@@ -31,19 +31,34 @@ public class BuildVars {
     public static int APP_ID = 4;
     public static String APP_HASH = "014b35b6184100b085b0d0572f9b5103";
 
-    // SafetyNet key for Google Identity SDK, set it to empty to disable
-    public static String SAFETYNET_KEY = "AIzaSyDqt8P-7F7CPCseMkOiVRgb1LY8RN1bvH8";
-    public static String PLAYSTORE_APP_URL = "https://play.google.com/store/apps/details?id=org.telegram.messenger";
-    public static String HUAWEI_STORE_URL = "https://appgallery.huawei.com/app/C101184875";
-    public static String GOOGLE_AUTH_CLIENT_ID = "760348033671-81kmi3pi84p11ub8hp9a1funsv0rn2p9.apps.googleusercontent.com";
+    // LoogriGram: SAFETYNET_KEY and GOOGLE_AUTH_CLIENT_ID are Telegram's own
+    // Google credentials, and as of this version nothing in the tree reads
+    // either of them - they are dead constants. Emptied rather than left
+    // sitting in our source: shipping somebody else's API key is a bad habit
+    // even when it is inert, and if a rebase ever wires them up again, empty
+    // is the value that disables the Google Identity path.
+    public static String SAFETYNET_KEY = "";
+    public static String GOOGLE_AUTH_CLIENT_ID = "";
+
+    // These are the "your client is too old, update it" destinations. Upstream
+    // points them at the official app's store pages, which for this fork would
+    // send the user off to install Telegram instead. There is no auto-update
+    // here, so the honest destination is where the build actually comes from.
+    public static String PLAYSTORE_APP_URL = "https://github.com/romanimpair-jpg/LoogriGram-Android";
+    public static String HUAWEI_STORE_URL = "https://github.com/romanimpair-jpg/LoogriGram-Android";
 
     public static String HUAWEI_APP_ID = "101184875";
 
     // You can use this flag to disable Google Play Billing (If you're making fork and want it to be in Google Play)
-    public static boolean IS_BILLING_UNAVAILABLE = false;
+    // LoogriGram: taking upstream at its word - this is the fork flag, and it
+    // closes the gift and premium buttons that the premium getters do not
+    // reach on their own.
+    public static boolean IS_BILLING_UNAVAILABLE = true;
 
     // works only on official app ids, disable on your forks
-    public static boolean SUPPORTS_PASSKEYS = true;
+    // LoogriGram: doing as the comment above says. Passkeys need the Google
+    // credentials provider anyway, which is not present here.
+    public static boolean SUPPORTS_PASSKEYS = false;
 
     static {
         if (ApplicationLoader.applicationContext != null) {
