@@ -2,11 +2,6 @@ package org.telegram.messenger;
 
 import android.app.Activity;
 
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.recaptcha.Recaptcha;
-import com.google.android.recaptcha.RecaptchaAction;
-import com.google.android.recaptcha.RecaptchaTasksClient;
-
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.ui.LaunchActivity;
 
@@ -63,52 +58,20 @@ public class CaptchaController {
         r.requestTokens.add(requestToken);
         final Request finalRequest = r;
 
-        final Activity activity = AndroidUtilities.getActivity();
-        if (activity == null) {
-            FileLog.e("CaptchaController: no activity found");
-            finalRequest.done("RECAPTCHA_FAILED_NO_ACTIVITY");
-            return;
-        }
-
-        Recaptcha.getTasksClient(activity.getApplication(), key_id)
-            .addOnSuccessListener(client -> {
-                client.executeTask(getAction(action))
-                    .addOnSuccessListener(token -> {
-                        FileLog.d("CaptchaController: got token for {action="+action+", key_id="+key_id+"}: " + token);
-                        if (token == null) {
-                            finalRequest.done("RECAPTCHA_FAILED_TOKEN_NULL");
-                        } else {
-                            finalRequest.done(token);
-                        }
-                    })
-                    .addOnFailureListener(e -> {
-                        FileLog.e("CaptchaController: executeTask failure", e);
-                        finalRequest.done("RECAPTCHA_FAILED_TASK_EXCEPTION_" + formatException(e));
-                    });
-            })
-            .addOnFailureListener(e -> {
-                FileLog.e("CaptchaController: getTasksClient failure", e);
-                finalRequest.done("RECAPTCHA_FAILED_GETCLIENT_EXCEPTION_" + formatException(e));
-            });
+        // LoogriGram: no reCAPTCHA. The server asks for one during login on
+        // some accounts, and Google's client cannot work without Play Services
+        // regardless - so rather than pretend, this reports a failure straight
+        // back through the same channel upstream uses when the captcha cannot
+        // be produced. Request.done hands the result to the native layer,
+        // which is waiting on the request token, so answering matters: staying
+        // silent would leave it hanging.
+        //
+        // If Telegram ever hard-requires a captcha to log in, login will fail
+        // and there is nothing this client can do about it - which is the
+        // honest outcome, not a regression to debug.
+        FileLog.d("CaptchaController: refusing captcha for {action=" + action + ", key_id=" + key_id + "}, no provider");
+        finalRequest.done("RECAPTCHA_FAILED_NO_PROVIDER");
     }
 
-    private static RecaptchaAction getAction(String action) {
-        switch (action) {
-            case "login":
-            case "LOGIN":
-                return RecaptchaAction.LOGIN;
-            case "signup":
-            case "SIGNUP":
-                return RecaptchaAction.SIGNUP;
-            default:
-                return RecaptchaAction.custom(action);
-        }
-    }
-
-    private static String formatException(Exception e) {
-        if (e == null) return "NULL";
-        if (e.getMessage() == null) return "MSG_NULL";
-        return e.getMessage().replaceAll(" ", "_").toUpperCase();
-    }
 
 }
