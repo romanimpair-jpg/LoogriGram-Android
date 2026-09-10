@@ -18,11 +18,6 @@ import android.os.Build;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
-import com.google.mlkit.common.MlKitException;
-import com.google.mlkit.vision.common.InputImage;
-import com.google.mlkit.vision.segmentation.subject.SubjectSegmentation;
-import com.google.mlkit.vision.segmentation.subject.SubjectSegmenter;
-import com.google.mlkit.vision.segmentation.subject.SubjectSegmenterOptions;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.FileLoader;
@@ -165,27 +160,14 @@ public class PhotoView extends EntityView {
     private boolean segmentingLoading, segmentingLoaded;
     public Bitmap segmentedImage;
     public void segmentImage(Bitmap source) {
-        if (segmentingLoaded || segmentingLoading || source == null) return;
-        if (Build.VERSION.SDK_INT < 24) return;
-        SubjectSegmenter segmenter = SubjectSegmentation.getClient(new SubjectSegmenterOptions.Builder().enableForegroundBitmap().build());
-        segmentingLoading = true;
-        InputImage inputImage = InputImage.fromBitmap(source, orientation);
-        segmenter.process(inputImage)
-            .addOnSuccessListener(result -> {
-                segmentingLoaded = true;
-                segmentingLoading = false;
-//                segmentedImage = result.getForegroundBitmap();
-//                highlightSegmented();
-            })
-            .addOnFailureListener(error -> {
-                segmentingLoading = false;
-                FileLog.e(error);
-                if (isWaitingMlKitError(error) && isAttachedToWindow()) {
-                    AndroidUtilities.runOnUIThread(() -> segmentImage(source), 2000);
-                } else {
-                    segmentingLoaded = true;
-                }
-            });
+        // LoogriGram: no subject segmentation. This asked ML Kit to cut the
+        // foreground subject out of the image, and the model arrives as an
+        // on-demand module delivered by Play Services - so it was never going
+        // to run here. Marked loaded so nothing retries: the failure path
+        // upstream reschedules itself every two seconds while the module is
+        // "downloading", which without Play Services would never stop.
+        segmentingLoaded = true;
+        segmentingLoading = false;
     }
 
     public boolean hasSegmentedImage() {
@@ -193,8 +175,8 @@ public class PhotoView extends EntityView {
     }
 
     public static boolean isWaitingMlKitError(Exception e) {
-        if (Build.VERSION.SDK_INT < 24) return false;
-        return e instanceof MlKitException && e.getMessage() != null && e.getMessage().contains("segmentation optional module to be downloaded");
+        // LoogriGram: nothing is ever waiting on an ML Kit module now.
+        return false;
     }
 
     public File saveSegmentedImage(int currentAccount) {

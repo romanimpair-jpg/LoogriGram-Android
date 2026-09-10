@@ -31,6 +31,32 @@ configurations.all {
 }
 
 dependencies {
+    // LoogriGram: this list is deliberately shorter than upstream's. Removed,
+    // with the reasoning at each affected class rather than repeated here:
+    //   google-services plugin, firebase-messaging / -datatransport /
+    //     -appindexing            push is our own connection; the other two
+    //                             were analytics transport and Google Search
+    //                             indexing of opened chats
+    //   play-services-maps, -location
+    //                             no map renderer, and the location
+    //                             permissions are gone from every manifest
+    //   play-services-auth        SMS Retriever and Google sign-in
+    //   play-services-wearable    watch-approved login
+    //   play-services-safetynet, play:integrity, recaptcha
+    //                             device attestation to Google
+    //   play-services-cast-framework, androidx.mediarouter, nanohttpd
+    //                             Chromecast, and the local HTTP server that
+    //                             fed it
+    //   play-services-mlkit-subject-segmentation, -image-labeling
+    //                             sticker cut-out and its suggested emoji;
+    //                             models delivered by Play Services
+    //   mlkit:language-id         worked offline, but only fed auto-translate
+    //   libgsaverification-client.aar
+    //                             Google Voice Search verification
+    // Every one of those needs Play Services, which this build does not have,
+    // except language-id - dropped anyway so "no Google classes in the APK"
+    // stays a check with one answer.
+
     implementation 'androidx.core:core:1.16.0'
     implementation 'androidx.palette:palette:1.0.0'
     implementation 'androidx.exifinterface:exifinterface:1.3.6'
@@ -38,72 +64,35 @@ dependencies {
     implementation "androidx.sharetarget:sharetarget:1.2.0"
     implementation 'androidx.interpolator:interpolator:1.0.0'
     implementation 'androidx.biometric:biometric:1.1.0'
+    implementation "androidx.credentials:credentials:1.6.0-alpha04"
+    implementation 'androidx.car.app:app:1.4.0'
+    implementation 'androidx.car.app:app-projected:1.4.0'
 
-    // LoogriGram: no Chromecast. play-services-cast-framework is the Google
-    // Cast protocol itself, with no non-Google implementation to swap in, and
-    // mediarouter existed only to discover receivers and show the picker. See
-    // ChromecastController for why the cast API keeps its shape.
-    //
-    // androidx.media has to be declared here now. Nothing casting-related uses
-    // it - it supplies MediaSessionCompat and PlaybackStateCompat, which the
-    // lock screen controls, PiP, Android Auto and the vendored ExoPlayer
-    // mediasession extension all depend on - but it was only ever on the
-    // classpath as a transitive dependency of mediarouter. Dropping mediarouter
+    // LoogriGram: added, not upstream. It supplies MediaSessionCompat and
+    // PlaybackStateCompat - lock screen controls, PiP, Android Auto and the
+    // vendored ExoPlayer mediasession extension - and was only ever on the
+    // classpath as a transitive dependency of mediarouter. Dropping Chromecast
     // took it with it and broke the media session, which is a long way from
     // Chromecast.
     implementation "androidx.media:media:1.7.0"
-    implementation 'com.google.zxing:core:3.5.4'
 
-    implementation 'androidx.car.app:app:1.4.0'
-    implementation 'androidx.car.app:app-projected:1.4.0'
-    // nanohttpd went with it: an HTTP server listening on the phone so a Cast
-    // receiver could pull media back out of the app. Not Google code, but a
-    // listening socket serving nobody is worth removing on its own account.
+    // Google-published but entirely offline: no Play Services, no network.
+    // zxing generates the QR codes; gson and guava are plain libraries.
+    implementation 'com.google.zxing:core:3.5.4'
+    implementation 'com.google.code.gson:gson:2.11.0'
+    implementation 'com.google.guava:guava:31.1-android'
+
+    // Still to go, tracked: vision is QR/face/MRZ detection, and wallet plus
+    // billingclient are the payment paths.
+    implementation 'com.google.android.gms:play-services-vision:20.1.3'
+    implementation 'com.google.android.gms:play-services-wallet:19.1.0'
+    implementation 'com.android.billingclient:billing:8.0.0'
+
+    implementation 'com.googlecode.mp4parser:isoparser:1.0.6'
+    implementation 'com.stripe:stripe-android:2.0.2'
 
     compileOnly 'org.checkerframework:checker-qual:2.5.2'
     compileOnly 'org.checkerframework:checker-compat-qual:2.5.0'
-    // LoogriGram: all Firebase is gone. firebase-messaging was the FCM push
-    // transport, which cannot work without Play Services anyway; push now runs
-    // over the MTProto connection a foreground NotificationsService keeps
-    // alive. firebase-datatransport is Google's analytics delivery plumbing
-    // and firebase-appindexing reported every opened chat to Google Search
-    // indexing - both are exactly the non-essential telemetry this fork exists
-    // to remove.
-    // LoogriGram: no maps and no geolocation. play-services-maps rendered the
-    // in-app map and play-services-location provided fixes; the location
-    // permissions are gone from every manifest, so the OS now guarantees this
-    // app cannot geolocate, which is checkable in the system app info rather
-    // than being a promise about our own code. Received locations open in
-    // whatever maps app the phone has, through a geo: intent.
-    // LoogriGram: play-services-auth provided two things, both gone. The SMS
-    // Retriever read the login code out of the incoming message without the
-    // READ_SMS permission, and Google sign-in authenticated the login email
-    // through Google's identity provider. Both need Play Services; the code is
-    // typed in by hand and the email is verified by an emailed code instead.
-    implementation 'com.google.android.gms:play-services-vision:20.1.3'
-    // LoogriGram: no Wear OS companion. play-services-wearable existed only to
-    // let a watch approve a login, which needs Play Services on both ends.
-    implementation 'com.google.android.gms:play-services-wallet:19.1.0'
-    implementation 'com.googlecode.mp4parser:isoparser:1.0.6'
-    implementation 'com.stripe:stripe-android:2.0.2'
-    implementation 'com.google.mlkit:language-id:17.0.6'
-    implementation 'com.android.billingclient:billing:8.0.0'
-    implementation 'com.google.code.gson:gson:2.11.0'
-    implementation 'com.google.guava:guava:31.1-android'
-    // LoogriGram: no device attestation. Play Integrity and SafetyNet both
-    // report device and app state to Google, which then vouches for us to
-    // Telegram; that is the opposite of the point of this build, and neither
-    // works without Play Services anyway. See ConnectionsManager
-    // .onIntegrityCheckClassic for how the server's request is answered.
-
-    implementation 'com.google.android.gms:play-services-mlkit-subject-segmentation:16.0.0-beta1'
-    implementation 'com.google.android.gms:play-services-mlkit-image-labeling:16.0.8'
-
-    // androidx.credentials stays - PasskeysController compiles against its
-    // core API - but LoogriGram drops the Play Services provider that actually
-    // backed it. Passkeys are off anyway (BuildVars.SUPPORTS_PASSKEYS), as
-    // upstream's own comment tells forks to do.
-    implementation "androidx.credentials:credentials:1.6.0-alpha04"
 
     implementation "io.noties.markwon:core:4.6.2"
     implementation "io.noties.markwon:ext-strikethrough:4.6.2"
@@ -115,8 +104,6 @@ dependencies {
     }
     api project(':jlatexmath')
 
-//    implementation 'com.google.mlkit:translate:17.0.3'
-
     constraints {
         implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.0") {
             because("kotlin-stdlib-jdk7 is now a part of kotlin-stdlib")
@@ -125,7 +112,6 @@ dependencies {
             because("kotlin-stdlib-jdk8 is now a part of kotlin-stdlib")
         }
     }
-    // LoogriGram: no reCAPTCHA either - see CaptchaController.
 
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
 }

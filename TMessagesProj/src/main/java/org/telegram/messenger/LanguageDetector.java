@@ -1,5 +1,17 @@
 package org.telegram.messenger;
 
+// LoogriGram: no on-device language detection.
+//
+// This wrapped ML Kit's language identifier, the one Google library here that
+// genuinely worked without Play Services - its model ships inside the APK and
+// nothing is sent anywhere. It goes because auto-translation is not wanted in
+// this build, so the only consumer of the detection was a feature being
+// removed, and keeping about a megabyte of Google bytecode to serve it would
+// have made "no Google classes in the APK" a weaker thing to verify.
+//
+// hasSupport() reporting false is a path upstream already handles: it is what
+// every caller checks before offering to detect anything, and TranslateController
+// treats an undetectable language as simply not offering a translation.
 public class LanguageDetector {
     public interface StringCallback {
         void run(String str);
@@ -9,7 +21,7 @@ public class LanguageDetector {
     }
 
     public static boolean hasSupport() {
-        return true;
+        return false;
     }
 
     public static void detectLanguage(String text, StringCallback onSuccess, ExceptionCallback onFail) {
@@ -17,41 +29,10 @@ public class LanguageDetector {
     }
 
     public static void detectLanguage(String text, StringCallback onSuccess, ExceptionCallback onFail, boolean initializeFirst) {
-        try {
-            if (initializeFirst) {
-                com.google.mlkit.common.sdkinternal.MlKitContext.zza(ApplicationLoader.applicationContext);
-            }
-            com.google.mlkit.nl.languageid.LanguageIdentification.getClient()
-                .identifyLanguage(text)
-                .addOnSuccessListener(str -> {
-                    if (onSuccess != null) {
-                        onSuccess.run(str);
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    if (onFail != null) {
-                        onFail.run(e);
-                    }
-                });
-        } catch (IllegalStateException e) {
-            if (!initializeFirst) {
-                detectLanguage(text, onSuccess, onFail, true);
-            } else {
-                if (onFail != null) {
-                    onFail.run(e);
-                }
-                FileLog.e(e, false);
-            }
-        } catch (Exception e) {
-            if (onFail != null) {
-                onFail.run(e);
-            }
-            FileLog.e(e);
-        } catch (Throwable t) {
-            if (onFail != null) {
-                onFail.run(null);
-            }
-            FileLog.e(t, false);
+        // Answered rather than dropped: callers pass a failure callback and some
+        // of them use it to move on, so staying silent would leave them waiting.
+        if (onFail != null) {
+            onFail.run(new UnsupportedOperationException("language detection removed"));
         }
     }
 }
