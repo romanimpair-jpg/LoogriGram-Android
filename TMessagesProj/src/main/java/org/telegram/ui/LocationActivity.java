@@ -456,6 +456,26 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
 
     @Override
     public boolean onFragmentCreate() {
+        // LoogriGram: this whole screen is a map, and there is no map provider
+        // any more, so it must never open - every view here would dereference a
+        // null one. isMapsInstalled closes twelve of the nineteen entry points,
+        // but not all: a story location sticker, a group's location, the live
+        // location bar and a few others go straight to presentFragment. Refusing
+        // here covers all of them at one chokepoint, which is why the guard is
+        // here rather than repeated at each call site.
+        //
+        // When there is a location to show, it is handed to an external maps app
+        // on the way out, so those paths still do something useful rather than
+        // nothing.
+        if (ApplicationLoader.getMapsProvider() == null) {
+            final TLRPC.MessageMedia media = messageObject != null && messageObject.messageOwner != null
+                ? messageObject.messageOwner.media : null;
+            final TLRPC.GeoPoint geo = media != null ? media.geo : null;
+            if (geo != null) {
+                AndroidUtilities.openLocationExternally(getContext(), geo.lat, geo._long, media.title);
+            }
+            return false;
+        }
         super.onFragmentCreate();
         getNotificationCenter().addObserver(this, NotificationCenter.closeChats);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.locationPermissionGranted);
