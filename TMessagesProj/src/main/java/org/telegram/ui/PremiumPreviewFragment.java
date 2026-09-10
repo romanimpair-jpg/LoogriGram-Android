@@ -2262,28 +2262,22 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
             return pricePerMonth;
         }
 
+        // LoogriGram: these four always format the server's price. Each had a
+        // second return below that formatted a Play price in micros instead.
         public String getFormattedPricePerYearRegular() {
-            if (BuildVars.useInvoiceBilling() || subscriptionOption.store_product == null) {
-                return BillingController.getInstance().formatCurrency(pricePerYearRegular, getCurrency());
-            }
+            return BillingController.getInstance().formatCurrency(pricePerYearRegular, getCurrency());
         }
 
         public String getFormattedPricePerYear() {
-            if (BuildVars.useInvoiceBilling() || subscriptionOption.store_product == null) {
-                return BillingController.getInstance().formatCurrency(getPricePerYear(), getCurrency());
-            }
+            return BillingController.getInstance().formatCurrency(getPricePerYear(), getCurrency());
         }
 
         public String getFormattedPricePerMonth() {
-            if (BuildVars.useInvoiceBilling() || subscriptionOption.store_product == null) {
-                return BillingController.getInstance().formatCurrency(getPricePerMonth(), getCurrency());
-            }
+            return BillingController.getInstance().formatCurrency(getPricePerMonth(), getCurrency());
         }
 
         public String getFormattedPrice() {
-            if (BuildVars.useInvoiceBilling() || subscriptionOption.store_product == null) {
-                return BillingController.getInstance().formatCurrency(getPrice(), getCurrency());
-            }
+            return BillingController.getInstance().formatCurrency(getPrice(), getCurrency());
         }
 
         public long getPrice() {
