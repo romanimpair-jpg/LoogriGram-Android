@@ -63,6 +63,7 @@ import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.Bulletin;
+import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.FolderDrawable;
 import org.telegram.ui.Components.HintsController;
@@ -89,20 +90,35 @@ import me.vkryl.android.animator.FactorAnimator;
 
 public class MainTabsActivity extends ViewPagerActivity implements NotificationCenter.NotificationCenterDelegate, FactorAnimator.Target {
 
-    public static final int TABS_COUNT = 4;
+    public static final int TABS_COUNT = 3;
+    // LoogriGram: the Contacts tab is replaced by the ghost mode switch, which
+    // is a toggle rather than a destination - so it has a tab index but no
+    // pager position, and the pager drops from four pages to three.
+    private static final int POSITION_NONE = -1;
     private static final int POSITION_CHATS = 0;
-    private static final int POSITION_CONTACTS = 1;
-    private static final int POSITION_CALLS_OR_SETTINGS = 2;
-    private static final int POSITION_PROFILE = 3;
+    private static final int POSITION_CALLS_OR_SETTINGS = 1;
+    private static final int POSITION_PROFILE = 2;
 
     private static final int INDEX_CHATS = 0;
-    private static final int INDEX_CONTACTS = 1;
+    private static final int INDEX_GHOST = 1;
     private static final int INDEX_SETTINGS = 2;
     private static final int INDEX_CALLS = 3;
     private static final int INDEX_PROFILE = 4;
 
     private static int indexToPosition(int index) {
-        return index > 2 ? index - 1 : index;
+        // Settings and Calls share a position - only one of the two is ever
+        // visible - and the ghost tab has none at all, being a switch.
+        switch (index) {
+            case INDEX_CHATS:
+                return POSITION_CHATS;
+            case INDEX_SETTINGS:
+            case INDEX_CALLS:
+                return POSITION_CALLS_OR_SETTINGS;
+            case INDEX_PROFILE:
+                return POSITION_PROFILE;
+            default:
+                return POSITION_NONE;
+        }
     }
 
     private static final int ANIMATOR_ID_TABS_VISIBLE = 0;
@@ -272,25 +288,14 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
     public void onResume() {
         super.onResume();
         blur3_updateColors();
-        checkContactsTabBadge();
         checkUnreadCount(true);
 
         showAccountChangeHint();
     }
 
-    private void checkContactsTabBadge() {
-        if (tabsView != null && tabs[INDEX_CONTACTS] != null) {
-            final boolean hasPermission = Build.VERSION.SDK_INT >= 23 && ContactsController.hasContactsPermission();
-            if (hasPermission) {
-                MessagesController.getGlobalNotificationsSettings().edit().putBoolean("askAboutContacts2", true).apply();
-            }
-            if (Build.VERSION.SDK_INT >= 23 && UserConfig.getInstance(currentAccount).syncContacts && !hasPermission && MessagesController.getGlobalNotificationsSettings().getBoolean("askAboutContacts2", true)) {
-                tabs[INDEX_CONTACTS].setCounter("!", true, true);
-            } else {
-                tabs[INDEX_CONTACTS].setCounter(null, true, true);
-            }
-        }
-    }
+    // LoogriGram: checkContactsTabBadge is gone with the Contacts tab. It put a
+    // "!" badge on that tab when contact sync was on without the permission,
+    // which has nowhere to render now.
 
     @Override
     public void onPause() {
@@ -312,17 +317,17 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
 
         tabs = new GlassTabView[5];
         tabs[INDEX_CHATS] = GlassTabView.createMainTab(context, resourceProvider, GlassTabView.TabAnimation.CHATS, R.string.MainTabsChats);
-        tabs[INDEX_CONTACTS] = GlassTabView.createMainTab(context, resourceProvider, GlassTabView.TabAnimation.CONTACTS, R.string.MainTabsContacts);
+        tabs[INDEX_GHOST] = GlassTabView.createMainTab(context, resourceProvider, GlassTabView.TabAnimation.GHOST, R.string.GhostMode);
         tabs[INDEX_SETTINGS] = GlassTabView.createMainTab(context, resourceProvider, GlassTabView.TabAnimation.SETTINGS, R.string.Settings);
         tabs[INDEX_CALLS] = GlassTabView.createMainTab(context, resourceProvider, GlassTabView.TabAnimation.CALLS, R.string.MainTabsCalls);
         tabs[INDEX_PROFILE] = GlassTabView.createAvatar(context, resourceProvider, currentAccount, R.string.MainTabsProfile);
         tabs[INDEX_CHATS].setOnLongClickListener(this::openFoldersSelector);
-        tabs[INDEX_CONTACTS].setOnLongClickListener(this::openContactsSelector);
         tabs[INDEX_CALLS].setOnLongClickListener(this::openCallsSelector);
         tabs[INDEX_PROFILE].setOnLongClickListener(this::openAccountSelector);
+        // No long-press menu on the ghost tab: its whole job is one tap.
 
         tabsView.addTabToIgnoreClick(tabs[INDEX_CHATS]);
-        tabsView.addTabToIgnoreClick(tabs[INDEX_CONTACTS]);
+        tabsView.addTabToIgnoreClick(tabs[INDEX_GHOST]);
         tabsView.addTabToIgnoreClick(tabs[INDEX_PROFILE]);
         tabsView.addTabToIgnoreClick(tabs[INDEX_CALLS]);
 
@@ -330,6 +335,12 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
             final GlassTabView view = tabs[index];
 
             final int position = indexToPosition(index);
+            if (index == INDEX_GHOST) {
+                tabs[index].setOnClickListener(v -> toggleGhostMode());
+                tabsView.addView(tabs[index]);
+                tabsView.setViewVisible(view, true, false);
+                continue;
+            }
             tabs[index].setOnClickListener(v -> {
                 if (viewPager.isManualScrolling() || viewPager.isTouch()) {
                     return;
@@ -410,26 +421,6 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         }
     }
 
-    public boolean openContactsSelector(View anchor) {
-        if (getContext() == null || getParentActivity() == null) return false;
-        final ItemOptions o = ItemOptions.makeOptions(this, anchor);
-        o.add(R.drawable.msg_contact_add, getString(R.string.NewContact), () -> {
-            new NewContactBottomSheet(this, getContext()).show();
-        });
-        o.add(R.drawable.msg_calls, getString(R.string.VoipChatRecentCalls), () -> {
-            Bundle args = new Bundle();
-            args.putBoolean("needFinishFragment", false);
-            presentFragment(new CallLogActivity(args));
-        });
-        o.setBlur(true);
-        o.translate(0, -dp(4));
-        o.setGravity(Gravity.LEFT);
-        final ShapeDrawable bg = Theme.createRoundRectDrawable(dp(28), getThemedColor(Theme.key_windowBackgroundWhite));
-        bg.getPaint().setShadowLayer(dp(6), 0, dp(1), Theme.multAlpha(0xFF000000, 0.15f));
-        o.setScrimViewBackground(bg);
-        o.show();
-        return true;
-    }
 
     public boolean openCallsSelector(View anchor) {
         if (getContext() == null || getParentActivity() == null) return false;
@@ -806,13 +797,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
 
     @Override
     protected BaseFragment createBaseFragmentAt(int position) {
-        if (position == POSITION_CONTACTS) {
-            Bundle args = new Bundle();
-            args.putBoolean("needPhonebook", true);
-            args.putBoolean("needFinishFragment", false);
-            args.putBoolean("hasMainTabs", true);
-            return new ContactsActivity(args);
-        } else if (position == POSITION_CALLS_OR_SETTINGS) {
+        if (position == POSITION_CALLS_OR_SETTINGS) {
             if (getUserConfig().showCallsTab) {
                 Bundle args = new Bundle();
                 args.putBoolean("needFinishFragment", false);
@@ -847,15 +832,40 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
 
     public GlassTabView[] tabs;
 
+    // LoogriGram: the ghost tab's selected state means "ghost mode is on", not
+    // "this page is showing", so it is driven from SharedConfig and never from
+    // the pager position.
+    private void toggleGhostMode() {
+        SharedConfig.toggleGhostMode();
+        if (tabs != null && tabs[INDEX_GHOST] != null) {
+            tabs[INDEX_GHOST].setSelected(SharedConfig.ghostMode, true);
+        }
+        if (getContext() != null) {
+            BulletinFactory.of(this)
+                .createSimpleBulletin(
+                    SharedConfig.ghostMode ? R.raw.ic_ban : R.raw.contact_check,
+                    getString(SharedConfig.ghostMode ? R.string.GhostModeOn : R.string.GhostModeOff),
+                    getString(SharedConfig.ghostMode ? R.string.GhostModeOnInfo : R.string.GhostModeOffInfo))
+                .show();
+        }
+    }
+
     public void selectTab(int position, boolean animated) {
         for (int a = 0; a < tabs.length; a++) {
             GlassTabView tab = tabs[a];
+            if (a == INDEX_GHOST) {
+                tab.setSelected(SharedConfig.ghostMode, animated);
+                continue;
+            }
             tab.setSelected(indexToPosition(a) == position, animated);
         }
     }
 
     public void setGestureSelectedOverride(float animatedPosition, boolean allow) {
         for (int index = 0; index < tabs.length; index++) {
+            if (index == INDEX_GHOST) {
+                continue;
+            }
             final int position = indexToPosition(index);
             final float visibility = Math.max(0, 1f - Math.abs(position - animatedPosition));
             tabs[index].setGestureSelectedOverride(visibility, allow);
@@ -1004,8 +1014,6 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
             if (tabs != null && tabs[INDEX_PROFILE] != null) {
                 tabs[INDEX_PROFILE].updateUserAvatar(currentAccount);
             }
-        } else if (id == NotificationCenter.contactsPermissionBadgeCheck) {
-            checkContactsTabBadge();
         }
     }
 

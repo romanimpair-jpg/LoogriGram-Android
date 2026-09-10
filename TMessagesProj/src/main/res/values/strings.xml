@@ -11221,4 +11221,11 @@
     <string name="UnsupportedMessageTitle">Unsupported Message</string>
     <string name="UnsupportedMessageMessage">Update Telegram to view this message</string>
     <string name="UnsupportedUpdate">Update</string>
+    <!-- LoogriGram: ghost mode. The tab label is deliberately one short word,
+         since it sits in the bottom bar next to Chats and Settings. -->
+    <string name="GhostMode">Ghost</string>
+    <string name="GhostModeOn">Ghost mode on</string>
+    <string name="GhostModeOnInfo">You appear offline. No typing, no online status, no story views.</string>
+    <string name="GhostModeOff">Ghost mode off</string>
+    <string name="GhostModeOffInfo">Typing, online status and story views are sent again.</string>
 </resources>

@@ -257,6 +257,10 @@ public class SharedConfig {
     public static boolean disableVoiceAudioEffects;
     public static boolean forceDisableTabletMode;
     public static boolean updateStickersOrderOnSend = true;
+    // LoogriGram: ghost mode master switch. One flag, no per-chat or
+    // per-signal state; see toggleGhostMode for storage and the suppression
+    // sites for what it governs.
+    public static boolean ghostMode = true;
     public static boolean bigCameraForRound;
     public static Boolean useCamera2Force;
     public static boolean useNewBlur;
@@ -661,6 +665,8 @@ public class SharedConfig {
             hasEmailLogin = preferences.getBoolean("hasEmailLogin", false);
             isFloatingDebugActive = preferences.getBoolean("floatingDebugActive", false);
             updateStickersOrderOnSend = preferences.getBoolean("updateStickersOrderOnSend", true);
+            // LoogriGram: default on. See toggleGhostMode below.
+            ghostMode = preferences.getBoolean("ghostMode", true);
             dayNightWallpaperSwitchHint = preferences.getInt("dayNightWallpaperSwitchHint", 0);
             bigCameraForRound = preferences.getBoolean("bigCameraForRound", false);
             useNewBlur = preferences.getBoolean("useNewBlur", true);
@@ -1024,6 +1030,17 @@ public class SharedConfig {
         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
         SharedPreferences.Editor editor = preferences.edit();
         editor.putInt("keep_media", keepMedia);
+        editor.apply();
+    }
+
+    // LoogriGram: the ghost mode master switch, default on. Stored in
+    // "mainconfig" through getGlobalMainSettings, deliberately not through
+    // SharedConfig.saveConfig - that writes the "userconfing" security block
+    // (passcode, salts) and has no business carrying a UI preference.
+    public static void toggleGhostMode() {
+        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean("ghostMode", ghostMode = !ghostMode);
         editor.apply();
     }
 

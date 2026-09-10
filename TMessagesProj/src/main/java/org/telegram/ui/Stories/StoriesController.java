@@ -38,6 +38,7 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.NotificationsController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SendMessagesHelper;
+import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.Timer;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
@@ -3725,6 +3726,21 @@ public class StoriesController {
             if (seenStories.contains(storyId)) return false;
             seenStories.add(storyId);
             saveCache();
+            // LoogriGram: ghost mode does not report story views. The guard sits
+            // here, after the local bookkeeping and before the request, on
+            // purpose: seenStories and saveCache are what make the story stop
+            // showing as unread on this device, so returning earlier would
+            // leave every story permanently unread locally. The notification
+            // below is posted either way for the same reason.
+            //
+            // Cost, accepted: incrementStoryViews is also what other devices
+            // sync the read position from, so story rings can come back unread
+            // on the phone. Stories expire in 24 hours, which is why this is
+            // suppressed while read receipts deliberately are not.
+            if (SharedConfig.ghostMode) {
+                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.storiesReadUpdated);
+                return true;
+            }
             TL_stories.TL_stories_incrementStoryViews req = new TL_stories.TL_stories_incrementStoryViews();
             req.peer = MessagesController.getInstance(currentAccount).getInputPeer(dialogId);
             req.id.add(storyId);

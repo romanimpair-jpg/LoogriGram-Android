@@ -10544,7 +10544,13 @@ public class MessagesController extends BaseController implements NotificationCe
         checkReadTasks();
 
         if (getUserConfig().isClientActivated()) {
-            if (!ignoreSetOnline && getConnectionsManager().getPauseTime() == 0 && ApplicationLoader.isScreenOn && !ApplicationLoader.mainInterfacePausedStageQueue) {
+            // LoogriGram: ghost mode never asserts online. Only this condition
+            // is changed, so control falls to the offline branch below, which
+            // sends offline once and latches offlineSent - and the rest of
+            // updateTimerProc, the updates queues and the view counter check,
+            // still runs. Gating the flag itself would have fought the several
+            // places that reset ignoreSetOnline after a call.
+            if (!ignoreSetOnline && !SharedConfig.ghostMode && getConnectionsManager().getPauseTime() == 0 && ApplicationLoader.isScreenOn && !ApplicationLoader.mainInterfacePausedStageQueue) {
                 if (ApplicationLoader.mainInterfacePausedStageQueueTime != 0 && Math.abs(ApplicationLoader.mainInterfacePausedStageQueueTime - System.currentTimeMillis()) > 1000) {
                     if (statusSettingState != 1 && (lastStatusUpdateTime == 0 || Math.abs(System.currentTimeMillis() - lastStatusUpdateTime) >= 55000 || offlineSent)) {
                         statusSettingState = 1;
@@ -11403,6 +11409,15 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public boolean sendTyping(long dialogId, long threadMsgId, int action, String emojicon, int classGuid) {
+        // LoogriGram: ghost mode sends no typing or activity - which covers
+        // recording voice, uploading and the rest, since every action funnels
+        // through here, secret chats included. false is already a routine
+        // return from this method, so callers need no changes. Group-call
+        // speaking does not come through here; it goes out over the call's own
+        // participant state, so it is unaffected.
+        if (SharedConfig.ghostMode) {
+            return false;
+        }
         if (action < 0 || action >= sendingTypings.length || dialogId == 0) {
             return false;
         }
