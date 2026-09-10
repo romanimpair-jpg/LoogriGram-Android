@@ -47,6 +47,8 @@ dependencies {
     //   play-services-cast-framework, androidx.mediarouter, nanohttpd
     //                             Chromecast, and the local HTTP server that
     //                             fed it
+    //   play-services-wallet      Google Pay inside Telegram Payments; card
+    //                             payment through Stripe is untouched
     //   play-services-vision      face detection for auto-placing masks, and
     //                             barcode reading; the detectors are not
     //                             bundled, Play Services downloads them
@@ -95,8 +97,7 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.11.0'
     implementation 'com.google.guava:guava:31.1-android'
 
-    // Still to go, tracked: wallet and billingclient are the payment paths.
-    implementation 'com.google.android.gms:play-services-wallet:19.1.0'
+    // Still to go, tracked: billingclient is the last of it.
     implementation 'com.android.billingclient:billing:8.0.0'
 
     implementation 'com.googlecode.mp4parser:isoparser:1.0.6'

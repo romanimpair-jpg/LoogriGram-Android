@@ -86,7 +86,6 @@ import androidx.core.graphics.ColorUtils;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 
-import com.google.android.gms.common.api.Status;
 import com.google.common.primitives.Longs;
 
 import org.telegram.PhoneFormat.PhoneFormat;
@@ -7465,12 +7464,13 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 }
             }
         } else if (id == NotificationCenter.needShowPlayServicesAlert) {
-            try {
-                final Status status = (Status) args[0];
-                status.startResolutionForResult(this, PLAY_SERVICES_REQUEST_CHECK_SETTINGS);
-            } catch (Throwable ignore) {
-
-            }
+            // LoogriGram: nothing posts this any more. It offered Play Services'
+            // "turn on location" resolution dialog, reached only from
+            // LocationController's STATUS_RESOLUTION_REQUIRED branch, and the
+            // no-op location provider reports SETTINGS_CHANGE_UNAVAILABLE
+            // instead. It could not have worked as written in any case: the
+            // poster passes the Integer status, not the gms Status this cast
+            // expected, so the ClassCastException was being swallowed here.
         } else if (id == NotificationCenter.fileLoaded) {
             String path = (String) args[0];
             if (loadingThemeFileName != null) {

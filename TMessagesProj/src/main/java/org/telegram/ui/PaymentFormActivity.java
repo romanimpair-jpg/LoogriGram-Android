@@ -73,15 +73,6 @@ import androidx.dynamicanimation.animation.FloatValueHolder;
 import androidx.dynamicanimation.animation.SpringAnimation;
 import androidx.dynamicanimation.animation.SpringForce;
 
-import com.google.android.gms.common.api.Status;
-import com.google.android.gms.tasks.Task;
-import com.google.android.gms.wallet.AutoResolveHelper;
-import com.google.android.gms.wallet.IsReadyToPayRequest;
-import com.google.android.gms.wallet.PaymentData;
-import com.google.android.gms.wallet.PaymentDataRequest;
-import com.google.android.gms.wallet.PaymentsClient;
-import com.google.android.gms.wallet.Wallet;
-import com.google.android.gms.wallet.WalletConstants;
 import com.stripe.android.Stripe;
 import com.stripe.android.TokenCallback;
 import com.stripe.android.exception.APIConnectionException;
@@ -218,7 +209,6 @@ public class PaymentFormActivity extends BaseFragment implements NotificationCen
     private HashMap<String, String> codesMap = new HashMap<>();
     private HashMap<String, String> phoneFormatMap = new HashMap<>();
 
-    private PaymentsClient paymentsClient;
 
     private EditTextBoldCursor[] inputFields;
     private RadioCell[] radioCells;
@@ -332,7 +322,6 @@ public class PaymentFormActivity extends BaseFragment implements NotificationCen
 
     private final static int done_button = 1;
 
-    private static final int LOAD_PAYMENT_DATA_REQUEST_CODE = 991;
 
     public enum InvoiceStatus {
         PAID,
@@ -2959,70 +2948,10 @@ public class PaymentFormActivity extends BaseFragment implements NotificationCen
             googlePayButton.setPadding(AndroidUtilities.dp(2), AndroidUtilities.dp(2), AndroidUtilities.dp(2), AndroidUtilities.dp(2));
         }
         googlePayContainer.addView(googlePayButton, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48));
-        googlePayButton.setOnClickListener(v -> {
-            googlePayButton.setClickable(false);
-            try {
-                JSONObject paymentDataRequest = getBaseRequest();
-
-                JSONObject cardPaymentMethod = getBaseCardPaymentMethod();
-                if (googlePayPublicKey != null && googlePayParameters == null) {
-                    cardPaymentMethod.put("tokenizationSpecification", new JSONObject() {{
-                        put("type", "DIRECT");
-                        put("parameters", new JSONObject() {{
-                            put("protocolVersion", "ECv2");
-                            put("publicKey", googlePayPublicKey);
-                        }});
-                    }});
-                } else {
-                    cardPaymentMethod.put("tokenizationSpecification", new JSONObject() {{
-                        put("type", "PAYMENT_GATEWAY");
-                        if (googlePayParameters != null) {
-                            put("parameters", googlePayParameters);
-                        } else {
-                            put("parameters", new JSONObject() {{
-                                put("gateway", "stripe");
-                                put("stripe:publishableKey", providerApiKey);
-                                put("stripe:version", StripeApiHandler.VERSION);
-                            }});
-                        }
-                    }});
-                }
-
-                paymentDataRequest.put("allowedPaymentMethods", new JSONArray().put(cardPaymentMethod));
-
-                JSONObject transactionInfo = new JSONObject();
-                ArrayList<TLRPC.TL_labeledPrice> arrayList = new ArrayList<>(paymentForm.invoice.prices);
-                if (shippingOption != null) {
-                    arrayList.addAll(shippingOption.prices);
-                }
-                transactionInfo.put("totalPrice", totalPriceDecimal = getTotalPriceDecimalString(arrayList));
-                transactionInfo.put("totalPriceStatus", "FINAL");
-                if (!TextUtils.isEmpty(googlePayCountryCode)) {
-                    transactionInfo.put("countryCode", googlePayCountryCode);
-                }
-                transactionInfo.put("currencyCode", paymentForm.invoice.currency);
-                transactionInfo.put("checkoutOption", "COMPLETE_IMMEDIATE_PURCHASE");
-                paymentDataRequest.put("transactionInfo", transactionInfo);
-
-                paymentDataRequest.put("merchantInfo", new JSONObject().put("merchantName", currentBotName));
-
-                /*paymentDataRequest.put("shippingAddressRequired", true);
-
-                JSONObject shippingAddressParameters = new JSONObject();
-                shippingAddressParameters.put("phoneNumberRequired", false);
-
-                JSONArray allowedCountryCodes = new JSONArray(Constants.SHIPPING_SUPPORTED_COUNTRIES);
-                shippingAddressParameters.put("allowedCountryCodes", allowedCountryCodes);
-                paymentDataRequest.put("shippingAddressParameters", shippingAddressParameters);*/
-
-                PaymentDataRequest request = PaymentDataRequest.fromJson(paymentDataRequest.toString());
-                if (request != null) {
-                    AutoResolveHelper.resolveTask(paymentsClient.loadPaymentData(request), getParentActivity(), LOAD_PAYMENT_DATA_REQUEST_CODE);
-                }
-            } catch (JSONException e) {
-                FileLog.e(e);
-            }
-        });
+        // LoogriGram: the button is never shown - see initGooglePay - and there
+        // is no Google Pay client to hand a request to, so the listener that
+        // built one is gone.
+        googlePayButton.setOnClickListener(v -> {});
 
         LinearLayout linearLayout = new LinearLayout(context);
         linearLayout.setWeightSum(2);
@@ -3191,48 +3120,16 @@ public class PaymentFormActivity extends BaseFragment implements NotificationCen
         return cardPaymentMethod;
     }
 
-    public Optional<JSONObject> getIsReadyToPayRequest() {
-        try {
-            JSONObject isReadyToPayRequest = getBaseRequest();
-            isReadyToPayRequest.put(
-                    "allowedPaymentMethods", new JSONArray().put(getBaseCardPaymentMethod()));
-
-            return Optional.of(isReadyToPayRequest);
-        } catch (JSONException e) {
-            return Optional.empty();
-        }
-    }
 
     private void initGooglePay(Context context) {
-        if (Build.VERSION.SDK_INT < 19 || getParentActivity() == null) {
-            return;
-        }
-        Wallet.WalletOptions walletOptions = new Wallet.WalletOptions.Builder()
-                .setEnvironment(paymentForm.invoice.test ? WalletConstants.ENVIRONMENT_TEST : WalletConstants.ENVIRONMENT_PRODUCTION)
-                .setTheme(WalletConstants.THEME_LIGHT)
-                .build();
-        paymentsClient = Wallet.getPaymentsClient(context, walletOptions);
-
-        final Optional<JSONObject> isReadyToPayJson = getIsReadyToPayRequest();
-        if (!isReadyToPayJson.isPresent()) {
-            return;
-        }
-        IsReadyToPayRequest request = IsReadyToPayRequest.fromJson(isReadyToPayJson.get().toString());
-        if (request == null) {
-            return;
-        }
-
-        Task<Boolean> task = paymentsClient.isReadyToPay(request);
-        task.addOnCompleteListener(getParentActivity(),
-                task1 -> {
-                    if (task1.isSuccessful()) {
-                        if (googlePayContainer != null) {
-                            googlePayContainer.setVisibility(View.VISIBLE);
-                        }
-                    } else {
-                        FileLog.e("isReadyToPay failed", task1.getException());
-                    }
-                });
+        // LoogriGram: no Google Pay. This built a Wallet PaymentsClient and
+        // asked isReadyToPay, and only its success callback made
+        // googlePayContainer visible - the container is created GONE. So doing
+        // nothing here leaves the button permanently hidden, which is exactly
+        // what upstream does on a device where Google Pay is not available.
+        //
+        // Paying a bot invoice by card still works: that path is Stripe and the
+        // other native providers, untouched.
     }
 
     private String getTotalPriceString(ArrayList<TLRPC.TL_labeledPrice> prices) {
@@ -3389,56 +3286,8 @@ public class PaymentFormActivity extends BaseFragment implements NotificationCen
 
     @Override
     public void onActivityResultFragment(int requestCode, int resultCode, Intent data) {
-        if (requestCode == LOAD_PAYMENT_DATA_REQUEST_CODE) {
-            AndroidUtilities.runOnUIThread(() -> {
-                if (resultCode == Activity.RESULT_OK) {
-                    PaymentData paymentData = PaymentData.getFromIntent(data);
-                    if (paymentData == null) {
-                        return;
-                    }
-                    final String paymentInfo = paymentData.toJson();
-                    if (paymentInfo == null) {
-                        return;
-                    }
-                    try {
-                        JSONObject paymentMethodData = new JSONObject(paymentInfo).getJSONObject("paymentMethodData");
-                        final JSONObject tokenizationData = paymentMethodData.getJSONObject("tokenizationData");
-                        final String tokenizationType = tokenizationData.getString("type");
-                        final String token = tokenizationData.getString("token");
-
-                        if (googlePayPublicKey != null || googlePayParameters != null) {
-                            googlePayCredentials = new TLRPC.TL_inputPaymentCredentialsGooglePay();
-                            googlePayCredentials.payment_token = new TLRPC.TL_dataJSON();
-                            googlePayCredentials.payment_token.data = tokenizationData.toString();
-                            String descriptions = paymentMethodData.optString("description");
-                            if (!TextUtils.isEmpty(descriptions)) {
-                                cardName = descriptions;
-                            } else {
-                                cardName = "Android Pay";
-                            }
-                        } else {
-                            Token t = TokenParser.parseToken(token);
-                            paymentJson = String.format(Locale.US, "{\"type\":\"%1$s\", \"id\":\"%2$s\"}", t.getType(), t.getId());
-                            Card card = t.getCard();
-                            cardName = card.getBrand() + " *" + card.getLast4();
-                        }
-                        goToNextStep();
-                    } catch (JSONException e) {
-                        FileLog.e(e);
-                    }
-                } else {
-                    if (resultCode == AutoResolveHelper.RESULT_ERROR) {
-                        Status status = AutoResolveHelper.getStatusFromIntent(data);
-                        FileLog.e("android pay error " + (status != null ? status.getStatusMessage() : ""));
-                    }
-                }
-                showEditDoneProgress(true, false);
-                setDonePressed(false);
-                if (googlePayButton != null) {
-                    googlePayButton.setClickable(true);
-                }
-            });
-        }
+        // LoogriGram: the Google Pay result branch is gone with the request
+        // that produced it.
     }
 
     private void goToNextStep() {
