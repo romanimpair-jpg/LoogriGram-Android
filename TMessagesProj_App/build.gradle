@@ -17,7 +17,9 @@ configurations.all {
 dependencies {
     implementation project(':TMessagesProj')
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
-    implementation files('../TMessagesProj/libs/libgsaverification-client.aar')
+    // LoogriGram: libgsaverification-client.aar was Google's Search Action
+    // verification client, and the only things extending it were the two
+    // Google Voice Search entry points, now gone with it.
 }
 
 android {
