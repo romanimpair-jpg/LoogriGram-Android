@@ -5847,21 +5847,13 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             signInWithGoogleView.setPadding(AndroidUtilities.dp(16), AndroidUtilities.dp(16), AndroidUtilities.dp(16), AndroidUtilities.dp(16));
             signInWithGoogleView.setMaxLines(2);
 
-            SpannableStringBuilder str = new SpannableStringBuilder("d ");
-            Drawable dr = ContextCompat.getDrawable(context, R.drawable.googleg_standard_color_18);
-            dr.setBounds(0, AndroidUtilities.dp(9), AndroidUtilities.dp(18), AndroidUtilities.dp(18 + 9));
-            str.setSpan(new ImageSpan(dr, ImageSpan.ALIGN_BOTTOM), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            str.setSpan(new ReplacementSpan() {
-                @Override
-                public int getSize(@NonNull Paint paint, CharSequence text, int start, int end, @Nullable Paint.FontMetricsInt fm) {
-                    return AndroidUtilities.dp(12);
-                }
-
-                @Override
-                public void draw(@NonNull Canvas canvas, CharSequence text, int start, int end, float x, int top, int y, int bottom, @NonNull Paint paint) {}
-            }, 1, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            str.append(getString(R.string.SignInWithGoogle));
-            signInWithGoogleView.setText(str);
+            // LoogriGram: the Google "G" logo was R.drawable.googleg_standard_color_18,
+            // a resource that came from play-services-auth - so removing that
+            // dependency removed the drawable too. The view stays because
+            // loginOrView measures against it, but it is permanently hidden and
+            // needs no label.
+            signInWithGoogleView.setText("");
+            signInWithGoogleView.setVisibility(View.GONE);
 
             loginOrView = new LoginOrView(context);
 
@@ -6133,21 +6125,13 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             signInWithGoogleView.setPadding(AndroidUtilities.dp(16), AndroidUtilities.dp(16), AndroidUtilities.dp(16), AndroidUtilities.dp(16));
             signInWithGoogleView.setMaxLines(2);
 
-            SpannableStringBuilder str = new SpannableStringBuilder("d ");
-            Drawable dr = ContextCompat.getDrawable(context, R.drawable.googleg_standard_color_18);
-            dr.setBounds(0, AndroidUtilities.dp(9), AndroidUtilities.dp(18), AndroidUtilities.dp(18 + 9));
-            str.setSpan(new ImageSpan(dr, ImageSpan.ALIGN_BOTTOM), 0, 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            str.setSpan(new ReplacementSpan() {
-                @Override
-                public int getSize(@NonNull Paint paint, CharSequence text, int start, int end, @Nullable Paint.FontMetricsInt fm) {
-                    return AndroidUtilities.dp(12);
-                }
-
-                @Override
-                public void draw(@NonNull Canvas canvas, CharSequence text, int start, int end, float x, int top, int y, int bottom, @NonNull Paint paint) {}
-            }, 1, 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            str.append(getString(R.string.SignInWithGoogle));
-            signInWithGoogleView.setText(str);
+            // LoogriGram: the Google "G" logo was R.drawable.googleg_standard_color_18,
+            // a resource that came from play-services-auth - so removing that
+            // dependency removed the drawable too. The view stays because
+            // loginOrView measures against it, but it is permanently hidden and
+            // needs no label.
+            signInWithGoogleView.setText("");
+            signInWithGoogleView.setVisibility(View.GONE);
 
             // LoogriGram: "Sign in with Google" is gone. It authenticated the
             // login email through Google's identity provider, which needs Play

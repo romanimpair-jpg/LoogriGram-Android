@@ -1114,7 +1114,10 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
         buyPremium(fragment, tier, source, forcePremium, null);
     }
 
-    public static void buyPremium(BaseFragment fragment, SubscriptionTier tier, String source, boolean forcePremium, BillingFlowParams.SubscriptionUpdateParams updateParams) {
+    // LoogriGram: the updateParams argument described a Play subscription
+    // replacement - swapping an existing Play subscription for another tier. It
+    // is gone with Play Billing; the overloads that passed null are unaffected.
+    public static void buyPremium(BaseFragment fragment, SubscriptionTier tier, String source, boolean forcePremium, Object updateParams) {
         if (BuildVars.IS_BILLING_UNAVAILABLE) {
             if (fragment == null) {
                 new PremiumNotAvailableBottomSheet(fragment).show();
@@ -1987,15 +1990,8 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
             premiumButtonView.setButton(getPremiumButtonText(currentAccount, subscriptionTiers.get(selectedTierIndex)), null, animated);
             buttonContainerInternal.setOnClickListener(v -> {
                 SubscriptionTier tier = subscriptionTiers.get(selectedTierIndex);
-                BillingFlowParams.SubscriptionUpdateParams updateParams = null;
-                if (currentSubscriptionTier != null && currentSubscriptionTier.subscriptionOption != null && currentSubscriptionTier.subscriptionOption.transaction != null) {
-                    updateParams = BillingFlowParams.SubscriptionUpdateParams.newBuilder()
-                            .setOldPurchaseToken(BillingController.getInstance().getLastPremiumToken())
-//                            .setReplaceProrationMode(BillingFlowParams.ProrationMode.IMMEDIATE_AND_CHARGE_FULL_PRICE)
-                            .setSubscriptionReplacementMode(BillingFlowParams.SubscriptionUpdateParams.ReplacementMode.CHARGE_FULL_PRICE)
-                            .build();
-                }
-                buyPremium(this, tier, "settings", true, updateParams);
+                // LoogriGram: no Play subscription to replace.
+                buyPremium(this, tier, "settings", true, null);
             });
             premiumButtonView.setFlickerDisabled(false);
         }

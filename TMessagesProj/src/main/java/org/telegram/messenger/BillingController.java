@@ -1,5 +1,7 @@
 package org.telegram.messenger;
 
+import org.telegram.messenger.utils.BillingUtilities;
+
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Currency;

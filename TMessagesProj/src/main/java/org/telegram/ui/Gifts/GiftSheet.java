@@ -692,6 +692,25 @@ public class GiftSheet extends BottomSheetWithRecyclerListView implements Notifi
 
     @Override
     public void show() {
+        // LoogriGram: sending gifts is an upsell surface and is removed. Guarded
+        // here rather than at each of the fourteen call sites - birthday
+        // prompts, profile buttons, the gifts tab, deep links - because this is
+        // the one place all of them pass through, and upstream already refuses
+        // here for a frozen account or a recipient who disallows gifts.
+        //
+        // Receiving is untouched: a gift someone sends still arrives, renders in
+        // the chat and appears on the profile. That has to keep working -
+        // ChatMessageCell draws it through StarGiftSheet and MessageObject
+        // formats the text through StarsIntroActivity.
+        final BaseFragment fragment = LaunchActivity.getSafeLastFragment();
+        if (fragment != null) {
+            BulletinFactory.of(fragment)
+                .createSimpleBulletin(R.raw.chats_infotip, LocaleController.getString(R.string.GiftsSendingRemoved))
+                .show();
+        }
+        if (true) {
+            return;
+        }
         if (MessagesController.getInstance(currentAccount).isFrozen()) {
             AccountFrozenAlert.show(currentAccount);
             return;

@@ -267,7 +267,9 @@ public class PremiumTierCell extends ViewGroup {
                 break;
         }
 
-        isDrawingGradient = !BuildVars.useInvoiceBilling() && (!BillingController.getInstance().isReady() || tier.getOfferDetails() == null);
+        // LoogriGram: the shimmer meant "price not fetched from Play yet".
+        // Prices come from the server and are there immediately.
+        isDrawingGradient = false;
         if (!isDrawingGradient) {
             if (tier.getDiscount() <= 0) {
                 discountView.setVisibility(GONE);

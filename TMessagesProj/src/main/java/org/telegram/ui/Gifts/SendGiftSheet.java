@@ -936,6 +936,12 @@ public class SendGiftSheet extends BottomSheetWithRecyclerListView implements No
 
     @Override
     public void show() {
+        // LoogriGram: see GiftSheet.show - sending is removed. This is the
+        // confirm-and-send step, reached from the gift sheet and from the
+        // auction sheet.
+        if (true) {
+            return;
+        }
         if (messageEdit != null) {
             messageEdit.editTextEmoji.onResume();
         }
