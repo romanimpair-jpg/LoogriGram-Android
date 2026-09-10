@@ -16,15 +16,24 @@ depends on.
 
 | Part | State |
 |---|---|
-| Fork, CI, all removals | Done, compiles, first signed APK built |
-| Installed on the phone | **Not yet — nothing has ever run** |
-| Ghost mode | Implemented, unverified on device |
-| Push transport | Implemented, unverified on device |
+| Fork, CI, all removals | Done. No Google bytecode in the APK, verified in the dex |
+| Installed on the phone | **Yes.** First run 2026-09-10, signed with our own key |
+| First use | Working — judged "about as good as desktop" |
+| Ghost mode | Working in first use; not yet checked against a second account |
+| Push transport | Working in first use; **not yet trusted over hours idle** |
 
-**Nothing here has been exercised on a real device.** It compiles and the
-degoogling is verified statically. The first launch is the real test, and the
-riskiest part is push: notifications arriving with the app backgrounded go
-through a path that is entirely ours.
+**It runs, and first use went well.** What is not yet earned is confidence in
+the push transport. That path is entirely ours - foreground service, `specialUse`
+type, MTProto connection - and its failure mode is *delayed* notifications after
+hours of idle, which no amount of testing in the first few minutes will reveal.
+If messages start arriving late or only on unlock, look there first, and question
+the `specialUse` choice before anything else.
+
+The installed APK: 44.5 MB, `lib/arm64-v8a/libtmessages.49.so` only, signed
+`O=LoogriMedia, CN=LoogriGram`, certificate SHA-256
+`97b5106a0796100b36f7aea5e42ceae51b5861bd0dec6e672ee5a85bc1e49030`. That
+fingerprint is how to confirm a later build carries the same key - and it must,
+because Android will refuse an update signed with any other.
 
 ---
 
@@ -268,10 +277,12 @@ In rough order of how much is left behind:
 
 ### Then
 
-1. **Install and actually use it.** Nothing has run. Check in order:
-   notifications with the app backgrounded (the whole push path is ours), ghost
-   mode's four signals against a second account, a received location opening
-   externally, and that no premium or gift surface appears.
+1. **Verify what first use could not.** Installed and working, but still open:
+   notifications after hours idle and after a reboot (the push path is ours and
+   fails *slowly*); ghost mode's four signals confirmed from a second account,
+   including that the read date is hidden and no burst of receipts follows
+   turning it off; a received location opening in a maps app; and a sweep for any
+   premium, Stars or gift surface still reachable.
 2. **Cosmetic pass** (agreed, not started): L and G letters laid diagonally over
    the default launcher icon — `icon_plane.xml` is a vector so the mark can be
    hand-written as paths; `icon_foreground.png` is raster at five densities.
