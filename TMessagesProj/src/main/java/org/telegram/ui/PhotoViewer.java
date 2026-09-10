@@ -150,9 +150,6 @@ import com.google.android.exoplayer2.analytics.AnalyticsListener;
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 import com.google.android.exoplayer2.video.VideoFrameMetadataListener;
 import com.google.android.exoplayer2.video.VideoSize;
-import com.google.android.gms.vision.Frame;
-import com.google.android.gms.vision.face.Face;
-import com.google.android.gms.vision.face.FaceDetector;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.AnimationNotificationsLocker;
@@ -11847,59 +11844,35 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
     }
 
     private void detectFaces() {
-        if (centerImage.getAnimation() != null || imagesArrLocals.isEmpty() || sendPhotoType == SELECT_TYPE_AVATAR) {
-            return;
-        }
-        String key = centerImage.getImageKey();
-        if (currentImageFaceKey != null && currentImageFaceKey.equals(key)) {
-            return;
-        }
-        currentImageHasFace = 0;
-        ImageReceiver.BitmapHolder bitmap = centerImage.getBitmapSafe();
-        detectFaces(key, bitmap, centerImage.getOrientation());
+        // LoogriGram: no face detection. This ran Google's Mobile Vision face
+        // detector to find eyes, mouth and chin so a mask sticker could be
+        // placed and angled on a face automatically. The detector is not part
+        // of the library - isOperational() is false until Play Services
+        // downloads it - so it never worked on this phone; upstream's own
+        // "face detection is not operational" branch was the live path.
+        //
+        // faces stays the empty list it starts as, which is what that branch
+        // left it as. Masks can still be placed and rotated by hand.
     }
 
     private void detectFaces(String key, ImageReceiver.BitmapHolder bitmap, int orientation) {
+        // LoogriGram: this asked the Mobile Vision detector merely whether the
+        // image contains a face, to decide whether to offer mask stickers.
+        // Same detector, same problem: not operational without Play Services.
+        //
+        // What follows is upstream's own not-operational branch, which was the
+        // live path here already - state 2 meaning "asked, and there is no
+        // answer". The bitmap release is kept; skipping it would leak a full
+        // size bitmap per image viewed.
         if (key == null || bitmap == null || bitmap.bitmap == null) {
             return;
         }
-        Utilities.globalQueue.postRunnable(() -> {
-            FaceDetector faceDetector = null;
-            try {
-                faceDetector = new FaceDetector.Builder(ApplicationLoader.applicationContext)
-                        .setMode(FaceDetector.FAST_MODE)
-                        .setLandmarkType(FaceDetector.NO_LANDMARKS)
-                        .setTrackingEnabled(false).build();
-                if (faceDetector.isOperational()) {
-                    Frame frame = new Frame.Builder().setBitmap(bitmap.bitmap).setRotation(orientation).build();
-                    SparseArray<Face> faces = faceDetector.detect(frame);
-                    boolean hasFaces = faces != null && faces.size() != 0;
-                    AndroidUtilities.runOnUIThread(() -> {
-                        String imageKey = centerImage.getImageKey();
-                        if (key.equals(imageKey)) {
-                            currentImageHasFace = hasFaces ? 1 : 0;
-                            currentImageFaceKey = key;
-                        }
-                    });
-                } else {
-                    if (BuildVars.LOGS_ENABLED) {
-                        FileLog.e("face detection is not operational");
-                    }
-                    AndroidUtilities.runOnUIThread(() -> {
-                        bitmap.release();
-                        String imageKey = centerImage.getImageKey();
-                        if (key.equals(imageKey)) {
-                            currentImageHasFace = 2;
-                            currentImageFaceKey = key;
-                        }
-                    });
-                }
-            } catch (Exception e) {
-                FileLog.e(e);
-            } finally {
-                if (faceDetector != null) {
-                    faceDetector.release();
-                }
+        AndroidUtilities.runOnUIThread(() -> {
+            bitmap.release();
+            String imageKey = centerImage.getImageKey();
+            if (key.equals(imageKey)) {
+                currentImageHasFace = 2;
+                currentImageFaceKey = key;
             }
         });
     }

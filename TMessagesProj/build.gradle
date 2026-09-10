@@ -47,6 +47,9 @@ dependencies {
     //   play-services-cast-framework, androidx.mediarouter, nanohttpd
     //                             Chromecast, and the local HTTP server that
     //                             fed it
+    //   play-services-vision      face detection for auto-placing masks, and
+    //                             barcode reading; the detectors are not
+    //                             bundled, Play Services downloads them
     //   play-services-mlkit-subject-segmentation, -image-labeling
     //                             sticker cut-out and its suggested emoji;
     //                             models delivered by Play Services
@@ -68,6 +71,16 @@ dependencies {
     implementation 'androidx.car.app:app:1.4.0'
     implementation 'androidx.car.app:app-projected:1.4.0'
 
+    // LoogriGram: added, not upstream, and for the same reason as androidx.media
+    // below - appcompat was never declared either, arriving transitively via
+    // mediarouter and then via the ML Kit libraries. Removing Chromecast and
+    // then ML Kit took it away in two stages, which is why the break surfaced
+    // one commit after the cause. FloatingToolbar and BotBiometry use
+    // androidx.appcompat.view; it also carries fragment, viewpager, lifecycle
+    // and customview, all of which this tree imports and none of which were
+    // declared.
+    implementation "androidx.appcompat:appcompat:1.7.0"
+
     // LoogriGram: added, not upstream. It supplies MediaSessionCompat and
     // PlaybackStateCompat - lock screen controls, PiP, Android Auto and the
     // vendored ExoPlayer mediasession extension - and was only ever on the
@@ -82,9 +95,7 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.11.0'
     implementation 'com.google.guava:guava:31.1-android'
 
-    // Still to go, tracked: vision is QR/face/MRZ detection, and wallet plus
-    // billingclient are the payment paths.
-    implementation 'com.google.android.gms:play-services-vision:20.1.3'
+    // Still to go, tracked: wallet and billingclient are the payment paths.
     implementation 'com.google.android.gms:play-services-wallet:19.1.0'
     implementation 'com.android.billingclient:billing:8.0.0'
 

@@ -17,9 +17,6 @@ import android.view.View;
 
 import androidx.annotation.NonNull;
 
-import com.google.android.gms.vision.Frame;
-import com.google.android.gms.vision.barcode.Barcode;
-import com.google.android.gms.vision.barcode.BarcodeDetector;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.MessagesController;
@@ -35,7 +32,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class QRScanner {
 
-    private final AtomicReference<BarcodeDetector> detector = new AtomicReference<>();
     private final AtomicBoolean paused = new AtomicBoolean(false);
 
     private final Utilities.Callback<Detected> listener;
@@ -45,10 +41,8 @@ public class QRScanner {
     public QRScanner(Context context, Utilities.Callback<Detected> whenScanned) {
         this.listener = whenScanned;
         this.prefix = MessagesController.getInstance(UserConfig.selectedAccount).linkPrefix;
-        Utilities.globalQueue.postRunnable(() -> {
-            detector.set(new BarcodeDetector.Builder(context).setBarcodeFormats(Barcode.QR_CODE).build());
-            attach(cameraView);
-        });
+        // LoogriGram: no barcode detector to build - see detect() below.
+        Utilities.globalQueue.postRunnable(() -> attach(cameraView));
     }
 
     public Detected getDetected() {
@@ -64,7 +58,6 @@ public class QRScanner {
 
     public void attach(CameraView cameraView) {
         this.cameraView = cameraView;
-        if (detector.get() == null) return;
 
         if (!paused.get()) {
             Utilities.globalQueue.cancelRunnable(this.process);
@@ -93,7 +86,7 @@ public class QRScanner {
 
     private Bitmap cacheBitmap;
     private final Runnable process = () -> {
-        if (detector.get() == null || cameraView == null || paused.get()) {
+        if (cameraView == null || paused.get()) {
             return;
         }
 
@@ -127,35 +120,15 @@ public class QRScanner {
     };
 
     private Detected detect(Bitmap bitmap) {
-        if (bitmap == null) {
-            return null;
-        }
-
-        final BarcodeDetector detector = this.detector.get();
-        if (detector == null || !detector.isOperational()) {
-            return null;
-        }
-
-        final int w = bitmap.getWidth();
-        final int h = bitmap.getHeight();
-        final Frame frame = new Frame.Builder().setBitmap(bitmap).build();
-        final SparseArray<Barcode> codes = detector.detect(frame);
-
-        for (int i = 0; i < codes.size(); ++i) {
-            final Barcode code = codes.valueAt(i);
-            String link = code.rawValue;
-            if (link == null) continue;
-            link = link.trim();
-            if (!link.startsWith(prefix) && !link.startsWith("https://" + prefix) && !link.startsWith("http://" + prefix)) continue;
-
-            final PointF[] cornerPoints = new PointF[code.cornerPoints.length];
-            for (int j = 0; j < code.cornerPoints.length; ++j) {
-                cornerPoints[j] = new PointF((float) code.cornerPoints[j].x / w, (float) code.cornerPoints[j].y / h);
-            }
-
-            return new Detected(link, cornerPoints);
-        }
-
+        // LoogriGram: no QR scanning in the story camera. This used Google's
+        // Mobile Vision barcode detector, which is not bundled - the detector
+        // is downloaded by Play Services and isOperational() stays false until
+        // it is - so scanning has never worked on this phone, and upstream's
+        // own "detector not operational" early return was the live path.
+        //
+        // Returning null is that same path. zxing:core is already a dependency
+        // for generating QR codes, so reading them could be reimplemented
+        // offline later; that is a feature to add, not part of this removal.
         return null;
     }
 
@@ -179,10 +152,7 @@ public class QRScanner {
     }
 
     public void detach() {
-        BarcodeDetector detector = this.detector.getAndSet(null);
-        if (detector != null) {
-            detector.release();
-        }
+        // Nothing to release: there is no detector.
     }
 
     public static final class Detected {
