@@ -121,6 +121,12 @@ public class VideoAds {
         int msg_id,
         BulletinFactory bulletinFactory
     ) {
+        // LoogriGram: no ads in the video player either. This surface did not
+        // exist when the fork was planned. PhotoViewer null-checks the result
+        // at every use, so returning null here is the whole change.
+        if (true) {
+            return null;
+        }
         final VideoAdsLocation key = new VideoAdsLocation(currentAccount, dialogId);
         VideoAds ads = cached.get(key);
         if (ads == null || (ads.msg_id != msg_id || System.currentTimeMillis() - ads.lastTime > 3 * 60 * 1000) && ads.ads.isEmpty()) {
@@ -852,6 +858,12 @@ public class VideoAds {
 
     public void logSponsoredShown(TLRPC.TL_sponsoredMessage ad) {
         if (ad == null) return;
+        // LoogriGram: make() returns null and the constructor is private, so no
+        // instance can exist to call this; guarded anyway so the beacons stay
+        // dead if a later rebase reintroduces a way in.
+        if (true) {
+            return;
+        }
         final TLRPC.TL_messages_viewSponsoredMessage req = new TLRPC.TL_messages_viewSponsoredMessage();
         req.random_id = ad.random_id;
         if (!BuildVars.DEBUG_PRIVATE_VERSION) {
@@ -861,6 +873,10 @@ public class VideoAds {
 
     public void logSponsoredClicked(TLRPC.TL_sponsoredMessage ad) {
         if (ad == null) return;
+        // LoogriGram: see logSponsoredShown above.
+        if (true) {
+            return;
+        }
         final TLRPC.TL_messages_clickSponsoredMessage req = new TLRPC.TL_messages_clickSponsoredMessage();
         req.random_id = ad.random_id;
         req.media = false;

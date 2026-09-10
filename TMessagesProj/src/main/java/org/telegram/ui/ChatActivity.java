@@ -36516,6 +36516,12 @@ public class ChatActivity extends BaseFragment implements
     }
 
     public void logSponsoredClicked(MessageObject messageObject, boolean media, boolean fullscreen) {
+        // LoogriGram: belt-and-braces. No sponsored message can reach the list
+        // any more, so this should be unreachable; blocked here as well so that
+        // a new upstream call site cannot quietly start reporting again.
+        if (true) {
+            return;
+        }
         if (messageObject == null || !messageObject.isSponsored()) {
             return;
         }
@@ -36741,6 +36747,10 @@ public class ChatActivity extends BaseFragment implements
             return;
         }
         if (!object.isSponsored() || object.viewsReloaded) {
+            return;
+        }
+        // LoogriGram: the impression beacon. See logSponsoredClicked above.
+        if (true) {
             return;
         }
         object.viewsReloaded = true;

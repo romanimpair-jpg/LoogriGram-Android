@@ -21630,6 +21630,13 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public SponsoredMessagesInfo getSponsoredMessages(long dialogId) {
+        // LoogriGram: no ads. Returning null before the request is built means
+        // nothing is ever fetched, so the impression and click beacons have
+        // nothing to report on either - ChatActivity.addSponsoredMessages
+        // already guards on a null result, as does everything downstream.
+        if (true) {
+            return null;
+        }
         SponsoredMessagesInfo info = sponsoredMessages.get(dialogId);
         if (info != null && (info.loading || Math.abs(SystemClock.elapsedRealtime() - info.loadTime) <= 5 * 60 * 1000)) {
             return info;

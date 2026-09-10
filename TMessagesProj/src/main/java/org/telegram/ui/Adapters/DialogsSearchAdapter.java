@@ -1113,7 +1113,12 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                 ConnectionsManager.getInstance(currentAccount).cancelRequest(sponsoredReqId, true);
                 sponsoredReqId = 0;
             }
-            if (query == null || query.length() < 4 || UserConfig.getInstance(currentAccount).isPremium() && MessagesController.getInstance(currentAccount).isSponsoredDisabled()) {
+            // LoogriGram: no sponsored search results. This is a third ad
+            // surface, separate from in-chat sponsored messages and the video
+            // player, and it also did not exist when the fork was planned.
+            // Taking upstream's own "do not ask" branch leaves sponsoredPeers
+            // empty, which the adapter already renders as no rows.
+            if (true || query == null || query.length() < 4 || UserConfig.getInstance(currentAccount).isPremium() && MessagesController.getInstance(currentAccount).isSponsoredDisabled()) {
                 sponsoredQuery = null;
             } else {
                 final TLRPC.TL_contacts_getSponsoredPeers req = new TLRPC.TL_contacts_getSponsoredPeers();
@@ -2533,6 +2538,11 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         }
         if (sent) return;
 
+        // LoogriGram: impression beacon for a sponsored search result. Nothing
+        // populates sponsoredPeers now, so this is belt-and-braces.
+        if (true) {
+            return;
+        }
         seenSponsoredPeers.add(sponsoredPeer.random_id);
         TLRPC.TL_messages_viewSponsoredMessage req = new TLRPC.TL_messages_viewSponsoredMessage();
         req.random_id = sponsoredPeer.random_id;
@@ -2541,6 +2551,10 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
 
     public void clickedSponsoredPeer(TLRPC.TL_sponsoredPeer sponsoredPeer) {
         if (sponsoredPeer == null) return;
+        // LoogriGram: click beacon. See above.
+        if (true) {
+            return;
+        }
         TLRPC.TL_messages_clickSponsoredMessage req = new TLRPC.TL_messages_clickSponsoredMessage();
         req.random_id = sponsoredPeer.random_id;
         ConnectionsManager.getInstance(currentAccount).sendRequest(req, null);
