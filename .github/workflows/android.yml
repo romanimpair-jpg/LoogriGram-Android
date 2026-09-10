@@ -1,0 +1,260 @@
+name: Android.
+
+# LoogriGram: upstream ships no CI for the Android client at all, so this
+# whole file is ours. It follows the same shape as the desktop workflow -
+# manual dispatch only, staged so a configuration mistake costs minutes
+# instead of an hour:
+#   validate - secrets and Gradle configuration only, a few minutes
+#   build    - full build, produces the APK artifact
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'validate | build'
+        required: true
+        default: validate
+        type: choice
+        options:
+          - validate
+          - build
+      config:
+        description: 'Release is what we ship. Debug is unsigned-ish, larger and unused.'
+        required: true
+        default: Release
+        type: choice
+        options:
+          - Release
+          - Debug
+
+jobs:
+
+  android:
+    name: Android
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    timeout-minutes: 180
+
+    env:
+      # Hard-pinned rather than "latest": the app declares both versions in
+      # its own Gradle files, and neither is preinstalled on the runner.
+      NDK_VERSION: "27.2.12479018"
+      CMAKE_VERSION: "3.22.1"
+      COMPILE_SDK: "36"
+      BUILD_TOOLS: "36.0.0"
+      GRADLE_TASK: "${{ inputs.config == 'Debug' && ':TMessagesProj_App:assembleAfatDebug' || ':TMessagesProj_App:assembleAfatRelease' }}"
+
+    steps:
+      - name: Validate configuration.
+        env:
+          TG_API_ID: ${{ secrets.TG_API_ID }}
+          TG_API_HASH: ${{ secrets.TG_API_HASH }}
+        run: |
+          failed=0
+
+          if [ -z "$TG_API_ID" ]; then
+            echo "::error::TG_API_ID is not set."
+            failed=1
+          elif [ "$TG_API_ID" != "${TG_API_ID//[!0-9]/}" ]; then
+            echo "::error::TG_API_ID contains non-digits (${#TG_API_ID} chars total). A stray space or newline when pasting is the usual cause."
+            failed=1
+          elif [ ${#TG_API_ID} -lt 5 ] || [ ${#TG_API_ID} -gt 10 ]; then
+            echo "::error::TG_API_ID is ${#TG_API_ID} digits; expected roughly 6-8."
+            failed=1
+          else
+            echo "TG_API_ID looks valid (${#TG_API_ID} digits)."
+          fi
+
+          hash_lower="$(printf '%s' "$TG_API_HASH" | tr 'A-Z' 'a-z')"
+          if [ -z "$TG_API_HASH" ]; then
+            echo "::error::TG_API_HASH is not set."
+            failed=1
+          elif [ ${#TG_API_HASH} -ne 32 ]; then
+            echo "::error::TG_API_HASH is ${#TG_API_HASH} chars; expected exactly 32. A stray space or newline when pasting is the usual cause."
+            failed=1
+          elif [ "$hash_lower" != "${hash_lower//[!0-9a-f]/}" ]; then
+            echo "::error::TG_API_HASH contains non-hexadecimal characters."
+            failed=1
+          else
+            echo "TG_API_HASH looks valid (32 hex chars)."
+          fi
+
+          if [ $failed -ne 0 ]; then
+            echo "Re-set with: gh secret set <NAME> --repo $GITHUB_REPOSITORY"
+            exit 1
+          fi
+          echo "Mode: ${{ inputs.mode }}, config: ${{ inputs.config }}"
+
+      - name: Clone.
+        uses: actions/checkout@v5
+        with:
+          # Ten submodules, one of them libyuv from chromium.googlesource.com
+          # rather than GitHub. A missing submodule fails at Gradle
+          # *configuration* time, not during the compile, so it surfaces as a
+          # confusing early error rather than a missing file.
+          submodules: recursive
+          # fetch-depth 1 also makes checkout fetch the submodules shallow,
+          # which matters: ffmpeg and libvpx have very large histories and we
+          # only ever need the pinned commit.
+          fetch-depth: 1
+
+      - name: Reclaim disk space.
+        if: inputs.mode != 'validate'
+        run: |
+          # The native build compiles ffmpeg, libvpx, dav1d, openh264,
+          # boringssl, libyuv and tlottie from source, and the NDK alone is
+          # about 4 GB. A hosted runner starts with roughly 25 GB free, which
+          # is enough but not comfortably so - the desktop side already lost a
+          # build to disk exhaustion, so this runs before anything is fetched.
+          df -h / | tail -1
+          before=$(df --output=avail -k / | tail -1)
+          sudo rm -rf \
+            /usr/share/dotnet \
+            /usr/share/swift \
+            /usr/local/lib/heroku \
+            /usr/local/share/powershell \
+            /usr/local/share/chromium \
+            /usr/local/share/boost \
+            /opt/ghc \
+            /opt/hostedtoolcache/CodeQL \
+            /opt/hostedtoolcache/Ruby \
+            /opt/hostedtoolcache/go \
+            /opt/hostedtoolcache/PyPy \
+            "$AGENT_TOOLSDIRECTORY" 2>/dev/null || true
+          sudo docker image prune --all --force >/dev/null 2>&1 || true
+          after=$(df --output=avail -k / | tail -1)
+          echo "reclaimed $(( (after - before) / 1024 / 1024 )) GB"
+          df -h / | tail -1
+
+      - name: Set up JDK 17.
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle.
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install Android SDK components.
+        run: |
+          # None of these are preinstalled at the pinned versions. sdkmanager
+          # is quiet about a version it cannot find and Gradle then reports it
+          # as a missing NDK much later, so each install is checked here.
+          SDK="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          MGR="$SDK/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$MGR" --licenses >/dev/null 2>&1 || true
+          "$MGR" --install \
+            "platforms;android-$COMPILE_SDK" \
+            "build-tools;$BUILD_TOOLS" \
+            "ndk;$NDK_VERSION" \
+            "cmake;$CMAKE_VERSION"
+          for p in "ndk/$NDK_VERSION" "cmake/$CMAKE_VERSION" "build-tools/$BUILD_TOOLS"; do
+            if [ ! -d "$SDK/$p" ]; then
+              echo "::error::$SDK/$p is missing after install."
+              exit 1
+            fi
+            echo "ok: $p"
+          done
+
+      - name: Inject API credentials.
+        env:
+          TG_API_ID: ${{ secrets.TG_API_ID }}
+          TG_API_HASH: ${{ secrets.TG_API_HASH }}
+        run: |
+          # BuildVars.APP_ID / APP_HASH are plain source constants, and what is
+          # committed upstream is Telegram's own official pair. Those are
+          # substituted here rather than committed, so the public repository
+          # never carries our credentials - Telegram flags publicly known ones
+          # with API_ID_PUBLISHED_FLOOD and GitHub is actively scraped for them.
+          F=TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java
+          sed -i "s|public static int APP_ID = .*;|public static int APP_ID = $TG_API_ID;|" "$F"
+          sed -i "s|public static String APP_HASH = \".*\";|public static String APP_HASH = \"$TG_API_HASH\";|" "$F"
+
+          # Verify by shape, never by printing the value.
+          if grep -q "public static int APP_ID = $TG_API_ID;" "$F" \
+             && grep -q "public static String APP_HASH = \"$TG_API_HASH\";" "$F"; then
+            echo "credentials substituted"
+          else
+            echo "::error::credential substitution did not apply - BuildVars.java layout must have changed."
+            grep -n "APP_ID\|APP_HASH" "$F" | sed 's|= .*|= <redacted>|'
+            exit 1
+          fi
+
+      - name: Install signing keystore.
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          # Upstream commits a dummy keystore with public passwords
+          # (android/androidkey/android), which is fine for proving the build
+          # works and useless for anything installed. When the real keystore
+          # secrets are present they replace it, and the passwords are written
+          # into gradle.properties where the signingConfigs read them from.
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "::warning::ANDROID_KEYSTORE_B64 is not set - building with upstream's public dummy keystore. An APK signed with it must not be installed as the real app: the signing key cannot be changed afterwards without uninstalling and losing local data."
+            exit 0
+          fi
+          printf '%s' "$KEYSTORE_B64" | base64 -d > TMessagesProj/config/release.keystore
+          if [ ! -s TMessagesProj/config/release.keystore ]; then
+            echo "::error::decoded keystore is empty - ANDROID_KEYSTORE_B64 is not valid base64."
+            exit 1
+          fi
+          for v in KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [ -z "${!v}" ]; then
+              echo "::error::ANDROID_$v is not set, but ANDROID_KEYSTORE_B64 is."
+              exit 1
+            fi
+          done
+          sed -i \
+            -e "s|^RELEASE_STORE_PASSWORD=.*|RELEASE_STORE_PASSWORD=$KEYSTORE_PASSWORD|" \
+            -e "s|^RELEASE_KEY_ALIAS=.*|RELEASE_KEY_ALIAS=$KEY_ALIAS|" \
+            -e "s|^RELEASE_KEY_PASSWORD=.*|RELEASE_KEY_PASSWORD=$KEY_PASSWORD|" \
+            gradle.properties
+          echo "own keystore installed ($(stat -c%s TMessagesProj/config/release.keystore) bytes)"
+
+      - name: Gradle configuration.
+        if: inputs.mode == 'validate'
+        run: |
+          # Configuration alone catches the expensive-to-discover mistakes: a
+          # missing submodule, a bad Gradle property, an SDK component that did
+          # not install. Minutes, not an hour.
+          ./gradlew --no-daemon :TMessagesProj_App:tasks --all > /dev/null
+          echo "configuration succeeded; $GRADLE_TASK is resolvable"
+
+      - name: Build.
+        id: build
+        if: inputs.mode == 'build'
+        run: |
+          ./gradlew --no-daemon --stacktrace "$GRADLE_TASK"
+
+      - name: Collect artifact.
+        if: inputs.mode == 'build'
+        run: |
+          mkdir -p artifact
+          APK="$(find TMessagesProj_App/build/outputs/apk -name '*.apk' -print -quit)"
+          if [ -z "$APK" ]; then
+            echo "::error::no APK produced under TMessagesProj_App/build/outputs/apk"
+            find TMessagesProj_App/build/outputs -type f | head -50
+            exit 1
+          fi
+          cp "$APK" artifact/LoogriGram.apk
+          echo "$APK -> $(stat -c%s "$APK") bytes"
+
+          # Recorded on every build: what is actually inside the APK is the
+          # only real check that the degoogling still holds after a rebase.
+          echo "--- ABIs packaged:"
+          unzip -l "$APK" | grep -o 'lib/[^/]*/' | sort -u || true
+          echo "--- Google classes (expected: none):"
+          unzip -l "$APK" | grep -c 'com/google/android/gms' || echo 0
+
+      - name: Upload artifact.
+        uses: actions/upload-artifact@v4
+        if: inputs.mode == 'build'
+        with:
+          name: LoogriGram ${{ inputs.config }}
+          path: artifact/
+          retention-days: 30

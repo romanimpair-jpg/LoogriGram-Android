@@ -129,6 +129,14 @@ android {
         minSdkVersion 21
         targetSdkVersion 36
 
+        ndk {
+            // LoogriGram: the native build lives in this library module, and
+            // an app flavor's abiFilters only filter what gets *packaged* -
+            // the library would still compile all four ABIs. Restricted here
+            // as well as in the afat flavor, or the saving is imaginary.
+            abiFilters "arm64-v8a"
+        }
+
         vectorDrawables.generatedDensities = ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi']
 
         multiDexEnabled true
