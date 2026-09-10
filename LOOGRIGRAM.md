@@ -145,12 +145,18 @@ Each of these was hit here. Do not relearn them.
    Do not suppress stderr while doing one-shot crypto — the first keystore
    silently was not created.
 
-9. **Prefer forcing a getter over deleting a feature.** Nearly every removal
-   here worked by making upstream's own "unavailable" branch the live one, which
-   keeps local state coherent by construction. `premiumFeaturesBlocked()`,
-   `premiumPurchaseBlocked()` and `starsPurchaseAvailable()` between them removed
-   the entire premium economy across ~90 call sites *and* the gold star and badge
-   gradients that the desktop side needed a separate edit for.
+9. **Forcing a getter is a probe, not the finished job.** Upstream almost always
+   already ships an "unavailable" branch — for regions where Premium cannot be
+   sold, or devices without Play Services — and making that the live one is the
+   cheapest way to see what a removal touches while keeping local state
+   coherent. `premiumFeaturesBlocked()`, `premiumPurchaseBlocked()` and
+   `starsPurchaseAvailable()` between them neutralised the premium economy across
+   ~90 call sites *and* the gold star and badge gradients that the desktop side
+   needed a separate edit for.
+
+   But the intended end state is **deletion**, not a guard with dead code behind
+   it. Everything currently sitting at the probe stage is listed under
+   "Remaining work" below and should be finished that way.
 
 ---
 
@@ -220,6 +226,47 @@ cut-out, and auto-translate language detection.
 ---
 
 ## Remaining work
+
+### Finish the removals properly
+
+Several systems here were neutralised with a guard or reduced to an inert stub
+rather than deleted, because a guard is cheap and safe on a four-minute compile
+loop. That is **not** the intended end state — the target is a leaner tree with
+no dead code. All of this is our code and upstream's structure is not a
+boundary, so rewriting the callers is fair game, including extracting a helper
+out of a class that is being deleted or changing how a message renders.
+**The desktop fork has the same backlog; see its `LOOGRIGRAM.md`.**
+
+In rough order of how much is left behind:
+
+- **Stars / Gifts / TON UI.** Still present and compiled. The reason recorded at
+  the time was that `MessageObject` calls `StarsIntroActivity.replaceStars()` in
+  nine places while formatting ordinary message text, and `ChatMessageCell`
+  draws received gifts through `StarGiftSheet` — so deleting the directories
+  breaks rendering of any chat that merely *contains* a gift or a stars amount.
+  That is a reason to rewrite those callers, not to keep the system.
+  `replaceStars` looks like a text-span helper that happens to live in an
+  activity class and could probably be extracted; `AmountUtils.Currency`
+  modelling STARS/TON as a core money type is the part most likely to fight
+  back. Measure the outside-the-directory reference count before starting.
+- **Location.** `LocationActivity` and `ChatAttachAlertLocationLayout` remain,
+  unreachable, holding ~135 references to `IMapsProvider` between them. Deleting
+  them lets the interface and the `onFragmentCreate` guard go too.
+- **Chromecast.** Four files reduced to Google-free stubs so ~98 call sites in
+  `MediaController`, `PhotoViewer` and `AudioPlayerAlert` keep compiling.
+  Deleting them means editing those three files (4k, 24k and 6k lines).
+- **Premium economy.** The three forced getters leave every branch behind them in
+  place; `PremiumPreviewFragment`, `GiftPremiumBottomSheet` and the tier cells
+  are largely dead weight now.
+- **`if (true) return;` guards**, each of which should become a deletion: ads
+  (`getSponsoredMessages`, `VideoAds.make`, the four view/click beacons),
+  `isMapsInstalled`, `checkAppUpdate`, `GiftSheet.show` / `SendGiftSheet.show`.
+- **Smaller leftovers:** `ObjectDetectionEmojis` (the label→emoji table, orphaned
+  when image labelling went), `CaptchaController` and `BillingController` reduced
+  to shells — the latter survives only for `formatCurrency`, which would be
+  better as a standalone utility than a class named after a removed feature.
+
+### Then
 
 1. **Install and actually use it.** Nothing has run. Check in order:
    notifications with the app backgrounded (the whole push path is ours), ghost
