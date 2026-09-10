@@ -89,7 +89,8 @@ public class ApplicationLoader extends Application {
     }
 
     protected ILocationServiceProvider onCreateLocationServiceProvider() {
-        return new GoogleLocationProvider();
+        // LoogriGram: cannot geolocate; see NoLocationServiceProvider.
+        return new NoLocationServiceProvider();
     }
 
     public static IMapsProvider getMapsProvider() {
@@ -100,7 +101,18 @@ public class ApplicationLoader extends Application {
     }
 
     protected IMapsProvider onCreateMapsProvider() {
-        return new GoogleMapsProvider();
+        // LoogriGram: there is no map renderer. Google Maps is gone and nothing
+        // replaces it in-app; a received location opens in whatever maps app
+        // the phone has, through a geo: intent - see
+        // AndroidUtilities.openLocationExternally.
+        //
+        // Deliberately null rather than a stub full of no-ops: a stub would
+        // hand LocationActivity null views to dereference a moment later, so
+        // it would crash either way and null at least fails at the boundary.
+        // Nothing should reach here - isMapsInstalled returns false, which is
+        // the guard upstream already puts in front of every map entry point,
+        // and the send-location button is no longer built at all.
+        return null;
     }
 
     public static PushListenerController.IPushListenerServiceProvider getPushProvider() {

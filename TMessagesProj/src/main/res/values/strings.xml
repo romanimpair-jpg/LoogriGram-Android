@@ -11228,4 +11228,5 @@
     <string name="GhostModeOnInfo">You appear offline. No typing, no online status, no story views.</string>
     <string name="GhostModeOff">Ghost mode off</string>
     <string name="GhostModeOffInfo">Typing, online status and story views are sent again.</string>
+    <string name="GhostNoMapsApp">No maps app installed to open this location.</string>
 </resources>

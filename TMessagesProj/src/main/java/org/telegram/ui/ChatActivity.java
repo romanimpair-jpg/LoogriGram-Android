@@ -41558,19 +41558,22 @@ public class ChatActivity extends BaseFragment implements
                     alertUserOpenError(message);
                 }
             } else if (message.type == MessageObject.TYPE_GEO) {
-                if (!AndroidUtilities.isMapsInstalled(ChatActivity.this)) {
-                    return;
-                }
-                if (message.isLiveLocation()) {
-                    LocationActivity fragment = new LocationActivity(currentChat == null || ChatObject.canSendMessages(currentChat) || currentChat.megagroup ? 2 : LocationActivity.LOCATION_TYPE_LIVE_VIEW);
-                    fragment.setDelegate(ChatActivity.this);
-                    fragment.setMessageObject(message);
-                    presentFragment(fragment);
-                } else {
-                    LocationActivity fragment = new LocationActivity(currentEncryptedChat == null ? 3 : 0);
-                    fragment.setDelegate(ChatActivity.this);
-                    fragment.setMessageObject(message);
-                    presentFragment(fragment);
+                // LoogriGram: received locations stay viewable, just not in a
+                // map we render ourselves - they go out to whatever maps app is
+                // installed. Live locations included: what is handed over is
+                // the last reported point, which is all a static handoff can
+                // carry, and there is no in-app map to watch it move on.
+                final TLRPC.MessageMedia media = message.messageOwner != null ? message.messageOwner.media : null;
+                final TLRPC.GeoPoint geo = media != null ? media.geo : null;
+                if (geo != null) {
+                    // title is on MessageMedia itself: set for a venue, null
+                    // for a plain or live location, which is what we want to
+                    // pass through either way.
+                    if (!AndroidUtilities.openLocationExternally(getParentActivity(), geo.lat, geo._long, media.title)) {
+                        BulletinFactory.of(ChatActivity.this)
+                            .createErrorBulletin(getString(R.string.GhostNoMapsApp))
+                            .show();
+                    }
                 }
             } else if (message.type == MessageObject.TYPE_FILE || message.type == MessageObject.TYPE_TEXT) {
                 if (message.getDocumentName().toLowerCase().endsWith("attheme")) {

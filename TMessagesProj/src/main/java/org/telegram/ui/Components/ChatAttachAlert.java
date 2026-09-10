@@ -6684,9 +6684,10 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 if (pollAllowedLayouts == 0 || BitwiseUtils.hasFlag(pollAllowedLayouts, 1 << LAYOUT_TYPE_MUSIC)) {
                     musicButton = buttonsCount++;
                 }
-                if (pollAllowedLayouts == 0 || BitwiseUtils.hasFlag(pollAllowedLayouts, 1 << LAYOUT_TYPE_LOCATION)) {
-                    locationButton = buttonsCount++;
-                }
+                // LoogriGram: no Location button - this build cannot send a
+                // location. isMapsInstalled would already refuse to open the
+                // picker, but a button that does nothing when tapped is worse
+                // than no button.
                 if (pollAllowedLayouts == 0 || BitwiseUtils.hasFlag(pollAllowedLayouts, 1 << LAYOUT_TYPE_LINK)) {
                     linksButton = buttonsCount++;
                 }
@@ -6735,9 +6736,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 }
                 documentButton = buttonsCount++;
 
-                if (plainTextEnabled) {
-                    locationButton = buttonsCount++;
-                }
+                // LoogriGram: no Location button here either - see above.
                 if (plainTextEnabled && MessagesController.getInstance(currentAccount).richEditorAvailable()) {
                     richButton = buttonsCount++;
                 }

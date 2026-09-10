@@ -1799,7 +1799,50 @@ public class AndroidUtilities {
         }
     }
 
+    // LoogriGram: hand a received location to whatever maps app the phone has,
+    // rather than rendering it in-process. A geo: URI is the standard Android
+    // handoff and Organic Maps, OsmAnd and the rest all register for it; the
+    // q= label is what those apps show as the pin's name. Nothing here needs a
+    // location permission - we are describing a point, not asking where we are.
+    //
+    // Returns false when no app handles geo:, so the caller can say so rather
+    // than appearing to do nothing.
+    public static boolean openLocationExternally(Context context, double lat, double lon, String title) {
+        if (context == null) {
+            return false;
+        }
+        try {
+            String uri = "geo:" + lat + "," + lon + "?z=16";
+            if (!TextUtils.isEmpty(title)) {
+                uri += "&q=" + Uri.encode(lat + "," + lon + "(" + title + ")");
+            } else {
+                uri += "&q=" + Uri.encode(lat + "," + lon);
+            }
+            final Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            if (intent.resolveActivity(context.getPackageManager()) == null) {
+                return false;
+            }
+            context.startActivity(intent);
+            return true;
+        } catch (Exception e) {
+            FileLog.e(e);
+            return false;
+        }
+    }
+
+    // LoogriGram: always false, and silently - no dialog. Upstream puts this
+    // check in front of every map entry point, both viewing and sending, so
+    // returning false here is what closes all of them at once. The upstream
+    // body below offered to install Google Maps from the Play Store, which is
+    // doubly wrong on a phone with neither.
+    //
+    // Viewing a received location is not lost: it goes out to whatever maps
+    // app is installed through openLocationExternally.
     public static boolean isMapsInstalled(BaseFragment fragment) {
+        if (true) {
+            return false;
+        }
         String pkg = ApplicationLoader.getMapsProvider().getMapsAppPackageName();
         try {
             ApplicationLoader.applicationContext.getPackageManager().getApplicationInfo(pkg, 0);
