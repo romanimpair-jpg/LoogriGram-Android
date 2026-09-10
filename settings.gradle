@@ -1,8 +1,10 @@
+// LoogriGram: only :TMessagesProj_App is ever built. The Huawei, HockeyApp,
+// Standalone and Tests modules are store- and CI-specific variants of the same
+// app - Huawei being a second proprietary push transport, HockeyApp a crash
+// reporter - and each carried its own google-services.json and manifest that
+// would otherwise have to be degoogled and kept degoogled through every
+// rebase. Removed rather than maintained unbuilt.
 include ':TMessagesProj'
 include ':TMessagesProj_App'
-include ':TMessagesProj_AppHuawei'
-include ':TMessagesProj_AppHockeyApp'
-include ':TMessagesProj_AppStandalone'
-include ':TMessagesProj_AppTests'
 include ':jlatexmath'
 project(':jlatexmath').projectDir = file('TMessagesProj/lib/jlatexmath/jlatexmath')
