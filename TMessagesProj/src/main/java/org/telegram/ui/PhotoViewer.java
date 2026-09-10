@@ -150,7 +150,6 @@ import com.google.android.exoplayer2.analytics.AnalyticsListener;
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 import com.google.android.exoplayer2.video.VideoFrameMetadataListener;
 import com.google.android.exoplayer2.video.VideoSize;
-import com.google.android.gms.cast.framework.CastContext;
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.face.Face;
 import com.google.android.gms.vision.face.FaceDetector;
@@ -5827,7 +5826,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         };
         boolean castAvailable = true;
         try {
-            castItemButton.setRouteSelector(CastContext.getSharedInstance(activityContext).getMergedSelector());
+            // LoogriGram: see AudioPlayerAlert - no Cast routes to select.
         } catch (Exception e) {
             FileLog.e(e);
             castAvailable = false;

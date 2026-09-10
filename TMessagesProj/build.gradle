@@ -39,13 +39,26 @@ dependencies {
     implementation 'androidx.interpolator:interpolator:1.0.0'
     implementation 'androidx.biometric:biometric:1.1.0'
 
-    implementation 'com.google.android.gms:play-services-cast-framework:21.4.0'
-    implementation "androidx.mediarouter:mediarouter:1.7.0"
+    // LoogriGram: no Chromecast. play-services-cast-framework is the Google
+    // Cast protocol itself, with no non-Google implementation to swap in, and
+    // mediarouter existed only to discover receivers and show the picker. See
+    // ChromecastController for why the cast API keeps its shape.
+    //
+    // androidx.media has to be declared here now. Nothing casting-related uses
+    // it - it supplies MediaSessionCompat and PlaybackStateCompat, which the
+    // lock screen controls, PiP, Android Auto and the vendored ExoPlayer
+    // mediasession extension all depend on - but it was only ever on the
+    // classpath as a transitive dependency of mediarouter. Dropping mediarouter
+    // took it with it and broke the media session, which is a long way from
+    // Chromecast.
+    implementation "androidx.media:media:1.7.0"
     implementation 'com.google.zxing:core:3.5.4'
 
     implementation 'androidx.car.app:app:1.4.0'
     implementation 'androidx.car.app:app-projected:1.4.0'
-    implementation 'org.nanohttpd:nanohttpd:2.3.1'
+    // nanohttpd went with it: an HTTP server listening on the phone so a Cast
+    // receiver could pull media back out of the app. Not Google code, but a
+    // listening socket serving nobody is worth removing on its own account.
 
     compileOnly 'org.checkerframework:checker-qual:2.5.2'
     compileOnly 'org.checkerframework:checker-compat-qual:2.5.0'
