@@ -29,6 +29,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <!-- LoogriGram: for NotificationsService; see its declaration below. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -252,7 +254,7 @@
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
-                <data android:mimeType="vnd.android.cursor.item/vnd.org.telegram.messenger.android.profile"/>
+                <data android:mimeType="vnd.android.cursor.item/vnd.com.loogrimedia.loogrigram.android.profile"/>
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
@@ -296,8 +298,8 @@
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
-                <data android:mimeType="vnd.android.cursor.item/vnd.org.telegram.messenger.android.call"/>
-                <data android:mimeType="vnd.android.cursor.item/vnd.org.telegram.messenger.android.call.video"/>
+                <data android:mimeType="vnd.android.cursor.item/vnd.com.loogrimedia.loogrigram.android.call"/>
+                <data android:mimeType="vnd.android.cursor.item/vnd.com.loogrimedia.loogrigram.android.call.video"/>
             </intent-filter>
         </activity-alias>
         <activity
@@ -471,12 +473,21 @@
             android:exported="true"
             android:foregroundServiceType="mediaPlayback"
         />
+        <!-- LoogriGram: this is the whole push transport now, so it runs as a
+             foreground service. specialUse is listed because Android 15 caps a
+             dataSync foreground service at six hours per day, which would stop
+             notifications partway through every day; dataSync stays for devices
+             older than API 34, which do not know specialUse. -->
         <service
             android:name=".NotificationsService"
             android:enabled="true"
             android:exported="true"
-            android:foregroundServiceType="dataSync"
-        />
+            android:foregroundServiceType="specialUse|dataSync"
+        >
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Maintains the messaging connection that delivers notifications, on a device with no Google Play Services to deliver them instead." />
+        </service>
         <service
             android:name=".NotificationRepeat"
             android:exported="false"

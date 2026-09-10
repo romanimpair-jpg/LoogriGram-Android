@@ -3,13 +3,15 @@ buildscript {
     repositories {
         mavenCentral()
         google()
-        maven { url 'https://developer.huawei.com/repo/' }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:8.10.1'
-        classpath 'com.google.gms:google-services:4.3.15'
-        classpath 'com.huawei.agconnect:agcp:1.9.1.301'
-        classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.0'
+        // LoogriGram: google-services, agcp (Huawei AppGallery Connect) and
+        // firebase-crashlytics are all gone. google-services in particular had
+        // to go: the plugin validates its google-services.json against
+        // applicationId, so renaming the package forces its removal - the two
+        // edits cannot be made separately. google() stays as a repository
+        // because AndroidX and the Android Gradle Plugin are published there.
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.0"
     }
 }

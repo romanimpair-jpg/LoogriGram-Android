@@ -284,7 +284,12 @@ public class ConnectionsManager extends BaseController {
         if (preferences.contains("pushConnection")) {
             return preferences.getBoolean("pushConnection", true);
         } else {
-            return MessagesController.getMainSettings(UserConfig.selectedAccount).getBoolean("backgroundConnection", false);
+            // LoogriGram: default on. Upstream can leave this off because FCM
+            // delivers the wake-up; with no Play Services this connection is
+            // the only way a notification ever arrives. Defaulted rather than
+            // forced, so the row still works and still means what it says -
+            // but turning it off means no notifications at all.
+            return MessagesController.getMainSettings(UserConfig.selectedAccount).getBoolean("backgroundConnection", true);
         }
     }
 

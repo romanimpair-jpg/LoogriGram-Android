@@ -5,17 +5,20 @@ name: Android.
 # manual dispatch only, staged so a configuration mistake costs minutes
 # instead of an hour:
 #   validate - secrets and Gradle configuration only, a few minutes
+#   compile  - Java only, no native build; catches a typo without paying for
+#              ffmpeg and friends, which is most of the wall clock
 #   build    - full build, produces the APK artifact
 on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'validate | build'
+        description: 'validate | compile | build'
         required: true
         default: validate
         type: choice
         options:
           - validate
+          - compile
           - build
       config:
         description: 'Release is what we ship. Debug is unsigned-ish, larger and unused.'
@@ -224,6 +227,16 @@ jobs:
           # not install. Minutes, not an hour.
           ./gradlew --no-daemon :TMessagesProj_App:tasks --all > /dev/null
           echo "configuration succeeded; $GRADLE_TASK is resolvable"
+
+      - name: Compile Java only.
+        if: inputs.mode == 'compile'
+        run: |
+          # javac has no dependency on externalNativeBuild, so this skips the
+          # entire CMake/NDK stage - which is nearly all of the build time -
+          # while still type-checking every source file we touch. The fast loop
+          # for source edits; it proves nothing about the native side or the
+          # APK, so a real build still has to follow.
+          ./gradlew --no-daemon --stacktrace :TMessagesProj_App:compileAfatReleaseJavaWithJavac
 
       - name: Build.
         id: build

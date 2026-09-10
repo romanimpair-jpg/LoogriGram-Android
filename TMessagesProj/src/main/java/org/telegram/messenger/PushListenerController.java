@@ -11,11 +11,6 @@ import androidx.annotation.IntDef;
 import androidx.annotation.Keep;
 import androidx.collection.LongSparseArray;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.messaging.FirebaseMessaging;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.telegram.messenger.voip.VoIPGroupNotification;
@@ -1662,16 +1657,25 @@ public class PushListenerController {
         int getPushType();
     }
 
-    public final static class GooglePushListenerServiceProvider implements IPushListenerServiceProvider {
-        public final static GooglePushListenerServiceProvider INSTANCE = new GooglePushListenerServiceProvider();
+    // LoogriGram: the one and only push provider. There is no Firebase and no
+    // Play Services here, so hasServices() is false - and upstream's own
+    // no-services path already does the right thing: ApplicationLoader
+    // .initPushServices registers a null token, which tells the server there
+    // is nothing to push to. Notifications then arrive over the MTProto push
+    // connection that the foreground NotificationsService keeps alive.
+    //
+    // getPushType keeps reporting PUSH_TYPE_FIREBASE because the type is only
+    // ever handed to ConnectionsManager.setRegId next to that null token and
+    // used to pick a log tag. Inventing a constant would mean teaching the
+    // native layer about it for no behavioural difference.
+    public final static class NoPushListenerServiceProvider implements IPushListenerServiceProvider {
+        public final static NoPushListenerServiceProvider INSTANCE = new NoPushListenerServiceProvider();
 
-        private Boolean hasServices;
-
-        private GooglePushListenerServiceProvider() {}
+        private NoPushListenerServiceProvider() {}
 
         @Override
         public String getLogTitle() {
-            return "Google Play Services";
+            return "LoogriGram push connection";
         }
 
         @Override
@@ -1681,54 +1685,12 @@ public class PushListenerController {
 
         @Override
         public void onRequestPushToken() {
-            String currentPushString = SharedConfig.pushString;
-            if (!TextUtils.isEmpty(currentPushString)) {
-                if (BuildVars.DEBUG_PRIVATE_VERSION && BuildVars.LOGS_ENABLED) {
-                    FileLog.d("FCM regId = " + currentPushString);
-                }
-            } else {
-                if (BuildVars.LOGS_ENABLED) {
-                    FileLog.d("FCM Registration not found.");
-                }
-            }
-            Utilities.globalQueue.postRunnable(() -> {
-                try {
-                    SharedConfig.pushStringGetTimeStart = SystemClock.elapsedRealtime();
-                    FirebaseApp.initializeApp(ApplicationLoader.applicationContext);
-                    FirebaseMessaging.getInstance().getToken()
-                            .addOnCompleteListener(task -> {
-                                SharedConfig.pushStringGetTimeEnd = SystemClock.elapsedRealtime();
-                                if (!task.isSuccessful()) {
-                                    if (BuildVars.LOGS_ENABLED) {
-                                        FileLog.d("Failed to get regid");
-                                    }
-                                    SharedConfig.pushStringStatus = "__FIREBASE_FAILED__";
-                                    PushListenerController.sendRegistrationToServer(getPushType(), null);
-                                    return;
-                                }
-                                String token = task.getResult();
-                                if (!TextUtils.isEmpty(token)) {
-                                    PushListenerController.sendRegistrationToServer(getPushType(), token);
-                                }
-                            });
-                } catch (Throwable e) {
-                    FileLog.e(e);
-                }
-            });
+            // Never reached; hasServices() is false.
         }
 
         @Override
         public boolean hasServices() {
-            if (hasServices == null) {
-                try {
-                    int resultCode = GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(ApplicationLoader.applicationContext);
-                    hasServices = resultCode == ConnectionResult.SUCCESS;
-                } catch (Exception e) {
-                    FileLog.e(e);
-                    hasServices = false;
-                }
-            }
-            return hasServices;
+            return false;
         }
     }
 }

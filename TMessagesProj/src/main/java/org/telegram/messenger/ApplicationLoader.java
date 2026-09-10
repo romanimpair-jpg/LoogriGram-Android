@@ -32,8 +32,6 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesUtil;
 
 import org.json.JSONObject;
 import org.telegram.messenger.voip.VideoCapturerDevice;
@@ -113,7 +111,9 @@ public class ApplicationLoader extends Application {
     }
 
     protected PushListenerController.IPushListenerServiceProvider onCreatePushProvider() {
-        return PushListenerController.GooglePushListenerServiceProvider.INSTANCE;
+        // LoogriGram: no Firebase, no Play Services. See
+        // NoPushListenerServiceProvider for how notifications arrive instead.
+        return PushListenerController.NoPushListenerServiceProvider.INSTANCE;
     }
 
     public static String getApplicationId() {
@@ -249,7 +249,10 @@ public class ApplicationLoader extends Application {
             UserConfig.getInstance(a).loadConfig();
             MessagesController.getInstance(a);
             if (a == 0) {
-                SharedConfig.pushStringStatus = "__FIREBASE_GENERATING_SINCE_" + ConnectionsManager.getInstance(a).getCurrentTime() + "__";
+                // LoogriGram: this string is handed to the server through
+                // ConnectionsManager.setRegId, so it should not claim a
+                // Firebase token is on its way when there is no Firebase.
+                SharedConfig.pushStringStatus = "__PUSH_CONNECTION__";
             } else {
                 ConnectionsManager.getInstance(a);
             }
@@ -361,11 +364,26 @@ public class ApplicationLoader extends Application {
         if (preferences.contains("pushService")) {
             enabled = preferences.getBoolean("pushService", true);
         } else {
-            enabled = MessagesController.getMainSettings(UserConfig.selectedAccount).getBoolean("keepAliveService", false);
+            // LoogriGram: default on, for the same reason as the push
+            // connection in ConnectionsManager.isPushConnectionEnabled - the
+            // connection only survives in the background while this service
+            // holds the process up.
+            enabled = MessagesController.getMainSettings(UserConfig.selectedAccount).getBoolean("keepAliveService", true);
         }
         if (enabled) {
             try {
-                applicationContext.startService(new Intent(applicationContext, NotificationsService.class));
+                final Intent intent = new Intent(applicationContext, NotificationsService.class);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    // LoogriGram: startService would be killed within seconds
+                    // on O+ once the app is backgrounded, and this service now
+                    // carries the only push transport there is. It calls
+                    // startForeground immediately; if the app is in the
+                    // background on API 31+ the start is refused, which the
+                    // existing catch absorbs and START_STICKY recovers from.
+                    applicationContext.startForegroundService(intent);
+                } else {
+                    applicationContext.startService(intent);
+                }
             } catch (Throwable ignore) {
 
             }
@@ -395,20 +413,10 @@ public class ApplicationLoader extends Application {
                 if (BuildVars.LOGS_ENABLED) {
                     FileLog.d("No valid " + getPushProvider().getLogTitle() + " APK found.");
                 }
-                SharedConfig.pushStringStatus = "__NO_GOOGLE_PLAY_SERVICES__";
+                SharedConfig.pushStringStatus = "__PUSH_CONNECTION__";
                 PushListenerController.sendRegistrationToServer(getPushProvider().getPushType(), null);
             }
         }, 1000);
-    }
-
-    private boolean checkPlayServices() {
-        try {
-            int resultCode = GooglePlayServicesUtil.isGooglePlayServicesAvailable(this);
-            return resultCode == ConnectionResult.SUCCESS;
-        } catch (Exception e) {
-            FileLog.e(e);
-        }
-        return true;
     }
 
     private static long lastNetworkCheck = -1;
