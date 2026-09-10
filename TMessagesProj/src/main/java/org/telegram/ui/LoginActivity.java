@@ -104,10 +104,6 @@ import com.android.billingclient.api.BillingFlowParams;
 import com.android.billingclient.api.ProductDetails;
 import com.android.billingclient.api.Purchase;
 import com.android.billingclient.api.QueryProductDetailsParams;
-import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-import com.google.android.gms.auth.api.signin.GoogleSignInClient;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 
@@ -5795,7 +5791,6 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         private String phone, emailPhone;
         private String requestPhone, phoneHash;
 
-        private GoogleSignInAccount googleAccount;
 
         public LoginActivitySetupEmail(Context context) {
             super(context);
@@ -5887,37 +5882,11 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             addView(bottomContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
             VerticalPositionAutoAnimator.attach(bottomContainer);
 
-            bottomContainer.setOnClickListener(view -> {
-                NotificationCenter.getGlobalInstance().addObserver(new NotificationCenter.NotificationCenterDelegate() {
-                    @Override
-                    public void didReceivedNotification(int id, int account, Object... args) {
-                        int request = (int) args[0];
-                        int result = (int) args[1];
-                        Intent data = (Intent) args[2];
-                        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.onActivityResultReceived);
-
-                        if (request == BasePermissionsActivity.REQUEST_CODE_SIGN_IN_WITH_GOOGLE) {
-                            try {
-                                googleAccount = GoogleSignIn.getSignedInAccountFromIntent(data).getResult(ApiException.class);
-                                onNextPressed(null);
-                            } catch (ApiException e) {
-                                FileLog.e(e);
-                            }
-                        }
-                    }
-                }, NotificationCenter.onActivityResultReceived);
-
-                GoogleSignInClient googleClient = GoogleSignIn.getClient(getContext(), new GoogleSignInOptions.Builder()
-                        .requestIdToken(BuildVars.GOOGLE_AUTH_CLIENT_ID)
-                        .requestEmail()
-                        .build());
-                googleClient.signOut().addOnCompleteListener(command -> {
-                    if (getParentActivity() == null || getParentActivity().isFinishing()) {
-                        return;
-                    }
-                    getParentActivity().startActivityForResult(googleClient.getSignInIntent(), BasePermissionsActivity.REQUEST_CODE_SIGN_IN_WITH_GOOGLE);
-                });
-            });
+            // LoogriGram: "Sign in with Google" is gone. It authenticated the
+            // login email through Google's identity provider, which needs Play
+            // Services, and the row was already hidden - its visibility gate
+            // includes getPushProvider().hasServices(), false since Firebase
+            // was removed. Email login by code still works.
         }
 
         @Override
@@ -5984,7 +5953,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 return;
             }
 
-            String email = googleAccount != null ? googleAccount.getEmail() : emailField.getText().toString();
+            String email = emailField.getText().toString();
             Bundle params = new Bundle();
             params.putString("phone", phone);
             params.putString("ephone", emailPhone);
@@ -5993,43 +5962,10 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             params.putString("email", email);
             params.putBoolean("setup", true);
 
-            if (googleAccount != null) {
-                TL_account.verifyEmail verifyEmail = new TL_account.verifyEmail();
-                if (activityMode == MODE_CHANGE_LOGIN_EMAIL) {
-                    verifyEmail.purpose = new TLRPC.TL_emailVerifyPurposeLoginChange();
-                } else {
-                    TLRPC.TL_emailVerifyPurposeLoginSetup purpose = new TLRPC.TL_emailVerifyPurposeLoginSetup();
-                    purpose.phone_number = requestPhone;
-                    purpose.phone_code_hash = phoneHash;
-                    verifyEmail.purpose = purpose;
-                }
-                TLRPC.TL_emailVerificationGoogle verificationGoogle = new TLRPC.TL_emailVerificationGoogle();
-                verificationGoogle.token = googleAccount.getIdToken();
-                verifyEmail.verification = verificationGoogle;
-
-                googleAccount = null;
-                ConnectionsManager.getInstance(currentAccount).sendRequest(verifyEmail, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                    if (response instanceof TL_account.TL_emailVerified && activityMode == MODE_CHANGE_LOGIN_EMAIL) {
-                        finishFragment();
-                        emailChangeFinishCallback.run();
-                    } else if (response instanceof TL_account.TL_emailVerifiedLogin) {
-                        TL_account.TL_emailVerifiedLogin emailVerifiedLogin = (TL_account.TL_emailVerifiedLogin) response;
-
-                        params.putString("email", emailVerifiedLogin.email);
-                        fillNextCodeParams(params, emailVerifiedLogin.sent_code);
-                    } else if (error != null) {
-                        if (error.text.contains("EMAIL_NOT_ALLOWED")) {
-                            needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString(R.string.EmailNotAllowed));
-                        } else if (error.text.contains("EMAIL_TOKEN_INVALID")) {
-                            needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString(R.string.EmailTokenInvalid));
-                        } else if (error.code != -1000) {
-                            AlertsCreator.processError(currentAccount, error, LoginActivity.this, verifyEmail);
-                        }
-                    }
-                }), ConnectionsManager.RequestFlagFailOnServerErrors | ConnectionsManager.RequestFlagWithoutLogin);
-
-                return;
-            }
+            // LoogriGram: the branch that verified the login email with a
+            // Google ID token is gone with Google sign-in. What remains is
+            // upstream's own path for an email typed in by hand: the server
+            // sends a code to it and the next page asks for that code.
 
             if (TextUtils.isEmpty(email)) {
                 onPasscodeError(false);
@@ -6131,7 +6067,6 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         private boolean resetRequestPending;
         private Bundle currentParams;
         private boolean nextPressed;
-        private GoogleSignInAccount googleAccount;
 
         private int resetAvailablePeriod, resetPendingDate;
         private String phone, emailPhone, email;
@@ -6221,37 +6156,11 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             str.append(getString(R.string.SignInWithGoogle));
             signInWithGoogleView.setText(str);
 
-            signInWithGoogleView.setOnClickListener(view -> {
-                NotificationCenter.getGlobalInstance().addObserver(new NotificationCenter.NotificationCenterDelegate() {
-                    @Override
-                    public void didReceivedNotification(int id, int account, Object... args) {
-                        int request = (int) args[0];
-                        int result = (int) args[1];
-                        Intent data = (Intent) args[2];
-                        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.onActivityResultReceived);
-
-                        if (request == BasePermissionsActivity.REQUEST_CODE_SIGN_IN_WITH_GOOGLE) {
-                            try {
-                                googleAccount = GoogleSignIn.getSignedInAccountFromIntent(data).getResult(ApiException.class);
-                                onNextPressed(null);
-                            } catch (ApiException e) {
-                                FileLog.e(e);
-                            }
-                        }
-                    }
-                }, NotificationCenter.onActivityResultReceived);
-
-                GoogleSignInClient googleClient = GoogleSignIn.getClient(getContext(), new GoogleSignInOptions.Builder()
-                                .requestIdToken(BuildVars.GOOGLE_AUTH_CLIENT_ID)
-                                .requestEmail()
-                                .build());
-                googleClient.signOut().addOnCompleteListener(command -> {
-                    if (getParentActivity() == null) {
-                        return;
-                    }
-                    getParentActivity().startActivityForResult(googleClient.getSignInIntent(), BasePermissionsActivity.REQUEST_CODE_SIGN_IN_WITH_GOOGLE);
-                });
-            });
+            // LoogriGram: "Sign in with Google" is gone. It authenticated the
+            // login email through Google's identity provider, which needs Play
+            // Services, and the row was already hidden - its visibility gate
+            // includes getPushProvider().hasServices(), false since Firebase
+            // was removed. Email login by code still works.
 
             cantAccessEmailFrameLayout = new FrameLayout(context);
             AndroidUtilities.updateViewVisibilityAnimated(cantAccessEmailFrameLayout, activityMode != MODE_CHANGE_LOGIN_EMAIL && !isSetup, 1f, false);
@@ -6707,7 +6616,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             }
 
             code = codeFieldContainer.getCode();
-            if (code.length() == 0 && googleAccount == null) {
+            if (code.length() == 0) {
                 onPasscodeError(false);
                 return;
             }
@@ -6736,15 +6645,11 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 TLRPC.TL_auth_signIn request = new TLRPC.TL_auth_signIn();
                 request.phone_number = requestPhone;
                 request.phone_code_hash = phoneHash;
-                if (googleAccount != null) {
-                    TLRPC.TL_emailVerificationGoogle verification = new TLRPC.TL_emailVerificationGoogle();
-                    verification.token = googleAccount.getIdToken();
-                    request.email_verification = verification;
-                } else {
-                    TLRPC.TL_emailVerificationCode verification = new TLRPC.TL_emailVerificationCode();
-                    verification.code = code;
-                    request.email_verification = verification;
-                }
+                // LoogriGram: always the emailed code; there is no Google
+                // token to verify with any more.
+                TLRPC.TL_emailVerificationCode verification = new TLRPC.TL_emailVerificationCode();
+                verification.code = code;
+                request.email_verification = verification;
                 request.flags |= 2;
                 req = request;
             }
@@ -6849,15 +6754,10 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                         }
                     }
                 }
-                googleAccount = null;
             }), ConnectionsManager.RequestFlagFailOnServerErrors | ConnectionsManager.RequestFlagWithoutLogin);
         }
 
         private void animateSuccess(Runnable callback) {
-            if (googleAccount != null) {
-                callback.run();
-                return;
-            }
             for (int i = 0; i < codeFieldContainer.codeField.length; i++) {
                 int finalI = i;
                 codeFieldContainer.postDelayed(()-> codeFieldContainer.codeField[finalI].animateSuccessProgress(1f), i * 75L);

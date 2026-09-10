@@ -62,7 +62,11 @@ dependencies {
     // app cannot geolocate, which is checkable in the system app info rather
     // than being a promise about our own code. Received locations open in
     // whatever maps app the phone has, through a geo: intent.
-    implementation 'com.google.android.gms:play-services-auth:20.4.0'
+    // LoogriGram: play-services-auth provided two things, both gone. The SMS
+    // Retriever read the login code out of the incoming message without the
+    // READ_SMS permission, and Google sign-in authenticated the login email
+    // through Google's identity provider. Both need Play Services; the code is
+    // typed in by hand and the email is verified by an emailed code instead.
     implementation 'com.google.android.gms:play-services-vision:20.1.3'
     // LoogriGram: no Wear OS companion. play-services-wearable existed only to
     // let a watch approve a login, which needs Play Services on both ends.
@@ -82,8 +86,11 @@ dependencies {
     implementation 'com.google.android.gms:play-services-mlkit-subject-segmentation:16.0.0-beta1'
     implementation 'com.google.android.gms:play-services-mlkit-image-labeling:16.0.8'
 
+    // androidx.credentials stays - PasskeysController compiles against its
+    // core API - but LoogriGram drops the Play Services provider that actually
+    // backed it. Passkeys are off anyway (BuildVars.SUPPORTS_PASSKEYS), as
+    // upstream's own comment tells forks to do.
     implementation "androidx.credentials:credentials:1.6.0-alpha04"
-    implementation "androidx.credentials:credentials-play-services-auth:1.6.0-alpha04"
 
     implementation "io.noties.markwon:core:4.6.2"
     implementation "io.noties.markwon:ext-strikethrough:4.6.2"
