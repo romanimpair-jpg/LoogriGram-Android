@@ -734,14 +734,34 @@ public class MessagesController extends BaseController implements NotificationCe
     public int transcribeButtonPressed;
     public boolean starsLocked;
 
+    // LoogriGram: the whole premium and Stars economy, off at three getters.
+    // These are upstream's own "purchases are blocked here" flags, driven by a
+    // server appConfig for regions where Premium cannot be sold, so forcing
+    // them sends roughly ninety call sites down branches upstream already
+    // wrote and ships: no Premium, Stars, Business or Send-a-Gift rows in
+    // settings or the profile, no purchase offers, and every limit box down
+    // its informational branch instead of an upsell.
+    //
+    // Forced at the getter rather than by setting premiumLocked, because
+    // appConfig overwrites that field on every connection.
+    //
+    // premiumFeaturesBlocked also drives the premium decorations -
+    // ChatMessageCell, UserCell, ReactedUsersListView, PremiumGradient - so
+    // this is also what removes the gold star and the badge gradients. Unlike
+    // upstream it ignores isPremium(): the point is that this build has no
+    // premium surfaces at all, not that the current account lacks them.
+    //
+    // One knock-on worth knowing: filterPremiumStickers strips premium
+    // stickers from sticker sets when this is true, as it does upstream in a
+    // purchase-blocked region.
     public boolean starsPurchaseAvailable() {
-        return !starsLocked;
+        return false;
     }
     public boolean premiumFeaturesBlocked() {
-        return premiumLocked && !getUserConfig().isPremium();
+        return true;
     }
     public boolean premiumPurchaseBlocked() {
-        return premiumLocked;
+        return true;
     }
 
     public List<String> directPaymentsCurrency = new ArrayList<>();

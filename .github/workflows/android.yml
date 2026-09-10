@@ -261,8 +261,21 @@ jobs:
           # only real check that the degoogling still holds after a rebase.
           echo "--- ABIs packaged:"
           unzip -l "$APK" | grep -o 'lib/[^/]*/' | sort -u || true
-          echo "--- Google classes (expected: none):"
-          unzip -l "$APK" | grep -c 'com/google/android/gms' || echo 0
+
+          # Grep the dex bytes, not the zip listing. Compiled classes are not
+          # zip entries - they live inside classes*.dex - so listing the
+          # archive reports zero Google classes even when the APK is full of
+          # them. Dex string tables do carry the type descriptors verbatim,
+          # which is enough for a smoke check.
+          echo "--- Google type descriptors in dex:"
+          for pkg in com/google/android/gms com/google/firebase com/google/mlkit \
+                     com/android/billingclient com/google/android/play \
+                     com/google/android/recaptcha; do
+            n=$(unzip -p "$APK" 'classes*.dex' | grep -c "L$pkg" || true)
+            printf '%8s  %s\n' "$n" "$pkg"
+          done
+          echo "--- Google assets/resources:"
+          unzip -l "$APK" | grep -iE 'google|firebase' | head -20 || echo "  (none)"
 
       - name: Upload artifact.
         uses: actions/upload-artifact@v4
