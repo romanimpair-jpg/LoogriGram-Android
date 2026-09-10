@@ -514,42 +514,35 @@ public class GiftPremiumBottomSheet extends BottomSheetWithRecyclerListView impl
             return pricePerMonth;
         }
 
+        // LoogriGram: these always format the server's price. Each had a second
+        // return below that formatted a Play price in micros instead.
         public String getFormattedPricePerMonth() {
-            if (BuildVars.useInvoiceBilling() || giftOption != null && giftOption.store_product == null || giftCodeOption != null && giftCodeOption.store_product == null) {
-                return BillingController.getInstance().formatCurrency(getPricePerMonth(), getCurrency());
-            }
-
+            return BillingController.getInstance().formatCurrency(getPricePerMonth(), getCurrency());
         }
 
         public String getFormattedPrice() {
-            if (BuildVars.useInvoiceBilling() || giftOption != null && giftOption.store_product == null || giftCodeOption != null && giftCodeOption.store_product == null) {
-                return BillingController.getInstance().formatCurrency(getPrice(), getCurrency());
-            }
-
+            return BillingController.getInstance().formatCurrency(getPrice(), getCurrency());
         }
 
         public long getPrice() {
             if (giftOption != null) {
-                if (BuildVars.useInvoiceBilling() || giftOption.store_product == null) {
-                    return giftOption.amount;
-                }
+                return giftOption.amount;
             } else if (giftCodeOption != null) {
-                if (BuildVars.useInvoiceBilling() || giftCodeOption.store_product == null) {
-                    return giftCodeOption.amount;
-                }
+                return giftCodeOption.amount;
             }
+            // Upstream fell through to the Play offer's micros here; 0 is what
+            // it returned when there were no product details, which is now
+            // always the case.
+            return 0;
         }
 
         public String getCurrency() {
             if (giftOption != null) {
-                if (BuildVars.useInvoiceBilling() || giftOption.store_product == null) {
-                    return giftOption.currency;
-                }
+                return giftOption.currency;
             } else if (giftCodeOption != null) {
-                if (BuildVars.useInvoiceBilling() || giftCodeOption.store_product == null) {
-                    return giftCodeOption.currency;
-                }
+                return giftCodeOption.currency;
             }
+            return "";
         }
 
         public Object getStarsOption() {
