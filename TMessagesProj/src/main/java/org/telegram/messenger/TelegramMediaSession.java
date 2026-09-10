@@ -62,10 +62,6 @@ public class TelegramMediaSession {
     private static final String MEDIA_ID_ROOT = "__ROOT__";
     private static final String MEDIA_ID_CHAT_PREFIX = "__CHAT_";
 
-    private static final String SLOT_RESERVATION_SKIP_TO_NEXT = "com.google.android.gms.car.media.ALWAYS_RESERVE_SPACE_FOR.ACTION_SKIP_TO_NEXT";
-    private static final String SLOT_RESERVATION_SKIP_TO_PREV = "com.google.android.gms.car.media.ALWAYS_RESERVE_SPACE_FOR.ACTION_SKIP_TO_PREVIOUS";
-    private static final String SLOT_RESERVATION_QUEUE = "com.google.android.gms.car.media.ALWAYS_RESERVE_SPACE_FOR.ACTION_QUEUE";
-
     private static final String CONTENT_STYLE_SUPPORTED = "android.media.browse.CONTENT_STYLE_SUPPORTED";
     private static final String CONTENT_STYLE_BROWSABLE_HINT = "android.media.browse.CONTENT_STYLE_BROWSABLE_HINT";
     private static final String CONTENT_STYLE_PLAYABLE_HINT = "android.media.browse.CONTENT_STYLE_PLAYABLE_HINT";
@@ -104,11 +100,11 @@ public class TelegramMediaSession {
                 PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
         session.setSessionActivity(pi);
 
-        Bundle extras = new Bundle();
-        extras.putBoolean(SLOT_RESERVATION_QUEUE, true);
-        extras.putBoolean(SLOT_RESERVATION_SKIP_TO_PREV, true);
-        extras.putBoolean(SLOT_RESERVATION_SKIP_TO_NEXT, true);
-        session.setExtras(extras);
+        // LoogriGram: the session extras asked the Android Auto media UI to
+        // reserve space for the skip and queue buttons. Those keys are read
+        // only by Auto, and there is no Auto here. The media session itself
+        // stays: it drives the lock screen controls and lets a plain Bluetooth
+        // head unit browse, neither of which involves Google.
 
         session.setActive(true);
 

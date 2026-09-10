@@ -56,6 +56,9 @@ dependencies {
     //                             sticker cut-out and its suggested emoji;
     //                             models delivered by Play Services
     //   mlkit:language-id         worked offline, but only fed auto-translate
+    //   androidx.car.app, app-projected
+    //                             Android Auto, whose manifest registration
+    //                             upstream had already commented out
     //   libgsaverification-client.aar
     //                             Google Voice Search verification
     // Every one of those needs Play Services, which this build does not have,
@@ -70,8 +73,10 @@ dependencies {
     implementation 'androidx.interpolator:interpolator:1.0.0'
     implementation 'androidx.biometric:biometric:1.1.0'
     implementation "androidx.credentials:credentials:1.6.0-alpha04"
-    implementation 'androidx.car.app:app:1.4.0'
-    implementation 'androidx.car.app:app-projected:1.4.0'
+    // LoogriGram: androidx.car.app is gone with Android Auto. Everything it
+    // supplied transitively that this tree imports - lifecycle, fragment,
+    // viewpager, customview, collection - comes from appcompat above, which is
+    // now declared; annotation and core were already covered.
 
     // LoogriGram: added, not upstream, and for the same reason as androidx.media
     // below - appcompat was never declared either, arriving transitively via
