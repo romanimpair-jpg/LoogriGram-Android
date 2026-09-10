@@ -5942,6 +5942,14 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 
     private boolean firstAppUpdateCheck = true;
     public void checkAppUpdate(boolean force, Browser.Progress progress) {
+        // LoogriGram: no auto-updates. Updates are manual - rebuild in CI and
+        // install the APK. Guarded here rather than only by CHECK_UPDATES,
+        // because the force path deliberately ignores that flag; the build type
+        // check below already excluded us, but that is a property of not being
+        // a standalone or beta build rather than a decision.
+        if (true) {
+            return;
+        }
         if (!ApplicationLoader.isStandaloneBuild() && !ApplicationLoader.isBetaBuild()) {
             return;
         }
