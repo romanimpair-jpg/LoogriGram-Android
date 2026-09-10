@@ -272,6 +272,10 @@ public class ApplicationLoader extends Application {
         MediaController.getInstance();
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) { //TODO improve account
             ContactsController.getInstance(a).checkAppAccount();
+            // LoogriGram: server-side half of ghost mode, once per account.
+            // No-ops for accounts that are not logged in, or that already
+            // have it applied.
+            ContactsController.getInstance(a).applyGhostModePrivacy(false);
             DownloadController.getInstance(a);
         }
         BillingController.getInstance().startConnection();

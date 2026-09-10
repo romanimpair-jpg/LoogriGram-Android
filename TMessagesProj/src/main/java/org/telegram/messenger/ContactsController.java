@@ -2810,6 +2810,87 @@ public class ContactsController extends BaseController {
         return globalPrivacySettings;
     }
 
+    // LoogriGram: the server-side half of ghost mode. Suppressing presence in
+    // the client is not enough on its own - the server also infers "last seen
+    // recently" from MTProto session activity, so without this the user still
+    // shows as recently online no matter what the client withholds. Read
+    // receipts are not suppressed at all (see MessagesController), so hiding
+    // the read *date* is the part of that which can be had without breaking
+    // read-position sync between devices.
+    //
+    // Applied once per account, and again on every explicit enable, but never
+    // reversed: turning ghost mode off leaves both settings alone rather than
+    // re-exposing last seen, which is the safer direction to fail in.
+    //
+    // Both are reciprocal and enforced by Telegram, not by us: hiding last seen
+    // means seeing only a vague "recently" for everyone else, and hiding the
+    // read date likewise costs seeing other people's. hide_read_marks is free
+    // and does not need Premium.
+    public void applyGhostModePrivacy(boolean force) {
+        if (!SharedConfig.ghostMode || !getUserConfig().isClientActivated()) {
+            return;
+        }
+        final SharedPreferences preferences = MessagesController.getMainSettings(currentAccount);
+        if (!force && preferences.getBoolean("ghostPrivacyApplied", false)) {
+            return;
+        }
+
+        // Note: this replaces the last-seen rules outright, so any existing
+        // exception list for last seen goes with it. Nobody is the point, and
+        // an exception to it would defeat it.
+        final TL_account.setPrivacy lastSeen = new TL_account.setPrivacy();
+        lastSeen.key = new TLRPC.TL_inputPrivacyKeyStatusTimestamp();
+        lastSeen.rules.add(new TLRPC.TL_inputPrivacyValueDisallowAll());
+        getConnectionsManager().sendRequest(lastSeen, (response, error) -> {
+            if (error != null) {
+                FileLog.e("LoogriGram: could not hide last seen: " + error.text);
+            }
+        });
+
+        // setGlobalPrivacySettings replaces the whole object, which also holds
+        // the archive settings - archive_and_mute_new_noncontact_peers,
+        // keep_archived_unmuted and so on. Sending a fresh one to set a single
+        // flag would silently reset those, and at app start the cached copy is
+        // usually still null, so the current settings are read first and only
+        // then amended.
+        if (globalPrivacySettings != null) {
+            sendHideReadMarks(globalPrivacySettings);
+        } else {
+            final TL_account.getGlobalPrivacySettings req = new TL_account.getGlobalPrivacySettings();
+            getConnectionsManager().sendRequest(req, (response, error) -> {
+                if (error != null || !(response instanceof TLRPC.GlobalPrivacySettings)) {
+                    FileLog.e("LoogriGram: could not read global privacy settings, not hiding read marks");
+                    return;
+                }
+                final TLRPC.GlobalPrivacySettings settings = (TLRPC.GlobalPrivacySettings) response;
+                AndroidUtilities.runOnUIThread(() -> {
+                    globalPrivacySettings = settings;
+                    loadingGlobalSettings = 2;
+                    sendHideReadMarks(settings);
+                });
+            });
+        }
+
+        // Recorded even if a request fails. Retrying on every start would mean
+        // two extra requests per launch forever on an account where the server
+        // keeps refusing; the explicit-enable path is the way to retry.
+        preferences.edit().putBoolean("ghostPrivacyApplied", true).apply();
+    }
+
+    private void sendHideReadMarks(TLRPC.GlobalPrivacySettings current) {
+        if (current.hide_read_marks) {
+            return;
+        }
+        final TL_account.setGlobalPrivacySettings req = new TL_account.setGlobalPrivacySettings();
+        req.settings = current;
+        req.settings.hide_read_marks = true;
+        getConnectionsManager().sendRequest(req, (response, error) -> {
+            if (error != null) {
+                FileLog.e("LoogriGram: could not hide read marks: " + error.text);
+            }
+        });
+    }
+
     public ArrayList<TLRPC.PrivacyRule> getPrivacyRules(int type) {
         switch (type) {
             case PRIVACY_RULES_TYPE_LASTSEEN:

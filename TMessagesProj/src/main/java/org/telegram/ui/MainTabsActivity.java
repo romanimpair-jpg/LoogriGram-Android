@@ -840,6 +840,12 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         if (tabs != null && tabs[INDEX_GHOST] != null) {
             tabs[INDEX_GHOST].setSelected(SharedConfig.ghostMode, true);
         }
+        if (SharedConfig.ghostMode) {
+            // Re-assert the server-side half on every explicit enable, which is
+            // also the retry path if it failed at startup. Never reversed on
+            // disable - see ContactsController.applyGhostModePrivacy.
+            ContactsController.getInstance(currentAccount).applyGhostModePrivacy(true);
+        }
         if (getContext() != null) {
             BulletinFactory.of(this)
                 .createSimpleBulletin(
