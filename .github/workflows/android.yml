@@ -216,6 +216,7 @@ jobs:
             -e "s|^RELEASE_STORE_PASSWORD=.*|RELEASE_STORE_PASSWORD=$KEYSTORE_PASSWORD|" \
             -e "s|^RELEASE_KEY_ALIAS=.*|RELEASE_KEY_ALIAS=$KEY_ALIAS|" \
             -e "s|^RELEASE_KEY_PASSWORD=.*|RELEASE_KEY_PASSWORD=$KEY_PASSWORD|" \
+            -e "s|^RELEASE_STORE_TYPE=.*|RELEASE_STORE_TYPE=pkcs12|" \
             gradle.properties
           echo "own keystore installed ($(stat -c%s TMessagesProj/config/release.keystore) bytes)"
 
@@ -274,6 +275,10 @@ jobs:
             n=$(unzip -p "$APK" 'classes*.dex' | grep -c "L$pkg" || true)
             printf '%8s  %s\n' "$n" "$pkg"
           done
+          echo "--- signing certificate:"
+          SDK="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          "$SDK/build-tools/$BUILD_TOOLS/apksigner" verify --print-certs "$APK" 2>&1 \
+            | grep -iE "DN:|SHA-256 digest" | head -4 || echo "  (apksigner reported nothing)"
           echo "--- Google assets/resources:"
           unzip -l "$APK" | grep -iE 'google|firebase' | head -20 || echo "  (none)"
 
