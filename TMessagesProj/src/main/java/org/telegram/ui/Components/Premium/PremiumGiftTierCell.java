@@ -195,7 +195,9 @@ public class PremiumGiftTierCell extends ViewGroup {
 
         titleView.setText(LocaleController.formatPluralString("Months", tier.getMonths()));
 
-        isDrawingGradient = !BuildVars.useInvoiceBilling() && (!BillingController.getInstance().isReady() || tier.getGooglePlayProductDetails() == null);
+        // LoogriGram: the shimmer meant "price not fetched from Play yet".
+        // Prices come from the server now and are there immediately.
+        isDrawingGradient = false;
         if (!isDrawingGradient) {
             if (tier.getDiscount() <= 0) {
                 discountView.setVisibility(GONE);

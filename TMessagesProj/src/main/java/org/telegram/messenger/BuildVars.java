@@ -12,9 +12,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
 
-import com.android.billingclient.api.ProductDetails;
 
-import java.util.Objects;
 
 public class BuildVars {
 
@@ -76,24 +74,16 @@ public class BuildVars {
         }
     }
 
+    // LoogriGram: always Telegram's own invoices, never Google Play Billing.
+    //
+    // Upstream reaches the same answer here by a longer route -
+    // billingClientEmpty is true when there is no Play Billing, which is now
+    // permanent - but it is stated outright because it is a decision, not a
+    // consequence of the device. hasDirectCurrency went with it: that asked the
+    // Play product details whether the subscription is priced in one of the
+    // currencies Telegram bills directly, and there are no product details.
     public static boolean useInvoiceBilling() {
-        return BillingController.billingClientEmpty || DEBUG_VERSION && false || ApplicationLoader.isStandaloneBuild() || isBetaApp() && false || isHuaweiStoreApp() || hasDirectCurrency();
-    }
-
-    private static boolean hasDirectCurrency() {
-        if (!BillingController.getInstance().isReady() || BillingController.PREMIUM_PRODUCT_DETAILS == null) {
-            return false;
-        }
-        for (ProductDetails.SubscriptionOfferDetails offerDetails : BillingController.PREMIUM_PRODUCT_DETAILS.getSubscriptionOfferDetails()) {
-            for (ProductDetails.PricingPhase phase : offerDetails.getPricingPhases().getPricingPhaseList()) {
-                for (String cur : MessagesController.getInstance(UserConfig.selectedAccount).directPaymentsCurrency) {
-                    if (Objects.equals(phase.getPriceCurrencyCode(), cur)) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
+        return true;
     }
 
     private static Boolean betaApp;

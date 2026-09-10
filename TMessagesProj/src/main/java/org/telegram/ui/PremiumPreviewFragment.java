@@ -53,10 +53,6 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.android.billingclient.api.BillingClient;
-import com.android.billingclient.api.BillingFlowParams;
-import com.android.billingclient.api.ProductDetails;
-import com.android.billingclient.api.Purchase;
 
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AndroidUtilities;
@@ -1175,113 +1171,10 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
             }
             return;
         }
-
-        if (BillingController.PREMIUM_PRODUCT_DETAILS == null) {
-            return;
-        }
-
-        List<ProductDetails.SubscriptionOfferDetails> offerDetails = BillingController.PREMIUM_PRODUCT_DETAILS.getSubscriptionOfferDetails();
-        if (offerDetails.isEmpty()) {
-            return;
-        }
-
-        if (selectedTier.getGooglePlayProductDetails() == null) {
-            selectedTier.setGooglePlayProductDetails(BillingController.PREMIUM_PRODUCT_DETAILS);
-        }
-
-        if (selectedTier.getOfferDetails() == null) {
-            return;
-        }
-
-        boolean finalForcePremium = forcePremium;
-        BillingController.getInstance().queryPurchases(BillingClient.ProductType.SUBS, (billingResult1, list) -> AndroidUtilities.runOnUIThread(() -> {
-            if (billingResult1.getResponseCode() == BillingClient.BillingResponseCode.OK) {
-                Runnable onSuccess = () -> {
-                    if (fragment instanceof PremiumPreviewFragment) {
-                        PremiumPreviewFragment premiumPreviewFragment = (PremiumPreviewFragment) fragment;
-                        if (finalForcePremium) {
-                            premiumPreviewFragment.setForcePremium();
-                        }
-                        premiumPreviewFragment.getMediaDataController().loadPremiumPromo(false);
-
-                        premiumPreviewFragment.listView.smoothScrollToPosition(0);
-                    } else {
-                        final PremiumPreviewFragment previewFragment = new PremiumPreviewFragment(null);
-                        if (finalForcePremium) {
-                            previewFragment.setForcePremium();
-                        }
-                        if (fragment != null) {
-                            fragment.presentFragment(previewFragment);
-                        } else {
-                            final BaseFragment lastFragment = LaunchActivity.getSafeLastFragment();
-                            if (lastFragment != null) {
-                                lastFragment.presentFragment(previewFragment);
-                            }
-                        }
-                    }
-                    if (fragment != null && fragment.getParentActivity() instanceof LaunchActivity) {
-                        try {
-                            fragment.getFragmentView().performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
-                        } catch (Exception ignored) {}
-                        ((LaunchActivity) fragment.getParentActivity()).getFireworksOverlay().start();
-                    }
-                };
-                if (list != null && !list.isEmpty() && !UserConfig.getInstance(account).isPremium()) {
-                    for (Purchase purchase : list) {
-                        if (purchase.getProducts().contains(BillingController.PREMIUM_PRODUCT_ID)) {
-                            TLRPC.TL_payments_assignPlayMarketTransaction req = new TLRPC.TL_payments_assignPlayMarketTransaction();
-                            req.receipt = new TLRPC.TL_dataJSON();
-                            req.receipt.data = purchase.getOriginalJson();
-                            TLRPC.TL_inputStorePaymentPremiumSubscription purpose = new TLRPC.TL_inputStorePaymentPremiumSubscription();
-                            purpose.restore = true;
-                            if (updateParams != null) {
-                                purpose.upgrade = true;
-                            }
-                            req.purpose = purpose;
-                            ConnectionsManager.getInstance(account).sendRequest(req, (response, error) -> {
-                                if (response instanceof TLRPC.Updates) {
-                                    MessagesController.getInstance(account).processUpdates((TLRPC.Updates) response, false);
-
-                                    AndroidUtilities.runOnUIThread(onSuccess);
-                                } else if (error != null) {
-                                    AndroidUtilities.runOnUIThread(() -> AlertsCreator.processError(account, error, fragment, req));
-                                }
-                            }, ConnectionsManager.RequestFlagFailOnServerErrors | ConnectionsManager.RequestFlagInvokeAfter);
-
-                            return;
-                        }
-                    }
-                }
-
-                BillingController.getInstance().addResultListener(BillingController.PREMIUM_PRODUCT_ID, billingResult -> {
-                    if (billingResult.getResponseCode() == BillingClient.BillingResponseCode.OK) {
-                        AndroidUtilities.runOnUIThread(onSuccess);
-                    }
-                });
-
-                TLRPC.TL_payments_canPurchaseStore req = new TLRPC.TL_payments_canPurchaseStore();
-                TLRPC.TL_inputStorePaymentPremiumSubscription purpose = new TLRPC.TL_inputStorePaymentPremiumSubscription();
-                if (updateParams != null) {
-                    purpose.upgrade = true;
-                }
-                req.purpose = purpose;
-                ConnectionsManager.getInstance(account).sendRequest(req, (response, error) -> {
-                    AndroidUtilities.runOnUIThread(() -> {
-                        if (response instanceof TLRPC.TL_boolTrue) {
-                            final Activity activity = fragment != null ? fragment.getParentActivity() : AndroidUtilities.getActivity();
-                            BillingController.getInstance().launchBillingFlow(activity, fragment.getAccountInstance(), purpose, Collections.singletonList(
-                                    BillingFlowParams.ProductDetailsParams.newBuilder()
-                                            .setProductDetails(BillingController.PREMIUM_PRODUCT_DETAILS)
-                                            .setOfferToken(selectedTier.getOfferDetails().getOfferToken())
-                                            .build()
-                            ), updateParams, false);
-                        } else {
-                            AlertsCreator.processError(account, error, fragment, req);
-                        }
-                    });
-                });
-            }
-        }));
+        // LoogriGram: the Play subscription purchase ran from here - resolve the
+        // offer from PREMIUM_PRODUCT_DETAILS, reconcile any existing purchase,
+        // then launch the billing flow. Unreachable: the invoice branch above
+        // always returns, since useInvoiceBilling is always true.
     }
 
     public static String getPremiumButtonText(int currentAccount, SubscriptionTier tier) {
@@ -1327,25 +1220,8 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
             }
 
             String price = null;
-            if (BillingController.PREMIUM_PRODUCT_DETAILS != null) {
-                List<ProductDetails.SubscriptionOfferDetails> details = BillingController.PREMIUM_PRODUCT_DETAILS.getSubscriptionOfferDetails();
-                if (!details.isEmpty()) {
-                    ProductDetails.SubscriptionOfferDetails offerDetails = details.get(0);
-                    for (ProductDetails.PricingPhase phase : offerDetails.getPricingPhases().getPricingPhaseList()) {
-                        if (phase.getBillingPeriod().equals("P1M")) { // Once per month
-                            price = phase.getFormattedPrice();
-                        } else if (phase.getBillingPeriod().equals("P1Y")) { // Once per year
-                            if (MessagesController.getInstance(currentAccount).showAnnualPerMonth) {
-                                price = BillingController.getInstance().formatCurrency(phase.getPriceAmountMicros() / 12L, phase.getPriceCurrencyCode(), 6);
-                            } else {
-                                stringResId = R.string.SubscribeToPremiumPerYear;
-                                price = BillingController.getInstance().formatCurrency(phase.getPriceAmountMicros(), phase.getPriceCurrencyCode(), 6);
-                            }
-                            break;
-                        }
-                    }
-                }
-            }
+            // LoogriGram: prices come from the server's promo, not Play details.
+            
 
             if (price == null) {
                 return getString(R.string.Loading);
@@ -1353,7 +1229,8 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
 
             return LocaleController.formatString(stringResId, price);
         } else {
-            if (!BuildVars.useInvoiceBilling() && tier.getOfferDetails() == null) {
+            // LoogriGram: no Play offer to wait for.
+            if (false) {
                 return getString(R.string.Loading);
             }
             final boolean isPremium = UserConfig.getInstance(currentAccount).isPremium();
@@ -2003,39 +1880,11 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
                 currentSubscriptionTier = null;
             }
 
-            if (BuildVars.useInvoiceBilling()) {
-                for (SubscriptionTier tier : subscriptionTiers) {
-                    tier.setPricePerYearRegular(pricePerYearMax);
-                }
-            } else if (BillingController.getInstance().isReady() && BillingController.PREMIUM_PRODUCT_DETAILS != null) {
-                long pricePerMonthMaxStore = 0;
-
-                boolean hasSomeLoaded = false;
-                for (SubscriptionTier subscriptionTier : subscriptionTiers) {
-                    subscriptionTier.setGooglePlayProductDetails(BillingController.PREMIUM_PRODUCT_DETAILS);
-
-                    if (subscriptionTier.getPricePerYear() > pricePerMonthMaxStore) {
-                        pricePerMonthMaxStore = subscriptionTier.getPricePerYear();
-                    }
-
-                    if (subscriptionTier.getOfferDetails() != null) {
-                        hasSomeLoaded = true;
-                    }
-                }
-
-                if (hasSomeLoaded) {
-                    for (int i = 0; i < subscriptionTiers.size(); ++i) {
-                        final SubscriptionTier tier = subscriptionTiers.get(i);
-                        if (tier.getOfferDetails() == null) {
-                            subscriptionTiers.remove(i);
-                            --i;
-                        }
-                    }
-                }
-
-                for (SubscriptionTier subscriptionTier : subscriptionTiers) {
-                    subscriptionTier.setPricePerYearRegular(pricePerMonthMaxStore);
-                }
+            // LoogriGram: tiers keep the server's prices. The Play branch here
+            // stamped every tier with PREMIUM_PRODUCT_DETAILS and then dropped
+            // any tier Play had no offer for.
+            for (SubscriptionTier tier : subscriptionTiers) {
+                tier.setPricePerYearRegular(pricePerYearMax);
             }
 
             if (selectedTierIndex == -1) {
@@ -2127,7 +1976,8 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
             buttonContainerInternal.setOnClickListener(v -> buyPremium(this));
             return;
         }
-        if (!BuildVars.useInvoiceBilling() && (!BillingController.getInstance().isReady() || subscriptionTiers.isEmpty() || selectedTierIndex >= subscriptionTiers.size() || subscriptionTiers.get(selectedTierIndex).googlePlayProductDetails == null)) {
+        // LoogriGram: never waiting on Play product details.
+        if (false) {
             premiumButtonView.setButton(getString(R.string.Loading), null, animated);
             buttonContainerInternal.setOnClickListener(v -> {});
             premiumButtonView.setFlickerDisabled(true);
@@ -2361,8 +2211,6 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
         private long pricePerYear;
 
         private long pricePerYearRegular;
-        private ProductDetails googlePlayProductDetails;
-        private ProductDetails.SubscriptionOfferDetails offerDetails;
 
         public int yOffset;
 
@@ -2370,18 +2218,8 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
             this.subscriptionOption = subscriptionOption;
         }
 
-        public ProductDetails getGooglePlayProductDetails() {
-            return googlePlayProductDetails;
-        }
 
-        public ProductDetails.SubscriptionOfferDetails getOfferDetails() {
-            checkOfferDetails();
-            return offerDetails;
-        }
 
-        public void setGooglePlayProductDetails(ProductDetails googlePlayProductDetails) {
-            this.googlePlayProductDetails = googlePlayProductDetails;
-        }
 
         public void setPricePerYearRegular(long pricePerYearRegular) {
             this.pricePerYearRegular = pricePerYearRegular;
@@ -2432,71 +2270,36 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
             if (BuildVars.useInvoiceBilling() || subscriptionOption.store_product == null) {
                 return BillingController.getInstance().formatCurrency(pricePerYearRegular, getCurrency());
             }
-
-            return googlePlayProductDetails == null ? "" : BillingController.getInstance().formatCurrency(pricePerYearRegular, getCurrency(), 6);
         }
 
         public String getFormattedPricePerYear() {
             if (BuildVars.useInvoiceBilling() || subscriptionOption.store_product == null) {
                 return BillingController.getInstance().formatCurrency(getPricePerYear(), getCurrency());
             }
-
-            return googlePlayProductDetails == null ? "" : BillingController.getInstance().formatCurrency(getPricePerYear(), getCurrency(), 6);
         }
 
         public String getFormattedPricePerMonth() {
             if (BuildVars.useInvoiceBilling() || subscriptionOption.store_product == null) {
                 return BillingController.getInstance().formatCurrency(getPricePerMonth(), getCurrency());
             }
-
-            return googlePlayProductDetails == null ? "" : BillingController.getInstance().formatCurrency(getPricePerMonth(), getCurrency(), 6);
         }
 
         public String getFormattedPrice() {
             if (BuildVars.useInvoiceBilling() || subscriptionOption.store_product == null) {
                 return BillingController.getInstance().formatCurrency(getPrice(), getCurrency());
             }
-
-            return googlePlayProductDetails == null ? "" : BillingController.getInstance().formatCurrency(getPrice(), getCurrency(), 6);
         }
 
         public long getPrice() {
-            if (BuildVars.useInvoiceBilling() || subscriptionOption.store_product == null) {
-                return subscriptionOption.amount;
-            }
-            if (googlePlayProductDetails == null) {
-                return 0;
-            }
-            checkOfferDetails();
-            return offerDetails == null ? 0 : offerDetails.getPricingPhases().getPricingPhaseList().get(0).getPriceAmountMicros();
+            // LoogriGram: always the server's amount. The Play path below read it
+            // from the subscription offer's pricing phase.
+            return subscriptionOption.amount;
         }
 
         public String getCurrency() {
-            if (BuildVars.useInvoiceBilling() || subscriptionOption.store_product == null) {
-                return subscriptionOption.currency;
-            }
-            if (googlePlayProductDetails == null) {
-                return "";
-            }
-            checkOfferDetails();
-            return offerDetails == null ? "" : offerDetails.getPricingPhases().getPricingPhaseList().get(0).getPriceCurrencyCode();
+            return subscriptionOption.currency;
         }
 
-        private void checkOfferDetails() {
-            if (googlePlayProductDetails == null) {
-                return;
-            }
-
-            if (offerDetails == null) {
-                for (ProductDetails.SubscriptionOfferDetails details : googlePlayProductDetails.getSubscriptionOfferDetails()) {
-                    String period = details.getPricingPhases().getPricingPhaseList().get(0).getBillingPeriod();
-                    if (getMonths() == 12 ? period.equals("P1Y") : period.equals(String.format(Locale.ROOT, "P%dM", getMonths()))) {
-                        offerDetails = details;
-                        break;
-                    }
-                }
-            }
-        }
     }
 
     private SelectAnimatedEmojiDialog.SelectAnimatedEmojiDialogWindow selectAnimatedEmojiDialog;

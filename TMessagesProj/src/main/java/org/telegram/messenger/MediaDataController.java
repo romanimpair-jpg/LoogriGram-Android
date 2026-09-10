@@ -46,7 +46,6 @@ import androidx.core.content.pm.ShortcutInfoCompat;
 import androidx.core.content.pm.ShortcutManagerCompat;
 import androidx.core.graphics.drawable.IconCompat;
 
-import com.android.billingclient.api.ProductDetails;
 
 import org.telegram.SQLite.SQLiteCursor;
 import org.telegram.SQLite.SQLiteDatabase;
@@ -465,47 +464,16 @@ public class MediaDataController extends BaseController {
             if (checkTransaction ? option.current && Objects.equals(option.transaction.replaceAll(PremiumPreviewFragment.TRANSACTION_PATTERN, "$1"), BillingController.getInstance().getLastPremiumTransaction()) : option.months == 1) {
                 found = true;
 
-                if (!BuildVars.useInvoiceBilling() && BillingController.PREMIUM_PRODUCT_DETAILS != null) {
-                    ProductDetails.SubscriptionOfferDetails offerDetails = null;
-                    for (ProductDetails.SubscriptionOfferDetails details : BillingController.PREMIUM_PRODUCT_DETAILS.getSubscriptionOfferDetails()) {
-                        String period = details.getPricingPhases().getPricingPhaseList().get(0).getBillingPeriod();
-                        if (option.months == 12 ? period.equals("P1Y") : period.equals(String.format(Locale.ROOT, "P%dM", option.months))) {
-                            offerDetails = details;
-                            break;
-                        }
-                    }
-
-                    if (offerDetails == null) {
-                        currentPrice = (double) option.amount / option.months;
-                    } else {
-                        currentPrice = (double) offerDetails.getPricingPhases().getPricingPhaseList().get(0).getPriceAmountMicros() / option.months;
-                    }
-                } else {
-                    currentPrice = (double) option.amount / option.months;
-                }
+                // LoogriGram: the price comes from the server's subscription
+                // option, never from Play product details.
+                currentPrice = (double) option.amount / option.months;
             }
         }
         for (TLRPC.TL_premiumSubscriptionOption option : premiumPromo.period_options) {
             if (found && option.months == 12) {
                 double amount;
-                if (!BuildVars.useInvoiceBilling() && BillingController.PREMIUM_PRODUCT_DETAILS != null) {
-                    ProductDetails.SubscriptionOfferDetails offerDetails = null;
-                    for (ProductDetails.SubscriptionOfferDetails details : BillingController.PREMIUM_PRODUCT_DETAILS.getSubscriptionOfferDetails()) {
-                        String period = details.getPricingPhases().getPricingPhaseList().get(0).getBillingPeriod();
-                        if (option.months == 12 ? period.equals("P1Y") : period.equals(String.format(Locale.ROOT, "P%dM", option.months))) {
-                            offerDetails = details;
-                            break;
-                        }
-                    }
-
-                    if (offerDetails == null) {
-                        amount = (double) option.amount / option.months;
-                    } else {
-                        amount = (double) offerDetails.getPricingPhases().getPricingPhaseList().get(0).getPriceAmountMicros() / option.months;
-                    }
-                } else {
-                    amount = (double) option.amount / option.months;
-                }
+                // LoogriGram: see above.
+                amount = (double) option.amount / option.months;
 
                 discount = (int) ((1.0 - amount / currentPrice) * 100);
             }

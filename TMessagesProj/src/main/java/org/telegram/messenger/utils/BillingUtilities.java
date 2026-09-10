@@ -7,8 +7,6 @@ import android.util.Base64;
 
 import androidx.core.util.Pair;
 
-import com.android.billingclient.api.AccountIdentifiers;
-import com.android.billingclient.api.Purchase;
 import com.google.android.exoplayer2.util.Util;
 import com.google.common.base.Charsets;
 
@@ -54,18 +52,14 @@ public class BillingUtilities {
         }
     }
 
-    public static Pair<String, String> createDeveloperPayload(TLRPC.InputStorePaymentPurpose paymentPurpose, AccountInstance accountInstance) {
-        String obfuscatedAccountId;
-        if (accountInstance.getUserConfig().isClientActivated()) {
-            long currentAccountId = accountInstance.getUserConfig().getClientUserId();
-            byte[] currentAccountIdBytes = String.valueOf(currentAccountId).getBytes(Charsets.UTF_8);
-            obfuscatedAccountId = Base64.encodeToString(currentAccountIdBytes, Base64.DEFAULT);
-        } else {
-            byte[] currentAccountIdBytes = ("account-" + accountInstance.getCurrentAccount()).getBytes(Charsets.UTF_8);
-            obfuscatedAccountId = Base64.encodeToString(currentAccountIdBytes, Base64.DEFAULT);
-        }
-        return Pair.create(obfuscatedAccountId, savePurpose(paymentPurpose));
-    }
+    // LoogriGram: createDeveloperPayload, extractDeveloperPayload and
+    // cleanupPurchase are gone. They packed the account and purpose into a
+    // Play purchase's obfuscated account id on the way out and read them
+    // back on the way in, and their only callers were the launchBillingFlow
+    // and purchase-updated paths in BillingController, which no longer
+    // exist. savePurpose / getPurpose / clearPurpose below are kept: those
+    // are our own encrypted-preferences store, not Google's.
+    
 
     public static String savePurpose(TLRPC.InputStorePaymentPurpose paymentPurpose) {
         final long id = Utilities.random.nextLong();
@@ -212,53 +206,6 @@ public class BillingUtilities {
         return result;
     }
 
-    public static Pair<AccountInstance, TLRPC.InputStorePaymentPurpose> extractDeveloperPayload(Purchase purchase) {
-        AccountIdentifiers identifiers = purchase.getAccountIdentifiers();
-        if (identifiers == null) {
-            FileLog.d("Billing: Extract payload. No AccountIdentifiers");
-            return null;
-        }
-        String obfuscatedAccountId = identifiers.getObfuscatedAccountId();
-        String obfuscatedData = identifiers.getObfuscatedProfileId();
-        if (obfuscatedAccountId == null || obfuscatedAccountId.isEmpty() || obfuscatedData == null || obfuscatedData.isEmpty()) {
-            FileLog.d("Billing: Extract payload. Empty AccountIdentifiers");
-            return null;
-        }
 
-        try {
-            TLRPC.InputStorePaymentPurpose purpose;
-            try {
-                purpose = getPurpose(obfuscatedData);
-            } catch (Exception e) {
-                FileLog.e("Billing: Extract payload, failed to get purpose", e);
-                purpose = null;
-            }
-
-            byte[] obfuscatedAccountIdBytes = Base64.decode(obfuscatedAccountId, Base64.DEFAULT);
-            String obfuscatedAccountIdString = new String(obfuscatedAccountIdBytes, Charsets.UTF_8);
-            FileLog.d("Billing: Extract payload. obfuscatedAccountIdString=" + obfuscatedAccountIdString);
-
-            AccountInstance acc;
-            if (obfuscatedAccountIdString.startsWith("account-")) {
-                int currentAccount = Integer.parseInt(obfuscatedAccountIdString.substring(8));
-                acc = AccountInstance.getInstance(currentAccount);
-            } else {
-                long accountId = Long.parseLong(obfuscatedAccountIdString);
-                acc = findAccountById(accountId);
-                if (acc == null) {
-                    FileLog.d("Billing: Extract payload. AccountInstance not found, accountId=" + accountId);
-                    return null;
-                }
-            }
-            return Pair.create(acc, purpose);
-        } catch (Exception e) {
-            FileLog.e("Billing: Extract Payload", e);
-            return null;
-        }
-    }
-
-    public static void cleanupPurchase(Purchase purchase) {
-        AccountIdentifiers identifiers = purchase.getAccountIdentifiers();
-        clearPurpose(identifiers.getObfuscatedProfileId());
-    }
+    
 }

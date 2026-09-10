@@ -59,6 +59,8 @@ dependencies {
     //   androidx.car.app, app-projected
     //                             Android Auto, whose manifest registration
     //                             upstream had already commented out
+    //   billingclient            Google Play in-app purchases; everything is
+    //                             billed through Telegram's own invoices
     //   libgsaverification-client.aar
     //                             Google Voice Search verification
     // Every one of those needs Play Services, which this build does not have,
@@ -102,8 +104,6 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.11.0'
     implementation 'com.google.guava:guava:31.1-android'
 
-    // Still to go, tracked: billingclient is the last of it.
-    implementation 'com.android.billingclient:billing:8.0.0'
 
     implementation 'com.googlecode.mp4parser:isoparser:1.0.6'
     implementation 'com.stripe:stripe-android:2.0.2'
