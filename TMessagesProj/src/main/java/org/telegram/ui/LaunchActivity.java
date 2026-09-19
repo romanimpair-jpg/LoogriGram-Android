@@ -140,7 +140,6 @@ import org.telegram.messenger.pip.activity.IPipActivityListener;
 import org.telegram.messenger.utils.FrameMetricsOverlayView;
 import org.telegram.messenger.utils.LeakDetector;
 import org.telegram.messenger.utils.WindowVisibilityManager;
-import org.telegram.messenger.video.VideoAds;
 import org.telegram.messenger.voip.VideoCapturerDevice;
 import org.telegram.messenger.voip.VoIPGroupNotification;
 import org.telegram.messenger.voip.VoIPPendingCall;
@@ -6886,7 +6885,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             }
         }
         Bulletin.removeDelegate(frameLayout);
-        VideoAds.dropCache();
+        // LoogriGram: nothing caches video ads any more.
 
         clearFragments();
         super.onDestroy();
