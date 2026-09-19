@@ -23,7 +23,6 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.BaseController;
 import org.telegram.messenger.BuildVars;
-import org.telegram.messenger.CaptchaController;
 import org.telegram.messenger.EmuDetector;
 import org.telegram.messenger.FileLoadOperation;
 import org.telegram.messenger.FileLoader;
@@ -1507,6 +1506,20 @@ public class ConnectionsManager extends BaseController {
 
     @Keep
     public static void onCaptchaCheck(final int currentAccount, final int requestToken, final String action, final String key_id) {
-        CaptchaController.request(currentAccount, requestToken, action, key_id);
+        // LoogriGram: no reCAPTCHA. The server asks for one during login on
+        // some accounts, and Google's client needs Play Services, so rather
+        // than pretend, answer with the failure string upstream already sends
+        // when a captcha cannot be produced. Answering matters: the native
+        // layer is waiting on this request token, and staying silent would
+        // leave it hanging.
+        //
+        // This was a CaptchaController class that queued requests by action and
+        // key so several could share one captcha. With no captcha to share,
+        // the queue had nothing to do and the class is gone.
+        //
+        // If Telegram ever hard-requires a captcha to log in, login fails and
+        // this client can do nothing about it - the honest outcome.
+        FileLog.d("account" + currentAccount + ": captcha refused, no provider {action=" + action + ", key_id=" + key_id + "}");
+        native_receivedCaptchaResult(currentAccount, new int[] { requestToken }, "RECAPTCHA_FAILED_NO_PROVIDER");
     }
 }
