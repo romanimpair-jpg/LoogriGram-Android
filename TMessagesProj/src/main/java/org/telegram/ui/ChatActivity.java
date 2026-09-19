@@ -36680,6 +36680,8 @@ public class ChatActivity extends BaseFragment implements
     }
 
     void openPhotoViewerForMessage(ChatMessageCell cell, MessageObject message) {
+        // LoogriGram: TEMPORARY - see PhotoViewer.lgpv.
+        PhotoViewer.lgpv("ChatActivity.openPhotoViewerForMessage: type=" + (message == null ? "null" : String.valueOf(message.type)) + " isVideo=" + (message != null && message.isVideo()) + " cell=" + (cell != null));
         if (cell == null) {
             int count = chatListView.getChildCount();
             for (int a = 0; a < count; a++) {
