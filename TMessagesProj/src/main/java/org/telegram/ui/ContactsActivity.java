@@ -151,7 +151,9 @@ public class ContactsActivity extends BaseFragment implements FactorAnimator.Tar
     private boolean searchWas;
     private boolean searching;
     private boolean onlyUsers;
-    private boolean needPhonebook;
+    // LoogriGram: needPhonebook listed the phone's address book beneath the
+    // Telegram contacts, with an Invite button on each row. Nothing reads the
+    // address book any more, so the flag and the screens behind it are gone.
     public boolean hasMainTabs;
     private boolean destroyAfterSelect;
     private boolean returnAsResult;
@@ -172,8 +174,6 @@ public class ContactsActivity extends BaseFragment implements FactorAnimator.Tar
     private HeaderShadowView headerShadowView;
     private FragmentSearchField searchField;
 
-    private AlertDialog permissionDialog;
-    private boolean askAboutContacts = true;
 
     private boolean disableSections;
 
@@ -188,8 +188,6 @@ public class ContactsActivity extends BaseFragment implements FactorAnimator.Tar
 
     private String searchQuery;
 
-    private boolean checkPermission = true;
-    private long permissionRequestTime;
 
     private final static int search_button = 0;
     private final static int sort_button = 1;
@@ -223,7 +221,6 @@ public class ContactsActivity extends BaseFragment implements FactorAnimator.Tar
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.updateInterfaces);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.encryptedChatCreated);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.closeChats);
-        checkPermission = UserConfig.getInstance(currentAccount).syncContacts;
         if (arguments != null) {
             onlyUsers = arguments.getBoolean("onlyUsers", false);
             destroyAfterSelect = arguments.getBoolean("destroyAfterSelect", false);
@@ -239,17 +236,13 @@ public class ContactsActivity extends BaseFragment implements FactorAnimator.Tar
             chatId = arguments.getLong("chat_id", 0);
             disableSections = arguments.getBoolean("disableSections", false);
             resetDelegate = arguments.getBoolean("resetDelegate", false);
-            needPhonebook = arguments.getBoolean("needPhonebook", false);
             hasMainTabs = arguments.getBoolean("hasMainTabs", false);
-        } else {
-            needPhonebook = true;
         }
 
         if (!createSecretChat && !returnAsResult) {
             sortByName = SharedConfig.sortContactsByName;
         }
 
-        getContactsController().checkInviteText();
         getContactsController().reloadContactsStatusesMaybe(false);
 
         additionNavigationBarHeight = hasMainTabs ? dp(DialogsActivity.MAIN_TABS_HEIGHT_WITH_MARGINS) : 0;
@@ -428,19 +421,13 @@ public class ContactsActivity extends BaseFragment implements FactorAnimator.Tar
         } else {
             inviteViaLink = 0;
         }
-        listViewAdapter = new ContactsAdapter(context, this, onlyUsers ? 1 : 0, needPhonebook, ignoreUsers, selectedContacts, inviteViaLink) {
+        listViewAdapter = new ContactsAdapter(context, this, onlyUsers ? 1 : 0, ignoreUsers, selectedContacts, inviteViaLink) {
             @Override
             public void notifyDataSetChanged() {
                 super.notifyDataSetChanged();
                 if (listView != null && listView.getAdapter() == this) {
                     int count = super.getItemCount();
-                    if (needPhonebook) {
-                        //  emptyView.setVisibility(count == 2 ? View.VISIBLE : View.GONE);
-                        listView.setFastScrollVisible(count != 2);
-                    } else {
-                        //emptyView.setVisibility(count == 0 ? View.VISIBLE : View.GONE);
-                        listView.setFastScrollVisible(count != 0);
-                    }
+                    listView.setFastScrollVisible(count != 0);
                 }
             }
 
@@ -624,9 +611,6 @@ public class ContactsActivity extends BaseFragment implements FactorAnimator.Tar
                         activity.setInitialPhoneNumber(str, true);
                         activity.show();
                     }
-                } else if (object instanceof ContactsController.Contact) {
-                    ContactsController.Contact contact = (ContactsController.Contact) object;
-                    AlertsCreator.createContactInviteDialog(ContactsActivity.this, contact.first_name, contact.last_name, contact.phones.get(0));
                 }
             } else {
                 if (listViewAdapter.includeSearch) {
@@ -639,13 +623,6 @@ public class ContactsActivity extends BaseFragment implements FactorAnimator.Tar
                 if (row < 0 || section < 0) {
                     return;
                 }
-
-                //if (view instanceof InviteUserCell) {
-                //    InviteUserCell cell = (InviteUserCell) view;
-                //    ContactsController.Contact contact = cell.getContact();
-                //    AlertsCreator.createContactInviteDialog(ContactsActivity.this, contact.first_name, contact.last_name, contact.phones.get(0));
-                //    return;
-                //}
 
                 if (view instanceof ViewGroup && ((ViewGroup) view).getChildAt(0) instanceof ContactsEmptyView) {
                     if (floatingButton != null) {
@@ -672,17 +649,9 @@ public class ContactsActivity extends BaseFragment implements FactorAnimator.Tar
 //                    section--;
 //                }
                 if ((!onlyUsers || inviteViaLink != 0) && section == 0) {
-                    if (needPhonebook) {
-                        if (row == 0) {
-                            if (MessagesController.getInstance(currentAccount).isFrozen()) {
-                                AccountFrozenAlert.show(currentAccount);
-                                return;
-                            }
-                            presentFragment(new InviteContactsActivity());
-                        } else if (row == 1) {
-                            presentFragment(new CallLogActivity());
-                        }
-                    } else if (inviteViaLink != 0) {
+                    // LoogriGram: the first two rows used to be "Invite Friends"
+                    // (which opened the phonebook picker) and "Recent Calls".
+                    if (inviteViaLink != 0) {
                         if (row == 0) {
                             if (MessagesController.getInstance(currentAccount).isFrozen()) {
                                 AccountFrozenAlert.show(currentAccount);
@@ -738,31 +707,9 @@ public class ContactsActivity extends BaseFragment implements FactorAnimator.Tar
                                 }
                             }
                         }
-                    } else if (item1 instanceof ContactsController.Contact) {
-                        ContactsController.Contact contact = (ContactsController.Contact) item1;
-                        String usePhone = null;
-                        if (!contact.phones.isEmpty()) {
-                            usePhone = contact.phones.get(0);
-                        }
-                        if (usePhone == null || getParentActivity() == null) {
-                            return;
-                        }
-                        AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-                        builder.setMessage(getString(R.string.InviteUser));
-                        builder.setTitle(getString(R.string.AppName));
-                        final String arg1 = usePhone;
-                        builder.setPositiveButton(getString(R.string.OK), (dialogInterface, i) -> {
-                            try {
-                                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.fromParts("sms", arg1, null));
-                                intent.putExtra("sms_body", ContactsController.getInstance(currentAccount).getInviteText(1));
-                                getParentActivity().startActivityForResult(intent, 500);
-                            } catch (Exception e) {
-                                FileLog.e(e);
-                            }
-                        });
-                        builder.setNegativeButton(getString(R.string.Cancel), null);
-                        showDialog(builder.create());
                     }
+                    // LoogriGram: tapping a phonebook row offered to text that
+                    // number an invite link. No phonebook rows, no SMS.
                 }
             }
         });
@@ -1244,105 +1191,19 @@ public class ContactsActivity extends BaseFragment implements FactorAnimator.Tar
     @Override
     public void onBecomeFullyVisible() {
         super.onBecomeFullyVisible();
-        if (checkPermission && Build.VERSION.SDK_INT >= 23) {
-            Activity activity = getParentActivity();
-            if (activity != null) {
-                checkPermission = false;
-                if (activity.checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED/* ||
-                    activity.checkSelfPermission(Manifest.permission.WRITE_CONTACTS) != PackageManager.PERMISSION_GRANTED*/) {
-                    if (activity.shouldShowRequestPermissionRationale(Manifest.permission.READ_CONTACTS)/* ||
-                        activity.shouldShowRequestPermissionRationale(Manifest.permission.WRITE_CONTACTS)*/) {
-                        AlertDialog.Builder builder = AlertsCreator.createContactsPermissionDialog(activity, param -> {
-                            askAboutContacts = param != 0;
-                            if (param == 0) {
-                                return;
-                            }
-                            askForPermissons(false);
-                        });
-                        showDialog(permissionDialog = builder.create());
-                    } else {
-                        askForPermissons(true);
-                    }
-                }
-            }
-        }
+        // LoogriGram: this asked for the contacts permission the first time the
+        // screen was shown. Neither READ_CONTACTS nor WRITE_CONTACTS is in the
+        // manifest, so there is nothing to ask for.
     }
 
     protected RecyclerListView getListView() {
         return listView;
     }
 
-    @Override
-    protected void onDialogDismiss(Dialog dialog) {
-        super.onDialogDismiss(dialog);
-        if (permissionDialog != null && dialog == permissionDialog && getParentActivity() != null && askAboutContacts) {
-            askForPermissons(false);
-        }
-    }
-
-    @TargetApi(Build.VERSION_CODES.M)
-    private void askForPermissons(boolean alert) {
-        Activity activity = getParentActivity();
-        if (activity == null || !UserConfig.getInstance(currentAccount).syncContacts || activity.checkSelfPermission(Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED/* && activity.checkSelfPermission(Manifest.permission.WRITE_CONTACTS) == PackageManager.PERMISSION_GRANTED*/) {
-            return;
-        }
-        if (alert && askAboutContacts) {
-            AlertDialog.Builder builder = AlertsCreator.createContactsPermissionDialog(activity, param -> {
-                MessagesController.getGlobalNotificationsSettings().edit().putBoolean("askAboutContacts2", false).commit();
-                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.contactsPermissionBadgeCheck);
-                askAboutContacts = param != 0;
-                if (param == 0) {
-                    return;
-                }
-                askForPermissons(false);
-            });
-            showDialog(builder.create());
-            return;
-        }
-        permissionRequestTime = SystemClock.elapsedRealtime();
-        ArrayList<String> permissons = new ArrayList<>();
-        permissons.add(Manifest.permission.READ_CONTACTS);
-        permissons.add(Manifest.permission.WRITE_CONTACTS);
-        permissons.add(Manifest.permission.GET_ACCOUNTS);
-        String[] items = permissons.toArray(new String[0]);
-        try {
-            activity.requestPermissions(items, 1);
-        } catch (Exception e) {
-            FileLog.e(e);
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResultFragment(int requestCode, String[] permissions, int[] grantResults) {
-        if (requestCode == 1) {
-            for (int a = 0; a < permissions.length; a++) {
-                if (grantResults.length <= a) {
-                    continue;
-                }
-                if (Manifest.permission.READ_CONTACTS.equals(permissions[a])) {
-                    if (grantResults[a] == PackageManager.PERMISSION_GRANTED) {
-                        ContactsController.getInstance(currentAccount).forceImportContacts();
-                    } else {
-                        MessagesController.getGlobalNotificationsSettings().edit()
-                            .putBoolean("askAboutContacts", askAboutContacts = false)
-                            .putBoolean("askAboutContacts2", false)
-                            .apply();
-                        if (SystemClock.elapsedRealtime() - permissionRequestTime < 200) {
-                            try {
-                                Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                                Uri uri = Uri.fromParts("package", ApplicationLoader.applicationContext.getPackageName(), null);
-                                intent.setData(uri);
-                                getParentActivity().startActivity(intent);
-                            } catch (Exception e) {
-                                FileLog.e(e);
-                            }
-                        }
-                    }
-                    break;
-                }
-            }
-        }
-    }
+    // LoogriGram: askForPermissons and onRequestPermissionsResultFragment stood
+    // here. They asked for READ_CONTACTS / WRITE_CONTACTS / GET_ACCOUNTS, and
+    // imported the address book once granted. None of those permissions is in
+    // the manifest now, so neither could ever run.
 
     @Override
     public void onPause() {
@@ -1635,7 +1496,7 @@ public class ContactsActivity extends BaseFragment implements FactorAnimator.Tar
             if (position == 0) {
                 final RecyclerView.ItemDecoration decoration = listView.getItemDecorationAt(i);
                 decoration.getItemOffsets(AndroidUtilities.rectTmp2, child, listView, listView.mState);
-                top = listView.getY() + (child.getY() - (listViewAdapter.isEmptyWithMainTabs ? 0 : AndroidUtilities.rectTmp2.top));
+                top = listView.getY() + (child.getY() - AndroidUtilities.rectTmp2.top);
                 break;
             } else if (position > 0) {
                 top = -dp(52);

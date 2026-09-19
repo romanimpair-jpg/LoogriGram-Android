@@ -36099,7 +36099,7 @@ public class ChatActivity extends BaseFragment implements
             } else {
                 f = null;
             }
-            showDialog(new PhonebookShareAlert(this, null, user, null, f, PhoneFormat.stripExceptNumbers(phone), first_name, last_name, themeDelegate));
+            showDialog(new PhonebookShareAlert(this, user, null, f, PhoneFormat.stripExceptNumbers(phone), first_name, last_name, themeDelegate));
         } catch (Exception e) {
             FileLog.e(e);
         }

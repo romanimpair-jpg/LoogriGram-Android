@@ -50,10 +50,14 @@ public class NotificationCenter {
     public static final int messageReceivedByServer = totalEvents++;
     public static final int messageReceivedByServer2 = totalEvents++;
     public static final int messageSendError = totalEvents++;
-    public static final int forceImportContactsStart = totalEvents++;
+    // LoogriGram: forceImportContactsStart, hasNewContactsToImport and
+    // contactsPermissionBadgeCheck all belonged to the address book import.
+    // Their ids are kept so the numbering of every event after them is
+    // unchanged - these are array indices into observer lists.
+    public static final int removedForceImportContactsStart = totalEvents++;
     public static final int contactsDidLoad = totalEvents++;
     public static final int contactsImported = totalEvents++;
-    public static final int hasNewContactsToImport = totalEvents++;
+    public static final int removedHasNewContactsToImport = totalEvents++;
     public static final int chatDidCreated = totalEvents++;
     public static final int chatDidFailCreate = totalEvents++;
     public static final int chatInfoDidLoad = totalEvents++;
@@ -370,7 +374,7 @@ public class NotificationCenter {
     public static final int tlSchemeParseException = totalEvents++;
     public static final int memoryLeakFoundException = totalEvents++;
     public static final int callTabsVisibleToggled = totalEvents++;
-    public static final int contactsPermissionBadgeCheck = totalEvents++;
+    public static final int removedContactsPermissionBadgeCheck = totalEvents++;
     public static final int guardBotDecisionResult = totalEvents++;
     public static final int webBrowserSettingsUpdate = totalEvents++;
     public static final int communityPendingRequestsUpdate = totalEvents++;

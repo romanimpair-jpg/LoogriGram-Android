@@ -152,7 +152,9 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
     @Keep
     private int contactsSuggestRow;
     @Keep
-    private int contactsSyncRow;
+    // LoogriGram: the "Sync contacts" switch authorised uploading the phone's
+    // address book. Deleting contacts already on the account stays - an account
+    // can still hold contacts imported before this build.
     private int contactsDetailRow;
     private int secretSectionRow;
     @Keep
@@ -166,8 +168,6 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
 
     private boolean deleteAccountUpdate;
     private boolean secretMapUpdate;
-    private boolean currentSync;
-    private boolean newSync;
     private boolean currentSuggest;
     private boolean newSuggest;
     private boolean archiveChats;
@@ -184,7 +184,6 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
 
         getContactsController().loadPrivacySettings();
         getMessagesController().getBlockedPeers(true);
-        currentSync = newSync = getUserConfig().syncContacts;
         currentSuggest = newSuggest = getUserConfig().suggestContacts;
         TLRPC.GlobalPrivacySettings privacySettings = getContactsController().getGlobalPrivacySettings();
         if (privacySettings != null) {
@@ -234,16 +233,6 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
         getNotificationCenter().removeObserver(this, NotificationCenter.didSetOrRemoveTwoStepPassword);
         getNotificationCenter().removeObserver(this, NotificationCenter.didUpdateGlobalAutoDeleteTimer);
         boolean save = false;
-        if (currentSync != newSync) {
-            getUserConfig().syncContacts = newSync;
-            save = true;
-            if (newSync && ContactsController.hasContactsPermission()) {
-                getContactsController().forceImportContacts();
-                if (getParentActivity() != null) {
-                    Toast.makeText(getParentActivity(), getString("SyncContactsAdded", R.string.SyncContactsAdded), Toast.LENGTH_SHORT).show();
-                }
-            }
-        }
         if (newSuggest != currentSuggest) {
             if (!newSuggest) {
                 getMediaDataController().clearTopPeers();
@@ -519,10 +508,6 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                     progressDialog = builder12.show();
                     progressDialog.setCanCancel(false);
 
-                    if (currentSync != newSync) {
-                        currentSync = getUserConfig().syncContacts = newSync;
-                        getUserConfig().saveConfig(false);
-                    }
                     getContactsController().deleteAllContacts(() -> progressDialog.dismiss());
                 });
                 AlertDialog alertDialog = builder.create();
@@ -562,11 +547,6 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                 final TextCheckCell cell = (TextCheckCell) view;
                 archiveChats = !archiveChats;
                 cell.setChecked(archiveChats);
-            } else if (position == contactsSyncRow) {
-                newSync = !newSync;
-                if (view instanceof TextCheckCell) {
-                    ((TextCheckCell) view).setChecked(newSync);
-                }
             } else if (position == secretMapRow) {
                 AlertsCreator.showSecretLocationAlert(getParentActivity(), currentAccount, () -> {
                     listAdapter.notifyDataSetChanged();
@@ -788,7 +768,6 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
         }
         contactsSectionRow = rowCount++;
         contactsDeleteRow = rowCount++;
-        contactsSyncRow = rowCount++;
         contactsSuggestRow = rowCount++;
         contactsDetailRow = rowCount++;
         secretSectionRow = rowCount++;
@@ -1036,7 +1015,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                     position == deleteAccountRow && !getContactsController().getLoadingDeleteInfo() ||
                     position == newChatsRow && !getContactsController().getLoadingGlobalSettings() ||
                     position == emailLoginRow || position == paymentsClearRow || position == secretMapRow ||
-                    position == contactsSyncRow || position == passportRow || position == contactsDeleteRow ||
+                    position == passportRow || position == contactsDeleteRow ||
                     position == contactsSuggestRow || position == autoDeleteMesages || position == botsBiometryRow;
         }
 
@@ -1278,8 +1257,6 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                     TextCheckCell textCheckCell = (TextCheckCell) holder.itemView;
                     if (position == secretWebpageRow) {
                         textCheckCell.setTextAndCheck(getString("SecretWebPage", R.string.SecretWebPage), getMessagesController().secretWebpagePreview == 1, false);
-                    } else if (position == contactsSyncRow) {
-                        textCheckCell.setTextAndCheck(getString("SyncContacts", R.string.SyncContacts), newSync, true);
                     } else if (position == contactsSuggestRow) {
                         textCheckCell.setTextAndCheck(getString("SuggestContacts", R.string.SuggestContacts), newSuggest, false);
                     } else if (position == newChatsRow) {
@@ -1397,7 +1374,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                 return 1;
             } else if (position == securitySectionRow || position == advancedSectionRow || position == privacySectionRow || position == secretSectionRow || position == botsSectionRow || position == contactsSectionRow || position == newChatsHeaderRow) {
                 return 2;
-            } else if (position == secretWebpageRow || position == contactsSyncRow || position == contactsSuggestRow || position == newChatsRow) {
+            } else if (position == secretWebpageRow || position == contactsSuggestRow || position == newChatsRow) {
                 return 3;
             } else if (position == botsAndWebsitesShadowRow) {
                 return 4;

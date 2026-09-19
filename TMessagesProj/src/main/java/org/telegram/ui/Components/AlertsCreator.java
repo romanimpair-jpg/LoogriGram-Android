@@ -7402,14 +7402,8 @@ public class AlertsCreator {
         return builder;
     }
 
-    public static AlertDialog.Builder createContactsPermissionDialog(Activity parentActivity, MessagesStorage.IntCallback callback) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(parentActivity);
-        builder.setTopAnimation(R.raw.permission_request_contacts, PERMISSIONS_REQUEST_TOP_ICON_SIZE, false, Theme.getColor(Theme.key_dialogTopBackground));
-        builder.setMessage(replaceTags(LocaleController.getString(R.string.ContactsPermissionAlert)));
-        builder.setPositiveButton(LocaleController.getString(R.string.ContactsPermissionAlertContinue), (dialog, which) -> callback.run(1));
-        builder.setNegativeButton(LocaleController.getString(R.string.ContactsPermissionAlertNotNow), (dialog, which) -> callback.run(0));
-        return builder;
-    }
+    // LoogriGram: createContactsPermissionDialog explained why the app wanted
+    // the contacts permission, before asking for it. It never asks.
 
     public static Dialog createFreeSpaceDialog(final LaunchActivity parentActivity) {
         AlertDialog.Builder builder = new AlertDialog.Builder(parentActivity);

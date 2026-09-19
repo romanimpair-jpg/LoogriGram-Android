@@ -55,7 +55,6 @@ public class GroupCreateSpan extends View {
     private ImageReceiver imageReceiver;
     private StaticLayout nameLayout;
     private AvatarDrawable avatarDrawable;
-    private ContactsController.Contact currentContact;
     private int textWidth;
     private float textX;
     private float progress;
@@ -67,28 +66,22 @@ public class GroupCreateSpan extends View {
     private boolean drawAvatarBackground = true;
 
     public GroupCreateSpan(Context context, Object object) {
-        this(context, object, null);
+        this(context, object, (Theme.ResourcesProvider) null);
     }
 
-    public GroupCreateSpan(Context context, ContactsController.Contact contact) {
-        this(context, null, contact);
+    // LoogriGram: the constructors taking a phonebook Contact are gone with
+    // the address book; a span always stands for a user, chat, filter or
+    // country now.
+    public GroupCreateSpan(Context context, Object object, Theme.ResourcesProvider resourcesProvider) {
+        this(context, object, false, resourcesProvider);
     }
 
-    public GroupCreateSpan(Context context, Object object, ContactsController.Contact contact) {
-        this(context, object, contact, null);
-    }
-
-    public GroupCreateSpan(Context context, Object object, ContactsController.Contact contact, Theme.ResourcesProvider resourcesProvider) {
-        this(context, object, contact, false, resourcesProvider);
-    }
-
-    public GroupCreateSpan(Context context, Object object, ContactsController.Contact contact, boolean small, Theme.ResourcesProvider resourcesProvider) {
+    public GroupCreateSpan(Context context, Object object, boolean small, Theme.ResourcesProvider resourcesProvider) {
         super(context);
         this.resourcesProvider = resourcesProvider;
         this.small = small;
         isFlag = false;
 
-        currentContact = contact;
         deleteDrawable = getResources().getDrawable(R.drawable.delete);
         textPaint.setTextSize(dp(small ? 13 : 14));
 
@@ -213,14 +206,9 @@ public class GroupCreateSpan extends View {
             imageLocation = null;
             imageParent = null;
         } else {
-            avatarDrawable.setInfo(contact.contact_id, contact.first_name, contact.last_name);
-            uid = contact.contact_id;
-            key = contact.key;
-            if (!TextUtils.isEmpty(contact.first_name)) {
-                firstName = contact.first_name;
-            } else {
-                firstName = contact.last_name;
-            }
+            // LoogriGram: this was the phonebook Contact case. Nothing reaches
+            // it now, and the locals still have to be assigned.
+            firstName = "";
             imageLocation = null;
             imageParent = null;
         }
@@ -306,10 +294,6 @@ public class GroupCreateSpan extends View {
 
     public String getKey() {
         return key;
-    }
-
-    public ContactsController.Contact getContact() {
-        return currentContact;
     }
 
     @Override

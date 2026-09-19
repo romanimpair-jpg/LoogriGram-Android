@@ -283,8 +283,10 @@ public class ApplicationLoader extends Application {
 
         MediaController.getInstance();
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) { //TODO improve account
-            ContactsController.getInstance(a).checkAppAccount();
-            // LoogriGram: server-side half of ghost mode, once per account.
+            // LoogriGram: checkAppAccount registered this app as an account with
+            // Android so a contacts sync adapter could run against the address
+            // book. Both are gone.
+            // Server-side half of ghost mode, once per account.
             // No-ops for accounts that are not logged in, or that already
             // have it applied.
             ContactsController.getInstance(a).applyGhostModePrivacy(false);

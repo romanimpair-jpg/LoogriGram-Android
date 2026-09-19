@@ -239,19 +239,23 @@ public class PhonebookShareAlert extends BottomSheet {
         }
     }
 
-    public PhonebookShareAlert(BaseFragment parent, ContactsController.Contact contact, TLRPC.User user, Uri uri, File file, String firstName, String lastName) {
-        this(parent, contact, user, uri, file, null, firstName, lastName);
+    // LoogriGram: these took a phonebook Contact as their first argument, for
+    // sharing someone straight out of the address book. That entry point is
+    // gone; a card still arrives from a chat message, a vCard file or a share
+    // intent, which are the remaining arguments.
+    public PhonebookShareAlert(BaseFragment parent, TLRPC.User user, Uri uri, File file, String firstName, String lastName) {
+        this(parent, user, uri, file, null, firstName, lastName);
     }
 
-    public PhonebookShareAlert(BaseFragment parent, ContactsController.Contact contact, TLRPC.User user, Uri uri, File file, String phone, String firstName, String lastName) {
-        this(parent, contact, user, uri, file, phone, firstName, lastName, null);
+    public PhonebookShareAlert(BaseFragment parent, TLRPC.User user, Uri uri, File file, String phone, String firstName, String lastName) {
+        this(parent, user, uri, file, phone, firstName, lastName, null);
     }
 
-    public PhonebookShareAlert(BaseFragment parent, ContactsController.Contact contact, TLRPC.User user, Uri uri, File file, String firstName, String lastName, Theme.ResourcesProvider resourcesProvider) {
-        this(parent, contact, user, uri, file, null, firstName, lastName, resourcesProvider);
+    public PhonebookShareAlert(BaseFragment parent, TLRPC.User user, Uri uri, File file, String firstName, String lastName, Theme.ResourcesProvider resourcesProvider) {
+        this(parent, user, uri, file, null, firstName, lastName, resourcesProvider);
     }
 
-    public PhonebookShareAlert(BaseFragment parent, ContactsController.Contact contact, TLRPC.User user, Uri uri, File file, String phone, String firstName, String lastName, Theme.ResourcesProvider resourcesProvider) {
+    public PhonebookShareAlert(BaseFragment parent, TLRPC.User user, Uri uri, File file, String phone, String firstName, String lastName, Theme.ResourcesProvider resourcesProvider) {
         super(parent.getParentActivity(), false, resourcesProvider);
 
         String name = ContactsController.formatName(firstName, lastName);
@@ -270,18 +274,11 @@ public class PhonebookShareAlert extends BottomSheet {
             item.vcardData.add(item.fullData = "TEL;MOBILE:+" + phone);
             phones.add(item);
             isImport = true;
-        } else if (contact.key != null) {
-            uri = Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_VCARD_URI, contact.key);
-            result = AndroidUtilities.loadVCardFromStream(uri, currentAccount, true, items, name);
-        } else {
-            AndroidUtilities.VcardItem item = new AndroidUtilities.VcardItem();
-            item.type = 0;
-            item.vcardData.add(item.fullData = "TEL;MOBILE:+" + contact.user.phone);
-            phones.add(item);
         }
-        if (user == null && contact != null) {
-            user = contact.user;
-        }
+        // LoogriGram: the two branches that stood here read the vCard straight
+        // out of the address book by lookup key, or fell back to the phone
+        // number of the Telegram user behind a phonebook entry. Neither has a
+        // source now that nothing hands this a phonebook contact.
         if (result != null) {
             for (int a = 0; a < items.size(); a++) {
                 AndroidUtilities.VcardItem item = items.get(a);

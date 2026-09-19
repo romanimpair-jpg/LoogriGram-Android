@@ -39,14 +39,17 @@
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO"/>
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>
-    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
-    <uses-permission android:name="android.permission.READ_CONTACTS" />
-    <uses-permission android:name="android.permission.WRITE_CONTACTS" />
-    <uses-permission android:name="android.permission.MANAGE_ACCOUNTS"/>
-    <uses-permission android:name="android.permission.READ_PROFILE"/>
-    <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS"/>
-    <uses-permission android:name="android.permission.READ_SYNC_SETTINGS"/>
-    <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS"/>
+    <!-- LoogriGram: this build does not touch the phone's address book at all.
+         Gone with it: READ_CONTACTS and WRITE_CONTACTS (reading the phonebook
+         to find which of your contacts are on Telegram, and writing Telegram
+         contacts back into it), READ_PROFILE (the owner's own card),
+         GET_ACCOUNTS / MANAGE_ACCOUNTS / AUTHENTICATE_ACCOUNTS and the two
+         sync-settings permissions, which existed for the account we used to
+         register with Android's AccountManager so a sync adapter could run.
+         The account, the authenticator and the sync adapter are all deleted -
+         the OS enforces the rest, so there is no permission to grant by
+         mistake. Telegram-side contacts, the ones the account already has on
+         the server, are unaffected. -->
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
@@ -244,11 +247,9 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <data android:mimeType="*/*"/>
             </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <data android:mimeType="vnd.android.cursor.item/vnd.com.loogrimedia.loogrigram.android.profile"/>
-            </intent-filter>
+            <!-- LoogriGram: the address book row that opened a contact's chat
+                 here. Those rows only exist for contacts this app wrote into
+                 the phonebook, which it no longer does. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT" />
@@ -280,18 +281,9 @@
             <meta-data android:name="android.service.chooser.chooser_target_service" android:value="androidx.sharetarget.ChooserTargetServiceCompat" />
             <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
         </activity>
-        <activity-alias
-            android:name="org.telegram.ui.CallsActivity"
-            android:targetActivity="org.telegram.ui.LaunchActivity"
-            android:permission="android.permission.CALL_PHONE"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <data android:mimeType="vnd.android.cursor.item/vnd.com.loogrimedia.loogrigram.android.call"/>
-                <data android:mimeType="vnd.android.cursor.item/vnd.com.loogrimedia.loogrigram.android.call.video"/>
-            </intent-filter>
-        </activity-alias>
+        <!-- LoogriGram: the "Call via LoogriGram" / "Video call" rows in the
+             phone's contacts app, for the same reason as the profile row
+             above. LaunchActivity's handling of those mime types goes too. -->
         <activity
             android:name="org.telegram.ui.BubbleActivity"
             android:configChanges="keyboard|keyboardHidden|orientation|screenSize|uiMode"
@@ -417,31 +409,11 @@
             </intent-filter>
         </receiver>
 
-        <service
-            android:name=".AuthenticatorService"
-            android:exported="true"
-            android:foregroundServiceType="dataSync"
-        >
-            <intent-filter>
-                <action android:name="android.accounts.AccountAuthenticator"/>
-            </intent-filter>
-            <meta-data android:name="android.accounts.AccountAuthenticator"
-                android:resource="@xml/auth"/>
-        </service>
-
-        <service
-            android:name=".ContactsSyncAdapterService"
-            android:exported="true"
-            android:foregroundServiceType="dataSync"
-        >
-            <intent-filter>
-                <action android:name="android.content.SyncAdapter" />
-            </intent-filter>
-            <meta-data android:name="android.content.SyncAdapter"
-                android:resource="@xml/sync_contacts" />
-            <meta-data android:name="android.provider.CONTACTS_STRUCTURE"
-                android:resource="@xml/contacts" />
-        </service>
+        <!-- LoogriGram: the account authenticator and the contacts sync adapter
+             are gone. Together they put a "LoogriGram" account in Android's
+             account list and let the OS run contact synchronisation against the
+             address book; res/xml/auth.xml, auth_menu.xml, sync_contacts.xml
+             and contacts.xml went with them. -->
 
         <service
             android:name=".KeepAliveJob"

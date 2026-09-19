@@ -1407,7 +1407,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         builder.setTitle(getString(R.string.DebugMenu));
         CharSequence[] items;
         items = new CharSequence[]{
-                getString(R.string.DebugMenuImportContacts),
+                null, // LoogriGram: "Import Contacts" read the address book.
                 getString(R.string.DebugMenuReloadContacts),
                 getString(R.string.DebugMenuResetContacts),
                 getString(R.string.DebugMenuResetDialogs),
@@ -1452,11 +1452,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         };
 
         builder.setItems(items, (dialog, which) -> {
-            if (which == 0) { // Import Contacts
-                getUserConfig().syncContacts = true;
-                getUserConfig().saveConfig(false);
-                getContactsController().forceImportContacts();
-            } else if (which == 1) { // Reload Contacts
+            if (which == 1) { // Reload Contacts
                 getContactsController().loadContacts(false, 0);
             } else if (which == 2) { // Reset Imported Contacts
                 getContactsController().resetImportedContacts();

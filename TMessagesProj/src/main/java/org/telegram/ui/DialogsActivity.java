@@ -624,7 +624,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private boolean dialogsListFrozen;
 
     private AlertDialog permissionDialog;
-    private boolean askAboutContacts = true;
+    // LoogriGram: askAboutContacts remembered whether the contacts permission
+    // prompt had been refused. Nothing asks for it any more.
 
     private boolean closeSearchFieldOnHide;
     private long searchDialogId;
@@ -2882,7 +2883,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
 
         if (initialDialogsType == DIALOGS_TYPE_DEFAULT) {
-            askAboutContacts = MessagesController.getGlobalNotificationsSettings().getBoolean("askAboutContacts", true);
             SharedConfig.loadProxyList();
         }
 
@@ -2922,7 +2922,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 .add(NotificationCenter.newSuggestionsAvailable)
                 .add(NotificationCenter.dialogsUnreadReactionsCounterChanged)
                 .add(NotificationCenter.dialogsUnreadPollVotesCounterChanged)
-                .add(NotificationCenter.forceImportContactsStart)
                 .add(NotificationCenter.userEmojiStatusUpdated)
                 .add(NotificationCenter.currentUserPremiumStatusChanged);
 
@@ -7057,7 +7056,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             Activity activity = getParentActivity();
             if (activity != null) {
                 checkPermission = false;
-                boolean hasNotContactsPermission = activity.checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED;
+                // LoogriGram: READ_CONTACTS is not in the manifest; this
+                // build never asks for it, at signup or afterwards.
+                final boolean hasNotContactsPermission = false;
                 boolean hasNotStoragePermission = (Build.VERSION.SDK_INT <= 28 || BuildVars.NO_SCOPED_STORAGE) && activity.checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED;
                 boolean hasNotNotificationsPermission = Build.VERSION.SDK_INT >= 33 && activity.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED;
                 AndroidUtilities.runOnUIThread(() -> {
@@ -7080,13 +7081,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                                     }));
                                 }
                             });
-                        } else if (hasNotContactsPermission && askAboutContacts && getUserConfig().syncContacts && activity.shouldShowRequestPermissionRationale(Manifest.permission.READ_CONTACTS)) {
-                            AlertDialog.Builder builder = AlertsCreator.createContactsPermissionDialog(activity, param -> {
-                                askAboutContacts = param != 0;
-                                MessagesController.getGlobalNotificationsSettings().edit().putBoolean("askAboutContacts", askAboutContacts).apply();
-                                askForPermissons(false);
-                            });
-                            showDialog(permissionDialog = builder.create());
                         } else if (hasNotStoragePermission && activity.shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
                             if (activity instanceof BasePermissionsActivity) {
                                 BasePermissionsActivity basePermissionsActivity = (BasePermissionsActivity) activity;
@@ -7977,9 +7971,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 //                    presentFragment(activity);
                     activity.show();
                 }
-            } else if (obj instanceof ContactsController.Contact) {
-                ContactsController.Contact contact = (ContactsController.Contact) obj;
-                AlertsCreator.createContactInviteDialog(DialogsActivity.this, contact.first_name, contact.last_name, contact.phones.get(0));
+            // LoogriGram: a search hit could be someone in the address book
+            // who is not on Telegram; tapping them offered to text an invite.
             } else if (obj instanceof TLRPC.TL_forumTopic && rightSlidingDialogContainer != null && rightSlidingDialogContainer.getFragment() instanceof TopicsFragment) {
                 dialogId = ((TopicsFragment) rightSlidingDialogContainer.getFragment()).getDialogId();
                 topicId = ((TLRPC.TL_forumTopic) obj).id;
@@ -10361,20 +10354,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             }
             permissons.add(Manifest.permission.POST_NOTIFICATIONS);
         }
-        if (getUserConfig().syncContacts && askAboutContacts && activity.checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
-            if (alert) {
-                AlertDialog.Builder builder = AlertsCreator.createContactsPermissionDialog(activity, param -> {
-                    askAboutContacts = param != 0;
-                    MessagesController.getGlobalNotificationsSettings().edit().putBoolean("askAboutContacts", askAboutContacts).commit();
-                    askForPermissons(false);
-                });
-                showDialog(permissionDialog = builder.create());
-                return;
-            }
-            permissons.add(Manifest.permission.READ_CONTACTS);
-            permissons.add(Manifest.permission.WRITE_CONTACTS);
-            permissons.add(Manifest.permission.GET_ACCOUNTS);
-        }
+        // LoogriGram: the contacts permissions were requested here, together
+        // with the account permission the sync adapter needed. None of the
+        // three is declared any more.
         if (Build.VERSION.SDK_INT >= 33) {
             if (activity.checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
                 permissons.add(Manifest.permission.READ_MEDIA_IMAGES);
@@ -10434,14 +10416,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                             NotificationPermissionDialog.askLater();
                         }
                         break;
-                    case Manifest.permission.READ_CONTACTS:
-                        if (grantResults[a] == PackageManager.PERMISSION_GRANTED) {
-                            AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.forceImportContactsStart));
-                            getContactsController().forceImportContacts();
-                        } else {
-                            MessagesController.getGlobalNotificationsSettings().edit().putBoolean("askAboutContacts", askAboutContacts = false).commit();
-                        }
-                        break;
+                    // LoogriGram: READ_CONTACTS is not in the manifest, so it
+                    // can never be granted or refused here.
                     case Manifest.permission.WRITE_EXTERNAL_STORAGE:
                         if (grantResults[a] == PackageManager.PERMISSION_GRANTED) {
                             ImageLoader.getInstance().checkMediaPaths();
@@ -10745,17 +10721,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             showNextSupportedSuggestion();
             updateDialogsHint();
             checkEmailConfig();
-        } else if (id == NotificationCenter.forceImportContactsStart) {
-            if (floatingButton3 != null) {
-                floatingButton3.setProgressVisible(true, true);
-            }
-            if (viewPages != null) {
-                for (ViewPage page : viewPages) {
-                    page.dialogsAdapter.setForceShowEmptyCell(false);
-                    page.dialogsAdapter.setForceUpdatingContacts(true);
-                    page.dialogsAdapter.notifyDataSetChanged();
-                }
-            }
+        // LoogriGram: forceImportContactsStart put the chat list into its
+        // "importing your contacts" state. Nothing imports contacts.
         } else if (id == NotificationCenter.messagesDeleted) {
             if (searchIsShowed && searchViewPager != null) {
                 ArrayList<Integer> markAsDeletedMessages = (ArrayList<Integer>) args[0];

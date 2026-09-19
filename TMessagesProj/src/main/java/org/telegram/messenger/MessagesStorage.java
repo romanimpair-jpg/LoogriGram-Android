@@ -465,8 +465,9 @@ public class MessagesStorage extends BaseController {
             "quick_replies",
             "messages_v2",
             "download_queue",
-            "user_contacts_v7",
-            "user_phones_v7",
+            // LoogriGram: user_contacts_v7 / user_phones_v7 were the cached
+            // phonebook and are no longer created; leaving them listed would
+            // make the database recovery path copy tables that do not exist.
             "dialogs",
             "dialog_filter",
             "dialog_filter_ep",
@@ -570,9 +571,9 @@ public class MessagesStorage extends BaseController {
         database.executeFast("CREATE TABLE download_queue(uid INTEGER, type INTEGER, date INTEGER, data BLOB, parent TEXT, PRIMARY KEY (uid, type));").stepThis().dispose();
         database.executeFast("CREATE INDEX IF NOT EXISTS type_date_idx_download_queue ON download_queue(type, date);").stepThis().dispose();
 
-        database.executeFast("CREATE TABLE user_contacts_v7(key TEXT PRIMARY KEY, uid INTEGER, fname TEXT, sname TEXT, imported INTEGER)").stepThis().dispose();
-        database.executeFast("CREATE TABLE user_phones_v7(key TEXT, phone TEXT, sphone TEXT, deleted INTEGER, PRIMARY KEY (key, phone))").stepThis().dispose();
-        database.executeFast("CREATE INDEX IF NOT EXISTS sphone_deleted_idx_user_phones ON user_phones_v7(sphone, deleted);").stepThis().dispose();
+        // LoogriGram: the two cached-phonebook tables are not created any
+        // more. A database upgraded from an old version still has them, empty
+        // and unread; nothing queries them either way.
 
         database.executeFast("CREATE TABLE dialogs(did INTEGER PRIMARY KEY, date INTEGER, unread_count INTEGER, last_mid INTEGER, inbox_max INTEGER, outbox_max INTEGER, last_mid_i INTEGER, unread_count_i INTEGER, pts INTEGER, date_i INTEGER, pinned INTEGER, flags INTEGER, folder_id INTEGER, data BLOB, unread_reactions INTEGER, last_mid_group INTEGER, ttl_period INTEGER, unread_poll_votes INTEGER)").stepThis().dispose();
         database.executeFast("CREATE INDEX IF NOT EXISTS date_idx_4_dialogs ON dialogs(date);").stepThis().dispose();
@@ -8312,234 +8313,14 @@ public class MessagesStorage extends BaseController {
         });
     }
 
-    public void applyPhoneBookUpdates(String adds, String deletes) {
-        if (TextUtils.isEmpty(adds)) {
-            return;
-        }
-        storageQueue.postRunnable(() -> {
-            try {
-                if (adds.length() != 0) {
-                    database.executeFast(String.format(Locale.US, "UPDATE user_phones_v7 SET deleted = 0 WHERE sphone IN(%s)", adds)).stepThis().dispose();
-                }
-                if (deletes.length() != 0) {
-                    database.executeFast(String.format(Locale.US, "UPDATE user_phones_v7 SET deleted = 1 WHERE sphone IN(%s)", deletes)).stepThis().dispose();
-                }
-            } catch (Exception e) {
-                checkSQLException(e);
-            }
-        });
-    }
+    // LoogriGram: the cached phonebook is gone. applyPhoneBookUpdates,
+    // putCachedPhoneBook and getCachedPhoneBook kept a copy of the phone's
+    // address book in the user_contacts_v7 / user_phones_v7 tables, so a later
+    // start could tell what had changed in it and upload only the difference.
+    // Nothing reads the address book any more, so there is nothing to cache,
+    // and the two tables go with the code - see ContactsController.
 
-    public void putCachedPhoneBook(HashMap<String, ContactsController.Contact> contactHashMap, boolean migrate, boolean delete) {
-        if (contactHashMap == null || contactHashMap.isEmpty() && !migrate && !delete) {
-            return;
-        }
-        storageQueue.postRunnable(() -> {
-            SQLitePreparedStatement state = null;
-            SQLitePreparedStatement state2 = null;
-            try {
-                if (BuildVars.LOGS_ENABLED) {
-                    FileLog.d(currentAccount + " save contacts to db " + contactHashMap.size());
-                }
-                database.executeFast("DELETE FROM user_contacts_v7 WHERE 1").stepThis().dispose();
-                database.executeFast("DELETE FROM user_phones_v7 WHERE 1").stepThis().dispose();
 
-                database.beginTransaction();
-                state = database.executeFast("REPLACE INTO user_contacts_v7 VALUES(?, ?, ?, ?, ?)");
-                state2 = database.executeFast("REPLACE INTO user_phones_v7 VALUES(?, ?, ?, ?)");
-                for (HashMap.Entry<String, ContactsController.Contact> entry : contactHashMap.entrySet()) {
-                    ContactsController.Contact contact = entry.getValue();
-                    if (contact.phones.isEmpty() || contact.shortPhones.isEmpty()) {
-                        continue;
-                    }
-                    state.requery();
-                    state.bindString(1, contact.key);
-                    state.bindInteger(2, contact.contact_id);
-                    state.bindString(3, contact.first_name);
-                    state.bindString(4, contact.last_name);
-                    state.bindInteger(5, contact.imported);
-                    state.step();
-                    for (int a = 0; a < contact.phones.size(); a++) {
-                        state2.requery();
-                        state2.bindString(1, contact.key);
-                        state2.bindString(2, contact.phones.get(a));
-                        state2.bindString(3, contact.shortPhones.get(a));
-                        state2.bindInteger(4, contact.phoneDeleted.get(a));
-                        state2.step();
-                    }
-                }
-                state.dispose();
-                state = null;
-                state2.dispose();
-                state2 = null;
-                database.commitTransaction();
-                if (migrate) {
-                    database.executeFast("DROP TABLE IF EXISTS user_contacts_v6;").stepThis().dispose();
-                    database.executeFast("DROP TABLE IF EXISTS user_phones_v6;").stepThis().dispose();
-                    getCachedPhoneBook(false);
-                }
-            } catch (Exception e) {
-                checkSQLException(e);
-            } finally {
-                if (state != null) {
-                    state.dispose();
-                }
-                if (state2 != null) {
-                    state2.dispose();
-                }
-                if (database != null) {
-                    database.commitTransaction();
-                }
-            }
-        });
-    }
-
-    public void getCachedPhoneBook(boolean byError) {
-        storageQueue.postRunnable(() -> {
-            SQLiteCursor cursor = null;
-            try {
-                cursor = database.queryFinalized("SELECT name FROM sqlite_master WHERE type='table' AND name='user_contacts_v6'");
-                boolean migrate = cursor.next();
-                cursor.dispose();
-                cursor = null;
-                if (migrate) {
-                    int count = 16;
-                    cursor = database.queryFinalized("SELECT COUNT(uid) FROM user_contacts_v6 WHERE 1");
-                    if (cursor.next()) {
-                        count = Math.min(5000, cursor.intValue(0));
-                    }
-                    cursor.dispose();
-
-                    SparseArray<ContactsController.Contact> contactHashMap = new SparseArray<>(count);
-                    cursor = database.queryFinalized("SELECT us.uid, us.fname, us.sname, up.phone, up.sphone, up.deleted, us.imported FROM user_contacts_v6 as us LEFT JOIN user_phones_v6 as up ON us.uid = up.uid WHERE 1");
-                    while (cursor.next()) {
-                        int uid = cursor.intValue(0);
-                        ContactsController.Contact contact = contactHashMap.get(uid);
-                        if (contact == null) {
-                            contact = new ContactsController.Contact();
-                            contact.first_name = cursor.stringValue(1);
-                            contact.last_name = cursor.stringValue(2);
-                            contact.imported = cursor.intValue(6);
-                            if (contact.first_name == null) {
-                                contact.first_name = "";
-                            }
-                            if (contact.last_name == null) {
-                                contact.last_name = "";
-                            }
-                            contact.contact_id = uid;
-                            contactHashMap.put(uid, contact);
-                        }
-                        String phone = cursor.stringValue(3);
-                        if (phone == null) {
-                            continue;
-                        }
-                        contact.phones.add(phone);
-                        String sphone = cursor.stringValue(4);
-                        if (sphone == null) {
-                            continue;
-                        }
-                        if (sphone.length() == 8 && phone.length() != 8) {
-                            sphone = PhoneFormat.stripExceptNumbers(phone);
-                        }
-                        contact.shortPhones.add(sphone);
-                        contact.phoneDeleted.add(cursor.intValue(5));
-                        contact.phoneTypes.add("");
-                        if (contactHashMap.size() == 5000) {
-                            break;
-                        }
-                    }
-                    cursor.dispose();
-                    cursor = null;
-                    getContactsController().migratePhoneBookToV7(contactHashMap);
-                    return;
-                }
-            } catch (Throwable e) {
-                checkSQLException(e);
-            } finally {
-                if (cursor != null) {
-                    cursor.dispose();
-                }
-            }
-
-            int count = 16;
-            int currentContactsCount = 0;
-            int start = 0;
-            try {
-                cursor = database.queryFinalized("SELECT COUNT(key) FROM user_contacts_v7 WHERE 1");
-                if (cursor.next()) {
-                    currentContactsCount = cursor.intValue(0);
-                    count = Math.min(5000, currentContactsCount);
-                    if (currentContactsCount > 5000) {
-                        start = currentContactsCount - 5000;
-                    }
-                    if (BuildVars.LOGS_ENABLED) {
-                        FileLog.d(currentAccount + " current cached contacts count = " + currentContactsCount);
-                    }
-                }
-            } catch (Throwable e) {
-                checkSQLException(e);
-            } finally {
-                if (cursor != null) {
-                    cursor.dispose();
-                }
-            }
-
-            HashMap<String, ContactsController.Contact> contactHashMap = new HashMap<>(count);
-            try {
-                if (start != 0) {
-                    cursor = database.queryFinalized("SELECT us.key, us.uid, us.fname, us.sname, up.phone, up.sphone, up.deleted, us.imported FROM user_contacts_v7 as us LEFT JOIN user_phones_v7 as up ON us.key = up.key WHERE 1 LIMIT " + 0 + "," + currentContactsCount);
-                } else {
-                    cursor = database.queryFinalized("SELECT us.key, us.uid, us.fname, us.sname, up.phone, up.sphone, up.deleted, us.imported FROM user_contacts_v7 as us LEFT JOIN user_phones_v7 as up ON us.key = up.key WHERE 1");
-                }
-                while (cursor.next()) {
-                    String key = cursor.stringValue(0);
-                    ContactsController.Contact contact = contactHashMap.get(key);
-                    if (contact == null) {
-                        contact = new ContactsController.Contact();
-                        contact.contact_id = cursor.intValue(1);
-                        contact.first_name = cursor.stringValue(2);
-                        contact.last_name = cursor.stringValue(3);
-                        contact.imported = cursor.intValue(7);
-                        if (contact.first_name == null) {
-                            contact.first_name = "";
-                        }
-                        if (contact.last_name == null) {
-                            contact.last_name = "";
-                        }
-                        contactHashMap.put(key, contact);
-                    }
-                    String phone = cursor.stringValue(4);
-                    if (phone == null) {
-                        continue;
-                    }
-                    contact.phones.add(phone);
-                    String sphone = cursor.stringValue(5);
-                    if (sphone == null) {
-                        continue;
-                    }
-                    if (sphone.length() == 8 && phone.length() != 8) {
-                        sphone = PhoneFormat.stripExceptNumbers(phone);
-                    }
-                    contact.shortPhones.add(sphone);
-                    contact.phoneDeleted.add(cursor.intValue(6));
-                    contact.phoneTypes.add("");
-                    if (contactHashMap.size() == 5000) {
-                        break;
-                    }
-                }
-                cursor.dispose();
-                cursor = null;
-            } catch (Exception e) {
-                contactHashMap.clear();
-                checkSQLException(e);
-            } finally {
-                if (cursor != null) {
-                    cursor.dispose();
-                }
-            }
-            getContactsController().performSyncPhoneBook(contactHashMap, true, true, false, false, !byError, false);
-        });
-    }
 
     public void getContacts() {
         storageQueue.postRunnable(() -> {

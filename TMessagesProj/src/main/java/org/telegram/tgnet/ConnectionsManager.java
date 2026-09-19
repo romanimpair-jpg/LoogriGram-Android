@@ -777,9 +777,9 @@ public class ConnectionsManager extends BaseController {
             if (BuildVars.LOGS_ENABLED) {
                 FileLog.d("reset app pause time");
             }
-            if (lastPauseTime != 0 && System.currentTimeMillis() - lastPauseTime > 5000) {
-                getContactsController().checkContacts();
-            }
+            // LoogriGram: coming back after more than five seconds away used to
+            // re-read the phone's address book and upload anything that had
+            // changed in it. Nothing reads it now.
             lastPauseTime = 0;
             native_resumeNetwork(currentAccount, false);
         }

@@ -62,13 +62,9 @@ public class BasePermissionsActivity extends FragmentActivity {
             } else {
                 ImageLoader.getInstance().checkMediaPaths();
             }
-        } else if (requestCode == REQUEST_CODE_ATTACH_CONTACT) {
-            if (!granted) {
-                showPermissionErrorAlert(R.raw.permission_request_contacts, LocaleController.getString(R.string.PermissionNoContactsSharing));
-                return false;
-            } else {
-                ContactsController.getInstance(currentAccount).forceImportContacts();
-            }
+        // LoogriGram: REQUEST_CODE_ATTACH_CONTACT handled the contacts
+        // permission for the attach menu's address book tab, importing the
+        // phonebook once granted. Neither the tab nor the permission exists.
         } else if (requestCode == 3 || requestCode == REQUEST_CODE_VIDEO_MESSAGE) {
             boolean audioGranted = true;
             boolean cameraGranted = true;

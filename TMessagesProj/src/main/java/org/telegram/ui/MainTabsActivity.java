@@ -1037,7 +1037,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
             .add(NotificationCenter.updateInterfaces)
             .add(NotificationCenter.callTabsVisibleToggled)
             .add(NotificationCenter.mainUserInfoChanged)
-            .add(NotificationCenter.contactsPermissionBadgeCheck);
+            ;
 
         globalObserversGroup = NotificationCenter.getGlobalInstance().createObserversGroup(this)
             .add(NotificationCenter.appUpdateAvailable)

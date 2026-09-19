@@ -885,7 +885,9 @@ public class AndroidUtilities {
                         }
                     }
                     if (user != null) {
-                        ContactsController.getInstance(currentAccount).markAsContacted(contactUri);
+                        // LoogriGram: marked the address book row as last
+                        // contacted, so the phone's contacts app could sort by
+                        // it. We do not write to the address book.
                         SendMessagesHelper.getInstance(currentAccount).sendMessage(SendMessagesHelper.SendMessageParams.of(text, user.id, null, null, null, true, null, null, null, true, 0, 0, null, false));
                     }
                 }

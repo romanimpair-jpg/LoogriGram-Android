@@ -1300,7 +1300,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             .add(NotificationCenter.needShowAlert)
             .add(NotificationCenter.wasUnableToFindCurrentLocation)
             .add(NotificationCenter.openArticle)
-            .add(NotificationCenter.hasNewContactsToImport)
             .add(NotificationCenter.needShowPlayServicesAlert)
             .add(NotificationCenter.fileLoaded)
             .add(NotificationCenter.fileLoadFailed)
@@ -6299,7 +6298,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             if (contactsToSend != null && contactsToSend.size() == 1 && !mainFragmentsStack.isEmpty()) {
                 final CharSequence finalMessage = message;
                 presentedFragmentWithRemoveLast = true;
-                PhonebookShareAlert alert = new PhonebookShareAlert(mainFragmentsStack.get(mainFragmentsStack.size() - 1), null, null, contactsToSendUri, null, null, null);
+                PhonebookShareAlert alert = new PhonebookShareAlert(mainFragmentsStack.get(mainFragmentsStack.size() - 1), null, contactsToSendUri, null, null, null);
                 alert.setDelegate((user, notify2, scheduleDate2, effectId, invertMedia, payStars) -> {
                     if (fragment != null) {
                         getActionBarLayout().presentFragment(fragment, true, false, true, false);
@@ -7307,26 +7306,9 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             }
             BaseFragment fragment = mainFragmentsStack.get(mainFragmentsStack.size() - 1);
             fragment.createArticleViewer(false).open((TLRPC.TL_webPage) args[0], (String) args[1]);
-        } else if (id == NotificationCenter.hasNewContactsToImport) {
-            if (actionBarLayout == null || actionBarLayout.getFragmentStack().isEmpty()) {
-                return;
-            }
-            final int type = (Integer) args[0];
-            final HashMap<String, ContactsController.Contact> contactHashMap = (HashMap<String, ContactsController.Contact>) args[1];
-            final boolean first = (Boolean) args[2];
-            final boolean schedule = (Boolean) args[3];
-            BaseFragment fragment = actionBarLayout.getFragmentStack().get(actionBarLayout.getFragmentStack().size() - 1);
-
-            AlertDialog.Builder builder = new AlertDialog.Builder(LaunchActivity.this);
-            builder.setTopAnimation(R.raw.permission_request_contacts, AlertsCreator.PERMISSIONS_REQUEST_TOP_ICON_SIZE, false, Theme.getColor(Theme.key_dialogTopBackground));
-            builder.setTitle(LocaleController.getString(R.string.UpdateContactsTitle));
-            builder.setMessage(LocaleController.getString(R.string.UpdateContactsMessage));
-            builder.setPositiveButton(LocaleController.getString(R.string.OK), (dialogInterface, i) -> ContactsController.getInstance(account).syncPhoneBookByAlert(contactHashMap, first, schedule, false));
-            builder.setNegativeButton(LocaleController.getString(R.string.Cancel), (dialog, which) -> ContactsController.getInstance(account).syncPhoneBookByAlert(contactHashMap, first, schedule, true));
-            builder.setOnBackButtonListener((dialogInterface, i) -> ContactsController.getInstance(account).syncPhoneBookByAlert(contactHashMap, first, schedule, true));
-            AlertDialog dialog = builder.create();
-            fragment.showDialog(dialog);
-            dialog.setCanceledOnTouchOutside(false);
+        // LoogriGram: hasNewContactsToImport asked "we found a lot of unsynced
+        // contacts, sync them now?" before uploading the address book. Nothing
+        // posts it any more.
         } else if (id == NotificationCenter.didSetNewTheme) {
             Boolean nightTheme = (Boolean) args[0];
             if (!nightTheme) {

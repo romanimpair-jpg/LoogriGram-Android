@@ -59,7 +59,9 @@ public class UserConfig extends BaseController {
 
     public boolean notificationsSettingsLoaded;
     public boolean notificationsSignUpSettingsLoaded;
-    public boolean syncContacts = true;
+    // LoogriGram: syncContacts recorded whether the user had agreed to upload
+    // the phone's address book. Nothing reads the address book now, so the
+    // setting has no meaning; the stored key is simply left unread.
     public boolean suggestContacts = true;
     public boolean showCallsTab;
     public boolean hasSecureData;
@@ -159,7 +161,6 @@ public class UserConfig extends BaseController {
                     editor.putInt("webappRatingLoadTime", webappRatingLoadTime);
                     editor.putBoolean("contactsReimported", contactsReimported);
                     editor.putInt("loginTime", loginTime);
-                    editor.putBoolean("syncContacts", syncContacts);
                     editor.putBoolean("showCallsTab", showCallsTab);
                     editor.putBoolean("suggestContacts", suggestContacts);
                     editor.putBoolean("hasSecureData", hasSecureData);
@@ -311,7 +312,6 @@ public class UserConfig extends BaseController {
             botGuestRatingLoadTime = preferences.getInt("botGuestRatingLoadTime", 0);
             webappRatingLoadTime = preferences.getInt("webappRatingLoadTime", 0);
             loginTime = preferences.getInt("loginTime", currentAccount);
-            syncContacts = preferences.getBoolean("syncContacts", true);
             showCallsTab = preferences.getBoolean("showCallsTab", false);
             suggestContacts = preferences.getBoolean("suggestContacts", true);
             hasSecureData = preferences.getBoolean("hasSecureData", false);
@@ -483,7 +483,6 @@ public class UserConfig extends BaseController {
         webappRatingLoadTime = 0;
         draftsLoaded = false;
         contactsReimported = true;
-        syncContacts = true;
         showCallsTab = false;
         suggestContacts = true;
         unreadDialogsLoaded = true;

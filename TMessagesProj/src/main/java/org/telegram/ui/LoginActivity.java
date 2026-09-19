@@ -317,7 +317,9 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
     private boolean checkPermissions = true;
     private boolean checkShowPermissions = true;
     private boolean newAccount;
-    private boolean syncContacts = true;
+    // LoogriGram: the login screen offered a "Sync contacts" checkbox, which
+    // authorised uploading the phone's address book after signing in. This
+    // build never reads the address book, so there is nothing to offer.
     private boolean testBackend = false;
 
     @ActivityMode
@@ -684,7 +686,6 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         }
         if (savedInstanceState != null) {
             currentViewNum = savedInstanceState.getInt("currentViewNum", 0);
-            syncContacts = savedInstanceState.getInt("syncContacts", 1) == 1;
             if (currentViewNum >= VIEW_CODE_MESSAGE && currentViewNum <= VIEW_CODE_CALL) {
                 int time = savedInstanceState.getInt("open");
                 if (time != 0 && Math.abs(System.currentTimeMillis() / 1000 - time) >= 24 * 60 * 60) {
@@ -1563,7 +1564,6 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         try {
             Bundle bundle = new Bundle();
             bundle.putInt("currentViewNum", currentViewNum);
-            bundle.putInt("syncContacts", syncContacts ? 1 : 0);
             for (int a = 0; a <= currentViewNum; a++) {
                 SlideView v = views[a];
                 if (v != null) {
@@ -1638,7 +1638,6 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         ConnectionsManager.getInstance(currentAccount).setUserId(res.user.id);
         UserConfig.getInstance(currentAccount).clearConfig();
         MessagesController.getInstance(currentAccount).cleanup();
-        UserConfig.getInstance(currentAccount).syncContacts = syncContacts;
         UserConfig.getInstance(currentAccount).setCurrentUser(res.user);
         UserConfig.getInstance(currentAccount).saveConfig(true);
         MessagesStorage.getInstance(currentAccount).cleanup(true);
@@ -1646,7 +1645,8 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         users.add(res.user);
         MessagesStorage.getInstance(currentAccount).putUsersAndChats(users, null, true, true);
         MessagesController.getInstance(currentAccount).putUser(res.user, false);
-        ContactsController.getInstance(currentAccount).checkAppAccount();
+        // LoogriGram: registered the Android account used for contact sync
+        // when a login completed. There is no such account now.
         MessagesController.getInstance(currentAccount).checkPromoInfo(true);
         ConnectionsManager.getInstance(currentAccount).updateDcSettings();
         MessagesController.getInstance(currentAccount).loadAppConfig();
@@ -1850,7 +1850,6 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         private LinkSpanDrawable.LinksTextView subtitleView;
         private View codeDividerView;
         private ImageView chevronRight;
-        private CheckBoxCell syncContactsBox;
         private CheckBoxCell testBackendCheckBox;
 
         @CountryState
@@ -2340,25 +2339,6 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             });
 
             int bottomMargin = 72;
-            if (newAccount && activityMode == MODE_LOGIN) {
-                syncContactsBox = new CheckBoxCell(context, 2);
-                syncContactsBox.setText(getString("SyncContacts", R.string.SyncContacts), "", syncContacts, false);
-                addView(syncContactsBox, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, Gravity.LEFT | Gravity.TOP, 16, 0, 16 + (LocaleController.isRTL && AndroidUtilities.isSmallScreen() ? 56 : 0), 0));
-                bottomMargin -= 24;
-                syncContactsBox.setOnClickListener(v -> {
-                    if (getParentActivity() == null) {
-                        return;
-                    }
-                    CheckBoxCell cell = (CheckBoxCell) v;
-                    syncContacts = !syncContacts;
-                    cell.setChecked(syncContacts, true);
-                    if (syncContacts) {
-                        BulletinFactory.of(slideViewsContainer, null).createSimpleBulletin(R.raw.contacts_sync_on, getString("SyncContactsOn", R.string.SyncContactsOn)).show();
-                    } else {
-                        BulletinFactory.of(slideViewsContainer, null).createSimpleBulletin(R.raw.contacts_sync_off, getString("SyncContactsOff", R.string.SyncContactsOff)).show();
-                    }
-                });
-            }
 
             final boolean allowTestBackend = (BuildVars.DEBUG_VERSION || TEST_BACKEND_IN_STORE && !BuildConfig.BUNDLE) || getConnectionsManager().isTestBackend();
             if (allowTestBackend && activityMode == MODE_LOGIN) {
@@ -2578,10 +2558,6 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             phoneField.setHintTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteHintText));
             phoneField.setCursorColor(Theme.getColor(Theme.key_windowBackgroundWhiteInputFieldActivated));
 
-            if (syncContactsBox != null) {
-                syncContactsBox.setSquareCheckBoxColor(Theme.key_checkboxSquareUnchecked, Theme.key_checkboxSquareBackground, Theme.key_checkboxSquareCheck);
-                syncContactsBox.updateTextColor();
-            }
             if (testBackendCheckBox != null) {
                 testBackendCheckBox.setSquareCheckBoxColor(Theme.key_checkboxSquareUnchecked, Theme.key_checkboxSquareBackground, Theme.key_checkboxSquareCheck);
                 testBackendCheckBox.updateTextColor();
@@ -3256,9 +3232,6 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         public void onShow() {
             super.onShow();
             fillNumber();
-            if (syncContactsBox != null) {
-                syncContactsBox.setChecked(syncContacts, false);
-            }
             AndroidUtilities.runOnUIThread(() -> {
                 if (phoneField != null) {
                     if (needRequestPermissions) {

@@ -345,7 +345,6 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 	private boolean bluetoothScoActive;
 	private boolean bluetoothScoConnecting;
 	private boolean needSwitchToBluetoothAfterScoActivates;
-	private boolean didDeleteConnectionServiceContact;
 	private Runnable connectingSoundRunnable;
 
 	public String currentBluetoothDeviceName;
@@ -903,7 +902,12 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 					extras.putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, addAccountToTelecomManager());
 					myExtras.putInt("call_type", 1);
 					extras.putBundle(TelecomManager.EXTRA_OUTGOING_CALL_EXTRAS, myExtras);
-					ContactsController.getInstance(currentAccount).createOrUpdateConnectionServiceContact(user.id, user.first_name, user.last_name);
+					// LoogriGram: upstream wrote a throwaway contact into the
+					// phone's address book here, purely so the system call UI
+					// would show a name against the +99084<id> number it dials,
+					// then deleted it again once the call went active. We do not
+					// write to the address book; the in-app call screen has the
+					// name, and the system UI shows the number.
 					tm.placeCall(Uri.fromParts("tel", "+99084" + user.id, null), extras);
 				} else {
 					delayedStartOutgoingCall = () -> {
@@ -1215,7 +1219,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 				stopSelf();
 			} else {
 				if (USE_CONNECTION_SERVICE) {
-					ContactsController.getInstance(currentAccount).createOrUpdateConnectionServiceContact(user.id, user.first_name, user.last_name);
+					// LoogriGram: see startOutgoingCall - no address book row.
 					TelecomManager tm = (TelecomManager) getSystemService(TELECOM_SERVICE);
 					Bundle extras = new Bundle();
 					extras.putInt("call_type", 1);
@@ -4262,9 +4266,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 		}
 
 		if (USE_CONNECTION_SERVICE) {
-			if (!didDeleteConnectionServiceContact) {
-				ContactsController.getInstance(currentAccount).deleteConnectionServiceContact();
-			}
+			// LoogriGram: nothing to delete - no contact was written.
 			if (systemCallConnection != null && !playingSound) {
 				systemCallConnection.destroy();
 			}
@@ -5787,10 +5789,8 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 			if (BuildVars.LOGS_ENABLED) {
 				FileLog.d("ConnectionService onStateChanged " + stateToString(state));
 			}
-			if (state == Connection.STATE_ACTIVE) {
-				ContactsController.getInstance(currentAccount).deleteConnectionServiceContact();
-				didDeleteConnectionServiceContact = true;
-			}
+			// LoogriGram: deleted the temporary address book contact once the
+			// call was up. There is none.
 		}
 
 		@Override

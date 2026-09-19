@@ -16216,7 +16216,8 @@ public class MessagesController extends BaseController implements NotificationCe
         getNotificationCenter().postNotificationName(NotificationCenter.appDidLogout);
         getMessagesStorage().cleanup(false);
         cleanup();
-        getContactsController().deleteUnknownAppAccounts();
+        // LoogriGram: logging out used to remove the Android account this app
+        // registered for contact sync. There is no such account any more.
     }
 
     public void registerForPush(@PushListenerController.PushType int pushType, String regid) {
@@ -20144,7 +20145,9 @@ public class MessagesController extends BaseController implements NotificationCe
                         TLRPC.User currentUser = getUser(update.user_id);
                         if (currentUser != null) {
                             currentUser.phone = update.phone;
-                            Utilities.phoneBookQueue.postRunnable(() -> getContactsController().addContactToPhoneBook(currentUser, true));
+                            // LoogriGram: a contact changing their number used
+                            // to be written through to the address book row we
+                            // kept for them. We keep none.
                             if (UserObject.isUserSelf(currentUser)) {
                                 getNotificationCenter().postNotificationName(NotificationCenter.mainUserInfoChanged);
                             }
@@ -20360,7 +20363,9 @@ public class MessagesController extends BaseController implements NotificationCe
                     } else if (baseUpdate instanceof TL_update.TL_updateFavedStickers) {
                         getMediaDataController().loadRecents(MediaDataController.TYPE_FAVE, false, false, true);
                     } else if (baseUpdate instanceof TL_update.TL_updateContactsReset) {
-                        getContactsController().forceImportContacts();
+                        // LoogriGram: the server telling us the contact list was
+                        // reset used to trigger a fresh upload of the whole
+                        // address book. Nothing to re-import.
                     } else if (baseUpdate instanceof TL_update.TL_updateNewStickerSet) {
                         TL_update.TL_updateNewStickerSet update = (TL_update.TL_updateNewStickerSet) baseUpdate;
                         getMediaDataController().addNewStickerSet(update.stickerset);

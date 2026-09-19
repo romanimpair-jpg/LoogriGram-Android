@@ -86,7 +86,8 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
     private TLRPC.User user;
     private TLRPC.Chat chat;
     private TLRPC.EncryptedChat encryptedChat;
-    private ContactsController.Contact contact;
+    // LoogriGram: this cell could also draw a person from the phone's address
+    // book, with an Invite button instead of a chat. Nothing produces those.
     private long dialog_id;
 
     private String lastName;
@@ -215,7 +216,6 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
         if (object instanceof TLRPC.User) {
             user = (TLRPC.User) object;
             chat = null;
-            contact = null;
             final TL_account.RequirementToContact r = showPremiumBlocked && user != null ? MessagesController.getInstance(currentAccount).isUserContactBlocked(user.id) : null;
             premiumBlocked = DialogObject.isPremiumBlocked(r);
             starsPriceBlocked = DialogObject.getMessagesStarsPrice(r);
@@ -223,16 +223,7 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
         } else if (object instanceof TLRPC.Chat) {
             chat = (TLRPC.Chat) object;
             user = null;
-            contact = null;
             final TL_account.RequirementToContact r = ChatObject.getRequirementToContact(chat);
-            premiumBlocked = DialogObject.isPremiumBlocked(r);
-            starsPriceBlocked = DialogObject.getMessagesStarsPrice(r);
-            setOpenBotButton(false);
-        } else if (object instanceof ContactsController.Contact) {
-            contact = (ContactsController.Contact) object;
-            chat = null;
-            user = null;
-            final TL_account.RequirementToContact r = showPremiumBlocked && contact != null && contact.user != null ? MessagesController.getInstance(currentAccount).isUserContactBlocked(contact.user.id) : null;
             premiumBlocked = DialogObject.isPremiumBlocked(r);
             starsPriceBlocked = DialogObject.getMessagesStarsPrice(r);
             setOpenBotButton(false);
@@ -364,8 +355,6 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
                 r = showPremiumBlocked ? MessagesController.getInstance(currentAccount).isUserContactBlocked(user.id) : null;
             } else if (chat != null) {
                 r = ChatObject.getRequirementToContact(chat);
-            } else if (contact != null) {
-                r = showPremiumBlocked && contact.user != null ? MessagesController.getInstance(currentAccount).isUserContactBlocked(contact.user.id) : null;
             } else return;
             if (premiumBlocked != DialogObject.isPremiumBlocked(r) || starsPriceBlocked != DialogObject.getMessagesStarsPrice(r)) {
                 premiumBlocked = DialogObject.isPremiumBlocked(r);
@@ -393,7 +382,7 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
 
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-        if (user == null && chat == null && encryptedChat == null && contact == null) {
+        if (user == null && chat == null && encryptedChat == null) {
             return;
         }
         if (checkBox != null) {
@@ -465,24 +454,6 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
             drawCheck = user.verified;
             drawPremium = !savedMessages && MessagesController.getInstance(currentAccount).isPremiumUser(user);
             updateStatus(drawCheck, user, null, false);
-        } else if (contact != null) {
-            dialog_id = 0;
-            if (!LocaleController.isRTL) {
-                nameLeft = dp(AndroidUtilities.leftBaseline);
-            } else {
-                nameLeft = dp(11);
-            }
-            if (actionButton == null) {
-                actionButton = new CanvasButton(this);
-                actionButton.setDelegate(() -> {
-                    if (getParent() instanceof RecyclerListView) {
-                        RecyclerListView parent = (RecyclerListView) getParent();
-                        parent.getOnItemClickListener().onItemClick(this, parent.getChildAdapterPosition(this));
-                    } else {
-                        callOnClick();
-                    }
-                });
-            }
         }
         if (!LocaleController.isRTL) {
             statusLeft = dp(AndroidUtilities.leftBaseline);
@@ -569,20 +540,6 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
                 nameLeft += adWidth;
             }
         }
-        if (contact != null) {
-            int w = (int) (Theme.dialogs_countTextPaint.measureText(getString(R.string.Invite)) + 1);
-
-            actionLayout = new StaticLayout(getString(R.string.Invite), Theme.dialogs_countTextPaint, w, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
-            if (!LocaleController.isRTL) {
-                actionLeft = getMeasuredWidth() - w - dp(19) - dp(16);
-            } else {
-                actionLeft = dp(19) + dp(16);
-                nameLeft += w;
-                statusLeft += w;
-            }
-            nameWidth -= dp(32) + w;
-        }
-
         nameWidth -= getPaddingLeft() + getPaddingRight();
         statusWidth -= getPaddingLeft() + getPaddingRight();
 
@@ -856,9 +813,6 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
                 avatarDrawable.setInfo(currentAccount, chat);
                 avatarImage.setImage(ImageLocation.getForUserOrChat(currentAccount, chat, ImageLocation.TYPE_SMALL), "50_50", ImageLocation.getForUserOrChat(chat, ImageLocation.TYPE_STRIPPED), "50_50", thumb, chat, 0);
             }
-        } else if (contact != null) {
-            avatarDrawable.setInfo(0, contact.first_name, contact.last_name);
-            avatarImage.setImage(null, null, avatarDrawable, null, null, 0);
         } else {
             avatarDrawable.setInfo(0, null, null);
             avatarImage.setImage(null, null, avatarDrawable, null, null, 0);
@@ -937,7 +891,7 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
 
     @Override
     protected void onDraw(Canvas canvas) {
-        if (user == null && chat == null && encryptedChat == null && contact == null) {
+        if (user == null && chat == null && encryptedChat == null) {
             return;
         }
 

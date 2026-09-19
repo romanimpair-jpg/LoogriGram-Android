@@ -195,7 +195,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     public static final int LAYOUT_TYPE_PHOTO = 1;
     public static final int LAYOUT_TYPE_MUSIC = 3;
     public static final int LAYOUT_TYPE_DOCUMENTS = 4;
-    public static final int LAYOUT_TYPE_CONTACTS = 5;
+    // LoogriGram: LAYOUT_TYPE_CONTACTS (5) was the address book tab.
     public static final int LAYOUT_TYPE_LOCATION = 6;
     public static final int LAYOUT_TYPE_POLL = 9;
     public static final int LAYOUT_TYPE_REPLIES = 11;
@@ -1009,7 +1009,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     public boolean allowLivePhotos = false;
 
     private ChatAttachAlertPhotoLayout photoLayout;
-    private ChatAttachAlertContactsLayout contactsLayout;
     private ChatAttachAlertAudioLayout audioLayout;
     private ChatAttachAlertPollLayout pollLayout;
     private ChatAttachAlertPollLayout todoLayout;
@@ -2003,7 +2002,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     }
 
                     boolean result;
-                    if (child != contactsLayout && child != quickRepliesLayout && child != audioLayout) {
+                    if (child != quickRepliesLayout && child != audioLayout) {
                         canvas.save();
                        // canvas.clipRect(backgroundPaddingLeft, actionBar.getY() + actionBar.getMeasuredHeight() - currentPanTranslationY, getMeasuredWidth() - backgroundPaddingLeft, getMeasuredHeight());
                         result = super.drawChild(canvas, child, drawingTime);
@@ -2797,17 +2796,11 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                         return;
                     }
                     openDocumentsLayout(true);
-                } else if (num == 5) {
-                    if (!plainTextEnabled && checkCanRemoveRestrictionsByBoosts()) {
-                        return;
-                    }
-                    if (Build.VERSION.SDK_INT >= 23 && plainTextEnabled) {
-                        if (getContext().checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
-                            AndroidUtilities.findActivity(getContext()).requestPermissions(new String[]{Manifest.permission.READ_CONTACTS}, BasePermissionsActivity.REQUEST_CODE_ATTACH_CONTACT);
-                            return;
-                        }
-                    }
-                    openContactsLayout();
+                // LoogriGram: attach item 5 was Contact - a browser for the
+                // phone's address book, asking for READ_CONTACTS the first time
+                // it was opened. It had no other source of people, so it is gone
+                // with the address book. A contact card received in a chat can
+                // still be viewed and forwarded.
                 } else if (num == 6) {
                     if (!plainTextEnabled && checkCanRemoveRestrictionsByBoosts()) {
                         return;
@@ -3809,50 +3802,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     }
                 }
             } else {
-                if (currentAttachLayout == contactsLayout) {
-                    if (!TextUtils.isEmpty(getCommentView().getText())) {
-                        hasMessageToEffect = true;
-                        TLRPC.TL_message msg = new TLRPC.TL_message();
-                        msg.id = id++;
-                        msg.out = true;
-                        msg.from_id = MessagesController.getInstance(currentAccount).getPeer(UserConfig.getInstance(currentAccount).getClientUserId());
-                        msg.peer_id = MessagesController.getInstance(currentAccount).getPeer(dialogId);
-                        CharSequence[] message = new CharSequence[]{ getCommentView().getText() };
-                        MessageObject.addLinks(true, message[0]);
-                        msg.entities = MediaDataController.getInstance(currentAccount).getEntities(message, true);
-                        msg.message = message[0].toString();
-                        MessageObject messageObject = new MessageObject(currentAccount, msg, true, false);
-                        messageObject.sendPreview = true;
-                        messageObject.notime = true;
-                        messageObject.isOutOwnerCached = true;
-                        messageObjects.add(messageObject);
-                    }
-                    ArrayList<TLRPC.User> users = contactsLayout.getSelected();
-                    for (int i = 0; i < users.size(); ++i) {
-                        TLRPC.User contact = users.get(i);
-                        hasMessageToEffect = true;
-                        TLRPC.TL_message msg = new TLRPC.TL_message();
-                        msg.id = id++;
-                        msg.out = true;
-                        msg.from_id = MessagesController.getInstance(currentAccount).getPeer(UserConfig.getInstance(currentAccount).getClientUserId());
-                        msg.peer_id = MessagesController.getInstance(currentAccount).getPeer(dialogId);
-                        msg.media = new TLRPC.TL_messageMediaContact();
-                        msg.media.phone_number = contact.phone;
-                        msg.media.first_name = contact.first_name;
-                        msg.media.last_name = contact.last_name;
-                        if (!contact.restriction_reason.isEmpty() && contact.restriction_reason.get(0).text.startsWith("BEGIN:VCARD")) {
-                            msg.media.vcard = contact.restriction_reason.get(0).text;
-                        } else {
-                            msg.media.vcard = "";
-                        }
-                        msg.media.user_id = contact.id;
-                        MessageObject messageObject = new MessageObject(currentAccount, msg, true, false);
-                        messageObject.sendPreview = true;
-                        messageObject.notime = true;
-                        messageObject.isOutOwnerCached = true;
-                        messageObjects.add(messageObject);
-                    }
-                } else if (currentAttachLayout == documentLayout) {
+                if (currentAttachLayout == documentLayout) {
                     for (int i = 0; i < documentLayout.selectedFilesOrder.size(); ++i) {
                         final String path = documentLayout.selectedFilesOrder.get(i);
                         if (path == null) continue;
@@ -4520,8 +4470,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             newId = LAYOUT_TYPE_MUSIC;
         } else if (layout == documentLayout) {
             newId = LAYOUT_TYPE_DOCUMENTS;
-        } else if (layout == contactsLayout) {
-            newId = LAYOUT_TYPE_CONTACTS;
         } else if (layout == locationLayout) {
             newId = LAYOUT_TYPE_LOCATION;
         } else if (layout == pollLayout) {
@@ -4832,7 +4780,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         float isGray = 0;
         for (ListAnimator.Entry<Long> entry : animatorCurrentVisibleLayout) {
             long id = entry.item;
-            if (id == LAYOUT_TYPE_PHOTO || id == LAYOUT_TYPE_MUSIC || id == LAYOUT_TYPE_DOCUMENTS || id == LAYOUT_TYPE_CONTACTS || id == LAYOUT_TYPE_LOCATION || id == LAYOUT_TYPE_POLL || id == LAYOUT_TYPE_REPLIES || id == LAYOUT_TYPE_TODO) {
+            if (id == LAYOUT_TYPE_PHOTO || id == LAYOUT_TYPE_MUSIC || id == LAYOUT_TYPE_DOCUMENTS || id == LAYOUT_TYPE_LOCATION || id == LAYOUT_TYPE_POLL || id == LAYOUT_TYPE_REPLIES || id == LAYOUT_TYPE_TODO) {
                 isGray += entry.getVisibility();
             }
         }
@@ -4871,40 +4819,13 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     }
 
     public void onRequestPermissionsResultFragment(int requestCode, String[] permissions, int[] grantResults) {
-        if (requestCode == BasePermissionsActivity.REQUEST_CODE_ATTACH_CONTACT && grantResults != null && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            openContactsLayout();
-        } else if (requestCode == 30 && locationLayout != null && currentAttachLayout == locationLayout && isShowing()) {
+        if (requestCode == 30 && locationLayout != null && currentAttachLayout == locationLayout && isShowing()) {
             locationLayout.openShareLiveLocation();
         }
     }
 
-    private void openContactsLayout() {
-        if (!plainTextEnabled) {
-            restrictedLayout = new ChatAttachRestrictedLayout(5, this, getContext(), resourcesProvider);
-            showLayout(restrictedLayout);
-        }
-        if (contactsLayout == null) {
-            layouts[2] = contactsLayout = new ChatAttachAlertContactsLayout(this, getContext(), resourcesProvider);
-            contactsLayout.setupBlurredSearchField(iBlur3FactoryLiquidGlass);
-            contactsLayout.setDelegate(new ChatAttachAlertContactsLayout.PhonebookShareAlertDelegate() {
-                @Override
-                public void didSelectContact(TLRPC.User user, boolean notify, int scheduleDate, long effectId, boolean invertMedia, long payStars) {
-                    ((ChatActivity) baseFragment).sendContact(user, notify, scheduleDate, effectId, invertMedia, payStars);
-                }
-
-                @Override
-                public void didSelectContacts(ArrayList<TLRPC.User> users, String caption, boolean notify, int scheduleDate, long effectId, boolean invertMedia, long payStars) {
-                    ((ChatActivity) baseFragment).sendContacts(users, caption, notify, scheduleDate, effectId, invertMedia, 0);
-                }
-            });
-        }
-        if (baseFragment instanceof ChatActivity) {
-            ChatActivity chatActivity = (ChatActivity) baseFragment;
-            TLRPC.Chat currentChat = chatActivity.getCurrentChat();
-            contactsLayout.setMultipleSelectionAllowed(!(currentChat != null && !ChatObject.hasAdminRights(currentChat) && currentChat.slowmode_enabled));
-        }
-        showLayout(contactsLayout);
-    }
+    // LoogriGram: openContactsLayout built the address book tab. See the
+    // attach button handler above.
 
     private void openQuickRepliesLayout() {
         if (quickRepliesLayout == null) {
@@ -6528,7 +6449,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         private int musicButton;
         private int pollButton;
         private int todoButton;
-        private int contactButton;
         private int quickRepliesButton;
         private int locationButton;
         private int stickerButton;
@@ -6586,8 +6506,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     } else if (position == pollButton) {
                         attachButton.setTextAndIcon(9, getString(R.string.Poll), GlassTabView.TabAnimation.POLL);
                         attachButton.setTag(9);
-                    } else if (position == contactButton) {
-                        attachButton.setTextAndIcon(5, getString(R.string.AttachContact), GlassTabView.TabAnimation.CONTACTS);
                         attachButton.setTag(5);
                         err = !checkContactsPermission(mContext);
                     } else if (position == quickRepliesButton) {
@@ -6660,7 +6578,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             musicButton = -1;
             pollButton = -1;
             todoButton = -1;
-            contactButton = -1;
             quickRepliesButton = -1;
             locationButton = -1;
             stickerButton = -1;
@@ -6747,9 +6664,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 if (todoEnabled) {
                     todoButton = buttonsCount++;
                 }
-                if (plainTextEnabled) {
-                    contactButton = buttonsCount++;
-                }
+                // LoogriGram: no Contact button - see openContactsLayout.
                 if (baseFragment instanceof ChatActivity && ((ChatActivity) baseFragment).getChatMode() == 0 && user != null && !paidUser && !user.bot && QuickRepliesController.getInstance(currentAccount).hasReplies()) {
                     quickRepliesButton = buttonsCount++;
                 }
@@ -6790,7 +6705,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         if (actionBar.isSearchFieldVisible()) {
             actionBar.closeSearchField();
         }
-        contactsLayout = null;
         quickRepliesLayout = null;
         audioLayout = null;
         pollLayout = null;

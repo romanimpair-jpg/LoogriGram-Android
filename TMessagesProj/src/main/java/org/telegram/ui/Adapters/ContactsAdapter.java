@@ -38,7 +38,6 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.DividerCell;
 import org.telegram.ui.Cells.GraySectionCell;
 import org.telegram.ui.Cells.HeaderCell;
-import org.telegram.ui.Cells.InviteUserCell;
 import org.telegram.ui.Cells.LetterSectionCell;
 import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.TextCell;
@@ -59,7 +58,11 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
     private final int currentAccount = UserConfig.selectedAccount;
     private final Context mContext;
     private final int onlyUsers;
-    private final boolean needPhonebook;
+    // LoogriGram: needPhonebook asked this adapter to list the phone's address
+    // book under the Telegram contacts - the "invite these people" rows. The
+    // phonebook is never read now, so the flag, the rows and the empty-state
+    // built around them are gone; the constructor keeps its parameter count
+    // only where callers pass something else, and this one loses it.
     private final LongSparseArray<TLRPC.User> ignoreUsers;
     private final LongSparseArray<TLRPC.User> selectedContacts;
     private ArrayList<TLRPC.TL_contact> onlineContacts;
@@ -68,15 +71,12 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
     private final boolean isChannel;
     private boolean disableSections;
     private boolean isEmpty;
-    private boolean hasPhonebook;
-    public boolean isEmptyWithMainTabs;
 
     BaseFragment fragment;
 
-    public ContactsAdapter(Context context, BaseFragment fragment, int onlyUsersType, boolean showPhoneBook, LongSparseArray<TLRPC.User> usersToIgnore, LongSparseArray<TLRPC.User> selectedContacts, int flags) {
+    public ContactsAdapter(Context context, BaseFragment fragment, int onlyUsersType, LongSparseArray<TLRPC.User> usersToIgnore, LongSparseArray<TLRPC.User> selectedContacts, int flags) {
         mContext = context;
         onlyUsers = onlyUsersType;
-        needPhonebook = showPhoneBook;
         ignoreUsers = usersToIgnore;
         this.selectedContacts = selectedContacts;
         isAdmin = flags != 0;
@@ -169,13 +169,6 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
     }
 
     public Object getItem(int section, int position) {
-        if (isEmptyWithMainTabs && section == 1 && position > 1) {
-            final int index = position - 2;
-            if (index < ContactsController.getInstance(currentAccount).phoneBookContacts.size()) {
-                return ContactsController.getInstance(currentAccount).phoneBookContacts.get(index);
-            }
-        }
-
         if (getItemViewType(section, position) == 2) {
             return "Header";
         }
@@ -213,9 +206,6 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
                 }
             }
         }
-        if (needPhonebook && position >= 0 && position < ContactsController.getInstance(currentAccount).phoneBookContacts.size()) {
-            return ContactsController.getInstance(currentAccount).phoneBookContacts.get(position);
-        }
         return null;
     }
 
@@ -228,10 +218,6 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
 
     @Override
     public boolean isEnabled(RecyclerView.ViewHolder holder, int section, int row) {
-        if (isEmptyWithMainTabs) {
-            return section == 1 && row > 1;
-        }
-
         HashMap<String, ArrayList<TLRPC.TL_contact>> usersSectionsDict = onlyUsers == 2 ? ContactsController.getInstance(currentAccount).usersMutualSectionsDict : ContactsController.getInstance(currentAccount).usersSectionsDict;
         ArrayList<String> sortedUsersSectionsArray = onlyUsers == 2 ? ContactsController.getInstance(currentAccount).sortedUsersMutualSectionsArray : ContactsController.getInstance(currentAccount).sortedUsersSectionsArray;
 
@@ -245,8 +231,6 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
             if (section == 0) {
                 if (isAdmin) {
                     return row < 1;
-                } else if (needPhonebook) {
-                    return row < 2;
                 } else {
                     return row < 3;
                 }
@@ -293,17 +277,6 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
         if (isAdmin) {
             count++;
         }
-        if (needPhonebook) {
-            //count++;
-        }
-
-        hasPhonebook = !ContactsController.getInstance(currentAccount).phoneBookContacts.isEmpty();
-        isEmptyWithMainTabs = isEmpty && needPhonebook && !isAdmin && onlyUsers == 0;
-        if (isEmptyWithMainTabs) {
-            // empty + invite friends
-            return hasPhonebook ? 2 : 1;
-        }
-
         return count;
     }
 
@@ -313,15 +286,6 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
     }
 
     private int getCountForSectionInternal(int section) {
-        if (isEmptyWithMainTabs) {
-            if (section == 0) { // empty
-                return (includeSearch ? 1 : 0) + 1;
-            } else if (section == 1) {  // invite contacts
-                return 2 + ContactsController.getInstance(currentAccount).phoneBookContacts.size();
-            }
-            return 0;
-        }
-
         HashMap<String, ArrayList<TLRPC.TL_contact>> usersSectionsDict = onlyUsers == 2 ? ContactsController.getInstance(currentAccount).usersMutualSectionsDict : ContactsController.getInstance(currentAccount).usersSectionsDict;
         ArrayList<String> sortedUsersSectionsArray = onlyUsers == 2 ? ContactsController.getInstance(currentAccount).sortedUsersMutualSectionsArray : ContactsController.getInstance(currentAccount).sortedUsersSectionsArray;
 
@@ -332,7 +296,7 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
             if (section < sortedUsersSectionsArray.size()) {
                 ArrayList<TLRPC.TL_contact> arr = usersSectionsDict.get(sortedUsersSectionsArray.get(section));
                 int count = arr.size();
-                if (section != (sortedUsersSectionsArray.size() - 1) || needPhonebook) {
+                if (section != (sortedUsersSectionsArray.size() - 1)) {
                     count++;
                 }
                 return count;
@@ -345,8 +309,6 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
 
                 if (isAdmin) {
                     return (includeSearch ? 1 : 0) + 3;
-                } else if (needPhonebook) {
-                    return (includeSearch ? 1 : 0) + 4;
                 } else {
                     return (includeSearch ? 1 : 0) + 4;
                 }
@@ -362,16 +324,10 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
                     if (section - 1 < sortedUsersSectionsArray.size()) {
                         ArrayList<TLRPC.TL_contact> arr = usersSectionsDict.get(sortedUsersSectionsArray.get(section - 1));
                         int count = arr.size();
-                        if (section - 1 != (sortedUsersSectionsArray.size() - 1) || needPhonebook) {
-                        //    count++;
-                        }
                         return count;
                     }
                 }
             }
-        }
-        if (needPhonebook) {
-            return ContactsController.getInstance(currentAccount).phoneBookContacts.size();
         }
         return 0;
     }
@@ -416,7 +372,7 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
     private static final int EMPTY_CELL = 4;
     private static final int SHADOW_CELL = 5;
     private static final int HEADER_CELL = 7;
-    private static final int INVITE_CELL = 8;
+    // LoogriGram: INVITE_CELL drew a phonebook entry with an Invite button.
     private static final int SEARCH_CELL = 9;
 
     @NonNull
@@ -424,10 +380,6 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view;
         switch (viewType) {
-            case INVITE_CELL: {
-                view = new InviteUserCell(mContext, false);
-                break;
-            }
             case HEADER_CELL: {
                 view = new HeaderCell(mContext, Theme.key_windowBackgroundWhiteBlueHeader, 21, 14, 5, false, null);
                 break;
@@ -467,11 +419,6 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
                 FrameLayout frameLayout = new FrameLayout(mContext) {
                     @Override
                     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-                        if (isEmptyWithMainTabs && hasPhonebook) {
-                            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-                            return;
-                        }
-
                         int height = MeasureSpec.getSize(heightMeasureSpec);
                         if (height == 0) {
                             height = parent.getMeasuredHeight();
@@ -481,7 +428,7 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
                         }
                         int cellHeight = AndroidUtilities.dp(50);
                         int totalHeight = onlyUsers != 0 ? 0 : cellHeight + AndroidUtilities.dp(30);
-                        if (!isAdmin && !needPhonebook) {
+                        if (!isAdmin) {
                             totalHeight += cellHeight;
                         }
 
@@ -519,15 +466,7 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
         }
         switch (holder.getItemViewType()) {
             case EMPTY_CELL:
-                holder.itemView.setPadding(0, dp(!hasPhonebook ? 96 : 25), 0, dp(18));
-                break;
-            case INVITE_CELL:
-                InviteUserCell inviteUserCell = (InviteUserCell) holder.itemView;
-                final int index = position - 2;
-                if (index >= 0 && index < ContactsController.getInstance(currentAccount).phoneBookContacts.size()) {
-                    ContactsController.Contact contact = ContactsController.getInstance(currentAccount).phoneBookContacts.get(index);
-                    inviteUserCell.setUser(contact, null);
-                }
+                holder.itemView.setPadding(0, dp(96), 0, dp(18));
                 break;
             case USER_CELL:
                 UserCell userCell = (UserCell) holder.itemView;
@@ -554,19 +493,15 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
                 break;
             case TEXT_CELL:
                 TextCell textCell = (TextCell) holder.itemView;
-                if (needPhonebook || !isAdmin) {
+                if (!isAdmin) {
                     textCell.setColors(Theme.key_windowBackgroundWhiteBlackText, Theme.key_windowBackgroundWhiteBlackText);
                 } else {
                     textCell.setColors(Theme.key_telegram_color_text, Theme.key_telegram_color_text);
                 }
                 if (section == 0) {
-                    if (needPhonebook) {
-                        if (position == 0) {
-                            textCell.setTextAndValueAndColorfulIcon(getString(R.string.InviteFriends), "", false, R.drawable.settings_invite, 0xFF1CA5ED, 0xFF1488E1, false);
-                        } else if (position == 1) {
-                            textCell.setTextAndValueAndColorfulIcon(getString(R.string.RecentCalls), "", false, R.drawable.settings_calls, 0xFF55CA47, 0xFF27B434, false);
-                        }
-                    } else if (isAdmin) {
+                    // LoogriGram: the "Invite Friends" and "Recent Calls" pair
+                    // that stood first here belonged to the phonebook layout.
+                    if (isAdmin) {
                         if (isChannel) {
                             textCell.setTextAndIcon(getString(R.string.ChannelInviteViaLink), R.drawable.msg_link2, false);
                         } else {
@@ -579,22 +514,11 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
                             textCell.setTextAndValueAndColorfulIcon(getString(R.string.NewChannel), "", false, R.drawable.settings_channel, 0xFF55CA47, 0xFF27B434, false);
                         }
                     }
-                } else {
-                    ContactsController.Contact contact = ContactsController.getInstance(currentAccount).phoneBookContacts.get(position);
-                    if (contact.first_name != null && contact.last_name != null) {
-                        textCell.setText(contact.first_name + " " + contact.last_name, false);
-                    } else if (contact.first_name != null && contact.last_name == null) {
-                        textCell.setText(contact.first_name, false);
-                    } else {
-                        textCell.setText(contact.last_name, false);
-                    }
                 }
                 break;
             case HEADER_CELL:
                 HeaderCell cell = (HeaderCell) holder.itemView;
-                if (isEmptyWithMainTabs && position == 1 && section == 1) {
-                    cell.setText(getString(R.string.InviteFriends));
-                } else if (sortType == SORT_TYPE_BY_NAME) {
+                if (sortType == SORT_TYPE_BY_NAME) {
                     cell.setText(getString(R.string.SortedByName));
                 } else {
                     cell.setText(getString(R.string.SortedByLastSeen));
@@ -619,21 +543,6 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
             if (position == 0) return SEARCH_CELL;
             position--;
         }
-        if (isEmptyWithMainTabs) {
-            if (section == 0) {
-                return EMPTY_CELL;
-            }
-            if (section == 1) {
-                if (position == 0) {
-                    return SHADOW_CELL;
-                } else if (position == 1) {
-                    return HEADER_CELL;
-                }
-            }
-            return INVITE_CELL;
-        }
-
-
         HashMap<String, ArrayList<TLRPC.TL_contact>> usersSectionsDict = onlyUsers == 2 ? ContactsController.getInstance(currentAccount).usersMutualSectionsDict : ContactsController.getInstance(currentAccount).usersSectionsDict;
         ArrayList<String> sortedUsersSectionsArray = onlyUsers == 2 ? ContactsController.getInstance(currentAccount).sortedUsersMutualSectionsArray : ContactsController.getInstance(currentAccount).sortedUsersSectionsArray;
         if (onlyUsers != 0 && !isAdmin) {
@@ -650,16 +559,6 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
                     }
                     if (position == 2) {
                         return (sortType == SORT_TYPE_BY_NAME || sortType == SORT_TYPE_BY_TIME ? HEADER_CELL : GRAY_CELL);
-                    }
-                } else if (needPhonebook) {
-                    if (position < 2) {
-                        return TEXT_CELL;
-                    }
-                    if (position == 2) {
-                        return SHADOW_CELL;
-                    }
-                    if (position == 3) {
-                        return isEmpty ? SHADOW_CELL : (sortType == SORT_TYPE_BY_NAME || sortType == SORT_TYPE_BY_TIME ? HEADER_CELL : GRAY_CELL);
                     }
                 } else {
                     if (position == 2) {
