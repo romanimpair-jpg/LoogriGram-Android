@@ -87,7 +87,19 @@ public class PhonebookShareAlert extends BottomSheet {
 
     private boolean isImport;
 
-    private ChatAttachAlertContactsLayout.PhonebookShareAlertDelegate delegate;
+    // LoogriGram: this interface lived in ChatAttachAlertContactsLayout, the
+    // address book tab of the attach menu, although the only thing that ever
+    // implemented or called it was this alert. It moved here when that tab was
+    // deleted.
+    public interface PhonebookShareAlertDelegate {
+        void didSelectContact(TLRPC.User user, boolean notify, int scheduleDate, long effectId, boolean invertMedia, long payStars);
+
+        default void didSelectContacts(ArrayList<TLRPC.User> users, String caption, boolean notify, int scheduleDate, long effectId, boolean invertMedia, long payStars) {
+
+        }
+    }
+
+    private PhonebookShareAlertDelegate delegate;
 
     private ArrayList<AndroidUtilities.VcardItem> other = new ArrayList<>();
     private ArrayList<AndroidUtilities.VcardItem> phones = new ArrayList<>();
@@ -960,7 +972,7 @@ public class PhonebookShareAlert extends BottomSheet {
         Bulletin.removeDelegate((FrameLayout) containerView);
     }
 
-    public void setDelegate(ChatAttachAlertContactsLayout.PhonebookShareAlertDelegate phonebookShareAlertDelegate) {
+    public void setDelegate(PhonebookShareAlertDelegate phonebookShareAlertDelegate) {
         delegate = phonebookShareAlertDelegate;
     }
 

@@ -182,7 +182,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
     private FilteredSearchView.Delegate filtersDelegate;
     private int currentItemCount;
     private int folderId;
-    private ArrayList<ContactEntry> allContacts;
+    // LoogriGram: allContacts cached the address book for searching.
 
     public void setFilterDialogIds(ArrayList<Long> filterDialogIds) {
         this.filterDialogIds = filterDialogIds;
@@ -954,7 +954,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         String q = query.trim().toLowerCase();
         if (q.length() == 0) {
             lastSearchId = 0;
-            updateSearchResults(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), lastSearchId);
+            updateSearchResults(new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), lastSearchId);
             return;
         }
         MessagesStorage.getInstance(currentAccount).getStorageQueue().postRunnable(() -> {
