@@ -8230,9 +8230,9 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                             selectedEmojis = new ArrayList<>();
                         }
                         if (selectedEmojis.isEmpty()) {
-                            if (stickerMakerView.detectedEmoji != null && Emoji.getEmojiDrawable(stickerMakerView.detectedEmoji) != null) {
-                                selectedEmojis.add(stickerMakerView.detectedEmoji);
-                            } else if (stickerEmoji != null) {
+                            // LoogriGram: the first branch here used the emoji
+                            // guessed by image labelling - see StickerMakerView.
+                            if (stickerEmoji != null) {
                                 selectedEmojis.add(stickerEmoji);
                             } else {
                                 selectedEmojis.add("👍");

@@ -61,7 +61,6 @@ import org.telegram.ui.Components.AnimatedFloat;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Components.Paint.ObjectDetectionEmojis;
 import org.telegram.ui.Components.ThanosEffect;
 import org.telegram.ui.Stories.recorder.DownloadButton;
 import org.telegram.ui.Stories.recorder.StoryEntry;
@@ -112,7 +111,11 @@ public class StickerMakerView extends FrameLayout implements NotificationCenter.
     private AlertDialog loadingDialog;
     private final Theme.ResourcesProvider resourcesProvider;
     private StickerCutOutBtn stickerCutOutBtn;
-    public String detectedEmoji;
+    // LoogriGram: detectedEmoji held the emoji that ML Kit's image labeller
+    // guessed for the cut-out sticker, looked up in ObjectDetectionEmojis -
+    // a 458-line table from label index to emoji. The labeller went with the
+    // rest of ML Kit, so nothing could ever fill this in; the table is
+    // deleted and PhotoViewer falls back to the emoji it already had.
 
     private DownloadButton.PreparingVideoToast loadingToast;
 
@@ -818,7 +821,6 @@ public class StickerMakerView extends FrameLayout implements NotificationCenter.
         if (Build.VERSION.SDK_INT < 24) return;
         sourceBitmap = source;
         this.orientation = orientation;
-        detectedEmoji = null;
         segment(source, orientation, subjects -> {
             final ArrayList<SegmentedObject> finalObjects = new ArrayList<>();
 
