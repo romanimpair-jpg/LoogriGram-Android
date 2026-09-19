@@ -49,6 +49,7 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Currency;
@@ -1426,14 +1427,55 @@ public class LocaleController {
         return localeInfo == null || TextUtils.isEmpty(localeInfo.name) ? getString("LanguageName", R.string.LanguageName) : localeInfo.name;
     }
 
+    // LoogriGram: strings that name this program, which the cloud language pack
+    // must not overwrite.
+    //
+    // strings.xml supplies only the compiled defaults. At startup the cached
+    // cloud pack - Telegram's own English, thousands of keys - is replayed over
+    // them, and every value it carries wins in getStringInternal below. So
+    // renaming the app in strings.xml alone changes nothing in-app: the pack
+    // puts "Telegram" straight back. The launcher label is the exception, since
+    // config/release/AndroidManifest.xml reads the resource directly.
+    //
+    // Only strings naming *this program* belong here. References to Telegram
+    // the service ("Anyone on Telegram can join...") are accurate and stay.
+    // The desktop fork carries the same list as KeepCompiledString.
+    private static final HashSet<String> KEEP_COMPILED = new HashSet<>(Arrays.asList(
+        "AppName",
+        "AppNameBeta",
+        "TelegramVersion",
+        "StorageUsageTelegram",
+        "StorageUsageTelegramLess",
+        "NotificationHiddenName",
+        "NotificationHiddenChatName",
+        "SecretChatName",
+        "LocalDatabaseInfo",
+        "PermissionDrawAboveOtherApps",
+        "VoipNeedCameraPermission",
+        "VoipInCallBranding",
+        "VoipInVideoCallBranding",
+        "VoipInConferenceCallBranding",
+        "VoipInCallBrandingWithName",
+        "VoipInVideoCallBrandingWithName",
+        "CallViaTelegram",
+        "VideoCallViaTelegram",
+        "Page1Title",
+        "BrowserExternalRestricted"
+    ));
+
     private String getStringInternal(String key, int res) {
         return getStringInternal(key, null, 0, res);
     }
 
     private String getStringInternal(String key, String fallback, int fallbackRes, int res) {
-        String value = BuildVars.USE_CLOUD_STRINGS ? localeValues.get(key) : null;
+        // LoogriGram: our own name comes from the compiled resource, never the
+        // cloud pack. The fallback key is checked too, or a key that misses in
+        // the pack under its own name could still pick "Telegram" up under the
+        // fallback's.
+        final boolean keepCompiled = KEEP_COMPILED.contains(key) || (fallback != null && KEEP_COMPILED.contains(fallback));
+        String value = BuildVars.USE_CLOUD_STRINGS && !keepCompiled ? localeValues.get(key) : null;
         if (value == null) {
-            if (BuildVars.USE_CLOUD_STRINGS && fallback != null) {
+            if (BuildVars.USE_CLOUD_STRINGS && !keepCompiled && fallback != null) {
                 value = localeValues.get(fallback);
             }
             if (value == null) {
@@ -1456,7 +1498,8 @@ public class LocaleController {
     }
 
     public static String getServerString(String key) {
-        String value = getInstance().localeValues.get(key);
+        // LoogriGram: same rule as getStringInternal - see KEEP_COMPILED.
+        String value = KEEP_COMPILED.contains(key) ? null : getInstance().localeValues.get(key);
         if (value == null) {
             int resourceId = ApplicationLoader.applicationContext.getResources().getIdentifier(key, "string", ApplicationLoader.applicationContext.getPackageName());
             if (resourceId != 0) {

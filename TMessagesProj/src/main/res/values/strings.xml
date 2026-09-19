@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="AppName">Telegram</string>
-    <string name="AppNameBeta">Telegram Beta</string>
+    <!-- LoogriGram: the app's own name. The launcher label reads this resource
+         directly (config/release/AndroidManifest.xml), so that surface is fixed
+         by this edit alone; everything in-app goes through LocaleController,
+         where the cloud language pack overrides it - see KEEP_COMPILED there. -->
+    <string name="AppName">LoogriGram</string>
+    <string name="AppNameBeta">LoogriGram Beta</string>
     <string name="LanguageName">English</string>
     <string name="English">English</string>
     <string name="LanguageNameInEnglish">English</string>
@@ -1808,8 +1812,8 @@
     <string name="NotificationGroupFew">%1$s sent %3$s to the group %2$s</string>
     <string name="NotificationGroupAlbum">%1$s sent an album to the group %2$s</string>
     <string name="NotificationGroupForwardedFew">%1$s forwarded %3$s to the group %2$s</string>
-    <string name="NotificationHiddenName">Telegram</string>
-    <string name="NotificationHiddenChatName">Telegram</string>
+    <string name="NotificationHiddenName">LoogriGram</string>
+    <string name="NotificationHiddenChatName">LoogriGram</string>
     <string name="NotificationHiddenChatUserName">User</string>
     <string name="NotificationHiddenMessage">New message</string>
     <string name="Reply">Reply</string>
@@ -1879,7 +1883,7 @@
     <string name="NotificationActionMissedCallConference">You missed a call from %1$s</string>
     <string name="NotificationActionMissedCallConferenceOther_one">You missed a call from %2$s and %1$d other</string>
     <string name="NotificationActionMissedCallConferenceOther_other">You missed a call from %2$s and %1$d others</string>
-    <string name="SecretChatName">Telegram</string>
+    <string name="SecretChatName">LoogriGram</string>
     <!--contacts view-->
     <string name="SelectContact">Select Contact</string>
     <string name="ShareContactTitle">Share Contact</string>
@@ -2627,7 +2631,7 @@
     <string name="DirectShareInfo">Show recent chats in Android share menu</string>
     <string name="Emoji">Emoji</string>
     <string name="LargeEmoji">Large Emoji</string>
-    <string name="TelegramVersion">Telegram for Android %1$s</string>
+    <string name="TelegramVersion">LoogriGram for Android %1$s</string>
     <string name="DebugMenu">Debug Menu</string>
     <string name="DebugMenuLongPress">Long press again for debug menu</string>
     <string name="DebugSendLogs">Send Logs</string>
@@ -2812,7 +2816,7 @@
     <string name="LocalDatabaseClearTextTitle">Clear local database</string>
     <string name="LocalDatabaseClearText">Are you sure you want to clear cached text messages?</string>
     <string name="LocalDatabaseClearText2">This operation can take a few minutes to complete.\n\nLocal database size: **%s**</string>
-    <string name="LocalDatabaseInfo">Clearing the local database will delete the texts of cached messages and compress the database to save internal disk space. Telegram needs some data to work, so database size will not reach zero.\n\nThis operation can take a few minutes to complete.</string>
+    <string name="LocalDatabaseInfo">Clearing the local database will delete the texts of cached messages and compress the database to save internal disk space. LoogriGram needs some data to work, so database size will not reach zero.\n\nThis operation can take a few minutes to complete.</string>
     <string name="ClearMediaCache">Clear Cache</string>
     <string name="CacheClear">Clear</string>
     <string name="CalculatingSize">Calculating...</string>
@@ -3550,8 +3554,8 @@
     <string name="StorageUsage">Storage Usage</string>
     <string name="StorageCleared">Storage Cleared</string>
     <string name="StorageUsageCalculating">Calculating cache size...</string>
-    <string name="StorageUsageTelegram">Telegram uses %s of your device storage.</string>
-    <string name="StorageUsageTelegramLess">Telegram uses %s of your device storage.</string>
+    <string name="StorageUsageTelegram">LoogriGram uses %s of your device storage.</string>
+    <string name="StorageUsageTelegramLess">LoogriGram uses %s of your device storage.</string>
     <string name="StorageCleared2">All media can be re-downloaded from the Telegram cloud if you need it again.</string>
     <string name="StorageUsageInfo">All media will stay in the Telegram cloud and can be re-downloaded if you need it again.</string>
     <string name="NetworkUsage">Data Usage</string>
@@ -4121,7 +4125,7 @@
     <string name="PermissionNoContactsSaving">**Telegram** needs access to contacts to save them on your phone. Tap Settings -> Permissions, and turn **Contacts** on.</string>
     <string name="PermissionNoStorageAvatar">**Telegram** needs storage access so you can upload profile picture. Tap Settings -> Permissions, and turn **Files and media** on.</string>
     <string name="PermissionNoAudioStorageStory">**Telegram** needs access to music files to upload with your story. Tap Settings -> Permissions, and turn **Music and Audio** on.</string>
-    <string name="PermissionDrawAboveOtherApps">Telegram needs access to draw above other apps to play videos in Picture-in-Picture mode.</string>
+    <string name="PermissionDrawAboveOtherApps">LoogriGram needs access to draw above other apps to play videos in Picture-in-Picture mode.</string>
     <string name="PermissionDrawAboveOtherAppsGroupCall">Overlay mode lets you use push-to-talk and see who is talking even when you are outside of Telegram.</string>
     <string name="PermissionOpenSettings">SETTINGS</string>
     <string name="PermissionXiaomiLockscreen">Please allow Telegram to be shown on the lock screen so that calls can work properly.</string>
@@ -4199,7 +4203,7 @@
     <string name="ViewMessageStatistic">Message Statistic</string>
     <string name="ViewMessage">Open Message</string>
     <!--Intro view-->
-    <string name="Page1Title">Telegram</string>
+    <string name="Page1Title">LoogriGram</string>
     <string name="Page2Title">Fast</string>
     <string name="Page3Title">Free</string>
     <string name="Page4Title">Secure</string>
@@ -4223,9 +4227,9 @@
     <string name="VoipFailed">Failed to connect</string>
     <string name="VoipRinging">Ringing</string>
     <string name="VoipBusy">Line busy</string>
-    <string name="VoipInCallBranding">Telegram Call</string>
-    <string name="VoipInVideoCallBranding">Telegram Video Call</string>
-    <string name="VoipInConferenceCallBranding">Telegram Group Call</string>
+    <string name="VoipInCallBranding">LoogriGram Call</string>
+    <string name="VoipInVideoCallBranding">LoogriGram Video Call</string>
+    <string name="VoipInConferenceCallBranding">LoogriGram Group Call</string>
     <string name="VoipOutgoingCall">Ongoing Telegram call</string>
     <string name="VoipVoiceChat">Ongoing Voice Chat</string>
     <string name="VoipLiveStream">Ongoing Live Stream</string>
@@ -4292,13 +4296,13 @@
     <string name="VoipRateCallAlert">Please rate the quality of your Telegram call</string>
     <string name="VoipNeedMicPermissionWithHint">**Telegram** needs microphone access so that you can make calls. Tap Settings -> Permissions, and turn **Microphone** on.</string>
     <string name="VoipNeedMicCameraPermissionWithHint">**Telegram** needs camera and microphone access so that you can make video calls. Tap Settings -> Permissions, and turn **Microphone** and **Camera** on.</string>
-    <string name="VoipNeedCameraPermission">Telegram needs access to your camera so that you can make video calls.</string>
+    <string name="VoipNeedCameraPermission">LoogriGram needs access to your camera so that you can make video calls.</string>
     <string name="VoipFeedbackCommentHint">Add an optional comment</string>
     <string name="CallBack">Call Back</string>
     <string name="CallAgain">Call Again</string>
     <string name="DefaultRingtone">Default</string>
-    <string name="CallViaTelegram">Telegram Call</string>
-    <string name="VideoCallViaTelegram">Telegram Video Call</string>
+    <string name="CallViaTelegram">LoogriGram Call</string>
+    <string name="VideoCallViaTelegram">LoogriGram Video Call</string>
     <string name="VoiceCallViaTelegram">Telegram Voice Call</string>
     <string name="VoiceCallViaCarrier">Call via Carrier</string>
     <string name="VoipAudioRoutingEarpiece">Earpiece</string>
@@ -4323,8 +4327,8 @@
     <string name="QuickReplyDefault3">I\'ll call you later.</string>
     <string name="QuickReplyDefault4">Can\'t talk now. Call me later?</string>
     <string name="AllowCustomQuickReply">Allow Custom</string>
-    <string name="VoipInCallBrandingWithName">Telegram Call to %s</string>
-    <string name="VoipInVideoCallBrandingWithName">Telegram Video Call to %s</string>
+    <string name="VoipInCallBrandingWithName">LoogriGram Call to %s</string>
+    <string name="VoipInVideoCallBrandingWithName">LoogriGram Video Call to %s</string>
     <string name="VoipErrorUnknown">Can\'t place a Telegram call at the moment.</string>
     <string name="RateCallEcho">I heard my own voice</string>
     <string name="RateCallNoise">I heard background noise</string>
@@ -8705,7 +8709,7 @@
     <string name="BrowserExternalCheck">Always open links from **%s** in browser</string>
     <string name="BrowserAlwaysOpenExternal">Always open this site in Browser</string>
     <string name="BrowserAlwaysOpenInApp">Always open this site in-app</string>
-    <string name="BrowserExternalRestricted">Telegram will now open links from this website in the external browser. You can change this in **Settings.**</string>
+    <string name="BrowserExternalRestricted">LoogriGram will now open links from this website in the external browser. You can change this in **Settings.**</string>
     <string name="StoryEditCover">Edit Cover</string>
     <string name="StoryEditCoverInfo">Choose a frame from the story to show in your Profile.</string>
     <string name="StoryEditCoverMenu">Edit Cover</string>

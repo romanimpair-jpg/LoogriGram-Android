@@ -34,9 +34,6 @@ import android.opengl.GLES20;
 import android.opengl.GLUtils;
 import android.os.Looper;
 import android.os.Parcelable;
-import android.text.SpannableStringBuilder;
-import android.text.Spanned;
-import android.text.style.ImageSpan;
 import android.util.TypedValue;
 import android.view.Display;
 import android.view.Gravity;
@@ -112,7 +109,6 @@ public class IntroActivity extends BaseFragment implements NotificationCenter.No
     private int lastPage = 0;
     private boolean justCreated = false;
     private boolean startPressed = false;
-    private Drawable logoDrawable;
     private CharSequence[] titles;
     private String[] messages;
     private int currentViewPagerPage;
@@ -153,11 +149,13 @@ public class IntroActivity extends BaseFragment implements NotificationCenter.No
 
     @Override
     public View createView(Context context) {
-        logoDrawable = context.getResources().getDrawable(R.drawable.telegram_logo).mutate();
-        logoDrawable.setBounds(0, dp(8.666f), dp(115), dp(35));
-        SpannableStringBuilder ssb = new SpannableStringBuilder(LocaleController.getString(R.string.Page1Title));
-        ssb.setSpan(new ImageSpan(logoDrawable), 0, ssb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        titles[0] = ssb;
+        // LoogriGram: the first page's title was Telegram's wordmark drawable,
+        // laid over the Page1Title text as an ImageSpan - so the screen said
+        // "Telegram" in artwork no matter what the string said, and renaming
+        // the string alone would have looked like it had done nothing. Our own
+        // name is set as plain text in the page's title style instead, which
+        // also means one fewer piece of upstream branding in the tree.
+        titles[0] = LocaleController.getString(R.string.Page1Title);
 
 
         actionBar.setAddToContainer(false);
@@ -962,7 +960,8 @@ public class IntroActivity extends BaseFragment implements NotificationCenter.No
 
     private void updateColors(boolean fromTheme) {
         startMessagingButtonBackground.setColors(new int[]{getThemedColor(Theme.key_featuredStickers_addButton), getThemedColor(Theme.key_featuredStickers_addButton2)});
-        logoDrawable.setColorFilter(Theme.multAlpha(getThemedColor(Theme.key_actionBarDefaultTitle), 0.9f), PorterDuff.Mode.MULTIPLY);
+        // LoogriGram: the wordmark drawable is gone, so there is nothing here to
+        // tint - the title is ordinary text now and takes the theme's colour.
         fragmentView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
         switchLanguageTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText4));
         startMessagingButton.setTextColor(Theme.getColor(Theme.key_featuredStickers_buttonText));
