@@ -20,7 +20,6 @@ namespace{
 	/*static*/ constexpr float MAX_BYTES_IN_FLIGHT_HEAD_ROOM=1.1f;
 	/*static*/ constexpr float GAIN=1.0f;
 	/*static*/ constexpr float BETA_LOSS=0.8f;
-	/*static*/ constexpr float BETA_ECN __attribute__((unused)) =0.9f; // ECN path not implemented
 	/*static*/ constexpr float BETA_R=0.9f;
 	/*static*/ constexpr uint32_t MSS=1024;
 	/*static*/ constexpr float RATE_ADJUST_INTERVAL=0.2f;
