@@ -65,6 +65,7 @@ import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
@@ -1756,7 +1757,7 @@ public class LiveCommentsView extends FrameLayout implements NotificationCenter.
                 background.setAlpha((int) (0xFF * (backgroundViewAlpha = !filled ? 0.65f : 1.0f)));
                 if (!message.isReaction) {
                     smallStarsView.setVisibility(View.VISIBLE);
-                    smallStarsView.setText(StarsIntroActivity.replaceStars("⭐️ " + LocaleController.formatNumber(message.stars, ','), 0.75f, smallStarsViewCache, 0, 0, 1.0f));
+                    smallStarsView.setText(StarsFormat.replaceStars("⭐️ " + LocaleController.formatNumber(message.stars, ','), 0.75f, smallStarsViewCache, 0, 0, 1.0f));
                     starsView.setVisibility(View.GONE);
                     starsView.setText("");
                 } else {
@@ -1764,7 +1765,7 @@ public class LiveCommentsView extends FrameLayout implements NotificationCenter.
                     smallStarsView.setText("");
                     starsView.setVisibility(View.VISIBLE);
                     starsView.setBackground(Theme.createRoundRectDrawable(dp(13), Theme.multAlpha(darkerBackgroundColor, 0.25f)));
-                    starsView.setText(StarsIntroActivity.replaceStars("⭐️ " + LocaleController.formatNumber(message.stars, ','), 0.75f, starsViewCache, 0, dp(0.66f), 1.0f));
+                    starsView.setText(StarsFormat.replaceStars("⭐️ " + LocaleController.formatNumber(message.stars, ','), 0.75f, starsViewCache, 0, dp(0.66f), 1.0f));
                     if (starsViewCache[0] != null) {
                         starsViewCache[0].draw = drawStar;
                     }

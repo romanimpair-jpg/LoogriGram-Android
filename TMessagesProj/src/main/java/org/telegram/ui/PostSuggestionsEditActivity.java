@@ -20,6 +20,7 @@ import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.R;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_stars;
@@ -39,7 +40,6 @@ import org.telegram.ui.Components.LinkActionView;
 import org.telegram.ui.Components.UItem;
 import org.telegram.ui.Components.UniversalAdapter;
 import org.telegram.ui.Components.UniversalRecyclerView;
-import org.telegram.ui.Stars.StarsIntroActivity;
 
 import java.util.ArrayList;
 
@@ -132,7 +132,7 @@ public class PostSuggestionsEditActivity extends BaseFragment {
             final int[] steps = SlideIntChooseView.cut(new int[]{ 0, 10, 50, 100, 200, 250, 400, 500, 1000, 2500, 5000, 7500, 9000, 10_000 }, (int) getMessagesController().starsPaidMessageAmountMax);
             final SlideIntChooseView.Options options = SlideIntChooseView.Options.make(1, steps, 20, (type, val) -> {
                 if (type == 0) {
-                    return StarsIntroActivity.replaceStarsWithPlain(LocaleController.formatPluralStringComma("Stars", val), 0.66f);
+                    return StarsFormat.replaceStarsWithPlain(LocaleController.formatPluralStringComma("Stars", val), 0.66f);
                 }
                 return LocaleController.formatNumber(val, ',');
             });

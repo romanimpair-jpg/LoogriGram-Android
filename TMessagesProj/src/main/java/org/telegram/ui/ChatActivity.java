@@ -179,6 +179,7 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.SecretChatHelper;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.SharedConfig;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.SvgHelper;
 import org.telegram.messenger.Timer;
 import org.telegram.messenger.TranslateController;
@@ -14847,10 +14848,10 @@ public class ChatActivity extends BaseFragment implements
                     if (messageSuggestionParams.isEmpty()) {
                         replyObjectTextView.setText(LocaleController.getString(R.string.SuggestAPostBelowSubtitle));
                     } else if (messageSuggestionParams.time <= 0) {
-                        replyObjectTextView.setText(StarsIntroActivity.replaceStarsWithPlain(isTon,
+                        replyObjectTextView.setText(StarsFormat.replaceStarsWithPlain(isTon,
                                 LocaleController.formatString(R.string.SuggestAPostBelowSubtitleStars, amountString ), 0.66f, spanArr));
                     } else {
-                        replyObjectTextView.setText(StarsIntroActivity.replaceStarsWithPlain(isTon,
+                        replyObjectTextView.setText(StarsFormat.replaceStarsWithPlain(isTon,
                                 LocaleController.formatSpannable(R.string.SuggestAPostBelowSubtitleStarsAndTime, amountString,
                                         Emoji.replaceEmoji("\uD83D\uDCC6 " + MessageSuggestionOfferSheet.formatDateTime(messageSuggestionParams.time), replyObjectTextView.getPaint().getFontMetricsInt(), true)
                                 ), 0.66f, spanArr));
@@ -15365,10 +15366,10 @@ public class ChatActivity extends BaseFragment implements
                 if (suggestionParams.isEmpty()) {
                     replyObjectTextView.setText(LocaleController.getString(R.string.SuggestAPostBelowSubtitle));
                 } else if (suggestionParams.time <= 0) {
-                    replyObjectTextView.setText(StarsIntroActivity.replaceStarsWithPlain(isTon,
+                    replyObjectTextView.setText(StarsFormat.replaceStarsWithPlain(isTon,
                         LocaleController.formatString(R.string.SuggestAPostBelowSubtitleStars, amountString ), 0.66f, spanArr));
                 } else {
-                    replyObjectTextView.setText(StarsIntroActivity.replaceStarsWithPlain(isTon,
+                    replyObjectTextView.setText(StarsFormat.replaceStarsWithPlain(isTon,
                         LocaleController.formatSpannable(R.string.SuggestAPostBelowSubtitleStarsAndTime, amountString,
                             Emoji.replaceEmoji("\uD83D\uDCC6 " + MessageSuggestionOfferSheet.formatDateTime(suggestionParams.time), replyObjectTextView.getPaint().getFontMetricsInt(), true)
                     ), 0.66f, spanArr));
@@ -28386,7 +28387,7 @@ public class ChatActivity extends BaseFragment implements
                 if (botButton != null) {
                     CharSequence string = new SpannableString(botButton.text);
                     if (TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeBuy.class) && pinnedMessageObject != null && MessageObject.getMedia(pinnedMessageObject.messageOwner) instanceof TLRPC.TL_messageMediaInvoice) {
-                        string = StarsIntroActivity.replaceStars(string);
+                        string = StarsFormat.replaceStars(string);
                     }
                     string = Emoji.replaceEmoji(string, buttonTextView.getPaint().getFontMetricsInt(), false);
                     buttonTextView.setText(string);
@@ -29078,7 +29079,7 @@ public class ChatActivity extends BaseFragment implements
             }
             if (feeItemText != null) {
                 if (topic != null && !topic.nopaid_messages_exception && currentChat.send_paid_messages_stars > 0) {
-                    feeItemText.setText(AndroidUtilities.replaceTags(StarsIntroActivity.replaceStarsWithPlain(LocaleController.formatString(R.string.DirectFee, (int) currentChat.send_paid_messages_stars, DialogObject.getShortName(getThreadId())), 0.6f)));
+                    feeItemText.setText(AndroidUtilities.replaceTags(StarsFormat.replaceStarsWithPlain(LocaleController.formatString(R.string.DirectFee, (int) currentChat.send_paid_messages_stars, DialogObject.getShortName(getThreadId())), 0.6f)));
                 } else {
                     feeItemText.setText(LocaleController.formatString(R.string.DirectFeeNone, DialogObject.getShortName(getThreadId())));
                 }
@@ -29554,7 +29555,7 @@ public class ChatActivity extends BaseFragment implements
                     totalText.append("\n\n");
                 }
                 final ColoredImageSpan[] span = new ColoredImageSpan[1];
-                totalText.append(StarsIntroActivity.replaceStars(AndroidUtilities.replaceSingleTag(formatString(R.string.MessageLockedStarsRemoveFeeShort, DialogObject.getShortName(user_id), LocaleController.formatNumber(showCost, ',')), () -> {
+                totalText.append(StarsFormat.replaceStars(AndroidUtilities.replaceSingleTag(formatString(R.string.MessageLockedStarsRemoveFeeShort, DialogObject.getShortName(user_id), LocaleController.formatNumber(showCost, ',')), () -> {
                     StarsController.getInstance(currentAccount).getPaidRevenue(user_id, parent_id, revenue -> {
                         if (getContext() == null) return;
                         AlertsCreator.showAlertWithCheckboxWithBalance(
@@ -32226,9 +32227,9 @@ public class ChatActivity extends BaseFragment implements
                     tv.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
                     tv.setTextColor(getThemedColor(Theme.key_actionBarDefaultSubmenuItem));
                     CharSequence text = TextUtils.concat(
-                        StarsIntroActivity.replaceStars(LocaleController.formatPluralString("PaidMessagesSendErrorState1", (int) message.messageOwner.errorAllowedPriceStars)),
+                        StarsFormat.replaceStars(LocaleController.formatPluralString("PaidMessagesSendErrorState1", (int) message.messageOwner.errorAllowedPriceStars)),
                         " ",
-                        StarsIntroActivity.replaceStars(LocaleController.formatPluralString("PaidMessagesSendErrorState2", (int) message.messageOwner.errorNewPriceStars))
+                        StarsFormat.replaceStars(LocaleController.formatPluralString("PaidMessagesSendErrorState2", (int) message.messageOwner.errorNewPriceStars))
                     );
                     tv.setText(text);
                     tv.setMaxWidth(popupLayout.getMeasuredWidth() - AndroidUtilities.dp(38));
@@ -32634,7 +32635,7 @@ public class ChatActivity extends BaseFragment implements
             TLRPC.Chat mfChat = getLinkedMonoForumChat();
             if (mfChat != null && currentChat != null && !ChatObject.canManageMonoForum(currentAccount, currentChat)) {
                 final long send_paid_messages_stars = currentChat.send_paid_messages_stars;
-                final CharSequence title = AndroidUtilities.replaceTags(StarsIntroActivity.replaceStars(send_paid_messages_stars > 0 ?
+                final CharSequence title = AndroidUtilities.replaceTags(StarsFormat.replaceStars(send_paid_messages_stars > 0 ?
                     formatString(R.string.SuggestionLockedStars, DialogObject.getShortName(-mfChat.id), LocaleController.formatNumber(send_paid_messages_stars, ',')):
                     formatString(R.string.SuggestionUnlockedStars, DialogObject.getShortName(-mfChat.id)), 1.0f));
 
@@ -32662,7 +32663,7 @@ public class ChatActivity extends BaseFragment implements
                 });
             } else if (userInfo != null && userInfo.send_paid_messages_stars > 0) {
                 final long send_paid_messages_stars = userInfo.send_paid_messages_stars;
-                greetingsViewContainer.setPremiumLock(send_paid_messages_stars > 0, AndroidUtilities.replaceTags(StarsIntroActivity.replaceStars(formatString(R.string.MessageLockedStars, DialogObject.getShortName(dialog_id), LocaleController.formatNumber(userInfo.send_paid_messages_stars, ',')), 1.0f)), LocaleController.getString(R.string.MessageStarsUnlock), v -> {
+                greetingsViewContainer.setPremiumLock(send_paid_messages_stars > 0, AndroidUtilities.replaceTags(StarsFormat.replaceStars(formatString(R.string.MessageLockedStars, DialogObject.getShortName(dialog_id), LocaleController.formatNumber(userInfo.send_paid_messages_stars, ',')), 1.0f)), LocaleController.getString(R.string.MessageStarsUnlock), v -> {
                     final long balance = StarsController.getInstance(currentAccount).getBalance().amount;
                     if (balance < send_paid_messages_stars) {
                         new StarsIntroActivity.StarsNeededSheet(getContext(), getResourceProvider(), send_paid_messages_stars, StarsIntroActivity.StarsNeededSheet.TYPE_PRIVATE_MESSAGE, DialogObject.getShortName(getDialogId()), this::updateBottomOverlay, getDialogId()).show();

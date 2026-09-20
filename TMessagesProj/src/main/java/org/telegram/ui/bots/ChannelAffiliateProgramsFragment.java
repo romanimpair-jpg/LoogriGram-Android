@@ -5,9 +5,9 @@ import static org.telegram.messenger.LocaleController.formatPluralString;
 import static org.telegram.messenger.LocaleController.formatSpannable;
 import static org.telegram.messenger.LocaleController.formatString;
 import static org.telegram.messenger.LocaleController.getString;
-import static org.telegram.ui.Stars.StarsIntroActivity.formatStarsAmount;
-import static org.telegram.ui.Stars.StarsIntroActivity.formatStarsAmountShort;
-import static org.telegram.ui.Stars.StarsIntroActivity.replaceStarsWithPlain;
+import static org.telegram.messenger.StarsFormat.formatStarsAmount;
+import static org.telegram.messenger.StarsFormat.formatStarsAmountShort;
+import static org.telegram.messenger.StarsFormat.replaceStarsWithPlain;
 import static org.telegram.ui.bots.AffiliateProgramFragment.percents;
 
 import android.content.Context;
@@ -43,6 +43,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.browser.Browser;
@@ -80,7 +81,6 @@ import org.telegram.ui.GradientHeaderActivity;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.ProfileActivity;
 import org.telegram.ui.Stars.BotStarsController;
-import org.telegram.ui.Stars.StarsIntroActivity;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 
 import java.util.ArrayList;
@@ -692,7 +692,7 @@ public class ChannelAffiliateProgramsFragment extends GradientHeaderActivity imp
             badge1.setTextColor(Color.WHITE);
             badge1.setGravity(Gravity.CENTER);
             ColoredImageSpan[] spans = new ColoredImageSpan[1];
-            badge1.setText(StarsIntroActivity.replaceStars("⭐️ " + formatStarsAmountShort(bot.daily_revenue_per_user, 1.0f, ','), 0.75f, spans));
+            badge1.setText(StarsFormat.replaceStars("⭐️ " + formatStarsAmountShort(bot.daily_revenue_per_user, 1.0f, ','), 0.75f, spans));
             badge1Outer.addView(badge1, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 15.66f));
             fromView.addView(badge1Outer, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 0, 0, -4));
         }
@@ -768,7 +768,7 @@ public class ChannelAffiliateProgramsFragment extends GradientHeaderActivity imp
         NotificationCenter.listenEmojiLoading(textView);
         SpannableString revenueStars = new SpannableString(formatStarsAmountShort(bot.daily_revenue_per_user, 0.95f, ','));
         revenueStars.setSpan(new TypefaceSpan(AndroidUtilities.bold()), 0, revenueStars.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        textView.setText(StarsIntroActivity.replaceStarsWithPlain(formatSpannable(R.string.ChannelAffiliateProgramJoinRevenue, revenueStars), .725f));
+        textView.setText(StarsFormat.replaceStarsWithPlain(formatSpannable(R.string.ChannelAffiliateProgramJoinRevenue, revenueStars), .725f));
         linearLayout.addView(textView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 10, 0, 20));
 
         textView = new TextView(context);

@@ -18,6 +18,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.utils.tlutils.AmountUtils;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.ColoredImageSpan;
@@ -79,7 +80,7 @@ public class BalanceCloud extends LinearLayout implements NotificationCenter.Not
         final AmountUtils.Amount balance = c.getBalanceAmount();
 
         if (currency == AmountUtils.Currency.STARS) {
-            textView1.setText(StarsIntroActivity.replaceStarsWithPlain(LocaleController.formatString(R.string.Gift2MessageStarsInfo, LocaleController.formatNumber(balance.asDecimal(), ',')), .60f));
+            textView1.setText(StarsFormat.replaceStarsWithPlain(LocaleController.formatString(R.string.Gift2MessageStarsInfo, LocaleController.formatNumber(balance.asDecimal(), ',')), .60f));
 
             textView2.setTextColor(Theme.getColor(Theme.key_undo_cancelColor, resourcesProvider));
             textView2.setLinkTextColor(Theme.getColor(Theme.key_undo_cancelColor, resourcesProvider));
@@ -87,7 +88,7 @@ public class BalanceCloud extends LinearLayout implements NotificationCenter.Not
                 new StarsIntroActivity.StarsOptionsSheet(getContext(), resourcesProvider).show();
             }), true, dp(8f / 3f), dp(1)));
         } else if (currency == AmountUtils.Currency.TON) {
-            textView1.setText(StarsIntroActivity.replaceStarsWithPlain(true, AndroidUtilities.replaceTags(LocaleController.formatString(R.string.Gift2MessageStarsInfoTON, balance.asDecimalString())), .60f, coloredImageSpansTon));
+            textView1.setText(StarsFormat.replaceStarsWithPlain(true, AndroidUtilities.replaceTags(LocaleController.formatString(R.string.Gift2MessageStarsInfoTON, balance.asDecimalString())), .60f, coloredImageSpansTon));
             coloredImageSpansTon[0].setColorKey(Theme.key_undo_cancelColor);
 
             final StringBuilder sb = new StringBuilder(10);

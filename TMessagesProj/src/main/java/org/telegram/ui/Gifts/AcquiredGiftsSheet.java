@@ -20,6 +20,7 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.GiftAuctionController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.tgnet.tl.TL_stars;
@@ -36,7 +37,6 @@ import org.telegram.ui.Components.UniversalAdapter;
 import org.telegram.ui.Components.UniversalRecyclerView;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.ProfileActivity;
-import org.telegram.ui.Stars.StarsIntroActivity;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 
 import java.util.ArrayList;
@@ -149,7 +149,7 @@ public class AcquiredGiftsSheet extends BottomSheetWithRecyclerListView {
 
             SpannableStringBuilder ssb1 = new SpannableStringBuilder();
             final CharSequence bid = "⭐️" + formatNumber(gift.bid_amount, ',');
-            ssb1.append(StarsIntroActivity.replaceStarsWithPlain(bid, 0.75f));
+            ssb1.append(StarsFormat.replaceStarsWithPlain(bid, 0.75f));
 
             String top = formatString(R.string.Gift2AuctionsAcquiredTop, gift.pos);
 

@@ -10,8 +10,8 @@ package org.telegram.ui;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.LocaleController.getString;
-import static org.telegram.ui.Stars.StarsIntroActivity.formatStarsAmount;
-import static org.telegram.ui.Stars.StarsIntroActivity.formatStarsAmountShort;
+import static org.telegram.messenger.StarsFormat.formatStarsAmount;
+import static org.telegram.messenger.StarsFormat.formatStarsAmountShort;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -61,6 +61,7 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
@@ -102,7 +103,6 @@ import org.telegram.ui.Components.SizeNotifierFrameLayout;
 import org.telegram.ui.Components.UndoView;
 import org.telegram.ui.Stars.BotStarsActivity;
 import org.telegram.ui.Stars.BotStarsController;
-import org.telegram.ui.Stars.StarsIntroActivity;
 import org.telegram.ui.bots.AffiliateProgramFragment;
 import org.telegram.ui.bots.BotVerifySheet;
 import org.telegram.ui.bots.ChannelAffiliateProgramsFragment;
@@ -1481,7 +1481,7 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
                     starsBalanceCell.setTextAndValueAndIcon(getString(R.string.BotBalanceStars), loadingStr, R.drawable.menu_premium_main, false);
                 } else {
 
-                    starsBalanceCell.setTextAndValueAndIcon(getString(R.string.BotBalanceStars), c.getBotStarsBalance(userId).amount <= 0?"":StarsIntroActivity.replaceStarsWithPlain(TextUtils.concat("XTR", formatStarsAmountShort(c.getBotStarsBalance(userId), .85f, ' ')), .85f), R.drawable.menu_premium_main, false);
+                    starsBalanceCell.setTextAndValueAndIcon(getString(R.string.BotBalanceStars), c.getBotStarsBalance(userId).amount <= 0?"":StarsFormat.replaceStarsWithPlain(TextUtils.concat("XTR", formatStarsAmountShort(c.getBotStarsBalance(userId), .85f, ' ')), .85f), R.drawable.menu_premium_main, false);
                 }
                 starsBalanceCell.setVisibility(c.botHasStars(userId) ? View.VISIBLE : View.GONE);
 
@@ -1856,7 +1856,7 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
                 if (starsBalanceCell != null) {
                     BotStarsController c = BotStarsController.getInstance(currentAccount);
                     starsBalanceCell.setVisibility(c.botHasStars(userId) ? View.VISIBLE : View.GONE);
-                    starsBalanceCell.setValue(StarsIntroActivity.replaceStarsWithPlain(TextUtils.concat("XTR", formatStarsAmount(c.getBotStarsBalance(userId), .8f, ' ')), .85f), true);
+                    starsBalanceCell.setValue(StarsFormat.replaceStarsWithPlain(TextUtils.concat("XTR", formatStarsAmount(c.getBotStarsBalance(userId), .8f, ' ')), .85f), true);
                     if (publicLinkCell != null) {
                         publicLinkCell.setNeedDivider(c.botHasStars(userId) || c.botHasTON(userId));
                     }
@@ -2495,7 +2495,7 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
             final long stars = forced != null ? forced : (mfChat != null ? mfChat.send_paid_messages_stars : 0);
             suggestedCell.setTextAndValueAndIcon(
                 (LocaleController.getString(R.string.PostSuggestions)),
-                StarsIntroActivity.replaceStarsWithPlain(
+                StarsFormat.replaceStarsWithPlain(
                     LocaleController.formatString(R.string.PostSuggestionsStars, stars),
                     0.66f),
                 R.drawable.msg_markunread, true);

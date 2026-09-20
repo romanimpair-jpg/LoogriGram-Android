@@ -147,6 +147,7 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.SharedPrefsHelper;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
@@ -199,7 +200,6 @@ import org.telegram.ui.PhotoViewer;
 import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.ProfileActivity;
 import org.telegram.ui.Stars.StarsController;
-import org.telegram.ui.Stars.StarsIntroActivity;
 import org.telegram.ui.StickersActivity;
 import org.telegram.ui.Stories.HighlightMessageSheet;
 import org.telegram.ui.Stories.recorder.CaptionContainerView;
@@ -6802,7 +6802,7 @@ public class ChatActivityEnterView extends FrameLayout implements
             }
         } else if (isPostSuggestions) {
             final CharSequence hint = paidMessagesStarsPrice > 0 ?
-                StarsIntroActivity.replaceStars(LocaleController.formatString(R.string.SuggestPostForStars, LocaleController.formatNumber((int) paidMessagesStarsPrice, ','), spans)):
+                StarsFormat.replaceStars(LocaleController.formatString(R.string.SuggestPostForStars, LocaleController.formatNumber((int) paidMessagesStarsPrice, ','), spans)):
                 LocaleController.formatString(R.string.SuggestPostForFree);
             messageEditText.setHintText(hint);
             if (spans[0] != null) {
@@ -6815,7 +6815,7 @@ public class ChatActivityEnterView extends FrameLayout implements
         } else if (editingMessageObject != null) {
             messageEditText.setHintText(editingCaption ? getString(R.string.Caption) : getString(R.string.TypeMessage));
         } else if (paidMessagesStarsPrice > 0) {
-            messageEditText.setHintText(StarsIntroActivity.replaceStars(LocaleController.formatString(R.string.TypeMessageForStars, LocaleController.formatNumber((int) paidMessagesStarsPrice, ',')), spans));
+            messageEditText.setHintText(StarsFormat.replaceStars(LocaleController.formatString(R.string.TypeMessageForStars, LocaleController.formatNumber((int) paidMessagesStarsPrice, ',')), spans));
             if (spans[0] != null) {
                 spans[0].spaceScaleX = 0.9f;
             }
@@ -14988,7 +14988,7 @@ public class ChatActivityEnterView extends FrameLayout implements
             starsPrice = price;
             messagesCount = count;
             if (price > 0) {
-                priceText.setText(StarsIntroActivity.replaceStars("⭐️" + LocaleController.formatNumber(price * Math.max(1, messagesCount), ','), spans), animated);
+                priceText.setText(StarsFormat.replaceStars("⭐️" + LocaleController.formatNumber(price * Math.max(1, messagesCount), ','), spans), animated);
             } else {
                 priceText.setText("", animated);
             }

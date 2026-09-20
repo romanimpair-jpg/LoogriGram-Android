@@ -43,6 +43,7 @@ import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SendMessagesHelper;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.TopicsController;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
@@ -4102,7 +4103,7 @@ public class StarsController {
         } else {
             MessagesController.getInstance(currentAccount).loadFullChat(-dialogId, 0, true);
         }
-        final CharSequence text = StarsIntroActivity.replaceStars(TextUtils.concat(
+        final CharSequence text = StarsFormat.replaceStars(TextUtils.concat(
             LocaleController.formatPluralString("PaidMessagesSendErrorToast1", (int) msg.messageOwner.errorAllowedPriceStars),
             " ",
             LocaleController.formatPluralString("PaidMessagesSendErrorToast2", (int) msg.messageOwner.errorNewPriceStars)

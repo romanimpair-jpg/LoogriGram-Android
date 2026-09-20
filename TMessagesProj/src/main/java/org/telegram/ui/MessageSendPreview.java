@@ -50,6 +50,7 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.utils.WindowVisibilityManager;
@@ -79,7 +80,6 @@ import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceBitmap;
 import org.telegram.ui.Components.blur3.utils.Blur3Utils;
 import org.telegram.ui.Components.chat.ViewPositionWatcher;
 import org.telegram.ui.Components.spoilers.SpoilerEffect2;
-import org.telegram.ui.Stars.StarsIntroActivity;
 import org.telegram.ui.Stories.recorder.KeyboardNotifier;
 
 import java.util.ArrayList;
@@ -1936,7 +1936,7 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
     private Paint buttonBgPaint;
 
     public void setStars(long stars) {
-        buttonText = stars <= 0 ? null : new Text(StarsIntroActivity.replaceStarsWithPlain(LocaleController.formatPluralStringComma("UnlockPaidContent", (int) stars), .7f), 14, AndroidUtilities.bold());
+        buttonText = stars <= 0 ? null : new Text(StarsFormat.replaceStarsWithPlain(LocaleController.formatPluralStringComma("UnlockPaidContent", (int) stars), .7f), 14, AndroidUtilities.bold());
         if (buttonBgPaint == null) {
             buttonBgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             buttonBgPaint.setColor(0x40000000);

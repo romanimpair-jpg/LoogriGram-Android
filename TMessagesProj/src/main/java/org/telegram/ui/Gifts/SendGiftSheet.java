@@ -44,6 +44,7 @@ import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
@@ -637,7 +638,7 @@ public class SendGiftSheet extends BottomSheetWithRecyclerListView implements No
         } else if (starGift != null) {
             final long balance = StarsController.getInstance(currentAccount).getBalance().amount;
             final long price = this.starGift.stars + (upgrade ? this.starGift.upgrade_stars : 0) + (TextUtils.isEmpty(messageEdit.getText()) ? 0 : send_paid_messages_stars);
-            button.setText(StarsIntroActivity.replaceStars(LocaleController.formatPluralStringComma(self ? "Gift2SendSelf" : "Gift2Send", (int) price), cachedStarSpan), animated);
+            button.setText(StarsFormat.replaceStars(LocaleController.formatPluralStringComma(self ? "Gift2SendSelf" : "Gift2Send", (int) price), cachedStarSpan), animated);
             if (StarsController.getInstance(currentAccount).balanceAvailable() && price > balance) {
                 button.setSubText(LocaleController.formatPluralStringComma("Gift2SendYourBalance", (int) balance), animated);
             } else {
@@ -645,7 +646,7 @@ public class SendGiftSheet extends BottomSheetWithRecyclerListView implements No
             }
         } else if (premiumTier != null) {
             if (useStars) {
-                button.setText(StarsIntroActivity.replaceStars(LocaleController.formatString(R.string.Gift2SendPremiumStars, LocaleController.formatNumber(premiumTier.getStarsPrice(), ',')), 1.0f, cachedStarSpan), animated);
+                button.setText(StarsFormat.replaceStars(LocaleController.formatString(R.string.Gift2SendPremiumStars, LocaleController.formatNumber(premiumTier.getStarsPrice(), ',')), 1.0f, cachedStarSpan), animated);
                 cachedStarSpan[0].spaceScaleX = .85f;
             } else {
                 button.setText(new SpannableStringBuilder(LocaleController.formatString(R.string.Gift2SendPremium, premiumTier.getFormattedPrice())), animated);
@@ -896,7 +897,7 @@ public class SendGiftSheet extends BottomSheetWithRecyclerListView implements No
         if (starGift != null) {
             if (starGift.can_upgrade && !self) {
                 items.add(UItem.asShadow(-3, null));
-                items.add(UItem.asCheck(2, StarsIntroActivity.replaceStarsWithPlain(formatString(self ? R.string.Gift2UpgradeSelf : R.string.Gift2Upgrade, (int) starGift.upgrade_stars), .78f)).setChecked(upgrade));
+                items.add(UItem.asCheck(2, StarsFormat.replaceStarsWithPlain(formatString(self ? R.string.Gift2UpgradeSelf : R.string.Gift2Upgrade, (int) starGift.upgrade_stars), .78f)).setChecked(upgrade));
                 items.add(UItem.asShadow(-5, forceNotUpgrade ? formatString(dialogId < 0 ? R.string.Gift2NoUpgradeChannelForcedInfo : R.string.Gift2NoUpgradeForcedInfo, name) : forceUpgrade ? formatString(dialogId < 0 ? R.string.Gift2UpgradeChannelForcedInfo : R.string.Gift2UpgradeForcedInfo, name) : AndroidUtilities.replaceArrows(AndroidUtilities.replaceSingleTag(self ? getString(R.string.Gift2UpgradeSelfInfo) : formatString(dialogId >= 0 ? R.string.Gift2UpgradeInfo : R.string.Gift2UpgradeChannelInfo, name), () -> {
                     new StarGiftSheet(getContext(), currentAccount, dialogId, resourcesProvider)
                         .openAsLearnMore(starGift.id, name);
@@ -918,12 +919,12 @@ public class SendGiftSheet extends BottomSheetWithRecyclerListView implements No
                 items.add(UItem.asShadow(-3, formatString(R.string.Gift2MessagePremiumInfo, name)));
             }
             if (premiumTier != null && premiumTier.isStarsPaymentAvailable()) {
-                items.add(UItem.asCheck(3, StarsIntroActivity.replaceStarsWithPlain(formatString(R.string.Gift2MessageStars, (int) premiumTier.getStarsPrice()), .78f)).setChecked(useStars));
+                items.add(UItem.asCheck(3, StarsFormat.replaceStarsWithPlain(formatString(R.string.Gift2MessageStars, (int) premiumTier.getStarsPrice()), .78f)).setChecked(useStars));
                 final long balance = StarsController.getInstance(currentAccount).getBalance().amount;
                 SpannableStringBuilder boldBalance = new SpannableStringBuilder(LocaleController.formatNumber(balance, ','));
                 boldBalance.setSpan(new TypefaceSpan(AndroidUtilities.bold()), 0, boldBalance.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 items.add(UItem.asShadow(-7, TextUtils.concat(
-                    StarsIntroActivity.replaceStarsWithPlain(formatSpannable(R.string.Gift2MessageStarsInfo, boldBalance), .66f),
+                    StarsFormat.replaceStarsWithPlain(formatSpannable(R.string.Gift2MessageStarsInfo, boldBalance), .66f),
                     " ",
                     AndroidUtilities.replaceArrows(AndroidUtilities.replaceSingleTag(getString(R.string.Gift2MessageStarsInfoLink), () -> {
                         new StarsIntroActivity.StarsOptionsSheet(getContext(), resourcesProvider).show();

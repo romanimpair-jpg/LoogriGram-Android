@@ -9,8 +9,8 @@ import static org.telegram.messenger.LocaleController.formatString;
 import static org.telegram.messenger.LocaleController.getString;
 import static org.telegram.ui.Stars.StarGiftSheet.addAttributeRow;
 import static org.telegram.ui.Stars.StarsController.findAttribute;
-import static org.telegram.ui.Stars.StarsIntroActivity.replaceStars;
-import static org.telegram.ui.Stars.StarsIntroActivity.replaceStarsWithPlain;
+import static org.telegram.messenger.StarsFormat.replaceStars;
+import static org.telegram.messenger.StarsFormat.replaceStarsWithPlain;
 
 import android.content.Context;
 import android.graphics.PorterDuff;
@@ -45,6 +45,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SendMessagesHelper;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.utils.tlutils.AmountUtils;
@@ -540,7 +541,7 @@ public class GiftOfferSheet extends BottomSheetWithRecyclerListView {
 
     private void checkButtonOfferText(boolean animated) {
         final boolean isTon = inputAmount.currency == AmountUtils.Currency.TON;
-        buttonView.setText(StarsIntroActivity.replaceStars(isTon,
+        buttonView.setText(StarsFormat.replaceStars(isTon,
             LocaleController.formatString(R.string.GiftOfferButtonStars, isTon ? inputAmount.asDecimalString() :
                 LocaleController.formatNumber(inputAmount.asDecimal(), ',')),
             isTon ? spanRefTon: spanRefStars

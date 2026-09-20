@@ -73,6 +73,7 @@ import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.SvgHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
@@ -1520,7 +1521,7 @@ public class GiftSheet extends BottomSheetWithRecyclerListView implements Notifi
                 final SpannableStringBuilder starsPrice = new SpannableStringBuilder("" + LocaleController.formatNumber(tier.getStarsPrice(), ','));
                 starsPrice.setSpan(new TypefaceSpan(AndroidUtilities.bold()), 0, starsPrice.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                 final ColoredImageSpan[] span = new ColoredImageSpan[1];
-                starsPriceView.setText(StarsIntroActivity.replaceStarsWithPlain(LocaleController.formatSpannable(R.string.PremiumOrStarsPrice, starsPrice), .48f, span));
+                starsPriceView.setText(StarsFormat.replaceStarsWithPlain(LocaleController.formatSpannable(R.string.PremiumOrStarsPrice, starsPrice), .48f, span));
                 span[0].spaceScaleX = .8f;
             } else {
                 starsPriceView.setVisibility(View.GONE);
@@ -1656,7 +1657,7 @@ public class GiftSheet extends BottomSheetWithRecyclerListView implements Notifi
                 priceView.setPadding(dp(8), 0, dp(10), 0);
                 final long stars = gift.getResellStars();
                 final int backgroundColor = Theme.blendOver(backdrop.center_color | 0xFF000000, Theme.multAlpha(backdrop.pattern_color | 0xFF000000, .55f));
-                priceView.setText(StarsIntroActivity.replaceStars("XTR " + LocaleController.formatNumber(stars, ',')));
+                priceView.setText(StarsFormat.replaceStars("XTR " + LocaleController.formatNumber(stars, ',')));
                 priceBackground.setBackground(new StarsBackground(0x70FFFFFF, backgroundColor));
                 priceView.setTextColor(0xFFFFFFFF);
 
@@ -1680,7 +1681,7 @@ public class GiftSheet extends BottomSheetWithRecyclerListView implements Notifi
                 if (gift.auction && gift.availability_resale == 0) {
                     priceView.setText(getString(gift.sold_out ? R.string.Gift2AuctionPriceView : R.string.Gift2AuctionPriceJoin));
                 } else {
-                    priceView.setText(StarsIntroActivity.replaceStarsWithPlain("XTR " + LocaleController.formatNumber(stars, ',') + (plus ? "+" : ""), .71f));
+                    priceView.setText(StarsFormat.replaceStarsWithPlain("XTR " + LocaleController.formatNumber(stars, ',') + (plus ? "+" : ""), .71f));
                 }
 
                 priceBackground.setBackground(new StarsBackground(gift instanceof TL_stars.TL_starGiftUnique ? 0x40FFFFFF : (Theme.isCurrentThemeDark() ? 0x1EEBA52D : 0x40E8AB02)));
@@ -1814,9 +1815,9 @@ public class GiftSheet extends BottomSheetWithRecyclerListView implements Notifi
                 priceView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 12);
                 ColoredImageSpan[] spans = new ColoredImageSpan[1];
                 if (userGift.gift.resale_ton_only && DialogObject.getPeerDialogId(userGift.gift.owner_id) == UserConfig.getInstance(currentAccount).getClientUserId()) {
-                    priceView.setText(StarsIntroActivity.replaceStars(true, "XTR " + StarsIntroActivity.formatStarsAmount(userGift.gift.getResellAmount(AmountUtils.Currency.TON).toTl(), 1, ','), .95f, spans));
+                    priceView.setText(StarsFormat.replaceStars(true, "XTR " + StarsFormat.formatStarsAmount(userGift.gift.getResellAmount(AmountUtils.Currency.TON).toTl(), 1, ','), .95f, spans));
                 } else {
-                    priceView.setText(StarsIntroActivity.replaceStars("XTR " + LocaleController.formatNumber(userGift.gift.getResellStars(), ','), .95f, spans));
+                    priceView.setText(StarsFormat.replaceStars("XTR " + LocaleController.formatNumber(userGift.gift.getResellStars(), ','), .95f, spans));
                 }
                 if (spans[0] != null) {
                     spans[0].translate(0, dp(0.5f));
@@ -1845,7 +1846,7 @@ public class GiftSheet extends BottomSheetWithRecyclerListView implements Notifi
                 } else {
                     priceView.setPadding(dp(8), 0, dp(10), 0);
                     priceView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 12);
-                    priceView.setText(StarsIntroActivity.replaceStarsWithPlain("XTR " + LocaleController.formatNumber(Math.max(userGift.gift.stars, userGift.convert_stars > 0 ? userGift.convert_stars : userGift.gift.convert_stars), ','), .66f));
+                    priceView.setText(StarsFormat.replaceStarsWithPlain("XTR " + LocaleController.formatNumber(Math.max(userGift.gift.stars, userGift.convert_stars > 0 ? userGift.convert_stars : userGift.gift.convert_stars), ','), .66f));
                 }
                 priceView.setTextColor(unique ? 0xFFFFFFFF : (Theme.isCurrentThemeDark() ? 0xFFEBA52D : 0xFFBF7600));
                 priceBackground.setBackground(new StarsBackground(unique ? 0x40FFFFFF : (Theme.isCurrentThemeDark() ? 0x1EEBA52D : 0x40E8AB02)));

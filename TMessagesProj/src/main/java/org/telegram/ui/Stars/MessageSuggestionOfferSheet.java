@@ -31,6 +31,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageSuggestionParams;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.utils.tlutils.AmountUtils;
 import org.telegram.ui.AccountFrozenAlert;
@@ -528,7 +529,7 @@ public class MessageSuggestionOfferSheet extends BottomSheet {
         if (mode == MODE_INPUT) {
             if (!inputAmount.isZero()) {
                 final boolean isTon = inputAmount.currency == AmountUtils.Currency.TON;
-                buttonView.setText(StarsIntroActivity.replaceStars(isTon,
+                buttonView.setText(StarsFormat.replaceStars(isTon,
                     LocaleController.formatString(R.string.PostSuggestionsOfferStars, isTon ? inputAmount.asDecimalString() :
                         LocaleController.formatNumber(inputAmount.asDecimal(), ',')),
                     isTon ? spanRefTon: spanRefStars

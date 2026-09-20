@@ -39,6 +39,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.utils.tlutils.TlUtils;
@@ -69,7 +70,6 @@ import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.Stars.BagRandomizer;
 import org.telegram.ui.Stars.StarGiftPreviewSheet;
 import org.telegram.ui.Stars.StarGiftSheet;
-import org.telegram.ui.Stars.StarsIntroActivity;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 import org.telegram.ui.Stories.recorder.HintView2;
 
@@ -451,7 +451,7 @@ public class AuctionJoinSheet extends BottomSheetWithRecyclerListView implements
             auctionRowStartTimeText.setText(LocaleController.formatDateTime(auction.auctionStateFinished.start_date, true));
             auctionRowEndTimeText.setText(LocaleController.formatDateTime(auction.auctionStateFinished.end_date, true));
 
-            SpannableStringBuilder ssb = new SpannableStringBuilder(StarsIntroActivity.replaceStarsWithPlain("⭐️ " + LocaleController.formatNumber(auction.auctionStateFinished.average_price, ','), .8f));
+            SpannableStringBuilder ssb = new SpannableStringBuilder(StarsFormat.replaceStarsWithPlain("⭐️ " + LocaleController.formatNumber(auction.auctionStateFinished.average_price, ','), .8f));
             ssb.append(" ").append(ButtonSpan.make("?", this::showAveragePriceHint, resourcesProvider));
             auctionRowAveragePriceText.setText(ssb);
         } else if (auction != null && auction.auctionStateActive != null) {

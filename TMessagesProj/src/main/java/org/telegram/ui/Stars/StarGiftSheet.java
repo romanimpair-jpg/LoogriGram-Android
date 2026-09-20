@@ -17,8 +17,8 @@ import static org.telegram.ui.Stars.StarsController.findAttribute;
 import static org.telegram.ui.Stars.StarsController.findAttributes;
 import static org.telegram.ui.Stars.StarsController.showNoSupportDialog;
 import static org.telegram.ui.Stars.StarsIntroActivity.addAvailabilityRow;
-import static org.telegram.ui.Stars.StarsIntroActivity.replaceStars;
-import static org.telegram.ui.Stars.StarsIntroActivity.replaceStarsWithPlain;
+import static org.telegram.messenger.StarsFormat.replaceStars;
+import static org.telegram.messenger.StarsFormat.replaceStarsWithPlain;
 import static org.telegram.ui.Stars.StarsIntroActivity.setGiftImage;
 import static org.telegram.ui.bots.AffiliateProgramFragment.percents;
 
@@ -101,6 +101,7 @@ import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
@@ -2417,9 +2418,9 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                     hasResellPrice = true;
 
                     final AmountUtils.Amount price = gift.getResellAmount(gift.resale_ton_only ? AmountUtils.Currency.TON : AmountUtils.Currency.STARS);
-                    resellPriceView.setText(LocaleController.formatSpannable(R.string.GiftOnSale, StarsIntroActivity.replaceStars(
+                    resellPriceView.setText(LocaleController.formatSpannable(R.string.GiftOnSale, StarsFormat.replaceStars(
                         price.currency == AmountUtils.Currency.TON,
-                        "⭐️ " + StarsIntroActivity.formatStarsAmount(price.toTl(), 1, ',')),
+                        "⭐️ " + StarsFormat.formatStarsAmount(price.toTl(), 1, ',')),
                         0.9f
                     ));
 
@@ -2506,9 +2507,9 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         public void setResellPrice(AmountUtils.Amount price) {
             hasResellPrice = !price.isZero();
             if (hasResellPrice) {
-                resellPriceView.setText(LocaleController.formatSpannable(R.string.GiftOnSale, StarsIntroActivity.replaceStars(
+                resellPriceView.setText(LocaleController.formatSpannable(R.string.GiftOnSale, StarsFormat.replaceStars(
                     price.currency == AmountUtils.Currency.TON,
-                    "⭐️ " + StarsIntroActivity.formatStarsAmount(price.toTl(), 1, ','),
+                    "⭐️ " + StarsFormat.formatStarsAmount(price.toTl(), 1, ','),
                     0.9f
                 )));
 
@@ -4559,10 +4560,10 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         final AmountUtils.Amount stars = gift.getResellAmount(AmountUtils.Currency.STARS);
         if (gift.resale_ton_only) {
             final AmountUtils.Amount ton = gift.getResellAmount(AmountUtils.Currency.TON);
-            button.setText(StarsIntroActivity.replaceStars(true, LocaleController.formatString(R.string.ResellGiftBuyTON, ton.asFormatString())), !firstSet);
-            button.setSubText(StarsIntroActivity.replaceStars(formatPluralStringComma("ResellGiftBuyEq", (int) stars.asDecimal())), !firstSet);
+            button.setText(StarsFormat.replaceStars(true, LocaleController.formatString(R.string.ResellGiftBuyTON, ton.asFormatString())), !firstSet);
+            button.setSubText(StarsFormat.replaceStars(formatPluralStringComma("ResellGiftBuyEq", (int) stars.asDecimal())), !firstSet);
         } else {
-            button.setText(StarsIntroActivity.replaceStars(formatPluralStringComma("ResellGiftBuy", (int) stars.asDecimal())), !firstSet);
+            button.setText(StarsFormat.replaceStars(formatPluralStringComma("ResellGiftBuy", (int) stars.asDecimal())), !firstSet);
             button.setSubText(null, !firstSet);
         }
     }
@@ -5928,9 +5929,9 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             }
             updateUnderButtonContainer();
             if (prepaying) {
-                button.setText(StarsIntroActivity.replaceStars(LocaleController.formatString(R.string.Gift2PrepayUpgradeButton, price), 1.13f, starCached), true);
+                button.setText(StarsFormat.replaceStars(LocaleController.formatString(R.string.Gift2PrepayUpgradeButton, price), 1.13f, starCached), true);
             } else {
-                button.setText(StarsIntroActivity.replaceStars(LocaleController.formatString(R.string.Gift2UpgradeButton, price), 1.13f, starCached), true);
+                button.setText(StarsFormat.replaceStars(LocaleController.formatString(R.string.Gift2UpgradeButton, price), 1.13f, starCached), true);
             }
         } else {
             button.setText(getString(R.string.Confirm), true);
@@ -6060,9 +6061,9 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         }
 
         if (prepaying) {
-            button.setText(StarsIntroActivity.replaceStars(LocaleController.formatString(R.string.Gift2PrepayUpgradeButton, form_price), 1.13f, starCached), true);
+            button.setText(StarsFormat.replaceStars(LocaleController.formatString(R.string.Gift2PrepayUpgradeButton, form_price), 1.13f, starCached), true);
         } else {
-            button.setText(StarsIntroActivity.replaceStars(LocaleController.formatString(R.string.Gift2UpgradeButton, form_price), 1.13f, starCached), true);
+            button.setText(StarsFormat.replaceStars(LocaleController.formatString(R.string.Gift2UpgradeButton, form_price), 1.13f, starCached), true);
         }
         if (upgradeSheet != null) {
             upgradeSheet.setCurrentPrice(form_price);
@@ -8139,7 +8140,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 final TableView tableView = new TableView(getContext(), resourcesProvider);
                 tableLayout.addView(tableView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.FILL));
                 tableView.addRow(getString(R.string.GiftValueInitialSale), LocaleController.formatYearMonthDay(info.initial_sale_date, true));
-                tableView.addRow(getString(R.string.GiftValueInitialPrice), StarsIntroActivity.replaceStarsWithPlain("⭐️" + info.initial_sale_stars + " (~" + CurrencyFormat.format(info.initial_sale_price, info.currency) + ")", .8f));
+                tableView.addRow(getString(R.string.GiftValueInitialPrice), StarsFormat.replaceStarsWithPlain("⭐️" + info.initial_sale_stars + " (~" + CurrencyFormat.format(info.initial_sale_price, info.currency) + ")", .8f));
                 if (info.hasFlag(info.flags, TLObject.FLAG_0)) {
                     tableView.addRow(getString(R.string.GiftValueLastSale), LocaleController.formatYearMonthDay(info.last_sale_date, true));
                     int morePercent = (int) (Math.round(((double) info.last_sale_price / info.initial_sale_price) * 1000) / 10) - 100;

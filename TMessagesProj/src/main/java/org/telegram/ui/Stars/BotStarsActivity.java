@@ -46,6 +46,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.browser.Browser;
@@ -644,7 +645,7 @@ public class BotStarsActivity extends BaseFragment implements NotificationCenter
         if (balanceTitle == null || balanceSubtitle == null)
             return;
         long amount = (long) (rate * crypto_amount.amount * 100.0);
-        SpannableStringBuilder ssb = new SpannableStringBuilder(StarsIntroActivity.replaceStarsWithPlain(TextUtils.concat("XTR ", StarsIntroActivity.formatStarsAmount(crypto_amount, 0.8f, ' ')), 1f));
+        SpannableStringBuilder ssb = new SpannableStringBuilder(StarsFormat.replaceStarsWithPlain(TextUtils.concat("XTR ", StarsFormat.formatStarsAmount(crypto_amount, 0.8f, ' ')), 1f));
         int index = TextUtils.indexOf(ssb, ".");
         if (index >= 0) {
             ssb.setSpan(balanceTitleSizeSpan, index, ssb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -711,7 +712,7 @@ public class BotStarsActivity extends BaseFragment implements NotificationCenter
             AndroidUtilities.runOnUIThread(this.setBalanceButtonText, 1000);
         } else {
             balanceButton.setSubText(null, true);
-            balanceButton.setText(StarsIntroActivity.replaceStars(balanceEditTextAll ? getString(R.string.BotStarsButtonWithdrawShortAll) : LocaleController.formatPluralStringSpaced("BotStarsButtonWithdrawShort", (int) balanceEditTextValue), starRef), true);
+            balanceButton.setText(StarsFormat.replaceStars(balanceEditTextAll ? getString(R.string.BotStarsButtonWithdrawShortAll) : LocaleController.formatPluralStringSpaced("BotStarsButtonWithdrawShort", (int) balanceEditTextValue), starRef), true);
         }
     };
 

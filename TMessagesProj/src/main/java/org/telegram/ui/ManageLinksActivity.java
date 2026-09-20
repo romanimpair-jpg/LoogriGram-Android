@@ -49,6 +49,7 @@ import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.SvgHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.TLObject;
@@ -81,7 +82,6 @@ import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.ShareAlert;
 import org.telegram.ui.Components.TimerParticles;
 import org.telegram.ui.Stars.StarsController;
-import org.telegram.ui.Stars.StarsIntroActivity;
 import org.telegram.ui.Stories.recorder.HintView2;
 
 import java.util.ArrayList;
@@ -1340,7 +1340,7 @@ public class ManageLinksActivity extends BaseFragment implements NotificationCen
                 priceLayout.setVisibility(View.VISIBLE);
                 optionsView.setVisibility(View.GONE);
 
-                priceTitleView.setText(StarsIntroActivity.replaceStarsWithPlain("⭐️ " + LocaleController.formatNumber(invite.subscription_pricing.amount, ','), .75f));
+                priceTitleView.setText(StarsFormat.replaceStarsWithPlain("⭐️ " + LocaleController.formatNumber(invite.subscription_pricing.amount, ','), .75f));
                 if (invite.subscription_pricing.period == StarsController.PERIOD_MONTHLY) {
                     priceSubitleView.setText(getString(R.string.StarsParticipantSubscriptionPerMonth));
                 } else if (invite.subscription_pricing.period == StarsController.PERIOD_5MINUTES) {

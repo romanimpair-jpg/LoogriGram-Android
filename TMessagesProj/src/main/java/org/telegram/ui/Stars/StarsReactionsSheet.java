@@ -62,6 +62,7 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
@@ -240,7 +241,7 @@ public class StarsReactionsSheet extends BottomSheet implements NotificationCent
             public void onValueChanged(int value) {
                 updateSenders(value);
                 if (buttonView != null) {
-                    buttonView.setText(StarsIntroActivity.replaceStars(formatString(R.string.StarsReactionSend, LocaleController.formatNumber(value, ',')), starRef), true);
+                    buttonView.setText(StarsFormat.replaceStars(formatString(R.string.StarsReactionSend, LocaleController.formatNumber(value, ',')), starRef), true);
                 }
                 if (liveStories) {
                     commentMessage.stars = value;
@@ -518,7 +519,7 @@ public class StarsReactionsSheet extends BottomSheet implements NotificationCent
             layout.addView(buttonView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48, 14, 0, 14, 0));
         }
         updateSenders(0);
-        buttonView.setText(StarsIntroActivity.replaceStars(formatString(R.string.StarsReactionSend, LocaleController.formatNumber(50, ',')), starRef), true);
+        buttonView.setText(StarsFormat.replaceStars(formatString(R.string.StarsReactionSend, LocaleController.formatNumber(50, ',')), starRef), true);
         if (sendEnabled) {
             buttonView.setOnClickListener(v -> {
                 if (sending) return;
@@ -820,7 +821,7 @@ public class StarsReactionsSheet extends BottomSheet implements NotificationCent
         slider.setValue(value);
         updateSenders(value);
         if (buttonView != null) {
-            buttonView.setText(StarsIntroActivity.replaceStars(formatString(R.string.StarsReactionSend, LocaleController.formatNumber(value, ',')), starRef), true);
+            buttonView.setText(StarsFormat.replaceStars(formatString(R.string.StarsReactionSend, LocaleController.formatNumber(value, ',')), starRef), true);
         }
         if (liveStories) {
             commentMessage.stars = value;
@@ -1200,7 +1201,7 @@ public class StarsReactionsSheet extends BottomSheet implements NotificationCent
 
         public void updateText(boolean animated) {
             counterText.cancelAnimation();
-            counterText.setText(StarsIntroActivity.replaceStars(LocaleController.formatNumber(getValue(), ','), starRef), animated);
+            counterText.setText(StarsFormat.replaceStars(LocaleController.formatNumber(getValue(), ','), starRef), animated);
         }
 
         protected void onValueChanged(int value) {}
@@ -1496,7 +1497,7 @@ public class StarsReactionsSheet extends BottomSheet implements NotificationCent
             }
 
             counterText.cancelAnimation();
-            counterText.setText(StarsIntroActivity.replaceStars(LocaleController.formatNumber(getValue(toProgress), ','), starRef), true);
+            counterText.setText(StarsFormat.replaceStars(LocaleController.formatNumber(getValue(toProgress), ','), starRef), true);
         }
     }
 
@@ -2114,7 +2115,7 @@ public class StarsReactionsSheet extends BottomSheet implements NotificationCent
 
             private int currentColor;
             public void setStars(long stars) {
-                starsText = new Text(StarsIntroActivity.replaceStars("⭐️" + LocaleController.formatNumber(stars, ','), .85f), 12, AndroidUtilities.getTypeface("fonts/num.otf"));
+                starsText = new Text(StarsFormat.replaceStars("⭐️" + LocaleController.formatNumber(stars, ','), .85f), 12, AndroidUtilities.getTypeface("fonts/num.otf"));
                 if (liveStories) {
                     gradient = new LinearGradient(0, 0, 0, dp(16), new int[] { getTierOption(currentAccount, (int) stars, TIER_COLOR2), getTierOption(currentAccount, (int) stars, TIER_COLOR1) }, new float[] { 0, 1 }, Shader.TileMode.CLAMP);
                     currentColor = ColorUtils.blendARGB(getTierOption(currentAccount, (int) stars, TIER_COLOR2), getTierOption(currentAccount, (int) stars, TIER_COLOR1), 0.5f);

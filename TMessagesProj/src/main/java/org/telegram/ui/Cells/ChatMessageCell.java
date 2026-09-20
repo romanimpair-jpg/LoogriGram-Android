@@ -133,6 +133,7 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.RichMessageLayout;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.SharedConfig;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.SvgHelper;
 import org.telegram.messenger.TranslateController;
 import org.telegram.messenger.UserConfig;
@@ -240,7 +241,6 @@ import org.telegram.ui.SecretMediaViewer;
 import org.telegram.ui.Stars.StarGiftPatterns;
 import org.telegram.ui.Stars.StarGiftSheet;
 import org.telegram.ui.Stars.StarsController;
-import org.telegram.ui.Stars.StarsIntroActivity;
 import org.telegram.ui.Stars.StarsReactionsSheet;
 import org.telegram.ui.Stories.StoriesUtilities;
 import org.telegram.ui.Stories.StoryViewer;
@@ -8794,7 +8794,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             }
                             String price = LocaleController.getInstance().formatCurrencyString(MessageObject.getMedia(messageObject.messageOwner).total_amount, MessageObject.getMedia(messageObject.messageOwner).currency);
                             SpannableStringBuilder stringBuilder = new SpannableStringBuilder(price + " " + str);
-                            stringBuilder = StarsIntroActivity.replaceStars(stringBuilder);
+                            stringBuilder = StarsFormat.replaceStars(stringBuilder);
                             stringBuilder.setSpan(new TypefaceSpan(AndroidUtilities.bold()), 0, price.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                             videoInfoLayout = new StaticLayout(stringBuilder, Theme.chat_shipmentPaint, maxWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
                             durationWidth = (int) (videoInfoLayout.getLineCount() > 0 ? videoInfoLayout.getLineWidth(0) : 0);
@@ -10884,7 +10884,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             }
 
                             if (TLKeyboardHelper.isType(botButton.button, TL_keyboard.TL_inlineButtonTypeBuy.class) && MessageObject.getMedia(messageObject.messageOwner) instanceof TLRPC.TL_messageMediaInvoice) {
-                                buttonText = StarsIntroActivity.replaceStars(buttonText);
+                                buttonText = StarsFormat.replaceStars(buttonText);
                             }
                             if (TLKeyboardHelper.isType(botButton.button, TL_keyboard.TL_inlineButtonTypeCopy.class)) {
                                 buttonText = new SpannableStringBuilder("c ").append(buttonText);
@@ -11143,16 +11143,16 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     final CharSequence text;
                     if (currentMessageObject.isOutOwner() && !currentMessageObject.isForwarded()) {
                         if (diceStakeOutcome > 0) {
-                            text = StarsIntroActivity.replaceDiamond(formatString(R.string.StakeDiceActionYouWon, StarsIntroActivity.formatTON(diceStakeOutcome)), 0.825f);
+                            text = StarsFormat.replaceDiamond(formatString(R.string.StakeDiceActionYouWon, StarsFormat.formatTON(diceStakeOutcome)), 0.825f);
                         } else {
-                            text = StarsIntroActivity.replaceDiamond(formatString(R.string.StakeDiceActionYouLost, StarsIntroActivity.formatTON(-diceStakeOutcome)), 0.825f);
+                            text = StarsFormat.replaceDiamond(formatString(R.string.StakeDiceActionYouLost, StarsFormat.formatTON(-diceStakeOutcome)), 0.825f);
                         }
                     } else {
                         final TLObject fromObject = currentMessageObject.getFromPeerObject();
                         if (diceStakeOutcome > 0) {
-                            text = StarsIntroActivity.replaceDiamond(replaceWithLink(formatString(R.string.StakeDiceActionWon, StarsIntroActivity.formatTON(diceStakeOutcome)), "un1", fromObject), 0.825f);
+                            text = StarsFormat.replaceDiamond(replaceWithLink(formatString(R.string.StakeDiceActionWon, StarsFormat.formatTON(diceStakeOutcome)), "un1", fromObject), 0.825f);
                         } else {
-                            text = StarsIntroActivity.replaceDiamond(replaceWithLink(formatString(R.string.StakeDiceActionLost, StarsIntroActivity.formatTON(-diceStakeOutcome)), "un1", fromObject), 0.825f);
+                            text = StarsFormat.replaceDiamond(replaceWithLink(formatString(R.string.StakeDiceActionLost, StarsFormat.formatTON(-diceStakeOutcome)), "un1", fromObject), 0.825f);
                         }
                     }
                     bottomActionText = new Text(text, 14, AndroidUtilities.bold())
@@ -18489,13 +18489,13 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             currentTimeString = timeString;
         }
         if (currentMessageObject.isStakedDice()) {
-            currentTimeString = TextUtils.concat("💎", StarsIntroActivity.formatTON(currentMessageObject.getStakedDiceAmount()), "  ", currentTimeString);
-            currentTimeString = StarsIntroActivity.replaceDiamond(currentTimeString, 0.55f, null, 0, dp(-.33f), 1.05f);
+            currentTimeString = TextUtils.concat("💎", StarsFormat.formatTON(currentMessageObject.getStakedDiceAmount()), "  ", currentTimeString);
+            currentTimeString = StarsFormat.replaceDiamond(currentTimeString, 0.55f, null, 0, dp(-.33f), 1.05f);
         }
         final long starsPrice = currentMessageObject.getDialogId() < 0 ? getStarsPrice() : 0;
         if (starsPrice > 0) {
             currentTimeString = TextUtils.concat("⭐️", AndroidUtilities.formatWholeNumber((int) starsPrice, 0), "  ", currentTimeString);
-            currentTimeString = StarsIntroActivity.replaceStars(currentTimeString, 0.8f, null, 0, dp(-.33f), 0.94f);
+            currentTimeString = StarsFormat.replaceStars(currentTimeString, 0.8f, null, 0, dp(-.33f), 0.94f);
         }
         if (currentMessageObject.messageOwner != null && currentMessageObject.messageOwner.schedule_repeat_period != 0) {
             final int period = currentMessageObject.messageOwner.schedule_repeat_period;

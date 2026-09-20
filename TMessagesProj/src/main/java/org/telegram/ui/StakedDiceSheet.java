@@ -2,8 +2,8 @@ package org.telegram.ui;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.LocaleController.getString;
-import static org.telegram.ui.Stars.StarsIntroActivity.formatTON;
-import static org.telegram.ui.Stars.StarsIntroActivity.replaceDiamond;
+import static org.telegram.messenger.StarsFormat.formatTON;
+import static org.telegram.messenger.StarsFormat.replaceDiamond;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -36,6 +36,7 @@ import org.telegram.messenger.Emoji;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.utils.tlutils.AmountUtils;
 import org.telegram.tgnet.TLRPC;
@@ -490,7 +491,7 @@ public class StakedDiceSheet extends BottomSheetWithRecyclerListView {
         }
 
         final SpannableStringBuilder sb = new SpannableStringBuilder(getString(R.string.StakeDiceToast));
-        sb.append(StarsIntroActivity.formatTON(stake));
+        sb.append(StarsFormat.formatTON(stake));
         sb.append("  ").append(ButtonSpan.make(getString(R.string.StakeDiceToastChange), () -> {
             new StakedDiceSheet(f.getContext(), f.getCurrentAccount(), f.getResourceProvider(), send).show();
         }, fragment.getResourceProvider()));

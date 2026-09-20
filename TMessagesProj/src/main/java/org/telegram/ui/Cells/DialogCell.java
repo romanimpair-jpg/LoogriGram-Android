@@ -81,6 +81,7 @@ import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
@@ -130,7 +131,6 @@ import org.telegram.ui.Components.spoilers.SpoilerEffect;
 import org.telegram.ui.DialogsActivity;
 import org.telegram.ui.FilterCreateActivity;
 import org.telegram.ui.RightSlidingDialogContainer;
-import org.telegram.ui.Stars.StarsIntroActivity;
 import org.telegram.ui.Stories.StoriesListPlaceProvider;
 import org.telegram.ui.Stories.StoriesUtilities;
 import org.telegram.ui.Stories.StoryViewer;
@@ -1913,7 +1913,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                                     } else {
                                         messageString = count > 1 ? LocaleController.formatPluralString("Photos", count) : getString(R.string.AttachPhoto);
                                     }
-                                    messageString = StarsIntroActivity.replaceStars(LocaleController.formatString(R.string.AttachPaidMedia, messageString));
+                                    messageString = StarsFormat.replaceStars(LocaleController.formatString(R.string.AttachPaidMedia, messageString));
                                     currentMessagePaint = Theme.dialogs_messagePrintingPaint[paintIndex];
                                 } else if (thumbsCount > 1) {
                                     if (hasVideoThumb) {
@@ -5993,7 +5993,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 } else {
                     innerMessage = count > 1 ? LocaleController.formatPluralString("Photos", count) : getString(R.string.AttachPhoto);
                 }
-                innerMessage = StarsIntroActivity.replaceStars(LocaleController.formatString(R.string.AttachPaidMedia, innerMessage));
+                innerMessage = StarsFormat.replaceStars(LocaleController.formatString(R.string.AttachPaidMedia, innerMessage));
                 colorKey = Theme.key_chats_actionMessage;
             } else if (thumbsCount > 1) {
                 if (hasVideoThumb) {

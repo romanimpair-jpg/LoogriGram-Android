@@ -47,6 +47,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.tgnet.ConnectionsManager;
@@ -64,7 +65,6 @@ import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.Premium.PremiumGradient;
 import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.Text;
-import org.telegram.ui.Stars.StarsIntroActivity;
 
 public class ShareDialogCell extends FrameLayout implements NotificationCenter.NotificationCenterDelegate {
 
@@ -364,7 +364,7 @@ public class ShareDialogCell extends FrameLayout implements NotificationCenter.N
                     float cy = imageView.getTop() + imageView.getMeasuredHeight() / 2.0f - dp(20.83f);
 
                     if (priceText == null || priceTextValue != starsPriceBlocked && starsPriceBlocked > 0) {
-                        priceText = new Text(StarsIntroActivity.replaceStars("⭐️" + AndroidUtilities.formatWholeNumber((int) (priceTextValue = starsPriceBlocked), 0), .65f), 9.33f, AndroidUtilities.bold());
+                        priceText = new Text(StarsFormat.replaceStars("⭐️" + AndroidUtilities.formatWholeNumber((int) (priceTextValue = starsPriceBlocked), 0), .65f), 9.33f, AndroidUtilities.bold());
                     }
                     final float w = (priceText == null ? 0 : priceText.getCurrentWidth()) + dp(10);
                     final float h = dp(14.33f);

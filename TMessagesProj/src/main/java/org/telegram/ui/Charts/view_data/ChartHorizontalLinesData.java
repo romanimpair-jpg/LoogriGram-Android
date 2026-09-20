@@ -11,11 +11,11 @@ import org.telegram.messenger.CurrencyFormat;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BillingController;
 import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ChannelMonetizationLayout;
 import org.telegram.ui.Charts.data.ChartData;
 import org.telegram.ui.Components.AnimatedEmojiSpan;
-import org.telegram.ui.Stars.StarsIntroActivity;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -155,7 +155,7 @@ public class ChartHorizontalLinesData {
             if (a == 1) {
                 return "≈" + CurrencyFormat.format(v, "USD");
             }
-            return StarsIntroActivity.replaceStarsWithPlain("XTR " + LocaleController.formatNumber(v, ' '), .65f);
+            return StarsFormat.replaceStarsWithPlain("XTR " + LocaleController.formatNumber(v, ' '), .65f);
         }
         return AndroidUtilities.formatWholeNumber((int) v, 0);
     }

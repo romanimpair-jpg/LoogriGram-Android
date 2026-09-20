@@ -70,6 +70,7 @@ import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.SvgHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
@@ -123,7 +124,6 @@ import org.telegram.ui.Gifts.ResaleGiftsFragment;
 import org.telegram.ui.Stars.StarGiftPatterns;
 import org.telegram.ui.Stars.StarGiftSheet;
 import org.telegram.ui.Stars.StarsController;
-import org.telegram.ui.Stars.StarsIntroActivity;
 import org.telegram.ui.Stories.StoriesUtilities;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 
@@ -1225,10 +1225,10 @@ public class PeerColorActivity extends BaseFragment implements NotificationCente
                 final AmountUtils.Amount stars = gift.getResellAmount(AmountUtils.Currency.STARS);
                 if (gift.resale_ton_only) {
                     final AmountUtils.Amount ton = gift.getResellAmount(AmountUtils.Currency.TON);
-                    button.setText(StarsIntroActivity.replaceStars(true, LocaleController.formatString(R.string.ResellGiftBuyTON, ton.asFormatString())), animated);
-                    button.setSubText(StarsIntroActivity.replaceStars(formatPluralStringComma("ResellGiftBuyEq", (int) stars.asDecimal())), animated);
+                    button.setText(StarsFormat.replaceStars(true, LocaleController.formatString(R.string.ResellGiftBuyTON, ton.asFormatString())), animated);
+                    button.setSubText(StarsFormat.replaceStars(formatPluralStringComma("ResellGiftBuyEq", (int) stars.asDecimal())), animated);
                 } else {
-                    button.setText(StarsIntroActivity.replaceStars(formatPluralStringComma("ResellGiftBuy", (int) stars.asDecimal())), animated);
+                    button.setText(StarsFormat.replaceStars(formatPluralStringComma("ResellGiftBuy", (int) stars.asDecimal())), animated);
                     button.setSubText(null, animated);
                 }
             } else {

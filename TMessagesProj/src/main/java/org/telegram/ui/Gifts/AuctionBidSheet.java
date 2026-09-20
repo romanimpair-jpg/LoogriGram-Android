@@ -47,6 +47,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.utils.CountdownTimer;
@@ -447,7 +448,7 @@ public class AuctionBidSheet extends BottomSheetWithRecyclerListView implements 
     private final ColoredImageSpan[] refS = new ColoredImageSpan[1];
     private AnimatedEmojiSpan animatedEmojiSpan;
     private void updateTable(boolean animated) {
-        minimumBidCell.infoView.setText(StarsIntroActivity.replaceStarsWithPlain(
+        minimumBidCell.infoView.setText(StarsFormat.replaceStarsWithPlain(
             "⭐️" + LocaleController.formatNumberWithMillion((int) auction.getMinimumBid(), ','), 0.78f, refS), animated);
 
         if (auction.auctionStateActive != null) {
@@ -615,12 +616,12 @@ public class AuctionBidSheet extends BottomSheetWithRecyclerListView implements 
             buttonView.setOnClickListener(v -> dismiss());
         } else {
             if (auction.auctionUserState.bid_amount < myBid && !auction.auctionUserState.returned) {
-                buttonView.setText(StarsIntroActivity.replaceStars(
+                buttonView.setText(StarsFormat.replaceStars(
                         formatString(R.string.Gift2AuctionPlaceBidAdd, formatNumber(myBid - auction.auctionUserState.bid_amount, ',')),
                         spanRefStars
                 ), animated);
             } else {
-                buttonView.setText(StarsIntroActivity.replaceStars(
+                buttonView.setText(StarsFormat.replaceStars(
                         formatString(R.string.Gift2AuctionPlaceBid, formatNumber(myBid, ',')),
                         spanRefStars
                 ), animated);
@@ -987,7 +988,7 @@ public class AuctionBidSheet extends BottomSheetWithRecyclerListView implements 
         }
 
         public void setBid(long bid, boolean animated) {
-            bidTextView.setText(StarsIntroActivity.replaceStarsWithPlain("⭐️" + LocaleController.formatNumber((int) bid, ','), 0.78f, ref), animated);
+            bidTextView.setText(StarsFormat.replaceStarsWithPlain("⭐️" + LocaleController.formatNumber((int) bid, ','), 0.78f, ref), animated);
         }
 
         private boolean drawDivider;

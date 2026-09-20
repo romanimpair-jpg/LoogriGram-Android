@@ -46,6 +46,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.R;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.browser.Browser;
@@ -69,7 +70,6 @@ import org.telegram.ui.LinkEditActivity;
 import org.telegram.ui.ManageLinksActivity;
 import org.telegram.ui.ProfileActivity;
 import org.telegram.ui.Stars.StarsController;
-import org.telegram.ui.Stars.StarsIntroActivity;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 import org.telegram.ui.Stories.recorder.HintView2;
 
@@ -1201,7 +1201,7 @@ public class InviteLinkBottomSheet extends BottomSheet {
                 periodView.setText(null);
                 setRightPadding(0, true, true);
             } else {
-                final CharSequence amountText = StarsIntroActivity.replaceStarsWithPlain("⭐️" + pricing.amount, .7f);
+                final CharSequence amountText = StarsFormat.replaceStarsWithPlain("⭐️" + pricing.amount, .7f);
                 final CharSequence periodText = pricing.period == StarsController.PERIOD_MONTHLY ? LocaleController.getString(R.string.StarsParticipantSubscriptionPerMonth) : (pricing.period == StarsController.PERIOD_5MINUTES ? "per 5 minutes" : "per each minute");
                 priceView.setText(amountText);
                 periodView.setText(periodText);
@@ -1254,11 +1254,11 @@ public class InviteLinkBottomSheet extends BottomSheet {
         public void set(TL_stars.TL_starsSubscriptionPricing pricing, int count) {
             if (pricing == null) return;
             if (pricing.period == StarsController.PERIOD_MONTHLY) {
-                titleView.setText(StarsIntroActivity.replaceStarsWithPlain(LocaleController.formatString(R.string.LinkRevenuePrice, pricing.amount) + (count > 0 ? " x " + count : ""), .8f));
+                titleView.setText(StarsFormat.replaceStarsWithPlain(LocaleController.formatString(R.string.LinkRevenuePrice, pricing.amount) + (count > 0 ? " x " + count : ""), .8f));
                 subtitleView.setText(count == 0 ? getString(R.string.NoOneSubscribed) : LocaleController.formatString(R.string.LinkRevenuePriceInfo, CurrencyFormat.format((long) (pricing.amount / 1000.0 * MessagesController.getInstance(currentAccount).starsUsdWithdrawRate1000 * count), "USD")));
             } else {
                 final String period = pricing.period == StarsController.PERIOD_5MINUTES ? "5min" : "min";
-                titleView.setText(StarsIntroActivity.replaceStarsWithPlain(String.format(Locale.US, "⭐%1$d/%2$s", pricing.amount, period) + (count > 0 ? " x " + count : ""), .8f));
+                titleView.setText(StarsFormat.replaceStarsWithPlain(String.format(Locale.US, "⭐%1$d/%2$s", pricing.amount, period) + (count > 0 ? " x " + count : ""), .8f));
                 subtitleView.setText(count == 0 ? getString(R.string.NoOneSubscribed) : String.format(Locale.US, "you get approximately %1$s %2$s", CurrencyFormat.format((long) (pricing.amount / 1000.0 * MessagesController.getInstance(currentAccount).starsUsdWithdrawRate1000 * count), "USD"), "for " + period));
             }
         }
@@ -1331,10 +1331,10 @@ public class InviteLinkBottomSheet extends BottomSheet {
         textView.setGravity(Gravity.CENTER);
         textView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText4, resourcesProvider));
         if (pricing.period == StarsController.PERIOD_MONTHLY) {
-            textView.setText(StarsIntroActivity.replaceStarsWithPlain(formatString(R.string.StarsSubscriptionPrice, pricing.amount), .8f));
+            textView.setText(StarsFormat.replaceStarsWithPlain(formatString(R.string.StarsSubscriptionPrice, pricing.amount), .8f));
         } else {
             final String period = pricing.period == StarsController.PERIOD_5MINUTES ? "5min" : "min";
-            textView.setText(StarsIntroActivity.replaceStarsWithPlain(String.format(Locale.US, "⭐%1$d/%2$s", pricing.amount, period), .8f));
+            textView.setText(StarsFormat.replaceStarsWithPlain(String.format(Locale.US, "⭐%1$d/%2$s", pricing.amount, period), .8f));
         }
         linearLayout.addView(textView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 20, 0, 20, 4));
 

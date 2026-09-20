@@ -22,6 +22,7 @@ import androidx.annotation.NonNull;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.GiftAuctionController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.utils.CountdownTimer;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.ui.ActionBar.Theme;
@@ -33,7 +34,6 @@ import org.telegram.ui.Components.RLottieImageView;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.UItem;
 import org.telegram.ui.Components.UniversalAdapter;
-import org.telegram.ui.Stars.StarsIntroActivity;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 
 import java.util.ArrayList;
@@ -215,11 +215,11 @@ public class ActiveAuctionsSheet extends BottomSheetWithRecyclerListView impleme
             final CharSequence bid = "⭐️" + formatNumber(auction.auctionUserState.bid_amount, ',');
             final GiftAuctionController.Auction.BidStatus bidStatus = auction.getBidStatus();
             if (bidStatus.isOutbid()) {
-                messageView.setText(StarsIntroActivity.replaceStarsWithPlain(AndroidUtilities.replaceTags(formatString(
+                messageView.setText(StarsFormat.replaceStarsWithPlain(AndroidUtilities.replaceTags(formatString(
                     R.string.Gift2ActiveAuctionsActiveBidOutbid, bid)), .66f, spanRefStars), animated);
                 messageView.setTextColor(Theme.getColor(Theme.key_text_RedBold));
             } else {
-                messageView.setText(StarsIntroActivity.replaceStarsWithPlain(AndroidUtilities.replaceTags(formatString(
+                messageView.setText(StarsFormat.replaceStarsWithPlain(AndroidUtilities.replaceTags(formatString(
                     R.string.Gift2ActiveAuctionsActiveBidActive, bid, auction.getApproximatedMyPlace()
                 )), .66f, spanRefStars), animated);
                 messageView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));

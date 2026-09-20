@@ -97,6 +97,7 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.SavedMessagesController;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.SharedConfig;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
@@ -197,7 +198,6 @@ import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.ProfileActivity;
 import org.telegram.ui.ReportBottomSheet;
 import org.telegram.ui.Stars.StarsController;
-import org.telegram.ui.Stars.StarsIntroActivity;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 import org.telegram.ui.Stories.recorder.CaptionContainerView;
 import org.telegram.ui.Stories.recorder.HintView2;
@@ -4912,7 +4912,7 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
         } else if (starsPriceBlocked > 0) {
             stealthModeIsActive = false;
             chatActivityEnterView.setEnabled(true);
-            chatActivityEnterView.setOverrideHint(StarsIntroActivity.replaceStars(LocaleController.formatString(R.string.TypeMessageForStars, LocaleController.formatNumber(starsPriceBlocked, ','))), animated);
+            chatActivityEnterView.setOverrideHint(StarsFormat.replaceStars(LocaleController.formatString(R.string.TypeMessageForStars, LocaleController.formatNumber(starsPriceBlocked, ','))), animated);
         } else if (!currentStory.isLive && stealthMode != null && ConnectionsManager.getInstance(currentAccount).getCurrentTime() < stealthMode.active_until_date) {
             stealthModeIsActive = true;
             int time = stealthMode.active_until_date - ConnectionsManager.getInstance(currentAccount).getCurrentTime();
@@ -4933,7 +4933,7 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
             if (currentStory.isLive) {
                 final long stars = chatActivityEnterView.getStarsPrice();
                 if (stars > 0) {
-                    chatActivityEnterView.setOverrideHint(StarsIntroActivity.replaceStars(LocaleController.formatString(R.string.CommentFor, LocaleController.formatNumber((int) stars, ',')), chatActivityEnterView.spans), animated);
+                    chatActivityEnterView.setOverrideHint(StarsFormat.replaceStars(LocaleController.formatString(R.string.CommentFor, LocaleController.formatNumber((int) stars, ',')), chatActivityEnterView.spans), animated);
                     if (chatActivityEnterView.spans[0] != null) {
                         chatActivityEnterView.spans[0].spaceScaleX = 0.9f;
                     }

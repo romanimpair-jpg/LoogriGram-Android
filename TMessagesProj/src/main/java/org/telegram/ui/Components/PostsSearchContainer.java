@@ -31,6 +31,7 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
@@ -541,7 +542,7 @@ public class PostsSearchContainer extends FrameLayout {
             final int s = S - h * 3600 - m * 60;
 
             emptyButton.setVisibility(View.VISIBLE);
-            emptyButton.setText(StarsIntroActivity.replaceStars(formatPluralStringComma("SearchPostsButtonPay", (int) flood.stars_amount), 1.13f, starSpan), true);
+            emptyButton.setText(StarsFormat.replaceStars(formatPluralStringComma("SearchPostsButtonPay", (int) flood.stars_amount), 1.13f, starSpan), true);
             emptyButton.setSubText(formatString(R.string.SearchPostsFreeSearchUnlocksIn, (h > 0 ? h + ":" : "") + (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s)), true);
             emptyButton.subText.setHacks(false, true, true);
             emptyButton.setOnClickListener(v -> {

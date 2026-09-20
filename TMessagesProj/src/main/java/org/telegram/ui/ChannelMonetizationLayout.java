@@ -55,6 +55,7 @@ import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.browser.Browser;
@@ -479,7 +480,7 @@ public class ChannelMonetizationLayout extends SizeNotifierFrameLayout implement
                 AndroidUtilities.runOnUIThread(this.setStarsBalanceButtonText, 1000);
             } else {
                 starsBalanceButton.setSubText(null, true);
-                starsBalanceButton.setText(StarsIntroActivity.replaceStars(starsBalanceEditTextAll ? getString(R.string.MonetizationStarsWithdrawAll) : LocaleController.formatPluralStringSpaced("MonetizationStarsWithdraw", (int) starsBalanceEditTextValue), starRef), true);
+                starsBalanceButton.setText(StarsFormat.replaceStars(starsBalanceEditTextAll ? getString(R.string.MonetizationStarsWithdrawAll) : LocaleController.formatPluralStringSpaced("MonetizationStarsWithdraw", (int) starsBalanceEditTextValue), starRef), true);
             }
         };
 
@@ -681,7 +682,7 @@ public class ChannelMonetizationLayout extends SizeNotifierFrameLayout implement
         if (balanceTitle == null || balanceSubtitle == null)
             return;
 //        long amount = (long) (stars_rate * crypto_amount * 100.0);
-        SpannableStringBuilder ssb = new SpannableStringBuilder(StarsIntroActivity.replaceStarsWithPlain(TextUtils.concat("XTR ", StarsIntroActivity.formatStarsAmount(amount, 0.8f, ' ')), 1f));
+        SpannableStringBuilder ssb = new SpannableStringBuilder(StarsFormat.replaceStarsWithPlain(TextUtils.concat("XTR ", StarsFormat.formatStarsAmount(amount, 0.8f, ' ')), 1f));
         int index = TextUtils.indexOf(ssb, ".");
         if (index >= 0) {
             ssb.setSpan(balanceTitleSizeSpan, index, ssb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -1147,9 +1148,9 @@ public class ChannelMonetizationLayout extends SizeNotifierFrameLayout implement
                     if (i == 0) {
                         s.append(LocaleController.formatNumber(value.crypto_amount, ' '));
                     } else {
-                        s.append(StarsIntroActivity.formatStarsAmount(value.crypto_amount2, .8f, ' '));
+                        s.append(StarsFormat.formatStarsAmount(value.crypto_amount2, .8f, ' '));
                     }
-                    finalS = StarsIntroActivity.replaceStarsWithPlain(s, .7f);
+                    finalS = StarsFormat.replaceStarsWithPlain(s, .7f);
                 } else {
                     s.append(Long.toString(value.crypto_amount));
                     finalS = s;
