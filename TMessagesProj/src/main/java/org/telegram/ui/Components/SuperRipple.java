@@ -1,4 +1,4 @@
-package org.telegram.ui.Stars;
+package org.telegram.ui.Components;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -16,11 +16,15 @@ import com.google.zxing.common.detector.MathUtils;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.R;
-import org.telegram.ui.Components.CubicBezierInterpolator;
 
 import java.util.ArrayList;
 
 @RequiresApi(api = Build.VERSION_CODES.TIRAMISU)
+/**
+ * LoogriGram: moved out of org.telegram.ui.Stars, which goes with the money
+ * screens. This is a ripple distortion effect with nothing money about it -
+ * no TL type, no controller - and LaunchActivity is its only caller.
+ */
 public class SuperRipple extends ISuperRipple {
 
     public static boolean supports() {
