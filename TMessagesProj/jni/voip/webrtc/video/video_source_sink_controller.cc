@@ -37,7 +37,7 @@ void VideoSourceSinkController::SetSource(
 
   rtc::VideoSourceInterface<VideoFrame>* old_source = source_;
   source_ = source;
-    DEBUG_D("$%d: SetSource(): new source as %ld", a, source_);
+    DEBUG_D("$%d: SetSource(): new source as %p", a, (void *) source_);
 
   if (old_source != source && old_source)
     old_source->RemoveSink(sink_);
@@ -64,7 +64,7 @@ void VideoSourceSinkController::PushSourceSinkSettings() {
   DEBUG_D("$%d: PushSourceSinkSettings(): 1", a);
   if (!source_)
     return;
-    DEBUG_D("$%d: PushSourceSinkSettings(): 2 src=%ld", a, source_);
+    DEBUG_D("$%d: PushSourceSinkSettings(): 2 src=%p", a, (void *) source_);
   rtc::VideoSinkWants wants = CurrentSettingsToSinkWants();
     DEBUG_D("$%d: PushSourceSinkSettings(): 3", a);
   source_->AddOrUpdateSink(sink_, wants);

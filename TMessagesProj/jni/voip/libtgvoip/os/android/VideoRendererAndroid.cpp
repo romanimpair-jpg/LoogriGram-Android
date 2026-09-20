@@ -84,7 +84,7 @@ void VideoRendererAndroid::RunThread(){
 
 	while(running){
 		//LOGV("before get from queue");
-		Request request=std::move(queue.GetBlocking());
+		Request request=queue.GetBlocking();
 		//LOGV("1 before decode %u", (unsigned int)request.Length());
 		if(request.type==Request::Type::Shutdown){
 			LOGI("Shutting down video decoder thread");

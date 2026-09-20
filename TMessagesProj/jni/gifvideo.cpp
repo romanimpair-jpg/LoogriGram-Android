@@ -47,7 +47,7 @@ struct OffsetIOContext;
 struct VideoInfo;
 static void freeOffsetIO(VideoInfo *info);
 
-typedef struct VideoInfo {
+struct VideoInfo {
 
     ~VideoInfo() {
         delete reader;
@@ -140,19 +140,7 @@ void custom_log(void *ptr, int level, const char* fmt, va_list vl){
     av_log_format_line(ptr, level, fmt, vl2, line, sizeof(line), &print_prefix);
     va_end(vl2);
 
-    LOGE(line);
-}
-
-static enum AVPixelFormat get_format(AVCodecContext *ctx,
-                                        const enum AVPixelFormat *pix_fmts)
-{
-    const enum AVPixelFormat *p;
-
-    for (p = pix_fmts; *p != -1; p++) {
-        LOGE("available format %d", p);
-    }
-
-    return pix_fmts[0];
+    LOGE("%s", line);
 }
 
 int open_codec_context(int *stream_idx, AVCodecContext **dec_ctx, AVFormatContext *fmt_ctx, enum AVMediaType type) {
@@ -413,7 +401,7 @@ extern "C" JNIEXPORT void JNICALL Java_org_telegram_ui_Components_AnimatedFileNa
         info->fmt_ctx->pb = avio;
 
         if ((ret = avformat_open_input(&info->fmt_ctx, nullptr, nullptr, nullptr)) < 0) {
-            LOGE("can't open source file at offset %s (offset=%lld), %s", info->src, fileOffset, av_err2str(ret));
+            LOGE("can't open source file at offset %s (offset=%lld), %s", info->src, (long long) fileOffset, av_err2str(ret));
             info->fmt_ctx = nullptr;
             delete info;
             return;
@@ -640,7 +628,7 @@ extern "C" JNIEXPORT jlong JNICALL Java_org_telegram_ui_Components_AnimatedFileN
 }
 
 extern "C" JNIEXPORT void JNICALL Java_org_telegram_ui_Components_AnimatedFileNative_nDestroyDecoder(JNIEnv *env, jclass clazz, jlong ptr) {
-    if (ptr == NULL) {
+    if (ptr == 0) {
         return;
     }
     VideoInfo *info = (VideoInfo *) (intptr_t) ptr;
@@ -665,7 +653,7 @@ extern "C" JNIEXPORT void JNICALL Java_org_telegram_ui_Components_AnimatedFileNa
 }
 
 extern "C" JNIEXPORT void JNICALL Java_org_telegram_ui_Components_AnimatedFileNative_nStopDecoder(JNIEnv *env, jclass clazz, jlong ptr) {
-    if (ptr == NULL) {
+    if (ptr == 0) {
         return;
     }
     VideoInfo *info = (VideoInfo *) (intptr_t) ptr;
@@ -673,7 +661,7 @@ extern "C" JNIEXPORT void JNICALL Java_org_telegram_ui_Components_AnimatedFileNa
 }
 
 extern "C" JNIEXPORT void JNICALL Java_org_telegram_ui_Components_AnimatedFileNative_nPrepareToSeek(JNIEnv *env, jclass clazz, jlong ptr) {
-    if (ptr == NULL) {
+    if (ptr == 0) {
         return;
     }
     VideoInfo *info = (VideoInfo *) (intptr_t) ptr;
@@ -765,7 +753,7 @@ static inline void writeFrameToBitmap(JNIEnv *env, VideoInfo *info, AVFrame *fra
         wantedHeight = bitmapHeight;
     }
 
-    if (!(wantedWidth == frame->width && wantedHeight == frame->height || wantedWidth == frame->height && wantedHeight == frame->width)) {
+    if (!((wantedWidth == frame->width && wantedHeight == frame->height) || (wantedWidth == frame->height && wantedHeight == frame->width))) {
         return;
     }
 

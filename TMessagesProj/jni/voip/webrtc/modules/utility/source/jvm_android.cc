@@ -75,11 +75,11 @@ JvmThreadConnector::JvmThreadConnector() {
   RTC_LOG(LS_INFO) << "JvmThreadConnector::ctor";
   JavaVM* jvm = JVM::GetInstance()->jvm();
   RTC_CHECK(jvm);
-  JNIEnv* jni = GetEnv(jvm);
+  GetEnv(jvm);
   if (JVM::GetInstance()->attachThread(std::this_thread::get_id())) {
     RTC_LOG(LS_INFO) << "Attaching thread to JVM";
     JNIEnv* env = nullptr;
-    jint ret = jvm->AttachCurrentThread(&env, nullptr);
+    jvm->AttachCurrentThread(&env, nullptr);
   }
 }
 

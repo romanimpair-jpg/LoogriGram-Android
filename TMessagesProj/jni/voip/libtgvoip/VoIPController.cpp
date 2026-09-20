@@ -419,7 +419,7 @@ void VoIPController::SetNetworkType(int type){
 		if(peerVersion<6){
 			SendPacketReliably(PKT_NETWORK_CHANGED, s.GetBuffer(), s.GetLength(), 1, 20);
 		}else{
-			Buffer buf(move(s));
+			Buffer buf(std::move(s));
 			SendExtra(buf, EXTRA_TYPE_NETWORK_CHANGED);
 		}
 		needReInitUdpProxy=true;
@@ -971,7 +971,7 @@ void VoIPController::SendStreamFlags(Stream& stream){
 		flags|=STREAM_FLAG_EXTRA_EC;
 	s.WriteInt32(flags);
 	LOGV("My stream state: id %u flags %u", (unsigned int)stream.id, (unsigned int)flags);
-	Buffer buf(move(s));
+	Buffer buf(std::move(s));
 	SendExtra(buf, EXTRA_TYPE_STREAM_FLAGS);
 }
 
@@ -1050,7 +1050,7 @@ void VoIPController::HandleAudioInput(unsigned char *data, size_t len, unsigned 
 	if(hasExtraFEC){
 		Buffer ecBuf(secondaryLen);
 		ecBuf.CopyFrom(secondaryData, 0, secondaryLen);
-		ecAudioPackets.push_back(move(ecBuf));
+		ecAudioPackets.push_back(std::move(ecBuf));
 		while(ecAudioPackets.size()>4)
 			ecAudioPackets.erase(ecAudioPackets.begin());
 		pkt.WriteByte((unsigned char)MIN(ecAudioPackets.size(), extraEcLevel));
@@ -1066,17 +1066,17 @@ void VoIPController::HandleAudioInput(unsigned char *data, size_t len, unsigned 
 			/*.seq=*/GenerateOutSeq(),
 			/*.type=*/PKT_STREAM_DATA,
 			/*.len=*/pktLength,
-			/*.data=*/Buffer(move(pkt)),
+			/*.data=*/Buffer(std::move(pkt)),
 			/*.endpoint=*/0,
 	};
 
 	conctl->PacketSent(p.seq, p.len);
 
-	SendOrEnqueuePacket(move(p));
+	SendOrEnqueuePacket(std::move(p));
 	if(peerVersion<7 && secondaryData && secondaryLen && shittyInternetMode){
 		Buffer ecBuf(secondaryLen);
 		ecBuf.CopyFrom(secondaryData, 0, secondaryLen);
-		ecAudioPackets.push_back(move(ecBuf));
+		ecAudioPackets.push_back(std::move(ecBuf));
 		while(ecAudioPackets.size()>4)
 			ecAudioPackets.erase(ecAudioPackets.begin());
 		pkt=BufferOutputStream(1500);
@@ -1093,10 +1093,10 @@ void VoIPController::HandleAudioInput(unsigned char *data, size_t len, unsigned 
 				GenerateOutSeq(),
 				PKT_STREAM_EC,
 				pktLength,
-				Buffer(move(pkt)),
+				Buffer(std::move(pkt)),
 				0
 		};
-		SendOrEnqueuePacket(move(p));
+		SendOrEnqueuePacket(std::move(p));
 	}
 
 	audioTimestampOut+=outgoingStreams[0]->frameDuration;
@@ -1445,7 +1445,7 @@ void VoIPController::SendInit(){
 					/*.seq=*/initSeq,
 					/*.type=*/PKT_INIT,
 					/*.len=*/outLength,
-					/*.data=*/Buffer(move(out)),
+					/*.data=*/Buffer(std::move(out)),
 					/*.endpoint=*/e.id
 			});
 		}
@@ -1688,7 +1688,7 @@ void VoIPController::RunRecvThread(){
 				canSend=endpoint->socket && endpoint->socket->IsReadyToSend();
 			if(canSend){
 				LOGI("Sending queued packet");
-				SendOrEnqueuePacket(move(*opkt), false);
+				SendOrEnqueuePacket(std::move(*opkt), false);
 				opkt=sendQueue.erase(opkt);
 			}else{
 				++opkt;
@@ -1753,7 +1753,7 @@ void VoIPController::ProcessIncomingPacket(NetworkPacket &packet, Endpoint& srcE
 							BufferOutputStream o(18);
 							o.WriteBytes(myIP, 16);
 							o.WriteInt16(udpSocket->GetLocalPort());
-							Buffer b(move(o));
+							Buffer b(std::move(o));
 							SendExtra(b, EXTRA_TYPE_IPV6_ENDPOINT);
 						}
 					}
@@ -1793,7 +1793,7 @@ void VoIPController::ProcessIncomingPacket(NetworkPacket &packet, Endpoint& srcE
 						if(peerVersion<6){
 							SendPacketReliably(PKT_LAN_ENDPOINT, pkt.GetBuffer(), pkt.GetLength(), 0.5, 10);
 						}else{
-							Buffer buf(move(pkt));
+							Buffer buf(std::move(pkt));
 							SendExtra(buf, EXTRA_TYPE_LAN_ENDPOINT);
 						}
 					}
@@ -2117,7 +2117,7 @@ simpleAudioBlock random_id:long random_bytes:string raw_data:string = DecryptedA
 						f=sentVideoFrames.erase(f);
 						continue;
 					}else{
-						LOGE("!!!!!!!!!!!!!!11 VIDEO FRAME LOSS DETECTED [1] %u of %u fragments", sentVideoFrames[0].unacknowledgedPackets.size(), sentVideoFrames[0].fragmentCount);
+						LOGE("!!!!!!!!!!!!!!11 VIDEO FRAME LOSS DETECTED [1] %u of %u fragments", (unsigned int) sentVideoFrames[0].unacknowledgedPackets.size(), sentVideoFrames[0].fragmentCount);
 						videoPacketLossCount++;
 						videoKeyframeRequested=true;
 						videoSource->RequestKeyFrame();
@@ -2126,7 +2126,7 @@ simpleAudioBlock random_id:long random_bytes:string raw_data:string = DecryptedA
 				}else if(first){
 					first=false;
 				}else if(!first && f->unacknowledgedPackets.size()<f->fragmentCount){
-					LOGE("!!!!!!!!!!!!!!11 VIDEO FRAME LOSS DETECTED [2] %u of %u fragments", f->unacknowledgedPackets.size(), f->fragmentCount);
+					LOGE("!!!!!!!!!!!!!!11 VIDEO FRAME LOSS DETECTED [2] %u of %u fragments", (unsigned int) f->unacknowledgedPackets.size(), f->fragmentCount);
 					videoPacketLossCount++;
 					videoKeyframeRequested=true;
 					videoSource->RequestKeyFrame();
@@ -2270,7 +2270,7 @@ simpleAudioBlock random_id:long random_bytes:string raw_data:string = DecryptedA
 				/*.seq=*/GenerateOutSeq(),
 				/*.type=*/PKT_INIT_ACK,
 				/*.len=*/outLength,
-				/*.data=*/Buffer(move(out)),
+				/*.data=*/Buffer(std::move(out)),
 				/*.endpoint=*/0
 		});
 		if(!receivedInit){
@@ -2502,7 +2502,7 @@ simpleAudioBlock random_id:long random_bytes:string raw_data:string = DecryptedA
 				/*.seq=*/GenerateOutSeq(),
 				/*.type=*/PKT_PONG,
 				/*.len=*/pktLength,
-				/*.data=*/Buffer(move(pkt)),
+				/*.data=*/Buffer(std::move(pkt)),
 				/*.endpoint=*/srcEndpoint.id,
 		});
 	}
@@ -2643,7 +2643,7 @@ void VoIPController::ProcessExtraData(Buffer &data){
 					size_t len=(size_t)in.ReadByte();
 					Buffer csd(len);
 					in.ReadBytes(*csd, len);
-					stm->codecSpecificData.push_back(move(csd));
+					stm->codecSpecificData.push_back(std::move(csd));
 				}
 				break;
 			}
@@ -2781,7 +2781,7 @@ bool VoIPController::SendOrEnqueuePacket(PendingOutgoingPacket pkt, bool enqueue
 	if(!canSend){
 		if(enqueue){
     		LOGW("Not ready to send - enqueueing");
-    		sendQueue.push_back(move(pkt));
+    		sendQueue.push_back(std::move(pkt));
 		}
 		return false;
 	}
@@ -3144,7 +3144,7 @@ void VoIPController::SendPacketReliably(unsigned char type, unsigned char *data,
 	if(data){
 		Buffer b(len);
 		b.CopyFrom(data, 0, len);
-		pkt.data=move(b);
+		pkt.data=std::move(b);
 	}
 	pkt.type=type;
 	pkt.retryInterval=retryInterval;
@@ -3153,7 +3153,7 @@ void VoIPController::SendPacketReliably(unsigned char type, unsigned char *data,
 	pkt.lastSentTime=0;
 	{
 		MutexGuard m(queuedPacketsMutex);
-		queuedPackets.push_back(move(pkt));
+		queuedPackets.push_back(std::move(pkt));
 	}
 	messageThread.Post(std::bind(&VoIPController::UpdateQueuedPackets, this));
 	if(timeout>0.0){
@@ -3167,12 +3167,12 @@ void VoIPController::SendExtra(Buffer &data, unsigned char type){
 	for(vector<UnacknowledgedExtraData>::iterator x=currentExtras.begin();x!=currentExtras.end();++x){
 		if(x->type==type){
 			x->firstContainingSeq=0;
-			x->data=move(data);
+			x->data=std::move(data);
 			return;
 		}
 	}
-	UnacknowledgedExtraData xd={type, move(data), 0};
-	currentExtras.push_back(move(xd));
+	UnacknowledgedExtraData xd={type, std::move(data), 0};
+	currentExtras.push_back(std::move(xd));
 }
 
 
@@ -3441,11 +3441,11 @@ void VoIPController::SendVideoFrame(const Buffer &frame, uint32_t flags, uint32_
 					/*.seq=*/seq,
 					/*.type=*/PKT_STREAM_DATA,
 					/*.len=*/pktLength,
-					/*.data=*/Buffer(move(pkt)),
+					/*.data=*/Buffer(std::move(pkt)),
 					/*.endpoint=*/0,
 			};
 			unsentStreamPackets++;
-			SendOrEnqueuePacket(move(p));
+			SendOrEnqueuePacket(std::move(p));
 			videoCongestionControl.ProcessPacketSent(static_cast<unsigned int>(pktLength));
 			sentFrame.unacknowledgedPackets.push_back(seq);
 		}
@@ -3467,7 +3467,7 @@ void VoIPController::SendStreamCSD(VoIPController::Stream &stream){
 		os.WriteByte(static_cast<unsigned char>(b.Length()));
 		os.WriteBytes(b);
 	}
-	Buffer buf(move(os));
+	Buffer buf(std::move(os));
 	SendExtra(buf, EXTRA_TYPE_STREAM_CSD);
 }
 
@@ -3489,7 +3489,7 @@ void VoIPController::ProcessIncomingVideoFrame(Buffer frame, uint32_t pts, bool 
 				stm->rotation=rotation;
 				videoRenderer->SetRotation(rotation);
 			}
-			videoRenderer->DecodeAndDisplay(move(frame), pts);
+			videoRenderer->DecodeAndDisplay(std::move(frame), pts);
 		}else{
 			LOGW("Skipping non-keyframe after packet loss...");
 		}
@@ -3793,7 +3793,7 @@ void VoIPController::UpdateAudioBitrate(){
 					if(peerVersion<6){
 						SendPacketReliably(PKT_NETWORK_CHANGED, s.GetBuffer(), s.GetLength(), 1, 20);
 					}else{
-						Buffer buf(move(s));
+						Buffer buf(std::move(s));
 						SendExtra(buf, EXTRA_TYPE_NETWORK_CHANGED);
 					}
 					lastRecvPacketTime=time;
@@ -3872,7 +3872,7 @@ void VoIPController::UpdateQueuedPackets(){
 						/*.seq=*/seq,
 						/*.type=*/qp->type,
 						/*.len=*/qp->data.Length(),
-						/*.data=*/move(buf),
+						/*.data=*/std::move(buf),
 						/*.endpoint=*/0
 				});
 			}
@@ -3880,7 +3880,7 @@ void VoIPController::UpdateQueuedPackets(){
 		}
 	}
 	for(PendingOutgoingPacket& pkt:packetsToSend){
-		SendOrEnqueuePacket(move(pkt));
+		SendOrEnqueuePacket(std::move(pkt));
 	}
 }
 
