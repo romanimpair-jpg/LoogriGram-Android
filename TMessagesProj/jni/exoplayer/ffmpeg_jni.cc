@@ -419,7 +419,6 @@ int decodePacket(AVCodecContext *context, AVPacket *packet,
     }
 
     // Resample output.
-    AVSampleFormat sampleFormat = context->sample_fmt;
     int channelCount = context->ch_layout.nb_channels;
     int sampleCount = frame->nb_samples;
 

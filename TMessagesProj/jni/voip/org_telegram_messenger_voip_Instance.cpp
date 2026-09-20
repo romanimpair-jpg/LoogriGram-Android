@@ -474,8 +474,8 @@ JNIEXPORT jlong JNICALL Java_org_telegram_messenger_voip_NativeInstance_makeGrou
                         boolFill[a] = !update.updates[a].value.isMuted && update.updates[a].value.voice;
                     }
                     env->SetIntArrayRegion(intArray, 0, size, intFill.data());
-                    env->SetFloatArrayRegion(floatArray, 0, size, floatFill);
-                    env->SetBooleanArrayRegion(boolArray, 0, size, boolFill);
+                    env->SetFloatArrayRegion(floatArray, 0, size, floatFill.data());
+                    env->SetBooleanArrayRegion(boolArray, 0, size, boolFill.data());
 
                     jobject globalRef = ((AndroidContext *) platformContext.get())->getJavaGroupInstance();
                     env->CallVoidMethod(globalRef, env->GetMethodID(NativeInstanceClass, "onAudioLevelsUpdated", "([I[F[Z)V"), intArray, floatArray, boolArray);
