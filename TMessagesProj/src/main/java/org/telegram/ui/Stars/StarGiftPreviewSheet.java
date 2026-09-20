@@ -72,7 +72,6 @@ import org.telegram.ui.Components.chat.ViewPositionWatcher;
 import org.telegram.ui.Components.glass.GlassTabView;
 import org.telegram.ui.Components.glass.GlassTabsView;
 import org.telegram.ui.Gifts.GiftSheet;
-import org.telegram.ui.bots.AffiliateProgramFragment;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -529,9 +528,9 @@ public class StarGiftPreviewSheet extends BottomSheetWithRecyclerListView {
             StarGiftSheet.getRarityName(topView.getUpgradeImageViewAttribute().rarity, rarityColor)
         );
         buttons[1].titleView.setText(topView.getUpgradeBackdropAttribute().name, animated);
-        buttons[1].percentView.setText(AffiliateProgramFragment.percents(topView.getUpgradeBackdropAttribute().getRarityPermille()), animated);
+        buttons[1].percentView.setText(AndroidUtilities.percents(topView.getUpgradeBackdropAttribute().getRarityPermille()), animated);
         buttons[2].titleView.setText(topView.getUpgradePatternAttribute().name, animated);
-        buttons[2].percentView.setText(AffiliateProgramFragment.percents(topView.getUpgradePatternAttribute().getRarityPermille()), animated);
+        buttons[2].percentView.setText(AndroidUtilities.percents(topView.getUpgradePatternAttribute().getRarityPermille()), animated);
     }
 
     private void fillItems(ArrayList<UItem> items, UniversalAdapter adapter) {

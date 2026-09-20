@@ -826,6 +826,19 @@ public class AndroidUtilities {
         return text;
     }
 
+    // LoogriGram: this was AffiliateProgramFragment.percents, a static member of
+    // the commission screen, which is going. Turning a permille into a percentage
+    // string is not a money feature - among its callers are the privacy screen,
+    // the members list and the chat, none of which are about being paid.
+    public static CharSequence percents(int commission) {
+        float f = commission / 10.0f;
+        if ((int) f == f) {
+            return String.format(Locale.US, "%d%%", commission / 10);
+        } else {
+            return String.format(Locale.US, "%.1f%%", f);
+        }
+    }
+
     // LoogriGram: this was StarGiftSheet.replaceUnderstood, a static member of a
     // money screen that is going. It swaps two emoji for icon spans and knows
     // nothing about gifts; the translate button, the tag editor and the settings

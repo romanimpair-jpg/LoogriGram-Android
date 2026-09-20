@@ -9,7 +9,7 @@ import static org.telegram.messenger.LocaleController.formatString;
 import static org.telegram.messenger.LocaleController.getString;
 import static org.telegram.ui.Stars.StarsController.findAttribute;
 import static org.telegram.ui.Stars.StarsIntroActivity.StarsTransactionView.getPlatformDrawable;
-import static org.telegram.ui.bots.AffiliateProgramFragment.percents;
+import static org.telegram.messenger.AndroidUtilities.percents;
 
 import android.content.Context;
 import android.graphics.Bitmap;

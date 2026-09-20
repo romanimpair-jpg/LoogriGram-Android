@@ -12,7 +12,7 @@ import static org.telegram.messenger.StarsFormat.replaceStarsWithPlain;
 import static org.telegram.ui.ChatEditActivity.applyNewSpan;
 import static org.telegram.ui.Stars.StarsController.findAttribute;
 import static org.telegram.ui.Stars.StarsIntroActivity.StarsTransactionView.getPlatformDrawable;
-import static org.telegram.ui.bots.AffiliateProgramFragment.percents;
+import static org.telegram.messenger.AndroidUtilities.percents;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -122,6 +122,7 @@ import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.ButtonSpan;
 import org.telegram.ui.Components.ColoredImageSpan;
+import org.telegram.ui.Components.ColorfulTextCell;
 import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.EditTextBoldCursor;
@@ -718,7 +719,7 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
         items.add(UItem.asShadow(null));
 
         if (getMessagesController().starrefConnectAllowed) {
-            items.add(AffiliateProgramFragment.ColorfulTextCell.Factory.as(BUTTON_AFFILIATE, getThemedColor(Theme.key_color_green), R.drawable.filled_earn_stars, applyNewSpan(getString(R.string.UserAffiliateProgramRowTitle)), getString(R.string.UserAffiliateProgramRowText)));
+            items.add(ColorfulTextCell.Factory.as(BUTTON_AFFILIATE, getThemedColor(Theme.key_color_green), R.drawable.filled_earn_stars, applyNewSpan(getString(R.string.UserAffiliateProgramRowTitle)), getString(R.string.UserAffiliateProgramRowText)));
             items.add(UItem.asShadow(null));
         }
 

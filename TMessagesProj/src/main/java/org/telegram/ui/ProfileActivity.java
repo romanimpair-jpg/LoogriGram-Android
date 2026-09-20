@@ -18,7 +18,7 @@ import static org.telegram.messenger.LocaleController.formatPluralStringComma;
 import static org.telegram.messenger.LocaleController.formatString;
 import static org.telegram.messenger.LocaleController.getString;
 import static org.telegram.messenger.AndroidUtilities.replaceUnderstood;
-import static org.telegram.ui.bots.AffiliateProgramFragment.percents;
+import static org.telegram.messenger.AndroidUtilities.percents;
 
 import android.Manifest;
 import android.animation.Animator;
@@ -118,6 +118,7 @@ import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+import org.telegram.ui.Components.ColorfulTextCell;
 import org.telegram.ui.Components.ScrimOptions;
 import org.telegram.ui.Components.blur3.drawable.color.impl.BlurredBackgroundProviderImpl;
 import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceBitmap;
@@ -13111,7 +13112,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     break;
                 }
                 case VIEW_TYPE_COLORFUL_TEXT: {
-                    view = new AffiliateProgramFragment.ColorfulTextCell(mContext, resourcesProvider);
+                    view = new ColorfulTextCell(mContext, resourcesProvider);
                     break;
                 }
                 case VIEW_TYPE_USER: {
@@ -13883,7 +13884,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     break;
                 }
                 case VIEW_TYPE_COLORFUL_TEXT: {
-                    AffiliateProgramFragment.ColorfulTextCell cell = (AffiliateProgramFragment.ColorfulTextCell) holder.itemView;
+                    ColorfulTextCell cell = (ColorfulTextCell) holder.itemView;
                     cell.set(getThemedColor(Theme.key_color_green), R.drawable.filled_affiliate, getString(R.string.ProfileBotAffiliateProgram), null);
                     cell.setPercent(userInfo != null && userInfo.starref_program != null ? percents(userInfo.starref_program.commission_permille) : null);
                     break;

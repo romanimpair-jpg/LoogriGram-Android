@@ -21,7 +21,7 @@ import static org.telegram.ui.Stars.StarsIntroActivity.addAvailabilityRow;
 import static org.telegram.messenger.StarsFormat.replaceStars;
 import static org.telegram.messenger.StarsFormat.replaceStarsWithPlain;
 import static org.telegram.ui.Stars.StarsIntroActivity.setGiftImage;
-import static org.telegram.ui.bots.AffiliateProgramFragment.percents;
+import static org.telegram.messenger.AndroidUtilities.percents;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;

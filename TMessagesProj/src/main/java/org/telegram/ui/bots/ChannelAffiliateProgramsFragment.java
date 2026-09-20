@@ -8,7 +8,7 @@ import static org.telegram.messenger.LocaleController.getString;
 import static org.telegram.messenger.StarsFormat.formatStarsAmount;
 import static org.telegram.messenger.StarsFormat.formatStarsAmountShort;
 import static org.telegram.messenger.StarsFormat.replaceStarsWithPlain;
-import static org.telegram.ui.bots.AffiliateProgramFragment.percents;
+import static org.telegram.messenger.AndroidUtilities.percents;
 
 import android.content.Context;
 import android.graphics.Canvas;
