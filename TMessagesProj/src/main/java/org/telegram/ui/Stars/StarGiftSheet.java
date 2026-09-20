@@ -6,6 +6,7 @@ import static org.telegram.messenger.AndroidUtilities.formatDuration;
 import static org.telegram.messenger.AndroidUtilities.lerp;
 import static org.telegram.messenger.AndroidUtilities.randomOf;
 import static org.telegram.messenger.AndroidUtilities.replaceArrows;
+import static org.telegram.messenger.AndroidUtilities.replaceUnderstood;
 import static org.telegram.messenger.LocaleController.formatNumber;
 import static org.telegram.messenger.LocaleController.formatPluralString;
 import static org.telegram.messenger.LocaleController.formatPluralStringComma;
@@ -8295,30 +8296,6 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             final TL_stars.StarGiftUpgradePrice toPrice = prices.get(prices.size() - 1);
             limitPreviewView.setStarsUpgradePrice(fromPrice, price, toPrice);
         }
-    }
-
-    public static CharSequence replaceUnderstood(CharSequence cs) {
-        return replaceUnderstood(cs, null);
-    }
-    public static CharSequence replaceUnderstood(CharSequence cs, ColoredImageSpan[] cache) {
-        if (cs == null) return null;
-        SpannableStringBuilder ssb;
-        if (!(cs instanceof SpannableStringBuilder)) {
-            ssb = new SpannableStringBuilder(cs);
-        } else {
-            ssb = (SpannableStringBuilder) cs;
-        }
-
-        final SpannableString ok = new SpannableString("👌");
-        ok.setSpan(new ColoredImageSpan(R.drawable.filled_understood), 0, ok.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-        final SpannableString thumbs = new SpannableString("👍");
-        thumbs.setSpan(new ColoredImageSpan(R.drawable.filled_reactions), 0, thumbs.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-        AndroidUtilities.replaceMultipleCharSequence("👌", ssb, ok);
-        AndroidUtilities.replaceMultipleCharSequence("👍", ssb, thumbs);
-
-        return ssb;
     }
 
     public static class ActionView extends View {

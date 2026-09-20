@@ -826,6 +826,36 @@ public class AndroidUtilities {
         return text;
     }
 
+    // LoogriGram: this was StarGiftSheet.replaceUnderstood, a static member of a
+    // money screen that is going. It swaps two emoji for icon spans and knows
+    // nothing about gifts; the translate button, the tag editor and the settings
+    // and profile screens all use it. replaceArrows just above is the same shape,
+    // so this is where it belongs.
+    public static CharSequence replaceUnderstood(CharSequence cs) {
+        return replaceUnderstood(cs, null);
+    }
+
+    public static CharSequence replaceUnderstood(CharSequence cs, ColoredImageSpan[] cache) {
+        if (cs == null) return null;
+        SpannableStringBuilder ssb;
+        if (!(cs instanceof SpannableStringBuilder)) {
+            ssb = new SpannableStringBuilder(cs);
+        } else {
+            ssb = (SpannableStringBuilder) cs;
+        }
+
+        final SpannableString ok = new SpannableString("👌");
+        ok.setSpan(new ColoredImageSpan(R.drawable.filled_understood), 0, ok.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+        final SpannableString thumbs = new SpannableString("👍");
+        thumbs.setSpan(new ColoredImageSpan(R.drawable.filled_reactions), 0, thumbs.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+        AndroidUtilities.replaceMultipleCharSequence("👌", ssb, ok);
+        AndroidUtilities.replaceMultipleCharSequence("👍", ssb, thumbs);
+
+        return ssb;
+    }
+
     public static void recycleBitmaps(List<Bitmap> bitmapToRecycle) {
         if (Build.VERSION.SDK_INT <= 23) {
             // cause to crash:

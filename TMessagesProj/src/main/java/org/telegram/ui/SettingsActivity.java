@@ -5,7 +5,7 @@ import static org.telegram.messenger.AndroidUtilities.lerp;
 import static org.telegram.messenger.AndroidUtilities.replaceSingleTag;
 import static org.telegram.messenger.LocaleController.formatString;
 import static org.telegram.messenger.LocaleController.getString;
-import static org.telegram.ui.Stars.StarGiftSheet.replaceUnderstood;
+import static org.telegram.messenger.AndroidUtilities.replaceUnderstood;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -67,7 +67,6 @@ import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.AuthTokensHelper;
-import org.telegram.messenger.BirthdayController;
 import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.ChatThemeController;
 import org.telegram.messenger.Emoji;
@@ -84,7 +83,6 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.SharedPrefsHelper;
-import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.browser.Browser;
@@ -115,7 +113,6 @@ import org.telegram.ui.Components.ItemOptions;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.LinkSpanDrawable;
 import org.telegram.ui.Components.Paint.PersistColorPalette;
-import org.telegram.ui.Components.Premium.boosts.UserSelectorBottomSheet;
 import org.telegram.ui.Components.RadialProgressView;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.ScaleStateListAnimator;
@@ -130,11 +127,8 @@ import org.telegram.ui.Components.blur3.ViewGroupPartRenderer;
 import org.telegram.ui.Components.blur3.capture.IBlur3Capture;
 import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceRenderNode;
 import org.telegram.ui.Components.voip.VoIPHelper;
-import org.telegram.ui.Stars.StarsController;
-import org.telegram.ui.Stars.StarsIntroActivity;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 import org.telegram.ui.Stories.recorder.DualCameraView;
-import org.telegram.ui.TON.TONIntroActivity;
 import org.telegram.ui.bots.BotBiometry;
 import org.telegram.ui.bots.BotDownloads;
 import org.telegram.ui.bots.BotLocation;
@@ -701,30 +695,11 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
 
         items.add(UItem.asShadow(null));
 
-        if (!getMessagesController().premiumFeaturesBlocked()) {
-            items.add(SettingCell.Factory.of(11, 0xFFB659FF, 0xFF617CFF, R.drawable.settings_premium, getString(R.string.TelegramPremium)));
-        }
-        if (getMessagesController().starsPurchaseAvailable()) {
-            StarsController c = StarsController.getInstance(currentAccount);
-            long balance = c.getBalance().amount;
-            items.add(SettingCell.Factory.of(12, 0xFFEFA612, 0xFFE77512, R.drawable.settings_stars, getString(R.string.TelegramStars), null, c.balanceAvailable() && balance > 0 ? StarsFormat.formatStarsAmount(c.getBalance(), 0.85f, ' ') : ""));
-        }
-        // LoogriGram: the MyTON row and the Wallet bot row are the two wallet
-        // entry points not covered by the premium and Stars flags - the TON row
-        // keys off the build type and the balance, not off a purchase flag.
-        // Hidden here rather than by deleting ui/Stars and ui/TON, which
-        // MessageObject and SendMessagesHelper both reach into while rendering
-        // and sending ordinary messages.
-
-        if (!getMessagesController().premiumFeaturesBlocked()) {
-            items.add(SettingCell.Factory.of(15, 0xFFF45255, 0xFFDF3955, R.drawable.settings_business, getString(R.string.TelegramBusiness)));
-        }
-        if (!getMessagesController().premiumPurchaseBlocked()) {
-            items.add(SettingCell.Factory.of(16, 0xFFF38B31, 0xFFE26314, R.drawable.settings_gift, getString(R.string.SendAGift)));
-        }
-        if (items.get(items.size() - 1).viewType != UniversalAdapter.VIEW_TYPE_SHADOW)
-            items.add(UItem.asShadow(null));
-
+        // LoogriGram: the Premium, Stars, Business and Send-a-Gift rows stood here,
+        // each behind a getter this build forces off, so none of them could ever be
+        // shown. Deleted rather than left unreachable, along with the switch cases
+        // that opened them. The shadow above is now the separator before the help
+        // section, which is why the conditional one that used to follow is gone too.
         items.add(UItem.asHeader(getString(R.string.SettingsHelp)));
         items.add(SettingCell.Factory.of(17, IconBackgroundColors.ORANGE.top, IconBackgroundColors.ORANGE.bottom, R.drawable.settings_ask, getString(R.string.AskAQuestion)));
         items.add(SettingCell.Factory.of(18, IconBackgroundColors.BLUE_LIGHT.top, IconBackgroundColors.BLUE_LIGHT.bottom, R.drawable.settings_faq, getString(R.string.TelegramFAQ)));
@@ -824,22 +799,6 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 break;
             case 10:
                 presentSettingFragment(new LanguageSelectActivity());
-                break;
-
-            case 11:
-                presentSettingFragment(new PremiumPreviewFragment("settings"));
-                break;
-            case 12:
-                presentSettingFragment(new StarsIntroActivity());
-                break;
-            case 13:
-                presentSettingFragment(new TONIntroActivity());
-                break;
-            case 15:
-                presentSettingFragment(new PremiumPreviewFragment(PremiumPreviewFragment.FEATURES_BUSINESS, "settings"));
-                break;
-            case 16:
-                UserSelectorBottomSheet.open(0, BirthdayController.getInstance(UserConfig.selectedAccount).getState());
                 break;
 
             case 17:
