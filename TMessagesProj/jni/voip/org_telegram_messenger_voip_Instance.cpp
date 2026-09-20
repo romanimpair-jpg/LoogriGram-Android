@@ -1,6 +1,7 @@
 #include "org_telegram_messenger_voip_Instance.h"
 
 #include <jni.h>
+#include <vector>
 #include <sdk/android/native_api/video/wrapper.h>
 #include <VideoCapturerInterface.h>
 #include <platform/android/AndroidInterface.h>
@@ -464,15 +465,15 @@ JNIEXPORT jlong JNICALL Java_org_telegram_messenger_voip_NativeInstance_makeGrou
                     jfloatArray floatArray = env->NewFloatArray(size);
                     jbooleanArray boolArray = env->NewBooleanArray(size);
 
-                    jint intFill[size];
-                    jfloat floatFill[size];
-                    jboolean boolFill[size];
+                    std::vector<jint> intFill(size);
+                    std::vector<jfloat> floatFill(size);
+                    std::vector<jboolean> boolFill(size);
                     for (int a = 0; a < size; a++) {
                         intFill[a] = update.updates[a].ssrc;
                         floatFill[a] = update.updates[a].value.isMuted ? 0 : update.updates[a].value.level;
                         boolFill[a] = !update.updates[a].value.isMuted && update.updates[a].value.voice;
                     }
-                    env->SetIntArrayRegion(intArray, 0, size, intFill);
+                    env->SetIntArrayRegion(intArray, 0, size, intFill.data());
                     env->SetFloatArrayRegion(floatArray, 0, size, floatFill);
                     env->SetBooleanArrayRegion(boolArray, 0, size, boolFill);
 
@@ -516,11 +517,11 @@ JNIEXPORT jlong JNICALL Java_org_telegram_messenger_voip_NativeInstance_makeGrou
                 unsigned int size = ssrcs.size();
                 jintArray intArray = env->NewIntArray(size);
 
-                jint intFill[size];
+                std::vector<jint> intFill(size);
                 for (int a = 0; a < size; a++) {
                     intFill[a] = ssrcs[a];
                 }
-                env->SetIntArrayRegion(intArray, 0, size, intFill);
+                env->SetIntArrayRegion(intArray, 0, size, intFill.data());
 
                 jobject globalRef = ((AndroidContext *) platformContext.get())->getJavaGroupInstance();
                 env->CallVoidMethod(globalRef, env->GetMethodID(NativeInstanceClass, "onParticipantDescriptionsRequired", "(J[I)V"), (jlong) task.get(), intArray);

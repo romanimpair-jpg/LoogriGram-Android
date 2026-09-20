@@ -1949,7 +1949,10 @@ void ConnectionsManager::sendRequest(TLObject *object, onCompleteFunc onComplete
         auto request = new Request(instanceNum, requestToken, connectionType, flags, datacenterId, onComplete, onQuickAck, onWriteToSocket, onClear);
         request->rawRequest = object;
         request->rpcRequest = wrapInLayer(object, getDatacenterWithId(datacenterId), request);
-        if (LOGS_ENABLED) DEBUG_D("send request wrapped %p - %s", request->rpcRequest.get(), typeid(*(request->rpcRequest.get())).name());
+        if (LOGS_ENABLED) {
+            TLObject &rpcRequest = *request->rpcRequest;
+            DEBUG_D("send request wrapped %p - %s", request->rpcRequest.get(), typeid(rpcRequest).name());
+        }
         auto cancelledIterator = tokensToBeCancelled.find(request->requestToken);
         if (cancelledIterator != tokensToBeCancelled.end()) {
             if (LOGS_ENABLED) DEBUG_D("(2) request is cancelled before sending, token %d", requestToken);
@@ -3050,7 +3053,10 @@ void ConnectionsManager::processRequestQueue(uint32_t connectionTypes, uint32_t 
                             request->outgoingQuery = message->outgoingBody;
                             message->outgoingBody = nullptr;
                         } else {
-                            if (LOGS_ENABLED) DEBUG_D("wrap body(%p, %s) to TL_invokeAfterMsg, token = %d, after 0x%" PRIx64, message->body.get(), typeid(*(message->body.get())).name(), networkMessage->requestId, request->msg_id);
+                            if (LOGS_ENABLED) {
+                                TLObject &body = *message->body;
+                                DEBUG_D("wrap body(%p, %s) to TL_invokeAfterMsg, token = %d, after 0x%" PRIx64, message->body.get(), typeid(body).name(), networkMessage->requestId, request->msg_id);
+                            }
                             request->query = std::move(message->body);
                         }
                         message->body = std::unique_ptr<TLObject>(request);

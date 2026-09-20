@@ -649,11 +649,9 @@ JNIEXPORT void Java_org_telegram_messenger_Utilities_stackBlurBitmap(JNIEnv *env
     const int divsum = SQUARE((div + 1) >> 1);
 
     // Small buffers
-    int stack[div * 4];
-    zeroClearInt(stack, div * 4);
+    std::vector<int> stack(div * 4, 0);
 
-    int vmin[MAX(w, h)];
-    zeroClearInt(vmin, MAX(w, h));
+    std::vector<int> vmin(MAX(w, h), 0);
 
     // Large buffers
     int *r = new int[wh];

@@ -149,12 +149,17 @@ AUDIO_DECODER_FUNC(jint, ffmpegDecode, jlong context, jobject inputData,
   }
   uint8_t *inputBuffer = (uint8_t *)env->GetDirectBufferAddress(inputData);
   uint8_t *outputBuffer = (uint8_t *)env->GetDirectBufferAddress(outputData);
-  AVPacket packet;
-  av_init_packet(&packet);
-  packet.data = inputBuffer;
-  packet.size = inputSize;
-  return decodePacket((AVCodecContext *)context, &packet, outputBuffer,
-                      outputSize);
+  AVPacket *packet = av_packet_alloc();
+  if (!packet) {
+    LOGE("Failed to allocate packet.");
+    return -1;
+  }
+  packet->data = inputBuffer;
+  packet->size = inputSize;
+  int result = decodePacket((AVCodecContext *)context, packet, outputBuffer,
+                            outputSize);
+  av_packet_free(&packet);
+  return result;
 }
 
 AUDIO_DECODER_FUNC(jint, ffmpegGetChannelCount, jlong context) {
