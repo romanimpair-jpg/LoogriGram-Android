@@ -294,6 +294,48 @@ jobs:
           echo "--- Google assets/resources:"
           unzip -l "$APK" | grep -iE 'google|firebase' | head -20 || echo "  (none)"
 
+      # LoogriGram: what makes a crash in the installed app readable later -
+      # the Android answer to the desktop build's PDB, which has already paid
+      # for itself more than once.
+      #
+      #   mapping.txt  R8 obfuscates release builds, so a Java stack trace in
+      #                logcat is a.b.c() without it. Feed it to retrace.
+      #   *.so         unstripped native libraries. ndk-stack resolves a
+      #                tombstone's addresses against these; the APK itself
+      #                carries stripped copies.
+      #
+      # Kept as its own artifact rather than attached to the release: it is a
+      # debugging aid, not something to hand out with the app.
+      - name: Collect symbols.
+        if: inputs.mode == 'build'
+        run: |
+          mkdir -p symbols
+          MAPPING="$(find TMessagesProj_App/build/outputs/mapping -name 'mapping.txt' -print -quit || true)"
+          if [ -n "$MAPPING" ]; then
+            cp "$MAPPING" symbols/mapping.txt
+            echo "mapping.txt -> $(stat -c%s symbols/mapping.txt) bytes"
+          else
+            echo "::warning::no mapping.txt found - was this build minified?"
+          fi
+          UNSTRIPPED="$(find TMessagesProj/build/intermediates -path '*merged_native_libs*' -name '*.so' -print -quit || true)"
+          if [ -n "$UNSTRIPPED" ]; then
+            LIBDIR="$(dirname "$(dirname "$UNSTRIPPED")")"
+            mkdir -p symbols/native
+            cp -r "$LIBDIR"/* symbols/native/
+            echo "native symbols from $LIBDIR:"
+            find symbols/native -name '*.so' -exec sh -c 'echo "  $1 $(stat -c%s "$1") bytes"' _ {} \;
+          else
+            echo "::warning::no unstripped .so found under merged_native_libs"
+          fi
+
+      - name: Upload symbols.
+        uses: actions/upload-artifact@v4
+        if: inputs.mode == 'build'
+        with:
+          name: LoogriGram ${{ inputs.config }} symbols ${{ env.LOOGRIGRAM_TAG }}
+          path: symbols/
+          retention-days: 30
+
       - name: Upload artifact.
         uses: actions/upload-artifact@v4
         if: inputs.mode == 'build'

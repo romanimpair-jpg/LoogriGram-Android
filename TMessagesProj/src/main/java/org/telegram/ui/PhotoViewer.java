@@ -17301,32 +17301,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         }
     }
 
-    // LoogriGram: TEMPORARY diagnostic logging for the photo viewer opening
-    // black and never reopening. Deliberately android.util.Log and not FileLog,
-    // so it reaches logcat in a release build without the in-app logging
-    // setting: adb logcat -s LGPV. Remove once the cause is known.
-    public static void lgpv(String s) {
-        android.util.Log.e("LGPV", s);
-    }
-
-    private long lgpvLastDraw;
-
-    private String lgpvState() {
-        return "animationInProgress=" + animationInProgress
-            + " isVisible=" + isVisible
-            + " clippingImageProgress=" + clippingImageProgress
-            + " blurRenderNode=" + BLUR_RENDERNODE()
-            + " useNewBlur=" + SharedConfig.useNewBlur
-            + " perfClass=" + SharedConfig.getDevicePerformanceClass()
-            + " textureViewSkipRender=" + textureViewSkipRender
-            + " animEndRunnable=" + (animationEndRunnable != null)
-            + " transitionStart=" + transitionAnimationStartTime
-            + " sinceStart=" + (transitionAnimationStartTime == 0 ? -1 : System.currentTimeMillis() - transitionAnimationStartTime)
-            + " containerView=" + (containerView == null ? "null" : containerView.getWidth() + "x" + containerView.getHeight() + " alpha=" + containerView.getAlpha())
-            + " centerImageHasBitmap=" + (centerImage == null ? "null" : String.valueOf(centerImage.hasBitmapImage()))
-            + " scale=" + scale + " translationX=" + translationX + " translationY=" + translationY;
-    }
-
     private boolean checkAnimation() {
         if (animationInProgress != 0) {
             invalidateBlur();
@@ -17379,14 +17353,11 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
     }
 
     public boolean openPhoto(final MessageObject messageObject, final TLRPC.FileLocation fileLocation, final ImageLocation imageLocation, final ImageLocation videoLocation, final ArrayList<MessageObject> messages, final ArrayList<SecureDocument> documents, final ArrayList<Object> photos, final int index, final PhotoViewerProvider provider, ChatActivity chatActivity, long dialogId, long mDialogId, long topicId, boolean fullScreenVideo, PageBlocksAdapter pageBlocksAdapter, Integer embedSeekTime) {
-        lgpv("openPhoto: " + lgpvState() + " parentActivity=" + (parentActivity != null) + " provider=" + (provider != null));
         if (parentActivity == null || isVisible || provider == null && checkAnimation() || messageObject == null && fileLocation == null && messages == null && photos == null && documents == null && imageLocation == null && pageBlocksAdapter == null) {
-            lgpv("openPhoto REFUSED: parentActivityNull=" + (parentActivity == null) + " isVisible=" + isVisible + " nothingToShow=" + (messageObject == null && fileLocation == null && messages == null && photos == null && documents == null && imageLocation == null && pageBlocksAdapter == null));
             return false;
         }
 
         final PlaceProviderObject object = provider.getPlaceForPhoto(messageObject, fileLocation, index, true, false);
-        lgpv("openPhoto: placeForPhoto object=" + (object != null));
         WindowManager wm = (WindowManager) parentActivity.getSystemService(Context.WINDOW_SERVICE);
         if (attachedToWindow) {
             try {
@@ -17439,7 +17410,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 }
             }
         } catch (Exception e) {
-            lgpv("openPhoto THREW while adding the window: " + e);
             FileLog.e(e);
             return false;
         }
@@ -17521,7 +17491,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         if (object != null) {
             disableShowCheck = true;
             animationInProgress = 1;
-            lgpv("openPhoto: animationInProgress=1 (opening animation begins)");
             if (messageObject != null) {
                 currentAnimation = object.allowTakeAnimation ? object.imageReceiver.getAnimation() : null;
                 if (currentAnimation != null) {
@@ -17708,9 +17677,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     }
                     animationEndRunnable = () -> {
                         animationEndRunnable = null;
-                        lgpv("animationEndRunnable: running, " + lgpvState());
                         if (containerView == null || windowView == null) {
-                            lgpv("animationEndRunnable: BAILED, containerView or windowView is null");
                             return;
                         }
                         containerView.setLayerType(View.LAYER_TYPE_NONE, null);
@@ -17778,14 +17745,11 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                         animatorSet.addListener(new AnimatorListenerAdapter() {
                             @Override
                             public void onAnimationEnd(Animator animation) {
-                                lgpv("openAnimator: onAnimationEnd");
                                 AndroidUtilities.runOnUIThread(() -> {
                                     transitionNotificationLocker.unlock();
                                     if (animationEndRunnable != null) {
                                         animationEndRunnable.run();
                                         animationEndRunnable = null;
-                                    } else {
-                                        lgpv("openAnimator: animationEndRunnable was already null");
                                     }
                                     setCaptionHwLayerEnabled(true);
                                 });
@@ -17797,7 +17761,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                         transitionAnimationStartTime = System.currentTimeMillis();
                         AndroidUtilities.runOnUIThread(() -> {
                             transitionNotificationLocker.lock();
-                            lgpv("openAnimator: starting, " + lgpvState());
                             animatorSet.start();
                         });
                     } else {
@@ -18030,7 +17993,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
     }
 
     public void closePhoto(boolean animated, boolean fromEditMode) {
-        lgpv("closePhoto(animated=" + animated + ", fromEditMode=" + fromEditMode + "): " + lgpvState());
         if (stickerMakerView != null) {
             stickerMakerView.isThanosInProgress = false;
             if (cutOutBtn.isCancelState()) {
@@ -19429,11 +19391,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
 
     @SuppressLint({"NewApi", "DrawAllocation"})
     private void onDraw(Canvas canvas) {
-        final long lgpvNow = System.currentTimeMillis();
-        if (lgpvNow - lgpvLastDraw > 1000) {
-            lgpvLastDraw = lgpvNow;
-            lgpv("onDraw: " + lgpvState());
-        }
         Canvas realCanvas = canvas;
         if (BLUR_RENDERNODE()) {
             if (renderNode == null) {
@@ -19525,9 +19482,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             if (BLUR_RENDERNODE()) {
                 canvas = realCanvas;
                 renderNode.endRecording();
-                if (lgpvNow == lgpvLastDraw) {
-                    lgpv("onDraw: took the animationInProgress==1 branch, which ends the render node recording WITHOUT compositing it");
-                }
             }
             drawFancyShadows(canvas);
             return;
