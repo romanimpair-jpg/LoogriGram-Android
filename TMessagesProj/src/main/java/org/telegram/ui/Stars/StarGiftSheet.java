@@ -142,6 +142,7 @@ import org.telegram.ui.Components.ColoredImageSpan;
 import org.telegram.ui.Components.CompatDrawable;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.EllipsizeSpanAnimator;
+import org.telegram.ui.Components.FeatureIconCell;
 import org.telegram.ui.Components.FireworksOverlay;
 import org.telegram.ui.Components.HorizontalRoundTabsLayout;
 import org.telegram.ui.Components.ItemOptions;
@@ -184,7 +185,6 @@ import org.telegram.ui.Stories.recorder.StoryRecorder;
 import org.telegram.ui.TON.TONIntroActivity;
 import org.telegram.ui.TwoStepVerificationActivity;
 import org.telegram.ui.TwoStepVerificationSetupActivity;
-import org.telegram.ui.bots.AffiliateProgramFragment;
 import org.telegram.ui.bots.BotWebViewSheet;
 
 import java.util.ArrayList;
@@ -224,7 +224,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
     private boolean upgradedOnce = false;
 
     private final LinearLayout upgradeLayout;
-    private final AffiliateProgramFragment.FeatureCell[] upgradeFeatureCells;
+    private final FeatureIconCell[] upgradeFeatureCells;
     private final View checkboxSeparator;
     private final LinearLayout checkboxLayout;
     private final CheckBox2 checkbox;
@@ -234,10 +234,10 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
     private final LinearLayout wearLayout;
     private final TextView wearTitle;
     private final TextView wearSubtitle;
-    private final AffiliateProgramFragment.FeatureCell[] wearFeatureCells;
+    private final FeatureIconCell[] wearFeatureCells;
 
     private final LinearLayout craftLayout;
-    private final AffiliateProgramFragment.FeatureCell[] craftFeatureCells;
+    private final FeatureIconCell[] craftFeatureCells;
 
     private boolean myProfile;
     private TL_stars.SavedStarGift savedStarGift;
@@ -459,16 +459,16 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         upgradeLayout.setPadding(dp(4) + backgroundPaddingLeft, dp(24), dp(4) + backgroundPaddingLeft, dp(12 + 48 + 6));
         container.addView(upgradeLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.FILL_HORIZONTAL | Gravity.TOP));
 
-        upgradeFeatureCells = new AffiliateProgramFragment.FeatureCell[3];
-        upgradeFeatureCells[0] = new AffiliateProgramFragment.FeatureCell(context, resourcesProvider);
+        upgradeFeatureCells = new FeatureIconCell[3];
+        upgradeFeatureCells[0] = new FeatureIconCell(context, resourcesProvider);
         upgradeFeatureCells[0].set(R.drawable.menu_feature_unique, getString(R.string.Gift2UpgradeFeature1Title), getString(R.string.GiftsFeature1Text));
         upgradeLayout.addView(upgradeFeatureCells[0], LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
 
-        upgradeFeatureCells[1] = new AffiliateProgramFragment.FeatureCell(context, resourcesProvider);
+        upgradeFeatureCells[1] = new FeatureIconCell(context, resourcesProvider);
         upgradeFeatureCells[1].set(R.drawable.menu_feature_tradable, getString(R.string.Gift2UpgradeFeature3Title), getString(R.string.GiftsFeature2Text));
         upgradeLayout.addView(upgradeFeatureCells[1], LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
 
-        upgradeFeatureCells[2] = new AffiliateProgramFragment.FeatureCell(context, resourcesProvider);
+        upgradeFeatureCells[2] = new FeatureIconCell(context, resourcesProvider);
         upgradeFeatureCells[2].set(R.drawable.menu_wear, getString(R.string.GiftsFeature3Title), getString(R.string.GiftsFeature3Text));
         upgradeLayout.addView(upgradeFeatureCells[2], LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
 
@@ -520,16 +520,16 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             wearSubtitle.setText(LocaleController.getString(R.string.Gift2WearSubtitle));
             wearLayout.addView(wearSubtitle, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.FILL_HORIZONTAL, 20, 6, 20, 24));
 
-            wearFeatureCells = new AffiliateProgramFragment.FeatureCell[3];
-            wearFeatureCells[0] = new AffiliateProgramFragment.FeatureCell(context, resourcesProvider);
+            wearFeatureCells = new FeatureIconCell[3];
+            wearFeatureCells[0] = new FeatureIconCell(context, resourcesProvider);
             wearFeatureCells[0].set(R.drawable.menu_feature_unique, getString(R.string.Gift2WearFeature1Title), getString(R.string.Gift2WearFeature1Text));
             wearLayout.addView(wearFeatureCells[0], LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
 
-            wearFeatureCells[1] = new AffiliateProgramFragment.FeatureCell(context, resourcesProvider);
+            wearFeatureCells[1] = new FeatureIconCell(context, resourcesProvider);
             wearFeatureCells[1].set(R.drawable.menu_feature_cover, getString(R.string.Gift2WearFeature2Title), getString(R.string.Gift2WearFeature2Text));
             wearLayout.addView(wearFeatureCells[1], LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
 
-            wearFeatureCells[2] = new AffiliateProgramFragment.FeatureCell(context, resourcesProvider);
+            wearFeatureCells[2] = new FeatureIconCell(context, resourcesProvider);
             wearFeatureCells[2].set(R.drawable.menu_verification, getString(R.string.Gift2WearFeature3Title), getString(R.string.Gift2WearFeature3Text));
             wearLayout.addView(wearFeatureCells[2], LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
         }
@@ -546,16 +546,16 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             craftLayout.setPadding(dp(4) + backgroundPaddingLeft, dp(10), dp(4) + backgroundPaddingLeft, dp(20 + 12 + 48 + 12));
             container.addView(craftLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.FILL_HORIZONTAL | Gravity.TOP));
 
-            craftFeatureCells = new AffiliateProgramFragment.FeatureCell[3];
-            craftFeatureCells[0] = new AffiliateProgramFragment.FeatureCell(context, resourcesProvider);
+            craftFeatureCells = new FeatureIconCell[3];
+            craftFeatureCells[0] = new FeatureIconCell(context, resourcesProvider);
             craftFeatureCells[0].set(R.drawable.menu_feature_unique, getString(R.string.GiftCraftInfoFeature1Title), getString(R.string.GiftCraftInfoFeature1Text));
             craftLayout.addView(craftFeatureCells[0], LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
 
-            craftFeatureCells[1] = new AffiliateProgramFragment.FeatureCell(context, resourcesProvider);
+            craftFeatureCells[1] = new FeatureIconCell(context, resourcesProvider);
             craftFeatureCells[1].set(R.drawable.menu_random, getString(R.string.GiftCraftInfoFeature2Title), getString(R.string.GiftCraftInfoFeature2Text));
             craftLayout.addView(craftFeatureCells[1], LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
 
-            craftFeatureCells[2] = new AffiliateProgramFragment.FeatureCell(context, resourcesProvider);
+            craftFeatureCells[2] = new FeatureIconCell(context, resourcesProvider);
             craftFeatureCells[2].set(R.drawable.menu_feature_affect, getString(R.string.GiftCraftInfoFeature3Title), getString(R.string.GiftCraftInfoFeature3Text));
             craftLayout.addView(craftFeatureCells[2], LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
         }

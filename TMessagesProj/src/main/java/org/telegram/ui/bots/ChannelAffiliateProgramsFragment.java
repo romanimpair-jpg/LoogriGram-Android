@@ -62,6 +62,7 @@ import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.ColoredImageSpan;
 import org.telegram.ui.Components.CubicBezierInterpolator;
+import org.telegram.ui.Components.FeatureIconCell;
 import org.telegram.ui.Components.FlickerLoadingView;
 import org.telegram.ui.Components.ItemOptions;
 import org.telegram.ui.Components.LayoutHelper;
@@ -264,9 +265,9 @@ public class ChannelAffiliateProgramsFragment extends GradientHeaderActivity imp
         }
 
         items.add(UItem.asFullyCustom(getHeader(getContext())));
-        items.add(AffiliateProgramFragment.FeatureCell.Factory.as(R.drawable.menu_feature_reliable, getString(R.string.ChannelAffiliateProgramFeature1Title), getString(R.string.ChannelAffiliateProgramFeature1)));
-        items.add(AffiliateProgramFragment.FeatureCell.Factory.as(R.drawable.menu_feature_transparent, getString(R.string.ChannelAffiliateProgramFeature2Title), getString(R.string.ChannelAffiliateProgramFeature2)));
-        items.add(AffiliateProgramFragment.FeatureCell.Factory.as(R.drawable.menu_feature_simple, getString(R.string.ChannelAffiliateProgramFeature3Title), getString(R.string.ChannelAffiliateProgramFeature3)));
+        items.add(FeatureIconCell.Factory.as(R.drawable.menu_feature_reliable, getString(R.string.ChannelAffiliateProgramFeature1Title), getString(R.string.ChannelAffiliateProgramFeature1)));
+        items.add(FeatureIconCell.Factory.as(R.drawable.menu_feature_transparent, getString(R.string.ChannelAffiliateProgramFeature2Title), getString(R.string.ChannelAffiliateProgramFeature2)));
+        items.add(FeatureIconCell.Factory.as(R.drawable.menu_feature_simple, getString(R.string.ChannelAffiliateProgramFeature3Title), getString(R.string.ChannelAffiliateProgramFeature3)));
         items.add(UItem.asShadow(1, null));
 
         final BotStarsController.ChannelConnectedBots connectedBots = BotStarsController.getInstance(currentAccount).getChannelConnectedBots(dialogId);

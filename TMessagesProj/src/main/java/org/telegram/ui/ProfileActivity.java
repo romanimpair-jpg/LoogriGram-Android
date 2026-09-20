@@ -18,7 +18,6 @@ import static org.telegram.messenger.LocaleController.formatPluralStringComma;
 import static org.telegram.messenger.LocaleController.formatString;
 import static org.telegram.messenger.LocaleController.getString;
 import static org.telegram.messenger.AndroidUtilities.replaceUnderstood;
-import static org.telegram.messenger.AndroidUtilities.percents;
 
 import android.Manifest;
 import android.animation.Animator;
@@ -118,7 +117,6 @@ import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 
-import org.telegram.ui.Components.ColorfulTextCell;
 import org.telegram.ui.Components.ScrimOptions;
 import org.telegram.ui.Components.blur3.drawable.color.impl.BlurredBackgroundProviderImpl;
 import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceBitmap;
@@ -290,7 +288,6 @@ import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceRenderNode
 import org.telegram.ui.Components.chat.ViewPositionWatcher;
 import org.telegram.ui.Components.voip.VoIPHelper;
 import org.telegram.ui.Gifts.GiftSheet;
-import org.telegram.ui.Stars.BotStarsController;
 import org.telegram.ui.Stars.ProfileGiftsView;
 import org.telegram.ui.Components.StarGiftPatterns;
 import org.telegram.ui.Stars.StarGiftSheet;
@@ -303,12 +300,10 @@ import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 import org.telegram.ui.Stories.recorder.DualCameraView;
 import org.telegram.ui.Stories.recorder.HintView2;
 import org.telegram.ui.Stories.recorder.StoryRecorder;
-import org.telegram.ui.bots.AffiliateProgramFragment;
 import org.telegram.ui.bots.BotBiometry;
 import org.telegram.ui.bots.BotDownloads;
 import org.telegram.ui.bots.BotLocation;
 import org.telegram.ui.bots.BotWebViewAttachedSheet;
-import org.telegram.ui.bots.ChannelAffiliateProgramsFragment;
 import org.telegram.ui.bots.SetupEmojiStatusSheet;
 import org.telegram.ui.community.CommunitySheet;
 
@@ -656,8 +651,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private int notificationsSimpleRow;
     private int infoStartRow, infoEndRow;
     private int infoSectionRow;
-    private int affiliateRow;
-    private int infoAffiliateRow;
+    // LoogriGram: a bot's affiliate-programme row and its explanatory footer
+    // stood here. Earning commission is a money feature, so both are gone.
     private int sendMessageRow;
     private int reportRow;
     private int deleteReactionRow;
@@ -4318,21 +4313,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 return;
             }
             listView.stopScroll();
-            if (position == affiliateRow) {
-                TLRPC.User user = getMessagesController().getUser(userId);
-                if (userInfo != null && userInfo.starref_program != null) {
-                    final long selfId = getUserConfig().getClientUserId();
-                    BotStarsController.getInstance(currentAccount).getConnectedBot(getContext(), selfId, userId, connectedBot -> {
-                        if (connectedBot == null) {
-                            ChannelAffiliateProgramsFragment.showConnectAffiliateAlert(context, currentAccount, userInfo.starref_program, getUserConfig().getClientUserId(), resourcesProvider, false);
-                        } else {
-                            ChannelAffiliateProgramsFragment.showShareAffiliateAlert(context, currentAccount, connectedBot, selfId, resourcesProvider);
-                        }
-                    });
-                } else if (user != null && user.bot_can_edit) {
-                    presentFragment(new AffiliateProgramFragment(userId));
-                }
-            } else if (position == notificationsSimpleRow) {
+            if (position == notificationsSimpleRow) {
                 boolean muted = getMessagesController().isDialogMuted(did, topicId);
                 getNotificationsController().muteDialog(did, topicId, !muted);
                 BulletinFactory.createMuteBulletin(ProfileActivity.this, !muted, null).show();
@@ -10492,8 +10473,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         bizLocationRow = -1;
         bizHoursRow = -1;
         infoSectionRow = -1;
-        affiliateRow = -1;
-        infoAffiliateRow = -1;
         secretSettingsSectionRow = -1;
         bottomPaddingRow = -1;
         addToGroupButtonRow = -1;
@@ -10679,11 +10658,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 if (user != null && user.linked_community_id != 0) {
                     linkedCommunityRow = rowCount++;
                     linkedCommunityDividerRow = rowCount++;
-                }
-
-                if (isBot && userInfo != null && userInfo.starref_program != null && (userInfo.starref_program.flags & 2) == 0 && getMessagesController().starrefConnectAllowed) {
-                    affiliateRow = rowCount++;
-                    infoAffiliateRow = rowCount++;
                 }
 
                 if (isBot) {
@@ -13010,7 +12984,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 VIEW_TYPE_CHANNEL = 23,
                 VIEW_TYPE_BOT_APP = 25,
                 VIEW_TYPE_SHADOW_TEXT = 26,
-                VIEW_TYPE_COLORFUL_TEXT = 27,
                 VIEW_TYPE_HEADER_EMPTY = 28,
                 VIEW_TYPE_MUSIC = 29,
                 VIEW_TYPE_TEXT_DETAIL_MULTILINE_2 = 30,
@@ -13109,10 +13082,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 }
                 case VIEW_TYPE_SHADOW_TEXT: {
                     view = new TextInfoPrivacyCell(mContext, resourcesProvider);
-                    break;
-                }
-                case VIEW_TYPE_COLORFUL_TEXT: {
-                    view = new ColorfulTextCell(mContext, resourcesProvider);
                     break;
                 }
                 case VIEW_TYPE_USER: {
@@ -13284,7 +13253,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 //                case VIEW_TYPE_ADDTOGROUP_INFO:
 //                case VIEW_TYPE_HEADER_EMPTY:
 //                case VIEW_TYPE_USER:
-//                case VIEW_TYPE_COLORFUL_TEXT:
 //                case VIEW_TYPE_NOTIFICATIONS_CHECK_SIMPLE:
 //                case VIEW_TYPE_NOTIFICATIONS_CHECK:
 //                case VIEW_TYPE_DIVIDER:
@@ -13871,22 +13839,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                             cell.setFixedSize(14);
                             cell.setText(null);
                         }
-                    } else if (position == infoAffiliateRow) {
-                        final TLRPC.User botUser = getMessagesController().getUser(userId);
-                        if (botUser != null && botUser.bot && botUser.bot_can_edit) {
-                            cell.setFixedSize(0);
-                            cell.setText(formatString(R.string.ProfileBotAffiliateProgramInfoOwner, UserObject.getUserName(botUser), percents(userInfo != null && userInfo.starref_program != null ? userInfo.starref_program.commission_permille : 0)));
-                        } else {
-                            cell.setFixedSize(0);
-                            cell.setText(formatString(R.string.ProfileBotAffiliateProgramInfo, UserObject.getUserName(botUser), percents(userInfo != null && userInfo.starref_program != null ? userInfo.starref_program.commission_permille : 0)));
-                        }
                     }
-                    break;
-                }
-                case VIEW_TYPE_COLORFUL_TEXT: {
-                    ColorfulTextCell cell = (ColorfulTextCell) holder.itemView;
-                    cell.set(getThemedColor(Theme.key_color_green), R.drawable.filled_affiliate, getString(R.string.ProfileBotAffiliateProgram), null);
-                    cell.setPercent(userInfo != null && userInfo.starref_program != null ? percents(userInfo.starref_program.commission_permille) : null);
                     break;
                 }
                 case VIEW_TYPE_USER:
@@ -14202,14 +14155,12 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 return VIEW_TYPE_CHANNEL;
             } else if (position == botAppRow) {
                 return VIEW_TYPE_BOT_APP;
-            } else if (position == infoSectionRow || position == infoAffiliateRow) {
+            } else if (position == infoSectionRow) {
                 return VIEW_TYPE_SHADOW_TEXT;
             } else if (position == unofficialSecurityRiskRow) {
                 return VIEW_TYPE_TEXT2;
             } else if (position == linkedCommunityRow) {
                 return VIEW_TYPE_LINKED_COMMUNITY;
-            } else if (position == affiliateRow) {
-                return VIEW_TYPE_COLORFUL_TEXT;
             } else if (position == infoHeaderRowEmpty || position == infoEndRowEmpty) {
                 return VIEW_TYPE_HEADER_EMPTY;
             }
@@ -15543,8 +15494,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             put(++pointer, reportDividerRow, sparseIntArray);
             put(++pointer, notificationsRow, sparseIntArray);
             put(++pointer, infoSectionRow, sparseIntArray);
-            put(++pointer, affiliateRow, sparseIntArray);
-            put(++pointer, infoAffiliateRow, sparseIntArray);
             put(++pointer, unofficialSecurityRiskRow, sparseIntArray);
             put(++pointer, sendMessageRow, sparseIntArray);
             put(++pointer, reportRow, sparseIntArray);

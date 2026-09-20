@@ -2,12 +2,10 @@ package org.telegram.ui;
 
 import static org.telegram.messenger.AndroidUtilities.REPLACING_TAG_TYPE_LINK_NBSP;
 import static org.telegram.messenger.AndroidUtilities.dp;
-import static org.telegram.messenger.AndroidUtilities.makeBlurBitmap;
 import static org.telegram.messenger.LocaleController.formatPluralString;
 import static org.telegram.messenger.LocaleController.formatString;
 import static org.telegram.messenger.LocaleController.getString;
 import static org.telegram.tgnet.ConnectionsManager.DEFAULT_DATACENTER_ID;
-import static org.telegram.ui.ChatEditActivity.applyNewSpan;
 
 import android.app.Activity;
 import android.content.Context;
@@ -48,7 +46,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.CurrencyFormat;
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.BillingController;
 import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.FileLog;
@@ -78,7 +75,6 @@ import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.ColoredImageSpan;
-import org.telegram.ui.Components.ColorfulTextCell;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.EditTextBoldCursor;
 import org.telegram.ui.Components.FlickerLoadingView;
@@ -98,7 +94,6 @@ import org.telegram.ui.Stars.BotStarsActivity;
 import org.telegram.ui.Stars.BotStarsController;
 import org.telegram.ui.Stars.StarsIntroActivity;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
-import org.telegram.ui.bots.ChannelAffiliateProgramsFragment;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -909,7 +904,6 @@ public class ChannelMonetizationLayout extends SizeNotifierFrameLayout implement
     private final static int CHECK_SWITCHOFF = 1;
     private final static int BUTTON_LOAD_MORE_TRANSACTIONS = 2;
     private final static int STARS_BALANCE = 3;
-    private final static int BUTTON_AFFILIATE =4;
 
     private void fillItems(ArrayList<UItem> items, UniversalAdapter adapter) {
         int stats_dc = -1;
@@ -957,10 +951,8 @@ public class ChannelMonetizationLayout extends SizeNotifierFrameLayout implement
                 items.add(UItem.asShadow(-6, starsBalanceInfo));
             }
         }
-        if (ChatObject.isChannelAndNotMegaGroup(MessagesController.getInstance(currentAccount).getChat(-dialogId)) && MessagesController.getInstance(currentAccount).starrefConnectAllowed) {
-            items.add(ColorfulTextCell.Factory.as(BUTTON_AFFILIATE, Theme.getColor(Theme.key_color_green, resourcesProvider), R.drawable.filled_earn_stars, applyNewSpan(getString(R.string.ChannelAffiliateProgramRowTitle)), getString(R.string.ChannelAffiliateProgramRowText)));
-            items.add(UItem.asShadow(-7, null));
-        }
+        // LoogriGram: a "Channel affiliate program" row stood here, opening the
+        // commission screen. Earning commission is a money feature, so it is gone.
         if (transactionsLayout.hasTransactions()) {
             items.add(UItem.asFullscreenCustom(transactionsLayout, dp(24), true));
         } else {
@@ -985,8 +977,6 @@ public class ChannelMonetizationLayout extends SizeNotifierFrameLayout implement
             AndroidUtilities.cancelRunOnUIThread(sendCpmUpdateRunnable);
             AndroidUtilities.runOnUIThread(sendCpmUpdateRunnable, 1000);
             listView.adapter.update(true);
-        } else if (item.id == BUTTON_AFFILIATE) {
-            fragment.presentFragment(new ChannelAffiliateProgramsFragment(dialogId));
         }
     }
 
