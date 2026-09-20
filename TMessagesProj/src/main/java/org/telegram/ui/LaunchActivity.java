@@ -95,8 +95,6 @@ import org.telegram.messenger.AnimationNotificationsLocker;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.AutoDeleteMediaTask;
 import org.telegram.messenger.BackupAgent;
-import org.telegram.messenger.BetaUpdate;
-import org.telegram.messenger.BirthdayController;
 import org.telegram.messenger.BotGuardHelper;
 import org.telegram.messenger.BotWebViewVibrationEffect;
 import org.telegram.messenger.BuildConfig;
@@ -124,7 +122,6 @@ import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.NotificationsController;
 import org.telegram.messenger.OpenAttachedMenuBotReceiver;
-import org.telegram.messenger.PushListenerController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.SharedConfig;
@@ -212,13 +209,11 @@ import org.telegram.ui.Components.poll.PollAttachedMediaPack;
 import org.telegram.ui.Components.spoilers.SpoilerEffect2;
 import org.telegram.ui.Components.voip.RTMPStreamPipOverlay;
 import org.telegram.ui.Components.voip.VoIPHelper;
-import org.telegram.ui.Gifts.GiftSheet;
 import org.telegram.ui.Components.ISuperRipple;
 import org.telegram.ui.Gifts.AuctionJoinSheet;
 import org.telegram.ui.Stars.StarGiftPreviewSheet;
 import org.telegram.ui.Stars.StarGiftSheet;
 import org.telegram.ui.Stars.StarsController;
-import org.telegram.ui.Stars.StarsIntroActivity;
 import org.telegram.ui.Components.SuperRipple;
 import org.telegram.ui.Stories.StoriesController;
 import org.telegram.ui.Stories.StoriesListPlaceProvider;
@@ -226,7 +221,6 @@ import org.telegram.ui.Stories.StoryViewer;
 import org.telegram.ui.Stories.recorder.StoryEntry;
 import org.telegram.ui.Stories.recorder.StoryRecorder;
 import org.telegram.ui.Stories.LiveStoryPipOverlay;
-import org.telegram.ui.TON.TONIntroActivity;
 import org.telegram.ui.bots.BotWebViewAttachedSheet;
 import org.telegram.ui.bots.BotWebViewSheet;
 import org.telegram.ui.bots.WebViewRequestProps;
@@ -2689,91 +2683,12 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                                         url = url.replace("tg:message", "tg://telegram.org").replace("tg://message", "tg://telegram.org");
                                         data = Uri.parse(url);
                                         chatLinkSlug = data.getQueryParameter("slug");
-                                    } else if (url.startsWith("tg:stars_topup") || url.startsWith("tg://stars_topup")) {
-                                        url = url.replace("tg:stars_topup", "tg://telegram.org").replace("tg://stars_topup", "tg://telegram.org");
-                                        data = Uri.parse(url);
-                                        long balance = 0;
-                                        try {
-                                            balance = (int) Long.parseLong(data.getQueryParameter("balance"));
-                                            if (balance < 0 || balance >= Integer.MAX_VALUE) balance = 0;
-                                        } catch (Exception e) {
-                                            FileLog.e(e);
-                                        }
-                                        String purpose = data.getQueryParameter("purpose");
-                                        StarsController.getInstance(intentAccount[0]).showStarsTopup(this, balance, purpose);
-                                    } else if (url.startsWith("tg:ton") || url.startsWith("tg://ton")) {
-                                        if (progress != null) {
-                                            progress.end();
-                                        }
-                                        presentFragment(new TONIntroActivity());
-                                        return pushOpened;
-                                    } else if (url.startsWith("tg:stars") || url.startsWith("tg://stars")) {
-                                        if (progress != null) {
-                                            progress.end();
-                                        }
-                                        presentFragment(new StarsIntroActivity());
-                                        return pushOpened;
-                                    } else if (url.startsWith("tg:send_gift") || url.startsWith("tg://send_gift")) {
-                                        final String to = data.getQueryParameter("to");
-                                        if (TextUtils.isEmpty(to)) {
-                                            if (progress != null) {
-                                                progress.end();
-                                            }
-                                            UserSelectorBottomSheet.open(0, BirthdayController.getInstance(currentAccount).getState());
-                                            return pushOpened;
-                                        }
-
-                                        long toId = 0;
-                                        try {
-                                            toId = Long.parseLong(to);
-                                        } catch (Exception e) {}
-
-                                        if (toId != 0) {
-                                            if (progress != null) {
-                                                progress.end();
-                                            }
-                                            final TLObject obj = MessagesController.getInstance(currentAccount).getUserOrChat(toId);
-                                            if (obj == null) {
-                                                BaseFragment lastFragment = LaunchActivity.getLastFragment();
-                                                if (lastFragment != null) {
-                                                    if (lastFragment instanceof ChatActivity) {
-                                                        ((ChatActivity) lastFragment).shakeContent();
-                                                    }
-                                                }
-                                                return pushOpened;
-                                            }
-                                            new GiftSheet(this, intentAccount[0], toId, null)
-                                                .show();
-                                            return pushOpened;
-                                        }
-
-                                        if (progress != null) {
-                                            progress.init();
-                                        }
-                                        final Runnable cancel = MessagesController.getInstance(intentAccount[0]).getUserNameResolver().resolve(to, null, (peerId) -> {
-                                            if (progress != null) {
-                                                progress.end();
-                                            }
-
-                                            final TLObject obj = MessagesController.getInstance(currentAccount).getUserOrChat(peerId);
-                                            if (obj == null) {
-                                                BaseFragment lastFragment = LaunchActivity.getLastFragment();
-                                                if (lastFragment != null) {
-                                                    if (lastFragment instanceof ChatActivity) {
-                                                        ((ChatActivity) lastFragment).shakeContent();
-                                                    }
-                                                }
-                                                return;
-                                            }
-
-                                            new GiftSheet(this, intentAccount[0], peerId, null)
-                                                .show();
-                                        });
-                                        if (progress != null && cancel != null) {
-                                            progress.onCancel(cancel);
-                                        }
-
-                                        return pushOpened;
+                                    // LoogriGram: tg:stars_topup, tg:ton, tg:stars and
+                                    // tg:send_gift were handled here - the Stars top-up
+                                    // sheet, the TON and Stars screens and the gift
+                                    // selector. None exist in this build, so these links
+                                    // now fall into the unsupported branch below, which is
+                                    // the honest answer: this client cannot open them.
                                     } else {
                                         unsupportedUrl = url.replace("tg://", "").replace("tg:", "");
                                         int index;
