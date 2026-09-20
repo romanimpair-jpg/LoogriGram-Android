@@ -10,8 +10,6 @@ package org.telegram.ui;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.LocaleController.getString;
-import static org.telegram.messenger.StarsFormat.formatStarsAmount;
-import static org.telegram.messenger.StarsFormat.formatStarsAmountShort;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -92,7 +90,6 @@ import org.telegram.ui.Components.EditTextBoldCursor;
 import org.telegram.ui.Components.EditTextEmoji;
 import org.telegram.ui.Components.ImageUpdater;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Components.LoadingSpan;
 import org.telegram.ui.Components.Premium.LimitReachedBottomSheet;
 import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.RadialProgressView;
@@ -101,8 +98,6 @@ import org.telegram.ui.Components.Reactions.ReactionsUtils;
 import org.telegram.ui.Components.SectionsScrollView;
 import org.telegram.ui.Components.SizeNotifierFrameLayout;
 import org.telegram.ui.Components.UndoView;
-import org.telegram.ui.Stars.BotStarsActivity;
-import org.telegram.ui.Stars.BotStarsController;
 import org.telegram.ui.bots.AffiliateProgramFragment;
 import org.telegram.ui.bots.BotVerifySheet;
 import org.telegram.ui.bots.ChannelAffiliateProgramsFragment;
@@ -111,8 +106,6 @@ import org.telegram.ui.community.CommunityEditActivity;
 import org.telegram.ui.community.CommunitySheet;
 import org.telegram.ui.community.cells.CommunityLinkView2;
 
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -160,7 +153,6 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
     private TextInfoPrivacyCell stickersInfoCell;
 
     private LinearLayout infoContainer;
-    private LinearLayout balanceContainer;
     private TextCell membersCell;
     private TextCell memberRequestsCell;
     private TextCell inviteLinksCell;
@@ -185,8 +177,6 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
     private TextInfoPrivacyCell communityGapView;
 
     private TextCell publicLinkCell;
-    private TextCell tonBalanceCell;
-    private TextCell starsBalanceCell;
     private TextCell botAffiliateProgramCell;
     private TextCell editIntroCell;
     private TextCell editCommandsCell;
@@ -394,9 +384,6 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
             forumTabs = false;
             canForum = false;
             getNotificationCenter().addObserver(this, NotificationCenter.userInfoDidLoad);
-            if (currentUser.bot) {
-                getNotificationCenter().addObserver(this, NotificationCenter.botStarsUpdated);
-            }
         }
         imageUpdater.parentFragment = this;
         imageUpdater.setDelegate(this);
@@ -438,9 +425,6 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
             getNotificationCenter().removeObserver(this, NotificationCenter.channelConnectedBotsUpdate);
         } else {
             getNotificationCenter().removeObserver(this, NotificationCenter.userInfoDidLoad);
-            if (currentUser.bot) {
-                getNotificationCenter().removeObserver(this, NotificationCenter.botStarsUpdated);
-            }
         }
         getNotificationCenter().removeObserver(this, NotificationCenter.updateInterfaces);
         getNotificationCenter().removeObserver(this, NotificationCenter.dialogDeleted);
@@ -1423,74 +1407,15 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
             verifyInfoCell.setVisibility(userInfo != null && userInfo.bot_info != null && userInfo.bot_info.verifier_settings != null ? View.VISIBLE : View.GONE);
 
             if (currentUser.bot && currentUser.bot_can_edit) {
-
-                balanceContainer = new LinearLayout(context);
-                balanceContainer.setOrientation(LinearLayout.VERTICAL);
-                linearLayout1.addView(balanceContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
-
-                HeaderCell headerCell = new HeaderCell(context);
-                headerCell.setText(getString(R.string.BotBalance));
-                balanceContainer.addView(headerCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
-
-                tonBalanceCell = new TextCell(context);
-                tonBalanceCell.setBackground(Theme.getSelectorDrawable(false));
-                tonBalanceCell.setPrioritizeTitleOverValue(true);
-                balanceContainer.addView(tonBalanceCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
-                BotStarsController c = BotStarsController.getInstance(currentAccount);
-                tonBalanceCell.setOnClickListener(v -> {
-                    if (!c.isStarsBalanceAvailable(userId))
-                        return;
-                    presentFragment(new BotStarsActivity(BotStarsActivity.TYPE_TON, userId));
-                });
-                if (!c.isTONBalanceAvailable(userId)) {
-                    SpannableStringBuilder loadingStr = new SpannableStringBuilder("x");
-                    loadingStr.setSpan(new LoadingSpan(tonBalanceCell.valueTextView, dp(30)), 0, loadingStr.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    tonBalanceCell.setTextAndValueAndIcon(getString(R.string.BotBalanceTON), loadingStr, R.drawable.outline_gram_24, false);
-                } else {
-                    long ton_balance = c.getTONBalance(userId);
-                    SpannableStringBuilder ssb = new SpannableStringBuilder();
-                    if (ton_balance > 0) {
-                        if (ton_balance / 1_000_000_000.0 > 1000.0) {
-                            ssb.append("TON ").append(AndroidUtilities.formatWholeNumber((int) (ton_balance / 1_000_000_000.0), 0));
-                        } else {
-                            DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
-                            symbols.setDecimalSeparator('.');
-                            DecimalFormat formatterTON = new DecimalFormat("#.##", symbols);
-                            formatterTON.setMinimumFractionDigits(2);
-                            formatterTON.setMaximumFractionDigits(3);
-                            formatterTON.setGroupingUsed(false);
-                            ssb.append("TON ").append(formatterTON.format(ton_balance / 1_000_000_000.0));
-                        }
-                    }
-                    tonBalanceCell.setTextAndValueAndIcon(getString(R.string.BotBalanceTON), ssb, R.drawable.outline_gram_24, true);
-                }
-                tonBalanceCell.setVisibility(c.botHasTON(userId) ? View.VISIBLE : View.GONE);
-
-                starsBalanceCell = new TextCell(context);
-                starsBalanceCell.setBackground(Theme.getSelectorDrawable(false));
-                starsBalanceCell.setPrioritizeTitleOverValue(true);
-                balanceContainer.addView(starsBalanceCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
-                starsBalanceCell.setOnClickListener(v -> {
-                    if (!c.isStarsBalanceAvailable(userId))
-                        return;
-                    presentFragment(new BotStarsActivity(BotStarsActivity.TYPE_STARS, userId));
-                });
-                if (!c.isStarsBalanceAvailable(userId)) {
-                    SpannableStringBuilder loadingStr = new SpannableStringBuilder("x");
-                    loadingStr.setSpan(new LoadingSpan(starsBalanceCell.valueTextView, dp(30)), 0, loadingStr.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    starsBalanceCell.setTextAndValueAndIcon(getString(R.string.BotBalanceStars), loadingStr, R.drawable.menu_premium_main, false);
-                } else {
-
-                    starsBalanceCell.setTextAndValueAndIcon(getString(R.string.BotBalanceStars), c.getBotStarsBalance(userId).amount <= 0?"":StarsFormat.replaceStarsWithPlain(TextUtils.concat("XTR", formatStarsAmountShort(c.getBotStarsBalance(userId), .85f, ' ')), .85f), R.drawable.menu_premium_main, false);
-                }
-                starsBalanceCell.setVisibility(c.botHasStars(userId) ? View.VISIBLE : View.GONE);
-
+                // LoogriGram: a bot's Stars and TON balance stood here, under a
+                // "Bot balance" header, each row opening BotStarsActivity. Being
+                // paid is as much out of scope as paying, so the section is gone.
+                // The gap below is kept because it is added to linearLayout1, not
+                // to the balance container, and spaces what comes after it.
                 TextInfoPrivacyCell gap = new TextInfoPrivacyCell(context, 12, getResourceProvider());
                 gap.setFixedSize(12);
                 gap.setTag(R.id.fit_width_tag, 1);
                 linearLayout1.addView(gap, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 12));
-
-                balanceContainer.setVisibility(starsBalanceCell.getVisibility() == View.VISIBLE || tonBalanceCell.getVisibility() == View.VISIBLE ? View.VISIBLE : View.GONE);
             }
         }
 
@@ -1850,42 +1775,6 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
                     availableReactions = info.available_reactions;
                 }
                 updateReactionsCell(true);
-            }
-        } else if (id == NotificationCenter.botStarsUpdated) {
-            if ((long) args[0] == userId) {
-                if (starsBalanceCell != null) {
-                    BotStarsController c = BotStarsController.getInstance(currentAccount);
-                    starsBalanceCell.setVisibility(c.botHasStars(userId) ? View.VISIBLE : View.GONE);
-                    starsBalanceCell.setValue(StarsFormat.replaceStarsWithPlain(TextUtils.concat("XTR", formatStarsAmount(c.getBotStarsBalance(userId), .8f, ' ')), .85f), true);
-                    if (publicLinkCell != null) {
-                        publicLinkCell.setNeedDivider(c.botHasStars(userId) || c.botHasTON(userId));
-                    }
-                    balanceContainer.setVisibility(starsBalanceCell.getVisibility() == View.VISIBLE || tonBalanceCell.getVisibility() == View.VISIBLE ? View.VISIBLE : View.GONE);
-                }
-                if (tonBalanceCell != null) {
-                    BotStarsController c = BotStarsController.getInstance(currentAccount);
-                    tonBalanceCell.setVisibility(c.botHasTON(userId) ? View.VISIBLE : View.GONE);
-                    long ton_balance = c.getTONBalance(userId);
-                    SpannableStringBuilder ssb = new SpannableStringBuilder();
-                    if (ton_balance > 0) {
-                        if (ton_balance / 1_000_000_000.0 > 1000.0) {
-                            ssb.append("TON ").append(AndroidUtilities.formatWholeNumber((int) (ton_balance / 1_000_000_000.0), 0));
-                        } else {
-                            DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
-                            symbols.setDecimalSeparator('.');
-                            DecimalFormat formatterTON = new DecimalFormat("#.##", symbols);
-                            formatterTON.setMinimumFractionDigits(2);
-                            formatterTON.setMaximumFractionDigits(3);
-                            formatterTON.setGroupingUsed(false);
-                            ssb.append("TON ").append(formatterTON.format(ton_balance / 1_000_000_000.0));
-                        }
-                    }
-                    tonBalanceCell.setValue(ssb, true);
-                    if (publicLinkCell != null) {
-                        publicLinkCell.setNeedDivider(c.botHasStars(userId) || c.botHasTON(userId));
-                    }
-                    balanceContainer.setVisibility(starsBalanceCell.getVisibility() == View.VISIBLE || tonBalanceCell.getVisibility() == View.VISIBLE ? View.VISIBLE : View.GONE);
-                }
             }
         } else if (id == NotificationCenter.userInfoDidLoad) {
             Long uid = (Long) args[0];

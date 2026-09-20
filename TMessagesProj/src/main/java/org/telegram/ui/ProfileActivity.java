@@ -18,7 +18,6 @@ import static org.telegram.messenger.LocaleController.formatPluralStringComma;
 import static org.telegram.messenger.LocaleController.formatString;
 import static org.telegram.messenger.LocaleController.getString;
 import static org.telegram.messenger.AndroidUtilities.replaceUnderstood;
-import static org.telegram.messenger.StarsFormat.formatStarsAmountShort;
 import static org.telegram.ui.bots.AffiliateProgramFragment.percents;
 
 import android.Manifest;
@@ -161,7 +160,6 @@ import org.telegram.messenger.NotificationsController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.SharedConfig;
-import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.SvgHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
@@ -291,7 +289,6 @@ import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceRenderNode
 import org.telegram.ui.Components.chat.ViewPositionWatcher;
 import org.telegram.ui.Components.voip.VoIPHelper;
 import org.telegram.ui.Gifts.GiftSheet;
-import org.telegram.ui.Stars.BotStarsActivity;
 import org.telegram.ui.Stars.BotStarsController;
 import org.telegram.ui.Stars.ProfileGiftsView;
 import org.telegram.ui.Components.StarGiftPatterns;
@@ -319,8 +316,6 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.ArrayList;
@@ -704,11 +699,12 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private int subscribersRequestsRow;
     private int administratorsRow;
     private int settingsRow;
-    private int botStarsBalanceRow;
-    private int botTonBalanceRow;
-    private int channelBalanceRow;
+    // LoogriGram: the bot and channel revenue rows stood here - Stars balance,
+    // TON balance and the channel monetization entry. Being paid is as much out
+    // of scope for this build as paying, so they are gone rather than hidden.
+    // balanceDividerRow went with them; upstream declares and clears it but
+    // never assigns it a row, so it was already dead.
     private int channelBalanceSectionRow;
-    private int balanceDividerRow;
     private int blockedUsersRow;
     private int membersSectionRow;
     private boolean hasMusic;
@@ -4509,15 +4505,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 presentFragment(fragment);
             } else if (position == settingsRow) {
                 editItem.performClick();
-            } else if (position == botStarsBalanceRow) {
-                presentFragment(new BotStarsActivity(BotStarsActivity.TYPE_STARS, userId));
-            } else if (position == botTonBalanceRow) {
-                presentFragment(new BotStarsActivity(BotStarsActivity.TYPE_TON, userId));
-            } else if (position == channelBalanceRow) {
-                Bundle args = new Bundle();
-                args.putLong("chat_id", chatId);
-                args.putBoolean("start_from_monetization", true);
-                presentFragment(new StatisticActivity(args));
             } else if (position == blockedUsersRow) {
                 Bundle args = new Bundle();
                 args.putLong("chat_id", chatId);
@@ -10526,10 +10513,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         sharedMediaRow = -1;
         notificationsSimpleRow = -1;
         settingsRow = -1;
-        botStarsBalanceRow = -1;
-        botTonBalanceRow = -1;
-        channelBalanceRow = -1;
-        balanceDividerRow = -1;
         hasMusic = false;
 
         unblockRow = -1;
@@ -10741,20 +10724,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
 
                 boolean divider = false;
-                if (user != null && user.bot) {
-                    if (userInfo != null && userInfo.can_view_revenue && BotStarsController.getInstance(currentAccount).getTONBalance(userId) > 0) {
-                        botTonBalanceRow = rowCount++;
-                    }
-                    if (BotStarsController.getInstance(currentAccount).getBotStarsBalance(userId).amount > 0 || BotStarsController.getInstance(currentAccount).hasTransactions(userId)) {
-                        botStarsBalanceRow = rowCount++;
-                    }
-                }
-
                 if (user != null && isBot && !user.bot_nochats) {
                     addToGroupButtonRow = rowCount++;
                     addToGroupInfoRow = rowCount++;
-                } else if (botStarsBalanceRow >= 0) {
-                    divider = true;
                 }
 
                 if (!myProfile && showAddToContacts && user != null && !user.contact && !user.bot && !UserObject.isService(user.id)) {
@@ -10863,34 +10835,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     if (chatInfo != null && (chatInfo.banned_count != 0 || chatInfo.kicked_count != 0)) {
                         blockedUsersRow = rowCount++;
                     }
-                    if (
-                        chatInfo != null && chatInfo.can_view_stars_revenue && (
-                            BotStarsController.getInstance(currentAccount).getBotStarsBalance(-chatId).amount > 0 ||
-                            BotStarsController.getInstance(currentAccount).hasTransactions(-chatId)
-                        ) ||
-                        chatInfo != null &&
-                        chatInfo.can_view_revenue &&
-                        BotStarsController.getInstance(currentAccount).getTONBalance(-chatId) > 0
-                    ) {
-                        channelBalanceRow = rowCount++;
-                    }
                     settingsRow = rowCount++;
                     channelBalanceSectionRow = rowCount++;
                 }
             } else {
-                if (
-                        chatInfo != null &&
-                                chatInfo.can_view_stars_revenue && (
-                                BotStarsController.getInstance(currentAccount).getBotStarsBalance(-chatId).amount > 0 ||
-                                        BotStarsController.getInstance(currentAccount).hasTransactions(-chatId)
-                        ) ||
-                                chatInfo != null &&
-                                        chatInfo.can_view_revenue &&
-                                        BotStarsController.getInstance(currentAccount).getTONBalance(-chatId) > 0
-                ) {
-                    channelBalanceRow = rowCount++;
-                    channelBalanceSectionRow = rowCount++;
-                }
             }
 
             if (ChatObject.isChannel(currentChat)) {
@@ -13698,52 +13646,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         }
                     } else if (position == settingsRow) {
                         textCell.setTextAndIcon(LocaleController.getString(R.string.ChannelAdminSettings), R.drawable.msg_customize, position != membersSectionRow - 1);
-                    } else if (position == channelBalanceRow) {
-                        final TL_stars.StarsAmount stars_balance = BotStarsController.getInstance(currentAccount).getBotStarsBalance(-chatId);
-                        final long ton_balance = BotStarsController.getInstance(currentAccount).getTONBalance(-chatId);
-                        SpannableStringBuilder ssb = new SpannableStringBuilder();
-                        if (ton_balance > 0) {
-                            if (ton_balance / 1_000_000_000.0 > 1000.0) {
-                                ssb.append("TON ").append(AndroidUtilities.formatWholeNumber((int) (ton_balance / 1_000_000_000.0), 0));
-                            } else {
-                                DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
-                                symbols.setDecimalSeparator('.');
-                                DecimalFormat formatterTON = new DecimalFormat("#.##", symbols);
-                                formatterTON.setMinimumFractionDigits(2);
-                                formatterTON.setMaximumFractionDigits(3);
-                                formatterTON.setGroupingUsed(false);
-                                ssb.append("TON ").append(formatterTON.format(ton_balance / 1_000_000_000.0));
-                            }
-                        }
-                        if (stars_balance.amount > 0) {
-                            if (ssb.length() > 0) ssb.append(" ");
-                            ssb.append("XTR ").append(formatStarsAmountShort(stars_balance));
-                        }
-                        textCell.setTextAndValueAndIcon(getString(R.string.ChannelStars), ChannelMonetizationLayout.replaceTON(StarsFormat.replaceStarsWithPlain(ssb, .7f), textCell.getTextView().getPaint()), R.drawable.menu_feature_paid, true);
-                    } else if (position == botStarsBalanceRow) {
-                        final TL_stars.StarsAmount stars_balance = BotStarsController.getInstance(currentAccount).getBotStarsBalance(userId);
-                        SpannableStringBuilder ssb = new SpannableStringBuilder();
-                        if (stars_balance.amount > 0) {
-                            ssb.append("XTR ").append(formatStarsAmountShort(stars_balance));
-                        }
-                        textCell.setTextAndValueAndIcon(getString(R.string.BotBalanceStars), ChannelMonetizationLayout.replaceTON(StarsFormat.replaceStarsWithPlain(ssb, .7f), textCell.getTextView().getPaint()), R.drawable.menu_premium_main, true);
-                    } else if (position == botTonBalanceRow) {
-                        long ton_balance = BotStarsController.getInstance(currentAccount).getTONBalance(userId);
-                        SpannableStringBuilder ssb = new SpannableStringBuilder();
-                        if (ton_balance > 0) {
-                            if (ton_balance / 1_000_000_000.0 > 1000.0) {
-                                ssb.append("TON ").append(AndroidUtilities.formatWholeNumber((int) (ton_balance / 1_000_000_000.0), 0));
-                            } else {
-                                DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
-                                symbols.setDecimalSeparator('.');
-                                DecimalFormat formatterTON = new DecimalFormat("#.##", symbols);
-                                formatterTON.setMinimumFractionDigits(2);
-                                formatterTON.setMaximumFractionDigits(3);
-                                formatterTON.setGroupingUsed(false);
-                                ssb.append("TON ").append(formatterTON.format(ton_balance / 1_000_000_000.0));
-                            }
-                        }
-                        textCell.setTextAndValueAndIcon(getString(R.string.BotBalanceTON), ChannelMonetizationLayout.replaceTON(StarsFormat.replaceStarsWithPlain(ssb, .7f), textCell.getTextView().getPaint()), R.drawable.outline_gram_24, true);
                     } else if (position == blockedUsersRow) {
                         if (chatInfo != null) {
                             textCell.setTextAndValueAndIcon(LocaleController.getString(R.string.ChannelBlacklist), String.format("%d", Math.max(chatInfo.banned_count, chatInfo.kicked_count)), R.drawable.msg_user_remove, position != membersSectionRow - 1);
@@ -14257,7 +14159,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     position == faqRow || position == policyRow || position == sendLogsRow || position == sendLastLogsRow ||
                     position == clearLogsRow || position == switchBackendRow || position == setAvatarRow || position == addToGroupButtonRow ||
                     position == addToContactsRow || position == liteModeRow ||
-                    position == botStarsBalanceRow || position == botTonBalanceRow || position == channelBalanceRow || position == botPermissionLocation ||
+                    position == botPermissionLocation ||
                     position == botPermissionBiometry || position == botPermissionEmojiStatus
             ) {
                 return VIEW_TYPE_TEXT;
@@ -14271,7 +14173,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     position == secretSettingsSectionRow || position == settingsSectionRow || position == devicesSectionRow ||
                     position == helpSectionCell || position == setAvatarSectionRow || position == passwordSuggestionSectionRow ||
                     position == phoneSuggestionSectionRow || position == reportDividerRow ||
-                    position == channelDividerRow || position == graceSuggestionSectionRow || position == balanceDividerRow ||
+                    position == channelDividerRow || position == graceSuggestionSectionRow ||
                     position == botPermissionsDivider || position == channelBalanceSectionRow || position == unofficialSecurityRiskDividerRow
             ) {
                 return VIEW_TYPE_SHADOW;
@@ -15671,10 +15573,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             put(++pointer, bizLocationRow, sparseIntArray);
             put(++pointer, birthdayRow, sparseIntArray);
             put(++pointer, channelRow, sparseIntArray);
-            put(++pointer, botStarsBalanceRow, sparseIntArray);
-            put(++pointer, botTonBalanceRow, sparseIntArray);
-            put(++pointer, channelBalanceRow, sparseIntArray);
-            put(++pointer, balanceDividerRow, sparseIntArray);
             put(++pointer, botAppRow, sparseIntArray);
             put(++pointer, botPermissionsHeader, sparseIntArray);
             put(++pointer, botPermissionLocation, sparseIntArray);

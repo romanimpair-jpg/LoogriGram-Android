@@ -12,7 +12,6 @@ import android.text.TextUtils;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
-import org.telegram.messenger.BirthdayController;
 import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.FileLog;
@@ -41,16 +40,10 @@ import org.telegram.ui.Components.AIEditorAlert;
 import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.CreateBotAlert;
-import org.telegram.ui.Components.Premium.boosts.UserSelectorBottomSheet;
 import org.telegram.ui.Components.SharedMediaLayout;
 import org.telegram.ui.Components.voip.VoIPHelper;
-import org.telegram.ui.Gifts.GiftSheet;
-import org.telegram.ui.Stars.BotStarsActivity;
 import org.telegram.ui.Stars.StarsController;
-import org.telegram.ui.Stars.StarsIntroActivity;
 import org.telegram.ui.Stories.recorder.StoryRecorder;
-import org.telegram.ui.TON.TONIntroActivity;
-import org.telegram.ui.bots.ChannelAffiliateProgramsFragment;
 import org.telegram.ui.web.WebBrowserSettings;
 
 import java.util.ArrayList;
@@ -1163,55 +1156,12 @@ public class LinkManager {
             return true;
         }
 
-        if ("stars".equalsIgnoreCase(first)) {
-            if ("top-up".equalsIgnoreCase(second)) {
-                new StarsIntroActivity.StarsOptionsSheet(activity, null).show();
-                return true;
-            }
-            if ("stats".equalsIgnoreCase(second)) {
-                presentFragment(new BotStarsActivity(BotStarsActivity.TYPE_STARS, getUserConfig().getClientUserId()));
-                return true;
-            }
-            if ("gift".equalsIgnoreCase(second)) {
-                StarsController.getInstance(currentAccount).getGiftOptions();
-                UserSelectorBottomSheet.open(UserSelectorBottomSheet.TYPE_STARS, 0, BirthdayController.getInstance(currentAccount).getState());
-                return true;
-            }
-            if ("earn".equalsIgnoreCase(second)) {
-                presentFragment(new ChannelAffiliateProgramsFragment(getUserConfig().getClientUserId()));
-                return true;
-            }
-            presentFragment(new StarsIntroActivity());
-            return true;
-        }
-
-        if ("premium".equalsIgnoreCase(first)) {
-            presentFragment(new PremiumPreviewFragment("link"));
-            return true;
-        }
-
-        if ("business".equalsIgnoreCase(first)) {
-            presentFragment(new PremiumPreviewFragment(PremiumPreviewFragment.FEATURES_BUSINESS, "link"));
-            if ("do-not-hide-ads".equalsIgnoreCase(second)) {
-                scrollTo("showAdsRow");
-            }
-            return true;
-        }
-
-        if ("ton".equalsIgnoreCase(first)) {
-            presentFragment(new TONIntroActivity());
-            return true;
-        }
-
-        if ("send-gift".equalsIgnoreCase(first)) {
-            if ("self".equalsIgnoreCase(second)) {
-                new GiftSheet(activity, currentAccount, getUserConfig().getClientUserId(), null, null).show();
-                return true;
-            }
-
-            UserSelectorBottomSheet.open(0, BirthdayController.getInstance(currentAccount).getState());
-            return true;
-        }
+        // LoogriGram: the stars, premium, business, ton and send-gift settings
+        // links were handled here - buying Stars, the Premium and Business
+        // upsells, the TON wallet, bot revenue stats, the affiliate programme
+        // and the gift selector. None of those screens are reachable in this
+        // build, so the links are not special-cased any more and fall through
+        // to the plain settings screen at the end of this method.
 
         if ("ask-question".equalsIgnoreCase(first) || "ask-a-question".equalsIgnoreCase(first)) {
             AlertsCreator.createSupportAlert(getLastFragment(), null).show();
