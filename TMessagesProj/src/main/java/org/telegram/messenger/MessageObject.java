@@ -6599,7 +6599,19 @@ public class MessageObject {
         int oldType = type;
         type = 1000;
         isRoundVideoCached = 0;
-        if (isSponsored()) {
+        // LoogriGram: money messages are held but never drawn. contentType -1
+        // with type -1 is upstream's own state for exactly that - it uses it
+        // for a cleared history - so nothing downstream needs to learn a new
+        // case. See LoogriGramHidden for why the message is kept at all.
+        if (LoogriGramHidden.isHidden(messageOwner)) {
+            contentType = -1;
+            type = -1;
+            // updateMessageText ran just before this and will have described
+            // the gift or the payment; the chat list reads that text, so a row
+            // would otherwise advertise a message the chat does not show.
+            messageText = "";
+            caption = null;
+        } else if (isSponsored()) {
             type = TYPE_TEXT;
         } else if (channelJoined) {
             contentType = 0;
@@ -7588,6 +7600,12 @@ public class MessageObject {
     }
 
     public void generateCaption() {
+        // LoogriGram: runs after setType, so a hidden message would get its
+        // caption back. See LoogriGramHidden.
+        if (LoogriGramHidden.isHidden(messageOwner)) {
+            caption = null;
+            return;
+        }
         if (isRoundVideo()) return;
         if (caption != null &&
             (translated && (messageOwner.translatedText != null || summarized && messageOwner.translatedSummaryText != null)) == captionTranslated &&
