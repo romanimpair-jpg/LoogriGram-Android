@@ -164,6 +164,13 @@ android {
         minSdkVersion 21
         targetSdkVersion 36
 
+        // LoogriGram: the tag this build reports as its own version. CI sets
+        // LOOGRIGRAM_TAG to the short commit sha and tags the release it
+        // publishes with the same string, so the updater compares the two as
+        // plain strings. A build made by hand gets "dev", which matches no
+        // release - so it never updates itself. See LoogriGramUpdate.
+        buildConfigField "String", "LOOGRIGRAM_TAG", "\"" + (System.getenv("LOOGRIGRAM_TAG") ?: "dev") + "\""
+
         ndk {
             // LoogriGram: the native build lives in this library module, and
             // an app flavor's abiFilters only filter what gets *packaged* -

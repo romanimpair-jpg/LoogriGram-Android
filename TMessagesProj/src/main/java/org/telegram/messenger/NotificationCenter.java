@@ -379,6 +379,9 @@ public class NotificationCenter {
     public static final int webBrowserSettingsUpdate = totalEvents++;
     public static final int communityPendingRequestsUpdate = totalEvents++;
     public static final int communitySwitchedCollapsed = totalEvents++;
+    // LoogriGram: the updater's state changed - checking, found, downloading,
+    // ready to install. Global, since the tab that shows it is not per account.
+    public static final int loogriGramUpdateChanged = totalEvents++;
 
     public static boolean alreadyLogged;
 

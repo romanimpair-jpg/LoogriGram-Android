@@ -11234,4 +11234,12 @@
     <string name="GhostModeOffInfo">Typing, online status and story views are sent again.</string>
     <string name="GhostNoMapsApp">No maps app installed to open this location.</string>
     <string name="GiftsSendingRemoved">Sending gifts is not available in this build.</string>
+    <!-- LoogriGram: the updater. See LoogriGramUpdate and the update tab in
+         MainTabsActivity. The tag is this build's short commit sha. -->
+    <string name="LoogriGramUpdateTab">Update?</string>
+    <string name="LoogriGramUpdateInstall">Install</string>
+    <string name="LoogriGramUpdateDownload">Download</string>
+    <string name="LoogriGramUpdateTitle">LoogriGram update</string>
+    <string name="LoogriGramUpdateFound">A newer build is available (%1$s). Download it now?</string>
+    <string name="LoogriGramUpdateReady">The update is downloaded. Install it now? The app will close while Android installs it.</string>
 </resources>

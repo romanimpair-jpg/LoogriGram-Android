@@ -569,6 +569,10 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
         // state is what shows ghost mode is on, so it must tint - which the
         // iconStatic path does, via updateColors.
         GHOST(TabAnimationType.STATIC, R.drawable.msg_stories_stealth2),
+        // LoogriGram: the update tab, which is only there when this build
+        // is out of date. Static for the same reason as GHOST - there is no
+        // tab animation for it - and it tints when selected.
+        UPDATE(TabAnimationType.STATIC, R.drawable.msg_download),
         ARTICLE(R.raw.tab_article, R.raw.tab_article_reverse),
 
         BOOSTS(R.raw.boosts, 25, 49),

@@ -45,6 +45,7 @@ import org.telegram.messenger.Emoji;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.LoogriGramUpdate;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
@@ -80,6 +81,9 @@ import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceColor;
 import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceRenderNode;
 import org.telegram.ui.Components.chat.ViewPositionWatcher;
 import org.telegram.ui.Components.glass.GlassTabView;
+import org.telegram.ui.ActionBar.AlertDialog;
+
+import java.util.Locale;
 import org.telegram.ui.Stories.recorder.HintView2;
 
 import java.util.ArrayList;
@@ -104,6 +108,10 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
     private static final int INDEX_SETTINGS = 2;
     private static final int INDEX_CALLS = 3;
     private static final int INDEX_PROFILE = 4;
+    // LoogriGram: the update tab. Like the ghost tab it is an action rather
+    // than a destination, so it has no pager position; unlike it, it is only
+    // there when there is an update to talk about. See LoogriGramUpdate.
+    private static final int INDEX_UPDATE = 5;
 
     private static int indexToPosition(int index) {
         // Settings and Calls share a position - only one of the two is ever
@@ -290,8 +298,22 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         blur3_updateColors();
         checkUnreadCount(true);
 
+        // LoogriGram: an update downloaded in an earlier run is still waiting,
+        // so put the tab back and offer the install once per run - that is the
+        // "it installs itself next time you open the app" half of the flow.
+        // Android still shows its own installer dialog; nothing installs
+        // silently.
+        updateUpdateTab(false);
+        if (!askedToInstallThisRun && LoogriGramUpdate.getInstance().getState() == LoogriGramUpdate.STATE_READY) {
+            askedToInstallThisRun = true;
+            askToInstallUpdate();
+        }
+
         showAccountChangeHint();
     }
+
+    /** One install prompt per run of the app; the tab is there for the rest. */
+    private boolean askedToInstallThisRun;
 
     // LoogriGram: checkContactsTabBadge is gone with the Contacts tab. It put a
     // "!" badge on that tab when contact sync was on without the permission,
@@ -315,12 +337,13 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         tabsView.setPadding(dp(DialogsActivity.MAIN_TABS_MARGIN + 4), dp(DialogsActivity.MAIN_TABS_MARGIN + 4), dp(DialogsActivity.MAIN_TABS_MARGIN + 4), dp(DialogsActivity.MAIN_TABS_MARGIN + 4));
         tabsView.setMaxWidth(dp(328 + DialogsActivity.MAIN_TABS_MARGIN * 2));
 
-        tabs = new GlassTabView[5];
+        tabs = new GlassTabView[6];
         tabs[INDEX_CHATS] = GlassTabView.createMainTab(context, resourceProvider, GlassTabView.TabAnimation.CHATS, R.string.MainTabsChats);
         tabs[INDEX_GHOST] = GlassTabView.createMainTab(context, resourceProvider, GlassTabView.TabAnimation.GHOST, R.string.GhostMode);
         tabs[INDEX_SETTINGS] = GlassTabView.createMainTab(context, resourceProvider, GlassTabView.TabAnimation.SETTINGS, R.string.Settings);
         tabs[INDEX_CALLS] = GlassTabView.createMainTab(context, resourceProvider, GlassTabView.TabAnimation.CALLS, R.string.MainTabsCalls);
         tabs[INDEX_PROFILE] = GlassTabView.createAvatar(context, resourceProvider, currentAccount, R.string.MainTabsProfile);
+        tabs[INDEX_UPDATE] = GlassTabView.createMainTab(context, resourceProvider, GlassTabView.TabAnimation.UPDATE, R.string.LoogriGramUpdateTab);
         tabs[INDEX_CHATS].setOnLongClickListener(this::openFoldersSelector);
         tabs[INDEX_CALLS].setOnLongClickListener(this::openCallsSelector);
         tabs[INDEX_PROFILE].setOnLongClickListener(this::openAccountSelector);
@@ -330,6 +353,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         tabsView.addTabToIgnoreClick(tabs[INDEX_GHOST]);
         tabsView.addTabToIgnoreClick(tabs[INDEX_PROFILE]);
         tabsView.addTabToIgnoreClick(tabs[INDEX_CALLS]);
+        tabsView.addTabToIgnoreClick(tabs[INDEX_UPDATE]);
 
         for (int index = 0; index < tabs.length; index++) {
             final GlassTabView view = tabs[index];
@@ -339,6 +363,13 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
                 tabs[index].setOnClickListener(v -> toggleGhostMode());
                 tabsView.addView(tabs[index]);
                 tabsView.setViewVisible(view, true, false);
+                continue;
+            }
+            if (index == INDEX_UPDATE) {
+                tabs[index].setOnClickListener(v -> onUpdateTabClick());
+                tabsView.addView(tabs[index]);
+                // hidden until there is something to say
+                tabsView.setViewVisible(view, false, false);
                 continue;
             }
             tabs[index].setOnClickListener(v -> {
@@ -835,6 +866,91 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
     // LoogriGram: the ghost tab's selected state means "ghost mode is on", not
     // "this page is showing", so it is driven from SharedConfig and never from
     // the pager position.
+    /**
+     * LoogriGram: the update tab shows what the updater is doing and is the
+     * one control for it. It appears only once there is an update, and each
+     * step asks before taking the next one:
+     *
+     *   nothing        - the tab is not there at all
+     *   "Update?"      - a newer release exists; tapping downloads it
+     *   "45%"          - downloading
+     *   "Install"      - downloaded; tapping opens the system installer
+     */
+    private void updateUpdateTab(boolean animated) {
+        if (tabs == null || tabs.length <= INDEX_UPDATE || tabs[INDEX_UPDATE] == null || tabsView == null) {
+            return;
+        }
+        final LoogriGramUpdate updater = LoogriGramUpdate.getInstance();
+        final int state = updater.getState();
+        final GlassTabView tab = tabs[INDEX_UPDATE];
+
+        switch (state) {
+            case LoogriGramUpdate.STATE_AVAILABLE:
+                tab.setText(getString(R.string.LoogriGramUpdateTab));
+                break;
+            case LoogriGramUpdate.STATE_DOWNLOADING:
+                tab.setText(String.format(Locale.US, "%d%%", Math.round(updater.getProgress() * 100)));
+                break;
+            case LoogriGramUpdate.STATE_READY:
+                tab.setText(getString(R.string.LoogriGramUpdateInstall));
+                break;
+            default:
+                break;
+        }
+
+        final boolean visible = state == LoogriGramUpdate.STATE_AVAILABLE
+            || state == LoogriGramUpdate.STATE_DOWNLOADING
+            || state == LoogriGramUpdate.STATE_READY;
+        tabsView.setViewVisible(tab, visible, animated);
+
+        if (visible && state == LoogriGramUpdate.STATE_AVAILABLE && updater.shouldAskAboutDownload()) {
+            updater.markAsked();
+            askToDownloadUpdate();
+        }
+    }
+
+    private void askToDownloadUpdate() {
+        if (getContext() == null || getParentActivity() == null) {
+            return;
+        }
+        final LoogriGramUpdate updater = LoogriGramUpdate.getInstance();
+        new AlertDialog.Builder(getContext())
+            .setTitle(getString(R.string.LoogriGramUpdateTitle))
+            .setMessage(LocaleController.formatString(R.string.LoogriGramUpdateFound, updater.getAvailableTag()))
+            .setPositiveButton(getString(R.string.LoogriGramUpdateDownload), (dialog, which) -> updater.startDownload())
+            // saying no leaves the tab in place: tapping it starts the download
+            .setNegativeButton(getString(R.string.Cancel), null)
+            .show();
+    }
+
+    private void askToInstallUpdate() {
+        if (getContext() == null || getParentActivity() == null) {
+            return;
+        }
+        new AlertDialog.Builder(getContext())
+            .setTitle(getString(R.string.LoogriGramUpdateTitle))
+            .setMessage(getString(R.string.LoogriGramUpdateReady))
+            .setPositiveButton(getString(R.string.LoogriGramUpdateInstall),
+                (dialog, which) -> LoogriGramUpdate.getInstance().install(getParentActivity()))
+            .setNegativeButton(getString(R.string.Cancel), null)
+            .show();
+    }
+
+    private void onUpdateTabClick() {
+        final LoogriGramUpdate updater = LoogriGramUpdate.getInstance();
+        switch (updater.getState()) {
+            case LoogriGramUpdate.STATE_AVAILABLE:
+                updater.startDownload();
+                break;
+            case LoogriGramUpdate.STATE_READY:
+                askToInstallUpdate();
+                break;
+            default:
+                // checking or downloading: nothing useful to do but wait
+                break;
+        }
+    }
+
     private void toggleGhostMode() {
         SharedConfig.toggleGhostMode();
         if (tabs != null && tabs[INDEX_GHOST] != null) {
@@ -863,13 +979,17 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
                 tab.setSelected(SharedConfig.ghostMode, animated);
                 continue;
             }
+            if (a == INDEX_UPDATE) {
+                // never a page, so never the selected tab
+                continue;
+            }
             tab.setSelected(indexToPosition(a) == position, animated);
         }
     }
 
     public void setGestureSelectedOverride(float animatedPosition, boolean allow) {
         for (int index = 0; index < tabs.length; index++) {
-            if (index == INDEX_GHOST) {
+            if (index == INDEX_GHOST || index == INDEX_UPDATE) {
                 continue;
             }
             final int position = indexToPosition(index);
@@ -975,6 +1095,8 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
     public void didReceivedNotification(int id, int account, Object... args) {
         if (id == NotificationCenter.notificationsCountUpdated || id == NotificationCenter.updateInterfaces) {
             checkUnreadCount(fragmentView != null && fragmentView.isAttachedToWindow());
+        } else if (id == NotificationCenter.loogriGramUpdateChanged) {
+            updateUpdateTab(true);
         } else if (id == NotificationCenter.appUpdateLoading) {
             if (updateLayout != null) {
                 updateLayout.updateFileProgress(null);
@@ -1042,6 +1164,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         globalObserversGroup = NotificationCenter.getGlobalInstance().createObserversGroup(this)
             .add(NotificationCenter.appUpdateAvailable)
             .add(NotificationCenter.appUpdateLoading)
+            .add(NotificationCenter.loogriGramUpdateChanged)
             .add(NotificationCenter.needSetDayNightTheme);
 
         return super.onFragmentCreate();

@@ -36,7 +36,11 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: read
+      # LoogriGram: write, because a successful Release build publishes the APK
+      # as a release for the in-app updater to find. Artifacts cannot serve
+      # that purpose - downloading one needs an authenticated token even on a
+      # public repository, and the app has no token.
+      contents: write
 
     timeout-minutes: 180
 
@@ -243,6 +247,14 @@ jobs:
         id: build
         if: inputs.mode == 'build'
         run: |
+          # LoogriGram: the version this build reports as its own. Gradle bakes
+          # it into BuildConfig.LOOGRIGRAM_TAG, and the release published below
+          # is tagged with the same string, so the updater compares the two as
+          # plain strings. Exported here so gradle in this same shell sees it,
+          # and written to GITHUB_ENV so the publish step gets it too.
+          export LOOGRIGRAM_TAG="g$(git rev-parse --short HEAD)"
+          echo "building as $LOOGRIGRAM_TAG"
+          echo "LOOGRIGRAM_TAG=$LOOGRIGRAM_TAG" >> "$GITHUB_ENV"
           ./gradlew --no-daemon --stacktrace "$GRADLE_TASK"
 
       - name: Collect artifact.
@@ -289,3 +301,24 @@ jobs:
           name: LoogriGram ${{ inputs.config }}
           path: artifact/
           retention-days: 30
+
+      # LoogriGram: what the in-app updater reads. Only Release builds are
+      # published - a Debug APK is signed the same way and would be offered as
+      # an update to everyone running the real thing.
+      - name: Publish release.
+        if: inputs.mode == 'build' && inputs.config == 'Release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -z "$LOOGRIGRAM_TAG" ]; then
+            echo "::error::LOOGRIGRAM_TAG is empty - the build step did not set it"
+            exit 1
+          fi
+          if gh release view "$LOOGRIGRAM_TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "release $LOOGRIGRAM_TAG already exists, replacing its asset"
+            gh release upload "$LOOGRIGRAM_TAG" artifact/LoogriGram.apk               --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$LOOGRIGRAM_TAG" artifact/LoogriGram.apk               --repo "$GITHUB_REPOSITORY"               --target "$GITHUB_SHA"               --title "$LOOGRIGRAM_TAG"               --notes "$(git log -1 --pretty=%s)"
+          fi
+          echo "published $LOOGRIGRAM_TAG"
+
