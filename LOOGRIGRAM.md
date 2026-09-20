@@ -16,20 +16,32 @@ depends on.
 
 | Part | State |
 |---|---|
-| Fork, CI, all removals | Done. No Google bytecode in the APK, verified in the dex |
-| Installed on the phone | **Yes.** First run 2026-09-10, signed with our own key |
-| First use | Working — judged "about as good as desktop" |
+| Fork, CI, degoogling | Done. No Google bytecode in the APK, verified in the dex |
+| Installed on the phone | **Yes.** `g25038ef5`, 2026-09-20, signed with our own key |
+| App name | Done — launcher, in-app strings, and the two wordmark screens |
+| Phone contacts | **Never touched.** Permissions, account and sync adapter all gone |
+| Updater | Ours, from this repo's releases; a sixth tab appears when one exists |
+| Money messages | Held in history, never drawn — desktop's hidden-content rule |
+| Photo/video viewer | **Fixed** 2026-09-20; was our own null dereference, see the traps |
+| Build warnings | Native: 4 left, all in the crypto path that is going. Resources: 40, upstream's |
 | Ghost mode | Working in first use; not yet checked against a second account |
-| Push transport | Working in first use; **not yet trusted over hours idle** |
+| Push transport | Working; **not yet trusted over hours idle**. FCM is impossible here — see below |
 
-**It runs, and first use went well.** What is not yet earned is confidence in
-the push transport. That path is entirely ours - foreground service, `specialUse`
+**The phone is now a Pixel 10a running stock Android with Play Services**, not
+GrapheneOS - so Google code could come back where it buys something. It has
+not: the one thing worth having, FCM push, cannot work here. Telegram's
+Firebase project registers `org.telegram.messenger`, `.beta` and `.web` only,
+and their servers push with their own credentials, so a renamed package signed
+with our key can never receive it. Checked in their `google-services.json`, not
+assumed. The MTProto foreground service stays.
+
+What is still not earned is confidence in the push transport. That path is entirely ours - foreground service, `specialUse`
 type, MTProto connection - and its failure mode is *delayed* notifications after
 hours of idle, which no amount of testing in the first few minutes will reveal.
 If messages start arriving late or only on unlock, look there first, and question
 the `specialUse` choice before anything else.
 
-The installed APK: 44.5 MB, `lib/arm64-v8a/libtmessages.49.so` only, signed
+The installed APK: ~44.5 MB, `lib/arm64-v8a/libtmessages.49.so` only, signed
 `O=LoogriMedia, CN=LoogriGram`, certificate SHA-256
 `97b5106a0796100b36f7aea5e42ceae51b5861bd0dec6e672ee5a85bc1e49030`. That
 fingerprint is how to confirm a later build carries the same key - and it must,
@@ -71,9 +83,16 @@ gh workflow run "Android." --repo romanimpair-jpg/LoogriGram-Android \
 | `build` | 22m | full arm64 APK, ~48 MB |
 
 `compile` exists because javac has no dependency on `externalNativeBuild`, so a
-typo costs four minutes instead of twenty-two. **Use it.** It validates the
-tree, not individual commits, so batch two or three commits per run rather than
-compiling each one.
+typo costs four minutes instead of twenty-two. **Use it** - freely, it needs no
+asking - but know what it cannot see: it never compiles a line of C++. It
+validates the tree, not individual commits, so batch two or three commits per
+run rather than compiling each one.
+
+**A `build` + `Release` run now publishes a release**, tagged `g<short sha>`,
+with the APK attached, plus a private `symbols` artifact holding `mapping.txt`
+and the unstripped `.so`. The installed app reads those releases - see the
+updater below - so a build is outward facing and is asked about every time. A
+`compile` is not.
 
 There is no JDK on the dev machine — **CI is the only compiler.** Plan edits
 accordingly: read code back after scripted edits rather than trusting them,
@@ -102,6 +121,37 @@ future build. One disk is not a backup.
 ## Traps that cost real time
 
 Each of these was hit here. Do not relearn them.
+
+0. **A removal that returns null must be checked against its callers, not
+   its call sites' shape.** `VideoAds.make` was made to return null with a
+   comment saying "PhotoViewer null-checks the result at every use". It does
+   not: `setImageIndex` assigns the result and calls `setWaitingPaused` on it
+   in the very next line, so **every photo opened in a chat dereferenced
+   null**. The viewer's window was already up, so the chrome and caption drew
+   while the image stayed black; `animationInProgress` was left at 1, which
+   spins the invalidate loop at ~50% CPU forever; `isVisible` stayed true, so
+   every later tap was refused and fell through to the chat list, which looked
+   like messages "selecting themselves". One null dereference, four symptoms,
+   none of them resembling its cause. Nothing crashed, and nothing reached
+   logcat - something in the touch path swallows it.
+
+   Two lessons, both already written down and both ignored: *verify by reading
+   the result back*, and a guard is not free. It cost a session. The cure was
+   deleting VideoAds outright, which is what should have happened first.
+
+0b. **`mode=compile` does not build the native side.** It is javac only, so a
+   C++ mistake sails through it and fails the 22-minute build instead. Two did:
+   `std::vector` passed where `.data()` was wanted, and a local left unused
+   when its only reader was deleted. Anything under `jni/` needs a full build
+   to mean anything.
+
+0c. **The phone is the fastest instrument.** `adb` settled in ten minutes what
+   three sessions of reading could not: a screenshot showed the viewer open
+   and black, `top` showed the process burning 50% CPU on a static screen, and
+   a temporary `android.util.Log.e` tag showed exactly which two statements the
+   failure sat between. Release builds log nothing by default (Telegram's own
+   logging is off until Settings → tap the version ten times → Enable logs),
+   so print rather than reason when a bug is reproducible.
 
 1. **A dependency you remove may be supplying something unrelated.** Dropping
    `androidx.mediarouter` with Chromecast took `androidx.media` with it, which
@@ -200,8 +250,50 @@ read back first or the archive settings get reset.
 architectural, not a bug. Do not re-attempt.
 
 **Ads.** Three surfaces, not one: `getSponsoredMessages`, `VideoAds.make` (video
-player) and `contacts.getSponsoredPeers` (search). All four view/click beacons
-guarded too.
+player) and `contacts.getSponsoredPeers` (search). `VideoAds` is deleted
+outright (889 lines) and all four view/click beacons are deleted with their
+eighteen call sites. What is left is `getSponsoredMessages` returning null and
+the empty sponsored UI around it — the next thing to go.
+
+**Updater.** Ours, reading this repository's releases: `LoogriGramUpdate` asks
+`api.github.com` which release is newest, compares its tag with
+`BuildConfig.LOOGRIGRAM_TAG` (CI stamps the short sha; a hand build carries
+`dev` and never updates), downloads the APK, checks its size and zip magic,
+and hands it to the system installer. The request is anonymous and is the only
+outbound traffic here that does not go to Telegram. **Android never installs
+silently** - the system installer always asks, and wants this app allowed to
+install unknown apps the first time. The UI is a sixth tab after the profile,
+present only when there is something to say: "Update?", then the percentage,
+then "Install"; refusing leaves the tab to tap later, and an update downloaded
+but not installed is offered again once per run. `LaunchActivity.checkAppUpdate`
+keeps its name and its callers and drives this now. Testing it needs two
+builds: the one that publishes a release also installs as that tag, so it sees
+itself as current.
+
+**Money messages are held, not shown.** `LoogriGramHidden` lists the TL types -
+invoices, paid media, giveaways, payments, gift codes, Stars gifts and
+transfers, boosts, suggested-post payments - and `MessageObject.setType` gives
+them `contentType = -1, type = -1`, which is **upstream's own state for a
+message that exists and is never drawn** (it uses it for a cleared history), so
+nothing downstream had to learn a new case. The message is still parsed and
+counted, because the read position only moves past messages we hold; dropping
+one leaves an unread badge that scrolling cannot clear. `setType` also clears
+the text `updateMessageText` produced a line earlier, `generateCaption` (which
+runs after) refuses to put a caption back, and notifications skip these in the
+loop that already drops handled conference calls. **Still open:** the chat list
+row still rises with an empty preview - desktop walks back to the newest
+displayable message instead.
+
+**Phone contacts: none.** Not reduced, gone. No `READ_CONTACTS`,
+`WRITE_CONTACTS`, `GET_ACCOUNTS`, `MANAGE_ACCOUNTS`, `AUTHENTICATE_ACCOUNTS`
+or sync-settings permissions, no account authenticator, no sync adapter, no
+cached phonebook (its two database tables are not created), no address book
+tab in the attach menu, no invite screens, no `ContactsController.Contact`
+type. Uploading every number in the address book to find out which of them had
+accounts was the largest thing this app said about people who never installed
+it. **Telegram-side contacts are untouched** - loading them, adding one by
+phone number by hand, deleting them, and "Delete synced contacts", which
+matters because an account can still hold contacts imported before this.
 
 **Location.** Cannot geolocate: every location permission is gone from all six
 manifests, which the OS enforces and GrapheneOS shows in app info.
@@ -248,16 +340,18 @@ out of a class that is being deleted or changing how a message renders.
 
 In rough order of how much is left behind:
 
-- **Stars / Gifts / TON UI.** Still present and compiled. The reason recorded at
-  the time was that `MessageObject` calls `StarsIntroActivity.replaceStars()` in
-  nine places while formatting ordinary message text, and `ChatMessageCell`
-  draws received gifts through `StarGiftSheet` — so deleting the directories
-  breaks rendering of any chat that merely *contains* a gift or a stars amount.
-  That is a reason to rewrite those callers, not to keep the system.
-  `replaceStars` looks like a text-span helper that happens to live in an
-  activity class and could probably be extracted; `AmountUtils.Currency`
+- **Stars / Gifts / TON UI.** Still present and compiled, and now the largest
+  thing left. What used to block it is half gone: money messages are no longer
+  drawn at all (see "Money messages are held, not shown"), so the old reason -
+  that deleting the directories breaks rendering of any chat that merely
+  *mentions* a gift - is much weaker. What remains to check before deleting:
+  `StarsIntroActivity.replaceStars` / `replaceStarsWithPlain` (86 calls between
+  them) and `formatStarsAmount` / `formatTON` / `replaceDiamond`, all of which
+  are text-span helpers living in an activity class; extract them the way
+  `CurrencyFormat` was extracted, then the screens can go. `AmountUtils.Currency`
   modelling STARS/TON as a core money type is the part most likely to fight
-  back. Measure the outside-the-directory reference count before starting.
+  back. `BillingController`'s last eleven callers are in these screens and it
+  dies with them.
 - **Location.** `LocationActivity` and `ChatAttachAlertLocationLayout` remain,
   unreachable, holding ~135 references to `IMapsProvider` between them. Deleting
   them lets the interface and the `onFragmentCreate` guard go too.
@@ -267,13 +361,24 @@ In rough order of how much is left behind:
 - **Premium economy.** The three forced getters leave every branch behind them in
   place; `PremiumPreviewFragment`, `GiftPremiumBottomSheet` and the tier cells
   are largely dead weight now.
-- **`if (true) return;` guards**, each of which should become a deletion: ads
-  (`getSponsoredMessages`, `VideoAds.make`, the four view/click beacons),
-  `isMapsInstalled`, `checkAppUpdate`, `GiftSheet.show` / `SendGiftSheet.show`.
-- **Smaller leftovers:** `ObjectDetectionEmojis` (the label→emoji table, orphaned
-  when image labelling went), `CaptchaController` and `BillingController` reduced
-  to shells — the latter survives only for `formatCurrency`, which would be
-  better as a standalone utility than a class named after a removed feature.
+- **`if (true) return;` guards** still standing, each of which should become a
+  deletion: `getSponsoredMessages` (and the empty sponsored UI around it),
+  `isMapsInstalled`, `GiftSheet.show` / `SendGiftSheet.show`. Done on
+  2026-09-20: `VideoAds.make` (deleted, and it was actively broken - see the
+  traps), the four ad beacons, `checkAppUpdate` (now drives our updater).
+- **Build warnings.** Native: four variable length arrays remain, all
+  `aesOut[MSC_STACK_FALLBACK(...)]` in libtgvoip's crypto path, left because
+  that code is going. Resources: 40 AAPT "multiple substitutions in
+  non-positional format" on upstream strings - about half are gift/Stars
+  strings that die with the money removal; the rest (`AddManyMembersAlert*`,
+  `Languages_*`, `NoContactsYet*`, `YourEmailCode*`, `ResetAccount*`,
+  `formatterMonth*`, `UnconfirmedAuthMultipleFrom_*`, `WidgetPasscodeEnable2`,
+  `StoryAddedToAlbum*`) want `%s` turned into `%1$s`, which no compile can
+  check and a wrong one throws at display time.
+- **Done on 2026-09-20, for the record:** `ObjectDetectionEmojis` deleted,
+  `CaptchaController` folded into its one caller, `BillingController`'s currency
+  half extracted as `CurrencyFormat` (61 call sites) with `BillingUtilities`
+  deleted.
 
 ### Then
 
@@ -283,13 +388,17 @@ In rough order of how much is left behind:
    including that the read date is hidden and no burst of receipts follows
    turning it off; a received location opening in a maps app; and a sweep for any
    premium, Stars or gift surface still reachable.
-2. **Cosmetic pass** (agreed, not started): L and G letters laid diagonally over
-   the default launcher icon — `icon_plane.xml` is a vector so the mark can be
-   hand-written as paths; `icon_foreground.png` is raster at five densities.
-   Delete the five alternative app icons and their `activity-alias` blocks.
-   `AppName` is still `Telegram` in `values/strings.xml`, which matters for API
-   ToS §2.3/§2.4 as much as the logo does. Drop the dead pre-API-26 launcher
-   paths.
+2. **Cosmetic pass**, artwork half only — the naming half is done. The launcher
+   label, the in-app strings and the two screens that drew Telegram's *wordmark
+   over* the app name (the intro page and the chat list header, both now plain
+   text) are handled; `KEEP_COMPILED` in `LocaleController` stops the cloud
+   language pack putting "Telegram" back, which is the trap that makes renaming
+   look like it did nothing. Still to do: the launcher icon itself — L and G
+   laid diagonally over the default, `icon_plane.xml` being a vector so the mark
+   can be hand-written as paths, `icon_foreground.png` raster at five densities;
+   the five alternative app icons and their `activity-alias` blocks; the
+   `telegram_logo_2` wordmark still drawn by the stories row; and the dead
+   pre-API-26 launcher paths.
 3. Consider caching the native build (`.cxx`) the way desktop caches `out/`, if
    22 minutes becomes annoying. Same mtime problem applies.
 
