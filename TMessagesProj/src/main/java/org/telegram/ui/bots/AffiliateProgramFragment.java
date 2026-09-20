@@ -40,6 +40,7 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.CubicBezierInterpolator;
+import org.telegram.ui.Components.FeatureIconCell;
 import org.telegram.ui.Components.ColorfulTextCell;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.LinkSpanDrawable;
@@ -372,9 +373,9 @@ public class AffiliateProgramFragment extends GradientHeaderActivity implements 
         }
 
         items.add(UItem.asFullyCustom(getHeader(getContext())));
-        items.add(FeatureCell.Factory.as(R.drawable.menu_feature_premium, getString(R.string.BotAffiliateProgramFeature1Title), getString(R.string.BotAffiliateProgramFeature1)));
-        items.add(FeatureCell.Factory.as(R.drawable.msg_channel, getString(R.string.BotAffiliateProgramFeature2Title), getString(R.string.BotAffiliateProgramFeature2)));
-        items.add(FeatureCell.Factory.as(R.drawable.menu_feature_links2, getString(R.string.BotAffiliateProgramFeature3Title), getString(R.string.BotAffiliateProgramFeature3)));
+        items.add(FeatureIconCell.Factory.as(R.drawable.menu_feature_premium, getString(R.string.BotAffiliateProgramFeature1Title), getString(R.string.BotAffiliateProgramFeature1)));
+        items.add(FeatureIconCell.Factory.as(R.drawable.msg_channel, getString(R.string.BotAffiliateProgramFeature2Title), getString(R.string.BotAffiliateProgramFeature2)));
+        items.add(FeatureIconCell.Factory.as(R.drawable.menu_feature_links2, getString(R.string.BotAffiliateProgramFeature3Title), getString(R.string.BotAffiliateProgramFeature3)));
         items.add(UItem.asShadow(1, null));
 
         items.add(UItem.asHeader(getString(R.string.AffiliateProgramCommission)));
