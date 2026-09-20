@@ -16016,7 +16016,6 @@ public class ChatActivity extends BaseFragment implements
                     final boolean isVisible = messageObject.viewsReloaded || rTop < contentView.getMeasuredHeight() - dp(9 + 32) - windowInsetsStateHolder.getAnimatedMaxBottomInset() - getTopicTabsSideSize(TopicsTabsView.Position.BOTTOM) - inputIslandHeightCurrent;
                     messageCell.setSponsoredMessageVisible(isVisible, isVisible);
                     if (isVisible) {
-                        markSponsoredAsRead(messageObject);
                     }
                 }
 
@@ -29155,7 +29154,6 @@ public class ChatActivity extends BaseFragment implements
         if (showBotAd) {
             createBotAdView();
             if (botAdView != null) {
-                markSponsoredAsRead(botSponsoredMessage);
                 botAdView.set(this, botSponsoredMessage, () -> {
                     if (botSponsoredMessage == null) return;
                     RevenueSharingAdsInfoBottomSheet[] sheet = new RevenueSharingAdsInfoBottomSheet[1];
@@ -29187,7 +29185,6 @@ public class ChatActivity extends BaseFragment implements
                                 textView.setOnClickListener(e -> {
                                     if (botSponsoredMessage == null) return;
                                     o.dismiss();
-                                    logSponsoredClicked(botSponsoredMessage, false, true);
                                     Browser.openUrl(getContext(), Uri.parse(botSponsoredMessage.sponsoredUrl), true, false, false, null, null, false, MessagesController.getInstance(currentAccount).sponsoredLinksInappAllow, false);
                                 });
                                 textView.setOnLongClickListener(e -> {
@@ -31681,7 +31678,6 @@ public class ChatActivity extends BaseFragment implements
                                 if (selectedObject == null) {
                                     return;
                                 }
-                                logSponsoredClicked(selectedObject, false, false);
                                 Browser.openUrl(getContext(), Uri.parse(selectedObject.sponsoredUrl), true, false, false, null, null, false, getMessagesController().sponsoredLinksInappAllow, false);
                             });
                             textView.setOnLongClickListener(e -> {
@@ -36163,7 +36159,6 @@ public class ChatActivity extends BaseFragment implements
                         if (str.startsWith("video?")) {
                             didPressMessageUrl(url, false, messageObject, cell);
                         } else {
-                            logSponsoredClicked(messageObject, false, false);
                             openClickableLink(url, str, false, cell, messageObject, true);
                         }
                     } else if (which == 1) {
@@ -36233,7 +36228,6 @@ public class ChatActivity extends BaseFragment implements
                 didLongPressLink(cell, messageObject, url, str);
             }
         } else {
-            logSponsoredClicked(messageObject, false, false);
             String username = Browser.extractUsername(str);
             if (username != null) {
                 username = username.toLowerCase();
@@ -36515,22 +36509,11 @@ public class ChatActivity extends BaseFragment implements
         }
     }
 
-    public void logSponsoredClicked(MessageObject messageObject, boolean media, boolean fullscreen) {
-        // LoogriGram: belt-and-braces. No sponsored message can reach the list
-        // any more, so this should be unreachable; blocked here as well so that
-        // a new upstream call site cannot quietly start reporting again.
-        if (true) {
-            return;
-        }
-        if (messageObject == null || !messageObject.isSponsored()) {
-            return;
-        }
-        TLRPC.TL_messages_clickSponsoredMessage req = new TLRPC.TL_messages_clickSponsoredMessage();
-        req.random_id = messageObject.sponsoredId;
-        req.media = media;
-        req.fullscreen = fullscreen;
-        getConnectionsManager().sendRequest(req, null);
-    }
+    // LoogriGram: the advertising beacons are gone - the impression report
+    // for a sponsored message, the click report, and the two for a
+    // sponsored search result. Nothing can reach them anyway, since no
+    // sponsored message is ever requested, but a report that ads were
+    // shown and tapped is not something to leave lying in the tree.
 
     private void didPressMessageUrl(CharacterStyle url, boolean longPress, MessageObject messageObject, ChatMessageCell cell) {
         if (url == null || getParentActivity() == null) {
@@ -36556,7 +36539,6 @@ public class ChatActivity extends BaseFragment implements
             if (longPress && cell != null) {
                 cell.resetPressedLink(-1);
             }
-            logSponsoredClicked(messageObject, false, false);
         } else if (url instanceof FormattedDateSpan) {
             FormattedDateSpan formattedDateSpan = (FormattedDateSpan) url;
             didLongPressFormattedDate(cell, url, formattedDateSpan.originalText, formattedDateSpan.entity);
@@ -36648,7 +36630,6 @@ public class ChatActivity extends BaseFragment implements
                     cell.resetPressedLink(-1);
                 }
             } else {
-                logSponsoredClicked(messageObject, false, false);
                 boolean forceAlert = url instanceof URLSpanReplacement;
                 if (url instanceof URLSpanReplacement && (urlFinal == null || !urlFinal.startsWith("mailto:")) || AndroidUtilities.shouldShowUrlInAlert(urlFinal)) {
                     if (openLinkInternally(urlFinal, cell, url, messageObject != null ? messageObject.getId() : 0)) {
@@ -36742,23 +36723,6 @@ public class ChatActivity extends BaseFragment implements
         chatListView.setImportantForAccessibility(mentionContainer != null && mentionContainer.isOpen() || (scrimPopupWindow != null && scrimPopupWindow.isShowing()) ? View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS : View.IMPORTANT_FOR_ACCESSIBILITY_AUTO);
     }
 
-    private void markSponsoredAsRead(MessageObject object) {
-        if (object == null) {
-            return;
-        }
-        if (!object.isSponsored() || object.viewsReloaded) {
-            return;
-        }
-        // LoogriGram: the impression beacon. See logSponsoredClicked above.
-        if (true) {
-            return;
-        }
-        object.viewsReloaded = true;
-        TLRPC.TL_messages_viewSponsoredMessage req = new TLRPC.TL_messages_viewSponsoredMessage();
-        req.random_id = object.sponsoredId;
-        getConnectionsManager().sendRequest(req, null);
-        getMessagesController().markSponsoredAsRead(dialog_id, object);
-    }
 
     @Override
     public boolean canBeginSlide() {
@@ -41502,7 +41466,6 @@ public class ChatActivity extends BaseFragment implements
             } else if (message.isVideo() || message.type == MessageObject.TYPE_PHOTO || message.type == MessageObject.TYPE_TEXT && !message.isWebpageDocument() || message.isGif()) {
                 if (message.isSponsored()) {
                     if (message.isGif() || message.isPhoto()) {
-                        logSponsoredClicked(message, true, false);
                         if (message.sponsoredUrl != null) {
                             if (progressDialogCurrent != null) {
                                 progressDialogCurrent.cancel(true);
@@ -41527,7 +41490,6 @@ public class ChatActivity extends BaseFragment implements
                         }
                         return;
                     } else if (message.isVideo()) {
-                        logSponsoredClicked(message, true, false);
                     }
                 }
                 if (message.getDuration() > 0 && message.getVideoStartsTimestamp() > 0 && !message.openedInViewer) {
@@ -41805,7 +41767,6 @@ public class ChatActivity extends BaseFragment implements
                 Browser.openUrl(getParentActivity(), Uri.parse(webPage.url), true, true, false, progressDialogCurrent, null, false, true, false);
             } else {
                 if (messageObject.isSponsored()) {
-                    logSponsoredClicked(messageObject, false, false);
                     if (messageObject.sponsoredUrl != null) {
                         if (progressDialogCurrent != null) {
                             progressDialogCurrent.cancel(true);
@@ -44502,7 +44463,6 @@ public class ChatActivity extends BaseFragment implements
                 } else if (customTabs && !isHashtag) {
                     Browser.openInTelegramBrowser(getParentActivity(), str, null);
                 } else {
-                    logSponsoredClicked(messageObject, false, false);
                     openClickableLink(span, str, false, cell, messageObject, false);
                 }
             });

@@ -20736,9 +20736,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         if (currentMessageObject != null && currentMessageObject.isSponsored()) {
             if (x >= (getContainerViewWidth() - centerImage.getImageWidth()) / 2.0f && x <= (getContainerViewWidth() + centerImage.getImageWidth()) / 2.0f &&
                 y >= (getContainerViewHeight() - centerImage.getImageHeight()) / 2.0f && y <= (getContainerViewHeight() + centerImage.getImageHeight()) / 2.0f) {
-                if (parentFragment instanceof ChatActivity) {
-                    ((ChatActivity) parentFragment).logSponsoredClicked(currentMessageObject, true, true);
-                }
                 closePhoto(true, false);
                 if (currentMessageObject.sponsoredUrl != null) {
                     Browser.openUrl(LaunchActivity.instance != null ? LaunchActivity.instance : activityContext, Uri.parse(currentMessageObject.sponsoredUrl), true, false, false, null, null, false, MessagesController.getInstance(currentAccount).sponsoredLinksInappAllow, false);
@@ -22956,9 +22953,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                         return;
                     }
                     o.dismiss();
-                    if (parentFragment instanceof ChatActivity) {
-                        ((ChatActivity) parentFragment).logSponsoredClicked(currentMessageObject, false, true);
-                    }
                     Browser.openUrl(activityContext, Uri.parse(currentMessageObject.sponsoredUrl), true, false, false, null, null, false, MessagesController.getInstance(currentAccount).sponsoredLinksInappAllow, false);
                 });
                 textView.setOnLongClickListener(e -> {
@@ -23110,9 +23104,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
 
         adButtonView.setOnClickListener(v -> {
             if (currentMessageObject == null || !currentMessageObject.isSponsored()) return;
-            if (parentFragment instanceof ChatActivity) {
-                ((ChatActivity) parentFragment).logSponsoredClicked(currentMessageObject, false, true);
-            }
             closePhoto(true, false);
             if (currentMessageObject.sponsoredUrl != null) {
                 Browser.openUrl(LaunchActivity.instance != null ? LaunchActivity.instance : activityContext, Uri.parse(currentMessageObject.sponsoredUrl), true, false, false, null, null, false, MessagesController.getInstance(currentAccount).sponsoredLinksInappAllow, false);

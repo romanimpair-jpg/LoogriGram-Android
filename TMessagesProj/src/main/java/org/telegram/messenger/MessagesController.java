@@ -23131,9 +23131,8 @@ public class MessagesController extends BaseController implements NotificationCe
                 .apply();
     }
 
-    public void markSponsoredAsRead(long dialog_id, MessageObject object) {
-        // sponsoredMessages.remove(dialog_id);
-    }
+    // LoogriGram: marking a sponsored message as read was already inert -
+    // its only statement was commented out upstream. See ChatActivity.
 
     public void deleteMessagesRange(long dialogId, long channelId, int minDate, int maxDate, boolean forAll, Runnable callback) {
         TLRPC.TL_messages_deleteHistory req = new TLRPC.TL_messages_deleteHistory();

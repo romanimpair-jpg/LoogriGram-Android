@@ -13207,7 +13207,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 final TLRPC.TL_sponsoredPeer peer = (TLRPC.TL_sponsoredPeer) item;
                 final long did = DialogObject.getPeerDialogId(peer.peer);
                 presentFragment(ChatActivity.of(did));
-                searchViewPager.dialogsSearchAdapter.clickedSponsoredPeer(peer);
                 return;
             }
             if (view instanceof ProfileSearchCell && ((ProfileSearchCell) view).isBlocked()) {

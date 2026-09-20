@@ -185,7 +185,6 @@ public class BotAdView extends FrameLayout {
 
         textView.setOnLinkPressListener(span -> {
             if (chatActivity != null) {
-                chatActivity.logSponsoredClicked(messageObject, false, false);
             }
             if (span instanceof URLSpan) {
                 String spanUrl = ((URLSpan) span).getURL();
@@ -204,7 +203,6 @@ public class BotAdView extends FrameLayout {
         });
         setOnClickListener(v -> {
             if (chatActivity != null) {
-                chatActivity.logSponsoredClicked(messageObject, false, false);
             }
             Browser.openUrl(getContext(), Uri.parse(url), true, false, false, null, null, false, MessagesController.getInstance(UserConfig.selectedAccount).sponsoredLinksInappAllow, false);
         });

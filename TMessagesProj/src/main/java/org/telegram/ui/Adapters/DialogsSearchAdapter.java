@@ -2501,14 +2501,9 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         ConnectionsManager.getInstance(currentAccount).sendRequest(req, null);
     }
 
-    public void clickedSponsoredPeer(TLRPC.TL_sponsoredPeer sponsoredPeer) {
-        if (sponsoredPeer == null) return;
-        // LoogriGram: click beacon. See above.
-        if (true) {
-            return;
-        }
-        TLRPC.TL_messages_clickSponsoredMessage req = new TLRPC.TL_messages_clickSponsoredMessage();
-        req.random_id = sponsoredPeer.random_id;
-        ConnectionsManager.getInstance(currentAccount).sendRequest(req, null);
-    }
+    // LoogriGram: the advertising beacons are gone - the impression report
+    // for a sponsored message, the click report, and the two for a
+    // sponsored search result. Nothing can reach them anyway, since no
+    // sponsored message is ever requested, but a report that ads were
+    // shown and tapped is not something to leave lying in the tree.
 }
