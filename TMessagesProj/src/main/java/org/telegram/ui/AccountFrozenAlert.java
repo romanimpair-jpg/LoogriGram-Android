@@ -27,9 +27,9 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.BottomSheet;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.BackupImageView;
+import org.telegram.ui.Components.FeatureRow;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RLottieImageView;
-import org.telegram.ui.Stars.ExplainStarsSheet;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 import org.telegram.ui.bots.AffiliateProgramFragment;
 
@@ -101,15 +101,15 @@ public class AccountFrozenAlert {
         textView.setGravity(Gravity.CENTER);
         linearLayout.addView(textView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 0, 0, 0, 23));
 
-        ExplainStarsSheet.FeatureCell featureCell = new ExplainStarsSheet.FeatureCell(context, ExplainStarsSheet.FeatureCell.STYLE_SHEET, resourcesProvider);
+        FeatureRow featureCell = new FeatureRow(context, FeatureRow.STYLE_SHEET, resourcesProvider);
         featureCell.set(R.drawable.msg_block2, getString(R.string.AccountFrozen1Title), getString(R.string.AccountFrozen1Text));
         linearLayout.addView(featureCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 0, 0, 0, 0));
 
-        featureCell = new ExplainStarsSheet.FeatureCell(context, ExplainStarsSheet.FeatureCell.STYLE_SHEET, resourcesProvider);
+        featureCell = new FeatureRow(context, FeatureRow.STYLE_SHEET, resourcesProvider);
         featureCell.set(R.drawable.menu_privacy, getString(R.string.AccountFrozen2Title), getString(R.string.AccountFrozen2Text));
         linearLayout.addView(featureCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 0, 0, 0, 0));
 
-        featureCell = new ExplainStarsSheet.FeatureCell(context, ExplainStarsSheet.FeatureCell.STYLE_SHEET, resourcesProvider);
+        featureCell = new FeatureRow(context, FeatureRow.STYLE_SHEET, resourcesProvider);
         featureCell.set(R.drawable.menu_feature_hourglass, getString(R.string.AccountFrozen3Title), replaceSingleTag(formatString(R.string.AccountFrozen3Text, formatYearMonthDay(MessagesController.getInstance(currentAccount).freezeUntilDate, true)), openAppeal::run));
         linearLayout.addView(featureCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 0, 0, 0, 0));
 

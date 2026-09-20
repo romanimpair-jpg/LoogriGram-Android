@@ -89,6 +89,7 @@ import org.telegram.ui.Components.ColoredImageSpan;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.ItemOptions;
 import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.Components.Particles;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.ScaleStateListAnimator;
 import org.telegram.ui.Components.Text;
@@ -1532,7 +1533,7 @@ public class LiveCommentsView extends FrameLayout implements NotificationCenter.
             this.filled = filled;
 
             layout = new LinearLayout(context) {
-                StarsReactionsSheet.Particles particles;
+                Particles particles;
                 Path clipPath = new Path();
 
                 @Override
@@ -1545,7 +1546,7 @@ public class LiveCommentsView extends FrameLayout implements NotificationCenter.
                         canvas.clipPath(clipPath);
 
                         if (particles == null) {
-                            particles = new StarsReactionsSheet.Particles(StarsReactionsSheet.Particles.TYPE_RADIAL, 250);
+                            particles = new Particles(Particles.TYPE_RADIAL, 250);
                         }
                         particles.setBounds(0, 0, getWidth(), getHeight());
                         particles.setSpeed(30.0f);
@@ -1884,7 +1885,7 @@ public class LiveCommentsView extends FrameLayout implements NotificationCenter.
             ScaleStateListAnimator.apply(this);
 
             layout = new LinearLayout(context) {
-                StarsReactionsSheet.Particles particles;
+                Particles particles;
                 final Path clipPath = new Path();
                 final Paint fillPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
                 long lastDialogId = 0;
@@ -1914,7 +1915,7 @@ public class LiveCommentsView extends FrameLayout implements NotificationCenter.
                     }
 
                     if (particles == null) {
-                        particles = new StarsReactionsSheet.Particles(StarsReactionsSheet.Particles.TYPE_RADIAL, 250);
+                        particles = new Particles(Particles.TYPE_RADIAL, 250);
                     }
                     particles.setBounds(0, 0, getWidth(), getHeight());
                     particles.setSpeed(30.0f);

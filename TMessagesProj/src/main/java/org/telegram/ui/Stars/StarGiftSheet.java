@@ -148,6 +148,7 @@ import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.LinkPath;
 import org.telegram.ui.Components.LinkSpanDrawable;
 import org.telegram.ui.Components.LoadingSpan;
+import org.telegram.ui.Components.Particles;
 import org.telegram.ui.Components.Premium.LimitPreviewView;
 import org.telegram.ui.Components.Premium.LimitReachedBottomSheet;
 import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
@@ -157,6 +158,7 @@ import org.telegram.ui.Components.RLottieImageView;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.ScaleStateListAnimator;
 import org.telegram.ui.Components.ShareAlert;
+import org.telegram.ui.Components.StarGiftPatterns;
 import org.telegram.ui.Components.TableView;
 import org.telegram.ui.Components.Text;
 import org.telegram.ui.Components.TextHelper;
@@ -2844,7 +2846,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         }
 
         private final RectF particlesBounds = new RectF();
-        private StarsReactionsSheet.Particles particles;
+        private Particles particles;
         protected final int[] backgroundColors = new int[12];
         private final int[] textColors = new int[12];
         private final int[] patternColors = new int[12];
@@ -2935,7 +2937,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
 
                 if (currentPage.at(PAGE_WEAR) > 0) {
                     if (particles == null) {
-                        particles = new StarsReactionsSheet.Particles(StarsReactionsSheet.Particles.TYPE_RADIAL, 12);
+                        particles = new Particles(Particles.TYPE_RADIAL, 12);
                     }
                     final float imageCx = imageLayout.getX() + imageLayout.getMeasuredWidth() / 2.0f, imageHw = imageLayout.getMeasuredWidth() * imageLayout.getScaleX() / 2.0f;
                     final float imageCy = imageLayout.getY() + imageLayout.getMeasuredHeight() / 2.0f, imageHh = imageLayout.getMeasuredHeight() * imageLayout.getScaleY() / 2.0f;
@@ -7393,7 +7395,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
 
         private final Path path = new Path();
         private final RectF rect = new RectF();
-        private StarsReactionsSheet.Particles particles;
+        private Particles particles;
         private final int sizeDp;
         private final TL_stars.StarGift starGift;
         private final View view;
@@ -7433,7 +7435,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 giftStatus.align(Layout.Alignment.ALIGN_CENTER);
                 giftStatus.multiline(1);
 
-                particles = new StarsReactionsSheet.Particles(StarsReactionsSheet.Particles.TYPE_RADIAL, 40);
+                particles = new Particles(Particles.TYPE_RADIAL, 40);
                 particles.setBounds(-dp(sizeDp * 0.45f), -dp(sizeDp * 0.45f), dp(sizeDp * 0.45f), dp(sizeDp * 0.25f));
                 particles.generateGrid();
             } else if (gift != null) {
@@ -10720,7 +10722,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             private AnimatedFloat swapGradient = new AnimatedFloat(1f, this::invalidateSelf, 0, 420, CubicBezierInterpolator.EASE_OUT_QUINT);
             private final Path clipPath = new Path();
 
-            private StarsReactionsSheet.Particles particles = new StarsReactionsSheet.Particles(StarsReactionsSheet.Particles.TYPE_RADIAL, 45);
+            private Particles particles = new Particles(Particles.TYPE_RADIAL, 45);
 
             public ButtonBackground() {
                 paintStrokeTop.setStyle(Paint.Style.STROKE);

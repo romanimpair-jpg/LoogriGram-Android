@@ -44,6 +44,8 @@ import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.ButtonBounce;
 import org.telegram.ui.Components.CubicBezierInterpolator;
+import org.telegram.ui.Components.Particles;
+import org.telegram.ui.Components.StarGiftPatterns;
 import org.telegram.ui.Components.Text;
 import org.telegram.ui.Gifts.GiftMessageDrawable;
 import org.telegram.ui.Gifts.GiftSheet;
@@ -95,7 +97,7 @@ public class StarGiftUniqueActionLayout {
     private final RectF buttonRect = new RectF();
     private final Path buttonPath = new Path();
     private final Paint buttonBackgroundPaint = new Paint();
-    private final StarsReactionsSheet.Particles buttonParticles = new StarsReactionsSheet.Particles(StarsReactionsSheet.Particles.TYPE_RADIAL, 25);
+    private final Particles buttonParticles = new Particles(Particles.TYPE_RADIAL, 25);
     private final ButtonBounce buttonBounce;
 
     private final ButtonBounce bounce;

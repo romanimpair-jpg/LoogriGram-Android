@@ -38,6 +38,7 @@ import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.BulletinFactory;
+import org.telegram.ui.Components.FeatureRow;
 import org.telegram.ui.Components.ItemOptions;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RLottieImageView;
@@ -46,7 +47,6 @@ import org.telegram.ui.Components.TextHelper;
 import org.telegram.ui.Components.UItem;
 import org.telegram.ui.Components.UniversalAdapter;
 import org.telegram.ui.Components.UniversalRecyclerView;
-import org.telegram.ui.Stars.ExplainStarsSheet;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 
 import java.util.ArrayList;
@@ -325,15 +325,15 @@ public class PasskeysActivity extends BaseFragment {
         subtitle.setText(getString(R.string.PasskeyFeatureSubtitle));
         linearLayout.addView(subtitle, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 32, 0, 32, 24));
 
-        ExplainStarsSheet.FeatureCell f = new ExplainStarsSheet.FeatureCell(context, ExplainStarsSheet.FeatureCell.STYLE_SHEET, resourcesProvider);
+        FeatureRow f = new FeatureRow(context, FeatureRow.STYLE_SHEET, resourcesProvider);
         f.set(R.drawable.msg2_permissions, getString(R.string.PasskeyFeature1Title), getString(R.string.PasskeyFeature1Subtitle));
         linearLayout.addView(f, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 0, 0, 8));
 
-        f = new ExplainStarsSheet.FeatureCell(context, ExplainStarsSheet.FeatureCell.STYLE_SHEET, resourcesProvider);
+        f = new FeatureRow(context, FeatureRow.STYLE_SHEET, resourcesProvider);
         f.set(R.drawable.menu_face, getString(R.string.PasskeyFeature2Title), getString(R.string.PasskeyFeature2Subtitle));
         linearLayout.addView(f, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 0, 0, 8));
 
-        f = new ExplainStarsSheet.FeatureCell(context, ExplainStarsSheet.FeatureCell.STYLE_SHEET, resourcesProvider);
+        f = new FeatureRow(context, FeatureRow.STYLE_SHEET, resourcesProvider);
         f.set(R.drawable.menu_privacy, getString(R.string.PasskeyFeature3Title), getString(R.string.PasskeyFeature3Subtitle));
         linearLayout.addView(f, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 0, 0, 8));
 

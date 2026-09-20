@@ -20,6 +20,7 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.BottomSheetWithRecyclerListView;
+import org.telegram.ui.Components.FeatureRow;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.LinkSpanDrawable;
 import org.telegram.ui.Components.Premium.GLIcon.GLIconRenderer;
@@ -114,94 +115,13 @@ public class ExplainStarsSheet extends BottomSheetWithRecyclerListView {
 
     public void fillItems(ArrayList<UItem> items, UniversalAdapter adapter) {
         items.add(UItem.asCustom(headerView));
-        items.add(FeatureCell.Factory.of(R.drawable.msg_gift_premium, getString(R.string.ExplainStarsFeature1Title), getString(R.string.ExplainStarsFeature1Text)));
-        items.add(FeatureCell.Factory.of(R.drawable.msg_bot, getString(R.string.ExplainStarsFeature2Title), AndroidUtilities.replaceArrows(AndroidUtilities.replaceSingleTag(getString(R.string.ExplainStarsFeature2Text), () -> {
+        items.add(FeatureRow.Factory.of(R.drawable.msg_gift_premium, getString(R.string.ExplainStarsFeature1Title), getString(R.string.ExplainStarsFeature1Text)));
+        items.add(FeatureRow.Factory.of(R.drawable.msg_bot, getString(R.string.ExplainStarsFeature2Title), AndroidUtilities.replaceArrows(AndroidUtilities.replaceSingleTag(getString(R.string.ExplainStarsFeature2Text), () -> {
             new StarAppsSheet(getContext()).show();
         }), true)));
-        items.add(FeatureCell.Factory.of(R.drawable.menu_unlock, getString(R.string.ExplainStarsFeature3Title), getString(R.string.ExplainStarsFeature3Text)));
-        items.add(FeatureCell.Factory.of(R.drawable.menu_feature_paid, getString(R.string.ExplainStarsFeature4Title), getString(R.string.ExplainStarsFeature4Text)));
+        items.add(FeatureRow.Factory.of(R.drawable.menu_unlock, getString(R.string.ExplainStarsFeature3Title), getString(R.string.ExplainStarsFeature3Text)));
+        items.add(FeatureRow.Factory.of(R.drawable.menu_feature_paid, getString(R.string.ExplainStarsFeature4Title), getString(R.string.ExplainStarsFeature4Text)));
         items.add(UItem.asSpace(dp(10 + 48 + 10)));
-    }
-
-    public static class FeatureCell extends LinearLayout {
-
-        public static final int STYLE_SHEET = 1;
-
-        public final ImageView imageView;
-        public final LinearLayout textLayout;
-        public final TextView titleView;
-        public final LinkSpanDrawable.LinksTextView subtitleView;
-
-        public FeatureCell(Context context, int style, Theme.ResourcesProvider resourcesProvider) {
-            super(context);
-
-            setOrientation(HORIZONTAL);
-
-            setPadding(dp(style == STYLE_SHEET ? 11 : 32), 0, dp(style == STYLE_SHEET ? 11 : 32), dp(style == STYLE_SHEET ? 8 : 12));
-
-            imageView = new ImageView(context);
-            imageView.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText), PorterDuff.Mode.SRC_IN));
-            imageView.setScaleType(ImageView.ScaleType.CENTER);
-            addView(imageView, LayoutHelper.createLinear(24, 24, Gravity.TOP | Gravity.LEFT, 0, 6, 16, 0));
-
-            textLayout = new LinearLayout(context);
-            textLayout.setOrientation(VERTICAL);
-
-            titleView = new LinkSpanDrawable.LinksTextView(context);
-            titleView.setTypeface(AndroidUtilities.bold());
-            titleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
-            titleView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
-            titleView.setLinkTextColor(Theme.getColor(Theme.key_chat_messageLinkIn, resourcesProvider));
-            textLayout.addView(titleView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.FILL_HORIZONTAL, 0, 0, 0, 3));
-
-            subtitleView = new LinkSpanDrawable.LinksTextView(context);
-            subtitleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
-            subtitleView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText2, resourcesProvider));
-            subtitleView.setLinkTextColor(Theme.getColor(Theme.key_chat_messageLinkIn, resourcesProvider));
-            textLayout.addView(subtitleView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.FILL_HORIZONTAL));
-
-            addView(textLayout, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 1f, Gravity.TOP | Gravity.FILL_HORIZONTAL, 0, 0, 0, 0));
-        }
-
-        public void set(int iconResId, CharSequence title, CharSequence text) {
-            imageView.setImageResource(iconResId);
-            titleView.setText(title);
-            subtitleView.setText(text);
-        }
-
-        public void setTitle(CharSequence text) {
-            titleView.setText(text);
-        }
-
-        public void setSubtitle(CharSequence text) {
-            subtitleView.setText(text);
-        }
-
-        public static class Factory extends UItem.UItemFactory<FeatureCell> {
-            static { setup(new Factory()); }
-
-            @Override
-            public FeatureCell createView(Context context, RecyclerListView listView, int currentAccount, int classGuid, Theme.ResourcesProvider resourcesProvider) {
-                return new FeatureCell(context, 0, resourcesProvider);
-            }
-
-            @Override
-            public void bindView(View view, UItem item, boolean divider, UniversalAdapter adapter, UniversalRecyclerView listView) {
-                ((FeatureCell) view).set(
-                    item.intValue, item.text, item.subtext
-                );
-            }
-
-            public static UItem of(int iconResId, CharSequence title, CharSequence text) {
-                UItem item = UItem.ofFactory(Factory.class);
-                item.selectable = false;
-                item.intValue = iconResId;
-                item.text = title;
-                item.subtext = text;
-                return item;
-            }
-
-        }
     }
 
 

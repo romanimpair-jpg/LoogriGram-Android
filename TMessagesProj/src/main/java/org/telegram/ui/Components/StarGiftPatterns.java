@@ -1,4 +1,4 @@
-package org.telegram.ui.Stars;
+package org.telegram.ui.Components;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.AndroidUtilities.dpf2;
@@ -17,9 +17,14 @@ import androidx.core.graphics.ColorUtils;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.Utilities;
-import org.telegram.ui.Components.CubicBezierInterpolator;
-import org.telegram.ui.Components.BatchParticlesDrawHelper;
 
+/**
+ * LoogriGram: moved out of org.telegram.ui.Stars, which is going away with the
+ * rest of the money screens. Nothing here is a money feature - it lays out and
+ * draws the decorative pattern behind a unique gift, a profile colour and a link
+ * preview, and ChatMessageCell, ProfileActivity and PeerColorActivity all draw
+ * with it. The file is upstream's, unchanged apart from its package.
+ */
 public class StarGiftPatterns {
 
     public static final int TYPE_DEFAULT = 0;

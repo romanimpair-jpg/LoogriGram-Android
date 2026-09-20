@@ -153,6 +153,7 @@ import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.CustomPhoneKeyboardView;
 import org.telegram.ui.Components.Easings;
 import org.telegram.ui.Components.EditTextBoldCursor;
+import org.telegram.ui.Components.FeatureRow;
 import org.telegram.ui.Components.FragmentFloatingButton;
 import org.telegram.ui.Components.ImageUpdater;
 import org.telegram.ui.Components.ItemOptions;
@@ -181,7 +182,6 @@ import org.telegram.ui.Components.URLSpanNoUnderline;
 import org.telegram.ui.Components.VerticalPositionAutoAnimator;
 import org.telegram.ui.Components.chat.ViewPositionWatcher;
 import org.telegram.ui.Components.spoilers.SpoilersTextView;
-import org.telegram.ui.Stars.ExplainStarsSheet;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 import org.telegram.ui.bots.BotWebViewSheet;
 
@@ -9496,7 +9496,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         private ImageView optionsButton;
         private ButtonWithCounterView button;
 
-        private ExplainStarsSheet.FeatureCell[] cells = new ExplainStarsSheet.FeatureCell[3];
+        private FeatureRow[] cells = new FeatureRow[3];
 
         public LoginPayView(Context context) {
             super(context);
@@ -9575,15 +9575,15 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             textView.setGravity(Gravity.CENTER);
             topView.addView(textView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 16, 152, 16, 0));
 
-            cells[0] = new ExplainStarsSheet.FeatureCell(context, ExplainStarsSheet.FeatureCell.STYLE_SHEET, resourceProvider);
+            cells[0] = new FeatureRow(context, FeatureRow.STYLE_SHEET, resourceProvider);
             cells[0].set(R.drawable.menu_high_price, getString(R.string.SMSFee1Title), getString(R.string.SMSFee1Text));
             addView(cells[0], LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.FILL_HORIZONTAL | Gravity.TOP, 0, 0, 0, 6));
 
-            cells[1] = new ExplainStarsSheet.FeatureCell(context, ExplainStarsSheet.FeatureCell.STYLE_SHEET, resourceProvider);
+            cells[1] = new FeatureRow(context, FeatureRow.STYLE_SHEET, resourceProvider);
             cells[1].set(R.drawable.menu_feature_code, getString(R.string.SMSFee2Title), getString(R.string.SMSFee2Text));
             addView(cells[1], LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.FILL_HORIZONTAL | Gravity.TOP, 0, 0, 0, 6));
 
-            cells[2] = new ExplainStarsSheet.FeatureCell(context, ExplainStarsSheet.FeatureCell.STYLE_SHEET, resourceProvider);
+            cells[2] = new FeatureRow(context, FeatureRow.STYLE_SHEET, resourceProvider);
             cells[2].set(R.drawable.menu_feature_hands, AndroidUtilities.replaceArrows(replaceSingleTag(getString(R.string.SMSFee3Title), () -> {
                 final PremiumPreviewFragment fragment = new PremiumPreviewFragment("sms");
                 fragment.setCurrentAccount(currentAccount);

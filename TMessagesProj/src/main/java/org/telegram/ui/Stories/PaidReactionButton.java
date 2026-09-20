@@ -46,13 +46,13 @@ import org.telegram.ui.Components.AnimatedTextView;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.ColoredImageSpan;
 import org.telegram.ui.Components.CubicBezierInterpolator;
+import org.telegram.ui.Components.Particles;
 import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.ScaleStateListAnimator;
 import org.telegram.ui.Components.Text;
 import org.telegram.ui.Components.blur3.StrokeDrawable;
 import org.telegram.ui.Components.blur3.drawable.color.BlurredBackgroundColorProvider;
 import org.telegram.ui.LaunchActivity;
-import org.telegram.ui.Stars.StarsReactionsSheet;
 
 import java.util.ArrayList;
 
@@ -393,7 +393,7 @@ public class PaidReactionButton extends View {
 
     private final RectF rect = new RectF();
     private final Path clipPath = new Path();
-    private final StarsReactionsSheet.Particles particles;
+    private final Particles particles;
     private final ColoredImageSpan span;
     private final AnimatedFloat animatedFilled = new AnimatedFloat(this, 320, CubicBezierInterpolator.EASE_OUT_QUINT);
     private final AnimatedFloat animatedShowCounter = new AnimatedFloat(this, 320, CubicBezierInterpolator.EASE_OUT_QUINT);
@@ -429,7 +429,7 @@ public class PaidReactionButton extends View {
         span.setScale(1.8f, 1.8f);
         setCount(0);
 
-        particles = new StarsReactionsSheet.Particles(StarsReactionsSheet.Particles.TYPE_RADIAL, 50);
+        particles = new Particles(Particles.TYPE_RADIAL, 50);
     }
 
     @Override

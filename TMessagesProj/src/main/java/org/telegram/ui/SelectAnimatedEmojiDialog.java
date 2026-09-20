@@ -117,6 +117,7 @@ import org.telegram.ui.Components.EmojiPacksAlert;
 import org.telegram.ui.Components.EmojiTabsStrip;
 import org.telegram.ui.Components.EmojiView;
 import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.Components.Particles;
 import org.telegram.ui.Components.Premium.PremiumButtonView;
 import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.Components.Premium.PremiumLockIconView;
@@ -130,7 +131,6 @@ import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.SearchStateDrawable;
 import org.telegram.ui.Components.StickerCategoriesListView;
 import org.telegram.ui.Stars.StarsController;
-import org.telegram.ui.Stars.StarsReactionsSheet;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -3176,10 +3176,10 @@ public class SelectAnimatedEmojiDialog extends FrameLayout implements Notificati
     private int animateExpandFromPosition = -1, animateExpandToPosition = -1;
     private long animateExpandStartTime = -1;
 
-    private StarsReactionsSheet.Particles collectionParticles;
-    public StarsReactionsSheet.Particles getCollectionParticles() {
+    private Particles collectionParticles;
+    public Particles getCollectionParticles() {
         if (collectionParticles == null) {
-            collectionParticles = new StarsReactionsSheet.Particles(StarsReactionsSheet.Particles.TYPE_RADIAL, 8);
+            collectionParticles = new Particles(Particles.TYPE_RADIAL, 8);
         }
         return collectionParticles;
     }
@@ -4384,7 +4384,7 @@ public class SelectAnimatedEmojiDialog extends FrameLayout implements Notificati
                         canvas.save();
                         canvas.translate(imageViewEmoji.getX(), imageViewEmoji.getY());
                         if (imageViewEmoji.particlesColor != null) {
-                            StarsReactionsSheet.Particles particles = getCollectionParticles();
+                            Particles particles = getCollectionParticles();
                             particles.setBounds(0, 0, imageViewEmoji.getWidth(), imageViewEmoji.getHeight());
                             if (!particlesUpdated) {
                                 particles.process();

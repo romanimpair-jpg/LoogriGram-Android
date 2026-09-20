@@ -8,13 +8,13 @@ import android.graphics.Canvas;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.utils.Choreographer60FpsContent;
+import org.telegram.ui.Components.Particles;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.TextCell;
-import org.telegram.ui.Stars.StarsReactionsSheet;
 
 public class ProfilePremiumCell extends TextCell {
 
-    private final StarsReactionsSheet.Particles particles = new StarsReactionsSheet.Particles(StarsReactionsSheet.Particles.TYPE_RADIAL, 15);
+    private final Particles particles = new Particles(Particles.TYPE_RADIAL, 15);
     private final int colorKey;
 
     private final Runnable invalidateRunnable = this::invalidate;

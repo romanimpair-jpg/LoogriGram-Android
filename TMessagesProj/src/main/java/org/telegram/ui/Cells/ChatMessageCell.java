@@ -187,6 +187,7 @@ import org.telegram.ui.Components.MediaActionDrawable;
 import org.telegram.ui.Components.MessageBackgroundDrawable;
 import org.telegram.ui.Components.MotionBackgroundDrawable;
 import org.telegram.ui.Components.MsgClockDrawable;
+import org.telegram.ui.Components.Particles;
 import org.telegram.ui.Components.PostRunnableHolder;
 import org.telegram.ui.Components.Premium.boosts.BoostCounterSpan;
 import org.telegram.ui.Components.Premium.boosts.cells.msg.GiveawayMessageCell;
@@ -238,10 +239,9 @@ import org.telegram.ui.MultiLayoutTypingAnimator;
 import org.telegram.ui.PhotoViewer;
 import org.telegram.ui.PinchToZoomHelper;
 import org.telegram.ui.SecretMediaViewer;
-import org.telegram.ui.Stars.StarGiftPatterns;
+import org.telegram.ui.Components.StarGiftPatterns;
 import org.telegram.ui.Stars.StarGiftSheet;
 import org.telegram.ui.Stars.StarsController;
-import org.telegram.ui.Stars.StarsReactionsSheet;
 import org.telegram.ui.Stories.StoriesUtilities;
 import org.telegram.ui.Stories.StoryViewer;
 import org.telegram.ui.Stories.recorder.CaptionContainerView;
@@ -1655,7 +1655,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private Drawable groupCallDrawable;
 
     public boolean drawSummaryReply;
-    public StarsReactionsSheet.Particles summaryParticles;
+    public Particles summaryParticles;
     public int summarySelectorColor;
     public Drawable summaryReplySelector;
     public Text summaryTitle, summarySubtitle;
@@ -21180,7 +21180,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
                 final int textColor = summaryLine.getColor();
                 if (summaryParticles == null) {
-                    summaryParticles = new StarsReactionsSheet.Particles(StarsReactionsSheet.Particles.TYPE_RADIAL_INSIDE, 30);
+                    summaryParticles = new Particles(Particles.TYPE_RADIAL_INSIDE, 30);
                 }
                 summaryParticles.setBounds(summarySelectorRect);
                 summaryParticles.process();

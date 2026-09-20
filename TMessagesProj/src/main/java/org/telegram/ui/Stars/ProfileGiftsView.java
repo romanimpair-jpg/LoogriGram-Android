@@ -33,6 +33,7 @@ import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.AnimatedFloat;
 import org.telegram.ui.Components.ButtonBounce;
 import org.telegram.ui.Components.CubicBezierInterpolator;
+import org.telegram.ui.Components.Particles;
 import org.telegram.ui.ProfileActivity;
 
 import java.util.ArrayList;
@@ -167,7 +168,7 @@ public class ProfileGiftsView extends View implements NotificationCenter.Notific
         public final long documentId;
         public final int color;
         public final String slug;
-        private StarsReactionsSheet.Particles particles;
+        private Particles particles;
 
         public int position = -1;
 
@@ -191,7 +192,7 @@ public class ProfileGiftsView extends View implements NotificationCenter.Notific
         }
 
         private void initParticles() {
-            particles = new StarsReactionsSheet.Particles(StarsReactionsSheet.Particles.TYPE_RADIAL, 6);
+            particles = new Particles(Particles.TYPE_RADIAL, 6);
             final float gsz = dp(36);
             particles.bounds.set(-gsz / 2.0f, -gsz / 2.0f, gsz / 2.0f, gsz / 2.0f);
         }

@@ -121,7 +121,7 @@ import org.telegram.ui.Components.UniversalRecyclerView;
 import org.telegram.ui.Components.ViewPagerFixed;
 import org.telegram.ui.Gifts.GiftSheet;
 import org.telegram.ui.Gifts.ResaleGiftsFragment;
-import org.telegram.ui.Stars.StarGiftPatterns;
+import org.telegram.ui.Components.StarGiftPatterns;
 import org.telegram.ui.Stars.StarGiftSheet;
 import org.telegram.ui.Stars.StarsController;
 import org.telegram.ui.Stories.StoriesUtilities;
