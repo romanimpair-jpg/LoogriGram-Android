@@ -11923,6 +11923,12 @@ public class MessagesStorage extends BaseController {
                     databaseInTransaction = false;
                 }
                 LongSparseArray<TLRPC.Message> messagesMap = new LongSparseArray<>();
+                // LoogriGram: the held money messages passed over when picking the map
+                // above, kept only for a dialog that has no row yet - there is nothing
+                // older to fall back to there, so the row has to be created from the held
+                // message or it is created pointing at nothing. Topics need no equivalent:
+                // an unknown topic is reloaded from the server before its message is read.
+                LongSparseArray<TLRPC.Message> hiddenMessagesMap = new LongSparseArray<>();
                 LongSparseIntArray messagesCounts = new LongSparseIntArray();
                 LongSparseIntArray newMessagesCounts = new LongSparseIntArray();
                 LongSparseIntArray newMentionsCounts = new LongSparseIntArray();
@@ -12397,14 +12403,38 @@ public class MessagesStorage extends BaseController {
                     }
 
                     if (updateDialog) {
+                        // LoogriGram: a held money message is never drawn, so it must not
+                        // become what the chat list shows either - the row would rise to the
+                        // top with an empty preview for something the chat does not show.
+                        // A null value here is upstream's own "update this dialog's counts
+                        // but leave last_mid and its date alone" (see the loop that consumes
+                        // these maps: messageId falls back to the stored last_mid when the
+                        // message is null), so the message is still stored and still counted
+                        // and only the preview stays on the newest message we do display.
+                        // Registering the key rather than skipping it matters: unread counts
+                        // are written inside that loop, and a dialog missing from the map
+                        // would keep an in-memory badge the database never learns about.
+                        final boolean hidden = LoogriGramHidden.isHidden(message);
                         TLRPC.Message lastMessage = messagesMap.get(message.dialog_id);
-                        if (lastMessage == null || message.date > lastMessage.date || lastMessage.id > 0 && message.id > lastMessage.id || lastMessage.id < 0 && message.id < lastMessage.id) {
+                        if (hidden) {
+                            if (lastMessage == null) {
+                                messagesMap.put(message.dialog_id, null);
+                                TLRPC.Message previous = hiddenMessagesMap.get(message.dialog_id);
+                                if (previous == null || message.date > previous.date) {
+                                    hiddenMessagesMap.put(message.dialog_id, message);
+                                }
+                            }
+                        } else if (lastMessage == null || message.date > lastMessage.date || lastMessage.id > 0 && message.id > lastMessage.id || lastMessage.id < 0 && message.id < lastMessage.id) {
                             messagesMap.put(message.dialog_id, message);
                         }
                         if (topicId != 0 && message.dialog_id != selfId) {
                             TopicKey topicKey = TopicKey.of(message.dialog_id, topicId);
                             lastMessage = topicMessagesMap.get(topicKey);
-                            if (lastMessage == null || message.date > lastMessage.date || lastMessage.id > 0 && message.id > lastMessage.id || lastMessage.id < 0 && message.id < lastMessage.id) {
+                            if (hidden) {
+                                if (lastMessage == null) {
+                                    topicMessagesMap.put(topicKey, null);
+                                }
+                            } else if (lastMessage == null || message.date > lastMessage.date || lastMessage.id > 0 && message.id > lastMessage.id || lastMessage.id < 0 && message.id < lastMessage.id) {
                                 topicMessagesMap.put(topicKey, message);
                             }
                         }
@@ -12715,25 +12745,52 @@ public class MessagesStorage extends BaseController {
                         continue;
                     }
                     TLRPC.Message message = messagesMap.valueAt(a);
+                    // LoogriGram: a null value here is ours - it says this dialog's newest
+                    // message is one we hold and never draw, so its row keeps the last_mid
+                    // and date it already has. The held message itself is still needed:
+                    // to find the channel just below, and to build a dialog row that does
+                    // not exist yet. The "message != null" tests further down this loop
+                    // were dead upstream and are what makes that work - but getChannelId
+                    // is not one of them, it dereferences its argument, so the call below
+                    // had to be guarded or every held message would crash here.
+                    final TLRPC.Message heldMessage = hiddenMessagesMap.get(key);
+                    final TLRPC.Message anyMessage = message != null ? message : heldMessage;
 
-                    long channelId = MessageObject.getChannelId(message);
+                    long channelId = anyMessage != null ? MessageObject.getChannelId(anyMessage) : 0;
 
-                    cursor = database.queryFinalized("SELECT date, unread_count, last_mid, unread_count_i FROM dialogs WHERE did = " + key);
+                    // LoogriGram: last_mid_group is read back because a held message leaves
+                    // last_mid where it is, and the row is rewritten whole - binding null
+                    // there would forget that the message still shown is part of an album,
+                    // which is what the dialogs query joins on.
+                    cursor = database.queryFinalized("SELECT date, unread_count, last_mid, unread_count_i, last_mid_group FROM dialogs WHERE did = " + key);
                     int dialog_date = 0;
                     int last_mid = 0;
                     int old_unread_count = 0;
                     int old_mentions_count = 0;
+                    long last_mid_group = 0;
                     boolean exists;
                     if (exists = cursor.next()) {
                         dialog_date = cursor.intValue(0);
                         old_unread_count = Math.max(0, cursor.intValue(1));
                         last_mid = cursor.intValue(2);
                         old_mentions_count = Math.max(0, cursor.intValue(3));
+                        if (!cursor.isNull(4)) {
+                            last_mid_group = cursor.longValue(4);
+                        }
                     } else if (channelId != 0) {
                         getMessagesController().checkChatInviter(channelId, true);
                     }
                     cursor.dispose();
                     cursor = null;
+
+                    if (message == null && !exists) {
+                        // LoogriGram: a chat we have never had a row for, whose only message
+                        // is one we hold. There is nothing older to keep the row on, so it
+                        // is built from the held message exactly as upstream would have.
+                        // An empty preview beats a row pointing at message 0, which sorts to
+                        // the bottom of the list carrying an unread badge nothing can clear.
+                        message = heldMessage;
+                    }
 
                     int mentions_count = mentionCounts.get(key, -1);
                     int unread_count = messagesCounts.get(key, -1);
@@ -12771,6 +12828,10 @@ public class MessagesStorage extends BaseController {
                             state_dialogs_update.bindInteger(3, messageId);
                             if (message != null && (message.flags & 131072) != 0) {
                                 state_dialogs_update.bindLong(4, message.grouped_id);
+                            } else if (message == null && last_mid_group != 0) {
+                                // LoogriGram: last_mid is staying put because the newest
+                                // message is one we hold, so its album id has to stay too.
+                                state_dialogs_update.bindLong(4, last_mid_group);
                             } else {
                                 state_dialogs_update.bindNull(4);
                             }
@@ -12907,20 +12968,28 @@ public class MessagesStorage extends BaseController {
                     }
 
                     FileLog.d("update topic " + topicKey.dialogId + " " + topicKey.topicId + " " + (oldUnreadCount + newUnreadMessages) + " " + (oldMentions + newMentions));
-                    if (message != null) {
-                        if (topicUpdatesInUi == null) {
-                            topicUpdatesInUi = new ArrayList<>();
-                        }
-                        TopicsController.TopicUpdate topicUpdate = new TopicsController.TopicUpdate();
-                        topicUpdate.dialogId = topicKey.dialogId;
-                        topicUpdate.topicId = topicKey.topicId;
-                        topicUpdate.topMessage = message;
-                        topicUpdate.unreadMentions = oldMentions + newMentions;
-                        topicUpdate.topMessageId = messageId;
-                        topicUpdate.unreadCount = oldUnreadCount + newUnreadMessages;
-                        topicUpdate.totalMessagesCount = newTotalMessagesCount;
-                        topicUpdatesInUi.add(topicUpdate);
+                    if (topicUpdatesInUi == null) {
+                        topicUpdatesInUi = new ArrayList<>();
                     }
+                    TopicsController.TopicUpdate topicUpdate = new TopicsController.TopicUpdate();
+                    topicUpdate.dialogId = topicKey.dialogId;
+                    topicUpdate.topicId = topicKey.topicId;
+                    topicUpdate.unreadMentions = oldMentions + newMentions;
+                    topicUpdate.unreadCount = oldUnreadCount + newUnreadMessages;
+                    topicUpdate.totalMessagesCount = newTotalMessagesCount;
+                    if (message != null) {
+                        topicUpdate.topMessage = message;
+                        topicUpdate.topMessageId = messageId;
+                    } else {
+                        // LoogriGram: every message this batch brought to the topic is one
+                        // we hold and never draw, so the row keeps the top message it has.
+                        // The counts above still moved and the topic list has to hear about
+                        // them, or its badge only catches up on the next reload - so this
+                        // goes out as upstream's onlyCounters update rather than not at all.
+                        // Upstream never reached the null case; see the map that feeds it.
+                        topicUpdate.onlyCounters = true;
+                    }
+                    topicUpdatesInUi.add(topicUpdate);
                 }
 
                 state_topics_update.dispose();

@@ -21906,13 +21906,24 @@ public class MessagesController extends BaseController implements NotificationCe
 
         boolean isEncryptedChat = DialogObject.isEncryptedDialog(dialogId);
         MessageObject lastMessage = null;
+        // LoogriGram: the newest message of this batch that we hold and never draw. It
+        // is tracked apart from lastMessage so a held message cannot become what the
+        // chat list shows - the row would rise to the top of the list with an empty
+        // preview for something the chat does not show - while still being available
+        // for a dialog we have no row for yet, which has nothing older to fall back to.
+        MessageObject heldLastMessage = null;
         long channelId = 0;
         boolean updateRating = false;
         boolean hasNotOutMessage = false;
         if (!scheduled && !quickReplies && !welcomeMessages) {
             for (int a = 0; a < messages.size(); a++) {
                 MessageObject message = messages.get(a);
-                if (lastMessage == null || (!isEncryptedChat && message.getId() > lastMessage.getId() || (isEncryptedChat || message.getId() < 0 && lastMessage.getId() < 0) && message.getId() < lastMessage.getId()) || message.messageOwner.date > lastMessage.messageOwner.date) {
+                final boolean hidden = LoogriGramHidden.isHidden(message.messageOwner);
+                if (hidden) {
+                    if (heldLastMessage == null || message.messageOwner.date > heldLastMessage.messageOwner.date) {
+                        heldLastMessage = message;
+                    }
+                } else if (lastMessage == null || (!isEncryptedChat && message.getId() > lastMessage.getId() || (isEncryptedChat || message.getId() < 0 && lastMessage.getId() < 0) && message.getId() < lastMessage.getId()) || message.messageOwner.date > lastMessage.messageOwner.date) {
                     lastMessage = message;
                     if (message.messageOwner.peer_id.channel_id != 0) {
                         channelId = message.messageOwner.peer_id.channel_id;
@@ -21953,10 +21964,33 @@ public class MessagesController extends BaseController implements NotificationCe
         }
         getNotificationCenter().postNotificationName(NotificationCenter.didReceiveNewMessages, dialogId, messages, scheduled, mode);
 
-        if (lastMessage == null || scheduled) {
+        // LoogriGram: these three modes skip the loop above, so upstream's combined
+        // "lastMessage == null || scheduled" return covered them too. They are named
+        // here because lastMessage being null no longer means there was nothing to say.
+        if (scheduled || quickReplies || welcomeMessages) {
             return false;
         }
         TLRPC.TL_dialog dialog = (TLRPC.TL_dialog) dialogs_dict.get(dialogId);
+        if (lastMessage == null && dialog == null) {
+            // LoogriGram: a chat with no row yet, whose only messages are ones we hold.
+            // There is nothing older to show, so the row is built from the held message
+            // the way upstream would have: an empty preview, but the chat is reachable
+            // and its unread badge can be cleared. Storage does the same on its side.
+            lastMessage = heldLastMessage;
+            if (lastMessage != null && lastMessage.messageOwner.peer_id.channel_id != 0) {
+                channelId = lastMessage.messageOwner.peer_id.channel_id;
+            }
+        }
+        if (lastMessage == null) {
+            // LoogriGram: every message this batch brought is held, and the chat list
+            // already shows something older, so nothing about the row changes. The
+            // rating below is still owed - upstream only reached this return for a
+            // batch it had nothing to say about at all.
+            if (updateRating) {
+                getMediaDataController().increasePeerRaiting(dialogId);
+            }
+            return false;
+        }
         if (lastMessage.messageOwner.action instanceof TLRPC.TL_messageActionChatMigrateTo) {
             if (dialog != null) {
                 allDialogs.remove(dialog);
