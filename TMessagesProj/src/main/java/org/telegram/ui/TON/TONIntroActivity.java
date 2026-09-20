@@ -29,6 +29,7 @@ import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.telegram.messenger.CurrencyFormat;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.BillingController;
@@ -344,7 +345,7 @@ public class TONIntroActivity extends GradientHeaderActivity implements Notifica
 
         final double dollars = balance.amount / 1_000_000_000.0 * ton_usd_rate;
         if ((int) (dollars * 100) > 0) {
-            starBalanceTitleView.setText("≈" + BillingController.getInstance().formatCurrency((int) (dollars * 100), "USD"));
+            starBalanceTitleView.setText("≈" + CurrencyFormat.format((int) (dollars * 100), "USD"));
         } else {
             starBalanceTitleView.setText(LocaleController.getString(R.string.YourTonBalance));
         }

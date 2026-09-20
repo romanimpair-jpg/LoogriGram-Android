@@ -55,6 +55,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 
 import org.telegram.PhoneFormat.PhoneFormat;
+import org.telegram.messenger.CurrencyFormat;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BillingController;
 import org.telegram.messenger.BuildVars;
@@ -1207,13 +1208,13 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
                     final String price;
                     if (selectedOption.months == 12) {
                         if (MessagesController.getInstance(currentAccount).showAnnualPerMonth) {
-                            price = BillingController.getInstance().formatCurrency(selectedOption.amount / 12, selectedOption.currency);
+                            price = CurrencyFormat.format(selectedOption.amount / 12, selectedOption.currency);
                         } else {
                             stringResId = R.string.SubscribeToPremiumPerYear;
-                            price = BillingController.getInstance().formatCurrency(selectedOption.amount, selectedOption.currency);
+                            price = CurrencyFormat.format(selectedOption.amount, selectedOption.currency);
                         }
                     } else {
-                        price = BillingController.getInstance().formatCurrency(selectedOption.amount, selectedOption.currency);
+                        price = CurrencyFormat.format(selectedOption.amount, selectedOption.currency);
                     }
 
                     return LocaleController.formatString(stringResId, price);
@@ -2265,19 +2266,19 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
         // LoogriGram: these four always format the server's price. Each had a
         // second return below that formatted a Play price in micros instead.
         public String getFormattedPricePerYearRegular() {
-            return BillingController.getInstance().formatCurrency(pricePerYearRegular, getCurrency());
+            return CurrencyFormat.format(pricePerYearRegular, getCurrency());
         }
 
         public String getFormattedPricePerYear() {
-            return BillingController.getInstance().formatCurrency(getPricePerYear(), getCurrency());
+            return CurrencyFormat.format(getPricePerYear(), getCurrency());
         }
 
         public String getFormattedPricePerMonth() {
-            return BillingController.getInstance().formatCurrency(getPricePerMonth(), getCurrency());
+            return CurrencyFormat.format(getPricePerMonth(), getCurrency());
         }
 
         public String getFormattedPrice() {
-            return BillingController.getInstance().formatCurrency(getPrice(), getCurrency());
+            return CurrencyFormat.format(getPrice(), getCurrency());
         }
 
         public long getPrice() {

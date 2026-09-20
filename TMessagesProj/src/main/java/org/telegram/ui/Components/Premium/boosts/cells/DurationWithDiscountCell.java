@@ -6,6 +6,7 @@ import android.text.SpannableStringBuilder;
 import android.view.Gravity;
 import android.view.View;
 
+import org.telegram.messenger.CurrencyFormat;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BillingController;
 import org.telegram.messenger.LocaleController;
@@ -63,7 +64,7 @@ public class DurationWithDiscountCell extends DurationCell {
             titleTextView.setText(titleBuilder);
         }
         setSubtitle(null);
-        totalTextView.setText(BillingController.getInstance().formatCurrency(usersCount > 0 ? price : 0, currency.toString()));
+        totalTextView.setText(CurrencyFormat.format(usersCount > 0 ? price : 0, currency.toString()));
         setDivider(needDivider);
         checkBox.setChecked(selected, false);
     }

@@ -46,6 +46,7 @@ import androidx.core.view.ViewCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.telegram.messenger.CurrencyFormat;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BillingController;
 import org.telegram.messenger.BuildVars;
@@ -673,7 +674,7 @@ public class ChannelMonetizationLayout extends SizeNotifierFrameLayout implement
             ssb.setSpan(balanceTitleSizeSpan, index, ssb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
         balanceTitle.setText(ssb);
-        balanceSubtitle.setText("≈" + BillingController.getInstance().formatCurrency(amount, "USD"));
+        balanceSubtitle.setText("≈" + CurrencyFormat.format(amount, "USD"));
     }
 
     private void setStarsBalance(TL_stars.StarsAmount amount, int blockedUntil) {
@@ -687,7 +688,7 @@ public class ChannelMonetizationLayout extends SizeNotifierFrameLayout implement
         }
         starsBalance = amount;
         starsBalanceTitle.setText(ssb);
-        starsBalanceSubtitle.setText("≈" + BillingController.getInstance().formatCurrency((long) (stars_rate * amount.amount * 100.0), "USD"));
+        starsBalanceSubtitle.setText("≈" + CurrencyFormat.format((long) (stars_rate * amount.amount * 100.0), "USD"));
         starsBalanceEditTextContainer.setVisibility(amount.amount > 0 ? VISIBLE : GONE);
         if (starsBalanceEditTextAll) {
             starsBalanceEditTextIgnore = true;
@@ -1162,7 +1163,7 @@ public class ChannelMonetizationLayout extends SizeNotifierFrameLayout implement
                 }
                 amountContainer[i].setVisibility(View.VISIBLE);
                 cryptoAmountView[i].setText(cryptoAmount);
-                amountView[i].setText("≈" + BillingController.getInstance().formatCurrency(amount, value.currency));
+                amountView[i].setText("≈" + CurrencyFormat.format(amount, value.currency));
             }
         }
 

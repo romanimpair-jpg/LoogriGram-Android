@@ -37,6 +37,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.telegram.messenger.CurrencyFormat;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BillingController;
 import org.telegram.messenger.ChatObject;
@@ -1254,11 +1255,11 @@ public class InviteLinkBottomSheet extends BottomSheet {
             if (pricing == null) return;
             if (pricing.period == StarsController.PERIOD_MONTHLY) {
                 titleView.setText(StarsIntroActivity.replaceStarsWithPlain(LocaleController.formatString(R.string.LinkRevenuePrice, pricing.amount) + (count > 0 ? " x " + count : ""), .8f));
-                subtitleView.setText(count == 0 ? getString(R.string.NoOneSubscribed) : LocaleController.formatString(R.string.LinkRevenuePriceInfo, BillingController.getInstance().formatCurrency((long) (pricing.amount / 1000.0 * MessagesController.getInstance(currentAccount).starsUsdWithdrawRate1000 * count), "USD")));
+                subtitleView.setText(count == 0 ? getString(R.string.NoOneSubscribed) : LocaleController.formatString(R.string.LinkRevenuePriceInfo, CurrencyFormat.format((long) (pricing.amount / 1000.0 * MessagesController.getInstance(currentAccount).starsUsdWithdrawRate1000 * count), "USD")));
             } else {
                 final String period = pricing.period == StarsController.PERIOD_5MINUTES ? "5min" : "min";
                 titleView.setText(StarsIntroActivity.replaceStarsWithPlain(String.format(Locale.US, "⭐%1$d/%2$s", pricing.amount, period) + (count > 0 ? " x " + count : ""), .8f));
-                subtitleView.setText(count == 0 ? getString(R.string.NoOneSubscribed) : String.format(Locale.US, "you get approximately %1$s %2$s", BillingController.getInstance().formatCurrency((long) (pricing.amount / 1000.0 * MessagesController.getInstance(currentAccount).starsUsdWithdrawRate1000 * count), "USD"), "for " + period));
+                subtitleView.setText(count == 0 ? getString(R.string.NoOneSubscribed) : String.format(Locale.US, "you get approximately %1$s %2$s", CurrencyFormat.format((long) (pricing.amount / 1000.0 * MessagesController.getInstance(currentAccount).starsUsdWithdrawRate1000 * count), "USD"), "for " + period));
             }
         }
 
@@ -1342,10 +1343,10 @@ public class InviteLinkBottomSheet extends BottomSheet {
         textView.setGravity(Gravity.CENTER);
         textView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText4, resourcesProvider));
         if (pricing.period == StarsController.PERIOD_MONTHLY) {
-            textView.setText(formatString(R.string.StarsParticipantSubscriptionApproxMonth, BillingController.getInstance().formatCurrency((int) (pricing.amount / 1000.0 * MessagesController.getInstance(currentAccount).starsUsdWithdrawRate1000), "USD")));
+            textView.setText(formatString(R.string.StarsParticipantSubscriptionApproxMonth, CurrencyFormat.format((int) (pricing.amount / 1000.0 * MessagesController.getInstance(currentAccount).starsUsdWithdrawRate1000), "USD")));
         } else {
             final String period = pricing.period == StarsController.PERIOD_5MINUTES ? "5min" : "min";
-            textView.setText(String.format(Locale.US, "appx. %1$s per %2$s", BillingController.getInstance().formatCurrency((int) (pricing.amount / 1000.0 * MessagesController.getInstance(currentAccount).starsUsdWithdrawRate1000), "USD"), period));
+            textView.setText(String.format(Locale.US, "appx. %1$s per %2$s", CurrencyFormat.format((int) (pricing.amount / 1000.0 * MessagesController.getInstance(currentAccount).starsUsdWithdrawRate1000), "USD"), period));
         }
         linearLayout.addView(textView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 20, 0, 20, 4));
 

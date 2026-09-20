@@ -65,6 +65,7 @@ import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.telegram.messenger.CurrencyFormat;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BillingController;
 import org.telegram.messenger.BirthdayController;
@@ -1068,7 +1069,7 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
                 item.intValue = index;
                 item.longValue = option.stars;
                 item.text = formatPluralStringSpaced("StarsCount", (int) option.stars);
-                item.subtext = option.loadingStorePrice ? null : BillingController.getInstance().formatCurrency(option.amount, option.currency);
+                item.subtext = option.loadingStorePrice ? null : CurrencyFormat.format(option.amount, option.currency);
                 item.object = option;
                 return item;
             }
@@ -1079,7 +1080,7 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
                 item.intValue = index;
                 item.longValue = option.stars;
                 item.text = formatPluralStringSpaced("StarsCount", (int) option.stars);
-                item.subtext = option.loadingStorePrice ? null : BillingController.getInstance().formatCurrency(option.amount, option.currency);
+                item.subtext = option.loadingStorePrice ? null : CurrencyFormat.format(option.amount, option.currency);
                 item.object = option;
                 return item;
             }
@@ -5225,7 +5226,7 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
                     subPriceView.setText("");
                 } else {
                     subPriceView.animate().alpha(1f).start();
-                    subPriceView.setText("≈" + BillingController.getInstance().formatCurrency((long) (input_stars / 1000.0 * MessagesController.getInstance(UserConfig.selectedAccount).starsUsdWithdrawRate1000), "USD"));
+                    subPriceView.setText("≈" + CurrencyFormat.format((long) (input_stars / 1000.0 * MessagesController.getInstance(UserConfig.selectedAccount).starsUsdWithdrawRate1000), "USD"));
                 }
             }
         });
@@ -5407,7 +5408,7 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
 
         editText.setText(Long.toString(amount));
         dollarsView.setAlpha(1.0f);
-        dollarsView.setText("≈" + BillingController.getInstance().formatCurrency((long) (amount * (commission / 1000.0f) / 1000.0 * MessagesController.getInstance(UserConfig.selectedAccount).starsUsdWithdrawRate1000), "USD"));
+        dollarsView.setText("≈" + CurrencyFormat.format((long) (amount * (commission / 1000.0f) / 1000.0 * MessagesController.getInstance(UserConfig.selectedAccount).starsUsdWithdrawRate1000), "USD"));
 
         editText.addTextChangedListener(new TextWatcher() {
             @Override
@@ -5455,7 +5456,7 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
                     dollarsView.setText("");
                 } else {
                     dollarsView.animate().alpha(1f).start();
-                    dollarsView.setText("≈" + BillingController.getInstance().formatCurrency((long) (input_stars * (commission / 1000.0f) / 1000.0 * MessagesController.getInstance(UserConfig.selectedAccount).starsUsdWithdrawRate1000), "USD"));
+                    dollarsView.setText("≈" + CurrencyFormat.format((long) (input_stars * (commission / 1000.0f) / 1000.0 * MessagesController.getInstance(UserConfig.selectedAccount).starsUsdWithdrawRate1000), "USD"));
                 }
             }
         });

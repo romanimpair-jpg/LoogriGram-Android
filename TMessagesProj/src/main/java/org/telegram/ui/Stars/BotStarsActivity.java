@@ -38,6 +38,7 @@ import androidx.core.view.ViewCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.telegram.messenger.CurrencyFormat;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BillingController;
 import org.telegram.messenger.FileLog;
@@ -649,7 +650,7 @@ public class BotStarsActivity extends BaseFragment implements NotificationCenter
             ssb.setSpan(balanceTitleSizeSpan, index, ssb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
         balanceTitle.setText(ssb);
-        balanceSubtitle.setText("≈" + BillingController.getInstance().formatCurrency(amount, "USD"));
+        balanceSubtitle.setText("≈" + CurrencyFormat.format(amount, "USD"));
         balanceEditTextContainer.setVisibility(amount > 0 ? View.VISIBLE : View.GONE);
         if (balanceEditTextAll) {
             balanceEditTextIgnore = true;
@@ -682,7 +683,7 @@ public class BotStarsActivity extends BaseFragment implements NotificationCenter
             ssb.setSpan(tonBalanceTitleSizeSpan, index, ssb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
         tonBalanceTitle.setText(ssb);
-        tonBalanceSubtitle.setText("≈" + BillingController.getInstance().formatCurrency(amount, "USD"));
+        tonBalanceSubtitle.setText("≈" + CurrencyFormat.format(amount, "USD"));
     }
 
     private SpannableStringBuilder lock;

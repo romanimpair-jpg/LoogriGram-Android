@@ -1,20 +1,15 @@
 package org.telegram.messenger;
 
-import org.telegram.messenger.utils.BillingUtilities;
 
-import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Currency;
-import java.util.HashMap;
-import java.util.Map;
 
-// LoogriGram: no Google Play Billing.
+// LoogriGram: no Google Play Billing, and nothing left worth keeping.
 //
-// This class is kept, gutted, for one reason: formatCurrency. Sixty-five call
-// sites use it to render a price - gift costs, Stars amounts, invoice totals,
-// chart labels - and none of them have anything to do with buying anything from
-// Google. Those, plus getCurrencyExp behind them, are the whole reason the file
-// still exists; the currency logic is untouched and was never Google's.
+// The currency formatting that used to justify this file has moved to
+// CurrencyFormat, so what remains is the purchase path: a client that never
+// connects, a readiness flag that is always false, and listeners that are
+// never run. Its last eleven callers are all inside the premium and Stars
+// screens, which go next; this file goes with them.
 //
 // Everything that talked to Play is gone: the BillingClient itself, the product
 // query and its details, launchBillingFlow, the purchase listeners and the
@@ -37,7 +32,6 @@ public class BillingController {
 
     private static BillingController instance;
 
-    private final Map<String, Integer> currencyExpMap = new HashMap<>();
 
     public static BillingController getInstance() {
         if (instance == null) {
@@ -63,49 +57,12 @@ public class BillingController {
 
     /* Currency formatting - the reason this class survives. Unchanged. */
 
-    public String formatCurrency(long amount, String currency) {
-        return formatCurrency(amount, currency, getCurrencyExp(currency));
-    }
+    // LoogriGram: the currency formatting moved to CurrencyFormat, which is
+    // not named after a removed feature and is what the fifty-odd callers
+    // actually wanted. Nothing about rendering a price needs Play Billing.
 
-    public String formatCurrency(long amount, String currency, int exp) {
-        return formatCurrency(amount, currency, exp, false);
-    }
 
-    private static NumberFormat currencyInstance;
-    public String formatCurrency(long amount, String currency, int exp, boolean rounded) {
-        if (currency == null || currency.isEmpty()) {
-            return String.valueOf(amount);
-        }
-        if ("TON".equalsIgnoreCase(currency)) {
-            return "TON " + (amount / 1_000_000_000.0);
-        }
-        if ("XTR".equalsIgnoreCase(currency)) {
-            return "XTR " + LocaleController.formatNumber(amount, ',');
-        }
-        Currency cur = Currency.getInstance(currency);
-        if (cur != null) {
-            if (currencyInstance == null) {
-                currencyInstance = NumberFormat.getCurrencyInstance();
-            }
-            currencyInstance.setCurrency(cur);
-            if (rounded) {
-                currencyInstance.setMaximumFractionDigits(0);
-                currencyInstance.setMinimumFractionDigits(0);
-                return currencyInstance.format(Math.round(amount / Math.pow(10, exp)));
-            }
-            final int defaultFractionDigits = cur.getDefaultFractionDigits();
-            currencyInstance.setMinimumFractionDigits(defaultFractionDigits);
-            currencyInstance.setMaximumFractionDigits(defaultFractionDigits);
-            return currencyInstance.format(amount / Math.pow(10, exp));
-        }
-        return amount + " " + currency;
-    }
 
-    @SuppressWarnings("ConstantConditions")
-    public int getCurrencyExp(String currency) {
-        BillingUtilities.extractCurrencyExp(currencyExpMap);
-        return currencyExpMap.getOrDefault(currency, 0);
-    }
 
     /* Everything below is inert. */
 

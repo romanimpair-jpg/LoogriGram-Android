@@ -20,6 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 
+import org.telegram.messenger.CurrencyFormat;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BillingController;
@@ -517,11 +518,11 @@ public class GiftPremiumBottomSheet extends BottomSheetWithRecyclerListView impl
         // LoogriGram: these always format the server's price. Each had a second
         // return below that formatted a Play price in micros instead.
         public String getFormattedPricePerMonth() {
-            return BillingController.getInstance().formatCurrency(getPricePerMonth(), getCurrency());
+            return CurrencyFormat.format(getPricePerMonth(), getCurrency());
         }
 
         public String getFormattedPrice() {
-            return BillingController.getInstance().formatCurrency(getPrice(), getCurrency());
+            return CurrencyFormat.format(getPrice(), getCurrency());
         }
 
         public long getPrice() {

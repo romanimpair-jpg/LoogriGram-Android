@@ -103,6 +103,7 @@ import androidx.core.graphics.ColorUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.telegram.PhoneFormat.PhoneFormat;
+import org.telegram.messenger.CurrencyFormat;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
@@ -9760,7 +9761,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                 if (!TextUtils.isEmpty(currency) && amount > 0) {
                     button.setVisibility(View.VISIBLE);
                     button.setLoading(false);
-                    button.setText(formatString(R.string.SMSFeePurchaseTitle, BillingController.getInstance().formatCurrency(amount, currency)), false);
+                    button.setText(formatString(R.string.SMSFeePurchaseTitle, CurrencyFormat.format(amount, currency)), false);
                     button.setSubText(premium_days == 7 ? getString(R.string.SMSFeePurchaseText) : formatPluralStringComma("SMSFeePurchaseTextDays", premium_days), false);
                     button.setOnClickListener(v -> {
                         if (button.isLoading())

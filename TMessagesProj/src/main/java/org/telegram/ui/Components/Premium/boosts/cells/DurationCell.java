@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.view.Gravity;
 
+import org.telegram.messenger.CurrencyFormat;
 import org.telegram.messenger.BillingController;
 import org.telegram.messenger.LocaleController;
 import org.telegram.ui.ActionBar.SimpleTextView;
@@ -37,8 +38,8 @@ public class DurationCell extends BaseCell {
         } else {
             titleTextView.setText(LocaleController.formatPluralString("Months", months));
         }
-        setSubtitle(BillingController.getInstance().formatCurrency(count > 0 ? (price / count) : price, currency.toString()) + " x " + count);
-        totalTextView.setText(BillingController.getInstance().formatCurrency(count > 0 ? price : 0, currency.toString()));
+        setSubtitle(CurrencyFormat.format(count > 0 ? (price / count) : price, currency.toString()) + " x " + count);
+        totalTextView.setText(CurrencyFormat.format(count > 0 ? price : 0, currency.toString()));
         setDivider(needDivider);
         radioButton.setChecked(selected, false);
     }
