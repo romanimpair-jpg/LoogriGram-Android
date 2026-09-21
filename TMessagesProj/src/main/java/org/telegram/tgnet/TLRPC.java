@@ -57504,8 +57504,6 @@ public class TLRPC {
         public TranslateController.PollText translatedPoll; //custom
         public TL_stories.StoryItem replyStory; //custom
         public InputQuickReplyShortcut quick_reply_shortcut; //custom
-        public long errorAllowedPriceStars; //custom
-        public long errorNewPriceStars; //custom
         public boolean summarizedOpen; //custom
         public TL_textWithEntities summaryText; //custom
         public String translatedSummaryLanguage; //custom

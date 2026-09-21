@@ -27,9 +27,7 @@ public class MessageCustomParamsHelper {
             message.translatedToLanguage == null &&
             message.translatedPoll == null &&
             message.translatedText == null &&
-            message.translatedRichMessage == null &&
-            message.errorAllowedPriceStars == 0 &&
-            message.errorNewPriceStars == 0
+            message.translatedRichMessage == null
         );
     }
 
@@ -46,8 +44,6 @@ public class MessageCustomParamsHelper {
         toMessage.translatedPoll = fromMessage.translatedPoll;
         toMessage.translatedText = fromMessage.translatedText;
         toMessage.translatedRichMessage = fromMessage.translatedRichMessage;
-        toMessage.errorAllowedPriceStars = fromMessage.errorAllowedPriceStars;
-        toMessage.errorNewPriceStars = fromMessage.errorNewPriceStars;
         toMessage.translatedVoiceTranscription = fromMessage.translatedVoiceTranscription;
         toMessage.summarizedOpen = fromMessage.summarizedOpen;
         toMessage.summaryText = fromMessage.summaryText;
@@ -104,9 +100,6 @@ public class MessageCustomParamsHelper {
 
             flags |= message.translatedPoll != null ? 32 : 0;
 
-            flags |= message.errorAllowedPriceStars != 0 ? 64 : 0;
-            flags |= message.errorNewPriceStars != 0 ? 128 : 0;
-
             flags |= message.translatedVoiceTranscription != null ? 256 : 0;
 
             flags = setFlag(flags, FLAG_10, message.summaryText != null);
@@ -145,12 +138,6 @@ public class MessageCustomParamsHelper {
                 message.translatedPoll.serializeToStream(stream);
             }
 
-            if ((flags & 64) != 0) {
-                stream.writeInt64(message.errorAllowedPriceStars);
-            }
-            if ((flags & 128) != 0) {
-                stream.writeInt64(message.errorNewPriceStars);
-            }
             if ((flags & 256) != 0) {
                 message.translatedVoiceTranscription.serializeToStream(stream);
             }
@@ -195,11 +182,15 @@ public class MessageCustomParamsHelper {
             if ((flags & 32) != 0) {
                 message.translatedPoll = TranslateController.PollText.TLdeserialize(stream, stream.readInt32(exception), exception);
             }
+            // LoogriGram: flags 64 and 128 held the old and new price of a paid
+            // message the server had refused. Nothing records them now, but rows
+            // written by an earlier build may still carry them, so the bytes are
+            // read and dropped to keep the fields after them in step.
             if ((flags & 64) != 0) {
-                message.errorAllowedPriceStars = stream.readInt64(exception);
+                stream.readInt64(exception);
             }
             if ((flags & 128) != 0) {
-                message.errorNewPriceStars = stream.readInt64(exception);
+                stream.readInt64(exception);
             }
             if ((flags & 256) != 0) {
                 message.translatedVoiceTranscription = TLRPC.TL_textWithEntities.TLdeserialize(stream, stream.readInt32(exception), exception);

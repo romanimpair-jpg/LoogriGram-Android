@@ -13613,41 +13613,6 @@ public class MessagesStorage extends BaseController {
         });
     }
 
-    public void markMessageAsSendErrorWithParams(TLRPC.Message msg, long errorAllowedPriceStars, long errorNewPriceStars) {
-        final long selfId = getUserConfig().getClientUserId();
-        storageQueue.postRunnable(() -> {
-            SQLiteCursor cursor = null;
-            try {
-                final long messageId = msg.id;
-                final long dialogId = MessageObject.getDialogId(msg);
-                for (int i = 0; i < 2; ++i) {
-                    final String table = i == 0 ? "messages_v2" : "messages_topics";
-
-                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT data FROM messages_v2 WHERE mid = %d AND uid = %d LIMIT 1", messageId, dialogId));
-                    if (cursor.next()) {
-                        NativeByteBuffer data = cursor.byteBufferValue(0);
-                        if (data != null) {
-                            TLRPC.Message message = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
-                            message.readAttachPath(data, selfId);
-                            data.reuse();
-
-
-                        }
-                    }
-
-                    database.executeFast(String.format(Locale.US, "UPDATE "+table+" SET send_state = 2 WHERE mid = %d AND uid = %d", messageId, dialogId)).stepThis().dispose();
-                    database.executeFast(String.format(Locale.US, "UPDATE "+table+" SET send_state = 2 WHERE mid = %d AND uid = %d", messageId, dialogId)).stepThis().dispose();
-                }
-            } catch (Exception e) {
-                checkSQLException(e);
-            } finally {
-                if (cursor != null) {
-                    cursor.dispose();
-                }
-            }
-        });
-    }
-
     public void setMessageSeq(int mid, int seq_in, int seq_out) {
         storageQueue.postRunnable(() -> {
             SQLitePreparedStatement state = null;

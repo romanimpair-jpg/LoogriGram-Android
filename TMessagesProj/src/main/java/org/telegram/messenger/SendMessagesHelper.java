@@ -927,8 +927,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                     MessageObject obj = messageObjects.get(a);
                     getMessagesStorage().markMessageAsSendError(obj.messageOwner, obj.scheduled ? 1 : 0);
                     obj.messageOwner.send_state = MessageObject.MESSAGE_SEND_STATE_SEND_ERROR;
-                    obj.messageOwner.errorAllowedPriceStars = 0;
-                    obj.messageOwner.errorNewPriceStars = 0;
                     getNotificationCenter().postNotificationName(NotificationCenter.messageSendError, obj.getId());
                     processSentMessage(obj.getId());
                     removeFromUploadingMessages(obj.getId(), scheduled);
@@ -937,8 +935,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             } else {
                 getMessagesStorage().markMessageAsSendError(obj.messageOwner, obj.scheduled ? 1 : 0);
                 obj.messageOwner.send_state = MessageObject.MESSAGE_SEND_STATE_SEND_ERROR;
-                obj.messageOwner.errorAllowedPriceStars = 0;
-                obj.messageOwner.errorNewPriceStars = 0;
                 getNotificationCenter().postNotificationName(NotificationCenter.messageSendError, obj.getId());
                 processSentMessage(obj.getId());
                 removeFromUploadingMessages(obj.getId(), scheduled);
@@ -3028,8 +3024,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 
                 newMsg.params = params;
                 newMsg.send_state = MessageObject.MESSAGE_SEND_STATE_EDITING;
-                newMsg.errorNewPriceStars = 0;
-                newMsg.errorAllowedPriceStars = 0;
             }
             if (newMsg.attachPath == null) {
                 newMsg.attachPath = "";
@@ -4345,8 +4339,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 if (retryMessageObject != null) {
                     getMessagesStorage().markMessageAsSendError(retryMessageObject.messageOwner, retryMessageObject.scheduled ? 1 : 0);
                     retryMessageObject.messageOwner.send_state = MessageObject.MESSAGE_SEND_STATE_SEND_ERROR;
-                    retryMessageObject.messageOwner.errorNewPriceStars = 0;
-                    retryMessageObject.messageOwner.errorAllowedPriceStars = 0;
                     getNotificationCenter().postNotificationName(NotificationCenter.messageSendError, retryMessageObject.getId());
                     processSentMessage(retryMessageObject.getId());
                 }
@@ -5046,8 +5038,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 newMsg.from_id = newMsg.peer_id;
             }
             newMsg.send_state = MessageObject.MESSAGE_SEND_STATE_SENDING;
-            newMsg.errorAllowedPriceStars = 0;
-            newMsg.errorNewPriceStars = 0;
 
             long groupId = 0;
             boolean isFinalGroupMedia = false;
@@ -6309,8 +6299,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             getMessagesStorage().markMessageAsSendError(newMsg, scheduleDate != 0 ? 1 : 0);
             if (newMsgObj != null) {
                 newMsgObj.messageOwner.send_state = MessageObject.MESSAGE_SEND_STATE_SEND_ERROR;
-                newMsgObj.messageOwner.errorAllowedPriceStars = 0;
-                newMsgObj.messageOwner.errorNewPriceStars = 0;
             }
             getNotificationCenter().postNotificationName(NotificationCenter.messageSendError, newMsg.id);
             processSentMessage(newMsg.id);
@@ -7526,8 +7514,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                                 TLRPC.Message newMsgObj = msgObjs.get(i).messageOwner;
                                 getMessagesStorage().markMessageAsSendError(newMsgObj, scheduled ? 1 : 0);
                                 newMsgObj.send_state = MessageObject.MESSAGE_SEND_STATE_SEND_ERROR;
-                                newMsgObj.errorAllowedPriceStars = 0;
-                                newMsgObj.errorNewPriceStars = 0;
                                 getNotificationCenter().postNotificationName(NotificationCenter.messageSendError, newMsgObj.id);
                                 processSentMessage(newMsgObj.id);
                                 removeFromSendingMessages(newMsgObj.id, scheduled);
@@ -7689,8 +7675,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                             oldIds.add(oldId);
                             getStatsController().incrementSentItemsCount(ApplicationLoader.getCurrentNetworkType(), StatsController.TYPE_MESSAGES, 1);
                             newMsgObj.send_state = MessageObject.MESSAGE_SEND_STATE_SENT;
-                            newMsgObj.errorAllowedPriceStars = 0;
-                            newMsgObj.errorNewPriceStars = 0;
                             getNotificationCenter().postNotificationName(NotificationCenter.messageReceivedByServer, oldId, newMsgObj.id, newMsgObj, newMsgObj.dialog_id, grouped_id, existFlags, currentSchedule);
                             getNotificationCenter().postNotificationName(NotificationCenter.messageReceivedByServer2, oldId, newMsgObj.id, newMsgObj, newMsgObj.dialog_id, grouped_id, existFlags, currentSchedule);
                             getMessagesStorage().getStorageQueue().postRunnable(() -> {
@@ -8211,8 +8195,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         if (!isSentError) {
                             getStatsController().incrementSentItemsCount(ApplicationLoader.getCurrentNetworkType(), StatsController.TYPE_MESSAGES, 1);
                             newMsgObj.send_state = MessageObject.MESSAGE_SEND_STATE_SENT;
-                            newMsgObj.errorNewPriceStars = 0;
-                            newMsgObj.errorAllowedPriceStars = 0;
                             if (scheduled != currentSchedule) {
                                 final boolean finalCurrentSchedule = currentSchedule;
                                 ArrayList<Integer> messageIds = new ArrayList<>();
