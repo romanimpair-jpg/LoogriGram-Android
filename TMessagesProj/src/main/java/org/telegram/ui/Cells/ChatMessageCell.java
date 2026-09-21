@@ -21840,12 +21840,15 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             boostCounterBounds.left += dp(8);
                         }
                     }
-                    int selectorColor = Theme.multAlpha(Theme.chat_namePaint.getColor(), .12f);
+                    // LoogriGram: renamed from selectorColor - the name selector's local
+                    // of that name used to be scoped by an isSponsored() check that is
+                    // gone, and now reaches this far.
+                    int boostSelectorColor = Theme.multAlpha(Theme.chat_namePaint.getColor(), .12f);
                     if (boostCounterLayoutSelector == null) {
-                        boostCounterLayoutSelector = Theme.createRadSelectorDrawable(boostCounterSelectorColor = selectorColor, 6, 6);
+                        boostCounterLayoutSelector = Theme.createRadSelectorDrawable(boostCounterSelectorColor = boostSelectorColor, 6, 6);
                         boostCounterLayoutSelector.setCallback(this);
-                    } else if (boostCounterSelectorColor != selectorColor) {
-                        Theme.setSelectorDrawableColor(boostCounterLayoutSelector, boostCounterSelectorColor = selectorColor, true);
+                    } else if (boostCounterSelectorColor != boostSelectorColor) {
+                        Theme.setSelectorDrawableColor(boostCounterLayoutSelector, boostCounterSelectorColor = boostSelectorColor, true);
                     }
                     boostCounterLayoutSelector.setBounds((int) boostCounterBounds.left - dp(4), (int) boostCounterBounds.top, (int) (int) boostCounterBounds.right, (int) boostCounterBounds.bottom);
                     boostCounterLayoutSelector.setAlpha((int) (0xFF * nameAlpha));
