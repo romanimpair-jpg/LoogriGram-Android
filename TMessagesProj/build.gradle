@@ -331,10 +331,3 @@ task checkVisibility {
 }
 
 preBuild.dependsOn checkVisibility
-
-// LoogriGram: TEMPORARY, reverted in the next commit - lists every
-// deprecation and unchecked warning javac otherwise sums up in two notes,
-// so they can be counted.
-tasks.withType(JavaCompile).configureEach {
-    options.compilerArgs += ['-Xlint:deprecation', '-Xlint:unchecked', '-Xmaxwarns', '100000']
-}
