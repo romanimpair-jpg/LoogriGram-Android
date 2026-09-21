@@ -616,9 +616,6 @@ public class DownloadController extends BaseController implements NotificationCe
             }
             return true;
         }
-        if (messageObject.sponsoredMedia != null) {
-            return true;
-        }
         if (messageObject.isHiddenSensitive())
             return false;
         return canDownloadMediaInternal(messageObject) == 1;
@@ -659,9 +656,6 @@ public class DownloadController extends BaseController implements NotificationCe
             }
             return 2;
         }
-        if (messageObject.sponsoredMedia != null) {
-            return 2;
-        }
         if (messageObject.isHiddenSensitive())
             return 0;
         return canDownloadMediaInternal(messageObject);
@@ -675,9 +669,6 @@ public class DownloadController extends BaseController implements NotificationCe
             if (storyItem == null || storyItem.media == null || storyItem.media.document == null || !storyItem.isPublic) {
                 return 0;
             }
-            return 2;
-        }
-        if (messageObject.sponsoredMedia != null) {
             return 2;
         }
         if (messageObject.isHiddenSensitive())

@@ -265,15 +265,10 @@ public class MessageObject {
     public boolean isMediaSpoilersRevealed;
     public boolean isMediaSpoilersRevealedInSharedMedia;
     public boolean revealingMediaSpoilers;
-    public byte[] sponsoredId;
-    public String sponsoredTitle, sponsoredUrl;
-    public boolean sponsoredRecommended;
-    public TLRPC.Photo sponsoredPhoto;
-    public String sponsoredInfo, sponsoredAdditionalInfo;
-    public String sponsoredButtonText;
-    public TLRPC.PeerColor sponsoredColor;
-    public TLRPC.MessageMedia sponsoredMedia;
-    public boolean sponsoredCanReport;
+    // LoogriGram: ten sponsored* fields stood here - the ad's id, title, URL,
+    // photo, sponsor details, button text, colour, media and reportability.
+    // getSponsoredMessages was the only thing that ever filled them, and it is
+    // gone, so isSponsored() went with them.
 
     public boolean replyTextEllipsized;
     public boolean replyTextRevealed;
@@ -4260,10 +4255,6 @@ public class MessageObject {
             return false;
         }
         return isVoted((TLRPC.TL_messageMediaPoll) m);
-    }
-
-    public boolean isSponsored() {
-        return sponsoredId != null;
     }
 
     public long getPollId() {
