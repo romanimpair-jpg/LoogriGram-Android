@@ -23022,7 +23022,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     MessagesController.getInstance(account).disableAds(true);
                     if (parentFragment instanceof ChatActivity) {
                         ChatActivity chatActivity = (ChatActivity) parentFragment;
-                        chatActivity.removeFromSponsored(currentMessageObject);
                         chatActivity.removeMessageWithThanos(currentMessageObject);
                     }
                 } else {
@@ -23044,7 +23043,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                         MessagesController.getInstance(account).disableAds(true);
                         if (parentFragment instanceof ChatActivity) {
                             ChatActivity chatActivity = (ChatActivity) parentFragment;
-                            chatActivity.removeFromSponsored(currentMessageObject);
                             chatActivity.removeMessageWithThanos(currentMessageObject);
                         }
                     } else {

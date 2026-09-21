@@ -972,7 +972,6 @@ public class ReportBottomSheet extends BottomSheet {
                                                     )
                                                 )
                                                 .show();
-                                        fragment.removeFromSponsored(message);
                                         fragment.removeMessageWithThanos(message);
                                     }, 200);
                                 }
@@ -983,7 +982,6 @@ public class ReportBottomSheet extends BottomSheet {
                                         BulletinFactory.of(fragment)
                                             .createAdReportedBulletin(LocaleController.getString(R.string.AdHidden))
                                             .show();
-                                        fragment.removeFromSponsored(message);
                                         fragment.removeMessageWithThanos(message);
                                     }, 200);
                                 }
@@ -1008,7 +1006,6 @@ public class ReportBottomSheet extends BottomSheet {
                                 )
                             )
                             .show();
-                        fragment.removeFromSponsored(message);
                         fragment.removeMessageWithThanos(message);
                     }, 200);
                 } else if (response instanceof TLRPC.TL_channels_sponsoredMessageReportResultAdsHidden) {
@@ -1017,7 +1014,6 @@ public class ReportBottomSheet extends BottomSheet {
                             .createAdReportedBulletin(LocaleController.getString(R.string.AdHidden))
                             .show();
                         MessagesController.getInstance(currentAccount).disableAds(false);
-                        fragment.removeFromSponsored(message);
                         fragment.removeMessageWithThanos(message);
                     }, 200);
                 }
@@ -1034,7 +1030,6 @@ public class ReportBottomSheet extends BottomSheet {
                             )
                         )
                         .show();
-                    fragment.removeFromSponsored(message);
                     fragment.removeMessageWithThanos(message);
                 }, 200);
             }
