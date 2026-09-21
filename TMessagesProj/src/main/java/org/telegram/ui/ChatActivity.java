@@ -2583,7 +2583,7 @@ public class ChatActivity extends BaseFragment implements
     };
 
     private final Runnable showScheduledHintRunnable = () -> {
-        if (getParentActivity() == null || fragmentView == null || chatActivityEnterView == null || forwardingPreviewView != null || getMessagesController().getSendPaidMessagesStars(getDialogId()) > 0) {
+        if (getParentActivity() == null || fragmentView == null || chatActivityEnterView == null || forwardingPreviewView != null) {
             return;
         }
         View anchor = chatActivityEnterView.getSendButton();
@@ -23872,11 +23872,6 @@ public class ChatActivity extends BaseFragment implements
                     chatActivityEnterView.checkChannelRights();
                     chatActivityEnterView.updateGiftButton(true);
                 }
-                if (getMessagesController().getSendPaidMessagesStars(getDialogId()) > 0) {
-                    if (!StarsController.getInstance(currentAccount).balanceAvailable()) {
-                        StarsController.getInstance(currentAccount).getBalance();
-                    }
-                }
                 if (headerItem != null) {
                     showAudioCallAsIcon = userInfo.phone_calls_available && !inPreviewMode;
                     if (userInfo.phone_calls_available) {
@@ -34877,9 +34872,8 @@ public class ChatActivity extends BaseFragment implements
         if (getMessagesController().isForum(getDialogId()) && !isTopic) {
             return false;
         }
-        if (getMessagesController().getSendPaidMessagesStars(getDialogId()) > 0) {
-            return false;
-        }
+        // LoogriGram: scheduling was refused in a chat that charges per message,
+        // since a scheduled message could not carry the payment. Nothing pays.
         return currentEncryptedChat == null && (bottomChannelButtonsLayout == null || bottomChannelButtonsLayout.getVisibility() != View.VISIBLE) && (!isThreadChat() || isTopic);
     }
 

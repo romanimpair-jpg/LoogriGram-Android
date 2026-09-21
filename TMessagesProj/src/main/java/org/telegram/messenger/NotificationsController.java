@@ -5143,7 +5143,10 @@ public class NotificationsController extends BaseController implements Notificat
 
             NotificationCompat.Action wearReplyAction = null;
 
-            if ((!isChannel || isSupergroup) && canReply && !SharedConfig.isWaitingForPasscodeEnter && selfUserId != dialogId && !UserObject.isReplyUser(dialogId) && MessagesController.getInstance(currentAccount).getSendPaidMessagesStars(dialogId) <= 0) {
+            // LoogriGram: no Reply action for a user we cannot write to - one who
+            // charges per message or takes only Premium senders. It used to hide the
+            // action for any chat with a price, which is not a thing we pay.
+            if ((!isChannel || isSupergroup) && canReply && !SharedConfig.isWaitingForPasscodeEnter && selfUserId != dialogId && !UserObject.isReplyUser(dialogId) && !(dialogId > 0 && DialogObject.isPremiumBlocked(MessagesController.getInstance(currentAccount).isUserContactBlocked(dialogId, true)))) {
                 Intent replyIntent = new Intent(ApplicationLoader.applicationContext, WearReplyReceiver.class);
                 replyIntent.putExtra("dialog_id", dialogId);
                 replyIntent.putExtra("max_id", maxId);

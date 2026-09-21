@@ -300,7 +300,6 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
     boolean isGroup;
     boolean isPremiumBlocked;
     boolean areLiveCommentsDisabled;
-    long starsPriceBlocked;
 
     private float alpha = 1f;
     private int previousSelectedPotision = -1;
@@ -4204,7 +4203,6 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
             final TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(dialogId);
             final TL_account.RequirementToContact r = MessagesController.getInstance(currentAccount).isUserContactBlocked(dialogId);
             isPremiumBlocked = !UserConfig.getInstance(currentAccount).isPremium() && DialogObject.isPremiumBlocked(r);
-            starsPriceBlocked = DialogObject.getMessagesStarsPrice(r);
             avatarDrawable.setInfo(currentAccount, user);
             headerView.backupImageView.getImageReceiver().setForUserOrChat(user, avatarDrawable);
             setTitle(true, dialogId, false);
@@ -4221,7 +4219,6 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
                 MessagesStorage.getInstance(currentAccount).loadChatInfo(-dialogId, true, new CountDownLatch(1), false, false);
             }
             isPremiumBlocked = isGroup && !ChatObject.canSendPlain(chat);
-            starsPriceBlocked = MessagesController.getInstance(currentAccount).getSendPaidMessagesStars(dialogId);
             avatarDrawable.setInfo(currentAccount, chat);
             headerView.backupImageView.getImageReceiver().setForUserOrChat(chat, avatarDrawable);
             setTitle(true, dialogId, false);
@@ -4827,9 +4824,8 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
         } else if (id == NotificationCenter.userIsPremiumBlockedUpadted) {
             final TL_account.RequirementToContact r = MessagesController.getInstance(currentAccount).isUserContactBlocked(dialogId);
             final boolean newPremiumBlocked = dialogId >= 0 && !UserConfig.getInstance(currentAccount).isPremium() && DialogObject.isPremiumBlocked(r);
-            if (isPremiumBlocked != newPremiumBlocked || starsPriceBlocked != DialogObject.getMessagesStarsPrice(r)) {
+            if (isPremiumBlocked != newPremiumBlocked) {
                 isPremiumBlocked = newPremiumBlocked;
-                starsPriceBlocked = DialogObject.getMessagesStarsPrice(r);
                 updatePosition();
                 checkStealthMode(true);
             }
@@ -4891,10 +4887,8 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
             stealthModeIsActive = false;
             chatActivityEnterView.setEnabled(false);
             chatActivityEnterView.setOverrideHint(" ", animated);
-        } else if (starsPriceBlocked > 0) {
-            stealthModeIsActive = false;
-            chatActivityEnterView.setEnabled(true);
-            chatActivityEnterView.setOverrideHint(StarsFormat.replaceStars(LocaleController.formatString(R.string.TypeMessageForStars, LocaleController.formatNumber(starsPriceBlocked, ','))), animated);
+        // LoogriGram: "Reply for N Stars" stood here for a peer that charges.
+        // A user who does is padlocked above; nothing is paid.
         } else if (!currentStory.isLive && stealthMode != null && ConnectionsManager.getInstance(currentAccount).getCurrentTime() < stealthMode.active_until_date) {
             stealthModeIsActive = true;
             int time = stealthMode.active_until_date - ConnectionsManager.getInstance(currentAccount).getCurrentTime();

@@ -13722,17 +13722,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         if (count == 0) {
             togglePhotosListView(false, true);
         }
-        if (pickerViewSendButton != null) {
-            long dialogId = 0;
-            if (placeProvider != null)
-                dialogId = placeProvider.getDialogId();
-            if (dialogId == 0 && currentMessageObject != null)
-                dialogId = currentMessageObject.getDialogId();
-            pickerViewSendButton.setStarsPrice(
-                (placeProvider != null && placeProvider.isEditingMessage() && !placeProvider.isEditingMessageResend()) ? 0 : MessagesController.getInstance(currentAccount).getSendPaidMessagesStars(dialogId),
-                Math.max(1, placeProvider == null ? 1 : placeProvider.getSelectedCount())
-            );
-        }
     }
 
     private boolean isCurrentAvatarSet() {
@@ -15921,17 +15910,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             if (topCaptionEdit != null) {
                 topCaptionEdit.setDialogId(dialogId);
             }
-        }
-        if (pickerViewSendButton != null) {
-            long dialogId = 0;
-            if (placeProvider != null)
-                dialogId = placeProvider.getDialogId();
-            if (dialogId == 0 && currentMessageObject != null)
-                dialogId = currentMessageObject.getDialogId();
-            pickerViewSendButton.setStarsPrice(
-                (placeProvider != null && placeProvider.isEditingMessage() && !placeProvider.isEditingMessageResend()) ? 0 : MessagesController.getInstance(currentAccount).getSendPaidMessagesStars(dialogId),
-                Math.max(1, placeProvider == null ? 1 : placeProvider.getSelectedCount())
-            );
         }
     }
 

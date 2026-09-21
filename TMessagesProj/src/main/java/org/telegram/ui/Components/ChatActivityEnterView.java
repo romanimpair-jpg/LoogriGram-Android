@@ -3547,10 +3547,11 @@ public class ChatActivityEnterView extends FrameLayout implements
         sendButton.setOnLongClickListener(listener != null ? listener : this::onSendLongClick);
     }
 
+    // LoogriGram: this was the chat's price per message, drawn on the send
+    // button. Nothing pays it. What remains is the hook PeerStoriesView
+    // overrides for a paid live comment, which goes with paid live comments.
     public long getStarsPrice() {
-        return parentFragment != null ?
-                parentFragment.getMessagesController().getSendPaidMessagesStars(parentFragment.getDialogId()) :
-                MessagesController.getInstance(currentAccount).getSendPaidMessagesStars(dialog_id);
+        return 0;
     }
 
     public boolean areLiveCommentsFree() {
@@ -6725,10 +6726,6 @@ public class ChatActivityEnterView extends FrameLayout implements
         }
         updateSendButtonPaid();
         final boolean isPostSuggestions = parentFragment != null && parentFragment.getChatMode() == ChatActivity.MODE_SUGGESTIONS && parentFragment.isSubscriberSuggestions;
-        long paidMessagesStarsPrice = (parentFragment != null ? parentFragment.getMessagesController().getSendPaidMessagesStars(parentFragment.getDialogId()) : 0);
-        if (paidMessagesStarsPrice > 0) {
-            paidMessagesStarsPrice *= getMessagesCount();
-        }
 
         final int chatActivityMode = parentFragment != null ? parentFragment.getChatMode() : -1;
 
@@ -6743,24 +6740,15 @@ public class ChatActivityEnterView extends FrameLayout implements
                 messageEditText.setHintText(getString(R.string.BusinessRepliesEnter));
             }
         } else if (isPostSuggestions) {
-            final CharSequence hint = paidMessagesStarsPrice > 0 ?
-                StarsFormat.replaceStars(LocaleController.formatString(R.string.SuggestPostForStars, LocaleController.formatNumber((int) paidMessagesStarsPrice, ','), spans)):
-                LocaleController.formatString(R.string.SuggestPostForFree);
-            messageEditText.setHintText(hint);
-            if (spans[0] != null) {
-                spans[0].spaceScaleX = 0.9f;
-            }
+            // LoogriGram: "Suggest a post for N Stars" when the channel charged.
+            messageEditText.setHintText(LocaleController.formatString(R.string.SuggestPostForFree));
         } else if (isEditingBusinessLink()) {
             messageEditText.setHintText(getString(R.string.BusinessLinksEnter));
         } else if (replyingMessageObject != null && replyingMessageObject.messageOwner.reply_markup != null && !TextUtils.isEmpty(replyingMessageObject.messageOwner.reply_markup.placeholder)) {
             messageEditText.setHintText(replyingMessageObject.messageOwner.reply_markup.placeholder, animated);
         } else if (editingMessageObject != null) {
             messageEditText.setHintText(editingCaption ? getString(R.string.Caption) : getString(R.string.TypeMessage));
-        } else if (paidMessagesStarsPrice > 0) {
-            messageEditText.setHintText(StarsFormat.replaceStars(LocaleController.formatString(R.string.TypeMessageForStars, LocaleController.formatNumber((int) paidMessagesStarsPrice, ',')), spans));
-            if (spans[0] != null) {
-                spans[0].spaceScaleX = 0.9f;
-            }
+
         } else if (botKeyboardViewVisible && botButtonsMessageObject != null && botButtonsMessageObject.messageOwner.reply_markup != null && !TextUtils.isEmpty(botButtonsMessageObject.messageOwner.reply_markup.placeholder)) {
             messageEditText.setHintText(botButtonsMessageObject.messageOwner.reply_markup.placeholder, animated);
         } else if (parentFragment != null && parentFragment.isForumInViewAsMessagesMode()) {

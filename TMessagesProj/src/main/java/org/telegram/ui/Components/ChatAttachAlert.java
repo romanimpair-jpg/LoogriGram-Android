@@ -5140,9 +5140,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             }
         }
         writeButton.setCount(show ? Math.max(1, currentAttachLayout.getSelectedItemsCount()) : 0, animated);
-        final long starsPrice = editingMessageObject != null ? 0 : MessagesController.getInstance(currentAccount).getSendPaidMessagesStars(getDialogId());
-        final int messagesCount = currentAttachLayout.getSelectedItemsCount() + getAdditionalMessagesCount();
-        writeButton.setStarsPrice(starsPrice, messagesCount);
         if (commentTextView != null) {
             ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) commentTextView.getLayoutParams();
             final int newRightMargin = Math.max(dp(48), writeButton.width());
@@ -5875,9 +5872,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         }
         updateMotionItem(animated != 0);
 
-        final long starsPrice = editingMessageObject != null && !editingMessageObject.needResendWhenEdit() ? 0 : MessagesController.getInstance(currentAccount).getSendPaidMessagesStars(getDialogId());
-        final int messagesCount = (currentAttachLayout == null ? 0 : currentAttachLayout.getSelectedItemsCount()) + getAdditionalMessagesCount();
-        writeButton.setStarsPrice(starsPrice, messagesCount);
         if (commentTextView != null) {
             ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) commentTextView.getLayoutParams();
             final int newRightMargin = Math.max(dp(48), writeButton.width());
@@ -6630,9 +6624,10 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             } else {
                 TLRPC.User user = baseFragment instanceof ChatActivity ? ((ChatActivity) baseFragment).getCurrentUser() : null;
                 TLRPC.Chat chat = baseFragment instanceof ChatActivity ? ((ChatActivity) baseFragment).getCurrentChat() : null;
-                final boolean paidUser = user != null && ((ChatActivity) baseFragment).getMessagesController().getSendPaidMessagesStars(user.id) > 0;
                 galleryButton = buttonsCount++;
-                if ((photosEnabled || videosEnabled) && !paidUser && (chat == null || !ChatObject.isMonoForum(chat))) {
+                // LoogriGram: attach bots were hidden for a user who charges per
+                // message; such a user is locked now and has no attach menu.
+                if ((photosEnabled || videosEnabled) && (chat == null || !ChatObject.isMonoForum(chat))) {
                     if (baseFragment instanceof ChatActivity && !((ChatActivity) baseFragment).isInScheduleMode() && !((ChatActivity) baseFragment).isSecretChat() && ((ChatActivity) baseFragment).getChatMode() != ChatActivity.MODE_QUICK_REPLIES) {
                         ChatActivity chatActivity = (ChatActivity) baseFragment;
 

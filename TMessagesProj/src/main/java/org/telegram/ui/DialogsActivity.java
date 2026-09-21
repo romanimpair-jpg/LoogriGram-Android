@@ -11443,7 +11443,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 if (selectedDialogs.isEmpty()) return false;
                 for (long did : selectedDialogs) {
                     if (DialogObject.isEncryptedDialog(did)) return false;
-                    if (getMessagesController().getSendPaidMessagesStars(did) > 0) return false;
                 }
                 return true;
             }
