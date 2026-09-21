@@ -1763,7 +1763,7 @@ public class RichEditor extends BaseFragment implements NotificationCenter.Notif
         ChatAttachAlert chatAttachAlert = new ChatAttachAlert(getContext(), this, false, false, true, getResourceProvider());
         chatAttachAlert.setDelegate(new ChatAttachAlert.ChatAttachViewDelegate() {
             @Override
-            public void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia, boolean forceDocument, long payStars) {
+            public void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia, boolean forceDocument) {
                 if (button == 7 || button == 8) {
                     HashMap<Object, Object> photos = chatAttachAlert.getPhotoLayout().getSelectedPhotos();
                     ArrayList<Object> order = chatAttachAlert.getPhotoLayout().getSelectedPhotosOrder();
@@ -1803,7 +1803,7 @@ public class RichEditor extends BaseFragment implements NotificationCenter.Notif
 
         chatAttachAlert.setMaxSelectedPhotos(1, true);
         chatAttachAlert.enablePollAttachMode(allowedLayouts);
-        chatAttachAlert.setLocationActivityDelegate((location, live, notify, scheduleDate, payStars) -> {
+        chatAttachAlert.setLocationActivityDelegate((location, live, notify, scheduleDate) -> {
             if (location == null || location.geo == null) {
                 chatAttachAlert.dismiss(true);
                 return;
@@ -1816,7 +1816,7 @@ public class RichEditor extends BaseFragment implements NotificationCenter.Notif
             listView.addBlock(map);
             chatAttachAlert.dismiss(true);
         });
-        chatAttachAlert.setAudioSelectDelegate((audios, caption, notify, scheduleDate, scheduleRepeatPeriod, effectId, invertMedia, payStars) -> {
+        chatAttachAlert.setAudioSelectDelegate((audios, caption, notify, scheduleDate, scheduleRepeatPeriod, effectId, invertMedia) -> {
             if (audios != null && !audios.isEmpty()) {
                 listView.attachAudio(audios.get(0));
             }
@@ -1824,7 +1824,7 @@ public class RichEditor extends BaseFragment implements NotificationCenter.Notif
         });
         chatAttachAlert.setDocumentsDelegate(new ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate() {
             @Override
-            public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia, long payStars) {
+            public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia) {
                 if (files != null && !files.isEmpty()) listView.attachDocument(files.get(0));
                 else if (fmessages != null && !fmessages.isEmpty()) listView.attachDocument(fmessages.get(0));
                 chatAttachAlert.dismiss(true);
@@ -1911,10 +1911,10 @@ public class RichEditor extends BaseFragment implements NotificationCenter.Notif
         final ChatAttachAlert pickerAlert = new ChatAttachAlert(getContext(), this, false, false, false, getResourceProvider());
         pickerAlert.setDelegate(new ChatAttachAlert.ChatAttachViewDelegate() {
             @Override
-            public void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia, boolean forceDocument, long payStars) {}
+            public void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia, boolean forceDocument) {}
         });
         pickerAlert.setLocationPicker();
-        pickerAlert.setLocationActivityDelegate((location, live, notify, scheduleDate, payStars) -> {
+        pickerAlert.setLocationActivityDelegate((location, live, notify, scheduleDate) -> {
             if (location == null || location.geo == null) return;
             if (listView.history != null) listView.history.flush();
             final TL_iv.pageBlockMap map = (TL_iv.pageBlockMap) row.block;
@@ -2021,9 +2021,7 @@ public class RichEditor extends BaseFragment implements NotificationCenter.Notif
                     scheduleRepeatPeriod,
                     sendMessageChatArguments,
                     0,
-                    monoForumPeerId,
-                    0
-                );
+                    monoForumPeerId);
             }
         };
         if (onSentCallback != null) {

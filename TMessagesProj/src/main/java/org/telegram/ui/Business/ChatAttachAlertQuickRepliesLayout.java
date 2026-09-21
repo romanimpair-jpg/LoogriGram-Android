@@ -413,10 +413,8 @@ public class ChatAttachAlertQuickRepliesLayout extends ChatAttachAlert.AttachAle
                     }
                     return;
                 }
-                AlertsCreator.ensurePaidMessageConfirmation(parentAlert.currentAccount, parentAlert.getDialogId(), ((QuickRepliesController.QuickReply) object).getMessagesCount(), payStars -> {
-                    QuickRepliesController.getInstance(UserConfig.selectedAccount).sendQuickReplyTo(parentAlert.getDialogId(), (QuickRepliesController.QuickReply) object);
-                    parentAlert.dismiss();
-                });
+                QuickRepliesController.getInstance(UserConfig.selectedAccount).sendQuickReplyTo(parentAlert.getDialogId(), (QuickRepliesController.QuickReply) object);
+                parentAlert.dismiss();
             }
         });
         listView.setOnScrollListener(new RecyclerView.OnScrollListener() {

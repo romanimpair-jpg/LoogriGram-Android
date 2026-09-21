@@ -199,7 +199,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
         3600, 3 * 3600, 8 * 3600, 24 * 3600, 72 * 3600 };
 
     public interface PollCreateActivityDelegate {
-        void sendPoll(TLRPC.MessageMedia poll, CharSequence caption, PollAttachedMediaPack media, ArrayList<Integer> correctAnswers, boolean notify, int scheduleDate, long payStars);
+        void sendPoll(TLRPC.MessageMedia poll, CharSequence caption, PollAttachedMediaPack media, ArrayList<Integer> correctAnswers, boolean notify, int scheduleDate);
     }
 
     private static class EmptyView extends View {
@@ -809,17 +809,15 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
             todo.todo.list.add(task);
         }
         ChatActivity chatActivity = (ChatActivity) parentAlert.baseFragment;
-        AlertsCreator.ensurePaidMessageConfirmation(parentAlert.currentAccount, parentAlert.getDialogId(), 1 + parentAlert.getAdditionalMessagesCount(), payStars -> {
-            if (chatActivity.isInScheduleMode()) {
-                AlertsCreator.createScheduleDatePickerDialog(chatActivity.getParentActivity(), chatActivity.getDialogId(), (notify, scheduleDate, scheduleRepeatPeriod) -> {
-                    delegate.sendPoll(todo, null, null, null, notify, scheduleDate, payStars);
-                    parentAlert.dismiss(true);
-                });
-            } else {
-                delegate.sendPoll(todo, null, null, null, true, 0, payStars);
+        if (chatActivity.isInScheduleMode()) {
+            AlertsCreator.createScheduleDatePickerDialog(chatActivity.getParentActivity(), chatActivity.getDialogId(), (notify, scheduleDate, scheduleRepeatPeriod) -> {
+                delegate.sendPoll(todo, null, null, null, notify, scheduleDate);
                 parentAlert.dismiss(true);
-            }
-        });
+            });
+        } else {
+            delegate.sendPoll(todo, null, null, null, true, 0);
+            parentAlert.dismiss(true);
+        }
     }
 
     private boolean smoothScrollToOption = false;
@@ -939,17 +937,15 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
             }
         }
         ChatActivity chatActivity = (ChatActivity) parentAlert.baseFragment;
-        AlertsCreator.ensurePaidMessageConfirmation(parentAlert.currentAccount, parentAlert.getDialogId(), 1 + parentAlert.getAdditionalMessagesCount(), payStars -> {
-            if (chatActivity.isInScheduleMode()) {
-                AlertsCreator.createScheduleDatePickerDialog(chatActivity.getParentActivity(), chatActivity.getDialogId(), (notify, scheduleDate, scheduleRepeatPeriod) -> {
-                    delegate.sendPoll(poll, descriptionString, attachedMedia, correctAnswers, notify, scheduleDate, payStars);
-                    parentAlert.dismiss(true);
-                });
-            } else {
-                delegate.sendPoll(poll, descriptionString, attachedMedia, correctAnswers, true, 0, payStars);
+        if (chatActivity.isInScheduleMode()) {
+            AlertsCreator.createScheduleDatePickerDialog(chatActivity.getParentActivity(), chatActivity.getDialogId(), (notify, scheduleDate, scheduleRepeatPeriod) -> {
+                delegate.sendPoll(poll, descriptionString, attachedMedia, correctAnswers, notify, scheduleDate);
                 parentAlert.dismiss(true);
-            }
-        });
+            });
+        } else {
+            delegate.sendPoll(poll, descriptionString, attachedMedia, correctAnswers, true, 0);
+            parentAlert.dismiss(true);
+        }
     }
 
     @Override
@@ -2870,7 +2866,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
         };
         chatAttachAlert.setDelegate(new ChatAttachAlert.ChatAttachViewDelegate() {
             @Override
-            public void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia, boolean forceDocument, long payStars) {
+            public void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia, boolean forceDocument) {
                 if (button == ChatAttachAlert.LAYOUT_TYPE_LINK) {
                     AlertsCreator.showAddLinkToPoll(fragment.getContext(), fragment.getResourceProvider(), null, null, url -> {
                         callback.run(new PollAttachedMediaLink(url));
@@ -2974,12 +2970,12 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
 
         chatAttachAlert.setMaxSelectedPhotos(1, true);
         chatAttachAlert.enablePollAttachMode(allowedLayouts);
-        chatAttachAlert.setLocationActivityDelegate((location, live, notify, scheduleDate, payStars) -> {
+        chatAttachAlert.setLocationActivityDelegate((location, live, notify, scheduleDate) -> {
             callback.run(new PollAttachedMediaLocation(location));
         });
         chatAttachAlert.setDocumentsDelegate(new ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate() {
             @Override
-            public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia, long payStars) {
+            public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia) {
                 if (files != null && !files.isEmpty()) {
                     callback.run(new PollAttachedMediaFile(files.get(0)));
                 }
@@ -2987,7 +2983,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
             }
 
             @Override
-            public void didSelectPhotos(ArrayList<SendMessagesHelper.SendingMediaInfo> photos, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long payStars) {
+            public void didSelectPhotos(ArrayList<SendMessagesHelper.SendingMediaInfo> photos, boolean notify, int scheduleDate, int scheduleRepeatPeriod) {
                 if (photos != null && !photos.isEmpty()) {
                     callback.run(new PollAttachedMediaGallery(photos.get(0)));
                 }
@@ -3005,7 +3001,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
                 }
             }
         });
-        chatAttachAlert.setAudioSelectDelegate((audios, caption, notify, scheduleDate, scheduleRepeatPeriod, effectId, invertMedia, payStars) -> {
+        chatAttachAlert.setAudioSelectDelegate((audios, caption, notify, scheduleDate, scheduleRepeatPeriod, effectId, invertMedia) -> {
             if (audios != null && !audios.isEmpty()) {
                 callback.run(new PollAttachedMediaMusic(audios.get(0)));
             }

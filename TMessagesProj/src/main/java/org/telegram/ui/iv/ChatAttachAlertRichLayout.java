@@ -868,9 +868,7 @@ public class ChatAttachAlertRichLayout extends ChatAttachAlert.AttachAlertLayout
             scheduleRepeatPeriod,
             sendMessageChatArguments,
             effectId,
-            monoForumPeerId,
-            0
-        );
+            monoForumPeerId);
         parentAlert.dismiss(true);
         return true;
     }
@@ -1003,10 +1001,10 @@ public class ChatAttachAlertRichLayout extends ChatAttachAlert.AttachAlertLayout
         final ChatAttachAlert pickerAlert = new ChatAttachAlert(getContext(), parentAlert.baseFragment, false, false, false, null);
         pickerAlert.setDelegate(new ChatAttachAlert.ChatAttachViewDelegate() {
             @Override
-            public void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia, boolean forceDocument, long payStars) {}
+            public void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia, boolean forceDocument) {}
         });
         pickerAlert.setLocationPicker();
-        pickerAlert.setLocationActivityDelegate((location, live, notify, scheduleDate, payStars) -> {
+        pickerAlert.setLocationActivityDelegate((location, live, notify, scheduleDate) -> {
             if (location == null || location.geo == null) return;
             if (listView.history != null) listView.history.flush();
             final TL_iv.pageBlockMap map = (TL_iv.pageBlockMap) row.block;
@@ -1037,7 +1035,7 @@ public class ChatAttachAlertRichLayout extends ChatAttachAlert.AttachAlertLayout
         final ChatAttachAlert alert = new ChatAttachAlert(getContext(), parentAlert.baseFragment, false, false, true, resourcesProvider);
         alert.setDelegate(new ChatAttachAlert.ChatAttachViewDelegate() {
             @Override
-            public void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia, boolean forceDocument, long payStars) {
+            public void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia, boolean forceDocument) {
                 if (button == 7 || button == 8) {
                     final java.util.HashMap<Object, Object> photos = alert.getPhotoLayout().getSelectedPhotos();
                     final ArrayList<Object> order = alert.getPhotoLayout().getSelectedPhotosOrder();
@@ -1066,7 +1064,7 @@ public class ChatAttachAlertRichLayout extends ChatAttachAlert.AttachAlertLayout
         alert.getPhotoLayout().loadGalleryPhotos();
         alert.setMaxSelectedPhotos(1, true);
         alert.enablePollAttachMode(allowedLayouts);
-        alert.setLocationActivityDelegate((location, live, notify, scheduleDate, payStars) -> {
+        alert.setLocationActivityDelegate((location, live, notify, scheduleDate) -> {
             if (location == null || location.geo == null) { alert.dismiss(true); return; }
             final TL_iv.pageBlockMap map = new TL_iv.pageBlockMap();
             map.geo = location.geo;
@@ -1077,13 +1075,13 @@ public class ChatAttachAlertRichLayout extends ChatAttachAlert.AttachAlertLayout
             updateSendButton(true);
             alert.dismiss(true);
         });
-        alert.setAudioSelectDelegate((audios, caption, notify, scheduleDate, scheduleRepeatPeriod, effectId, invertMedia, payStars) -> {
+        alert.setAudioSelectDelegate((audios, caption, notify, scheduleDate, scheduleRepeatPeriod, effectId, invertMedia) -> {
             if (audios != null && !audios.isEmpty()) listView.attachAudio(audios.get(0));
             alert.dismiss(true);
         });
         alert.setDocumentsDelegate(new ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate() {
             @Override
-            public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia, long payStars) {
+            public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia) {
                 if (files != null && !files.isEmpty()) listView.attachDocument(files.get(0));
                 else if (fmessages != null && !fmessages.isEmpty()) listView.attachDocument(fmessages.get(0));
                 alert.dismiss(true);

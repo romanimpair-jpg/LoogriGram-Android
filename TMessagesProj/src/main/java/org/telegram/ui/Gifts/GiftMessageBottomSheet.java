@@ -208,7 +208,7 @@ public class GiftMessageBottomSheet extends BottomSheet {
         containerView.addView(chatInputViewsContainer, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         commentView.setDelegate(new ChatActivityEnterView.ChatActivityEnterViewDelegate() {
             @Override
-            public void onMessageSend(CharSequence message, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long payStars) {
+            public void onMessageSend(CharSequence message, boolean notify, int scheduleDate, int scheduleRepeatPeriod) {
 
             }
 
@@ -321,7 +321,7 @@ public class GiftMessageBottomSheet extends BottomSheet {
             }
 
             @Override
-            public void needStartRecordVideo(int state, boolean notify, int scheduleDate, int scheduleRepeatPeriod, int ttl, long effectId, long stars) {
+            public void needStartRecordVideo(int state, boolean notify, int scheduleDate, int scheduleRepeatPeriod, int ttl, long effectId) {
 
             }
 

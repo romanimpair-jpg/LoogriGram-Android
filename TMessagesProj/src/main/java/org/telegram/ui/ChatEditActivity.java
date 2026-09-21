@@ -855,7 +855,7 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
                     if (info != null && info.location instanceof TLRPC.TL_channelLocation) {
                         fragment.setInitialLocation((TLRPC.TL_channelLocation) info.location);
                     }
-                    fragment.setDelegate((location, live, notify, scheduleDate, payStars) -> {
+                    fragment.setDelegate((location, live, notify, scheduleDate) -> {
                         TLRPC.TL_channelLocation channelLocation = new TLRPC.TL_channelLocation();
                         channelLocation.address = location.address;
                         channelLocation.geo_point = location.geo;

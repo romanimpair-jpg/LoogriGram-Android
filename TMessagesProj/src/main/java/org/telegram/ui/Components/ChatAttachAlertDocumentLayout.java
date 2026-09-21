@@ -95,8 +95,8 @@ import java.util.StringTokenizer;
 public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLayout {
 
     public interface DocumentSelectActivityDelegate {
-        void didSelectFiles(ArrayList<String> files, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia, long payStars);
-        default void didSelectPhotos(ArrayList<SendMessagesHelper.SendingMediaInfo> photos, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long payStars) {
+        void didSelectFiles(ArrayList<String> files, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia);
+        default void didSelectPhotos(ArrayList<SendMessagesHelper.SendingMediaInfo> photos, boolean notify, int scheduleDate, int scheduleRepeatPeriod) {
 
         }
 
@@ -763,11 +763,10 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
         final ArrayList<TLRPC.MessageEntity> captionEntities = MediaDataController.getInstance(parentAlert.currentAccount).getEntities(message, true);
         final String caption = message[0].toString();
 
-        return AlertsCreator.ensurePaidMessageConfirmation(parentAlert.currentAccount, parentAlert.getDialogId(), (!TextUtils.isEmpty(caption) ? 1 : 0) + files.size() + parentAlert.getAdditionalMessagesCount(), payStars -> {
-            sendPressed = true;
-            delegate.didSelectFiles(files, caption, captionEntities, fmessages, notify, scheduleDate, 0, effectId, invertMedia, payStars);
-            parentAlert.dismiss(true);
-        });
+        sendPressed = true;
+        delegate.didSelectFiles(files, caption, captionEntities, fmessages, notify, scheduleDate, 0, effectId, invertMedia);
+        parentAlert.dismiss(true);
+        return false;
     }
 
     private boolean onItemClick(View view, Object object) {
@@ -841,7 +840,7 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
                 fmessages.add(selectedMessages.get(hashId));
             }
             final ArrayList<String> files = new ArrayList<>(selectedFilesOrder);
-            delegate.didSelectFiles(files, null, null, fmessages, false, 0, 0, 0, false, 0);
+            delegate.didSelectFiles(files, null, null, fmessages, false, 0, 0, 0, false);
             return true;
         }
 
@@ -920,9 +919,7 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
                 info.ttl = photoEntry.ttl;
             }
         }
-        AlertsCreator.ensurePaidMessageConfirmation(parentAlert.currentAccount, parentAlert.getDialogId(), media.size() + parentAlert.getAdditionalMessagesCount(), payStars -> {
-            delegate.didSelectPhotos(media, notify, scheduleDate, 0, payStars);
-        });
+        delegate.didSelectPhotos(media, notify, scheduleDate, 0);
     }
 
     public void loadRecentFiles() {

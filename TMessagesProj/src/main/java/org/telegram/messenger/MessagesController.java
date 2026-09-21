@@ -24861,7 +24861,7 @@ public class MessagesController extends BaseController implements NotificationCe
         getSendMessagesHelper().sendMessage(messageObjects, msg.getDialogId(),
             !msg.isForwarded(), false, true, 0,
                 0, msg.messageOwner.suggested_post != null ? msg : null,
-            -1, 0,
+            -1,
             DialogObject.getPeerDialogId(msg.messageOwner.saved_peer_id),
             MessageSuggestionParams.of(suggestedPost)
         );

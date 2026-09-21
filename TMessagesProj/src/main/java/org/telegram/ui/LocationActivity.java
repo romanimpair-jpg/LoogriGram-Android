@@ -326,11 +326,11 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
             lastPressedMarkerView.setOnClickListener(v -> {
                 if (parentFragment != null && parentFragment.isInScheduleMode()) {
                     AlertsCreator.createScheduleDatePickerDialog(getParentActivity(), parentFragment.getDialogId(), (notify, scheduleDate, scheduleRepeatPeriod) -> {
-                        delegate.didSelectLocation(location.venue, locationType, notify, scheduleDate, 0);
+                        delegate.didSelectLocation(location.venue, locationType, notify, scheduleDate);
                         finishFragment();
                     });
                 } else {
-                    delegate.didSelectLocation(location.venue, locationType, true, 0, 0);
+                    delegate.didSelectLocation(location.venue, locationType, true, 0);
                     finishFragment();
                 }
             });
@@ -431,7 +431,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
     }
 
     public interface LocationActivityDelegate {
-        void didSelectLocation(TLRPC.MessageMedia location, int live, boolean notify, int scheduleDate, long payStars);
+        void didSelectLocation(TLRPC.MessageMedia location, int live, boolean notify, int scheduleDate);
     }
 
     public LocationActivity(int type) {
@@ -1157,7 +1157,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
                         return;
                     }
                     if (dialogId == 0) {
-                        delegate.didSelectLocation(venue, LOCATION_TYPE_GROUP, true, 0, 0);
+                        delegate.didSelectLocation(venue, LOCATION_TYPE_GROUP, true, 0);
                         finishFragment();
                     } else {
                         final AlertDialog[] progressDialog = new AlertDialog[]{new AlertDialog(getParentActivity(), AlertDialog.ALERT_TYPE_SPINNER)};
@@ -1174,7 +1174,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
 
                             }
                             progressDialog[0] = null;
-                            delegate.didSelectLocation(venue, LOCATION_TYPE_GROUP, true, 0, 0);
+                            delegate.didSelectLocation(venue, LOCATION_TYPE_GROUP, true, 0);
                             finishFragment();
                         }));
                         progressDialog[0].setOnCancelListener(dialog -> getConnectionsManager().cancelRequest(requestId, true));
@@ -1200,11 +1200,11 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
                         location.geo._long = AndroidUtilities.fixLocationCoord(userLocation.getLongitude());
                         if (parentFragment != null && parentFragment.isInScheduleMode()) {
                             AlertsCreator.createScheduleDatePickerDialog(getParentActivity(), parentFragment.getDialogId(), (notify, scheduleDate, scheduleRepeatPeriod) -> {
-                                delegate.didSelectLocation(location, locationType, notify, scheduleDate, 0);
+                                delegate.didSelectLocation(location, locationType, notify, scheduleDate);
                                 finishFragment();
                             });
                         } else {
-                            delegate.didSelectLocation(location, locationType, true, 0, 0);
+                            delegate.didSelectLocation(location, locationType, true, 0);
                             finishFragment();
                         }
                     }
@@ -1228,11 +1228,11 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
                 if (object instanceof TLRPC.TL_messageMediaVenue) {
                     if (parentFragment != null && parentFragment.isInScheduleMode()) {
                         AlertsCreator.createScheduleDatePickerDialog(getParentActivity(), parentFragment.getDialogId(), (notify, scheduleDate, scheduleRepeatPeriod) -> {
-                            delegate.didSelectLocation((TLRPC.TL_messageMediaVenue) object, locationType, notify, scheduleDate, 0);
+                            delegate.didSelectLocation((TLRPC.TL_messageMediaVenue) object, locationType, notify, scheduleDate);
                             finishFragment();
                         });
                     } else {
-                        delegate.didSelectLocation((TLRPC.TL_messageMediaVenue) object, locationType, true, 0, 0);
+                        delegate.didSelectLocation((TLRPC.TL_messageMediaVenue) object, locationType, true, 0);
                         finishFragment();
                     }
                 } else if (object instanceof LiveLocation) {
@@ -1408,11 +1408,11 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
                 } else if (object != null && delegate != null) {
                     if (parentFragment != null && parentFragment.isInScheduleMode()) {
                         AlertsCreator.createScheduleDatePickerDialog(getParentActivity(), parentFragment.getDialogId(), (notify, scheduleDate, scheduleRepeatPeriod) -> {
-                            delegate.didSelectLocation(object, locationType, notify, scheduleDate, 0);
+                            delegate.didSelectLocation(object, locationType, notify, scheduleDate);
                             finishFragment();
                         });
                     } else {
-                        delegate.didSelectLocation(object, locationType, true, 0, 0);
+                        delegate.didSelectLocation(object, locationType, true, 0);
                         finishFragment();
                     }
                 }
@@ -1880,7 +1880,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
         location.period = period;
         location.proximity_notification_radius = radius;
         location.flags |= 8;
-        delegate.didSelectLocation(location, locationType, true, 0, 0);
+        delegate.didSelectLocation(location, locationType, true, 0);
         if (radius > 0) {
             proximitySheet.setRadiusSet();
             proximityButton.setImageResource(R.drawable.msg_location_alert2);

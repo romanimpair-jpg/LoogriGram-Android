@@ -1099,7 +1099,6 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
     private boolean sendAfterDoneNotify;
     private int sendAfterDoneScheduleDate;
     private boolean sendAfterDoneOnce;
-    private long sendAfterDonePayStars;
 
     private Runnable recordStartRunnable;
     private DispatchQueue recordQueue;
@@ -1188,7 +1187,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                 } else {
                     recordBuffers.add(buffer);
                     if (sendAfterDone != 3 && sendAfterDone != 4) {
-                        stopRecordingInternal(sendAfterDone, sendAfterDoneNotify, sendAfterDoneScheduleDate, sendAfterDoneOnce, sendAfterDonePayStars);
+                        stopRecordingInternal(sendAfterDone, sendAfterDoneNotify, sendAfterDoneScheduleDate, sendAfterDoneOnce);
                     }
                 }
             }
@@ -1454,7 +1453,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                                 if (isPlayingMessage(playingMessageObject) && !isMessagePaused()) {
                                     pauseMessage(playingMessageObject);
                                 } else if (recordStartRunnable != null || recordingAudio != null) {
-                                    stopRecording(2, false, 0, false, 0);
+                                    stopRecording(2, false, 0, false);
                                 }
                                 EmbedBottomSheet embedBottomSheet = EmbedBottomSheet.getInstance();
                                 if (embedBottomSheet != null) {
@@ -2298,7 +2297,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
         } else if (raised) {
             startRecording(raiseChat.getCurrentAccount(), raiseChat.getDialogId(), null, raiseChat.getThreadMessage(), null, raiseChat.getClassGuid(), false, raiseChat != null ? raiseChat.getMessageChatSendParams() : null, raiseChat != null ? raiseChat.getSendMonoForumPeerId(): 0, raiseChat != null ? raiseChat.getSendMessageSuggestionParams(): null);
         } else {
-            stopRecording(2, false, 0, false, 0);
+            stopRecording(2, false, 0, false);
         }
     }
 
@@ -2416,7 +2415,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
             if (recordingAudio != null && !isRecordingPaused()) {
                 toggleRecordingPause(false);
             } else {
-                stopRecording(fromChat ? 2 : 0, false, 0, false, 0);
+                stopRecording(fromChat ? 2 : 0, false, 0, false);
             }
         }
         if (!sensorsStarted || ignoreOnPause || accelerometerSensor == null && (gravitySensor == null || linearAcceleration == null) || proximitySensor == null || raiseChat != chatActivity) {
@@ -4789,7 +4788,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
         ignoreOnPause = false;
     }
 
-    private void stopRecordingInternal(final int send, boolean notify, int scheduleDate, boolean once, long payStars) {
+    private void stopRecordingInternal(final int send, boolean notify, int scheduleDate, boolean once) {
         if (send != 0 && recordingAudioFile != null) {
             final TLRPC.TL_document audioToSend = recordingAudio;
             final File recordingAudioFileToSend_ = recordingAudioFile;
@@ -4837,7 +4836,6 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                             params.suggestionParams = recordMonoForumSuggestionParams;
                             params.replyToStoryItem = recordReplyingStory;
                             params.sendMessageChatArguments = recordSendMessageChatArguments;
-                            params.payStars = payStars;
                             SendMessagesHelper.getInstance(recordingCurrentAccount).sendMessage(params);
                         }
                         NotificationCenter.getInstance(recordingCurrentAccount).postNotificationName(NotificationCenter.audioDidSent, recordingGuid, send == 2 ? audioToSend : null, send == 2 ? recordingAudioFileToSend.getAbsolutePath() : null);
@@ -4874,7 +4872,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
         ignoreOnPause = false;
     }
 
-    public void stopRecording(final int send, boolean notify, int scheduleDate, boolean once, long payStars) {
+    public void stopRecording(final int send, boolean notify, int scheduleDate, boolean once) {
         if (recordStartRunnable != null) {
             recordQueue.cancelRunnable(recordStartRunnable);
             recordStartRunnable = null;
@@ -4882,7 +4880,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
         recordQueue.postRunnable(() -> {
             if (sendAfterDone == 3) {
                 sendAfterDone = 0;
-                stopRecordingInternal(send, notify, scheduleDate, once, payStars);
+                stopRecordingInternal(send, notify, scheduleDate, once);
                 return;
             }
             if (audioRecorder == null) {
@@ -4897,7 +4895,6 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                 sendAfterDoneNotify = notify;
                 sendAfterDoneScheduleDate = scheduleDate;
                 sendAfterDoneOnce = once;
-                sendAfterDonePayStars = payStars;
                 audioRecorder.stop();
                 setBluetoothScoOn(false);
             } catch (Exception e) {
@@ -4910,7 +4907,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                 }
             }
             if (send == 0) {
-                stopRecordingInternal(0, false, 0, false, 0);
+                stopRecordingInternal(0, false, 0, false);
             }
             try {
                 feedbackView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);

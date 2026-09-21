@@ -4956,7 +4956,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
             commentView.setDelegate(new ChatActivityEnterView.ChatActivityEnterViewDelegate() {
                 @Override
-                public void onMessageSend(CharSequence message, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long payStars) {
+                public void onMessageSend(CharSequence message, boolean notify, int scheduleDate, int scheduleRepeatPeriod) {
                     if (delegate == null || selectedDialogs.isEmpty()) {
                         return;
                     }
@@ -5057,7 +5057,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 }
 
                 @Override
-                public void needStartRecordVideo(int state, boolean notify, int scheduleDate, int scheduleRepeatPeriod, int ttl, long effectId, long stars) {
+                public void needStartRecordVideo(int state, boolean notify, int scheduleDate, int scheduleRepeatPeriod, int ttl, long effectId) {
 
                 }
 

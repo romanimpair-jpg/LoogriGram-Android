@@ -2389,25 +2389,48 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
             video_timestamp = -1;
         }
 
-        long totalPrice = 0;
-        int messagesCount = 0;
-        ArrayList<Long> paidDialogIds = new ArrayList<>();
+        // LoogriGram: the price of every chosen chat that charges per message was
+        // added up here for a pay-to-send confirmation. Nothing is paid; the
+        // sends go out unpaid and a refusal locks the user.
         if (sendingMessageObjects != null) {
+            List<Long> removeKeys = new ArrayList<>();
             for (int a = 0; a < selectedDialogs.size(); a++) {
-                final long did = selectedDialogs.keyAt(a);
-                long thisPrice = MessagesController.getInstance(currentAccount).getSendPaidMessagesStars(did);
-                if (thisPrice <= 0) {
-                    thisPrice = DialogObject.getMessagesStarsPrice(MessagesController.getInstance(currentAccount).isUserContactBlocked(did));
+                long key = selectedDialogs.keyAt(a);
+                boolean isMonoForum = MessagesController.getInstance(currentAccount).isMonoForum(key);
+                TLRPC.TL_forumTopic topic = selectedDialogTopics.get(selectedDialogs.get(key));
+                long monoForumPeerId = topic != null && isMonoForum ? DialogObject.getPeerDialogId(topic.from_id) : 0;
+
+                MessageObject replyTopMsg = topic != null && !isMonoForum ? new MessageObject(currentAccount, topic.topicStartMessage, false, false) : null;
+                if (replyTopMsg != null) {
+                    replyTopMsg.isTopicMainMessage = true;
                 }
+                int result;
                 if (frameLayout2.getTag() != null && commentTextView.length() > 0) {
-                    if (thisPrice > 0) messagesCount++;
-                    totalPrice += thisPrice;
+                    SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(text[0] == null ? null : text[0].toString(), key, replyTopMsg, replyTopMsg, null, true, entities, null, null, withSound, 0, 0, null, false);
+                    params.monoForumPeer = monoForumPeerId;
+                    SendMessagesHelper.getInstance(currentAccount).sendMessage(params);
                 }
-                if (thisPrice > 0) messagesCount++;
-                totalPrice += thisPrice;
-                if (thisPrice > 0 && !paidDialogIds.contains(did)) {
-                    paidDialogIds.add(did);
+                result = SendMessagesHelper.getInstance(currentAccount).sendMessage(sendingMessageObjects, key, !showSendersName,false, withSound, 0, 0, replyTopMsg, video_timestamp, monoForumPeerId, null);
+                if (result != 0) {
+                    removeKeys.add(key);
                 }
+                if (selectedDialogs.size() == 1) {
+                    AlertsCreator.showSendMediaAlert(result, parentFragment, null);
+
+                    if (result != 0) {
+                        break;
+                    }
+                }
+            }
+            for (long key : removeKeys) {
+                TLRPC.Dialog dialog = selectedDialogs.get(key);
+                selectedDialogs.remove(key);
+                if (dialog != null) {
+                    selectedDialogTopics.remove(dialog);
+                }
+            }
+            if (!selectedDialogs.isEmpty()) {
+                onSend(selectedDialogs, sendingMessageObjects.size(), selectedDialogs.size() == 1 ? selectedDialogTopics.get(selectedDialogs.valueAt(0)) : null, true);
             }
         } else {
             int num;
@@ -2418,153 +2441,54 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
             }
             if (storyItem != null) {
                 for (int a = 0; a < selectedDialogs.size(); a++) {
-                    final long did = selectedDialogs.keyAt(a);
-                    long thisPrice = MessagesController.getInstance(currentAccount).getSendPaidMessagesStars(did);
-                    if (thisPrice <= 0) {
-                        thisPrice = DialogObject.getMessagesStarsPrice(MessagesController.getInstance(currentAccount).isUserContactBlocked(did));
-                    }
-                    if (storyItem != null) {
-                        if (frameLayout2.getTag() != null && commentTextView.length() > 0 && text[0] != null) {
-                            if (thisPrice > 0) messagesCount++;
-                            totalPrice += thisPrice;
+                    long key = selectedDialogs.keyAt(a);
+                    boolean isMonoForum = MessagesController.getInstance(currentAccount).isMonoForum(key);
+                    TLRPC.TL_forumTopic topic = selectedDialogTopics.get(selectedDialogs.get(key));
+                    long monoForumPeerId = topic != null && isMonoForum ? DialogObject.getPeerDialogId(topic.from_id) : 0;
+                    MessageObject replyTopMsg = topic != null && !isMonoForum ? new MessageObject(currentAccount, topic.topicStartMessage, false, false) : null;
+
+                    SendMessagesHelper.SendMessageParams params;
+                    if (storyItem == null) {
+                        if (frameLayout2.getTag() != null && commentTextView.length() > 0) {
+                            params = SendMessagesHelper.SendMessageParams.of(text[0] == null ? null : text[0].toString(), key, replyTopMsg, replyTopMsg, null, true, entities, null, null, withSound, 0, 0, null, false);
+                        } else {
+                            params = SendMessagesHelper.SendMessageParams.of(sendingText[num], key, replyTopMsg, replyTopMsg, null, true, null, null, null, withSound, 0, 0, null, false);
                         }
+                    } else {
+                        if (frameLayout2.getTag() != null && commentTextView.length() > 0 && text[0] != null) {
+                            SendMessagesHelper.getInstance(currentAccount).sendMessage(SendMessagesHelper.SendMessageParams.of(text[0].toString(), key, null, replyTopMsg, null, true, null, null, null, withSound, 0, 0, null, false));
+                        }
+                        params = SendMessagesHelper.SendMessageParams.of(null, key, replyTopMsg, replyTopMsg, null, true, null, null, null, withSound, 0, 0, null, false);
+                        params.sendingStory = storyItem;
                     }
-                    if (thisPrice > 0) messagesCount++;
-                    totalPrice += thisPrice;
-                    if (thisPrice > 0 && !paidDialogIds.contains(did)) {
-                        paidDialogIds.add(did);
-                    }
+                    params.monoForumPeer = monoForumPeerId;
+                    SendMessagesHelper.getInstance(currentAccount).sendMessage(params);
                 }
             } else if (sendingText[num] != null) {
                 for (int a = 0; a < selectedDialogs.size(); a++) {
-                    final long did = selectedDialogs.keyAt(a);
-                    long thisPrice = MessagesController.getInstance(currentAccount).getSendPaidMessagesStars(did);
-                    if (thisPrice <= 0) {
-                        thisPrice = DialogObject.getMessagesStarsPrice(MessagesController.getInstance(currentAccount).isUserContactBlocked(did));
-                    }
-                    if (frameLayout2.getTag() != null && commentTextView.length() > 0) {
-                        if (thisPrice > 0) messagesCount++;
-                        totalPrice += thisPrice;
-                    }
-                    if (thisPrice > 0) messagesCount++;
-                    totalPrice += thisPrice;
-                    if (thisPrice > 0 && !paidDialogIds.contains(did)) {
-                        paidDialogIds.add(did);
-                    }
-                }
-            }
-        }
-
-        AlertsCreator.ensurePaidMessagesMultiConfirmation(currentAccount, paidDialogIds, messagesCount, prices -> {
-            boolean hadPaid = false;
-            if (sendingMessageObjects != null) {
-                List<Long> removeKeys = new ArrayList<>();
-                for (int a = 0; a < selectedDialogs.size(); a++) {
                     long key = selectedDialogs.keyAt(a);
                     boolean isMonoForum = MessagesController.getInstance(currentAccount).isMonoForum(key);
-                    final Long price = prices == null ? (Long) 0L : prices.get(key);
-                    if (price != null && price > 0) hadPaid = true;
                     TLRPC.TL_forumTopic topic = selectedDialogTopics.get(selectedDialogs.get(key));
                     long monoForumPeerId = topic != null && isMonoForum ? DialogObject.getPeerDialogId(topic.from_id) : 0;
-
                     MessageObject replyTopMsg = topic != null && !isMonoForum ? new MessageObject(currentAccount, topic.topicStartMessage, false, false) : null;
-                    if (replyTopMsg != null) {
-                        replyTopMsg.isTopicMainMessage = true;
-                    }
-                    int result;
+
                     if (frameLayout2.getTag() != null && commentTextView.length() > 0) {
                         SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(text[0] == null ? null : text[0].toString(), key, replyTopMsg, replyTopMsg, null, true, entities, null, null, withSound, 0, 0, null, false);
-                        params.payStars = price == null ? 0 : price;
                         params.monoForumPeer = monoForumPeerId;
                         SendMessagesHelper.getInstance(currentAccount).sendMessage(params);
                     }
-                    result = SendMessagesHelper.getInstance(currentAccount).sendMessage(sendingMessageObjects, key, !showSendersName,false, withSound, 0, 0, replyTopMsg, video_timestamp, price == null ? 0 : price, monoForumPeerId, null);
-                    if (result != 0) {
-                        removeKeys.add(key);
-                    }
-                    if (selectedDialogs.size() == 1) {
-                        AlertsCreator.showSendMediaAlert(result, parentFragment, null);
-
-                        if (result != 0) {
-                            break;
-                        }
-                    }
+                    SendMessagesHelper.SendMessageParams params2 = SendMessagesHelper.SendMessageParams.of(sendingText[num], key, replyTopMsg, replyTopMsg, null, true, null, null, null, withSound, 0, 0, null, false);
+                    params2.monoForumPeer = monoForumPeerId;
+                    SendMessagesHelper.getInstance(currentAccount).sendMessage(params2);
                 }
-                for (long key : removeKeys) {
-                    TLRPC.Dialog dialog = selectedDialogs.get(key);
-                    selectedDialogs.remove(key);
-                    if (dialog != null) {
-                        selectedDialogTopics.remove(dialog);
-                    }
-                }
-                if (!selectedDialogs.isEmpty()) {
-                    onSend(selectedDialogs, sendingMessageObjects.size(), selectedDialogs.size() == 1 ? selectedDialogTopics.get(selectedDialogs.valueAt(0)) : null, !hadPaid);
-                }
-            } else {
-                int num;
-                if (switchView != null) {
-                    num = switchView.currentTab;
-                } else {
-                    num = 0;
-                }
-                if (storyItem != null) {
-                    for (int a = 0; a < selectedDialogs.size(); a++) {
-                        long key = selectedDialogs.keyAt(a);
-                        boolean isMonoForum = MessagesController.getInstance(currentAccount).isMonoForum(key);
-                        final Long price = prices == null ? (Long) 0L : prices.get(key);
-                        if (price != null && price > 0) hadPaid = true;
-                        TLRPC.TL_forumTopic topic = selectedDialogTopics.get(selectedDialogs.get(key));
-                        long monoForumPeerId = topic != null && isMonoForum ? DialogObject.getPeerDialogId(topic.from_id) : 0;
-                        MessageObject replyTopMsg = topic != null && !isMonoForum ? new MessageObject(currentAccount, topic.topicStartMessage, false, false) : null;
-
-                        SendMessagesHelper.SendMessageParams params;
-                        if (storyItem == null) {
-                            if (frameLayout2.getTag() != null && commentTextView.length() > 0) {
-                                params = SendMessagesHelper.SendMessageParams.of(text[0] == null ? null : text[0].toString(), key, replyTopMsg, replyTopMsg, null, true, entities, null, null, withSound, 0, 0, null, false);
-                            } else {
-                                params = SendMessagesHelper.SendMessageParams.of(sendingText[num], key, replyTopMsg, replyTopMsg, null, true, null, null, null, withSound, 0, 0, null, false);
-                            }
-                        } else {
-                            if (frameLayout2.getTag() != null && commentTextView.length() > 0 && text[0] != null) {
-                                SendMessagesHelper.getInstance(currentAccount).sendMessage(SendMessagesHelper.SendMessageParams.of(text[0].toString(), key, null, replyTopMsg, null, true, null, null, null, withSound, 0, 0, null, false));
-                            }
-                            params = SendMessagesHelper.SendMessageParams.of(null, key, replyTopMsg, replyTopMsg, null, true, null, null, null, withSound, 0, 0, null, false);
-                            params.sendingStory = storyItem;
-                        }
-                        params.payStars = price == null ? 0 : price;
-                        params.monoForumPeer = monoForumPeerId;
-                        SendMessagesHelper.getInstance(currentAccount).sendMessage(params);
-                    }
-                } else if (sendingText[num] != null) {
-                    for (int a = 0; a < selectedDialogs.size(); a++) {
-                        long key = selectedDialogs.keyAt(a);
-                        boolean isMonoForum = MessagesController.getInstance(currentAccount).isMonoForum(key);
-                        final Long price = prices == null ? (Long) 0L : prices.get(key);
-                        if (price != null && price > 0) hadPaid = true;
-                        TLRPC.TL_forumTopic topic = selectedDialogTopics.get(selectedDialogs.get(key));
-                        long monoForumPeerId = topic != null && isMonoForum ? DialogObject.getPeerDialogId(topic.from_id) : 0;
-                        MessageObject replyTopMsg = topic != null && !isMonoForum ? new MessageObject(currentAccount, topic.topicStartMessage, false, false) : null;
-
-                        if (frameLayout2.getTag() != null && commentTextView.length() > 0) {
-                            SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(text[0] == null ? null : text[0].toString(), key, replyTopMsg, replyTopMsg, null, true, entities, null, null, withSound, 0, 0, null, false);
-                            params.payStars = price == null ? 0 : price;
-                            params.monoForumPeer = monoForumPeerId;
-                            SendMessagesHelper.getInstance(currentAccount).sendMessage(params);
-                        }
-                        SendMessagesHelper.SendMessageParams params2 = SendMessagesHelper.SendMessageParams.of(sendingText[num], key, replyTopMsg, replyTopMsg, null, true, null, null, null, withSound, 0, 0, null, false);
-                        params2.payStars = price == null ? 0 : price;
-                        params2.monoForumPeer = monoForumPeerId;
-                        SendMessagesHelper.getInstance(currentAccount).sendMessage(params2);
-                    }
-                }
-
-                onSend(selectedDialogs, 1, selectedDialogTopics.get(selectedDialogs.valueAt(0)), !hadPaid);
             }
-            if (delegate != null) {
-                delegate.didShare();
-            }
-            dismiss();
-        });
+
+            onSend(selectedDialogs, 1, selectedDialogTopics.get(selectedDialogs.valueAt(0)), true);
+        }
+        if (delegate != null) {
+            delegate.didShare();
+        }
+        dismiss();
     }
 
     protected void onSend(LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic, boolean showToast) {

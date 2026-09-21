@@ -295,7 +295,7 @@ public class ChatActivityEnterView extends FrameLayout implements
 
         default void onContextMenuClose() {}
 
-        void onMessageSend(CharSequence message, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long payStars);
+        void onMessageSend(CharSequence message, boolean notify, int scheduleDate, int scheduleRepeatPeriod);
 
         void needSendTyping();
 
@@ -325,7 +325,7 @@ public class ChatActivityEnterView extends FrameLayout implements
 
         default void didPressSuggestionButton() {}
 
-        void needStartRecordVideo(int state, boolean notify, int scheduleDate, int scheduleRepeatPeriod, int ttl, long effectId, long stars);
+        void needStartRecordVideo(int state, boolean notify, int scheduleDate, int scheduleRepeatPeriod, int ttl, long effectId);
 
         void toggleVideoRecordingPause();
 
@@ -883,7 +883,7 @@ public class ChatActivityEnterView extends FrameLayout implements
         @Override
         public void run() {
             if (delegate != null) {
-                delegate.needStartRecordVideo(0, true, 0, 0, 0, 0, 0);
+                delegate.needStartRecordVideo(0, true, 0, 0, 0, 0);
             }
         }
     };
@@ -2836,11 +2836,11 @@ public class ChatActivityEnterView extends FrameLayout implements
                             AlertsCreator.createScheduleDatePickerDialog(parentActivity, dialogId, new AlertsCreator.ScheduleDatePickerDelegate() {
                                 @Override
                                 public void didSelectDate(boolean notify2, int scheduleDate2, int scheduleRepeatPeriod2) {
-                                    sendMessageInternal(notify2, scheduleDate2, scheduleRepeatPeriod2, 0, true);
+                                    sendMessageInternal(notify2, scheduleDate2, scheduleRepeatPeriod2);
                                 }
                             }, resourcesProvider);
                         } else {
-                            sendMessageInternal(notify, scheduleDate, scheduleRepeatPeriod, 0, true);
+                            sendMessageInternal(notify, scheduleDate, scheduleRepeatPeriod);
                         }
                     })
                     .show();
@@ -2862,7 +2862,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                             AlertsCreator.createScheduleDatePickerDialog(parentActivity, dialogId, new AlertsCreator.ScheduleDatePickerDelegate() {
                                 @Override
                                 public void didSelectDate(boolean notify, int scheduleDate, int scheduleRepeatPeriod) {
-                                    final boolean shownDialog = sendMessageInternal(notify, scheduleDate, scheduleRepeatPeriod, 0, true);
+                                    final boolean shownDialog = sendMessageInternal(notify, scheduleDate, scheduleRepeatPeriod);
                                     if (messageSendPreview != null) {
                                         messageSendPreview.dismiss(!shownDialog);
                                         messageSendPreview = null;
@@ -2870,7 +2870,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                                 }
                             }, resourcesProvider);
                         } else {
-                            sendMessageInternal(notify, scheduleDate, scheduleRepeatPeriod, 0, true);
+                            sendMessageInternal(notify, scheduleDate, scheduleRepeatPeriod);
                         }
                     }
                 })
@@ -2964,44 +2964,13 @@ public class ChatActivityEnterView extends FrameLayout implements
                         if (!hasRecordVideo || calledRecordRunnable) {
                             startedDraggingX = -1;
                             if (hasRecordVideo && isInVideoMode()) {
-                                if (AlertsCreator.needsPaidMessageAlert(currentAccount, dialog_id)) {
-                                    if (slideText != null) {
-                                        slideText.setEnabled(false);
-                                    }
-                                    delegate.toggleVideoRecordingPause();
-                                    AlertsCreator.ensurePaidMessageConfirmation(currentAccount, dialog_id, 1, payStars -> {
-                                        sendMessageInternal(true, 0, 0, payStars, false);
-                                    });
-                                    return true;
-                                }
-                                delegate.needStartRecordVideo(1, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId, 0);
+                                delegate.needStartRecordVideo(1, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId);
                                 sendButton.setEffect(effectId = 0);
                             } else {
                                 if (recordingAudioVideo && isInScheduleMode()) {
-                                    AlertsCreator.createScheduleDatePickerDialog(parentActivity, parentFragment.getDialogId(), (notify, scheduleDate, scheduleRepeatPeriod) -> MediaController.getInstance().stopRecording(1, notify, scheduleDate, false, 0), () -> MediaController.getInstance().stopRecording(0, false, 0, false, 0), resourcesProvider);
+                                    AlertsCreator.createScheduleDatePickerDialog(parentActivity, parentFragment.getDialogId(), (notify, scheduleDate, scheduleRepeatPeriod) -> MediaController.getInstance().stopRecording(1, notify, scheduleDate, false), () -> MediaController.getInstance().stopRecording(0, false, 0, false), resourcesProvider);
                                 }
-                                if (AlertsCreator.needsPaidMessageAlert(currentAccount, dialog_id)) {
-                                    if (isInVideoMode()) {
-                                        if (slideText != null) {
-                                            slideText.setEnabled(false);
-                                        }
-                                        delegate.toggleVideoRecordingPause();
-                                    } else {
-                                        if (sendButtonVisible) {
-                                            calledRecordRunnable = true;
-                                        }
-                                        MediaController.getInstance().toggleRecordingPause(voiceOnce);
-                                        delegate.needStartRecordAudio(0);
-                                        if (slideText != null) {
-                                            slideText.setEnabled(false);
-                                        }
-                                    }
-                                    AlertsCreator.ensurePaidMessageConfirmation(currentAccount, dialog_id, 1, payStars -> {
-                                        sendMessageInternal(true, 0, 0, payStars, false);
-                                    });
-                                    return true;
-                                }
-                                MediaController.getInstance().stopRecording(isInScheduleMode() ? 3 : 1, true, 0, voiceOnce, 0);
+                                MediaController.getInstance().stopRecording(isInScheduleMode() ? 3 : 1, true, 0, voiceOnce);
                                 delegate.needStartRecordAudio(0);
                             }
                             recordingAudioVideo = false;
@@ -3035,11 +3004,11 @@ public class ChatActivityEnterView extends FrameLayout implements
                         if (slideToCancelProgress < 0.7f) {
                             if (hasRecordVideo && isInVideoMode()) {
                                 CameraController.getInstance().cancelOnInitRunnable(onFinishInitCameraRunnable);
-                                delegate.needStartRecordVideo(2, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId, 0);
+                                delegate.needStartRecordVideo(2, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId);
                                 sendButton.setEffect(effectId = 0);
                             } else {
                                 delegate.needStartRecordAudio(0);
-                                MediaController.getInstance().stopRecording(0, false, 0, voiceOnce, 0);
+                                MediaController.getInstance().stopRecording(0, false, 0, voiceOnce);
                             }
                             millisecondsRecorded = 0;
                             recordingAudioVideo = false;
@@ -3063,11 +3032,11 @@ public class ChatActivityEnterView extends FrameLayout implements
                     if (alpha < 0.45) {
                         if (hasRecordVideo && isInVideoMode()) {
                             CameraController.getInstance().cancelOnInitRunnable(onFinishInitCameraRunnable);
-                            delegate.needStartRecordVideo(2, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId, 0);
+                            delegate.needStartRecordVideo(2, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId);
                             sendButton.setEffect(effectId = 0);
                         } else {
                             delegate.needStartRecordAudio(0);
-                            MediaController.getInstance().stopRecording(0, false, 0, voiceOnce, 0);
+                            MediaController.getInstance().stopRecording(0, false, 0, voiceOnce);
                         }
                         millisecondsRecorded = 0;
                         recordingAudioVideo = false;
@@ -3086,41 +3055,17 @@ public class ChatActivityEnterView extends FrameLayout implements
                         } else if (!hasRecordVideo || calledRecordRunnable) {
                             startedDraggingX = -1;
                             if (hasRecordVideo && isInVideoMode()) {
-                                if (AlertsCreator.needsPaidMessageAlert(currentAccount, dialog_id)) {
-                                    if (slideText != null) {
-                                        slideText.setEnabled(false);
-                                    }
-                                    delegate.toggleVideoRecordingPause();
-                                    AlertsCreator.ensurePaidMessageConfirmation(currentAccount, dialog_id, 1, payStars -> {
-                                        sendMessageInternal(true, 0, 0, payStars, false);
-                                    });
-                                    return true;
-                                }
                                 CameraController.getInstance().cancelOnInitRunnable(onFinishInitCameraRunnable);
-                                delegate.needStartRecordVideo(1, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId, 0);
+                                delegate.needStartRecordVideo(1, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId);
                                 sendButton.setEffect(effectId = 0);
                             } else if (!sendVoiceEnabled) {
                                 delegate.needShowMediaBanHint();
                             } else {
-                                if (AlertsCreator.needsPaidMessageAlert(currentAccount, dialog_id)) {
-                                    if (sendButtonVisible) {
-                                        calledRecordRunnable = true;
-                                    }
-                                    MediaController.getInstance().toggleRecordingPause(voiceOnce);
-                                    delegate.needStartRecordAudio(0);
-                                    if (slideText != null) {
-                                        slideText.setEnabled(false);
-                                    }
-                                    AlertsCreator.ensurePaidMessageConfirmation(currentAccount, dialog_id, 1, payStars -> {
-                                        sendMessageInternal(true, 0, 0, payStars, false);
-                                    });
-                                    return true;
-                                }
                                 if (recordingAudioVideo && isInScheduleMode()) {
-                                    AlertsCreator.createScheduleDatePickerDialog(parentActivity, parentFragment.getDialogId(), (notify, scheduleDate, scheduleRepeatPeriod) -> MediaController.getInstance().stopRecording(1, notify, scheduleDate, false, 0), () -> MediaController.getInstance().stopRecording(0, false, 0, false, 0), resourcesProvider);
+                                    AlertsCreator.createScheduleDatePickerDialog(parentActivity, parentFragment.getDialogId(), (notify, scheduleDate, scheduleRepeatPeriod) -> MediaController.getInstance().stopRecording(1, notify, scheduleDate, false), () -> MediaController.getInstance().stopRecording(0, false, 0, false), resourcesProvider);
                                 }
                                 delegate.needStartRecordAudio(0);
-                                MediaController.getInstance().stopRecording(isInScheduleMode() ? 3 : 1, true, 0, voiceOnce, 0);
+                                MediaController.getInstance().stopRecording(isInScheduleMode() ? 3 : 1, true, 0, voiceOnce);
                             }
                             recordingAudioVideo = false;
                             messageTransitionIsRunning = false;
@@ -3170,11 +3115,11 @@ public class ChatActivityEnterView extends FrameLayout implements
                     if (alpha == 0) {
                         if (hasRecordVideo && isInVideoMode()) {
                             CameraController.getInstance().cancelOnInitRunnable(onFinishInitCameraRunnable);
-                            delegate.needStartRecordVideo(2, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId, 0);
+                            delegate.needStartRecordVideo(2, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId);
                             sendButton.setEffect(effectId = 0);
                         } else {
                             delegate.needStartRecordAudio(0);
-                            MediaController.getInstance().stopRecording(0, false, 0, voiceOnce, 0);
+                            MediaController.getInstance().stopRecording(0, false, 0, voiceOnce);
                         }
                         recordingAudioVideo = false;
                         updateRecordInterface(RECORD_STATE_CANCEL_BY_GESTURE, true);
@@ -4066,7 +4011,7 @@ public class ChatActivityEnterView extends FrameLayout implements
         }
         if (videoToSendMessageObject != null) {
             CameraController.getInstance().cancelOnInitRunnable(onFinishInitCameraRunnable);
-            delegate.needStartRecordVideo(2, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId, 0);
+            delegate.needStartRecordVideo(2, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId);
             sendButton.setEffect(effectId = 0);
         } else {
             MessageObject playing = MediaController.getInstance().getPlayingMessageObject();
@@ -4082,7 +4027,7 @@ public class ChatActivityEnterView extends FrameLayout implements
         }
         MediaController.getInstance().cleanRecording(true);
         MediaDataController.getInstance(currentAccount).pushDraftVoiceMessage(dialog_id, parentFragment != null && parentFragment.isTopic ? parentFragment.getTopicId() : 0, null);
-        MediaController.getInstance().stopRecording(0, false, 0, false, 0);
+        MediaController.getInstance().stopRecording(0, false, 0, false);
         millisecondsRecorded = 0;
         hideRecordedAudioPanel(false);
         checkSendButton(true);
@@ -4796,7 +4741,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                         AlertsCreator.createScheduleDatePickerDialog(parentActivity, parentFragment.getDialogId(), new AlertsCreator.ScheduleDatePickerDelegate() {
                             @Override
                             public void didSelectDate(boolean notify, int scheduleDate, int scheduleRepeatPeriod) {
-                                sendMessageInternal(notify, scheduleDate, 0, 0, true);
+                                sendMessageInternal(notify, scheduleDate, 0);
                             }
                         }, resourcesProvider);
                     });
@@ -4810,7 +4755,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                             if (sendPopupWindow != null && sendPopupWindow.isShowing()) {
                                 sendPopupWindow.dismiss();
                             }
-                            sendMessageInternal(true, 0x7FFFFFFE, 0, 0, true);
+                            sendMessageInternal(true, 0x7FFFFFFE, 0);
                         });
                         sendPopupLayout.addView(sendWhenOnlineButton, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, DEFAULT_HEIGHT));
                     }
@@ -4823,7 +4768,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                         if (sendPopupWindow != null && sendPopupWindow.isShowing()) {
                             sendPopupWindow.dismiss();
                         }
-                        sendMessageInternal(false, 0, 0, 0, true);
+                        sendMessageInternal(false, 0, 0);
                     });
                     sendPopupLayout.addView(sendWithoutSoundButton, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, DEFAULT_HEIGHT));
                 }
@@ -5040,7 +4985,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                 AlertsCreator.createScheduleDatePickerDialog(parentActivity, parentFragment.getDialogId(), new AlertsCreator.ScheduleDatePickerDelegate() {
                     @Override
                     public void didSelectDate(boolean notify, int scheduleDate, int scheduleRepeatPeriod) {
-                        sendMessageInternal(notify, scheduleDate, scheduleRepeatPeriod, 0, true);
+                        sendMessageInternal(notify, scheduleDate, scheduleRepeatPeriod);
                         if (messageSendPreview != null) {
                             messageSendPreview.dismissInstant();
                             messageSendPreview = null;
@@ -5051,7 +4996,7 @@ public class ChatActivityEnterView extends FrameLayout implements
 
             if (!self && dialog_id > 0) {
                 options.add(R.drawable.msg_online, getString(R.string.SendWhenOnline), () -> {
-                    sendMessageInternal(true, 0x7FFFFFFE, 0, 0, true);
+                    sendMessageInternal(true, 0x7FFFFFFE, 0);
                     if (messageSendPreview != null) {
                         messageSendPreview.dismiss(false);
                         messageSendPreview = null;
@@ -5094,7 +5039,7 @@ public class ChatActivityEnterView extends FrameLayout implements
         if (sendWithoutSoundButtonValue) {
             options.add(R.drawable.input_notify_off, getString(R.string.SendWithoutSound), () -> {
                 sentFromPreview = System.currentTimeMillis();
-                final boolean shownDialog = sendMessageInternal(false, 0, 0, 0, true);
+                final boolean shownDialog = sendMessageInternal(false, 0, 0);
                 if (!containsSendMessage && messageSendPreview != null) {
                     messageSendPreview.dismiss(!shownDialog);
                     messageSendPreview = null;
@@ -5173,18 +5118,15 @@ public class ChatActivityEnterView extends FrameLayout implements
                         if (parentFragment != null && parentFragment.checkSlowMode(view)) {
                             return;
                         }
-                        AlertsCreator.ensurePaidMessageConfirmation(currentAccount, dialog_id, 1, stars -> {
-                            final SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(command, dialog_id, replyingMessageObject, getThreadMessage(), null, false, null, null, null, true, 0, 0, null, false);
-                            params.sendMessageChatArguments = parentFragment != null ? parentFragment.getMessageChatSendParams() : null;
-                            params.effect_id = effectId;
-                            params.payStars = stars;
-                            params.monoForumPeer = getSendMonoForumPeerId();
-                            params.suggestionParams = getSendMessageSuggestionParams();
-                            SendMessagesHelper.getInstance(currentAccount).sendMessage(params);
-                            setFieldText("");
-                            botCommandsMenuContainer.dismiss();
-                            sendButton.setEffect(effectId = 0);
-                        });
+                        final SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(command, dialog_id, replyingMessageObject, getThreadMessage(), null, false, null, null, null, true, 0, 0, null, false);
+                        params.sendMessageChatArguments = parentFragment != null ? parentFragment.getMessageChatSendParams() : null;
+                        params.effect_id = effectId;
+                        params.monoForumPeer = getSendMonoForumPeerId();
+                        params.suggestionParams = getSendMessageSuggestionParams();
+                        SendMessagesHelper.getInstance(currentAccount).sendMessage(params);
+                        setFieldText("");
+                        botCommandsMenuContainer.dismiss();
+                        sendButton.setEffect(effectId = 0);
                     }
                 }
             }
@@ -5323,7 +5265,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                 SendMessagesHelper.prepareSendingPhoto(accountInstance, null, inputContentInfo.getContentUri(), dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, null, null, null, inputContentInfo, 0, null, notify, 0, parentFragment == null ? 0 : parentFragment.getChatMode(), parentFragment != null ? parentFragment.getMessageChatSendParams() : null);
             }
             if (delegate != null) {
-                delegate.onMessageSend(null, true, scheduleDate, scheduleRepeatPeriod, 0);
+                delegate.onMessageSend(null, true, scheduleDate, scheduleRepeatPeriod);
             }
         }
 
@@ -5580,9 +5522,9 @@ public class ChatActivityEnterView extends FrameLayout implements
                     photoEntry.reset();
                     sending = true;
                     boolean updateStickersOrder = SendMessagesHelper.checkUpdateStickersOrder(info.caption);
-                    SendMessagesHelper.prepareSendingMedia(accountInstance, photos, dialog_id, replyingMessageObject, getThreadMessage(), null, replyingQuote, false, false, editingMessageObject, notify, scheduleDate, scheduleRepeatPeriod, parentFragment == null ? 0 : parentFragment.getChatMode(), updateStickersOrder, null, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, 0, false, 0, getSendMonoForumPeerId(), parentFragment != null ? parentFragment.messageSuggestionParams : null);
+                    SendMessagesHelper.prepareSendingMedia(accountInstance, photos, dialog_id, replyingMessageObject, getThreadMessage(), null, replyingQuote, false, false, editingMessageObject, notify, scheduleDate, scheduleRepeatPeriod, parentFragment == null ? 0 : parentFragment.getChatMode(), updateStickersOrder, null, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, 0, false, getSendMonoForumPeerId(), parentFragment != null ? parentFragment.messageSuggestionParams : null);
                     if (delegate != null) {
-                        delegate.onMessageSend(null, true, scheduleDate, scheduleRepeatPeriod, 0);
+                        delegate.onMessageSend(null, true, scheduleDate, scheduleRepeatPeriod);
                     }
                 }
 
@@ -6162,11 +6104,11 @@ public class ChatActivityEnterView extends FrameLayout implements
     public void cancelRecordingAudioVideo() {
         if (hasRecordVideo && isInVideoMode()) {
             CameraController.getInstance().cancelOnInitRunnable(onFinishInitCameraRunnable);
-            delegate.needStartRecordVideo(5, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId, 0);
+            delegate.needStartRecordVideo(5, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId);
             sendButton.setEffect(effectId = 0);
         } else {
             delegate.needStartRecordAudio(0);
-            MediaController.getInstance().stopRecording(0, false, 0, false, 0);
+            MediaController.getInstance().stopRecording(0, false, 0, false);
         }
         recordingAudioVideo = false;
         updateRecordInterface(RECORD_STATE_CANCEL, true);
@@ -7226,7 +7168,7 @@ public class ChatActivityEnterView extends FrameLayout implements
             AlertsCreator.createScheduleDatePickerDialog(parentActivity, parentFragment.getDialogId(), new AlertsCreator.ScheduleDatePickerDelegate() {
                 @Override
                 public void didSelectDate(boolean notify, int scheduleDate, int scheduleRepeatPeriod) {
-                    final boolean shownDialog = sendMessageInternal(notify, scheduleDate, scheduleRepeatPeriod, 0, true);
+                    final boolean shownDialog = sendMessageInternal(notify, scheduleDate, scheduleRepeatPeriod);
                     if (messageSendPreview != null) {
                         messageSendPreview.dismiss(!shownDialog);
                         messageSendPreview = null;
@@ -7235,13 +7177,11 @@ public class ChatActivityEnterView extends FrameLayout implements
             }, resourcesProvider);
             return true;
         } else {
-            return sendMessageInternal(true, 0, 0, 0, true);
+            return sendMessageInternal(true, 0, 0);
         }
     }
 
-    protected boolean sendMessageInternal(boolean notify, int scheduleDate, int scheduleRepeatPeriod, long payStars, boolean allowConfirm) {
-        final boolean allowConfirmFinal = allowConfirm && !animatorEphemeralMessageVisibility.getValue();
-
+    protected boolean sendMessageInternal(boolean notify, int scheduleDate, int scheduleRepeatPeriod) {
         final Runnable send = () -> {
             if (slowModeTimer == Integer.MAX_VALUE && !isInScheduleMode()) {
                 if (delegate != null) {
@@ -7263,14 +7203,9 @@ public class ChatActivityEnterView extends FrameLayout implements
                     emojiView.hideSearchKeyboard();
                 }
             }
-            if (allowConfirmFinal && showConfirmAlert(() -> {
-                sendMessageInternal(notify, scheduleDate, scheduleRepeatPeriod, payStars, false);
-            })) {
-                return;
-            }
             dismissSendPreviewSent = true;
             if (videoToSendMessageObject != null) {
-                delegate.needStartRecordVideo(4, notify, scheduleDate, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId, payStars);
+                delegate.needStartRecordVideo(4, notify, scheduleDate, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId);
                 sendButton.setEffect(effectId = 0);
                 hideRecordedAudioPanel(true);
                 checkSendButton(true);
@@ -7315,7 +7250,6 @@ public class ChatActivityEnterView extends FrameLayout implements
                 SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(audioToSend, null, audioToSendPath, dialog_id, replyingMessageObject, getThreadMessage(), null, null, null, null, notify, scheduleDate, 0, voiceOnce ? 0x7FFFFFFF : 0, null, null, false);
                 params.sendMessageChatArguments = parentFragment != null ? parentFragment.getMessageChatSendParams() : null;
                 params.effect_id = effectId;
-                params.payStars = payStars;
                 params.monoForumPeer = getSendMonoForumPeerId();
                 params.suggestionParams = getSendMessageSuggestionParams();
                 sendButton.setEffect(effectId = 0);
@@ -7327,7 +7261,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                 applyStoryToSendMessageParams(params);
                 SendMessagesHelper.getInstance(currentAccount).sendMessage(params);
                 if (delegate != null) {
-                    delegate.onMessageSend(null, notify, scheduleDate, scheduleRepeatPeriod, payStars);
+                    delegate.onMessageSend(null, notify, scheduleDate, scheduleRepeatPeriod);
                 }
                 hideRecordedAudioPanel(true);
                 checkSendButton(true);
@@ -7339,7 +7273,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                 millisecondsRecorded = 0;
                 return;
             } else if (richDraftActive && richDraftMessage != null) {
-                sendRichDraft(notify, scheduleDate, scheduleRepeatPeriod, payStars);
+                sendRichDraft(notify, scheduleDate, scheduleRepeatPeriod);
                 return;
             }
             CharSequence message = messageEditText == null ? "" : messageEditText.getTextToUse();
@@ -7358,13 +7292,13 @@ public class ChatActivityEnterView extends FrameLayout implements
             if (checkPremiumAnimatedEmoji(currentAccount, dialog_id, parentFragment, null, message)) {
                 return;
             }
-            if (processSendingText(message, notify, scheduleDate, scheduleRepeatPeriod, payStars)) {
+            if (processSendingText(message, notify, scheduleDate, scheduleRepeatPeriod)) {
                 if (delegate.hasForwardingMessages() || (scheduleDate != 0 && !isInScheduleMode()) || isInScheduleMode()) {
                     if (messageEditText != null) {
                         messageEditText.setText("");
                     }
                     if (delegate != null) {
-                        delegate.onMessageSend(message, notify, scheduleDate, scheduleRepeatPeriod, payStars);
+                        delegate.onMessageSend(message, notify, scheduleDate, scheduleRepeatPeriod);
                     }
                 } else {
                     messageTransitionIsRunning = false;
@@ -7375,46 +7309,26 @@ public class ChatActivityEnterView extends FrameLayout implements
                             messageEditText.setText("");
                         }
                         if (delegate != null) {
-                            delegate.onMessageSend(message, notify, scheduleDate, scheduleRepeatPeriod, payStars);
+                            delegate.onMessageSend(message, notify, scheduleDate, scheduleRepeatPeriod);
                         }
                     }, 200);
                 }
                 lastTypingTimeSend = 0;
             } else if (forceShowSendButton) {
                 if (delegate != null) {
-                    delegate.onMessageSend(null, notify, scheduleDate, scheduleRepeatPeriod, payStars);
+                    delegate.onMessageSend(null, notify, scheduleDate, scheduleRepeatPeriod);
                 }
             }
             updateSendButtonPaid();
         };
-        if (allowConfirmFinal) {
-            boolean alertShown = AlertsCreator.ensurePaidMessageConfirmation(currentAccount, dialog_id, getMessagesCount(), starsPrice -> sendMessageInternal(notify, scheduleDate, scheduleRepeatPeriod, starsPrice, false), payStars);
-            if (alertShown && sendButtonVisible) {
-                if (isInVideoMode()) {
-                    if (delegate.isVideoRecordingPaused())
-                        return alertShown;
-                    if (slideText != null) {
-                        slideText.setEnabled(false);
-                    }
-                    delegate.toggleVideoRecordingPause();
-                } else {
-                    if (MediaController.getInstance().isRecordingPaused())
-                        return alertShown;
-                    if (sendButtonVisible) {
-                        calledRecordRunnable = true;
-                    }
-                    MediaController.getInstance().toggleRecordingPause(voiceOnce);
-                    delegate.needStartRecordAudio(0);
-                    if (slideText != null) {
-                        slideText.setEnabled(false);
-                    }
-                }
-            }
-            return alertShown;
-        } else {
-            send.run();
-            return false;
-        }
+        // LoogriGram: with allowConfirm the send went through the paid-message
+        // confirmation first, pausing any recording while it asked. With no
+        // price it answered at once by calling back here with allowConfirm
+        // false, so that is simply what happens now - which is also why the
+        // showConfirmAlert check that stood inside send never ran from here and
+        // is gone. Nothing returns "an alert is showing" any more.
+        send.run();
+        return false;
     }
 
     protected boolean showConfirmAlert(Runnable onConfirmed) {
@@ -7732,7 +7646,7 @@ public class ChatActivityEnterView extends FrameLayout implements
         setEditingMessageObject(null, null, false);
     }
 
-    public boolean processSendingText(CharSequence text, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long payStars) {
+    public boolean processSendingText(CharSequence text, boolean notify, int scheduleDate, int scheduleRepeatPeriod) {
         if (replyingQuote != null && parentFragment != null && replyingQuote.outdated) {
             parentFragment.showQuoteMessageUpdate();
             return false;
@@ -7822,7 +7736,6 @@ public class ChatActivityEnterView extends FrameLayout implements
                 SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(message[0].toString(), dialog_id, replyingMessageObject, replyToTopMsg, messageWebPage, messageWebPageSearch, entities, null, null, notify, scheduleDate, scheduleRepeatPeriod, sendAnimationData, updateStickersOrder);
                 params.sendMessageChatArguments = parentFragment != null ? parentFragment.getMessageChatSendParams() : null;
                 params.effect_id = effectId;
-                params.payStars = payStars;
                 params.monoForumPeer = getSendMonoForumPeerId();
                 params.suggestionParams = getSendMessageSuggestionParams();
                 sendButton.setEffect(effectId = 0);
@@ -10773,7 +10686,7 @@ public class ChatActivityEnterView extends FrameLayout implements
         QuoteSpan.normalizeQuotes(simple);
         clearRichDraft();
         setFieldText(simple);
-        sendMessageInternal(notify, scheduleDate, scheduleRepeatPeriod, 0, true);
+        sendMessageInternal(notify, scheduleDate, scheduleRepeatPeriod);
     }
 
     private void openRichEditorWithoutFormatting() {
@@ -10802,7 +10715,7 @@ public class ChatActivityEnterView extends FrameLayout implements
         parentFragment.presentFragment(editor);
     }
 
-    private void sendRichDraft(boolean notify, int scheduleDate, int scheduleRepeatPeriod, long payStars) {
+    private void sendRichDraft(boolean notify, int scheduleDate, int scheduleRepeatPeriod) {
         final TL_iv.RichMessage rich = richDraftMessage;
         if (rich == null) {
             return;
@@ -10822,14 +10735,12 @@ public class ChatActivityEnterView extends FrameLayout implements
             scheduleRepeatPeriod,
             parentFragment != null ? parentFragment.getMessageChatSendParams() : null,
             effectId,
-            getSendMonoForumPeerId(),
-            payStars
-        );
+            getSendMonoForumPeerId());
         sendButton.setEffect(effectId = 0);
         messageEditText.setText("");
         clearRichDraft();
         if (delegate != null) {
-            delegate.onMessageSend(null, notify, scheduleDate, scheduleRepeatPeriod, payStars);
+            delegate.onMessageSend(null, notify, scheduleDate, scheduleRepeatPeriod);
         }
         checkSendButton(true);
     }
@@ -11391,7 +11302,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                     preferences.edit().putInt("answered_" + getTopicKeyString(), botButtonsMessageObject.getId()).commit();
                 }
                 if (delegate != null) {
-                    delegate.onMessageSend(null, true, 0, 0, 0);
+                    delegate.onMessageSend(null, true, 0, 0);
                 }
             });
             viewParentForEmojiView.addView(botKeyboardView);
@@ -12188,102 +12099,100 @@ public class ChatActivityEnterView extends FrameLayout implements
                         }
                         return;
                     }
-                    AlertsCreator.ensurePaidMessageConfirmation(currentAccount, dialog_id, 1, stars -> {
-                        Runnable runnable = () -> {
-                            if (stickersExpanded) {
-                                if (searchingType != 0) {
-                                    emojiView.hideSearchKeyboard();
-                                }
-                                setStickersExpanded(false, true, false);
+                    Runnable runnable = () -> {
+                        if (stickersExpanded) {
+                            if (searchingType != 0) {
+                                emojiView.hideSearchKeyboard();
                             }
-                            TL_stories.StoryItem storyItem = delegate != null ? delegate.getReplyToStory() : null;
-                            if (gif instanceof TLRPC.Document) {
-                                TLRPC.Document document = (TLRPC.Document) gif;
-                                boolean applyEdit = false;
-
-                                final VideoEditedInfo videoEditedInfo = entry != null ? entry.editedInfo : null;
-                                if (videoEditedInfo != null && entry != null) {
-                                    videoEditedInfo.roundVideo = true;
-                                    applyEdit = videoEditedInfo.needConvert();
-                                    videoEditedInfo.roundVideo = false;
-                                    videoEditedInfo.muted = true;
-                                }
-                                if (applyEdit) {
-                                    ArrayList<SendMessagesHelper.SendingMediaInfo> photos = new ArrayList<>();
-                                    SendMessagesHelper.SendingMediaInfo info = new SendMessagesHelper.SendingMediaInfo();
-                                    if (!entry.isVideo && entry.imagePath != null) {
-                                        info.path = entry.imagePath;
-                                        if (entry.isHighQuality()) {
-                                            info.originalPhotoEntry = entry.clone();
-                                        }
-                                    } else if (entry.path != null) {
-                                        info.path = entry.path;
-                                    }
-                                    info.thumbPath = entry.thumbPath;
-                                    info.coverPath = entry.coverPath;
-                                    info.coverPhoto = entry.coverPhoto;
-                                    info.isLivePhoto = entry.isLivePhoto();
-                                    info.isVideo = entry.isVideo;
-                                    info.discardLivePhoto = entry.isUnalivePhoto();
-                                    info.livePhotoVideoOffset = entry.livePhotoVideoOffset;
-                                    info.livePhotoTimestampUs = entry.livePhotoTimestampUs;
-                                    info.caption = entry.caption != null ? entry.caption.toString() : null;
-                                    info.entities = entry.entities;
-                                    info.masks = entry.stickers;
-                                    info.ttl = entry.ttl;
-                                    info.videoEditedInfo = entry.editedInfo;
-                                    info.canDeleteAfter = entry.canDeleteAfter;
-                                    info.updateStickersOrder = SendMessagesHelper.checkUpdateStickersOrder(entry.caption);
-                                    info.hasMediaSpoilers = entry.hasSpoiler;
-                                    info.stars = entry.starsAmount;
-                                    info.highQuality = entry.isHighQuality();
-                                    photos.add(info);
-                                    entry.reset();
-
-                                    SendMessagesHelper.prepareSendingMedia(AccountInstance.getInstance(currentAccount), photos, dialog_id, replyingMessageObject, getThreadMessage(), null, replyingQuote, false, false, editingMessageObject, notify, scheduleDate, scheduleRepeatPeriod, 0, false, null, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, effectId, invertMedia, stars, getSendMonoForumPeerId(),  getSendMessageSuggestionParams());
-                                } else {
-                                    SendMessagesHelper.getInstance(currentAccount).sendSticker(document, query, dialog_id, entry != null ? entry.caption : null, videoEditedInfo, replyingMessageObject, getThreadMessage(), storyItem, replyingQuote, null, notify, scheduleDate, scheduleRepeatPeriod, false, parent, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, stars, getSendMonoForumPeerId(), getSendMessageSuggestionParams(), invertMedia);
-                                    MediaDataController.getInstance(currentAccount).addRecentGif(document, (int) (System.currentTimeMillis() / 1000), true);
-                                    if (DialogObject.isEncryptedDialog(dialog_id)) {
-                                        accountInstance.getMessagesController().saveGif(parent, document);
-                                    }
-                                }
-                            } else if (gif instanceof TLRPC.BotInlineResult) {
-                                TLRPC.BotInlineResult result = (TLRPC.BotInlineResult) gif;
-
-                                if (result.document != null) {
-                                    MediaDataController.getInstance(currentAccount).addRecentGif(result.document, (int) (System.currentTimeMillis() / 1000), false);
-                                    if (DialogObject.isEncryptedDialog(dialog_id)) {
-                                        accountInstance.getMessagesController().saveGif(parent, result.document);
-                                    }
-                                }
-
-                                TLRPC.User bot = (TLRPC.User) parent;
-
-                                HashMap<String, String> params = new HashMap<>();
-                                params.put("id", result.id);
-                                params.put("query_id", "" + result.query_id);
-                                params.put("force_gif", "1");
-
-                                if (storyItem == null) {
-                                    SendMessagesHelper.prepareSendingBotContextResult(parentFragment, accountInstance, result, params, dialog_id, replyingMessageObject, getThreadMessage(), null, replyingQuote, notify, scheduleDate, 0, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, stars, getSendMonoForumPeerId());
-                                } else {
-                                    SendMessagesHelper.getInstance(currentAccount).sendSticker(result.document, query, dialog_id, replyingMessageObject, getThreadMessage(), storyItem, replyingQuote, null, notify, scheduleDate, scheduleRepeatPeriod, false, parent, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, stars, getSendMonoForumPeerId(), getSendMessageSuggestionParams());
-                                }
-                                if (searchingType != 0) {
-                                    setSearchingTypeInternal(0, true);
-                                    emojiView.closeSearch(true);
-                                    emojiView.hideSearchKeyboard();
-                                }
-                            }
-                            if (delegate != null) {
-                                delegate.onMessageSend(null, notify, scheduleDate, 0, 0);
-                            }
-                        };
-                        if (!showConfirmAlert(runnable)) {
-                            runnable.run();
+                            setStickersExpanded(false, true, false);
                         }
-                    });
+                        TL_stories.StoryItem storyItem = delegate != null ? delegate.getReplyToStory() : null;
+                        if (gif instanceof TLRPC.Document) {
+                            TLRPC.Document document = (TLRPC.Document) gif;
+                            boolean applyEdit = false;
+
+                            final VideoEditedInfo videoEditedInfo = entry != null ? entry.editedInfo : null;
+                            if (videoEditedInfo != null && entry != null) {
+                                videoEditedInfo.roundVideo = true;
+                                applyEdit = videoEditedInfo.needConvert();
+                                videoEditedInfo.roundVideo = false;
+                                videoEditedInfo.muted = true;
+                            }
+                            if (applyEdit) {
+                                ArrayList<SendMessagesHelper.SendingMediaInfo> photos = new ArrayList<>();
+                                SendMessagesHelper.SendingMediaInfo info = new SendMessagesHelper.SendingMediaInfo();
+                                if (!entry.isVideo && entry.imagePath != null) {
+                                    info.path = entry.imagePath;
+                                    if (entry.isHighQuality()) {
+                                        info.originalPhotoEntry = entry.clone();
+                                    }
+                                } else if (entry.path != null) {
+                                    info.path = entry.path;
+                                }
+                                info.thumbPath = entry.thumbPath;
+                                info.coverPath = entry.coverPath;
+                                info.coverPhoto = entry.coverPhoto;
+                                info.isLivePhoto = entry.isLivePhoto();
+                                info.isVideo = entry.isVideo;
+                                info.discardLivePhoto = entry.isUnalivePhoto();
+                                info.livePhotoVideoOffset = entry.livePhotoVideoOffset;
+                                info.livePhotoTimestampUs = entry.livePhotoTimestampUs;
+                                info.caption = entry.caption != null ? entry.caption.toString() : null;
+                                info.entities = entry.entities;
+                                info.masks = entry.stickers;
+                                info.ttl = entry.ttl;
+                                info.videoEditedInfo = entry.editedInfo;
+                                info.canDeleteAfter = entry.canDeleteAfter;
+                                info.updateStickersOrder = SendMessagesHelper.checkUpdateStickersOrder(entry.caption);
+                                info.hasMediaSpoilers = entry.hasSpoiler;
+                                info.stars = entry.starsAmount;
+                                info.highQuality = entry.isHighQuality();
+                                photos.add(info);
+                                entry.reset();
+
+                                SendMessagesHelper.prepareSendingMedia(AccountInstance.getInstance(currentAccount), photos, dialog_id, replyingMessageObject, getThreadMessage(), null, replyingQuote, false, false, editingMessageObject, notify, scheduleDate, scheduleRepeatPeriod, 0, false, null, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, effectId, invertMedia, getSendMonoForumPeerId(),  getSendMessageSuggestionParams());
+                            } else {
+                                SendMessagesHelper.getInstance(currentAccount).sendSticker(document, query, dialog_id, entry != null ? entry.caption : null, videoEditedInfo, replyingMessageObject, getThreadMessage(), storyItem, replyingQuote, null, notify, scheduleDate, scheduleRepeatPeriod, false, parent, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, getSendMonoForumPeerId(), getSendMessageSuggestionParams(), invertMedia);
+                                MediaDataController.getInstance(currentAccount).addRecentGif(document, (int) (System.currentTimeMillis() / 1000), true);
+                                if (DialogObject.isEncryptedDialog(dialog_id)) {
+                                    accountInstance.getMessagesController().saveGif(parent, document);
+                                }
+                            }
+                        } else if (gif instanceof TLRPC.BotInlineResult) {
+                            TLRPC.BotInlineResult result = (TLRPC.BotInlineResult) gif;
+
+                            if (result.document != null) {
+                                MediaDataController.getInstance(currentAccount).addRecentGif(result.document, (int) (System.currentTimeMillis() / 1000), false);
+                                if (DialogObject.isEncryptedDialog(dialog_id)) {
+                                    accountInstance.getMessagesController().saveGif(parent, result.document);
+                                }
+                            }
+
+                            TLRPC.User bot = (TLRPC.User) parent;
+
+                            HashMap<String, String> params = new HashMap<>();
+                            params.put("id", result.id);
+                            params.put("query_id", "" + result.query_id);
+                            params.put("force_gif", "1");
+
+                            if (storyItem == null) {
+                                SendMessagesHelper.prepareSendingBotContextResult(parentFragment, accountInstance, result, params, dialog_id, replyingMessageObject, getThreadMessage(), null, replyingQuote, notify, scheduleDate, 0, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, getSendMonoForumPeerId());
+                            } else {
+                                SendMessagesHelper.getInstance(currentAccount).sendSticker(result.document, query, dialog_id, replyingMessageObject, getThreadMessage(), storyItem, replyingQuote, null, notify, scheduleDate, scheduleRepeatPeriod, false, parent, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, getSendMonoForumPeerId(), getSendMessageSuggestionParams());
+                            }
+                            if (searchingType != 0) {
+                                setSearchingTypeInternal(0, true);
+                                emojiView.closeSearch(true);
+                                emojiView.hideSearchKeyboard();
+                            }
+                        }
+                        if (delegate != null) {
+                            delegate.onMessageSend(null, notify, scheduleDate, 0);
+                        }
+                    };
+                    if (!showConfirmAlert(runnable)) {
+                        runnable.run();
+                    }
                 }
             }
 
@@ -12530,34 +12439,32 @@ public class ChatActivityEnterView extends FrameLayout implements
         if (isInScheduleMode() && scheduleDate == 0) {
             AlertsCreator.createScheduleDatePickerDialog(parentActivity, parentFragment.getDialogId(), (n, s, r) -> onStickerSelected(sticker, query, parent, sendAnimationData, clearsInputField, n, s, r), resourcesProvider);
         } else {
-            AlertsCreator.ensurePaidMessageConfirmation(currentAccount, dialog_id, 1, stars -> {
-                final Runnable runnable = () -> {
-                    if (slowModeTimer > 0 && !isInScheduleMode()) {
-                        if (delegate != null) {
-                            delegate.onUpdateSlowModeButton(slowModeButton, true, slowModeButton.getText());
-                        }
-                        return;
-                    }
-                    if (searchingType != 0) {
-                        setSearchingTypeInternal(0, true);
-                        emojiView.closeSearch(true);
-                        emojiView.hideSearchKeyboard();
-                    }
-                    setStickersExpanded(false, true, false);
-                    final TL_stories.StoryItem storyItem = delegate != null ? delegate.getReplyToStory() : null;
-                    SendMessagesHelper.getInstance(currentAccount).sendSticker(sticker, query, dialog_id, replyingMessageObject, getThreadMessage(), storyItem, replyingQuote, sendAnimationData, notify, scheduleDate, scheduleRepeatPeriod, parent instanceof TLRPC.TL_messages_stickerSet, parent, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, stars, getSendMonoForumPeerId(), getSendMessageSuggestionParams());
+            final Runnable runnable = () -> {
+                if (slowModeTimer > 0 && !isInScheduleMode()) {
                     if (delegate != null) {
-                        delegate.onMessageSend(null, true, scheduleDate, 0, 0);
+                        delegate.onUpdateSlowModeButton(slowModeButton, true, slowModeButton.getText());
                     }
-                    if (clearsInputField) {
-                        setFieldText("");
-                    }
-                    MediaDataController.getInstance(currentAccount).addRecentSticker(MediaDataController.TYPE_IMAGE, parent, sticker, (int) (System.currentTimeMillis() / 1000), false);
-                };
-                if (!showConfirmAlert(runnable)) {
-                    runnable.run();
+                    return;
                 }
-            });
+                if (searchingType != 0) {
+                    setSearchingTypeInternal(0, true);
+                    emojiView.closeSearch(true);
+                    emojiView.hideSearchKeyboard();
+                }
+                setStickersExpanded(false, true, false);
+                final TL_stories.StoryItem storyItem = delegate != null ? delegate.getReplyToStory() : null;
+                SendMessagesHelper.getInstance(currentAccount).sendSticker(sticker, query, dialog_id, replyingMessageObject, getThreadMessage(), storyItem, replyingQuote, sendAnimationData, notify, scheduleDate, scheduleRepeatPeriod, parent instanceof TLRPC.TL_messages_stickerSet, parent, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, getSendMonoForumPeerId(), getSendMessageSuggestionParams());
+                if (delegate != null) {
+                    delegate.onMessageSend(null, true, scheduleDate, 0);
+                }
+                if (clearsInputField) {
+                    setFieldText("");
+                }
+                MediaDataController.getInstance(currentAccount).addRecentSticker(MediaDataController.TYPE_IMAGE, parent, sticker, (int) (System.currentTimeMillis() / 1000), false);
+            };
+            if (!showConfirmAlert(runnable)) {
+                runnable.run();
+            }
         }
     }
 
@@ -13461,7 +13368,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                     updateRecordInterface(RECORD_STATE_PREPARING, !fromDraft);
                 } else {
                     if (delegate != null) {
-                        delegate.onMessageSend(null, true, 0, 0, 0);
+                        delegate.onMessageSend(null, true, 0, 0);
                     }
                 }
             }
@@ -13990,11 +13897,11 @@ public class ChatActivityEnterView extends FrameLayout implements
         public void onCancelButtonPressed() {
             if (hasRecordVideo && isInVideoMode()) {
                 CameraController.getInstance().cancelOnInitRunnable(onFinishInitCameraRunnable);
-                delegate.needStartRecordVideo(5, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId, 0);
+                delegate.needStartRecordVideo(5, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId);
                 sendButton.setEffect(effectId = 0);
             } else {
                 delegate.needStartRecordAudio(0);
-                MediaController.getInstance().stopRecording(0, false, 0, voiceOnce, 0);
+                MediaController.getInstance().stopRecording(0, false, 0, voiceOnce);
             }
             audioToSend = null;
             audioToSendMessageObject = null;
@@ -14258,7 +14165,7 @@ public class ChatActivityEnterView extends FrameLayout implements
             if (isInVideoMode()) {
                 if (t >= 59500 && !stoppedInternal) {
                     startedDraggingX = -1;
-                    delegate.needStartRecordVideo(3, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId, 0);
+                    delegate.needStartRecordVideo(3, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId);
                     sendButton.setEffect(effectId = 0);
                     stoppedInternal = true;
                 }
