@@ -800,7 +800,7 @@ public class ContactAddActivity extends BaseFragment implements NotificationCent
                         if (fragment instanceof ChatActivity) {
                             ChatActivity chatActivity = (ChatActivity) fragment;
                             if (chatActivity.getDialogId() == user_id && chatActivity.getChatMode() == 0) {
-                                chatActivity.scrollToLastMessage(true, false);
+                                chatActivity.scrollToLastMessage(false);
                                 return true;
                             }
                         }
