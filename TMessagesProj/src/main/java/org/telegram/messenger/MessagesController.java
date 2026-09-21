@@ -704,7 +704,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public long starsPaidMessageAmountMax;
     public int starsPaidMessageCommissionPermille;
     public int stargiftsPinnedToTopLimit;
-    public boolean starsPaidMessagesAvailable;
     public long freezeSinceDate;
     public long freezeUntilDate;
     public String freezeAppealUrl;
@@ -1739,7 +1738,6 @@ public class MessagesController extends BaseController implements NotificationCe
         starsPaidMessageAmountMax = mainPreferences.getLong("starsPaidMessageAmountMax", 10_000L);
         starsPaidMessageCommissionPermille = mainPreferences.getInt("starsPaidMessageCommissionPermille", 850);
         stargiftsPinnedToTopLimit = mainPreferences.getInt("stargiftsPinnedToTopLimit", 6);
-        starsPaidMessagesAvailable = mainPreferences.getBoolean("starsPaidMessagesAvailable", true);
         freezeSinceDate = mainPreferences.getLong("freezeSinceDate", 0L);
         freezeUntilDate = mainPreferences.getLong("freezeUntilDate", 0L);
         conferenceCallSizeLimit = mainPreferences.getInt("conferenceCallSizeLimit", isTest ? 5 : 100);
@@ -4055,17 +4053,6 @@ public class MessagesController extends BaseController implements NotificationCe
                         if (stargiftsPinnedToTopLimit != (int) num.value) {
                             stargiftsPinnedToTopLimit = (int) num.value;
                             editor.putInt("stargiftsPinnedToTopLimit", stargiftsPinnedToTopLimit);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "stars_paid_messages_available": {
-                    if (value.value instanceof TLRPC.TL_jsonBool) {
-                        TLRPC.TL_jsonBool num = (TLRPC.TL_jsonBool) value.value;
-                        if (starsPaidMessagesAvailable != num.value) {
-                            starsPaidMessagesAvailable = num.value;
-                            editor.putBoolean("starsPaidMessagesAvailable", starsPaidMessagesAvailable);
                             changed = true;
                         }
                     }

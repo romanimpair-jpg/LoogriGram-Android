@@ -826,10 +826,9 @@ public class LinkManager {
                     scrollTo("showGiftIconRow");
                 if ("gifts".equalsIgnoreCase(second) && "accepted-types".equalsIgnoreCase(third))
                     scrollTo("giftTypesHeaderRow");
-                if ("messages".equalsIgnoreCase(second) && "set-price".equalsIgnoreCase(third))
-                    scrollTo("priceRow");
-                if ("messages".equalsIgnoreCase(second) && "remove-fee".equalsIgnoreCase(third))
-                    scrollTo("alwaysShareRow");
+                // LoogriGram: messages/set-price and messages/remove-fee scrolled
+                // to the price slider and its exceptions, which are gone; the
+                // links still open the messages screen.
                 if ("last-seen".equalsIgnoreCase(second) && "hide-read-time".equalsIgnoreCase(third))
                     scrollTo("readRow");
                 if ("profile-photos".equalsIgnoreCase(second)) {
