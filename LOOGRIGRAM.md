@@ -18,10 +18,12 @@ depends on.
 |---|---|
 | Fork, CI, degoogling | Done. No Google bytecode in the APK, verified in the dex |
 | Installed on the phone | **Yes.** `g25038ef5`, 2026-09-20, signed with our own key |
+| Pending build | `ge9a33bc2`, dispatched 2026-09-21 ([run 35636880531](https://github.com/romanimpair-jpg/LoogriGram-Android/actions/runs/35636880531)) — 24 commits past the installed one, none of them built before. **The first real test of the updater** — see below |
 | App name | Done — launcher, in-app strings, and the two wordmark screens |
 | Phone contacts | **Never touched.** Permissions, account and sync adapter all gone |
-| Updater | Ours, from this repo's releases; a sixth tab appears when one exists |
-| Money messages | Held in history, never drawn — desktop's hidden-content rule |
+| Updater | Ours, from this repo's releases; a sixth tab appears when one exists. Written 2026-09-20, **never yet exercised** |
+| Ads | **Gone**, all three surfaces, down to `MessageObject`'s fields (2026-09-21) |
+| Money messages | Held in history, never drawn — desktop's hidden-content rule. The chat list no longer rises for one |
 | Photo/video viewer | **Fixed** 2026-09-20; was our own null dereference, see the traps |
 | Build warnings | Native: 4 left, all in the crypto path that is going. Resources: 40, upstream's |
 | Ghost mode | Working in first use; not yet checked against a second account |
@@ -46,6 +48,36 @@ The installed APK: ~44.5 MB, `lib/arm64-v8a/libtmessages.49.so` only, signed
 `97b5106a0796100b36f7aea5e42ceae51b5861bd0dec6e672ee5a85bc1e49030`. That
 fingerprint is how to confirm a later build carries the same key - and it must,
 because Android will refuse an update signed with any other.
+
+### Start here next session (written 2026-09-21)
+
+1. **Did `ge9a33bc2` build?** The user reports back; don't poll. If it failed,
+   `gh run view 35636880531 --log-failed` and fix the exact errors. Every commit
+   in it passed `compile`, so a failure is native or packaging, not javac.
+2. **Test the updater on the phone.** The installed `g25038ef5` already carries
+   it. Once the build publishes release `ge9a33bc2`, opening the app should
+   show a sixth tab after the profile: "Update?", then a percentage, then
+   "Install", handing off to the system installer (which asks the first time to
+   allow installs from this app). Refusing should leave the tab to tap later.
+   After installing, the new build must *not* offer itself - it is the current
+   tag. Confirm the certificate fingerprint above is unchanged. If nothing
+   appears: the request is an anonymous `api.github.com` releases query in
+   `LoogriGramUpdate`; enable logs (Settings → tap version ten times) and look
+   there first.
+3. **Look where this session cut deepest**, since a compile cannot see layout:
+   - chat list: a gift or payment arriving must not move the chat to the top
+     or blank its preview; the unread badge must still count it and clear;
+   - opening a channel: scrolling to the newest message, the jump-to-bottom
+     button, and new messages arriving while open (`processNewMessages` lost
+     all its ad placement);
+   - message bubbles: link previews with photos, the side share/go-to button's
+     position, name tap highlight, time placement;
+   - global search results list, and "show more" there;
+   - reporting a message or chat (the report sheet lost its ad mode);
+   - Settings and your own profile no longer list Premium, Stars, TON,
+     Business or Send a Gift; a bot you own has no balance or affiliate rows.
+4. Then the remaining work below. **Paid messages** is the natural next piece:
+   desktop has already settled what to do, so it is mechanical.
 
 ---
 
@@ -217,6 +249,28 @@ Each of these was hit here. Do not relearn them.
    it. Everything currently sitting at the probe stage is listed under
    "Remaining work" below and should be finished that way.
 
+10. **Large scripted removals fail in the same few ways.** Each of these cost a
+    failed compile on 2026-09-21; check them *before* dispatching:
+    - deleting a public member: grep its callers across the tree, not the file
+      (`removeFromSponsored` had seven outside `ChatActivity`);
+    - de-nesting `Outer.Inner` to a top-level class: the declaring file's own
+      bare `Inner` uses are invisible to a repoint of `Outer.Inner` (bit twice);
+    - unwrapping a dead `if` also removes the scope it gave its locals, and one
+      collided with a same-named local further down the method;
+    - a symbol sweep finds a missing import, never a wrong one (androidx vs
+      zxing `MathUtils`);
+    - any brace-balance check must blank strings before comments, or
+      `"tg://..."` loses everything after `//`; compare to `HEAD`, never trust
+      the absolute count;
+    - cut by exact text with asserted match counts, not by line numbers - a
+      line-number cut shifted and overwrote the one field it meant to keep.
+
+11. **"Constant false" is a proof, not a guess.** The ad removal was safe to do
+    mechanically only because `isSponsored()` was *proven* constant: nothing
+    left in the tree wrote `MessageObject.sponsoredId` (the one other write was
+    `ReportBottomSheet`'s own field of that name). Before simplifying every
+    `x.isFoo()` to false, find every writer of what it reads.
+
 ---
 
 ## Architecture
@@ -249,11 +303,19 @@ read back first or the archive settings get reset.
 **Read receipts are deliberately NOT suppressed** — see the desktop notes. It is
 architectural, not a bug. Do not re-attempt.
 
-**Ads.** Three surfaces, not one: `getSponsoredMessages`, `VideoAds.make` (video
-player) and `contacts.getSponsoredPeers` (search). `VideoAds` is deleted
-outright (889 lines) and all four view/click beacons are deleted with their
-eighteen call sites. What is left is `getSponsoredMessages` returning null and
-the empty sponsored UI around it — the next thing to go.
+**Ads: none, and no code for them.** Three surfaces, not one, all deleted
+rather than guarded: `getSponsoredMessages` (in-chat), `VideoAds` (video player,
+2026-09-20) and `contacts.getSponsoredPeers` (above global search results). The
+chat's ad placement is gone from `processNewMessages` (`findAdPlace`, the
+not-yet-placed queue, pasting messages under ads, `skipSponsored` on both
+scroll-to-last methods), as are the viewer's ad subsystem, the cell's ad
+rendering and two-part side button, the ad menus, the report sheet's ad mode,
+and finally `MessageObject`'s ten `sponsored*` fields and `isSponsored()`
+itself - so the compiler guarantees nothing is left asking. `BotAdView`,
+`SearchAdsInfoBottomSheet` and `SponsoredMessageInfoView` are deleted. What
+still *mentions* ads is not about showing them to you: the channel owner's
+"switch off ads for subscribers" toggle (inside the ad-revenue screen) and
+Premium's "no ads" row - both go with the money and Premium removals.
 
 **Updater.** Ours, reading this repository's releases: `LoogriGramUpdate` asks
 `api.github.com` which release is newest, compares its tag with
@@ -268,7 +330,8 @@ then "Install"; refusing leaves the tab to tap later, and an update downloaded
 but not installed is offered again once per run. `LaunchActivity.checkAppUpdate`
 keeps its name and its callers and drives this now. Testing it needs two
 builds: the one that publishes a release also installs as that tag, so it sees
-itself as current.
+itself as current. The installed `g25038ef5` already has it, so `ge9a33bc2` is
+the second build - the first real test.
 
 **Money messages are held, not shown.** `LoogriGramHidden` lists the TL types -
 invoices, paid media, giveaways, payments, gift codes, Stars gifts and
@@ -280,9 +343,20 @@ counted, because the read position only moves past messages we hold; dropping
 one leaves an unread badge that scrolling cannot clear. `setType` also clears
 the text `updateMessageText` produced a line earlier, `generateCaption` (which
 runs after) refuses to put a caption back, and notifications skip these in the
-loop that already drops handled conference calls. **Still open:** the chat list
-row still rises with an empty preview - desktop walks back to the newest
-displayable message instead.
+loop that already drops handled conference calls.
+
+A held message never becomes the dialog's last message either (2026-09-21), so
+a gift does not lift the chat to the top with a blank preview. Two halves, kept
+in step: `MessagesStorage.putMessagesInternal` puts null into the per-dialog
+map, which is upstream's own "move the counts, keep `last_mid` and the date"
+(the key is registered, not skipped, or the unread count never reaches the
+database; `last_mid_group` is read back and rebound so an album preview
+survives; a topic gets an `onlyCounters` update), and
+`MessagesController.updateInterfaceWithMessages` tracks the held message apart
+from `lastMessage`. A chat with no row yet is still created from the held
+message - an empty preview beats a row pointing at message 0. Not covered, as
+on desktop: a dialog list fetched from the server has one message per chat, so
+a held one there shows blank until the next message.
 
 **Phone contacts: none.** Not reduced, gone. No `READ_CONTACTS`,
 `WRITE_CONTACTS`, `GET_ACCOUNTS`, `MANAGE_ACCOUNTS`, `AUTHENTICATE_ACCOUNTS`
@@ -303,10 +377,37 @@ Received locations open in any maps app via a `geo:` intent, guarded at
 not check `isMapsInstalled`.
 
 **Gifts.** Sending blocked at `GiftSheet.show`/`SendGiftSheet.show` — one
-chokepoint for eighteen call sites. **Receiving must keep working:**
-`ChatMessageCell` draws received gifts through `StarGiftSheet` and
-`MessageObject` formats text through `StarsIntroActivity` in nine places, so
-deleting the gift and Stars UI breaks ordinary message rendering.
+chokepoint for eighteen call sites. **Receiving must keep working**, and that
+settles the shape of the rest of the money removal: `ui/Stars` and `ui/Gifts`
+**cannot be deleted as a block.** `StarGiftSheet` is genuinely mixed -
+`ChatActionCell` opens it for a gift someone was *given* and `ChatMessageCell`
+draws its gift icon in link previews, while `PeerColorActivity` uses its
+resale/buy alert. The profile gifts tab (`ProfileGiftsContainer`/`View`) and
+`StarGiftUniqueActionLayout` are display too. The end state is splitting the
+display half out from the buying/selling half, not deleting directories.
+
+**Helpers freed from money screens** (2026-09-20/21), so the screens can go
+without taking ordinary rendering with them: `messenger.StarsFormat` (the
+Stars/TON/diamond span and number formatters, 218 call sites), `CurrencyFormat`,
+`ui.Components.Particles` (sparkle effect), `StarGiftPatterns`,
+`SuperRipple`/`ISuperRipple`/`SuperRippleFallback`, `FeatureRow` (was
+`ExplainStarsSheet.FeatureCell`), `FeatureIconCell` (was
+`AffiliateProgramFragment.FeatureCell`), `ColorfulTextCell`, and
+`AndroidUtilities.percents` / `replaceUnderstood`. Two were renamed on the way
+out because four classes already declare a nested `FeatureCell`.
+
+**Paid messages: not done yet, but decided.** Where the server demands Stars -
+a user who charges per message - desktop reuses upstream's "only accepts
+Premium senders" lock instead of a buy-Stars sheet: the peer becomes one you
+cannot write to, with *"%1 only accepts paid messages, which LoogriGram doesn't
+send."* It is applied when contact requirements arrive
+(`ResolveMessageMoneyRestrictions`), in the send-error check, and on a server
+refusal (`ALLOW_PAYMENT_REQUIRED_*`: lock the user from then on, toast, reload
+full info). Paid post search keeps only the free daily searches; a staked dice
+error is reported like any other. On Android the same lock is one step away:
+`UserObject.getRequirementToContact` (both overloads) already chooses between
+`requirementToContactPaidMessages` and `...Premium` from the same field, and
+`SendMessagesHelper` already parses `ALLOW_PAYMENT_REQUIRED_` in four places.
 
 ---
 
@@ -340,18 +441,26 @@ out of a class that is being deleted or changing how a message renders.
 
 In rough order of how much is left behind:
 
-- **Stars / Gifts / TON UI.** Still present and compiled, and now the largest
-  thing left. What used to block it is half gone: money messages are no longer
-  drawn at all (see "Money messages are held, not shown"), so the old reason -
-  that deleting the directories breaks rendering of any chat that merely
-  *mentions* a gift - is much weaker. What remains to check before deleting:
-  `StarsIntroActivity.replaceStars` / `replaceStarsWithPlain` (86 calls between
-  them) and `formatStarsAmount` / `formatTON` / `replaceDiamond`, all of which
-  are text-span helpers living in an activity class; extract them the way
-  `CurrencyFormat` was extracted, then the screens can go. `AmountUtils.Currency`
-  modelling STARS/TON as a core money type is the part most likely to fight
-  back. `BillingController`'s last eleven callers are in these screens and it
-  dies with them.
+- **Paid messages** - first, because it is decided (see "Paid messages" above)
+  and small: map `requirementToContactPaidMessages` onto the Premium lock in
+  `UserObject.getRequirementToContact`, add the desktop sentence to the fork's
+  `strings.xml` entries, make the four `ALLOW_PAYMENT_REQUIRED_` sites lock the
+  user instead of recording a price, and delete the `StarsNeededSheet` calls
+  (`ChatActivity` ×5, `AlertsCreator` ×3, `ChatActionCell`,
+  `SendMessagesHelper`, `PostsSearchContainer`, `LiveCommentsView`,
+  `DialogsActivity`, `StakedDiceSheet`).
+- **Stars / Gifts / TON UI.** The helper extraction is finished (see "Helpers
+  freed from money screens"), so what is left is real coupling, measured
+  2026-09-21 as non-money files still touching `ui/Stars`, `ui/Gifts`, `ui/TON`:
+  `StarsController` 33 (`ChatActivity` 24 refs, `SendMessagesHelper` 17,
+  `PeerColorActivity` 14, `MessagesController` 14, `AlertsCreator` 13),
+  `StarsIntroActivity` 19, `GiftSheet` 8, `StarGiftSheet` 7,
+  `BotStarsController` 5. Shape: split the display half (received gifts) out
+  of the buy/sell half, then delete the rest - not the directories whole. The
+  three affiliate fragments are now reached only from other money screens and
+  go with them. `AmountUtils` lives in `messenger/utils/tlutils` and stays.
+  `ChannelMonetizationLayout` (ad revenue, plus the "switch off ads for
+  subscribers" toggle) and `BillingController`'s last callers go here too.
 - **Location.** `LocationActivity` and `ChatAttachAlertLocationLayout` remain,
   unreachable, holding ~135 references to `IMapsProvider` between them. Deleting
   them lets the interface and the `onFragmentCreate` guard go too.
@@ -359,13 +468,18 @@ In rough order of how much is left behind:
   `MediaController`, `PhotoViewer` and `AudioPlayerAlert` keep compiling.
   Deleting them means editing those three files (4k, 24k and 6k lines).
 - **Premium economy.** The three forced getters leave every branch behind them in
-  place; `PremiumPreviewFragment`, `GiftPremiumBottomSheet` and the tier cells
-  are largely dead weight now.
-- **`if (true) return;` guards** still standing, each of which should become a
-  deletion: `getSponsoredMessages` (and the empty sponsored UI around it),
-  `isMapsInstalled`, `GiftSheet.show` / `SendGiftSheet.show`. Done on
-  2026-09-20: `VideoAds.make` (deleted, and it was actively broken - see the
-  traps), the four ad beacons, `checkAppUpdate` (now drives our updater).
+  place. Settings and the own-profile menu have lost their Premium, Stars,
+  MyTON, Business and Send-a-Gift rows (2026-09-21), but
+  `PremiumPreviewFragment` (with its "no ads" row), `GiftPremiumBottomSheet`,
+  `LimitReachedBottomSheet`'s boost-level feature lists and the tier cells are
+  still largely dead weight.
+- **`if (true)` guards** still standing, each of which should become a
+  deletion: `isMapsInstalled`, `GiftSheet.show` / `SendGiftSheet.show`. Done:
+  `getSponsoredMessages` and everything behind it (2026-09-21), `VideoAds.make`,
+  the four ad beacons, `checkAppUpdate` (2026-09-20). A plain `grep -rn "if
+  (true)"` also finds `MessagesController` (`addPhotoAtStart`),
+  `AndroidUtilities`, `ChatActivity` and `DialogsSearchAdapter` - their origin
+  was not checked; some may be upstream's own.
 - **Build warnings.** Native: four variable length arrays remain, all
   `aesOut[MSC_STACK_FALLBACK(...)]` in libtgvoip's crypto path, left because
   that code is going. Resources: 40 AAPT "multiple substitutions in
@@ -379,6 +493,12 @@ In rough order of how much is left behind:
   `CaptchaController` folded into its one caller, `BillingController`'s currency
   half extracted as `CurrencyFormat` (61 call sites) with `BillingUtilities`
   deleted.
+- **Done on 2026-09-21, for the record** (21 commits, `0031a094..e9a33bc2`):
+  the chat-list fix for held money messages; every money-screen helper freed
+  (above); the Settings and profile money rows, bot and channel revenue rows,
+  the affiliate rows, and the money deep links in `LinkManager` and
+  `LaunchActivity` deleted; `ProfilePremiumCell` deleted; all three ad surfaces
+  deleted down to `MessageObject`'s fields. 5,135 lines deleted, about 3,250 net.
 
 ### Then
 
