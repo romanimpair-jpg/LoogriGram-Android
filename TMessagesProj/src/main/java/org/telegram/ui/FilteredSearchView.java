@@ -2,7 +2,6 @@ package org.telegram.ui;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.AndroidUtilities.dpf2;
-import static org.telegram.messenger.LocaleController.getString;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -478,15 +477,6 @@ public class FilteredSearchView extends FrameLayout implements NotificationCente
         if (messageObject.isQuickReply()) {
             QuickRepliesController.QuickReply reply = QuickRepliesController.getInstance(messageObject.currentAccount).findReply(messageObject.getQuickReplyId());
             return reply == null ? "" : reply.name;
-        }
-        if (messageObject.isSponsored()) {
-            if (messageObject.sponsoredCanReport) {
-                return getString(R.string.SponsoredMessageAd);
-            } else if (messageObject.sponsoredRecommended) {
-                return getString(R.string.SponsoredMessage2Recommended);
-            } else {
-                return getString(R.string.SponsoredMessage2);
-            }
         }
         if (arrowSpan[arrowType] == null) {
             arrowSpan[arrowType] = new SpannableStringBuilder(">");

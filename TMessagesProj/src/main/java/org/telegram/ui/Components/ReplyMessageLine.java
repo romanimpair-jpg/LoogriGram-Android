@@ -54,7 +54,6 @@ public class ReplyMessageLine {
     private boolean cachedHasColor3;
     private int switchedCount = 0;
     private float emojiAlpha = 1f;
-    private boolean sponsored;
 
     private AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable emoji;
     private AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable sticker;
@@ -243,7 +242,6 @@ public class ReplyMessageLine {
         reversedOut = false;
         emojiDocumentId = 0;
         stickerDocumentId = 0;
-        sponsored = messageObject != null && messageObject.isSponsored();
         if (messageObject == null) {
             hasColor2 = hasColor3 = false;
             color1 = color2 = color3 = Theme.getColor(Theme.key_chat_inReplyLine, resourcesProvider);
@@ -276,18 +274,12 @@ public class ReplyMessageLine {
             messageObject.messageOwner != null && (
                 (messageObject.isFromUser() || DialogObject.isEncryptedDialog(messageObject.getDialogId())) && currentUser != null ||
                 messageObject.isFromChannel() && currentChat != null ||
-                messageObject.messageOwner != null && messageObject.messageOwner.fwd_from != null && messageObject.messageOwner.fwd_from.from_id != null ||
-                messageObject.isSponsored() && messageObject.sponsoredColor != null && messageObject.sponsoredColor.color != -1
+                messageObject.messageOwner != null && messageObject.messageOwner.fwd_from != null && messageObject.messageOwner.fwd_from.from_id != null
             )
         )) {
             int colorId = 5;
             if (messageObject.overrideLinkColor >= 0) {
                 colorId = messageObject.overrideLinkColor;
-            } else if (messageObject.isSponsored() && messageObject.sponsoredColor != null && messageObject.sponsoredColor.color != -1) {
-                colorId = messageObject.sponsoredColor.color;
-                if (type == TYPE_LINK) {
-                    emojiDocumentId = messageObject.sponsoredColor.background_emoji_id;
-                }
             } else if (messageObject.messageOwner != null && messageObject.messageOwner.fwd_from != null && messageObject.messageOwner.fwd_from.from_id != null) {
                 long dialogId = DialogObject.getPeerDialogId(messageObject.messageOwner.fwd_from.from_id);
                 if (dialogId < 0) {
@@ -538,7 +530,7 @@ public class ReplyMessageLine {
     }
 
     public void drawLine(Canvas canvas, RectF rect, float alpha) {
-        final int rad = (int) Math.floor(SharedConfig.bubbleRadius / (sponsored ? 2f : 3f));
+        final int rad = (int) Math.floor(SharedConfig.bubbleRadius / 3f);
         final float lineRight = rect.left + Math.max(dp(3), dp(2 * rad));
 
         final int c1 = color1Animated.set(color1);

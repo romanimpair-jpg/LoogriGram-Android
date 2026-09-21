@@ -143,7 +143,6 @@ public class TranslateController extends BaseController {
             messageObject.messageOwner.summary_from_language != null &&
             !messageObject.isOutOwner() &&
             !messageObject.isRestrictedMessage &&
-            !messageObject.isSponsored() &&
             (
                 messageObject.type == MessageObject.TYPE_TEXT ||
                 messageObject.type == MessageObject.TYPE_VIDEO ||
@@ -166,7 +165,6 @@ public class TranslateController extends BaseController {
             messageObject.messageOwner != null &&
             !messageObject.isOutOwner() &&
             !messageObject.isRestrictedMessage &&
-            !messageObject.isSponsored() &&
             (
                 messageObject.type == MessageObject.TYPE_TEXT ||
                 messageObject.type == MessageObject.TYPE_VIDEO ||

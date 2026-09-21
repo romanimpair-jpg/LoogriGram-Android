@@ -3931,7 +3931,7 @@ public class ChannelAdminLogActivity extends BaseFragment implements Notificatio
             for (int i = chatLayoutManager.findFirstVisibleItemPosition(); i <= end; i++) {
                 if (i >= chatAdapter.messagesStartRow && i < chatAdapter.messagesEndRow) {
                     MessageObject messageObject = filteredMessages.get(i - chatAdapter.messagesStartRow);
-                    if (messageObject.contentType == 1 || messageObject.getRealId() == 0 || messageObject.isSponsored()) {
+                    if (messageObject.contentType == 1 || messageObject.getRealId() == 0) {
                         continue;
                     }
                     scrollFromIndex = i - chatAdapter.messagesStartRow;

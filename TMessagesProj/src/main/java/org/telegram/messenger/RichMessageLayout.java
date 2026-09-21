@@ -288,10 +288,6 @@ public class RichMessageLayout {
         if (messageObject.overrideLinkColor >= 0 || messageObject.overrideLinkPeerColor != null) {
             return true;
         }
-        if (messageObject.isSponsored() && messageObject.sponsoredColor != null
-                && messageObject.sponsoredColor.color != -1) {
-            return true;
-        }
         if (messageObject.messageOwner != null && messageObject.messageOwner.fwd_from != null
                 && messageObject.messageOwner.fwd_from.from_id != null) {
             final long dialogId = DialogObject.getPeerDialogId(messageObject.messageOwner.fwd_from.from_id);

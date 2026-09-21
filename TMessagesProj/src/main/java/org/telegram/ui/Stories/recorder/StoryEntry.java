@@ -774,7 +774,7 @@ public class StoryEntry {
     }
 
     public static boolean canRepostMessage(MessageObject messageObject) {
-        if (messageObject == null || messageObject.isSponsored()) {
+        if (messageObject == null) {
             return false;
         }
         if (messageObject.messageOwner != null && messageObject.messageOwner.noforwards) {

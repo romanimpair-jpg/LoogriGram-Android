@@ -5931,7 +5931,7 @@ public class MessageObject {
             } else if (messageOwner.rich_message != null) {
                 messageText = formatRichMessage(messageOwner.rich_message, isOutOwner());
                 messageText = AndroidUtilities.replaceNewLines(messageText);
-            } else if (!isMediaEmpty() && !isSponsored()) {
+            } else if (!isMediaEmpty()) {
 //                messageText = getMediaTitle(getMedia(messageOwner)); // I'm afraid doing this
                 if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaGiveaway) {
                     boolean isChannel;
@@ -6528,9 +6528,6 @@ public class MessageObject {
         if (messageObject == null || messageObject.messageOwner == null) {
             return null;
         }
-        if (messageObject.sponsoredMedia != null) {
-            return messageObject.sponsoredMedia;
-        }
         return getMedia(messageObject.messageOwner);
     }
 
@@ -6610,8 +6607,6 @@ public class MessageObject {
             // would otherwise advertise a message the chat does not show.
             messageText = "";
             caption = null;
-        } else if (isSponsored()) {
-            type = TYPE_TEXT;
         } else if (channelJoined) {
             contentType = 0;
             type = TYPE_JOINED_CHANNEL;
@@ -6633,7 +6628,7 @@ public class MessageObject {
                 }
             } else if (messageOwner.media instanceof TLRPC.TL_messageMediaPaidMedia) {
                 type = TYPE_PAID_MEDIA;
-            } else if (isMediaEmpty(false) && !isDice() && !isSponsored() && emojiOnlyCount >= 1 && !hasUnwrappedEmoji && messageOwner != null && !hasNonEmojiEntities()) {
+            } else if (isMediaEmpty(false) && !isDice() && emojiOnlyCount >= 1 && !hasUnwrappedEmoji && messageOwner != null && !hasNonEmojiEntities()) {
                 type = TYPE_EMOJIS;
             } else if (isMediaEmpty()) {
                 type = TYPE_TEXT;
@@ -7183,37 +7178,6 @@ public class MessageObject {
                 if (strippedThumb == null) {
                     createStrippedThumb();
                 }
-            }
-        } else if (sponsoredMedia != null) {
-            TLRPC.Photo photo = sponsoredMedia.photo;
-            TLRPC.Document document = sponsoredMedia.document;
-            if (photo != null) {
-                if (!update || photoThumbs == null) {
-                    photoThumbs = new ArrayList<>(photo.sizes);
-                } else if (!photoThumbs.isEmpty()) {
-                    updatePhotoSizeLocations(photoThumbs, photo.sizes);
-                }
-                photoThumbsObject = photo;
-            } else if (document != null) {
-                if (isDocumentHasThumb(document)) {
-                    if (!update) {
-                        photoThumbs = new ArrayList<>();
-                        photoThumbs.addAll(document.thumbs);
-                    } else if (photoThumbs != null && !photoThumbs.isEmpty()) {
-                        updatePhotoSizeLocations(photoThumbs, document.thumbs);
-                    }
-                    photoThumbsObject = document;
-                }
-            }
-        } else if (sponsoredPhoto != null) {
-            if (!update || photoThumbs == null) {
-                photoThumbs = new ArrayList<>(sponsoredPhoto.sizes);
-            } else if (!photoThumbs.isEmpty()) {
-                updatePhotoSizeLocations(photoThumbs, sponsoredPhoto.sizes);
-            }
-            photoThumbsObject = sponsoredPhoto;
-            if (strippedThumb == null) {
-                createStrippedThumb();
             }
         }
     }
@@ -8388,8 +8352,6 @@ public class MessageObject {
             return true;
         }
         if (type == TYPE_JOINED_CHANNEL) {
-            return false;
-        } else if (isSponsored()) {
             return false;
         } else if (hasCode) {
             return false;
@@ -9611,7 +9573,7 @@ public class MessageObject {
         } else {
             channelSignatureProfiles = getDialogId() == UserObject.VERIFY;
         }
-        return !isSponsored() && (isFromUser() || isFromGroup() || channelSignatureProfiles || eventId != 0 || messageOwner.fwd_from != null && messageOwner.fwd_from.saved_from_peer != null);
+        return isFromUser() || isFromGroup() || channelSignatureProfiles || eventId != 0 || messageOwner.fwd_from != null && messageOwner.fwd_from.saved_from_peer != null;
     }
 
     private boolean needDrawAvatarInternal() {
@@ -9637,7 +9599,7 @@ public class MessageObject {
         } else {
             channelSignatureProfiles = getDialogId() == UserObject.VERIFY;
         }
-        return !isSponsored() && (isFromChat() && isFromUser() || isFromGroup() || channelSignatureProfiles || eventId != 0 || messageOwner.fwd_from != null && messageOwner.fwd_from.saved_from_peer != null);
+        return isFromChat() && isFromUser() || isFromGroup() || channelSignatureProfiles || eventId != 0 || messageOwner.fwd_from != null && messageOwner.fwd_from.saved_from_peer != null;
     }
 
     public boolean isFromChat() {
@@ -11151,7 +11113,7 @@ public class MessageObject {
     }
 
     public boolean shouldDrawWithoutBackground() {
-        return !isSponsored() && (type == TYPE_STICKER || type == TYPE_ANIMATED_STICKER || type == TYPE_ROUND_VIDEO || type == TYPE_EMOJIS || isExpiredStory());
+        return type == TYPE_STICKER || type == TYPE_ANIMATED_STICKER || type == TYPE_ROUND_VIDEO || type == TYPE_EMOJIS || isExpiredStory();
     }
 
     public boolean isAnimatedEmojiStickers() {
@@ -11615,7 +11577,7 @@ public class MessageObject {
     public boolean canForwardMessage() {
         if (isQuickReply()) return false;
         if (type == TYPE_GIFT_STARS || type == TYPE_GIFT_THEME_UPDATE || type == TYPE_SUGGEST_BIRTHDAY || type == TYPE_GIFT_OFFER || type == TYPE_SHARING_OFFER || type == TYPE_COMMUNITY_CHANGED) return false;
-        return !(messageOwner instanceof TLRPC.TL_message_secret) && !needDrawBluredPreview() && !isLiveLocation() && type != MessageObject.TYPE_PHONE_CALL && !isSponsored() && !messageOwner.noforwards;
+        return !(messageOwner instanceof TLRPC.TL_message_secret) && !needDrawBluredPreview() && !isLiveLocation() && type != MessageObject.TYPE_PHONE_CALL && !messageOwner.noforwards;
     }
 
     public boolean canEditMedia() {
@@ -11752,7 +11714,7 @@ public class MessageObject {
     public boolean canDeleteMessage(boolean inScheduleMode, TLRPC.Chat chat) {
         return (
             isStory() && messageOwner != null && messageOwner.dialog_id == UserConfig.getInstance(currentAccount).getClientUserId() ||
-            eventId == 0 && sponsoredId == null && canDeleteMessage(currentAccount, inScheduleMode, messageOwner, chat) || isEphemeral()
+            eventId == 0 && canDeleteMessage(currentAccount, inScheduleMode, messageOwner, chat) || isEphemeral()
         );
     }
 
@@ -12216,7 +12178,7 @@ public class MessageObject {
     }
 
     public boolean isReactionsAvailable() {
-        return !isEditing() && !isSponsored() && isSent() && !isEphemeral() && !isExpiredStory() && canSetReaction();
+        return !isEditing() && isSent() && !isEphemeral() && !isExpiredStory() && canSetReaction();
     }
 
     public boolean isPaidReactionChosen() {
@@ -12761,7 +12723,6 @@ public class MessageObject {
         return hasLinkPreview && !isGiveawayOrGiveawayResults() &&
             webpage != null && (webpage.photo != null || isVideoDocument(webpage.document)) &&
             !(webpage != null && TextUtils.isEmpty(webpage.description) && TextUtils.isEmpty(webpage.title)) &&
-            !isSponsored() && // drawInstantViewType = 1
             !"telegram_megagroup".equals(webpageType) &&     // drawInstantViewType = 2
             !"telegram_background".equals(webpageType) &&    // drawInstantViewType = 6
             !"telegram_voicechat".equals(webpageType) &&     // drawInstantViewType = 9
@@ -13056,7 +13017,7 @@ public class MessageObject {
     }
 
     public boolean isFactCheckable() {
-        return getId() >= 0 && !isSponsored() && (
+        return getId() >= 0 && (
             type == TYPE_TEXT ||
             type == TYPE_VOICE ||
             type == TYPE_PHOTO ||
