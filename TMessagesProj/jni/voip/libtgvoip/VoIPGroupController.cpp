@@ -625,9 +625,10 @@ void VoIPGroupController::SendPacket(unsigned char *data, size_t len, Endpoint& 
 		out.WriteBytes(msgKey, 16);
 		//LOGV("<- MSG KEY: %08x %08x %08x %08x, hashed %u", *reinterpret_cast<int32_t*>(msgKey), *reinterpret_cast<int32_t*>(msgKey+4), *reinterpret_cast<int32_t*>(msgKey+8), *reinterpret_cast<int32_t*>(msgKey+12), inner.GetLength()-4);
 
-		unsigned char aesOut[MSC_STACK_FALLBACK(inner.GetLength(), 1500)];
-		crypto.aes_ige_encrypt(inner.GetBuffer(), aesOut, inner.GetLength(), key, iv);
-		out.WriteBytes(aesOut, inner.GetLength());
+		// LoogriGram: a vector, not a variable length array - a Clang extension in C++
+		std::vector<unsigned char> aesOut(inner.GetLength());
+		crypto.aes_ige_encrypt(inner.GetBuffer(), aesOut.data(), inner.GetLength(), key, iv);
+		out.WriteBytes(aesOut.data(), inner.GetLength());
 	}
 
 	// relay signature

@@ -113,12 +113,6 @@
 #define SHA1_LENGTH 20
 #define SHA256_LENGTH 32
 
-#ifdef _MSC_VER
-#define MSC_STACK_FALLBACK(a, b) (b)
-#else
-#define MSC_STACK_FALLBACK(a, b) (a)
-#endif
-
 #define SEQ_MAX 0xFFFFFFFF
 
 inline bool seqgt(uint32_t s1, uint32_t s2){

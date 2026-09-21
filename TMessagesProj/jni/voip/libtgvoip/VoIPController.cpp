@@ -1820,16 +1820,17 @@ void VoIPController::ProcessIncomingPacket(NetworkPacket &packet, Endpoint& srcE
 		in.ReadBytes(msgHash, 16);
 		unsigned char key[32], iv[32];
 		KDF(msgHash, isOutgoing ? 8 : 0, key, iv);
-		unsigned char aesOut[MSC_STACK_FALLBACK(in.Remaining(), 1500)];
-		if(in.Remaining()>sizeof(aesOut))
-			return;
-		crypto.aes_ige_decrypt((unsigned char *) buffer+in.GetOffset(), aesOut, in.Remaining(), key, iv);
-		BufferInputStream _in(aesOut, in.Remaining());
+		// LoogriGram: a vector, not a variable length array - a Clang extension in C++
+		// (-Wvla-cxx-extension). The size check that followed compared the length
+		// with itself here; it only bit on MSVC, whose fallback was a fixed 1500.
+		std::vector<unsigned char> aesOut(in.Remaining());
+		crypto.aes_ige_decrypt((unsigned char *) buffer+in.GetOffset(), aesOut.data(), in.Remaining(), key, iv);
+		BufferInputStream _in(aesOut.data(), in.Remaining());
 		unsigned char sha[SHA1_LENGTH];
 		uint32_t _len=(uint32_t) _in.ReadInt32();
 		if(_len>_in.Remaining())
 			_len=(uint32_t) _in.Remaining();
-		crypto.sha1((uint8_t *) (aesOut), (size_t) (_len+4), sha);
+		crypto.sha1((uint8_t *) (aesOut.data()), (size_t) (_len+4), sha);
 		if(memcmp(msgHash, sha+(SHA1_LENGTH-16), 16)!=0){
 			LOGW("Received packet has wrong hash after decryption");
 			if(state==STATE_WAIT_INIT || state==STATE_WAIT_INIT_ACK)
@@ -1837,7 +1838,7 @@ void VoIPController::ProcessIncomingPacket(NetworkPacket &packet, Endpoint& srcE
 			else
 				return;
 		}else{
-			memcpy(buffer+in.GetOffset(), aesOut, in.Remaining());
+			memcpy(buffer+in.GetOffset(), aesOut.data(), in.Remaining());
 			in.ReadInt32();
 		}
 	}
@@ -2842,9 +2843,10 @@ void VoIPController::SendPacket(unsigned char *data, size_t len, Endpoint& ep, P
 			out.WriteBytes(msgKey, 16);
 			//LOGV("<- MSG KEY: %08x %08x %08x %08x, hashed %u", *reinterpret_cast<int32_t*>(msgKey), *reinterpret_cast<int32_t*>(msgKey+4), *reinterpret_cast<int32_t*>(msgKey+8), *reinterpret_cast<int32_t*>(msgKey+12), inner.GetLength()-4);
 
-			unsigned char aesOut[MSC_STACK_FALLBACK(inner.GetLength(), 1500)];
-			crypto.aes_ige_encrypt(inner.GetBuffer(), aesOut, inner.GetLength(), key, iv);
-			out.WriteBytes(aesOut, inner.GetLength());
+			// LoogriGram: a vector, not a variable length array - a Clang extension in C++
+			std::vector<unsigned char> aesOut(inner.GetLength());
+			crypto.aes_ige_encrypt(inner.GetBuffer(), aesOut.data(), inner.GetLength(), key, iv);
+			out.WriteBytes(aesOut.data(), inner.GetLength());
 		}else{
 			BufferOutputStream inner(len+128);
 			inner.WriteInt32((int32_t)len);
@@ -2861,9 +2863,10 @@ void VoIPController::SendPacket(unsigned char *data, size_t len, Endpoint& ep, P
 			out.WriteBytes(keyFingerprint, 8);
 			out.WriteBytes((msgHash+(SHA1_LENGTH-16)), 16);
 			KDF(msgHash+(SHA1_LENGTH-16), isOutgoing ? 0 : 8, key, iv);
-			unsigned char aesOut[MSC_STACK_FALLBACK(inner.GetLength(), 1500)];
-			crypto.aes_ige_encrypt(inner.GetBuffer(), aesOut, inner.GetLength(), key, iv);
-			out.WriteBytes(aesOut, inner.GetLength());
+			// LoogriGram: a vector, not a variable length array - a Clang extension in C++
+			std::vector<unsigned char> aesOut(inner.GetLength());
+			crypto.aes_ige_encrypt(inner.GetBuffer(), aesOut.data(), inner.GetLength(), key, iv);
+			out.WriteBytes(aesOut.data(), inner.GetLength());
 		}
 	}
 	//LOGV("Sending %d bytes to %s:%d", out.GetLength(), ep.address.ToString().c_str(), ep.port);

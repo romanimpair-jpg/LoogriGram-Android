@@ -473,7 +473,7 @@ public:
         
         webrtc::EnableMedia(peerConnectionFactoryDependencies);
 
-        peerConnectionFactoryDependencies.event_log_factory = std::make_unique<webrtc::RtcEventLogFactory>(peerConnectionFactoryDependencies.task_queue_factory.get());
+        peerConnectionFactoryDependencies.event_log_factory = std::make_unique<webrtc::RtcEventLogFactory>(); // LoogriGram: the deprecated constructor took the task queue factory and ignored it
 
         _peerConnectionFactory = webrtc::CreateModularPeerConnectionFactory(std::move(peerConnectionFactoryDependencies));
 
