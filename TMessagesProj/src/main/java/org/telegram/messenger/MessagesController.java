@@ -671,7 +671,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public long starsSubscriptionAmountMax;
     public float starsUsdSellRate1000;
     public float starsUsdWithdrawRate1000;
-    public boolean sponsoredLinksInappAllow;
     public Set<String> starrefStartParamPrefixes = new HashSet<>();
     public boolean starrefProgramAllowed;
     public boolean starrefConnectAllowed;
@@ -1806,7 +1805,6 @@ public class MessagesController extends BaseController implements NotificationCe
         starsSubscriptionAmountMax = mainPreferences.getLong("starsSubscriptionAmountMax", 2500L);
         starsUsdSellRate1000 = mainPreferences.getFloat("starsUsdSellRate1000", 2000);
         starsUsdWithdrawRate1000 = mainPreferences.getFloat("starsUsdWithdrawRate1000", 1200);
-        sponsoredLinksInappAllow = mainPreferences.getBoolean("sponsoredLinksInappAllow", false);
         starrefProgramAllowed = mainPreferences.getBoolean("starrefProgramAllowed", false);
         starrefConnectAllowed = mainPreferences.getBoolean("starrefConnectAllowed", false);
         starrefStartParamPrefixes = mainPreferences.getStringSet("starrefStartParamPrefixes", new HashSet<>(Arrays.asList("_tgr_")));
@@ -4724,17 +4722,6 @@ public class MessagesController extends BaseController implements NotificationCe
                         if (Math.abs(num.value - starsUsdWithdrawRate1000) > 0.001f) {
                             starsUsdWithdrawRate1000 = (float) num.value;
                             editor.putFloat("starsUsdWithdrawRate1000", starsUsdWithdrawRate1000);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "sponsored_links_inapp_allow": {
-                    if (value.value instanceof TLRPC.TL_jsonBool) {
-                        TLRPC.TL_jsonBool bool = (TLRPC.TL_jsonBool) value.value;
-                        if (bool.value != sponsoredLinksInappAllow) {
-                            sponsoredLinksInappAllow = bool.value;
-                            editor.putBoolean("sponsoredLinksInappAllow", sponsoredLinksInappAllow);
                             changed = true;
                         }
                     }
@@ -24268,23 +24255,9 @@ public class MessagesController extends BaseController implements NotificationCe
         }));
     }
 
-    public void disableAds(boolean send) {
-        TLRPC.UserFull userFull = getUserFull(getUserConfig().getClientUserId());
-        if (userFull == null) return;
-        userFull.sponsored_enabled = false;
-        getMessagesStorage().updateUserInfo(userFull, false);
-        if (send) {
-            TL_account.toggleSponsoredMessages req = new TL_account.toggleSponsoredMessages();
-            req.enabled = false;
-            getConnectionsManager().sendRequest(req, null);
-        }
-    }
-
-    public boolean isSponsoredDisabled() {
-        TLRPC.UserFull userFull = getUserFull(getUserConfig().getClientUserId());
-        if (userFull == null) return false;
-        return !userFull.sponsored_enabled;
-    }
+    // LoogriGram: disableAds and isSponsoredDisabled stood here - the "hide ads"
+    // action a Premium user could take on an ad, and the check that skipped
+    // fetching ads for them. Both lost every caller when ads were removed.
 
     private boolean loadingAvailableEffects;
     private TLRPC.messages_AvailableEffects availableEffects;
