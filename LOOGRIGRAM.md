@@ -17,15 +17,16 @@ depends on.
 | Part | State |
 |---|---|
 | Fork, CI, degoogling | Done. No Google bytecode in the APK, verified in the dex |
-| Installed on the phone | **Yes.** `g25038ef5`, 2026-09-20, signed with our own key |
-| Pending build | `ge9a33bc2`, dispatched 2026-09-21 ([run 35636880531](https://github.com/romanimpair-jpg/LoogriGram-Android/actions/runs/35636880531)) — 24 commits past the installed one, none of them built before. **The first real test of the updater** — see below |
+| Installed on the phone | **Yes.** `gf20af361`, installed 2026-09-22 over `adb` (`adb install -r` succeeded, so the key matched); launches clean |
+| Pending build | `gf2f12360`, dispatched 2026-09-22 ([run 35662105360](https://github.com/romanimpair-jpg/LoogriGram-Android/actions/runs/35662105360)) — 9 commits past the installed one: the rest of paid messages so far and every build warning. **Not yet known to succeed** |
 | App name | Done — launcher, in-app strings, and the two wordmark screens |
 | Phone contacts | **Never touched.** Permissions, account and sync adapter all gone |
-| Updater | Ours, from this repo's releases; a sixth tab appears when one exists. Written 2026-09-20, **never yet exercised** |
+| Updater | Ours, from this repo's releases. Checks on every cold start, then hourly; manual row in Settings (2026-09-21). The installed `gf20af361` is the first build with that behaviour — **its automatic check is still untested**, it needs a later release to find |
 | Ads | **Gone**, all three surfaces, down to `MessageObject`'s fields (2026-09-21) |
 | Money messages | Held in history, never drawn — desktop's hidden-content rule. The chat list no longer rises for one |
+| Paid messages | **Mostly done** (2026-09-21/22): users who charge are locked, nothing ever pays, no price shown where you write. Left: setting a price on your own messages — see "Paid messages" |
 | Photo/video viewer | **Fixed** 2026-09-20; was our own null dereference, see the traps |
-| Build warnings | Native: 4 left, all in the crypto path that is going. Resources: 40, upstream's |
+| Build warnings | **All fixed** in `f2f12360` (native, CMake, Gradle, Kotlin, CI); the native half is only proven once the pending build finishes. Still open: 40 AAPT resource warnings, upstream's strings |
 | Ghost mode | Working in first use; not yet checked against a second account |
 | Push transport | Working; **not yet trusted over hours idle**. FCM is impossible here — see below |
 
@@ -49,22 +50,38 @@ The installed APK: ~44.5 MB, `lib/arm64-v8a/libtmessages.49.so` only, signed
 fingerprint is how to confirm a later build carries the same key - and it must,
 because Android will refuse an update signed with any other.
 
-### Start here next session (written 2026-09-21)
+### Start here next session (written 2026-09-22)
 
-1. **Did `ge9a33bc2` build?** The user reports back; don't poll. If it failed,
-   `gh run view 35636880531 --log-failed` and fix the exact errors. Every commit
-   in it passed `compile`, so a failure is native or packaging, not javac.
-2. **Test the updater on the phone.** The installed `g25038ef5` already carries
-   it. Once the build publishes release `ge9a33bc2`, opening the app should
-   show a sixth tab after the profile: "Update?", then a percentage, then
-   "Install", handing off to the system installer (which asks the first time to
-   allow installs from this app). Refusing should leave the tab to tap later.
-   After installing, the new build must *not* offer itself - it is the current
-   tag. Confirm the certificate fingerprint above is unchanged. If nothing
-   appears: the request is an anonymous `api.github.com` releases query in
-   `LoogriGramUpdate`; enable logs (Settings → tap version ten times) and look
-   there first.
-3. **Look where this session cut deepest**, since a compile cannot see layout:
+1. **Did `gf2f12360` build?** The user reports back; don't poll. Every commit
+   in it passed `compile`, so a failure is native or packaging. The native
+   changes are exactly the five warning fixes in `d6b0890c` (libtgvoip's
+   `aesOut` vectors, the `RtcEventLogFactory` constructor) and the
+   `project(tmessages)` line in `jni/CMakeLists.txt` - look there first. On
+   success, grep the log for `C/C++: .*warning:`; it should find none.
+2. **Test the updater, for real this time.** `gf20af361` is the first build
+   that checks on every cold start. When `gf2f12360` is published, a cold
+   start of the installed app should show the sixth tab ("Update?"), then the
+   percentage, then "Install". Also try Settings → "Check for updates" (bottom
+   of the help section, the build's tag underneath): with nothing newer it says
+   "LoogriGram is up to date (g…)". After installing, the new build must not
+   offer itself. The phone is reachable over USB:
+   `C:\Users\Loogris\platform-tools\adb.exe` (not on PATH), package
+   `com.loogrimedia.loogrigram`.
+3. **Check the paid-message lock on the phone** (needs a user who charges per
+   message - any account can set a price on itself in official Telegram):
+   their chat shows "X only accepts paid messages, which LoogriGram doesn't
+   send." instead of a compose field; their row is padlocked in the share and
+   forward pickers and a tap there says the same line; a story reply to them
+   is locked too. A group that charges must still open and read normally, and
+   a send there should end in the same line as a toast.
+4. **The last cut from 2026-09-21 is still unverified on screen** - see the
+   list below; it shipped in `ge9a33bc2` and nobody has looked yet.
+5. Then finish paid messages: setting a price on your own messages (privacy,
+   group permissions, channel direct messages). See "Paid messages" and
+   "Remaining work".
+
+Unverified from 2026-09-21 (ads and money-row removal), since a compile cannot
+see layout:
    - chat list: a gift or payment arriving must not move the chat to the top
      or blank its preview; the unread badge must still count it and clear;
    - opening a channel: scrolling to the newest message, the jump-to-bottom
@@ -76,8 +93,6 @@ because Android will refuse an update signed with any other.
    - reporting a message or chat (the report sheet lost its ad mode);
    - Settings and your own profile no longer list Premium, Stars, TON,
      Business or Send a Gift; a bot you own has no balance or affiliate rows.
-4. Then the remaining work below. **Paid messages** is the natural next piece:
-   desktop has already settled what to do, so it is mechanical.
 
 ---
 
@@ -271,6 +286,38 @@ Each of these was hit here. Do not relearn them.
     `ReportBottomSheet`'s own field of that name). Before simplifying every
     `x.isFoo()` to false, find every writer of what it reads.
 
+12. **Before deleting a variable, grep every reader of it - in the whole
+    method, not the lines you are looking at.** Twice on 2026-09-22 a compile
+    failed on a name removed with its obvious use: `ShareDialogCell`'s online
+    dot also scaled itself by the price badge's `priceT`, and the attach
+    menu's `paidUser` also hid the quick replies button sixty lines lower.
+
+13. **Removing a parameter from a widely called method is a script job, and
+    the script must match by name *and* arity.** The price parameter sat on
+    ~25 methods with ~350 call sites in 48 files. What worked (2026-09-21): a
+    small Java-aware parser that collects every declaration carrying the
+    parameter across the tree, refuses any name/arity also declared without
+    it, then removes the argument at that index from every call, logging each
+    removed expression for review. Generic names (`send`, `onSend`,
+    `sendMedia`) collide with unrelated methods; the arity check is what stops
+    a paid-live-comment `send(text, stars)` being edited by mistake. Remember
+    lambdas implementing an interface (`(a, b, payStars) ->`) - a declaration
+    scan does not see them. The scripts lived in the session scratchpad and
+    are gone; the approach is what matters.
+
+14. **Inlining a callback is only safe once its body cannot `return`.** A
+    `return` inside `x -> { ... }` leaves the lambda; pasted inline it leaves
+    the enclosing method. Check each body - a `return` inside a *nested*
+    `Runnable` is fine - and watch for locals that now share a scope with the
+    enclosing block.
+
+15. **Windows PowerShell 5.1 mangles quoting for native commands.** A commit
+    message piped with `git commit -F -` from a here-string lost its quotes
+    and arrived as pathspecs, and `python -c` scripts containing `"` broke the
+    same way. Write the message or script to a file in the scratchpad and pass
+    the path. Also: `Select-String` with a backtracking regex over the whole
+    tree ran past two minutes; use the Grep tool (ripgrep).
+
 ---
 
 ## Architecture
@@ -328,10 +375,22 @@ install unknown apps the first time. The UI is a sixth tab after the profile,
 present only when there is something to say: "Update?", then the percentage,
 then "Install"; refusing leaves the tab to tap later, and an update downloaded
 but not installed is offered again once per run. `LaunchActivity.checkAppUpdate`
-keeps its name and its callers and drives this now. Testing it needs two
-builds: the one that publishes a release also installs as that tag, so it sees
-itself as current. The installed `g25038ef5` already has it, so `ge9a33bc2` is
-the second build - the first real test.
+keeps its name and its callers (it runs on every `onResume`) and drives this
+now.
+
+When it asks: the first check of every run always goes out, later resumes at
+most once an hour, and only a real answer from GitHub restarts that clock - a
+failed request leaves the next resume free to retry. Until 2026-09-21 it was
+once a day, counted from any attempt, and that is why `ge9a33bc2` never
+appeared on the phone: the installed build had checked that morning, before
+the release existed. There is also a manual check, the "Check for updates" row
+at the bottom of Settings' help section (subtitled with the build's tag): a
+newer build found that way re-opens the download prompt even if it was refused
+before; otherwise a toast says up to date or GitHub unreachable. The only
+earlier manual way was item 9 of upstream's hidden debug menu.
+
+Testing it needs two builds: the one that publishes a release also installs as
+that tag, so it sees itself as current.
 
 **Money messages are held, not shown.** `LoogriGramHidden` lists the TL types -
 invoices, paid media, giveaways, payments, gift codes, Stars gifts and
@@ -396,18 +455,42 @@ Stars/TON/diamond span and number formatters, 218 call sites), `CurrencyFormat`,
 `AndroidUtilities.percents` / `replaceUnderstood`. Two were renamed on the way
 out because four classes already declare a nested `FeatureCell`.
 
-**Paid messages: not done yet, but decided.** Where the server demands Stars -
-a user who charges per message - desktop reuses upstream's "only accepts
-Premium senders" lock instead of a buy-Stars sheet: the peer becomes one you
-cannot write to, with *"%1 only accepts paid messages, which LoogriGram doesn't
-send."* It is applied when contact requirements arrive
-(`ResolveMessageMoneyRestrictions`), in the send-error check, and on a server
-refusal (`ALLOW_PAYMENT_REQUIRED_*`: lock the user from then on, toast, reload
-full info). Paid post search keeps only the free daily searches; a staked dice
-error is reported like any other. On Android the same lock is one step away:
-`UserObject.getRequirementToContact` (both overloads) already chooses between
-`requirementToContactPaidMessages` and `...Premium` from the same field, and
-`SendMessagesHelper` already parses `ALLOW_PAYMENT_REQUIRED_` in four places.
+**Paid messages: locked, never paid, never priced** (2026-09-21/22, as
+desktop). A user who charges Stars per message is treated like one who only
+accepts Premium senders. `DialogObject.isPremiumBlocked` answers true for both
+requirements, so every cell that draws the Premium padlock draws it for them
+too, and the chat shows the `LoogriGramPaidMessagesLocked` line (*"%1 only
+accepts paid messages, which LoogriGram doesn't send."*) in place of the
+compose field (`ChatActivity.updateBottomOverlay`). The five "tapped a
+padlocked row" toasts share `DialogObject.getLockedText`, which keeps the
+Premium wording for the Premium case. A server refusal
+(`ALLOW_PAYMENT_REQUIRED_*`) is handled once, in `AlertsCreator.processError`,
+which every send path already calls: `MessagesController.lockPaymentRequired`
+marks the user and refetches full info. That deliberately does *not* go into
+`cachedIsUserContactBlocked`, which outranks full info and would keep them
+locked for the session after they stopped charging.
+
+**Groups that charge are not locked**, also as desktop: they open and read
+normally, a send goes out unpaid, the server refuses, and the toast says why.
+`ChatObject.getRequirementToContact` was deleted for this - it would have made
+such a group padlocked in search, and tapping it would toast instead of open.
+
+Nothing pays: the price is gone from every send method, delegate and lambda
+(`payStars`, and `stars` where it meant the same), from `SendMessageParams`,
+from the wire (`allow_paid_stars`, outgoing `paid_message_stars`), and with it
+AlertsCreator's pay-to-send confirmations, StarsController's undo toast and
+send queue, and the `BALANCE_TOO_LOW` buy-Stars sheet. Nothing shows a price
+where you write: row badges, the share screens' totals, the compose hints,
+the attach-menu and photo-viewer send buttons, story replies, and the old/new
+price stored on a failed message (`MessageCustomParamsHelper` still *skips*
+flags 64/128 when reading, for rows an older build wrote). Features upstream
+switched off in a chat with a price - scheduling, the schedule hint - are on.
+
+What still reads a price, on purpose: `SendButton`'s price pill and
+`ChatActivityEnterView.getStarsPrice` (answers 0; the hook `PeerStoriesView`
+overrides) belong to **paid live comments**, and the gift sheets
+(`SendGiftSheet`, `GiftOfferSheet`) read `getSendPaidMessagesStars` but are
+unreachable behind the gift-sending block. Both go with their own removals.
 
 ---
 
@@ -441,14 +524,24 @@ out of a class that is being deleted or changing how a message renders.
 
 In rough order of how much is left behind:
 
-- **Paid messages** - first, because it is decided (see "Paid messages" above)
-  and small: map `requirementToContactPaidMessages` onto the Premium lock in
-  `UserObject.getRequirementToContact`, add the desktop sentence to the fork's
-  `strings.xml` entries, make the four `ALLOW_PAYMENT_REQUIRED_` sites lock the
-  user instead of recording a price, and delete the `StarsNeededSheet` calls
-  (`ChatActivity` ×5, `AlertsCreator` ×3, `ChatActionCell`,
-  `SendMessagesHelper`, `PostsSearchContainer`, `LiveCommentsView`,
-  `DialogsActivity`, `StakedDiceSheet`).
+- **Paid messages, the price-setting half** - next. Desktop's `9d363a2689`
+  is the map: the "Charge for messages" privacy option with its star slider
+  and "Remove fee" exceptions (`NoPaidMessages` key), a group's "charge Stars"
+  permission toggle, and a channel's direct-messages price (keep the toggle
+  that allows direct messages at all - that is not money). Also the
+  `messagesFeeUpdated` / `nopaid_messages_exception` machinery in
+  `StarsController` and `TopicsController`, and the remaining
+  `StarsNeededSheet` callers outside send paths (`ChatActionCell`,
+  `PostsSearchContainer`, `StakedDiceSheet`). When `getSendPaidMessagesStars`
+  and `DialogObject.getMessagesStarsPrice` lose their last readers (the gift
+  sheets), delete both.
+- **Paid live comments.** `LiveCommentsView.send(text, stars)`, the price
+  pill in `ChatActivityEnterView.SendButton` (`setStarsPrice`), the
+  `isLiveComment` tiers (`HighlightMessageSheet`) and
+  `PeerStoriesView.getStarsPrice`. Desktop removed its equivalent.
+- **Paid media** (sending photos with a price): `SendMessageParams.stars`,
+  `ChatAttachAlertPhotoLayout.setStarsPrice`, `showMediaPriceSheet`. Separate
+  from paid messages - left alone on purpose.
 - **Stars / Gifts / TON UI.** The helper extraction is finished (see "Helpers
   freed from money screens"), so what is left is real coupling, measured
   2026-09-21 as non-money files still touching `ui/Stars`, `ui/Gifts`, `ui/TON`:
@@ -480,9 +573,10 @@ In rough order of how much is left behind:
   (true)"` also finds `MessagesController` (`addPhotoAtStart`),
   `AndroidUtilities`, `ChatActivity` and `DialogsSearchAdapter` - their origin
   was not checked; some may be upstream's own.
-- **Build warnings.** Native: four variable length arrays remain, all
-  `aesOut[MSC_STACK_FALLBACK(...)]` in libtgvoip's crypto path, left because
-  that code is going. Resources: 40 AAPT "multiple substitutions in
+- **Build warnings.** Native, CMake, Gradle, Kotlin (`buildSrc`) and CI all
+  fixed 2026-09-22 (`d6b0890c`, `f2f12360`). The node `punycode` / `url.parse`
+  deprecations in the log come from inside GitHub's own actions. Still open:
+  40 AAPT "multiple substitutions in
   non-positional format" on upstream strings - about half are gift/Stars
   strings that die with the money removal; the rest (`AddManyMembersAlert*`,
   `Languages_*`, `NoContactsYet*`, `YourEmailCode*`, `ResetAccount*`,
@@ -499,6 +593,12 @@ In rough order of how much is left behind:
   the affiliate rows, and the money deep links in `LinkManager` and
   `LaunchActivity` deleted; `ProfilePremiumCell` deleted; all three ad surfaces
   deleted down to `MessageObject`'s fields. 5,135 lines deleted, about 3,250 net.
+- **Done on 2026-09-21/22, for the record** (`3935357b..f2f12360`): paid
+  messages locked (`3935357b`), never paid (`1618bebd`, ~1,700 lines),
+  `onSend`'s `showToast` dropped (`f20af361`), prices gone from rows, share
+  screens and the compose field (`80e73326`..`60ef620c`), the refused-price
+  fields (`8f352db4`); the updater's start-up check and Settings row
+  (`a1d5345d`); every build warning but AAPT's (`d6b0890c`, `f2f12360`).
 
 ### Then
 
