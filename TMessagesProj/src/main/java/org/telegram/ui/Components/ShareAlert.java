@@ -2759,21 +2759,9 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
         if (selectedDialogs.size() == 0) {
             showCommentTextView(false);
         } else {
-            int messagesCount = sendingMessageObjects == null ? 1 : sendingMessageObjects.size();
-            if (frameLayout2.getTag() != null && commentTextView.length() > 0) {
-                messagesCount++;
-            }
-            long price = 0;
-            for (int i = 0; i < selectedDialogs.size(); ++i) {
-                final long did = selectedDialogs.valueAt(i).id;
-                long thisPrice = MessagesController.getInstance(currentAccount).getSendPaidMessagesStars(did);
-                if (thisPrice <= 0) {
-                    thisPrice = DialogObject.getMessagesStarsPrice(MessagesController.getInstance(currentAccount).isUserContactBlocked(did));
-                }
-                price += thisPrice;
-            }
+            // LoogriGram: the chosen chats' prices per message were added up here
+            // and shown on the send button. Nothing is paid.
             writeButton.setCount(Math.max(1, selectedDialogs.size()), animated != 0);
-            writeButton.setStarsPrice(price, messagesCount, animated != 0);
             showCommentTextView(true);
 
             commentTextView.setPadding(0, 0, Math.max(dp(84), writeButton.width()), 0);

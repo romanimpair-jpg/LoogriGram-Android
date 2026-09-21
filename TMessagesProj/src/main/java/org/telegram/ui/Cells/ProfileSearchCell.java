@@ -127,8 +127,6 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
     private boolean showPremiumBlocked;
     private final AnimatedFloat premiumBlockedT = new AnimatedFloat(this, 0, 350, CubicBezierInterpolator.EASE_OUT_QUINT);
     private boolean premiumBlocked;
-    private final AnimatedFloat starsBlockedT = new AnimatedFloat(this, 0, 350, CubicBezierInterpolator.EASE_OUT_QUINT);
-    private long starsPriceBlocked;
     private boolean openBot;
 
     private int statusLeft;
@@ -203,14 +201,14 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
             chat = null;
             final TL_account.RequirementToContact r = showPremiumBlocked && user != null ? MessagesController.getInstance(currentAccount).isUserContactBlocked(user.id) : null;
             premiumBlocked = DialogObject.isPremiumBlocked(r);
-            starsPriceBlocked = DialogObject.getMessagesStarsPrice(r);
             setOpenBotButton(allowBotOpenButton && user.bot_has_main_app);
         } else if (object instanceof TLRPC.Chat) {
             chat = (TLRPC.Chat) object;
             user = null;
-            final TL_account.RequirementToContact r = ChatObject.getRequirementToContact(chat);
-            premiumBlocked = DialogObject.isPremiumBlocked(r);
-            starsPriceBlocked = DialogObject.getMessagesStarsPrice(r);
+            // LoogriGram: a group that charges per message wore its price here.
+            // Groups are not locked (desktop does the same): you can still open
+            // and read one, and a send it refuses says why.
+            premiumBlocked = false;
             setOpenBotButton(false);
         } else {
             setOpenBotButton(false);
@@ -335,15 +333,10 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
         if (id == NotificationCenter.emojiLoaded) {
             invalidate();
         } else if (id == NotificationCenter.userIsPremiumBlockedUpadted) {
-            final TL_account.RequirementToContact r;
-            if (user != null) {
-                r = showPremiumBlocked ? MessagesController.getInstance(currentAccount).isUserContactBlocked(user.id) : null;
-            } else if (chat != null) {
-                r = ChatObject.getRequirementToContact(chat);
-            } else return;
-            if (premiumBlocked != DialogObject.isPremiumBlocked(r) || starsPriceBlocked != DialogObject.getMessagesStarsPrice(r)) {
+            if (user == null) return;
+            final TL_account.RequirementToContact r = showPremiumBlocked ? MessagesController.getInstance(currentAccount).isUserContactBlocked(user.id) : null;
+            if (premiumBlocked != DialogObject.isPremiumBlocked(r)) {
                 premiumBlocked = DialogObject.isPremiumBlocked(r);
-                starsPriceBlocked = DialogObject.getMessagesStarsPrice(r);
                 invalidate();
             }
         }

@@ -47,7 +47,6 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
-import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.tgnet.ConnectionsManager;
@@ -91,15 +90,9 @@ public class ShareDialogCell extends FrameLayout implements NotificationCenter.N
 
     private final AnimatedFloat premiumBlockedT = new AnimatedFloat(this, 0, 350, CubicBezierInterpolator.EASE_OUT_QUINT);
     private boolean premiumBlocked;
-    private final AnimatedFloat starsBlockedT = new AnimatedFloat(this, 0, 350, CubicBezierInterpolator.EASE_OUT_QUINT);
-    private long starsPriceBlocked;
 
     public boolean isBlocked() {
         return premiumBlocked;
-    }
-
-    public long getStarsPrice() {
-        return starsPriceBlocked;
     }
 
     public BackupImageView getImageView() {
@@ -184,10 +177,8 @@ public class ShareDialogCell extends FrameLayout implements NotificationCenter.N
     public void didReceivedNotification(int id, int account, Object... args) {
         if (id == NotificationCenter.userIsPremiumBlockedUpadted) {
             final TL_account.RequirementToContact r = user != null ? MessagesController.getInstance(currentAccount).isUserContactBlocked(user.id) : null;
-            final long starsPrice = currentDialog < 0 ? MessagesController.getInstance(currentAccount).getSendPaidMessagesStars(currentDialog) : DialogObject.getMessagesStarsPrice(r);
-            if (premiumBlocked != DialogObject.isPremiumBlocked(r) || starsPriceBlocked != starsPrice) {
+            if (premiumBlocked != DialogObject.isPremiumBlocked(r)) {
                 premiumBlocked = DialogObject.isPremiumBlocked(r);
-                starsPriceBlocked = starsPrice;
                 nameTextView.setTextColor(getThemedColor(premiumBlocked ? Theme.key_windowBackgroundWhiteGrayText5 : Theme.key_dialogTextBlack));
                 invalidate();
             }
@@ -215,10 +206,8 @@ public class ShareDialogCell extends FrameLayout implements NotificationCenter.N
             user = MessagesController.getInstance(currentAccount).getUser(uid);
             final TL_account.RequirementToContact r = MessagesController.getInstance(currentAccount).isUserContactBlocked(uid);
             premiumBlocked = DialogObject.isPremiumBlocked(r);
-            starsPriceBlocked = DialogObject.getMessagesStarsPrice(r);
             nameTextView.setTextColor(getThemedColor(premiumBlocked ? Theme.key_windowBackgroundWhiteGrayText5 : Theme.key_dialogTextBlack));
             premiumBlockedT.force(premiumBlocked);
-            starsBlockedT.force(starsPriceBlocked > 0);
             invalidate();
             avatarDrawable.setInfo(currentAccount, user);
             if (currentType != TYPE_CREATE && UserObject.isReplyUser(user)) {
@@ -244,8 +233,6 @@ public class ShareDialogCell extends FrameLayout implements NotificationCenter.N
             user = null;
             premiumBlocked = false;
             premiumBlockedT.force(0);
-            starsPriceBlocked = MessagesController.getInstance(currentAccount).getSendPaidMessagesStars(uid);
-            starsBlockedT.force(false);
             TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-uid);
             if (name != null) {
                 nameTextView.setText(name);
@@ -342,10 +329,6 @@ public class ShareDialogCell extends FrameLayout implements NotificationCenter.N
     private PremiumGradient.PremiumGradientTools premiumGradient;
     private Drawable lockDrawable;
 
-    private final Paint priceBackgroundPaint = new Paint();
-    private long priceTextValue;
-    private Text priceText;
-
     @Override
     protected boolean drawChild(Canvas canvas, View child, long drawingTime) {
         boolean result = super.drawChild(canvas, child, drawingTime);
@@ -358,29 +341,9 @@ public class ShareDialogCell extends FrameLayout implements NotificationCenter.N
                 }
                 lastUpdateTime = newTime;
 
-                final float priceT = starsBlockedT.set(starsPriceBlocked > 0);
-                if (priceT > 0) {
-                    float cx = imageView.getLeft() + imageView.getMeasuredWidth() / 2.0f + dp(18);
-                    float cy = imageView.getTop() + imageView.getMeasuredHeight() / 2.0f - dp(20.83f);
-
-                    if (priceText == null || priceTextValue != starsPriceBlocked && starsPriceBlocked > 0) {
-                        priceText = new Text(StarsFormat.replaceStars("⭐️" + AndroidUtilities.formatWholeNumber((int) (priceTextValue = starsPriceBlocked), 0), .65f), 9.33f, AndroidUtilities.bold());
-                    }
-                    final float w = (priceText == null ? 0 : priceText.getCurrentWidth()) + dp(10);
-                    final float h = dp(14.33f);
-
-                    AndroidUtilities.rectTmp.set(cx - w / 2.0f, cy - h / 2.0f, cx + w / 2.0f, cy + h / 2.0f);
-                    AndroidUtilities.rectTmp.inset(-dp(1.33f), dp(-1.33f));
-                    priceBackgroundPaint.setColor(getThemedColor(Theme.key_dialogBackground));
-                    canvas.drawRoundRect(AndroidUtilities.rectTmp, AndroidUtilities.rectTmp.height() / 2.0f, AndroidUtilities.rectTmp.height() / 2.0f, priceBackgroundPaint);
-                    AndroidUtilities.rectTmp.inset(dp(1.33f), dp(1.33f));
-                    priceBackgroundPaint.setColor(getThemedColor(Theme.key_dialogRoundCheckBox));
-                    canvas.drawRoundRect(AndroidUtilities.rectTmp, AndroidUtilities.rectTmp.height() / 2.0f, AndroidUtilities.rectTmp.height() / 2.0f, priceBackgroundPaint);
-
-                    if (priceText != null) {
-                        priceText.draw(canvas, cx - w / 2.0f + dp(5), cy, Color.WHITE, 1.0f);
-                    }
-                }
+                // LoogriGram: a star pill with the price per message sat on the avatar
+                // of a chat that charges. Nothing is paid; a user who charges is
+                // padlocked instead, just below.
                 final float lockT = premiumBlockedT.set(premiumBlocked);
                 if (lockT > 0) {
                     int top = imageView.getBottom() - dp(9);

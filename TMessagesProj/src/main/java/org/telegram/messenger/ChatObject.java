@@ -2616,17 +2616,6 @@ public class ChatObject {
         return 0;
     }
 
-    public static TL_account.RequirementToContact getRequirementToContact(TLRPC.Chat chat) {
-        if (chat == null) return null;
-        if (chat.send_paid_messages_stars != 0) {
-            final TL_account.requirementToContactPaidMessages r = new TL_account.requirementToContactPaidMessages();
-            r.stars_amount = chat.send_paid_messages_stars;
-            return r;
-        } else {
-            return null;
-        }
-    }
-
     public static boolean areTabsEnabled(TLRPC.Chat chat) {
         return SharedConfig.forceForumTabs || chat != null && chat.forum_tabs;
     }

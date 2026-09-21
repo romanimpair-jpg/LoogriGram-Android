@@ -68,8 +68,6 @@ public class HintDialogCell extends FrameLayout {
     private boolean showPremiumBlocked;
     private final AnimatedFloat premiumBlockedT = new AnimatedFloat(this, 0, 350, CubicBezierInterpolator.EASE_OUT_QUINT);
     private boolean premiumBlocked;
-    private final AnimatedFloat starsBlockedT = new AnimatedFloat(this, 0, 350, CubicBezierInterpolator.EASE_OUT_QUINT);
-    private long starsPriceBlocked;
 
     public boolean isBlocked() {
         return premiumBlocked;
@@ -131,12 +129,10 @@ public class HintDialogCell extends FrameLayout {
 
     private void updatePremiumBlocked(boolean animated) {
         final TL_account.RequirementToContact r = showPremiumBlocked && currentUser != null ? MessagesController.getInstance(currentAccount).isUserContactBlocked(currentUser.id) : null;
-        if (premiumBlocked != DialogObject.isPremiumBlocked(r) || starsPriceBlocked != DialogObject.getMessagesStarsPrice(r)) {
+        if (premiumBlocked != DialogObject.isPremiumBlocked(r)) {
             premiumBlocked = DialogObject.isPremiumBlocked(r);
-            starsPriceBlocked = DialogObject.getMessagesStarsPrice(r);
             if (!animated) {
                 premiumBlockedT.set(premiumBlocked, true);
-                starsBlockedT.set(starsPriceBlocked > 0, true);
             }
             invalidate();
         }

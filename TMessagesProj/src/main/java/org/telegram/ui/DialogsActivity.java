@@ -4914,21 +4914,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 }
 
                 @Override
-                public long getStarsPrice() {
-                    long price = 0;
-                    if (selectedDialogs != null) {
-                        for (final long did : selectedDialogs) {
-                            long dialogPrice = getMessagesController().getSendPaidMessagesStars(did);
-                            if (dialogPrice <= 0 && did > 0) {
-                                dialogPrice = DialogObject.getMessagesStarsPrice(getMessagesController().isUserContactBlocked(did));
-                            }
-                            price += dialogPrice;
-                        }
-                    }
-                    return price;
-                }
-
-                @Override
                 public int getMessagesCount() {
                     return Math.max(1, DialogsActivity.this.messagesCount + (TextUtils.isEmpty(commentView == null ? "" : commentView.getFieldText()) ? 0 : 1));
                 }
@@ -10298,17 +10283,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     }
                 }
                 writeButton.setCount(Math.max(1, selectedDialogs.size()), true);
-                long price = 0;
-                final int messagesCount = this.messagesCount + (TextUtils.isEmpty(commentView.getFieldText()) ? 0 : 1);
-                for (final long did : selectedDialogs) {
-                    long dialogPrice = getMessagesController().getSendPaidMessagesStars(did);
-                    if (dialogPrice <= 0 && did > 0) {
-                        dialogPrice = DialogObject.getMessagesStarsPrice(getMessagesController().isUserContactBlocked(did));
-                    }
-                    price += dialogPrice;
-                }
-                writeButton.setStarsPrice(price, messagesCount);
-                commentView.updateSendButtonPaid();
+                // LoogriGram: the chosen chats' prices per message were added up here
+                // and shown on the send button. Nothing is paid.
                 if (wasSelectedDialogsEmpty == selectedDialogs.isEmpty()) {
                     actionBar.setTitle(LocaleController.formatPluralString("Recipient", selectedDialogs.size()));
                 } else {
