@@ -512,8 +512,21 @@ public class DialogObject {
         return value == null || value instanceof TL_account.requirementToContactEmpty;
     }
 
+    // LoogriGram: a user who charges Stars per message is locked too, exactly
+    // like one who only accepts Premium senders - nothing here pays, so the
+    // chat has no compose field and their row wears the same padlock. Only
+    // the sentence differs; see getLockedText.
     public static boolean isPremiumBlocked(TL_account.RequirementToContact value) {
-        return value instanceof TL_account.requirementToContactPremium;
+        return value instanceof TL_account.requirementToContactPremium || value instanceof TL_account.requirementToContactPaidMessages;
+    }
+
+    // LoogriGram: why a padlocked user cannot be written to. premiumText is the
+    // caller's own Premium sentence, which keeps its wording.
+    public static CharSequence getLockedText(int currentAccount, long dialogId, int premiumText) {
+        final TL_account.RequirementToContact r = dialogId > 0 ? MessagesController.getInstance(currentAccount).isUserContactBlocked(dialogId) : null;
+        final boolean paid = r instanceof TL_account.requirementToContactPaidMessages;
+        final String name = dialogId > 0 ? UserObject.getUserName(MessagesController.getInstance(currentAccount).getUser(dialogId)) : getShortName(currentAccount, dialogId);
+        return AndroidUtilities.replaceTags(LocaleController.formatString(paid ? R.string.LoogriGramPaidMessagesLocked : premiumText, name));
     }
 
     public static long getMessagesStarsPrice(TL_account.RequirementToContact value) {

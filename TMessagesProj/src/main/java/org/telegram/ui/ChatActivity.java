@@ -21858,6 +21858,9 @@ public class ChatActivity extends BaseFragment implements
             if (chatActivityEnterView != null) {
                 chatActivityEnterView.updateSendButtonPaid();
             }
+            // LoogriGram: a payment-required refusal locks the user at once, so
+            // the compose field has to give way to the notice here too.
+            updateBottomOverlay(true);
         } else if (id == NotificationCenter.updateInterfaces) {
             int updateMask = (Integer) args[0];
             if ((updateMask & MessagesController.UPDATE_MASK_NAME) != 0 || (updateMask & MessagesController.UPDATE_MASK_CHAT_NAME) != 0 || (updateMask & MessagesController.UPDATE_MASK_EMOJI_STATUS) != 0) {
@@ -27524,15 +27527,22 @@ public class ChatActivity extends BaseFragment implements
             bottomOverlayLinksText.setBackground(Theme.createSelectorDrawable(Theme.multAlpha(getThemedColor(Theme.key_featuredStickers_addButton), .05f), Theme.RIPPLE_MASK_ALL));
             bottomOverlayLinksText.setClickable(true);
             showBottomOverlayProgress(false, false);
-        } else if (chatMode == MODE_DEFAULT && getDialogId() != getUserConfig().getClientUserId() && userInfo != null && userInfo.contact_require_premium && !getUserConfig().isPremium()) {
+        } else if (chatMode == MODE_DEFAULT && getDialogId() != getUserConfig().getClientUserId() && userInfo != null && (userInfo.contact_require_premium && !getUserConfig().isPremium() || userInfo.send_paid_messages_stars != 0)) {
             bottomOverlayLinks = true;
             bottomOverlayChatText.setVisibility(View.GONE);
             bottomOverlayLinksText.setVisibility(View.VISIBLE);
             bottomOverlayLinksText.setTextColor(getThemedColor(Theme.key_graySectionText));
             bottomOverlayLinksText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
-            bottomOverlayLinksText.setText(AndroidUtilities.replaceSingleTag(LocaleController.formatString(R.string.OnlyPremiumCanMessage, UserObject.getFirstName(currentUser)), Theme.key_chat_messageLinkIn, 0, () -> {
-                ChatGreetingsView.showPremiumSheet(getContext(), currentAccount, dialog_id, themeDelegate);
-            }));
+            if (userInfo.send_paid_messages_stars != 0) {
+                // LoogriGram: a user who charges Stars per message gets the same
+                // lock as a Premium-only one, with our sentence in place of the
+                // price and the top-up sheet.
+                bottomOverlayLinksText.setText(AndroidUtilities.replaceTags(LocaleController.formatString(R.string.LoogriGramPaidMessagesLocked, UserObject.getFirstName(currentUser))));
+            } else {
+                bottomOverlayLinksText.setText(AndroidUtilities.replaceSingleTag(LocaleController.formatString(R.string.OnlyPremiumCanMessage, UserObject.getFirstName(currentUser)), Theme.key_chat_messageLinkIn, 0, () -> {
+                    ChatGreetingsView.showPremiumSheet(getContext(), currentAccount, dialog_id, themeDelegate);
+                }));
+            }
             bottomOverlayLinksText.setClickable(false);
             showBottomOverlayProgress(false, false);
         } else if (editingMessageObject == null && chatMode == MODE_QUICK_REPLIES && messages.size() >= getMessagesController().config.quickReplyMessagesLimit.get()) {
@@ -43832,9 +43842,9 @@ public class ChatActivity extends BaseFragment implements
     private void invalidatePremiumBlocked() {
         if (getDialogId() == getUserConfig().getClientUserId())
             return;
-        if (getUserConfig().isPremium())
-            return;
-        if (currentUser == null || !currentUser.contact_require_premium)
+        // LoogriGram: a user who charges per message is locked too, and Premium
+        // does not lift that one.
+        if (currentUser == null || !(currentUser.contact_require_premium && !getUserConfig().isPremium() || currentUser.send_paid_messages_stars != 0))
             return;
         if (messages.isEmpty() == (getMessagesController().isUserContactBlocked(getDialogId()) != null))
             return;

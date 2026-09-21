@@ -5959,23 +5959,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private void showPremiumBlockedToast(View view, long dialogId) {
         AndroidUtilities.shakeViewSpring(view, shiftDp = -shiftDp);
         BotWebViewVibrationEffect.APP_ERROR.vibrate();
-        String username = "";
-        if (dialogId >= 0) {
-            username = UserObject.getUserName(MessagesController.getInstance(currentAccount).getUser(dialogId));
-        }
-        Bulletin bulletin;
-        if (getMessagesController().premiumFeaturesBlocked()) {
-            bulletin = BulletinFactory.of(this).createSimpleBulletin(R.raw.star_premium_2, AndroidUtilities.replaceTags(LocaleController.formatString(R.string.UserBlockedNonPremium, username)));
-        } else {
-            bulletin = BulletinFactory.of(this)
-                .createSimpleBulletin(R.raw.star_premium_2, AndroidUtilities.replaceTags(LocaleController.formatString(R.string.UserBlockedNonPremium, username)), LocaleController.getString(R.string.UserBlockedNonPremiumButton), () -> {
-                    BaseFragment lastFragment = LaunchActivity.getLastFragment();
-                    if (lastFragment != null) {
-                        presentFragment(new PremiumPreviewFragment("noncontacts"));
-                    }
-                });
-        }
-        bulletin.show();
+        // LoogriGram: the "Subscribe to Premium" button beside this was never
+        // offered (premiumFeaturesBlocked), and the text now also covers a
+        // user who charges per message.
+        BulletinFactory.of(this).createSimpleBulletin(R.raw.star_premium_2, DialogObject.getLockedText(currentAccount, dialogId, R.string.UserBlockedNonPremium)).show();
     }
 
     private void updateDialogsHint() {

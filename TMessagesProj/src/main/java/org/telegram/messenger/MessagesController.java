@@ -24204,6 +24204,24 @@ public class MessagesController extends BaseController implements NotificationCe
         loadFullUser(getUser(userId), classGuid, true);
     }
 
+    // LoogriGram: the server refused a message because it wanted Stars for it.
+    // Nothing here pays, so the user is locked from then on the way their full
+    // info would lock them, and that full info is fetched again to catch up.
+    // The amount is never shown; it only has to be non-zero to lock. Not put in
+    // cachedIsUserContactBlocked, which outranks full info and so would keep
+    // them locked for the session even if they stopped charging.
+    public void lockPaymentRequired(long userId) {
+        final TL_account.requirementToContactPaidMessages r = new TL_account.requirementToContactPaidMessages();
+        r.stars_amount = 1;
+        UserObject.applyRequirementToContact(getUser(userId), r);
+        final TLRPC.UserFull userFull = getUserFull(userId);
+        if (userFull != null && UserObject.applyRequirementToContact(userFull, r)) {
+            getMessagesStorage().updateUserInfo(userFull, true);
+        }
+        getNotificationCenter().postNotificationName(NotificationCenter.userIsPremiumBlockedUpadted);
+        invalidateUserPremiumBlocked(userId, 0);
+    }
+
     private final Runnable requestIsUserContactBlockedRunnable = this::requestIsUserContactBlocked;
     private void requestIsUserContactBlocked() {
         if (loadingIsUserContactBlocked.isEmpty()) return;

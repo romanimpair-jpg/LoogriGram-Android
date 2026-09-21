@@ -1907,35 +1907,9 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
     private void showPremiumBlockedToast(View view, long dialogId) {
         AndroidUtilities.shakeViewSpring(view, shiftDp = -shiftDp);
         BotWebViewVibrationEffect.APP_ERROR.vibrate();
-        String username = "";
-        if (dialogId >= 0) {
-            username = UserObject.getUserName(MessagesController.getInstance(currentAccount).getUser(dialogId));
-        }
-        Bulletin bulletin;
-        if (MessagesController.getInstance(currentAccount).premiumFeaturesBlocked()) {
-            bulletin = BulletinFactory.of(bulletinContainer, resourcesProvider).createSimpleBulletin(R.raw.star_premium_2, AndroidUtilities.replaceTags(LocaleController.formatString(R.string.UserBlockedNonPremium, username)));
-        } else {
-            bulletin = BulletinFactory.of(bulletinContainer, resourcesProvider).createSimpleBulletin(R.raw.star_premium_2, AndroidUtilities.replaceTags(LocaleController.formatString(R.string.UserBlockedNonPremium, username)), LocaleController.getString(R.string.UserBlockedNonPremiumButton), () -> {
-                Runnable openPremium = () -> {
-                    BaseFragment lastFragment = LaunchActivity.getLastFragment();
-                    if (lastFragment != null) {
-                        BaseFragment.BottomSheetParams params = new BaseFragment.BottomSheetParams();
-                        params.transitionFromLeft = true;
-                        params.allowNestedScroll = false;
-                        lastFragment.showAsSheet(new PremiumPreviewFragment("noncontacts"), params);
-                    }
-                };
-                if (isKeyboardVisible()) {
-                    if (searchView != null) {
-                        AndroidUtilities.hideKeyboard(searchView.editText);
-                    }
-                    AndroidUtilities.runOnUIThread(openPremium, 300);
-                } else {
-                    openPremium.run();
-                }
-            });
-        }
-        bulletin.show();
+        // LoogriGram: no "Subscribe to Premium" button (premiumFeaturesBlocked
+        // never offered it), and the text also covers paid messages.
+        BulletinFactory.of(bulletinContainer, resourcesProvider).createSimpleBulletin(R.raw.star_premium_2, DialogObject.getLockedText(currentAccount, dialogId, R.string.UserBlockedNonPremium)).show();
     }
 
     private int shiftDp = 4;

@@ -4079,40 +4079,6 @@ public class StarsController {
         return 0;
     }
 
-    public static long getPeer(TLObject req) {
-        if (req instanceof TLRPC.TL_messages_sendMessage) {
-            return DialogObject.getPeerDialogId(((TLRPC.TL_messages_sendMessage) req).peer);
-        } else if (req instanceof TLRPC.TL_messages_sendMultiMedia) {
-            return DialogObject.getPeerDialogId(((TLRPC.TL_messages_sendMultiMedia) req).peer);
-        } else if (req instanceof TLRPC.TL_messages_sendInlineBotResult) {
-            return DialogObject.getPeerDialogId(((TLRPC.TL_messages_sendInlineBotResult) req).peer);
-        } else if (req instanceof TLRPC.TL_messages_forwardMessages) {
-            return DialogObject.getPeerDialogId(((TLRPC.TL_messages_forwardMessages) req).to_peer);
-        } else if (req instanceof TLRPC.TL_messages_sendMedia) {
-            return DialogObject.getPeerDialogId(((TLRPC.TL_messages_sendMedia) req).peer);
-        }
-        return 0;
-    }
-
-    public void showPriceChangedToast(List<MessageObject> msgs) {
-        if (msgs == null || msgs.isEmpty()) return;
-        final MessageObject msg = msgs.get(0);
-        final long dialogId = msg.getDialogId();
-        if (dialogId >= 0) {
-            MessagesController.getInstance(currentAccount).loadFullUser(MessagesController.getInstance(currentAccount).getUser(dialogId), 0, true);
-        } else {
-            MessagesController.getInstance(currentAccount).loadFullChat(-dialogId, 0, true);
-        }
-        final CharSequence text = StarsFormat.replaceStars(TextUtils.concat(
-            LocaleController.formatPluralString("PaidMessagesSendErrorToast1", (int) msg.messageOwner.errorAllowedPriceStars),
-            " ",
-            LocaleController.formatPluralString("PaidMessagesSendErrorToast2", (int) msg.messageOwner.errorNewPriceStars)
-        ));
-        BulletinFactory.of(LaunchActivity.getSafeLastFragment())
-            .createSimpleBulletin(R.raw.error, text)
-            .show();
-    }
-
     public static boolean isEnoughAmount(int currentAccount, AmountUtils.Amount amount) {
         if (amount == null) {
             return true;

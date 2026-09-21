@@ -2984,23 +2984,10 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
         }
         AndroidUtilities.shakeViewSpring(chatActivityEnterView, shiftDp = -shiftDp);
         BotWebViewVibrationEffect.APP_ERROR.vibrate();
-        String username = "";
-        if (dialogId >= 0) {
-            username = UserObject.getUserName(MessagesController.getInstance(currentAccount).getUser(dialogId));
-        }
-        Bulletin bulletin;
-        if (MessagesController.getInstance(currentAccount).premiumFeaturesBlocked()) {
-            bulletin = BulletinFactory.of(storyContainer, resourcesProvider)
-                    .createSimpleBulletin(R.raw.star_premium_2, AndroidUtilities.replaceTags(LocaleController.formatString(R.string.UserBlockedRepliesNonPremium, username)));
-        } else {
-            bulletin = BulletinFactory.of(storyContainer, resourcesProvider)
-                .createSimpleBulletin(R.raw.star_premium_2, AndroidUtilities.replaceTags(LocaleController.formatString(R.string.UserBlockedRepliesNonPremium, username)), getString(R.string.UserBlockedNonPremiumButton), () -> {
-                    if (storyViewer != null) {
-                        storyViewer.presentFragment(new PremiumPreviewFragment("noncontacts"));
-                    }
-                });
-        }
-        bulletin.show();
+        // LoogriGram: no "Subscribe to Premium" button (premiumFeaturesBlocked
+        // never offered it), and the text also covers paid messages.
+        BulletinFactory.of(storyContainer, resourcesProvider)
+            .createSimpleBulletin(R.raw.star_premium_2, DialogObject.getLockedText(currentAccount, dialogId, R.string.UserBlockedRepliesNonPremium)).show();
     }
 
     private void updateSpeedItem(boolean isFinal) {

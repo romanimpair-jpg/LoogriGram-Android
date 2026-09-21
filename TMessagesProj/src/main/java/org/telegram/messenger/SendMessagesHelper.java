@@ -961,6 +961,22 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         return localInstance;
     }
 
+    // LoogriGram: was StarsController.getPeer, moved out of the money code.
+    public static long getSendRequestPeer(TLObject req) {
+        if (req instanceof TLRPC.TL_messages_sendMessage) {
+            return DialogObject.getPeerDialogId(((TLRPC.TL_messages_sendMessage) req).peer);
+        } else if (req instanceof TLRPC.TL_messages_sendMultiMedia) {
+            return DialogObject.getPeerDialogId(((TLRPC.TL_messages_sendMultiMedia) req).peer);
+        } else if (req instanceof TLRPC.TL_messages_sendInlineBotResult) {
+            return DialogObject.getPeerDialogId(((TLRPC.TL_messages_sendInlineBotResult) req).peer);
+        } else if (req instanceof TLRPC.TL_messages_forwardMessages) {
+            return DialogObject.getPeerDialogId(((TLRPC.TL_messages_forwardMessages) req).to_peer);
+        } else if (req instanceof TLRPC.TL_messages_sendMedia) {
+            return DialogObject.getPeerDialogId(((TLRPC.TL_messages_sendMedia) req).peer);
+        }
+        return 0;
+    }
+
     public SendMessagesHelper(int instance) {
         super(instance);
 
@@ -2745,11 +2761,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                             for (int a1 = 0; a1 < newMsgObjArr.size(); a1++) {
                                 final TLRPC.Message newMsgObj1 = newMsgObjArr.get(a1);
                                 getMessagesStorage().markMessageAsSendError(newMsgObj1, scheduleDate != 0 ? 1 : 0);
-                                if (error != null && error.text != null && error.text.startsWith("ALLOW_PAYMENT_REQUIRED_")) {
-                                    newMsgObj1.errorAllowedPriceStars = StarsController.getInstance(currentAccount).getAllowedPaidStars(req);
-                                    newMsgObj1.errorNewPriceStars = Long.parseLong(error.text.substring("ALLOW_PAYMENT_REQUIRED_".length())) / req.id.size();
-                                    getMessagesStorage().updateMessageCustomParams(MessageObject.getDialogId(newMsgObj1), newMsgObj1);
-                                }
                                 AndroidUtilities.runOnUIThread(() -> {
                                     newMsgObj1.send_state = MessageObject.MESSAGE_SEND_STATE_SEND_ERROR;
                                     getNotificationCenter().postNotificationName(NotificationCenter.messageSendError, newMsgObj1.id);
@@ -2757,11 +2768,9 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                                     removeFromSendingMessages(newMsgObj1.id, scheduleDate != 0);
                                 });
                             }
-                            if (error != null && error.text != null && error.text.startsWith("ALLOW_PAYMENT_REQUIRED_")) {
-                                AndroidUtilities.runOnUIThread(() -> {
-                                    StarsController.getInstance(currentAccount).showPriceChangedToast(newMsgArr);
-                                });
-                            }
+                            // LoogriGram: a payment-required error recorded the new
+                            // price on each message and toasted it. processError
+                            // above now locks the user instead.
                         }, ConnectionsManager.RequestFlagCanCompress | ConnectionsManager.RequestFlagInvokeAfter);
                     };
 
@@ -7820,12 +7829,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         TLRPC.Message newMsgObj = msgObj.messageOwner;
                         getMessagesStorage().markMessageAsSendError(newMsgObj, scheduled ? 1 : 0);
                         newMsgObj.send_state = MessageObject.MESSAGE_SEND_STATE_SEND_ERROR;
-                        if (!scheduled && error != null && error.text != null && error.text.startsWith("ALLOW_PAYMENT_REQUIRED_")) {
-                            newMsgObj.errorAllowedPriceStars = StarsController.getInstance(currentAccount).getAllowedPaidStars(request);
-                            newMsgObj.errorNewPriceStars = Long.parseLong(error.text.substring("ALLOW_PAYMENT_REQUIRED_".length()));
-                            StarsController.getInstance(currentAccount).showPriceChangedToast(Arrays.asList(msgObj));
-                            getMessagesStorage().updateMessageCustomParams(MessageObject.getDialogId(newMsgObj), newMsgObj);
-                        }
                         getNotificationCenter().postNotificationName(NotificationCenter.messageSendError, newMsgObj.id);
                         processSentMessage(newMsgObj.id);
                         removeFromSendingMessages(newMsgObj.id, scheduled);
@@ -8359,12 +8362,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                     if (isSentError) {
                         getMessagesStorage().markMessageAsSendError(newMsgObj, scheduled ? 1 : 0);
                         newMsgObj.send_state = MessageObject.MESSAGE_SEND_STATE_SEND_ERROR;
-                        if (error != null && error.text != null && error.text.startsWith("ALLOW_PAYMENT_REQUIRED_")) {
-                            newMsgObj.errorAllowedPriceStars = StarsController.getInstance(currentAccount).getAllowedPaidStars(req);
-                            newMsgObj.errorNewPriceStars = Long.parseLong(error.text.substring("ALLOW_PAYMENT_REQUIRED_".length()));
-                            StarsController.getInstance(currentAccount).showPriceChangedToast(Arrays.asList(msgObj));
-                            getMessagesStorage().updateMessageCustomParams(MessageObject.getDialogId(newMsgObj), newMsgObj);
-                        }
                         getNotificationCenter().postNotificationName(NotificationCenter.messageSendError, newMsgObj.id);
                         processSentMessage(newMsgObj.id);
                         removeFromSendingMessages(newMsgObj.id, scheduled);

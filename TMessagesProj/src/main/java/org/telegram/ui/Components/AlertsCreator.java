@@ -291,7 +291,7 @@ public class AlertsCreator {
         }
         if ("BALANCE_TOO_LOW".equalsIgnoreCase(error.text)) {
             final long price = StarsController.getAllowedPaidStars(request);
-            final long dialogId = StarsController.getPeer(request);
+            final long dialogId = SendMessagesHelper.getSendRequestPeer(request);
             if (price > 0) {
                 StarsController.getInstance(currentAccount).getBalance(true, () -> {
                     final Activity activity = AndroidUtilities.getActivity();
@@ -303,6 +303,15 @@ public class AlertsCreator {
                     }, dialogId).show();
                 }, true);
             }
+        } else if (error.text.startsWith("ALLOW_PAYMENT_REQUIRED_")) {
+            // LoogriGram: the server wants Stars to deliver this and nothing here
+            // pays. A user is locked from then on, as their full info would lock
+            // them; for a group that charges, saying so is all there is to do.
+            final long dialogId = SendMessagesHelper.getSendRequestPeer(request);
+            if (dialogId > 0) {
+                MessagesController.getInstance(currentAccount).lockPaymentRequired(dialogId);
+            }
+            BulletinFactory.global().createSimpleBulletin(R.raw.error, DialogObject.getLockedText(currentAccount, dialogId, R.string.LoogriGramPaidMessagesLocked)).show();
         } else if (error.text.equals("JOIN_GUARD_TIMEOUT")) {
             showSimpleAlert(fragment, LocaleController.getString(R.string.GuardBotTimeoutTitle), LocaleController.getString(R.string.GuardBotTimeout));
         } else if (request instanceof TLRPC.TL_messages_sendMessage && error.text.contains("PRIVACY_PREMIUM_REQUIRED")) {

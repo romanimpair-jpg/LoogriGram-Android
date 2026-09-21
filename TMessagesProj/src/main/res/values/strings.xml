@@ -11234,6 +11234,10 @@
     <string name="GhostModeOffInfo">Typing, online status and story views are sent again.</string>
     <string name="GhostNoMapsApp">No maps app installed to open this location.</string>
     <string name="GiftsSendingRemoved">Sending gifts is not available in this build.</string>
+    <!-- LoogriGram: a user who charges Stars per message. Nothing here pays,
+         so they are locked like one who only accepts Premium senders. The
+         desktop fork uses the same sentence. -->
+    <string name="LoogriGramPaidMessagesLocked">**%1$s** only accepts paid messages, which LoogriGram doesn\'t send.</string>
     <!-- LoogriGram: the updater. See LoogriGramUpdate and the update tab in
          MainTabsActivity. The tag is this build's short commit sha. -->
     <string name="LoogriGramUpdateTab">Update?</string>
