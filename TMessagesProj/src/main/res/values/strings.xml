@@ -11238,6 +11238,10 @@
          so they are locked like one who only accepts Premium senders. The
          desktop fork uses the same sentence. -->
     <string name="LoogriGramPaidMessagesLocked">**%1$s** only accepts paid messages, which LoogriGram doesn\'t send.</string>
+    <!-- LoogriGram: a channel's direct messages, without the fee upstream
+         offered beside the switch. See PostSuggestionsEditActivity. -->
+    <string name="LoogriGramDirectMessagesHint">Allow users to send messages to your channel.</string>
+    <string name="LoogriGramDirectMessagesOn">On</string>
     <!-- LoogriGram: the updater. See LoogriGramUpdate and the update tab in
          MainTabsActivity. The tag is this build's short commit sha. -->
     <string name="LoogriGramUpdateTab">Update?</string>

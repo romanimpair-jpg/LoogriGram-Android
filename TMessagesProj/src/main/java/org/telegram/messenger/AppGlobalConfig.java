@@ -12,8 +12,6 @@ import java.util.concurrent.TimeUnit;
 public class AppGlobalConfig {
     private final HashMap<String, ConfigInternal> map = new HashMap<>();
 
-    public final ConfigInt starsPaidMessagesChannelAmountDefault = ofInt("stars_paid_messages_channel_amount_default", 10);
-
     public final ConfigInt starsSuggestedPostCommissionPermille = ofInt("stars_suggested_post_commission_permille", 850);
     public final ConfigInt starsSuggestedPostAmountMin = ofInt("stars_suggested_post_amount_min", 5);
     public final ConfigInt starsSuggestedPostAmountMax = ofInt("stars_suggested_post_amount_max", 100000);

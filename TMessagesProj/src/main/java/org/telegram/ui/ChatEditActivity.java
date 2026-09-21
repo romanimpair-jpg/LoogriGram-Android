@@ -59,7 +59,6 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
-import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
@@ -901,7 +900,7 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
                 typeEditContainer.addView(suggestedCell, LayoutHelper.createLinear(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
                 suggestedCell.setOnClickListener(v -> {
                     PostSuggestionsEditActivity fragment = new PostSuggestionsEditActivity(chatId);
-                    fragment.setOnApplied(stars -> updateSuggestedCell(stars, false));
+                    fragment.setOnApplied(allowed -> updateSuggestedCell(allowed, false));
                     presentFragment(fragment);
                 });
             }
@@ -2333,20 +2332,17 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
         updateSuggestedCell(null, animated);
     }
 
-    public void updateSuggestedCell(Long forced, boolean animated) {
+    public void updateSuggestedCell(Boolean forced, boolean animated) {
         if (currentChat == null || suggestedCell == null) {
             return;
         }
 
-        final boolean allowed = forced != null ? forced >= 0 : currentChat.broadcast_messages_allowed;
+        final boolean allowed = forced != null ? forced : currentChat.broadcast_messages_allowed;
         if (allowed) {
-            final TLRPC.Chat mfChat = getMessagesController().getChat(currentChat.linked_monoforum_id);
-            final long stars = forced != null ? forced : (mfChat != null ? mfChat.send_paid_messages_stars : 0);
+            // LoogriGram: "On", not the price per message - none is ever set.
             suggestedCell.setTextAndValueAndIcon(
                 (LocaleController.getString(R.string.PostSuggestions)),
-                StarsFormat.replaceStarsWithPlain(
-                    LocaleController.formatString(R.string.PostSuggestionsStars, stars),
-                    0.66f),
+                LocaleController.getString(R.string.LoogriGramDirectMessagesOn),
                 R.drawable.msg_markunread, true);
         } else {
             suggestedCell.setTextAndValueAndIcon(

@@ -702,7 +702,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public boolean disableBotFullscreenBlur;
     public String tonBlockchainExplorerUrl;
     public long starsPaidMessageAmountMax;
-    public int starsPaidMessageCommissionPermille;
     public int stargiftsPinnedToTopLimit;
     public long freezeSinceDate;
     public long freezeUntilDate;
@@ -1736,7 +1735,6 @@ public class MessagesController extends BaseController implements NotificationCe
         disableBotFullscreenBlur = mainPreferences.getBoolean("disableBotFullscreenBlur", false);
         tonBlockchainExplorerUrl = mainPreferences.getString("tonBlockchainExplorerUrl", "https://tonviewer.com/");
         starsPaidMessageAmountMax = mainPreferences.getLong("starsPaidMessageAmountMax", 10_000L);
-        starsPaidMessageCommissionPermille = mainPreferences.getInt("starsPaidMessageCommissionPermille", 850);
         stargiftsPinnedToTopLimit = mainPreferences.getInt("stargiftsPinnedToTopLimit", 6);
         freezeSinceDate = mainPreferences.getLong("freezeSinceDate", 0L);
         freezeUntilDate = mainPreferences.getLong("freezeUntilDate", 0L);
@@ -4031,17 +4029,6 @@ public class MessagesController extends BaseController implements NotificationCe
                         if (starsPaidMessageAmountMax != (long) num.value) {
                             starsPaidMessageAmountMax = (long) num.value;
                             editor.putLong("starsPaidMessageAmountMax", starsPaidMessageAmountMax);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "stars_paid_message_commission_permille": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (starsPaidMessageCommissionPermille != (int) num.value) {
-                            starsPaidMessageCommissionPermille = (int) num.value;
-                            editor.putInt("starsPaidMessageCommissionPermille", starsPaidMessageCommissionPermille);
                             changed = true;
                         }
                     }

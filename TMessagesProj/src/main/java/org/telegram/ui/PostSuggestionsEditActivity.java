@@ -1,9 +1,7 @@
 package org.telegram.ui;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
-import static org.telegram.messenger.LocaleController.formatString;
 import static org.telegram.messenger.LocaleController.getString;
-import static org.telegram.messenger.AndroidUtilities.percents;
 
 import android.content.Context;
 import android.graphics.PorterDuff;
@@ -18,9 +16,7 @@ import android.widget.FrameLayout;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.R;
-import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_stars;
@@ -29,9 +25,7 @@ import org.telegram.ui.ActionBar.ActionBarMenuItem;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.Cells.SlideIntChooseView;
 import org.telegram.ui.Cells.TextCheckCell;
-import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.CircularProgressDrawable;
 import org.telegram.ui.Components.CrossfadeDrawable;
@@ -46,7 +40,6 @@ import java.util.ArrayList;
 public class PostSuggestionsEditActivity extends BaseFragment {
     private final long currentChatId;
 
-    private SlideIntChooseView slideView;
     private LinkActionView linkView;
     private UniversalRecyclerView listView;
 
@@ -54,27 +47,18 @@ public class PostSuggestionsEditActivity extends BaseFragment {
     private CrossfadeDrawable doneButtonDrawable;
     private ActionBarMenuItem doneButton;
 
+    // LoogriGram: only whether direct messages are allowed. Upstream also set
+    // a price per message here, with a slider and the commission line under
+    // it; a channel set up in this app never charges for them.
     private final boolean initialSuggestionsEnabled;
-    private final long initialSuggestionsStarsCount;
     private boolean isSuggestionsEnabled;
-    private long suggestionsStarsCount;
 
     public PostSuggestionsEditActivity(long chatId) {
         currentChatId = chatId;
 
         final TLRPC.Chat currentChat = getMessagesController().getChat(currentChatId);
-        final TLRPC.Chat monoforumChat;
-        if (currentChat != null && currentChat.linked_monoforum_id != 0) {
-            monoforumChat = getMessagesController().getChat(currentChat.linked_monoforum_id);
-        } else {
-            monoforumChat = null;
-        }
-
-        final long stars = monoforumChat == null ? 0 : monoforumChat.send_paid_messages_stars;
         initialSuggestionsEnabled = currentChat != null && currentChat.broadcast_messages_allowed;
-        initialSuggestionsStarsCount = Utilities.clamp(initialSuggestionsEnabled ? stars : getMessagesController().config.starsPaidMessagesChannelAmountDefault.get(), getMessagesController().starsPaidMessageAmountMax, 0);
         isSuggestionsEnabled = initialSuggestionsEnabled;
-        suggestionsStarsCount = initialSuggestionsStarsCount;
     }
 
     @Override
@@ -105,9 +89,6 @@ public class PostSuggestionsEditActivity extends BaseFragment {
         fragmentView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
         FrameLayout frameLayout = (FrameLayout) fragmentView;
 
-        slideView = new SlideIntChooseView(context, resourceProvider);
-        slideView.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundWhite));
-
         linkView = new LinkActionView(context, this, null, currentChatId, true, true);
         linkView.setPadding(dp(16), dp(12), dp(16), 0);
         linkView.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundWhite));
@@ -123,32 +104,11 @@ public class PostSuggestionsEditActivity extends BaseFragment {
     }
 
     private void fillItems(ArrayList<UItem> items, UniversalAdapter adapter) {
-        items.add(UItem.asTopView(getString(R.string.AllowPostSuggestionsHint2), R.raw.bubble));
+        items.add(UItem.asTopView(getString(R.string.LoogriGramDirectMessagesHint), R.raw.bubble));
         items.add(UItem.asCheck(1, getString(R.string.AllowPostSuggestions)).setChecked(isSuggestionsEnabled));
         items.add(UItem.asShadow(2, null));
 
         if (isSuggestionsEnabled) {
-            items.add(UItem.asHeader(getString(R.string.PriceForEachSuggestion)));
-            final int[] steps = SlideIntChooseView.cut(new int[]{ 0, 10, 50, 100, 200, 250, 400, 500, 1000, 2500, 5000, 7500, 9000, 10_000 }, (int) getMessagesController().starsPaidMessageAmountMax);
-            final SlideIntChooseView.Options options = SlideIntChooseView.Options.make(1, steps, 20, (type, val) -> {
-                if (type == 0) {
-                    return StarsFormat.replaceStarsWithPlain(LocaleController.formatPluralStringComma("Stars", val), 0.66f);
-                }
-                return LocaleController.formatNumber(val, ',');
-            });
-            slideView.set((int) Utilities.clamp(suggestionsStarsCount, 10000, 0), options, newValue -> {
-                suggestionsStarsCount = newValue;
-                final View view = listView.findViewByItemId(4);
-                if (view instanceof TextInfoPrivacyCell && ((TextInfoPrivacyCell) view).getFixedSize() <= 0 && suggestionsStarsCount > 0) {
-                    ((TextInfoPrivacyCell) view).setText(getIncomeInfo());
-                } else {
-                    listView.adapter.update(true);
-                }
-                checkDone(true);
-            });
-            items.add(UItem.asCustom(3, slideView));
-            items.add(UItem.asShadow(4, suggestionsStarsCount > 0 ? getIncomeInfo() : null));
-
             final TLRPC.Chat chat = getMessagesController().getChat(currentChatId);
             if (chat != null && !TextUtils.isEmpty(ChatObject.getPublicUsername(chat))) {
                 linkView.setLink(
@@ -159,13 +119,6 @@ public class PostSuggestionsEditActivity extends BaseFragment {
 //                items.add(UItem.asShadow(6, null));
             }
         }
-    }
-
-    private CharSequence getIncomeInfo() {
-        final int percent = getMessagesController().starsPaidMessageCommissionPermille;
-        final float revenuePercent = percent / 1000.0f;
-        final String income = String.valueOf((int) ((suggestionsStarsCount * revenuePercent / 1000.0 * getMessagesController().starsUsdWithdrawRate1000)) / 100.0);
-        return formatString(R.string.PostSuggestionsPriceInfo2, percents(percent), income);
     }
 
     private void onItemClick(UItem item, View view, int position, float x, float y) {
@@ -188,9 +141,9 @@ public class PostSuggestionsEditActivity extends BaseFragment {
     }
 
 
-    private MessagesStorage.LongCallback starsCallback;
-    public PostSuggestionsEditActivity setOnApplied(MessagesStorage.LongCallback stars) {
-        this.starsCallback = stars;
+    private Utilities.Callback<Boolean> appliedCallback;
+    public PostSuggestionsEditActivity setOnApplied(Utilities.Callback<Boolean> allowed) {
+        this.appliedCallback = allowed;
         return this;
     }
 
@@ -204,7 +157,7 @@ public class PostSuggestionsEditActivity extends BaseFragment {
         doneButtonDrawable.animateToProgress(1f);
         final TL_stars.updatePaidMessagesPrice req = new TL_stars.updatePaidMessagesPrice();
         req.channel = getMessagesController().getInputChannel(currentChatId);
-        req.send_paid_messages_stars = isSuggestionsEnabled ? suggestionsStarsCount : 0;
+        req.send_paid_messages_stars = 0;
         req.suggestions_allowed = isSuggestionsEnabled;
 
         getConnectionsManager().sendRequest(req, (response, error) -> {
@@ -221,8 +174,8 @@ public class PostSuggestionsEditActivity extends BaseFragment {
                 getMessagesController().processUpdates(updates, false);
 
                 if (!isFinished && !finishing) {
-                    if (starsCallback != null) {
-                        starsCallback.run(req.suggestions_allowed ? req.send_paid_messages_stars : -1);
+                    if (appliedCallback != null) {
+                        appliedCallback.run(req.suggestions_allowed);
                     }
                     finishFragment();
                 }
@@ -239,27 +192,15 @@ public class PostSuggestionsEditActivity extends BaseFragment {
                 chat.broadcast_messages_allowed = false;
             }
             getMessagesController().putChat(chat, true);
-
-            final TLRPC.Chat mfChat = getMessagesController().getChat(chat.linked_monoforum_id);
-            if (mfChat != null) {
-                if (isSuggestionsEnabled) {
-                    mfChat.flags2 |= 16384;
-                    mfChat.send_paid_messages_stars = suggestionsStarsCount;
-                } else {
-                    mfChat.flags2 &=~ 16384;
-                    mfChat.send_paid_messages_stars = 0;
-                }
-                getMessagesController().putChat(mfChat, true);
-            }
         }
 
-        if (starsCallback != null) {
-            starsCallback.run(isSuggestionsEnabled ? suggestionsStarsCount : -1);
+        if (appliedCallback != null) {
+            appliedCallback.run(isSuggestionsEnabled);
         }
     }
 
     private boolean hasChanges() {
-        return suggestionsStarsCount != initialSuggestionsStarsCount || isSuggestionsEnabled != initialSuggestionsEnabled;
+        return isSuggestionsEnabled != initialSuggestionsEnabled;
     }
 
     private boolean lastHasChanges = true;
