@@ -70,7 +70,6 @@ import org.telegram.ui.DialogsActivity;
 import org.telegram.ui.FilteredSearchView;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -133,15 +132,11 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
     private final ArrayList<MessageObject> searchForumResultMessages = new ArrayList<>();
     private final ArrayList<MessageObject> searchResultMessages = new ArrayList<>();
     private final ArrayList<String> searchResultHashtags = new ArrayList<>();
-    public final ArrayList<TLRPC.TL_sponsoredPeer> sponsoredPeers = new ArrayList<>();
-    private final HashSet<byte[]> seenSponsoredPeers = new HashSet<>();
     private String lastSearchText;
     private boolean searchWas;
     private int reqId = 0;
     private int lastReqId;
     private int reqForumId = 0;
-    private String sponsoredQuery;
-    private int sponsoredReqId;
     private int lastForumReqId;
     public DialogsSearchAdapterDelegate delegate;
     private int needMessagesSearch;
@@ -1108,40 +1103,9 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
             query = null;
         }
         filterRecent(query);
-        if (!TextUtils.equals(sponsoredQuery, query)) {
-            sponsoredQuery = query;
-            sponsoredPeers.clear();
-            if (sponsoredReqId != 0) {
-                ConnectionsManager.getInstance(currentAccount).cancelRequest(sponsoredReqId, true);
-                sponsoredReqId = 0;
-            }
-            // LoogriGram: no sponsored search results. This is a third ad
-            // surface, separate from in-chat sponsored messages and the video
-            // player, and it also did not exist when the fork was planned.
-            // Taking upstream's own "do not ask" branch leaves sponsoredPeers
-            // empty, which the adapter already renders as no rows.
-            if (true || query == null || query.length() < 4 || UserConfig.getInstance(currentAccount).isPremium() && MessagesController.getInstance(currentAccount).isSponsoredDisabled()) {
-                sponsoredQuery = null;
-            } else {
-                final TLRPC.TL_contacts_getSponsoredPeers req = new TLRPC.TL_contacts_getSponsoredPeers();
-                req.q = sponsoredQuery = query;
-                sponsoredReqId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
-                    sponsoredReqId = 0;
-                    if (res instanceof TLRPC.TL_contacts_sponsoredPeersEmpty) {
-                        if (!sponsoredPeers.isEmpty()) {
-                            sponsoredPeers.clear();
-                            notifyDataSetChanged();
-                        }
-                    } else if (res instanceof TLRPC.TL_contacts_sponsoredPeers) {
-                        final TLRPC.TL_contacts_sponsoredPeers r = (TLRPC.TL_contacts_sponsoredPeers) res;
-                        MessagesController.getInstance(currentAccount).putUsers(r.users, true);
-                        MessagesController.getInstance(currentAccount).putChats(r.chats, true);
-                        sponsoredPeers.addAll(r.peers);
-                        notifyDataSetChanged();
-                    }
-                }));
-            }
-        }
+        // LoogriGram: contacts.getSponsoredPeers was requested here, for the
+        // ads shown above global search results. It sat behind an always-true
+        // guard; the request, the list it filled and the ad rows are gone now.
         if (TextUtils.isEmpty(query)) {
             filteredRecentQuery = null;
             searchAdapterHelper.unloadRecentHashtags();
@@ -1375,7 +1339,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         if (globalSearchCount > 3 && globalSearchCollapsed) {
             globalSearchCount = 3;
         }
-        int globalCount = globalSearchCount + sponsoredPeers.size();
+        int globalCount = globalSearchCount;
         int phoneCount = searchAdapterHelper.getPhoneSearch().size();
         if (phoneCount > 3 && phoneCollapsed) {
             phoneCount = 3;
@@ -1472,7 +1436,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         if (globalSearchCount > 3 && globalSearchCollapsed) {
             globalSearchCount = 3;
         }
-        int globalCount = globalSearch.isEmpty() && sponsoredPeers.isEmpty() ? 0 : globalSearchCount + sponsoredPeers.size() + 1;
+        int globalCount = globalSearch.isEmpty() ? 0 : globalSearchCount + 1;
         if (i >= 0 && i < localCount) {
             return searchResult.get(i);
         }
@@ -1487,10 +1451,6 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         i -= phoneCount;
         if (i > 0 && i < globalCount) {
             i--;
-            if (i >= 0 && i < sponsoredPeers.size()) {
-                return sponsoredPeers.get(i);
-            }
-            i -= sponsoredPeers.size();
             if (i >= 0 && i < globalSearch.size()) {
                 return globalSearch.get(i);
             }
@@ -1541,7 +1501,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         if (globalSearchCount > 3 && globalSearchCollapsed) {
             globalSearchCount = 3;
         }
-        int globalCount = globalSearch.isEmpty() && sponsoredPeers.isEmpty() ? 0 : globalSearchCount + sponsoredPeers.size() + 1;
+        int globalCount = globalSearch.isEmpty() ? 0 : globalSearchCount + 1;
         if (localCount + localServerCount > 0 && (getRecentItemsCount() > 0 || !searchTopics.isEmpty() || !publicPosts.isEmpty())) {
             if (i == 0) {
                 return false;
@@ -1716,24 +1676,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                 ArrayList<TLRPC.TL_username> usernames = null;
                 Object obj = getItem(position);
 
-                if (obj instanceof TLRPC.TL_sponsoredPeer) {
-                    final TLRPC.TL_sponsoredPeer sponsoredPeer = (TLRPC.TL_sponsoredPeer) obj;
-                    seenSponsoredPeer(sponsoredPeer);
-                    final long dialogId = DialogObject.getPeerDialogId(sponsoredPeer.peer);
-                    if (dialogId >= 0) {
-                        user = MessagesController.getInstance(currentAccount).getUser(dialogId);
-                        if (user != null) {
-                            usernames = user.usernames;
-                            un = DialogObject.getPublicUsername(user, currentMessagesQuery);
-                        }
-                    } else {
-                        chat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
-                        if (chat != null) {
-                            usernames = chat.usernames;
-                            un = DialogObject.getPublicUsername(chat, currentMessagesQuery);
-                        }
-                    }
-                } else if (obj instanceof TLRPC.User) {
+                if (obj instanceof TLRPC.User) {
                     user = (TLRPC.User) obj;
                     usernames = user.usernames;
                     un = DialogObject.getPublicUsername(user, currentMessagesQuery);
@@ -1781,7 +1724,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                 if (globalSearchCount > 3 && globalSearchCollapsed) {
                     globalSearchCount = 3;
                 }
-                int globalCount = globalSearch.isEmpty() && sponsoredPeers.isEmpty() ? 0 : globalSearchCount + sponsoredPeers.size() + 1;
+                int globalCount = globalSearch.isEmpty() ? 0 : globalSearchCount + 1;
                 if (!isRecent) {
                     cell.useSeparator = (
                         position != getItemCount() - getRecentItemsCount() - 1 &&
@@ -1901,8 +1844,6 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                     }
                 }
                 cell.allowBotOpenButton(isRecent, this::openBotApp);
-                cell.setOnSponsoredOptionsClick(this::openSponsoredOptions);
-                cell.setAd(obj instanceof TLRPC.TL_sponsoredPeer ? (TLRPC.TL_sponsoredPeer) obj : null);
                 cell.setData(user != null ? user : chat, encryptedChat, name, username, true, savedMessages);
                 cell.setChecked(delegate.isSelected(cell.getDialogId()), oldDialogId == cell.getDialogId());
                 break;
@@ -1964,7 +1905,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                     if (globalSearchCount > 3 && globalSearchCollapsed) {
                         globalSearchCount = 3;
                     }
-                    int globalCount = globalSearch.isEmpty() && sponsoredPeers.isEmpty() ? 0 : globalSearchCount + sponsoredPeers.size() + 1;
+                    int globalCount = globalSearch.isEmpty() ? 0 : globalSearchCount + 1;
                     int localMessagesCount = searchForumResultMessages.isEmpty() ? 0 : searchForumResultMessages.size() + 1;
                     int messagesCount = searchResultMessages.isEmpty() ? 0 : searchResultMessages.size() + 1;
                     if ((currentMessagesFilter != Filter.All || forceLoadingMessages) && searchResultMessages.isEmpty()) {
@@ -2005,10 +1946,9 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
                                         }
                                         lastShowMoreUpdate = now;
 
-                                        final int sponsoredCountAtClick = sponsoredPeers.size();
                                         final int globalSearchCountAtClick = globalSearch.size();
-                                        int totalGlobalCount = globalSearch.isEmpty() && sponsoredPeers.isEmpty() ? 0 : globalSearchCountAtClick + sponsoredCountAtClick;
-                                        int collapsedVisibleCount = sponsoredCountAtClick + Math.min(3, globalSearchCountAtClick);
+                                        int totalGlobalCount = globalSearch.isEmpty() ? 0 : globalSearchCountAtClick;
+                                        int collapsedVisibleCount = Math.min(3, globalSearchCountAtClick);
                                         boolean disableRemoveAnimation = getItemCount() > rawPosition + (globalSearchCollapsed ? collapsedVisibleCount : totalGlobalCount) + 1;
                                         if (itemAnimator != null) {
                                             itemAnimator.setAddDuration(disableRemoveAnimation ? 45 : 200);
@@ -2215,7 +2155,7 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
         if (globalSearchCount > 3 && globalSearchCollapsed) {
             globalSearchCount = 3;
         }
-        int globalCount = sponsoredPeers.isEmpty() && globalSearch.isEmpty() ? 0 : globalSearchCount + sponsoredPeers.size() + 1;
+        int globalCount = globalSearch.isEmpty() ? 0 : globalSearchCount + 1;
         int messagesCount = searchResultMessages.isEmpty() ? 0 : searchResultMessages.size() + 1;
         if ((currentMessagesFilter != Filter.All || forceLoadingMessages) && searchResultMessages.isEmpty()) {
             messagesCount = forceLoadingMessages ? 4 : 2;
@@ -2363,10 +2303,6 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
 
     }
 
-    protected void openSponsoredOptions(ProfileSearchCell cell, TLRPC.TL_sponsoredPeer sponsoredPeer) {
-
-    }
-
     private static class EmptyLayout extends LinearLayout {
 
         private TextView textView;
@@ -2442,63 +2378,6 @@ public class DialogsSearchAdapter extends RecyclerListView.SelectionAdapter {
             count++;
         }
         return count;
-    }
-
-    public void removeAd(TLRPC.TL_sponsoredPeer peer) {
-        if (sponsoredPeers.isEmpty()) return;
-        int index = sponsoredPeers.indexOf(peer);
-        if (index < 0) return;
-
-        int globalSearchPosition = globalSearchPosition();
-        if (globalSearchPosition >= getItemCount()) return;
-
-        sponsoredPeers.remove(index);
-        notifyItemRemoved(globalSearchPosition + 1 + index);
-
-        int globalSearchSize = searchAdapterHelper.getGlobalSearch().size();
-        int visibleAfter = sponsoredPeers.size() + (globalSearchCollapsed ? Math.min(3, globalSearchSize) : globalSearchSize);
-        if (visibleAfter <= 0) {
-            notifyItemRemoved(globalSearchPosition);
-        }
-    }
-
-    public void removeAllAds() {
-        if (sponsoredPeers.isEmpty()) return;
-
-        int globalSearchPosition = globalSearchPosition();
-        if (globalSearchPosition >= getItemCount()) return;
-
-        int sponsoredCount = sponsoredPeers.size();
-        sponsoredPeers.clear();
-        notifyItemRangeRemoved(globalSearchPosition + 1, sponsoredCount);
-
-        int globalSearchSize = searchAdapterHelper.getGlobalSearch().size();
-        int visibleAfter = globalSearchCollapsed ? Math.min(3, globalSearchSize) : globalSearchSize;
-        if (visibleAfter <= 0) {
-            notifyItemRemoved(globalSearchPosition);
-        }
-    }
-
-    public void seenSponsoredPeer(TLRPC.TL_sponsoredPeer sponsoredPeer) {
-        if (sponsoredPeer == null) return;
-        boolean sent = false;
-        for (byte[] r : seenSponsoredPeers) {
-            if (Arrays.equals(r, sponsoredPeer.random_id)) {
-                sent = true;
-                break;
-            }
-        }
-        if (sent) return;
-
-        // LoogriGram: impression beacon for a sponsored search result. Nothing
-        // populates sponsoredPeers now, so this is belt-and-braces.
-        if (true) {
-            return;
-        }
-        seenSponsoredPeers.add(sponsoredPeer.random_id);
-        TLRPC.TL_messages_viewSponsoredMessage req = new TLRPC.TL_messages_viewSponsoredMessage();
-        req.random_id = sponsoredPeer.random_id;
-        ConnectionsManager.getInstance(currentAccount).sendRequest(req, null);
     }
 
     // LoogriGram: the advertising beacons are gone - the impression report

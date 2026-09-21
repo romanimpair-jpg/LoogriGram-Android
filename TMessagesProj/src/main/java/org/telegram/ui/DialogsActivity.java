@@ -13203,13 +13203,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             return false;
         });
         searchViewPager.searchListView.setOnItemClickListener((view, position, x, y) -> {
-            Object item = searchViewPager.dialogsSearchAdapter.getItem(position);
-            if (item instanceof TLRPC.TL_sponsoredPeer) {
-                final TLRPC.TL_sponsoredPeer peer = (TLRPC.TL_sponsoredPeer) item;
-                final long did = DialogObject.getPeerDialogId(peer.peer);
-                presentFragment(ChatActivity.of(did));
-                return;
-            }
             if (view instanceof ProfileSearchCell && ((ProfileSearchCell) view).isBlocked()) {
                 showPremiumBlockedToast(view, ((ProfileSearchCell) view).getDialogId());
                 return;

@@ -57,7 +57,6 @@ import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.ButtonBounce;
 import org.telegram.ui.Components.CanvasButton;
 import org.telegram.ui.Components.CheckBox2;
-import org.telegram.ui.Components.ColoredImageSpan;
 import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.Forum.ForumUtilities;
@@ -81,7 +80,6 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
     private AvatarDrawable avatarDrawable;
     private CharSequence subLabel;
     private Theme.ResourcesProvider resourcesProvider;
-    private TLRPC.TL_sponsoredPeer ad;
 
     private TLRPC.User user;
     private TLRPC.Chat chat;
@@ -139,10 +137,6 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
     private AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable statusDrawable;
     public StoriesUtilities.AvatarStoryParams avatarStoryParams = new StoriesUtilities.AvatarStoryParams(false);
 
-    private final RectF adBounds = new RectF();
-    private Text adText;
-    private Paint adBackgroundPaint;
-    private final ButtonBounce adBounce = new ButtonBounce(this);
 
     private RectF rect = new RectF();
 
@@ -181,11 +175,6 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
         return this;
     }
 
-    private Utilities.Callback2<ProfileSearchCell, TLRPC.TL_sponsoredPeer> onSponsoredOptionsClick;
-    public void setOnSponsoredOptionsClick(Utilities.Callback2<ProfileSearchCell, TLRPC.TL_sponsoredPeer> onOptionsClick) {
-        this.onSponsoredOptionsClick = onOptionsClick;
-    }
-
     public ProfileSearchCell showPremiumBlock(boolean show) {
         showPremiumBlocked = show;
         return this;
@@ -201,10 +190,6 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
     @Override
     protected boolean verifyDrawable(@NonNull Drawable who) {
         return statusDrawable == who || botVerificationDrawable == who || super.verifyDrawable(who);
-    }
-
-    public void setAd(TLRPC.TL_sponsoredPeer sponsoredPeer) {
-        ad = sponsoredPeer;
     }
 
     private boolean allowEmojiStatus = true;
@@ -461,21 +446,6 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
             statusLeft = dp(11);
         }
 
-        if (ad != null) {
-            if (adText == null) {
-                final SpannableStringBuilder sb = new SpannableStringBuilder(getString(R.string.SearchAd)).append(" i");
-                final ColoredImageSpan span = new ColoredImageSpan(R.drawable.ic_ab_other);
-                span.setScale(.55f, .55f);
-                span.spaceScaleX = .7f;
-                span.translate(-dp(2), 0);
-                sb.setSpan(span, sb.length() - 1, sb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                adText = new Text(sb, 12);
-            }
-            if (adBackgroundPaint == null) {
-                adBackgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            }
-        }
-
         if (currentName != null) {
             nameString = currentName;
         }
@@ -532,13 +502,6 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
         }
         if (drawNameLock) {
             nameWidth -= dp(6) + Theme.dialogs_lockDrawable.getIntrinsicWidth();
-        }
-        if (ad != null) {
-            final int adWidth = (int) adText.getCurrentWidth() + dp(12.66f + 8);
-            nameWidth -= adWidth;
-            if (LocaleController.isRTL) {
-                nameLeft += adWidth;
-            }
         }
         nameWidth -= getPaddingLeft() + getPaddingRight();
         statusWidth -= getPaddingLeft() + getPaddingRight();
@@ -949,31 +912,6 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
             statusDrawable.draw(canvas);
         }
 
-        if (ad != null && adText != null && adBackgroundPaint != null) {
-            final int color = Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider);
-            adBackgroundPaint.setColor(Theme.multAlpha(color, .10f));
-            final int w = (int) adText.getWidth() + dp(12.66f);
-            final int h = dp(17.33f);
-            final int l;
-            if (LocaleController.isRTL) {
-                l = dp(12);
-            } else {
-                l = getWidth() - dp(12) - w;
-            }
-
-            adBounds.set(l, nameTop, l + w, nameTop + h);
-            adBounds.inset(-dp(6), -dp(6));
-
-            canvas.save();
-            final float s = adBounce.getScale(0.1f);
-            canvas.scale(s, s, adBounds.centerX(), adBounds.centerY());
-            canvas.translate(l, nameTop);
-            AndroidUtilities.rectTmp.set(0, 0, w, h);
-            canvas.drawRoundRect(AndroidUtilities.rectTmp, h / 2f, h / 2f, adBackgroundPaint);
-            adText.draw(canvas, dp(6.33f), h / 2.f, color, 1.0f);
-            canvas.restore();
-        }
-
         if (statusLayout != null) {
             canvas.save();
             canvas.translate(statusLeft + sublabelOffsetX, dp(callCellStyle ? 35 : 33) + sublabelOffsetY);
@@ -1137,22 +1075,6 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
                 return true;
             }
             if (hit || openButtonBounce.isPressed())
-                return true;
-        } else if (ad != null && onSponsoredOptionsClick != null) {
-            final boolean hit = adBounds.contains(event.getX(), event.getY());
-            if (event.getAction() == MotionEvent.ACTION_DOWN || event.getAction() == MotionEvent.ACTION_MOVE) {
-                adBounce.setPressed(hit);
-            } else if (event.getAction() == MotionEvent.ACTION_UP) {
-                if (adBounce.isPressed()) {
-                    onSponsoredOptionsClick.run(this, ad);
-                }
-                adBounce.setPressed(false);
-                return true;
-            } else if (event.getAction() == MotionEvent.ACTION_CANCEL) {
-                adBounce.setPressed(false);
-                return true;
-            }
-            if (hit || adBounce.isPressed())
                 return true;
         }
         if ((user != null || chat != null) && avatarStoryParams.checkOnTouchEvent(event, this)) {
