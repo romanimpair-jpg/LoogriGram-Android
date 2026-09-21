@@ -377,9 +377,9 @@ public class ShareDialogCell extends FrameLayout implements NotificationCenter.N
                     int top = imageView.getBottom() - dp(6);
                     int left = imageView.getRight() - dp(10);
                     Theme.dialogs_onlineCirclePaint.setColor(getThemedColor(Theme.key_windowBackgroundWhite));
-                    canvas.drawCircle(left, top, dp(7) * onlineProgress * (1.0f - lockT) * (1.0f - priceT), Theme.dialogs_onlineCirclePaint);
+                    canvas.drawCircle(left, top, dp(7) * onlineProgress * (1.0f - lockT), Theme.dialogs_onlineCirclePaint);
                     Theme.dialogs_onlineCirclePaint.setColor(getThemedColor(Theme.key_chats_onlineCircle));
-                    canvas.drawCircle(left, top, dp(5) * onlineProgress * (1.0f - lockT) * (1.0f - priceT), Theme.dialogs_onlineCirclePaint);
+                    canvas.drawCircle(left, top, dp(5) * onlineProgress * (1.0f - lockT), Theme.dialogs_onlineCirclePaint);
                     if (isOnline) {
                         if (onlineProgress < 1.0f) {
                             onlineProgress += dt / 150.0f;
