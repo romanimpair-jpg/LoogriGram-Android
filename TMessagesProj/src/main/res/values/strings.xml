@@ -11245,5 +11245,8 @@
     <string name="LoogriGramUpdateDownload">Download</string>
     <string name="LoogriGramUpdateTitle">LoogriGram update</string>
     <string name="LoogriGramUpdateFound">A newer build is available (%1$s). Download it now?</string>
+    <string name="LoogriGramUpdateCheck">Check for updates</string>
+    <string name="LoogriGramUpdateCurrent">LoogriGram is up to date (%1$s).</string>
+    <string name="LoogriGramUpdateFailed">Couldn\'t reach GitHub to check for updates.</string>
     <string name="LoogriGramUpdateReady">The update is downloaded. Install it now? The app will close while Android installs it.</string>
 </resources>

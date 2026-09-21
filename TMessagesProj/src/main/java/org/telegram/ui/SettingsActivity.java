@@ -101,6 +101,7 @@ import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackupImageView;
+import org.telegram.messenger.LoogriGramUpdate;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.FloatingDebug.FloatingDebugController;
@@ -705,6 +706,12 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         items.add(SettingCell.Factory.of(18, IconBackgroundColors.BLUE_LIGHT.top, IconBackgroundColors.BLUE_LIGHT.bottom, R.drawable.settings_faq, getString(R.string.TelegramFAQ)));
         items.add(SettingCell.Factory.of(23, IconBackgroundColors.PURPLE.top, IconBackgroundColors.PURPLE.bottom, R.drawable.settings_features, getString(R.string.TelegramFeatures)));
         items.add(SettingCell.Factory.of(19, IconBackgroundColors.GREEN.top, IconBackgroundColors.GREEN.bottom, R.drawable.settings_policy, getString(R.string.PrivacyPolicy)));
+        // LoogriGram: a manual update check. The only other way to ask was
+        // item 9 of upstream's hidden debug menu. The subtitle is this build's
+        // tag, which is also how to tell which build is installed.
+        if (LoogriGramUpdate.updatesEnabled()) {
+            items.add(SettingCell.Factory.of(24, IconBackgroundColors.CYAN.top, IconBackgroundColors.CYAN.bottom, R.drawable.settings_update, getString(R.string.LoogriGramUpdateCheck), LoogriGramUpdate.currentTag()));
+        }
 
         if (BuildVars.LOGS_ENABLED || BuildVars.DEBUG_PRIVATE_VERSION) {
             items.add(UItem.asShadow(null));
@@ -809,6 +816,18 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 break;
             case 19:
                 Browser.openUrl(getParentActivity(), LocaleController.getString(R.string.PrivacyPolicyUrl));
+                break;
+            case 24:
+                // LoogriGram: a newer build found here re-opens the download
+                // prompt from the update tab; this only reports the other two
+                // outcomes.
+                LoogriGramUpdate.getInstance().checkForUpdate(true, result -> {
+                    if (result == LoogriGramUpdate.RESULT_CURRENT) {
+                        BulletinFactory.of(this).createSimpleBulletin(R.raw.contact_check, formatString(R.string.LoogriGramUpdateCurrent, LoogriGramUpdate.currentTag())).show();
+                    } else if (result == LoogriGramUpdate.RESULT_FAILED) {
+                        BulletinFactory.of(this).createSimpleBulletin(R.raw.error, getString(R.string.LoogriGramUpdateFailed)).show();
+                    }
+                });
                 break;
 
             case 20:

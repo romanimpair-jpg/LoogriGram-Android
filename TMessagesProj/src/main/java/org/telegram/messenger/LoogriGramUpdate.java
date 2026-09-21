@@ -59,8 +59,17 @@ public class LoogriGramUpdate {
     private static final String RELEASES_URL =
         "https://api.github.com/repos/romanimpair-jpg/LoogriGram-Android/releases/latest";
 
-    /** How long to leave it before asking again, when nothing was found. */
-    private static final long CHECK_INTERVAL = 24 * 60 * 60 * 1000L;
+    /** Results reported to a manual check. */
+    public static final int RESULT_CURRENT = 0;
+    public static final int RESULT_FOUND = 1;
+    public static final int RESULT_FAILED = 2;
+
+    /**
+     * How long to leave it before asking again on resume. The first check of
+     * every run ignores this. It was a day, which meant a release published an
+     * hour after a check stayed invisible until the next day.
+     */
+    private static final long CHECK_INTERVAL = 60 * 60 * 1000L;
 
     /** An APK far smaller than this is an error page, not a build. */
     private static final long MIN_APK_SIZE = 1024 * 1024;
@@ -88,6 +97,12 @@ public class LoogriGramUpdate {
 
     /** Set once the user has been asked about a given tag, so it asks once. */
     private String askedTag;
+
+    /** False until this process has asked once; that first ask is never skipped. */
+    private boolean checkedThisRun;
+
+    /** Waiting on the check in flight: the Settings row that asked for it. */
+    private Utilities.Callback<Integer> pendingResult;
 
     private LoogriGramUpdate() {
         SharedPreferences prefs = getPrefs();
@@ -164,17 +179,42 @@ public class LoogriGramUpdate {
     }
 
     /**
-     * Called on startup. Checks at most once a day unless forced, and reports
-     * a finished download that has not been installed yet.
+     * Called on every resume. The first call of a run always asks; after that
+     * at most once an hour, unless forced.
      */
     public void checkForUpdate(boolean force) {
-        if (!updatesEnabled() || state == STATE_CHECKING || state == STATE_DOWNLOADING || state == STATE_READY) {
+        checkForUpdate(force, null);
+    }
+
+    /**
+     * The manual check behind the Settings row: always asks, and reports what
+     * it found. A newer build found this way offers itself again even if its
+     * prompt was refused before - asking by hand is asking to be asked.
+     */
+    public void checkForUpdate(boolean force, Utilities.Callback<Integer> onResult) {
+        if (!updatesEnabled()) {
+            if (onResult != null) {
+                onResult.run(RESULT_CURRENT);
+            }
+            return;
+        }
+        if (state == STATE_DOWNLOADING || state == STATE_READY) {
+            if (onResult != null) {
+                onResult.run(RESULT_FOUND);
+            }
+            return;
+        }
+        if (onResult != null) {
+            pendingResult = onResult;
+        }
+        if (state == STATE_CHECKING) {
             return;
         }
         final long last = getPrefs().getLong("lastCheckTime", 0);
-        if (!force && Math.abs(System.currentTimeMillis() - last) < CHECK_INTERVAL) {
+        if (!force && checkedThisRun && Math.abs(System.currentTimeMillis() - last) < CHECK_INTERVAL) {
             return;
         }
+        checkedThisRun = true;
         setState(STATE_CHECKING);
         Utilities.globalQueue.postRunnable(this::checkInternal);
     }
@@ -183,6 +223,7 @@ public class LoogriGramUpdate {
         String tag = null;
         String url = null;
         long size = 0;
+        boolean answered = false;
         HttpURLConnection connection = null;
         try {
             connection = (HttpURLConnection) new URL(RELEASES_URL).openConnection();
@@ -192,6 +233,7 @@ public class LoogriGramUpdate {
             connection.setRequestProperty("User-Agent", "LoogriGram");
             if (connection.getResponseCode() == 200) {
                 final JSONObject release = new JSONObject(readAll(connection.getInputStream()));
+                answered = true;
                 tag = release.optString("tag_name", null);
                 final JSONArray assets = release.optJSONArray("assets");
                 if (assets != null) {
@@ -222,20 +264,38 @@ public class LoogriGramUpdate {
         final String foundTag = tag;
         final String foundUrl = url;
         final long foundSize = size;
+        final boolean ok = answered;
         AndroidUtilities.runOnUIThread(() -> {
-            getPrefs().edit().putLong("lastCheckTime", System.currentTimeMillis()).apply();
+            final Utilities.Callback<Integer> onResult = pendingResult;
+            pendingResult = null;
+            // only an answer restarts the clock; a failed request (no network,
+            // rate limit) leaves the next resume free to try again
+            if (ok) {
+                getPrefs().edit().putLong("lastCheckTime", System.currentTimeMillis()).apply();
+            }
             if (foundTag != null && foundUrl != null && isNewer(foundTag)) {
                 availableTag = foundTag;
                 availableUrl = foundUrl;
                 availableSize = foundSize;
-                getPrefs().edit()
+                final SharedPreferences.Editor editor = getPrefs().edit()
                     .putString("availableTag", availableTag)
                     .putString("availableUrl", availableUrl)
-                    .putLong("availableSize", availableSize)
-                    .apply();
+                    .putLong("availableSize", availableSize);
+                if (onResult != null) {
+                    askedTag = null;
+                    editor.remove("askedTag");
+                }
+                editor.apply();
                 setState(STATE_AVAILABLE);
+                if (onResult != null) {
+                    onResult.run(RESULT_FOUND);
+                }
             } else {
-                setState(STATE_NONE);
+                // a failed check keeps an update already found on offer
+                setState(!ok && availableTag != null && isNewer(availableTag) ? STATE_AVAILABLE : STATE_NONE);
+                if (onResult != null) {
+                    onResult.run(ok ? RESULT_CURRENT : RESULT_FAILED);
+                }
             }
         });
     }

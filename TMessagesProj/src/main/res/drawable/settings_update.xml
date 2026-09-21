@@ -1,0 +1,6 @@
+<!-- LoogriGram: the "Check for updates" row in Settings. A download arrow over
+     a tray, drawn in the same 72-unit grid as the other settings_* icons. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:height="24dp" android:viewportHeight="72" android:viewportWidth="72" android:width="24dp">
+    <path android:fillColor="#FFFFFF" android:pathData="M33,12L39,12L39,34L47,26L51.2,30.2L36,45.4L20.8,30.2L25,26L33,34Z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M14,46L20,46L20,55L52,55L52,46L58,46L58,61L14,61Z"/>
+</vector>
