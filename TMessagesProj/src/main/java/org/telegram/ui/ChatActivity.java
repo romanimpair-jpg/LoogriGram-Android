@@ -495,8 +495,6 @@ public class ChatActivity extends BaseFragment implements
     private SuggestEmojiView suggestEmojiPanel;
     private ActionBarMenuItem.Item muteItem;
     private ActionBarMenuItem.Item muteItemGap;
-    private ActionBarMenuItem.Item feeItemGap;
-    private ActionBarMenuItem.Item feeItemText;
     private ChatNotificationsPopupWrapper chatNotificationsPopupWrapper;
     // private ChatActivitySideControlsButtonsLayout topButtonsLayout;
     private ChatActivitySideControlsButtonsLayout sideControlsButtonsLayout;
@@ -1678,8 +1676,6 @@ public class ChatActivity extends BaseFragment implements
 
     private final static int share = 69;
     private final static int open_direct = 70;
-    private final static int remove_fee = 71;
-    private final static int charge_fee = 72;
 
     private final static int chat_menu_topic_create = 73;
 
@@ -2974,7 +2970,6 @@ public class ChatActivity extends BaseFragment implements
             .add(NotificationCenter.quickRepliesDeleted)
             .add(NotificationCenter.quickRepliesUpdated)
             .add(NotificationCenter.factCheckLoaded)
-            .add(NotificationCenter.messagesFeeUpdated)
             .add(NotificationCenter.starBalanceUpdated)
             .add(NotificationCenter.botForumTopicDidCreate)
             .add(NotificationCenter.botForumDraftUpdate)
@@ -3757,35 +3752,6 @@ public class ChatActivity extends BaseFragment implements
                 } else if (id == open_direct) {
                     if (currentChat == null) return;
                     presentFragment(ChatActivity.of(-currentChat.linked_monoforum_id));
-                } else if (id == charge_fee ) {
-                    long user_id = dialog_id;
-                    long parent_id = 0;
-                    if (ChatObject.isMonoForum(currentChat) && ChatObject.canManageMonoForum(currentAccount, currentChat)) {
-                        user_id = getThreadId();
-                        parent_id = dialog_id;
-                    }
-                    StarsController.getInstance(currentAccount).stopPaidMessages(user_id, parent_id, false, false);
-                } else if (id == remove_fee) {
-                    long _user_id = dialog_id;
-                    long _parent_id = 0;
-                    if (ChatObject.isMonoForum(currentChat) && ChatObject.canManageMonoForum(currentAccount, currentChat)) {
-                        _user_id = getThreadId();
-                        _parent_id = dialog_id;
-                    }
-                    final long user_id = _user_id;
-                    final long parent_id = _parent_id;
-                    StarsController.getInstance(currentAccount).getPaidRevenue(user_id, parent_id, revenue -> {
-                        if (getContext() == null) return;
-                        AlertsCreator.showAlertWithCheckboxWithBalance(
-                            getContext(),
-                            getString(R.string.RemoveMessageFeeTitle),
-                            AndroidUtilities.replaceTags(formatString(ChatObject.isMonoForum(currentChat) ? R.string.RemoveMessageFeeMessageChannel : R.string.RemoveMessageFeeMessage, DialogObject.getShortName(user_id))),
-                            revenue > 0 ? formatPluralStringComma("RemoveMessageFeeRefund", (int) (long) revenue) : null,
-                            getString(R.string.Confirm),
-                            refund -> StarsController.getInstance(currentAccount).stopPaidMessages(user_id, parent_id, revenue > 0 && refund, true),
-                            resourceProvider
-                        );
-                    });
                 } else if (id == tag_message) {
                     if (tagSelector == null) {
                         showTagSelector();
@@ -4467,17 +4433,6 @@ public class ChatActivity extends BaseFragment implements
                         headerItem.lazilyAddSubItem(delete_chat, R.drawable.msg_delete, LocaleController.getString(R.string.DeleteChatUser));
                     }
                 }
-            }
-            if (ChatObject.isMonoForum(currentChat) && ChatObject.canManageMonoForum(currentAccount, currentChat)) {
-                headerItem.lazilyAddSubItem(remove_fee, R.drawable.menu_paid_off, getString(R.string.DirectRemoveFee));
-                headerItem.lazilyAddSubItem(charge_fee, R.drawable.menu_feature_paid, getString(R.string.DirectChargeFee));
-                headerItem.setSubItemShown(remove_fee, false);
-                headerItem.setSubItemShown(charge_fee, false);
-
-                feeItemGap = headerItem.lazilyAddColoredGap();
-                feeItemText = headerItem.lazilyAddText("", 13);
-                feeItemGap.setVisibility(View.GONE);
-                feeItemText.setVisibility(View.GONE);
             }
         } else if (chatMode == MODE_EDIT_BUSINESS_LINK) {
             headerItem = menu.addItem(chat_menu_options, otherIcon);
@@ -24420,12 +24375,6 @@ public class ChatActivity extends BaseFragment implements
             if (messageObject != null) {
                 messageObject.setMyPaidReactionDialogId(peer);
             }
-        } else if (id == NotificationCenter.messagesFeeUpdated) {
-            final long did = (long) args[0];
-            if (dialog_id != did) return;
-            if (getSendMonoForumPeerId() != 0 && getSendMonoForumPeerId() != did) return;
-            updateTopPanel(true);
-            updateBottomOverlay(true);
         } else if (id == NotificationCenter.starBalanceUpdated) {
             updateTopPanel(true);
             updateBottomOverlay(true);
@@ -28892,39 +28841,10 @@ public class ChatActivity extends BaseFragment implements
         boolean showAddMembersToGroup = preferences.getBoolean("dialog_bar_invite" + did, false);
         TLRPC.EmojiStatus showEmojiStatusReport = currentUser != null && (showReport || showBlock) ? DialogObject.filterEmojiStatus(currentUser.emoji_status) : null;
         TL_bots.botVerification showBotVerificationReport = (show && (showReport || showBlock) || shownBotVerification || preferences.getBoolean("dialog_bar_botver" + did, true)) ? (userInfo != null && !UserObject.isUserSelf(currentUser) && userInfo.bot_verification != null ? userInfo.bot_verification : chatInfo != null && chatInfo.bot_verification != null ? chatInfo.bot_verification : null) : null;
-        long showCost = 0;
-        if (ChatObject.isMonoForum(currentChat) && ChatObject.canManageMonoForum(currentAccount, currentChat)) {
-            TLRPC.TL_forumTopic topic = getMessagesController().getTopicsController().findTopic(-dialog_id, getThreadId());
-//            if (topic != null && !topic.nopaid_messages_exception) {
-//                showCost = currentChat.send_paid_messages_stars;
-//            }
-            if (headerItem != null) {
-                headerItem.setSubItemShown(remove_fee, getThreadId() != 0 && topic != null && !topic.nopaid_messages_exception && currentChat.send_paid_messages_stars > 0);
-                headerItem.setSubItemShown(charge_fee, getThreadId() != 0 && topic != null && topic.nopaid_messages_exception && currentChat.send_paid_messages_stars > 0);
-            }
-            if (feeItemGap != null) {
-                feeItemGap.setVisibility(getThreadId() != 0 && currentChat.send_paid_messages_stars > 0 ? View.VISIBLE : View.GONE);
-            }
-            if (feeItemText != null) {
-                if (topic != null && !topic.nopaid_messages_exception && currentChat.send_paid_messages_stars > 0) {
-                    feeItemText.setText(AndroidUtilities.replaceTags(StarsFormat.replaceStarsWithPlain(LocaleController.formatString(R.string.DirectFee, (int) currentChat.send_paid_messages_stars, DialogObject.getShortName(getThreadId())), 0.6f)));
-                } else {
-                    feeItemText.setText(LocaleController.formatString(R.string.DirectFeeNone, DialogObject.getShortName(getThreadId())));
-                }
-                feeItemText.setVisibility(getThreadId() != 0 && currentChat.send_paid_messages_stars > 0 ? View.VISIBLE : View.GONE);
-            }
-        } else {
-            showCost = preferences.getLong("dialog_bar_paying_" + did, 0L);
-            if (showCost <= 0 && userInfo != null && userInfo.settings != null && userInfo.settings.charge_paid_message_stars > 0) {
-                showCost = userInfo.settings.charge_paid_message_stars;
-            }
-        }
-        if (showCost > 0) {
-            if (!show) {
-                showReport = showGeo = showShare = showBlock = showAdd = showArchive = showAddMembersToGroup = false;
-            }
-            show = true;
-        } else if (showBotVerificationReport != null) {
+        // LoogriGram: no "pays you N Stars per message" bar with its "Remove
+        // fee" link, and no fee items in a channel's direct messages menu -
+        // nothing here ever sets a price, so there is nothing to waive.
+        if (showBotVerificationReport != null) {
             if (!shownBotVerification) {
                 preferences.edit().putBoolean("dialog_bar_botver" + did, false).apply();
             }
@@ -29155,7 +29075,7 @@ public class ChatActivity extends BaseFragment implements
             show = false;
         }
 
-        if (showCost > 0 || showEmojiStatusReport != null && show) {
+        if (showEmojiStatusReport != null && show) {
             createTopPanel();
             if (topChatPanelView == null) {
                 return;
@@ -29240,36 +29160,6 @@ public class ChatActivity extends BaseFragment implements
                     text.replace(i, i + 4, link);
                 }
                 totalText.append(AndroidUtilities.replaceArrows(text, true, dp(8f / 3f), dp(1.66f), 1.0f));
-            }
-            if (showCost > 0) {
-                long _user_id = dialog_id;
-                long _parent_id = 0;
-                if (ChatObject.isMonoForum(currentChat) && ChatObject.canManageMonoForum(currentAccount, currentChat)) {
-                    _user_id = getThreadId();
-                    _parent_id = dialog_id;
-                }
-                final long user_id = _user_id;
-                final long parent_id = _parent_id;
-                if (totalText.length() > 0) {
-                    totalText.append("\n\n");
-                }
-                final ColoredImageSpan[] span = new ColoredImageSpan[1];
-                totalText.append(StarsFormat.replaceStars(AndroidUtilities.replaceSingleTag(formatString(R.string.MessageLockedStarsRemoveFeeShort, DialogObject.getShortName(user_id), LocaleController.formatNumber(showCost, ',')), () -> {
-                    StarsController.getInstance(currentAccount).getPaidRevenue(user_id, parent_id, revenue -> {
-                        if (getContext() == null) return;
-                        AlertsCreator.showAlertWithCheckboxWithBalance(
-                            getContext(),
-                            getString(R.string.RemoveMessageFeeTitle),
-                            AndroidUtilities.replaceTags(formatString(ChatObject.isMonoForum(currentChat) ? R.string.RemoveMessageFeeMessageChannel : R.string.RemoveMessageFeeMessage, DialogObject.getShortName(user_id))),
-                            revenue > 0 ? formatPluralStringComma("RemoveMessageFeeRefund", (int) (long) revenue) : null,
-                            getString(R.string.Confirm),
-                            refund -> StarsController.getInstance(currentAccount).stopPaidMessages(user_id, parent_id, revenue > 0 && refund, true),
-                            resourceProvider
-                        );
-                    });
-                }), .9f, span));
-                // span[0].setTranslateY(dp(1));
-                span[0].setTranslateX(+dp(1));
             }
             ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) emojiStatusSpamHint.getLayoutParams();
             lp.leftMargin = dp(25 + (isSideMenued() ? 32 : 0));
