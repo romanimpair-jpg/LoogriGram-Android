@@ -1817,7 +1817,7 @@ public class GiftSheet extends BottomSheetWithRecyclerListView implements Notifi
                 if (userGift.gift.resale_ton_only && DialogObject.getPeerDialogId(userGift.gift.owner_id) == UserConfig.getInstance(currentAccount).getClientUserId()) {
                     priceView.setText(StarsFormat.replaceStars(true, "XTR " + StarsFormat.formatStarsAmount(userGift.gift.getResellAmount(AmountUtils.Currency.TON).toTl(), 1, ','), .95f, spans));
                 } else {
-                    priceView.setText(StarsFormat.replaceStars("XTR " + LocaleController.formatNumber(userGift.gift.getResellStars(), ','), .95f, spans));
+                    priceView.setText(StarsFormat.replaceStars("XTR " + LocaleController.formatNumber(userGift.gift.getResellAmount(AmountUtils.Currency.STARS).asDecimal(), ','), .95f, spans));
                 }
                 if (spans[0] != null) {
                     spans[0].translate(0, dp(0.5f));
