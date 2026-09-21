@@ -892,6 +892,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
                 tab.setText(String.format(Locale.US, "%d%%", Math.round(updater.getProgress() * 100)));
                 break;
             case LoogriGramUpdate.STATE_READY:
+            case LoogriGramUpdate.STATE_INSTALLING:
                 tab.setText(getString(R.string.LoogriGramUpdateInstall));
                 break;
             default:
@@ -900,7 +901,8 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
 
         final boolean visible = state == LoogriGramUpdate.STATE_AVAILABLE
             || state == LoogriGramUpdate.STATE_DOWNLOADING
-            || state == LoogriGramUpdate.STATE_READY;
+            || state == LoogriGramUpdate.STATE_READY
+            || state == LoogriGramUpdate.STATE_INSTALLING;
         tabsView.setViewVisible(tab, visible, animated);
 
         if (visible && state == LoogriGramUpdate.STATE_AVAILABLE && updater.shouldAskAboutDownload()) {
@@ -946,7 +948,7 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
                 askToInstallUpdate();
                 break;
             default:
-                // checking or downloading: nothing useful to do but wait
+                // checking, downloading or installing: nothing useful to do but wait
                 break;
         }
     }

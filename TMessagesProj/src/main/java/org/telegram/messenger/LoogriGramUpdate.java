@@ -1,12 +1,12 @@
 package org.telegram.messenger;
 
 import android.app.Activity;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.Uri;
-
-import androidx.core.content.FileProvider;
+import android.content.pm.PackageInstaller;
+import android.os.Build;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -38,10 +39,16 @@ import java.net.URL;
  *   LOOGRIGRAM_TAG and tags the release with the same string; comparing them is
  *   the whole check. A locally built APK carries "dev", which matches no
  *   release, so it never tries to update itself.
- * - Android cannot install silently. install() opens the system package
- *   installer, which asks the user; the first time, it also sends them to
- *   settings to allow installs from this app. Installing replaces the running
- *   process, so the app is killed at that point - that is normal.
+ * - Installing is a PackageInstaller session that asks for no user action.
+ *   Android 12+ honours that for an app updating itself once the user has
+ *   allowed it to install unknown apps - a one-time switch in settings that
+ *   no app can flip for itself; only a preinstalled store holds
+ *   INSTALL_PACKAGES and skips it. Until it is on, or below Android 12, the
+ *   session reports STATUS_PENDING_USER_ACTION and LoogriGramInstallReceiver
+ *   opens the system's confirmation, which leads to that switch the first
+ *   time. Installing replaces the running process, so the app is killed at
+ *   that point - that is normal - and AppStartReceiver restarts the push
+ *   service on MY_PACKAGE_REPLACED.
  * - The APK must be signed with the same key as the installed one or Android
  *   refuses the update. CI signs with ours; see LOOGRIGRAM.md.
  */
@@ -52,6 +59,8 @@ public class LoogriGramUpdate {
     public static final int STATE_AVAILABLE = 2;
     public static final int STATE_DOWNLOADING = 3;
     public static final int STATE_READY = 4;
+    /** Handed to the system; this process is replaced if it succeeds. */
+    public static final int STATE_INSTALLING = 5;
 
     /** The tag a build that was not made by CI carries. Matches no release. */
     private static final String DEV_TAG = "dev";
@@ -198,7 +207,7 @@ public class LoogriGramUpdate {
             }
             return;
         }
-        if (state == STATE_DOWNLOADING || state == STATE_READY) {
+        if (state == STATE_DOWNLOADING || state == STATE_READY || state == STATE_INSTALLING) {
             if (onResult != null) {
                 onResult.run(RESULT_FOUND);
             }
@@ -410,33 +419,86 @@ public class LoogriGramUpdate {
     }
 
     /**
-     * Hands the downloaded APK to the system installer. Android always asks the
-     * user, and needs this app to be allowed to install unknown apps, so this
-     * opens a dialog rather than installing anything by itself.
+     * Installs the downloaded APK through a PackageInstaller session - see the
+     * class comment for when Android lets that happen without asking. The
+     * outcome arrives at LoogriGramInstallReceiver, except a success, which
+     * replaces this process before anything could hear about it.
      */
     public void install(Activity activity) {
         if (state != STATE_READY || readyPath == null || activity == null) {
             return;
         }
-        try {
-            final File file = new File(readyPath);
-            if (!file.exists()) {
-                forgetDownload();
-                setState(STATE_AVAILABLE);
-                return;
+        final File file = new File(readyPath);
+        if (!file.exists()) {
+            forgetDownload();
+            setState(STATE_AVAILABLE);
+            return;
+        }
+        final Context context = activity.getApplicationContext();
+        setState(STATE_INSTALLING);
+        Utilities.globalQueue.postRunnable(() -> {
+            final PackageInstaller installer = context.getPackageManager().getPackageInstaller();
+            int sessionId = -1;
+            boolean committed = false;
+            try {
+                final PackageInstaller.SessionParams params = new PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL);
+                params.setAppPackageName(context.getPackageName());
+                params.setSize(file.length());
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    params.setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED);
+                }
+                sessionId = installer.createSession(params);
+                try (PackageInstaller.Session session = installer.openSession(sessionId)) {
+                    try (InputStream in = new FileInputStream(file); OutputStream out = session.openWrite("base.apk", 0, file.length())) {
+                        final byte[] buffer = new byte[64 * 1024];
+                        int read;
+                        while ((read = in.read(buffer)) > 0) {
+                            out.write(buffer, 0, read);
+                        }
+                        session.fsync(out);
+                    }
+                    int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        // the installer writes the status into this intent
+                        flags |= PendingIntent.FLAG_MUTABLE;
+                    }
+                    final Intent result = new Intent(context, LoogriGramInstallReceiver.class);
+                    session.commit(PendingIntent.getBroadcast(context, sessionId, result, flags).getIntentSender());
+                    committed = true;
+                }
+            } catch (Throwable e) {
+                FileLog.e(e);
             }
-            final Uri uri = FileProvider.getUriForFile(activity, ApplicationLoader.getApplicationId() + ".provider", file);
-            final Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.setDataAndType(uri, "application/vnd.android.package-archive");
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
-            activity.startActivity(intent);
-        } catch (Throwable e) {
-            FileLog.e(e);
+            if (!committed) {
+                if (sessionId != -1) {
+                    try {
+                        installer.abandonSession(sessionId);
+                    } catch (Throwable e) {
+                        FileLog.e(e);
+                    }
+                }
+                AndroidUtilities.runOnUIThread(this::onInstallFailed);
+            }
+        });
+    }
+
+    /** The install failed or was declined: offer it again. */
+    public void onInstallFailed() {
+        if (state == STATE_INSTALLING) {
+            setState(STATE_READY);
         }
     }
 
-    /** Forgets a finished download - after installing it, or when it is stale. */
+    /**
+     * Forgets a finished download - after installing it, or when it is stale -
+     * and deletes the APK, which would otherwise sit in the app's files until
+     * the next download cleared it.
+     */
     public void forgetDownload() {
+        final String path = getPrefs().getString("readyPath", null);
+        if (path != null) {
+            new File(path).delete();
+        }
         readyPath = null;
         getPrefs().edit().remove("readyTag").remove("readyPath").apply();
     }

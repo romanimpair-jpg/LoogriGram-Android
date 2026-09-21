@@ -35,6 +35,12 @@ public class AppStartReceiver extends BroadcastReceiver {
             // and did nothing. Harmless upstream, where FCM delivers the
             // wake-up regardless; here it is the restart path.
             AndroidUtilities.runOnUIThread(ApplicationLoader::startPushService);
+        } else if (Intent.ACTION_MY_PACKAGE_REPLACED.equals(intent.getAction())) {
+            // LoogriGram: installing an update kills this process, and with it
+            // the service that carries push here; nothing brought it back until
+            // the app was next opened. Android exempts this broadcast from the
+            // background foreground-service ban for exactly this.
+            AndroidUtilities.runOnUIThread(ApplicationLoader::startPushService);
         }
     }
 }
