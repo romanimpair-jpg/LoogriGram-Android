@@ -2430,7 +2430,7 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
                 }
             }
             if (!selectedDialogs.isEmpty()) {
-                onSend(selectedDialogs, sendingMessageObjects.size(), selectedDialogs.size() == 1 ? selectedDialogTopics.get(selectedDialogs.valueAt(0)) : null, true);
+                onSend(selectedDialogs, sendingMessageObjects.size(), selectedDialogs.size() == 1 ? selectedDialogTopics.get(selectedDialogs.valueAt(0)) : null);
             }
         } else {
             int num;
@@ -2483,7 +2483,7 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
                 }
             }
 
-            onSend(selectedDialogs, 1, selectedDialogTopics.get(selectedDialogs.valueAt(0)), true);
+            onSend(selectedDialogs, 1, selectedDialogTopics.get(selectedDialogs.valueAt(0)));
         }
         if (delegate != null) {
             delegate.didShare();
@@ -2491,7 +2491,7 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
         dismiss();
     }
 
-    protected void onSend(LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic, boolean showToast) {
+    protected void onSend(LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic) {
 
     }
 

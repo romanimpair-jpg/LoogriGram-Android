@@ -8400,8 +8400,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         }
         ShareAlert alert = new ShareAlert(parentActivity, parentChatActivity, messages, null, null, false, link, null, false, true, false, videoTimestamp, null) {
             @Override
-            protected void onSend(LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic, boolean showToast) {
-                if (!showToast) return;
+            protected void onSend(LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic) {
                 AndroidUtilities.runOnUIThread(() -> {
                     BulletinFactory.createForwardedBulletin(parentActivity, null, photoContainerView, dids.size(), dids.size() == 1 ? dids.valueAt(0).id : 0, count, 0xf9222222, 0xffffffff, Bulletin.DURATION_SHORT).show();
                 }, 250);

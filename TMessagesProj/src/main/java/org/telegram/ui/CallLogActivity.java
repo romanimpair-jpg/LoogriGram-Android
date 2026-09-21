@@ -1858,8 +1858,7 @@ public class CallLogActivity extends BaseFragment implements NotificationCenter.
 		);
 		shareButton.setOnClickListener(v -> new ShareAlert(context, null, link, false, currentLink[0], false, resourcesProvider) {
             @Override
-            protected void onSend(LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic, boolean showToast) {
-                if (!showToast) return;
+            protected void onSend(LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic) {
                 final String str;
                 if (dids != null && dids.size() == 1) {
                     long did = dids.valueAt(0).id;

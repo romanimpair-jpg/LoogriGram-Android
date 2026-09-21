@@ -1329,9 +1329,8 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             }
 
             @Override
-            protected void onSend(LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic, boolean showToast) {
-                if (!showToast) return;
-                super.onSend(dids, count, topic, showToast);
+            protected void onSend(LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic) {
+                super.onSend(dids, count, topic);
                 BulletinFactory bulletinFactory = getBulletinFactory();
                 if (bulletinFactory != null) {
                     if (dids.size() == 1) {

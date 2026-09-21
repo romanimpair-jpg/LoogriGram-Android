@@ -6719,8 +6719,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
             }
             shareAlert = new ShareAlert(getContext(), null, null, message, urlMuted, false, urlUnmuted, urlMuted, false, true) {
                 @Override
-                protected void onSend(LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic, boolean showToast) {
-                    if (!showToast) return;
+                protected void onSend(LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic) {
                     if (dids.size() == 1) {
                         getUndoView().showWithAction(dids.valueAt(0).id, UndoView.ACTION_VOIP_INVITE_LINK_SENT, count);
                     } else {

@@ -1232,8 +1232,7 @@ public class ProfileGiftsContainer extends FrameLayout implements NotificationCe
                     final String link = MessagesController.getInstance(currentAccount).linkPrefix + "/" + username + "/c/" + collection.collection_id;
                     new ShareAlert(context, null, link, false, link, false, resourcesProvider) {
                         @Override
-                        protected void onSend(LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic, boolean showToast) {
-                            if (!showToast) return;
+                        protected void onSend(LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic) {
                             final BulletinFactory bulletinFactory = BulletinFactory.of(fragment);
                             if (bulletinFactory != null) {
                                 if (dids.size() == 1) {

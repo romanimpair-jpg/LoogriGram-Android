@@ -4884,8 +4884,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
                                 showDialog(new ShareAlert(getParentActivity(), null, info.toString(), false, null, false) {
                                     @Override
-                                    protected void onSend(LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic, boolean showToast) {
-                                        if (!showToast) return;
+                                    protected void onSend(LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic) {
                                         AndroidUtilities.runOnUIThread(() -> {
                                             BulletinFactory.createInviteSentBulletin(getParentActivity(), contentView, dids.size(), dids.size() == 1 ? dids.valueAt(0).id : 0, count, getThemedColor(Theme.key_undo_background), getThemedColor(Theme.key_undo_infoColor)).show();
                                         }, 250);
@@ -7270,8 +7269,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 }
                 ShareAlert shareAlert = new ShareAlert(getParentActivity(), null, link, false, link, false) {
                     @Override
-                    protected void onSend(LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic, boolean showToast) {
-                        if (!showToast) return;
+                    protected void onSend(LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic) {
                         AndroidUtilities.runOnUIThread(() -> {
                             BulletinFactory.createInviteSentBulletin(getParentActivity(), contentView, dids.size(), dids.size() == 1 ? dids.valueAt(0).id : 0, count, getThemedColor(Theme.key_undo_background), getThemedColor(Theme.key_undo_infoColor)).show();
                         }, 250);

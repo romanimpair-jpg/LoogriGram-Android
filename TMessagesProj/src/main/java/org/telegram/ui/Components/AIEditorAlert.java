@@ -222,8 +222,7 @@ public class AIEditorAlert extends BottomSheetWithRecyclerListView implements No
                         final String link = "https://t.me/addstyle/" + tone.slug;
                         new ShareAlert(context, null, link, false, link, false, resourcesProvider) {
                             @Override
-                            protected void onSend(LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic, boolean showToast) {
-                                if (!showToast) return;
+                            protected void onSend(LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic) {
                                 final BulletinFactory bulletinFactory = BulletinFactory.of(bulletinContainer, resourcesProvider);
                                 if (bulletinFactory != null) {
                                     if (dids.size() == 1) {

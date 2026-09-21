@@ -1356,8 +1356,7 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
                 }
 
                 @Override
-                protected void onSend(LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic, boolean showToast) {
-                    if (!showToast) return;
+                protected void onSend(LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic) {
                     AndroidUtilities.runOnUIThread(() -> {
                         UndoView undoView;
                         if (parentFragment instanceof ChatActivity) {

@@ -38824,9 +38824,9 @@ public class ChatActivity extends BaseFragment implements
                     }
 
                     @Override
-                    protected void onSend(LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic, boolean showToast) {
+                    protected void onSend(LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic) {
                         createUndoView();
-                        if (undoView == null || !showToast) {
+                        if (undoView == null) {
                             return;
                         }
                         if (dids.size() == 1) {

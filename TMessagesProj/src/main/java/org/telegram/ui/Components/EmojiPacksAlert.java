@@ -1482,7 +1482,7 @@ public class EmojiPacksAlert extends BottomSheet implements NotificationCenter.N
             }
             ShareAlert alert = new ShareAlert(context, null, stickersUrl, false, stickersUrl, false, resourcesProvider) {
                 @Override
-                protected void onSend(androidx.collection.LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic, boolean showToast) {
+                protected void onSend(androidx.collection.LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic) {
                     AndroidUtilities.runOnUIThread(() -> {
                         UndoView undoView;
                         if (fragment instanceof ChatActivity) {

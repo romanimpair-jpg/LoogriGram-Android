@@ -12333,7 +12333,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         options.add(R.drawable.media_share, getString(R.string.StoriesAlbumMenuShareLink), () -> {
             ShareAlert alert = new ShareAlert(getContext(), null, link, false, link, false, resourcesProvider) {
                 @Override
-                protected void onSend(androidx.collection.LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic, boolean showToast) {
+                protected void onSend(androidx.collection.LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic) {
                     AndroidUtilities.runOnUIThread(() -> {
                         UndoView undoView;
                         if (fragment instanceof ChatActivity) {
