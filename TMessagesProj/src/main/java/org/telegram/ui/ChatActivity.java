@@ -31940,7 +31940,7 @@ public class ChatActivity extends BaseFragment implements
             businessLinksEmptyView = new BusinessLinksEmptyView(getContext(), this, businessLink, getResourceProvider());
             businessLinksEmptyView.setBackground(Theme.createServiceDrawable(AndroidUtilities.dp(24), businessLinksEmptyView, contentView, getThemedPaint(Theme.key_paint_chatActionBackground)));
             emptyViewContainer.addView(businessLinksEmptyView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER));
-        } else if (preloadedGreetingsSticker != null && currentUser != null && !userBlocked || userInfo != null && getDialogId() != getUserConfig().getClientUserId() && (userInfo.contact_require_premium && !getUserConfig().isPremium() || userInfo.send_paid_messages_stars > StarsController.getInstance(currentAccount).getBalance().amount)) {
+        } else if (preloadedGreetingsSticker != null && currentUser != null && !userBlocked || userInfo != null && getDialogId() != getUserConfig().getClientUserId() && userInfo.contact_require_premium && !getUserConfig().isPremium()) {
             greetingsViewContainer = new ChatGreetingsView(getContext(), currentUser, currentAccount, preloadedGreetingsSticker, themeDelegate) {
                 @Override
                 protected void onLayout(boolean changed, int l, int t, int r, int b) {
@@ -32041,23 +32041,13 @@ public class ChatActivity extends BaseFragment implements
 
         if (ChatObject.isMonoForum(currentChat)) {
             TLRPC.Chat mfChat = getLinkedMonoForumChat();
-            if (mfChat != null && currentChat != null && !ChatObject.canManageMonoForum(currentAccount, currentChat)) {
-                final long send_paid_messages_stars = currentChat.send_paid_messages_stars;
-                final CharSequence title = AndroidUtilities.replaceTags(StarsFormat.replaceStars(send_paid_messages_stars > 0 ?
-                    formatString(R.string.SuggestionLockedStars, DialogObject.getShortName(-mfChat.id), LocaleController.formatNumber(send_paid_messages_stars, ',')):
+            // LoogriGram: only the "free to write to" half. A channel that
+            // charges got its price and a buy-Stars button here; now it gets
+            // nothing, and a send there is refused with the reason.
+            if (mfChat != null && currentChat != null && !ChatObject.canManageMonoForum(currentAccount, currentChat) && currentChat.send_paid_messages_stars <= 0) {
+                final CharSequence title = AndroidUtilities.replaceTags(StarsFormat.replaceStars(
                     formatString(R.string.SuggestionUnlockedStars, DialogObject.getShortName(-mfChat.id)), 1.0f));
-
-                final CharSequence button = send_paid_messages_stars > 0 ?
-                    LocaleController.getString(R.string.MessageStarsUnlock) : null;
-
-                greetingsViewContainer.setPremiumLock(true, true, title, button, v -> {
-                    final long balance = StarsController.getInstance(currentAccount).getBalance().amount;
-                    if (balance < send_paid_messages_stars) {
-                        new StarsIntroActivity.StarsNeededSheet(getContext(), getResourceProvider(), send_paid_messages_stars, StarsIntroActivity.StarsNeededSheet.TYPE_PRIVATE_MESSAGE, DialogObject.getShortName(getDialogId()), this::updateBottomOverlay, getDialogId()).show();
-                    } else {
-                        new StarsIntroActivity.StarsOptionsSheet(getContext(), resourceProvider).show();
-                    }
-                });
+                greetingsViewContainer.setPremiumLock(true, true, title, null, null);
             } else {
                 greetingsViewContainer.resetPremiumLock();
             }
@@ -32069,17 +32059,10 @@ public class ChatActivity extends BaseFragment implements
                         fragment.presentFragment(new PremiumPreviewFragment("contact"));
                     }
                 });
-            } else if (userInfo != null && userInfo.send_paid_messages_stars > 0) {
-                final long send_paid_messages_stars = userInfo.send_paid_messages_stars;
-                greetingsViewContainer.setPremiumLock(send_paid_messages_stars > 0, AndroidUtilities.replaceTags(StarsFormat.replaceStars(formatString(R.string.MessageLockedStars, DialogObject.getShortName(dialog_id), LocaleController.formatNumber(userInfo.send_paid_messages_stars, ',')), 1.0f)), LocaleController.getString(R.string.MessageStarsUnlock), v -> {
-                    final long balance = StarsController.getInstance(currentAccount).getBalance().amount;
-                    if (balance < send_paid_messages_stars) {
-                        new StarsIntroActivity.StarsNeededSheet(getContext(), getResourceProvider(), send_paid_messages_stars, StarsIntroActivity.StarsNeededSheet.TYPE_PRIVATE_MESSAGE, DialogObject.getShortName(getDialogId()), this::updateBottomOverlay, getDialogId()).show();
-                    } else {
-                        new StarsIntroActivity.StarsOptionsSheet(getContext(), resourceProvider).show();
-                    }
-                });
             } else {
+                // LoogriGram: no "charges N Stars per message" and Unlock
+                // button for a user who charges - the compose field already
+                // says the chat is locked (updateBottomOverlay).
                 greetingsViewContainer.resetPremiumLock();
             }
         } else {
@@ -32121,7 +32104,7 @@ public class ChatActivity extends BaseFragment implements
         showGreetInfo(
             getDialogId() != getUserConfig().getClientUserId() &&
             userInfo != null && userInfo.business_intro != null &&
-            !(userInfo != null && (userInfo.contact_require_premium && !getUserConfig().isPremium() || userInfo.send_paid_messages_stars > 0))
+            !(userInfo != null && userInfo.contact_require_premium && !getUserConfig().isPremium())
         );
     }
 
