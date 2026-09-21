@@ -136,13 +136,13 @@ jobs:
           df -h / | tail -1
 
       - name: Set up JDK 17.
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Set up Gradle.
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Install Android SDK components.
         run: |
@@ -329,7 +329,7 @@ jobs:
           fi
 
       - name: Upload symbols.
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: inputs.mode == 'build'
         with:
           name: LoogriGram ${{ inputs.config }} symbols ${{ env.LOOGRIGRAM_TAG }}
@@ -337,7 +337,7 @@ jobs:
           retention-days: 30
 
       - name: Upload artifact.
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: inputs.mode == 'build'
         with:
           name: LoogriGram ${{ inputs.config }}

@@ -1,4 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
+# LoogriGram: CMake requires a project() call here and warned that it was
+# pretending one existed. C and C++ are the defaults it assumed; ASM is
+# still enabled per ABI below.
+project(tmessages)
 
 set(CMAKE_CXX_FLAGS "-std=c++14 -DANDROID -g")
 set(CMAKE_C_FLAGS "-w -std=c11 -DANDROID -D_LARGEFILE_SOURCE=1 -g -Wno-error=implicit-function-declaration")

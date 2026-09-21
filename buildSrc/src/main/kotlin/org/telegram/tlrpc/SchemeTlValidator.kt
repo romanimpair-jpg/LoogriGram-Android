@@ -11,7 +11,7 @@ object SchemeTlValidator {
 
         val isValid = scheme.constructors2.all { c ->
             c.params.list.all { p -> validateParamType(types, p.type) }
-        } && scheme.methods2.all { c ->
+        } && scheme.methods2.all { _ ->
             true // validateParamType(types, c.type) && c.params.all { p -> validateParamType(types, p.type) }
         }
 

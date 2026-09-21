@@ -290,6 +290,12 @@ android {
         }
     }
 
+    // LoogriGram: declared here instead of the deprecated gradle.properties
+    // default android.defaults.buildfeatures.buildconfig, which applied to
+    // every module; jlatexmath never uses BuildConfig.
+    buildFeatures {
+        buildConfig = true
+    }
     namespace 'org.telegram.messenger'
 }
 

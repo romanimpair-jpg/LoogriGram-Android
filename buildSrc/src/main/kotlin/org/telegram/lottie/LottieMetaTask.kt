@@ -47,7 +47,7 @@ abstract class LottieMetaTask : DefaultTask() {
             .mapNotNull { f ->
                 val info = parseLottie(f) ?: return@mapNotNull null
                 val mono = false;
-                f.nameWithoutExtension to Triple(info.fps, info.frameCount, mono ?: false)
+                f.nameWithoutExtension to Triple(info.fps, info.frameCount, mono)
             }
             .groupBy({ it.first }, { it.second })
 
