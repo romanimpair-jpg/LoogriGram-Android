@@ -6657,7 +6657,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     todoButton = buttonsCount++;
                 }
                 // LoogriGram: no Contact button - see openContactsLayout.
-                if (baseFragment instanceof ChatActivity && ((ChatActivity) baseFragment).getChatMode() == 0 && user != null && !paidUser && !user.bot && QuickRepliesController.getInstance(currentAccount).hasReplies()) {
+                if (baseFragment instanceof ChatActivity && ((ChatActivity) baseFragment).getChatMode() == 0 && user != null && !user.bot && QuickRepliesController.getInstance(currentAccount).hasReplies()) {
                     quickRepliesButton = buttonsCount++;
                 }
                 musicButton = buttonsCount++;
