@@ -1469,10 +1469,8 @@ public class StarsController {
             return getPeerId() == UserObject.ANONYMOUS;
         }
 
-        public StarReactionsOverlay overlay;
-        public void setOverlay(StarReactionsOverlay overlay) {
-            this.overlay = overlay;
-        }
+        // LoogriGram: the overlay that drew the stars flying off the message
+        // is deleted with the rest of paid reactions.
 
         public String getToastTitle() {
             if (isAnonymous()) {
@@ -1596,9 +1594,6 @@ public class StarsController {
                 NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.starBalanceUpdated);
             }
             bulletin.hide();
-            if (overlay != null && overlay.isShowing(messageObject)) {
-                overlay.hide();
-            }
 
             if (currentPendingReactions == this) {
                 currentPendingReactions = null;
@@ -1611,9 +1606,6 @@ public class StarsController {
 
             cancelled = true;
             bulletin.hide();
-            if (overlay != null) {
-                overlay.hide();
-            }
 
             messageObject.addPaidReactions((int) -amount, wasChosen, getPeerId());
             minus -= amount;
