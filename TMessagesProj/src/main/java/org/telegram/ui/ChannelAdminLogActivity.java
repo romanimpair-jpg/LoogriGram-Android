@@ -3196,12 +3196,14 @@ public class ChannelAdminLogActivity extends BaseFragment implements Notificatio
                                 alertUserOpenError(message);
                             }
                         } else if (message.type == MessageObject.TYPE_GEO) {
-                            if (!AndroidUtilities.isMapsInstalled(ChannelAdminLogActivity.this)) {
-                                return;
+                            // LoogriGram: out to a maps app, as in the chat.
+                            final TLRPC.MessageMedia geoMedia = message.messageOwner != null ? message.messageOwner.media : null;
+                            final TLRPC.GeoPoint geo = geoMedia != null ? geoMedia.geo : null;
+                            if (geo != null && !AndroidUtilities.openLocationExternally(getParentActivity(), geo.lat, geo._long, geoMedia.title)) {
+                                BulletinFactory.of(ChannelAdminLogActivity.this)
+                                    .createErrorBulletin(getString(R.string.GhostNoMapsApp))
+                                    .show();
                             }
-                            LocationActivity fragment = new LocationActivity(0);
-                            fragment.setMessageObject(message);
-                            presentFragment(fragment);
                         } else if (message.type == MessageObject.TYPE_FILE || message.type == MessageObject.TYPE_TEXT) {
                             if (message.getDocumentName().toLowerCase().endsWith("attheme")) {
                                 File locFile = null;

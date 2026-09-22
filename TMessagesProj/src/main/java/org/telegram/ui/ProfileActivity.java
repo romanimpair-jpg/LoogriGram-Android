@@ -4461,10 +4461,15 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     }
                 }
             } else if (position == locationRow) {
+                // LoogriGram: a group's address opens in a maps app rather than
+                // in a map of ours.
                 if (chatInfo.location instanceof TLRPC.TL_channelLocation) {
-                    LocationActivity fragment = new LocationActivity(LocationActivity.LOCATION_TYPE_GROUP_VIEW);
-                    fragment.setChatLocation(chatId, (TLRPC.TL_channelLocation) chatInfo.location);
-                    presentFragment(fragment);
+                    final TLRPC.TL_channelLocation location = (TLRPC.TL_channelLocation) chatInfo.location;
+                    if (location.geo_point != null && !AndroidUtilities.openLocationExternally(getParentActivity(), location.geo_point.lat, location.geo_point._long, location.address)) {
+                        BulletinFactory.of(this)
+                            .createErrorBulletin(getString(R.string.GhostNoMapsApp))
+                            .show();
+                    }
                 }
             } else if (position == joinRow) {
                 onJoinClicked(false);
@@ -15965,26 +15970,18 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         ((FrameLayout) fragmentView).addView(birthdayEffect, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.FILL_HORIZONTAL | Gravity.TOP));
     }
 
+    // LoogriGram: inMapsApp is what it always is now - there is no map of
+    // ours to open instead, so a business address goes out either way: by
+    // coordinates when it has them, by street address when it does not.
     private void openLocation(boolean inMapsApp) {
         if (userInfo == null || userInfo.business_location == null) return;
-        if (userInfo.business_location.geo_point != null && !inMapsApp) {
-            LocationActivity fragment = new LocationActivity(3) {
-                @Override
-                protected boolean disablePermissionCheck() {
-                    return true;
-                }
-            };
-            fragment.setResourceProvider(resourcesProvider);
-            TLRPC.TL_message message = new TLRPC.TL_message();
-            message.local_id = -1;
-            message.peer_id = getMessagesController().getPeer(getDialogId());
-            TLRPC.TL_messageMediaGeo media = new TLRPC.TL_messageMediaGeo();
-            media.geo = userInfo.business_location.geo_point;
-            media.address = userInfo.business_location.address;
-            message.media = media;
-            fragment.setSharingAllowed(false);
-            fragment.setMessageObject(new MessageObject(UserConfig.selectedAccount, message, false, false));
-            presentFragment(fragment);
+        if (userInfo.business_location.geo_point != null) {
+            final TLRPC.GeoPoint geo = userInfo.business_location.geo_point;
+            if (!AndroidUtilities.openLocationExternally(getParentActivity(), geo.lat, geo._long, userInfo.business_location.address)) {
+                BulletinFactory.of(this)
+                    .createErrorBulletin(getString(R.string.GhostNoMapsApp))
+                    .show();
+            }
         } else {
             String domain;
             if (BuildVars.isHuaweiStoreApp()) {

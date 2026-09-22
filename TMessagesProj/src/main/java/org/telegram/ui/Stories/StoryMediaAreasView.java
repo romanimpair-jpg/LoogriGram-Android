@@ -270,40 +270,26 @@ public class StoryMediaAreasView extends FrameLayout implements View.OnClickList
                 return;
             }
 
-            LocationActivity fragment = new LocationActivity(3) {
-                @Override
-                protected boolean disablePermissionCheck() {
-                    return true;
-                }
-            };
-            fragment.fromStories = true;
-            fragment.searchStories(selectedArea.mediaArea);
-            fragment.setResourceProvider(resourcesProvider);
-            TLRPC.TL_message message = new TLRPC.TL_message();
+            // LoogriGram: a location sticker opened a map of ours, which also
+            // searched other stories placed nearby. The point itself goes out
+            // to a maps app instead; the nearby-stories search goes with the
+            // map, since it was a feature of that screen.
+            final TLRPC.GeoPoint geo;
+            final String label;
             if (selectedArea.mediaArea instanceof TL_stories.TL_mediaAreaVenue) {
-                TL_stories.TL_mediaAreaVenue areaVenue = (TL_stories.TL_mediaAreaVenue) selectedArea.mediaArea;
-                TLRPC.TL_messageMediaVenue media = new TLRPC.TL_messageMediaVenue();
-                media.venue_id = areaVenue.venue_id;
-                media.venue_type = areaVenue.venue_type;
-                media.title = areaVenue.title;
-                media.address = areaVenue.address;
-                media.provider = areaVenue.provider;
-                media.geo = areaVenue.geo;
-                message.media = media;
+                final TL_stories.TL_mediaAreaVenue areaVenue = (TL_stories.TL_mediaAreaVenue) selectedArea.mediaArea;
+                geo = areaVenue.geo;
+                label = areaVenue.title;
             } else if (selectedArea.mediaArea instanceof TL_stories.TL_mediaAreaGeoPoint) {
-                fragment.setInitialMaxZoom(true);
-                TL_stories.TL_mediaAreaGeoPoint areaGeo = (TL_stories.TL_mediaAreaGeoPoint) selectedArea.mediaArea;
-                TLRPC.TL_messageMediaGeo media = new TLRPC.TL_messageMediaGeo();
-                media.geo = areaGeo.geo;
-                message.media = media;
+                geo = ((TL_stories.TL_mediaAreaGeoPoint) selectedArea.mediaArea).geo;
+                label = null;
             } else {
-                selectedArea = null;
-                invalidate();
-                return;
+                geo = null;
+                label = null;
             }
-            fragment.setSharingAllowed(false);
-            fragment.setMessageObject(new MessageObject(UserConfig.selectedAccount, message, false, false));
-            presentFragment(fragment);
+            if (geo != null) {
+                AndroidUtilities.openLocationExternally(getContext(), geo.lat, geo._long, label);
+            }
             selectedArea = null;
             invalidate();
             return;

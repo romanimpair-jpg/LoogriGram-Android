@@ -8809,26 +8809,13 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     final TLRPC.TL_messageMediaPoll messageMediaPoll = (TLRPC.TL_messageMediaPoll) messageMedia;
 
                     if (media.geo != null) {
-                        if (!AndroidUtilities.isMapsInstalled(profileActivity)) {
-                            return;
+                        // LoogriGram: out to a maps app, as everywhere else.
+                        final String label = media.address != null ? media.address : (answer != null && answer.text != null ? answer.text.text : null);
+                        if (!AndroidUtilities.openLocationExternally(profileActivity.getParentActivity(), media.geo.lat, media.geo._long, label)) {
+                            BulletinFactory.of(profileActivity)
+                                .createErrorBulletin(LocaleController.getString(R.string.GhostNoMapsApp))
+                                .show();
                         }
-                        LocationActivity fragment = new LocationActivity(3) {
-                            @Override
-                            protected boolean disablePermissionCheck() {
-                                return true;
-                            }
-                        };
-                        fragment.setResourceProvider(resourcesProvider);
-                        TLRPC.TL_message message = new TLRPC.TL_message();
-                        message.local_id = -1;
-                        message.peer_id = MessagesController.getInstance(currentAccount).getPeer(dialog_id);
-                        TLRPC.TL_messageMediaGeo media1 = new TLRPC.TL_messageMediaGeo();
-                        media1.geo = media.geo;
-                        media1.address = media.address != null ? media.address : (answer != null && answer.text != null ? answer.text.text : "");
-                        message.media = media1;
-                        fragment.setSharingAllowed(false);
-                        fragment.setMessageObject(new MessageObject(UserConfig.selectedAccount, message, false, false));
-                        profileActivity.presentFragment(fragment);
                     } else if (MessageObject.isAnyKindOfStickerOrEmoji(media.document)) {
                         ContentPreviewViewer.getInstance().setParentActivity(profileActivity.getParentActivity());
                         ContentPreviewViewer.getInstance().setDelegate(new ContentPreviewViewer.ContentPreviewViewerDelegate() {

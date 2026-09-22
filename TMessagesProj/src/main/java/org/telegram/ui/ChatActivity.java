@@ -40432,27 +40432,15 @@ public class ChatActivity extends BaseFragment implements
             if (media.webpage != null) {
                 didPressWebPage(cell, media.webpage, media.webpage.url, media.safe);
             } else if (media.geo != null) {
-                if (!AndroidUtilities.isMapsInstalled(ChatActivity.this)) {
-                    return;
+                // LoogriGram: out to a maps app, as a location in a message
+                // already goes. The label is the address, or the answer's own
+                // text when it has none.
+                final String label = media.address != null ? media.address : (answer != null && answer.text != null ? answer.text.text : null);
+                if (!AndroidUtilities.openLocationExternally(getParentActivity(), media.geo.lat, media.geo._long, label)) {
+                    BulletinFactory.of(ChatActivity.this)
+                        .createErrorBulletin(getString(R.string.GhostNoMapsApp))
+                        .show();
                 }
-
-                LocationActivity fragment = new LocationActivity(3) {
-                    @Override
-                    protected boolean disablePermissionCheck() {
-                        return true;
-                    }
-                };
-                fragment.setResourceProvider(resourceProvider);
-                TLRPC.TL_message message = new TLRPC.TL_message();
-                message.local_id = -1;
-                message.peer_id = getMessagesController().getPeer(getDialogId());
-                TLRPC.TL_messageMediaGeo media1 = new TLRPC.TL_messageMediaGeo();
-                media1.geo = media.geo;
-                media1.address = media.address != null ? media.address : (answer != null && answer.text != null ? answer.text.text : "");
-                message.media = media1;
-                fragment.setSharingAllowed(false);
-                fragment.setMessageObject(new MessageObject(UserConfig.selectedAccount, message, false, false));
-                presentFragment(fragment);
             } else if (MessageObject.isAnyKindOfStickerOrEmoji(media.document)) {
                 ContentPreviewViewer.getInstance().setParentActivity(getParentActivity());
                 ContentPreviewViewer.getInstance().setDelegate(new ContentPreviewViewer.ContentPreviewViewerDelegate() {
