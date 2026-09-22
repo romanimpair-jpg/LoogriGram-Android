@@ -12987,9 +12987,6 @@ public class ChatActivity extends BaseFragment implements
         if (checksHintView != null) {
             checksHintView.hide();
         }
-        if (bottomGiftHintView != null) {
-            bottomGiftHintView.hide();
-        }
         if (bottomSuggestHintView != null) {
             bottomSuggestHintView.hide();
         }

@@ -10706,9 +10706,6 @@ public class ChatActivityEnterView extends FrameLayout implements
         if (sendSuggestHintView != null) {
             sendSuggestHintView.hide();
         }
-        if (birthdayHint != null) {
-            birthdayHint.hide();
-        }
     }
 
     public void updateScheduleButton(boolean animated) {
