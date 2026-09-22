@@ -613,19 +613,9 @@ public class GroupCreateFinalActivity extends BaseFragment implements Notificati
             }
         });
         listView.setOnItemClickListener((view, position, x, y) -> {
-            if (view instanceof TextSettingsCell) {
-                if (!AndroidUtilities.isMapsInstalled(GroupCreateFinalActivity.this)) {
-                    return;
-                }
-                LocationActivity fragment = new LocationActivity(LocationActivity.LOCATION_TYPE_GROUP);
-                fragment.setDialogId(0);
-                fragment.setDelegate((location, live, notify, scheduleDate) -> {
-                    currentGroupCreateLocation.setLatitude(location.geo.lat);
-                    currentGroupCreateLocation.setLongitude(location.geo._long);
-                    currentGroupCreateAddress = location.address;
-                });
-                presentFragment(fragment);
-            }
+            // LoogriGram: the address row opened a picker to move the group's
+            // location. Nothing fills these arguments any more - the flow that
+            // did was Telegram's own People Nearby, already gone upstream.
             if (view instanceof TextCell && chatType != ChatObject.CHAT_TYPE_FORUM) {
                 if (popupWindow != null && popupWindow.isShowing()) {
                     return;

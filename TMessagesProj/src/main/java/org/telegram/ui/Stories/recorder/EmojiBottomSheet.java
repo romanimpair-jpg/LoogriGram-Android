@@ -1477,7 +1477,7 @@ public class EmojiBottomSheet extends BottomSheet implements NotificationCenter.
     }
 
     public boolean hasWidgets() {
-        return onWidgetSelected != null && (canShowWidget(WIDGET_LOCATION) || canShowWidget(WIDGET_AUDIO) || canShowWidget(WIDGET_PHOTO) || canShowWidget(WIDGET_REACTION) || canShowWidget(WIDGET_LINK));
+        return onWidgetSelected != null && (canShowWidget(WIDGET_AUDIO) || canShowWidget(WIDGET_PHOTO) || canShowWidget(WIDGET_REACTION) || canShowWidget(WIDGET_LINK));
     }
 
     @Override
@@ -2886,8 +2886,8 @@ public class EmojiBottomSheet extends BottomSheet implements NotificationCenter.
             setPadding(0, 0, 0, 0);
             if (canShowWidget(WIDGET_LINK))
                 widgets.add(new Button(WIDGET_LINK, R.drawable.msg_limit_links, LocaleController.getString(R.string.StoryWidgetLink)).needsPremium());
-            if (canShowWidget(WIDGET_LOCATION))
-                widgets.add(new Button(WIDGET_LOCATION, R.drawable.map_pin3, LocaleController.getString(R.string.StoryWidgetLocation)));
+            // LoogriGram: no location widget - there is no picker to choose
+            // one with, and nothing here may ask the phone where it is.
             if (canShowWidget(WIDGET_WEATHER)) {
                 Weather.State weather = Weather.getCached();
                 Button[] btn = new Button[] { null };

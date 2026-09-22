@@ -1986,11 +1986,7 @@ public class PaintView extends SizeNotifierFrameLayoutPhoto implements IPhotoPai
             return true;
         });
         alert.whenWidgetSelected(widgetId -> {
-            if (widgetId == EmojiBottomSheet.WIDGET_LOCATION) {
-                closing[0] = false;
-                showLocationAlert(null, (location, area) -> appearAnimation(createLocationSticker(location, area, false)));
-                return true;
-            } else if (widgetId == EmojiBottomSheet.WIDGET_WEATHER) {
+            if (widgetId == EmojiBottomSheet.WIDGET_WEATHER) {
                 closing[0] = false;
                 Weather.fetch(true, weather -> {
                     if (weather != null) {
@@ -2101,98 +2097,6 @@ public class PaintView extends SizeNotifierFrameLayoutPhoto implements IPhotoPai
         });
         sheet.show();
         onOpenCloseStickersAlert(true);
-    }
-
-    private void showLocationAlert(LocationView editingLocationView, Utilities.Callback2<TLRPC.MessageMedia, TL_stories.MediaArea> onLocationSelected) {
-        ChatAttachAlert locationAlert = new ChatAttachAlert(getContext(), new ChatActivity(null) {
-            @Override
-            public long getDialogId() {
-                return 0;
-            }
-
-            @Override
-            public Theme.ResourcesProvider getResourceProvider() {
-                return resourcesProvider;
-            }
-
-            @Override
-            public boolean isKeyboardVisible() {
-                return false;
-            }
-
-            @Override
-            public Activity getParentActivity() {
-                return AndroidUtilities.findActivity(PaintView.this.getContext());
-            }
-
-            @Override
-            public TLRPC.User getCurrentUser() {
-                return UserConfig.getInstance(currentAccount).getCurrentUser();
-            }
-
-            @Override
-            public boolean isLightStatusBar() {
-                return false;
-            }
-
-            @Override
-            public void didSelectLocation(TLRPC.MessageMedia location, int locationType, boolean notify, int scheduleDate) {
-                TL_stories.MediaArea mediaArea;
-                if (location instanceof TLRPC.TL_messageMediaGeo) {
-                    TL_stories.TL_mediaAreaGeoPoint areaGeo = new TL_stories.TL_mediaAreaGeoPoint();
-                    areaGeo.geo = location.geo;
-                    mediaArea = areaGeo;
-                } else if (location instanceof TLRPC.TL_messageMediaVenue) {
-                    TLRPC.TL_messageMediaVenue loc = (TLRPC.TL_messageMediaVenue) location;
-                    if (loc.query_id == -1 || loc.query_id == -2) {
-                        TL_stories.TL_mediaAreaGeoPoint areaGeo = new TL_stories.TL_mediaAreaGeoPoint();
-                        areaGeo.geo = location.geo;
-                        areaGeo.address = ((TLRPC.TL_messageMediaVenue) location).geoAddress;
-                        if (areaGeo.address != null) {
-                            areaGeo.flags |= 1;
-                        }
-                        Utilities.globalQueue.postRunnable(() -> {
-                            try {
-                                Geocoder gcd = new Geocoder(ApplicationLoader.applicationContext, LocaleController.getInstance().getCurrentLocale());
-                                List<Address> addresses = gcd.getFromLocationName(location.title, 1);
-                                if (addresses.size() <= 0) {
-                                    return;
-                                }
-                                areaGeo.geo.lat = addresses.get(0).getLatitude();
-                                areaGeo.geo._long = addresses.get(0).getLongitude();
-                            } catch (Exception ignore) {}
-                        });
-                        mediaArea = areaGeo;
-                    } else {
-                        TL_stories.TL_inputMediaAreaVenue areaVenue = new TL_stories.TL_inputMediaAreaVenue();
-                        areaVenue.query_id = ((TLRPC.TL_messageMediaVenue) location).query_id;
-                        areaVenue.result_id = ((TLRPC.TL_messageMediaVenue) location).result_id;
-                        mediaArea = areaVenue;
-                    }
-                } else {
-                    return;
-                }
-                onLocationSelected.run(location, mediaArea);
-            }
-        }, false, true, false, resourcesProvider);
-        locationAlert.setDelegate(new ChatAttachAlert.ChatAttachViewDelegate() {
-            @Override
-            public void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia, boolean forceDocument) {
-
-            }
-        });
-        if (editingLocationView != null && editingLocationView.location != null && editingLocationView.location.geo != null) {
-            locationAlert.setStoryLocationPicker(editingLocationView.location.geo.lat, editingLocationView.location.geo._long);
-        } else if (fileFromGallery) {
-            locationAlert.setStoryLocationPicker(isVideo, file);
-        } else {
-            locationAlert.setStoryLocationPicker();
-        }
-        locationAlert.setOnDismissListener(di -> {
-            onOpenCloseStickersAlert(false);
-        });
-        locationAlert.init();
-        locationAlert.show();
     }
 
     private void showAudioAlert(Utilities.Callback<MessageObject> onAudioSelected) {
@@ -4049,19 +3953,6 @@ public class PaintView extends SizeNotifierFrameLayoutPhoto implements IPhotoPai
                         }
                     });
                 }
-                parent.addView(editView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, 44));
-            } else if (entityView instanceof LocationView) {
-                TextView editView = createActionLayoutButton(1, getString(R.string.PaintEdit));
-                editView.setOnClickListener(v -> {
-                    selectEntity(null);
-                    showLocationAlert((LocationView) entityView, (location, area) -> {
-                        ((LocationView) entityView).setLocation(currentAccount, location, area);
-                        appearAnimation(entityView);
-                    });
-                    if (popupWindow != null && popupWindow.isShowing()) {
-                        popupWindow.dismiss(true);
-                    }
-                });
                 parent.addView(editView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, 44));
             } else if (entityView instanceof LinkView) {
                 TextView editView = createActionLayoutButton(1, getString(R.string.PaintEdit));

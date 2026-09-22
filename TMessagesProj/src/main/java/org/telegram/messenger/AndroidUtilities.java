@@ -1873,42 +1873,9 @@ public class AndroidUtilities {
         }
     }
 
-    // LoogriGram: always false, and silently - no dialog. Upstream puts this
-    // check in front of every map entry point, both viewing and sending, so
-    // returning false here is what closes all of them at once. The upstream
-    // body below offered to install Google Maps from the Play Store, which is
-    // doubly wrong on a phone with neither.
-    //
-    // Viewing a received location is not lost: it goes out to whatever maps
-    // app is installed through openLocationExternally.
-    public static boolean isMapsInstalled(BaseFragment fragment) {
-        if (true) {
-            return false;
-        }
-        String pkg = ApplicationLoader.getMapsProvider().getMapsAppPackageName();
-        try {
-            ApplicationLoader.applicationContext.getPackageManager().getApplicationInfo(pkg, 0);
-            return true;
-        } catch (PackageManager.NameNotFoundException e) {
-            if (fragment.getParentActivity() == null) {
-                return false;
-            }
-            AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getParentActivity());
-            builder.setMessage(getString(ApplicationLoader.getMapsProvider().getInstallMapsString()));
-            builder.setPositiveButton(getString(R.string.OK), (dialogInterface, i) -> {
-                try {
-                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + pkg));
-                    fragment.getParentActivity().startActivityForResult(intent, 500);
-                } catch (Exception e1) {
-                    FileLog.e(e1);
-                }
-            });
-            builder.setNegativeButton(getString(R.string.Cancel), null);
-            fragment.showDialog(builder.create());
-            return false;
-        }
-    }
-
+    // LoogriGram: isMapsInstalled stood here, answering false to close
+    // every map entry point at once. The screens behind those entry points
+    // are gone now, so there is nothing left to guard.
     public static int[] toIntArray(List<Integer> integers) {
         int[] ret = new int[integers.size()];
         for (int i = 0; i < ret.length; i++) {

@@ -366,7 +366,6 @@ import me.vkryl.core.reference.ReferenceList;
 public class ChatActivity extends BaseFragment implements
         NotificationCenter.NotificationCenterDelegate,
         DialogsActivity.DialogsActivityDelegate,
-        LocationActivity.LocationActivityDelegate,
         ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate,
         ChatActivityInterface,
         FloatingDebugProvider,
@@ -34669,24 +34668,6 @@ public class ChatActivity extends BaseFragment implements
         } else {
             messagesSearchListView.setEmptyView(null);
             hashtagSearchEmptyView.setVisibility(View.GONE);
-        }
-    }
-
-    @Override
-    public void didSelectLocation(TLRPC.MessageMedia location, int locationType, boolean notify, int scheduleDate) {
-        SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(location, dialog_id, replyingMessageObject, getThreadMessage(), null, null, notify, scheduleDate, 0);
-        params.sendMessageChatArguments = getMessageChatSendParams();
-        params.monoForumPeer = getSendMonoForumPeerId();
-        params.suggestionParams = messageSuggestionParams;
-        getSendMessagesHelper().sendMessage(params);
-        if (chatMode == 0) {
-            moveScrollToLastMessage();
-        }
-        if (locationType == LocationActivity.LOCATION_TYPE_SEND || locationType == LocationActivity.LOCATION_TYPE_SEND_WITH_LIVE) {
-            afterMessageSend();
-        }
-        if (paused) {
-            scrollToTopOnResume = true;
         }
     }
 

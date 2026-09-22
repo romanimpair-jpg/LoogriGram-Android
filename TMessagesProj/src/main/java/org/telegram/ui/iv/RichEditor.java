@@ -487,7 +487,7 @@ public class RichEditor extends BaseFragment implements NotificationCenter.Notif
             @Override
             public void onOpenAttachRequest(int a, int b) { openAttach(a, b); }
             @Override
-            public void onOpenLocationRequest(BlockRow row) { openLocationPicker(row); }
+            public void onOpenLocationRequest(BlockRow row) {}
             @Override
             public void onSlashSuggest(RichTextCell cell, String query) {
                 if (commandSuggestions == null) commandSuggestions = new RichCommandSuggestions(anchor -> ItemOptions.makeOptions(RichEditor.this, anchor), getResourceProvider());
@@ -1752,8 +1752,7 @@ public class RichEditor extends BaseFragment implements NotificationCenter.Notif
     private static final int DEFAULT_ATTACH_LAYOUTS =
         (1 << ChatAttachAlert.LAYOUT_TYPE_PHOTO) |
         (1 << ChatAttachAlert.LAYOUT_TYPE_MUSIC) |
-        (1 << ChatAttachAlert.LAYOUT_TYPE_DOCUMENTS) |
-        (1 << ChatAttachAlert.LAYOUT_TYPE_LOCATION);
+        (1 << ChatAttachAlert.LAYOUT_TYPE_DOCUMENTS);
 
     private void openAttach() {
         openAttach(DEFAULT_ATTACH_LAYOUTS, 0);
@@ -1803,19 +1802,6 @@ public class RichEditor extends BaseFragment implements NotificationCenter.Notif
 
         chatAttachAlert.setMaxSelectedPhotos(1, true);
         chatAttachAlert.enablePollAttachMode(allowedLayouts);
-        chatAttachAlert.setLocationActivityDelegate((location, live, notify, scheduleDate) -> {
-            if (location == null || location.geo == null) {
-                chatAttachAlert.dismiss(true);
-                return;
-            }
-            TL_iv.pageBlockMap map = new TL_iv.pageBlockMap();
-            map.geo = location.geo;
-            map.zoom = 15;
-            map.w = 600;
-            map.h = 400;
-            listView.addBlock(map);
-            chatAttachAlert.dismiss(true);
-        });
         chatAttachAlert.setAudioSelectDelegate((audios, caption, notify, scheduleDate, scheduleRepeatPeriod, effectId, invertMedia) -> {
             if (audios != null && !audios.isEmpty()) {
                 listView.attachAudio(audios.get(0));
@@ -1905,43 +1891,6 @@ public class RichEditor extends BaseFragment implements NotificationCenter.Notif
         }, getResourceProvider());
     }
 
-    private void openLocationPicker(BlockRow row) {
-        if (row == null || !(row.block instanceof TL_iv.pageBlockMap)) return;
-        if (!AndroidUtilities.isMapsInstalled(this)) return;
-        final ChatAttachAlert pickerAlert = new ChatAttachAlert(getContext(), this, false, false, false, getResourceProvider());
-        pickerAlert.setDelegate(new ChatAttachAlert.ChatAttachViewDelegate() {
-            @Override
-            public void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia, boolean forceDocument) {}
-        });
-        pickerAlert.setLocationPicker();
-        pickerAlert.setLocationActivityDelegate((location, live, notify, scheduleDate) -> {
-            if (location == null || location.geo == null) return;
-            if (listView.history != null) listView.history.flush();
-            final TL_iv.pageBlockMap map = (TL_iv.pageBlockMap) row.block;
-            map.geo = location.geo;
-            map.zoom = 15;
-            if (map.w <= 0 || map.h <= 0) {
-                map.w = 600;
-                map.h = 400;
-            }
-            if (listView.history != null) listView.history.record();
-            pickerAlert.dismiss(true);
-            listView.post(() -> {
-                View v = listView.findViewByItemObject(row);
-                if (v instanceof RichMapCell) {
-                    ((RichMapCell) v).bind(row, listView.getMapDelegate());
-                } else {
-                    listView.adapter.update(false);
-                }
-            });
-        });
-        pickerAlert.init();
-        pickerAlert.show();
-    }
-
-    private boolean isInScheduleMode() {
-        return editingMessageObject == null && chatActivity != null && chatActivity.isInScheduleMode();
-    }
 
     private void sendMessage() {
         if (isSendLocked()) {

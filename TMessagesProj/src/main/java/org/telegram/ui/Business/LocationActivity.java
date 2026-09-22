@@ -48,7 +48,6 @@ import org.telegram.ui.Components.AnimatedTextView;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.BulletinFactory;
-import org.telegram.ui.Components.ChatAttachAlertLocationLayout;
 import org.telegram.ui.Components.CircularProgressDrawable;
 import org.telegram.ui.Components.ClipRoundedDrawable;
 import org.telegram.ui.Components.CrossfadeDrawable;
@@ -451,14 +450,15 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
     }
 
     private boolean clearVisible;
-    private final int BUTTON_MAP = 1;
     private final int BUTTON_CLEAR = 2;
 
     private void fillItems(ArrayList<UItem> items, UniversalAdapter adapter) {
         items.add(UItem.asTopView(getString(R.string.BusinessLocation), getString(R.string.BusinessLocationInfo), R.raw.biz_map));
         items.add(UItem.asCustom(editTextContainer));
         items.add(UItem.asShadow(null));
-        items.add(UItem.asCheck(BUTTON_MAP, getString(R.string.BusinessLocationMap)).setChecked(geo != null));
+        // LoogriGram: no "set it on a map" switch - there is no picker. A
+        // business address is text you type; a point already saved still
+        // shows, and Clear still removes it.
         if (geo != null) {
             items.add(UItem.asCustom(mapPreviewContainer));
         }
@@ -471,14 +471,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
     }
 
     private void onClick(UItem item, View view, int position, float x, float y) {
-        if (item.id == BUTTON_MAP || item.view == mapPreviewContainer) {
-            if (geo == null || item.view == mapPreviewContainer) {
-                showLocationAlert();
-            } else {
-                geo = null;
-                listView.adapter.update(true);
-            }
-        } else if (item.id == BUTTON_CLEAR) {
+        if (item.id == BUTTON_CLEAR) {
             AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
             builder.setTitle(LocaleController.getString(R.string.BusinessLocationClearTitle));
             builder.setMessage(LocaleController.getString(R.string.BusinessLocationClearMessage));
@@ -503,61 +496,6 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
             });
             builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
             showDialog(builder.create());
-        }
-    }
-
-    private void showLocationAlert() {
-        org.telegram.ui.LocationActivity fragment = new org.telegram.ui.LocationActivity(ChatAttachAlertLocationLayout.LOCATION_TYPE_BIZ);
-        if (geo != null) {
-            TLRPC.TL_channelLocation initialLocation = new TLRPC.TL_channelLocation();
-            initialLocation.address = address;
-            initialLocation.geo_point = geo;
-            fragment.setInitialLocation(initialLocation);
-        }
-        fragment.setDelegate((location, live, notify, scheduleDate) -> {
-            geo = location.geo;
-            if (TextUtils.isEmpty(address) && !TextUtils.isEmpty(fragment.getAddressName()) || mapAddress) {
-                mapAddress = true;
-                address = fragment.getAddressName();
-                if (address == null) address = "";
-                if (editText != null) {
-                    ignoreEditText = true;
-                    editText.setText(address);
-                    editText.setSelection(editText.getText().length());
-                    ignoreEditText = false;
-                }
-            }
-            updateMapPreview();
-            listView.adapter.update(true);
-            checkDone(true);
-        });
-        if (geo == null && !TextUtils.isEmpty(address)) {
-            AlertDialog progressDialog = new AlertDialog(getContext(), AlertDialog.ALERT_TYPE_SPINNER);
-            progressDialog.setCanCancel(false);
-            progressDialog.showDelayed(200);
-            Utilities.searchQueue.postRunnable(() -> {
-                try {
-                    Geocoder geocoder = new Geocoder(getContext(), LocaleController.getInstance().getCurrentLocale());
-                    List<Address> addresses = geocoder.getFromLocationName(address, 1);
-                    if (!addresses.isEmpty()) {
-                        Address geoAddress = addresses.get(0);
-                        TLRPC.TL_channelLocation initialLocation = new TLRPC.TL_channelLocation();
-                        initialLocation.address = address;
-                        initialLocation.geo_point = new TLRPC.TL_geoPoint();
-                        initialLocation.geo_point.lat = geoAddress.getLatitude();
-                        initialLocation.geo_point._long = geoAddress.getLongitude();
-                        fragment.setInitialLocation(initialLocation);
-                    }
-                } catch (Exception e) {
-                    FileLog.e(e);
-                }
-                AndroidUtilities.runOnUIThread(() -> {
-                    progressDialog.dismiss();
-                    presentFragment(fragment);
-                });
-            });
-        } else {
-            presentFragment(fragment);
         }
     }
 

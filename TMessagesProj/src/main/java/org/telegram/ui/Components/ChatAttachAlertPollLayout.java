@@ -2970,9 +2970,6 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
 
         chatAttachAlert.setMaxSelectedPhotos(1, true);
         chatAttachAlert.enablePollAttachMode(allowedLayouts);
-        chatAttachAlert.setLocationActivityDelegate((location, live, notify, scheduleDate) -> {
-            callback.run(new PollAttachedMediaLocation(location));
-        });
         chatAttachAlert.setDocumentsDelegate(new ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate() {
             @Override
             public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia) {
@@ -3071,8 +3068,6 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
             } else {
                 return ChatAttachAlert.LAYOUT_TYPE_STICKERS;
             }
-        } else if (attachedMedia instanceof PollAttachedMediaLocation) {
-            return ChatAttachAlert.LAYOUT_TYPE_LOCATION;
         } else if (attachedMedia instanceof PollAttachedMediaLink) {
             return ChatAttachAlert.LAYOUT_TYPE_LINK;
         }
@@ -3082,14 +3077,12 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
     public static int getAllowedLayoutsForIndex(int index) {
         if (index == PollAttachedMediaPack.INDEX_DESCRIPTION || index == PollAttachedMediaPack.INDEX_EXPLANATION) {
             return (1 << ChatAttachAlert.LAYOUT_TYPE_PHOTO)
-                | (1 << ChatAttachAlert.LAYOUT_TYPE_MUSIC)
-                | (1 << ChatAttachAlert.LAYOUT_TYPE_LOCATION);
+                | (1 << ChatAttachAlert.LAYOUT_TYPE_MUSIC);
         } else {
             return (1 << ChatAttachAlert.LAYOUT_TYPE_PHOTO)
                 | (1 << ChatAttachAlert.LAYOUT_TYPE_STICKERS)
                 // | (1 << ChatAttachAlert.LAYOUT_TYPE_EMOJI)
-                | (1 << ChatAttachAlert.LAYOUT_TYPE_LINK)
-                | (1 << ChatAttachAlert.LAYOUT_TYPE_LOCATION);
+                | (1 << ChatAttachAlert.LAYOUT_TYPE_LINK);
         }
     }
 

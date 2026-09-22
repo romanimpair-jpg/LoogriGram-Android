@@ -196,7 +196,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     public static final int LAYOUT_TYPE_MUSIC = 3;
     public static final int LAYOUT_TYPE_DOCUMENTS = 4;
     // LoogriGram: LAYOUT_TYPE_CONTACTS (5) was the address book tab.
-    public static final int LAYOUT_TYPE_LOCATION = 6;
     public static final int LAYOUT_TYPE_POLL = 9;
     public static final int LAYOUT_TYPE_REPLIES = 11;
     public static final int LAYOUT_TYPE_TODO = 12;
@@ -247,9 +246,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
 
     public boolean canOpenPreview = false;
     private boolean isSoundPicker = false;
-    public boolean isStoryLocationPicker = false;
-    public boolean isBizLocationPicker = false;
-    public boolean isLocationPicker = false;
+    // LoogriGram: the three location-picker modes are gone with the map.
     public boolean isStoryAudioPicker = false;
     private ImageUpdater.AvatarFor setAvatarFor;
     public boolean pinnedToTop;
@@ -1012,7 +1009,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     private ChatAttachAlertAudioLayout audioLayout;
     private ChatAttachAlertPollLayout pollLayout;
     private ChatAttachAlertPollLayout todoLayout;
-    private ChatAttachAlertLocationLayout locationLayout;
     private ChatAttachAlertDocumentLayout documentLayout;
     private ChatAttachAlertPhotoLayoutPreview photoPreviewLayout;
     public ChatAttachAlertColorsLayout colorsLayout;
@@ -1794,9 +1790,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     int h = (actionBarType != 0 ? ActionBar.getCurrentActionBarHeight() : backgroundPaddingTop);
                     if (actionBarType != 2 && top + backgroundPaddingTop < h) {
                         float toMove = offset;
-                        if (layout == locationLayout) {
-                            toMove += dp(11);
-                        } else if (layout == pollLayout) {
+                        if (layout == pollLayout) {
                             toMove -= dp(3);
                         } else if (layout == todoLayout) {
                             toMove -= dp(3);
@@ -1839,9 +1833,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                         }
                     } else {
                         float toMove = offset;
-                        if (layout == locationLayout) {
-                            toMove += dp(11);
-                        } else if (layout == pollLayout) {
+                        if (layout == pollLayout) {
                             toMove -= dp(3);
                         } else if (layout == todoLayout) {
                             toMove -= dp(3);
@@ -1956,9 +1948,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                         }
                     } else if (top + backgroundPaddingTop < h) {
                         float toMove = offset;
-                        if (layout == locationLayout) {
-                            toMove += dp(11);
-                        } else if (layout == pollLayout) {
+                        if (layout == pollLayout) {
                             toMove -= dp(3);
                         } else if (layout == todoLayout) {
                             toMove -= dp(3);
@@ -2799,27 +2789,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 // it was opened. It had no other source of people, so it is gone
                 // with the address book. A contact card received in a chat can
                 // still be viewed and forwarded.
-                } else if (num == 6) {
-                    if (!plainTextEnabled && checkCanRemoveRestrictionsByBoosts()) {
-                        return;
-                    }
-                    if (!AndroidUtilities.isMapsInstalled(baseFragment)) {
-                        return;
-                    }
-                    if (!plainTextEnabled) {
-                        restrictedLayout = new ChatAttachRestrictedLayout(6, this, getContext(), resourcesProvider);
-                        showLayout(restrictedLayout);
-                    } else {
-                        if (locationLayout == null) {
-                            layouts[5] = locationLayout = new ChatAttachAlertLocationLayout(this, getContext(), resourcesProvider, !isPollAttach && !restrictEphemeralMessageTypes);
-                            if (locationActivityDelegate != null) {
-                                locationLayout.setDelegate(locationActivityDelegate);
-                            } else {
-                                locationLayout.setDelegate((location, live, notify, scheduleDate) -> ((ChatActivity) baseFragment).didSelectLocation(location, live, notify, scheduleDate));
-                            }
-                        }
-                        showLayout(locationLayout);
-                    }
                 } else if (num == LAYOUT_TYPE_POLL) {
                     if (!pollsEnabled && checkCanRemoveRestrictionsByBoosts()) {
                         return;
@@ -4413,19 +4382,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 }
             }
             openAudioLayout(true);
-        } else if (layoutType == LAYOUT_TYPE_LOCATION) {
-            if (!AndroidUtilities.isMapsInstalled(baseFragment)) {
-                return;
-            }
-            if (locationLayout == null) {
-                layouts[5] = locationLayout = new ChatAttachAlertLocationLayout(this, getContext(), resourcesProvider, !isPollAttach && !restrictEphemeralMessageTypes);
-                if (locationActivityDelegate != null) {
-                    locationLayout.setDelegate(locationActivityDelegate);
-                } else if (baseFragment instanceof ChatActivity) {
-                    locationLayout.setDelegate((location, live, notify, scheduleDate) -> ((ChatActivity) baseFragment).didSelectLocation(location, live, notify, scheduleDate));
-                }
-            }
-            showLayout(locationLayout);
         }
     }
 
@@ -4439,8 +4395,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             newId = LAYOUT_TYPE_MUSIC;
         } else if (layout == documentLayout) {
             newId = LAYOUT_TYPE_DOCUMENTS;
-        } else if (layout == locationLayout) {
-            newId = LAYOUT_TYPE_LOCATION;
         } else if (layout == pollLayout) {
             newId = LAYOUT_TYPE_POLL;
         } else if (layout == colorsLayout) {
@@ -4547,7 +4501,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         }
         int index = containerView.indexOfChild(currentAttachLayout);
         if (nextAttachLayout.getParent() != containerView) {
-            containerView.addView(nextAttachLayout, nextAttachLayout == locationLayout ? index : index + 1, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+            containerView.addView(nextAttachLayout, index + 1, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         }
 
         Runnable onEnd = () -> {
@@ -4695,7 +4649,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             }
 
             final int menuWidth;
-            if (newId == LAYOUT_TYPE_PHOTO || newId == LAYOUT_TYPE_LOCATION || layout instanceof ChatAttachAlertBotWebViewLayout) {
+            if (newId == LAYOUT_TYPE_PHOTO || layout instanceof ChatAttachAlertBotWebViewLayout) {
                 menuWidth = dp(46);
             } else if (newId == LAYOUT_TYPE_DOCUMENTS) {
                 menuWidth = dp(84);
@@ -4749,7 +4703,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         float isGray = 0;
         for (ListAnimator.Entry<Long> entry : animatorCurrentVisibleLayout) {
             long id = entry.item;
-            if (id == LAYOUT_TYPE_PHOTO || id == LAYOUT_TYPE_MUSIC || id == LAYOUT_TYPE_DOCUMENTS || id == LAYOUT_TYPE_LOCATION || id == LAYOUT_TYPE_POLL || id == LAYOUT_TYPE_REPLIES || id == LAYOUT_TYPE_TODO) {
+            if (id == LAYOUT_TYPE_PHOTO || id == LAYOUT_TYPE_MUSIC || id == LAYOUT_TYPE_DOCUMENTS || id == LAYOUT_TYPE_POLL || id == LAYOUT_TYPE_REPLIES || id == LAYOUT_TYPE_TODO) {
                 isGray += entry.getVisibility();
             }
         }
@@ -4788,9 +4742,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     }
 
     public void onRequestPermissionsResultFragment(int requestCode, String[] permissions, int[] grantResults) {
-        if (requestCode == 30 && locationLayout != null && currentAttachLayout == locationLayout && isShowing()) {
-            locationLayout.openShareLiveLocation();
-        }
     }
 
     // LoogriGram: openContactsLayout built the address book tab. See the
@@ -5962,18 +5913,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         enterCommentEventSent = false;
         setFocusable(false);
         ChatAttachAlert.AttachAlertLayout layoutToSet;
-        if (isStoryLocationPicker || isBizLocationPicker || isLocationPicker) {
-            if (locationLayout == null) {
-                layouts[5] = locationLayout = new ChatAttachAlertLocationLayout(this, getContext(), resourcesProvider, !isPollAttach && !isLocationPicker && !restrictEphemeralMessageTypes);
-                if (locationActivityDelegate != null) {
-                    locationLayout.setDelegate(locationActivityDelegate);
-                } else {
-                    locationLayout.setDelegate((location, live, notify, scheduleDate) -> ((ChatActivity) baseFragment).didSelectLocation(location, live, notify, scheduleDate));
-                }
-            }
-            selectedId = 5;
-            layoutToSet = locationLayout;
-        } else if (isStoryAudioPicker) {
+        if (isStoryAudioPicker) {
             openAudioLayout(false);
             layoutToSet = audioLayout;
             selectedId = 3;
@@ -6159,7 +6099,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         }
     }
 
-    private ChatAttachAlertLocationLayout.LocationActivityDelegate locationActivityDelegate;
 
     public void enablePollAttachMode(int allowedLayouts) {
         typeButtonsAvailable = true;
@@ -6174,10 +6113,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             selectedTextView.setTranslationY(0);
             optionsItem.setVisibility(View.GONE);
         }
-    }
-
-    public void setLocationActivityDelegate(ChatAttachAlertLocationLayout.LocationActivityDelegate locationActivityDelegate) {
-        this.locationActivityDelegate = locationActivityDelegate;
     }
 
     public void enableDefaultMode() {
@@ -6242,38 +6177,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         selectedTextView.setText(getString(R.string.ChoosePhotoOrVideo));
     }
 
-    public boolean storyLocationPickerFileIsVideo;
-    public File storyLocationPickerPhotoFile;
-    public double[] storyLocationPickerLatLong;
-
-    public void setBusinessLocationPicker() {
-        isBizLocationPicker = true;
-        buttonsRecyclerViewWrapper.setVisibility(View.GONE);
-    }
-
-    public void setLocationPicker() {
-        isLocationPicker = true;
-        buttonsRecyclerViewWrapper.setVisibility(View.GONE);
-    }
-
-    public void setStoryLocationPicker() {
-        isStoryLocationPicker = true;
-        buttonsRecyclerViewWrapper.setVisibility(View.GONE);
-    }
-
-    public void setStoryLocationPicker(boolean isVideo, File photo) {
-        storyLocationPickerFileIsVideo = isVideo;
-        storyLocationPickerPhotoFile = photo;
-        isStoryLocationPicker = true;
-        buttonsRecyclerViewWrapper.setVisibility(View.GONE);
-    }
-
-    public void setStoryLocationPicker(double lat, double lon) {
-        storyLocationPickerLatLong = new double[]{lat, lon};
-        isStoryLocationPicker = true;
-        buttonsRecyclerViewWrapper.setVisibility(View.GONE);
-    }
-
     public void setStoryAudioPicker() {
         isStoryAudioPicker = true;
     }
@@ -6292,10 +6195,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
 
     public ChatAttachAlertPhotoLayout getPhotoLayout() {
         return photoLayout;
-    }
-
-    public ChatAttachAlertLocationLayout getLocationLayout() {
-        return locationLayout;
     }
 
 
@@ -6673,7 +6572,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         audioLayout = null;
         pollLayout = null;
         todoLayout = null;
-        locationLayout = null;
         documentLayout = null;
         for (int a = 1; a < layouts.length; a++) {
             if (layouts[a] == null) {

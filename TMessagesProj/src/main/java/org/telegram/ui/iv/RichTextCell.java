@@ -1156,7 +1156,7 @@ public class RichTextCell extends FrameLayout implements Theme.Colorable, TextSe
         if (tl.equals("/img") || tl.equals("/pic") || tl.equals("/image") || tl.equals("/picture") || tl.equals("/photo")) return CMD_ATTACH_PHOTO;
         if (tl.equals("/vid") || tl.equals("/video")) return CMD_ATTACH_VIDEO;
         if (tl.equals("/audio") || tl.equals("/music")) return CMD_ATTACH_MUSIC;
-        if (tl.equals("/map") || tl.equals("/location") || tl.equals("/loc")) return CMD_ATTACH_LOCATION;
+        // LoogriGram: no /map - a map block needs a picker we do not have.
         if (tl.equals("/latex") || tl.equals("/equation") || tl.equals("/math")) return CMD_MATH;
         if (tl.equals("/toggle") || tl.equals("/details")) return CMD_DETAILS;
         if (tl.equals("/button")) return CMD_BUTTON;

@@ -92,7 +92,6 @@ import org.telegram.ui.Components.voip.VoIPHelper;
 import org.telegram.ui.DialogsActivity;
 import org.telegram.ui.GroupCallActivity;
 import org.telegram.ui.LaunchActivity;
-import org.telegram.ui.LocationActivity;
 import org.telegram.ui.Stories.LivePlayer;
 
 import java.lang.annotation.Retention;
@@ -812,11 +811,9 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                         }
                     }
                 }
-                if (did != 0) {
-                    openSharingLocation(LocationController.getInstance(account).getSharingLocationInfo(did));
-                } else {
-                    fragment.showDialog(new SharingLocationsAlert(getContext(), this::openSharingLocation, resourcesProvider));
-                }
+                // LoogriGram: this opened the map that watched a live location
+                // being shared. Nothing here can share one - every location
+                // permission is gone - so the bar never appears.
             } else if (currentStyle == STYLE_ACTIVE_GROUP_CALL) {
                 if (VoIPService.getSharedInstance() != null && getContext() instanceof LaunchActivity) {
                     GroupCallActivity.create((LaunchActivity) getContext(), AccountInstance.getInstance(VoIPService.getSharedInstance().getAccount()), null, null, false, null);
@@ -1048,20 +1045,6 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                 }
             }
         }
-    }
-
-    private void openSharingLocation(final LocationController.SharingLocationInfo info) {
-        if (info == null || !(fragment.getParentActivity() instanceof LaunchActivity)) {
-            return;
-        }
-        LaunchActivity launchActivity = ((LaunchActivity) fragment.getParentActivity());
-        launchActivity.switchToAccount(info.messageObject.currentAccount, true);
-
-        LocationActivity locationActivity = new LocationActivity(2);
-        locationActivity.setMessageObject(info.messageObject);
-        final long dialog_id = info.messageObject.getDialogId();
-        locationActivity.setDelegate((location, live, notify, scheduleDate) -> SendMessagesHelper.getInstance(info.messageObject.currentAccount).sendMessage(SendMessagesHelper.SendMessageParams.of(location, dialog_id, null, null, null, null, notify, scheduleDate, 0)));
-        launchActivity.presentFragment(locationActivity);
     }
 
     @Keep

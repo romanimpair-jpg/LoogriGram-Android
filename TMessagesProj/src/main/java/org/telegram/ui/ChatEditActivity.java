@@ -845,26 +845,19 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
                 locationCell = new TextCell(context);
                 locationCell.setBackgroundDrawable(Theme.getSelectorDrawable(true));
                 typeEditContainer.addView(locationCell, LayoutHelper.createLinear(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+                // LoogriGram: a group's location was picked on a map. The row
+                // still shows the address a group already has, and opens it in
+                // a maps app; setting one needs a picker we do not have.
                 locationCell.setOnClickListener(v -> {
-                    if (!AndroidUtilities.isMapsInstalled(ChatEditActivity.this)) {
+                    if (!(info != null && info.location instanceof TLRPC.TL_channelLocation)) {
                         return;
                     }
-                    LocationActivity fragment = new LocationActivity(LocationActivity.LOCATION_TYPE_GROUP);
-                    fragment.setDialogId(-chatId);
-                    if (info != null && info.location instanceof TLRPC.TL_channelLocation) {
-                        fragment.setInitialLocation((TLRPC.TL_channelLocation) info.location);
+                    final TLRPC.TL_channelLocation location = (TLRPC.TL_channelLocation) info.location;
+                    if (location.geo_point != null && !AndroidUtilities.openLocationExternally(getParentActivity(), location.geo_point.lat, location.geo_point._long, location.address)) {
+                        BulletinFactory.of(ChatEditActivity.this)
+                            .createErrorBulletin(getString(R.string.GhostNoMapsApp))
+                            .show();
                     }
-                    fragment.setDelegate((location, live, notify, scheduleDate) -> {
-                        TLRPC.TL_channelLocation channelLocation = new TLRPC.TL_channelLocation();
-                        channelLocation.address = location.address;
-                        channelLocation.geo_point = location.geo;
-
-                        info.location = channelLocation;
-                        info.flags |= 32768;
-                        updateFields(false, true);
-                        getMessagesController().loadFullChat(chatId, 0, true);
-                    });
-                    presentFragment(fragment);
                 });
             }
 

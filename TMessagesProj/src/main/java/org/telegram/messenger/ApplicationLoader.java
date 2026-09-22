@@ -72,7 +72,6 @@ public class ApplicationLoader extends Application {
     public static volatile long mainInterfacePausedStageQueueTime;
 
     private static PushListenerController.IPushListenerServiceProvider pushProvider;
-    private static IMapsProvider mapsProvider;
     private static ILocationServiceProvider locationServiceProvider;
 
     @Override
@@ -93,27 +92,10 @@ public class ApplicationLoader extends Application {
         return new NoLocationServiceProvider();
     }
 
-    public static IMapsProvider getMapsProvider() {
-        if (mapsProvider == null) {
-            mapsProvider = applicationLoaderInstance.onCreateMapsProvider();
-        }
-        return mapsProvider;
-    }
-
-    protected IMapsProvider onCreateMapsProvider() {
-        // LoogriGram: there is no map renderer. Google Maps is gone and nothing
-        // replaces it in-app; a received location opens in whatever maps app
-        // the phone has, through a geo: intent - see
-        // AndroidUtilities.openLocationExternally.
-        //
-        // Deliberately null rather than a stub full of no-ops: a stub would
-        // hand LocationActivity null views to dereference a moment later, so
-        // it would crash either way and null at least fails at the boundary.
-        // Nothing should reach here - isMapsInstalled returns false, which is
-        // the guard upstream already puts in front of every map entry point,
-        // and the send-location button is no longer built at all.
-        return null;
-    }
+    // LoogriGram: there was a map provider here, and for a while it answered
+    // null. Nothing renders a map any more - the screens that did are deleted -
+    // so a received location opens in whatever maps app the phone has, through
+    // a geo: intent. See AndroidUtilities.openLocationExternally.
 
     public static PushListenerController.IPushListenerServiceProvider getPushProvider() {
         if (pushProvider == null) {

@@ -196,7 +196,6 @@ import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.RLottieImageView;
 import org.telegram.ui.Components.SearchTagsList;
 import org.telegram.ui.Components.ShareTopView;
-import org.telegram.ui.Components.SharingLocationsAlert;
 import org.telegram.ui.Components.SizeNotifierFrameLayout;
 import org.telegram.ui.Components.StickerSetBulletinLayout;
 import org.telegram.ui.Components.StickersAlert;
@@ -2971,19 +2970,9 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 }
                 pushOpened = false;
             } else if (showLocations) {
-                if (!actionBarLayout.getFragmentStack().isEmpty()) {
-                    BaseFragment fragment = actionBarLayout.getFragmentStack().get(0);
-                    fragment.showDialog(new SharingLocationsAlert(this, info -> {
-                        intentAccount[0] = info.messageObject.currentAccount;
-                        switchToAccount(intentAccount[0], true);
-
-                        LocationActivity locationActivity = new LocationActivity(2);
-                        locationActivity.setMessageObject(info.messageObject);
-                        final long dialog_id = info.messageObject.getDialogId();
-                        locationActivity.setDelegate((location, live, notify, scheduleDate) -> SendMessagesHelper.getInstance(intentAccount[0]).sendMessage(SendMessagesHelper.SendMessageParams.of(location, dialog_id, null, null, null, null, notify, scheduleDate, 0)));
-                        presentFragment(locationActivity);
-                    }, null));
-                }
+                // LoogriGram: the live-locations notification opened the map
+                // watching them. Nothing here shares a location, so nothing
+                // posts that notification.
                 pushOpened = false;
             } else if (exportingChatUri != null) {
                 runImportRequest(exportingChatUri, documentsUrisArray);
@@ -7087,23 +7076,8 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle(LocaleController.getString(R.string.AppName));
             builder.setPositiveButton(LocaleController.getString(R.string.OK), null);
-            builder.setNegativeButton(LocaleController.getString(R.string.ShareYouLocationUnableManually), (dialogInterface, i) -> {
-                if (mainFragmentsStack.isEmpty()) {
-                    return;
-                }
-                BaseFragment lastFragment = mainFragmentsStack.get(mainFragmentsStack.size() - 1);
-                if (!AndroidUtilities.isMapsInstalled(lastFragment)) {
-                    return;
-                }
-                LocationActivity fragment = new LocationActivity(0);
-                fragment.setDelegate((location, live, notify, scheduleDate) -> {
-                    for (HashMap.Entry<String, MessageObject> entry : waitingForLocation.entrySet()) {
-                        MessageObject messageObject = entry.getValue();
-                        SendMessagesHelper.getInstance(account).sendMessage(SendMessagesHelper.SendMessageParams.of(location, messageObject.getDialogId(), messageObject, null, null, null, notify, scheduleDate, 0));
-                    }
-                });
-                presentFragment(fragment);
-            });
+            // LoogriGram: "send it manually" opened the map picker. A bot
+            // asking where you are gets nothing either way.
             builder.setMessage(LocaleController.getString(R.string.ShareYouLocationUnable));
             if (!mainFragmentsStack.isEmpty()) {
                 mainFragmentsStack.get(mainFragmentsStack.size() - 1).showDialog(builder.create());

@@ -2737,8 +2737,7 @@ public class RichEditorListView extends UniversalRecyclerView {
 
     private static final int DEFAULT_ATTACH_LAYOUTS =
         (1 << ChatAttachAlert.LAYOUT_TYPE_PHOTO) |
-        (1 << ChatAttachAlert.LAYOUT_TYPE_MUSIC) |
-        (1 << ChatAttachAlert.LAYOUT_TYPE_LOCATION);
+        (1 << ChatAttachAlert.LAYOUT_TYPE_MUSIC);
 
     private void prepareEditText(RichEditText editText) {
         if (editText == null) return;
@@ -3537,9 +3536,6 @@ public class RichEditorListView extends UniversalRecyclerView {
                 break;
             case RichTextCell.CMD_ATTACH_MUSIC:
                 delegate.onOpenAttachRequest(DEFAULT_ATTACH_LAYOUTS, ChatAttachAlert.LAYOUT_TYPE_MUSIC);
-                break;
-            case RichTextCell.CMD_ATTACH_LOCATION:
-                delegate.onOpenAttachRequest(DEFAULT_ATTACH_LAYOUTS, ChatAttachAlert.LAYOUT_TYPE_LOCATION);
                 break;
             case RichTextCell.CMD_MATH:
                 openLatexEditorAndAdd();
