@@ -702,7 +702,6 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
                         }
                         lastDrawnGroup = group;
                         if (group == null) {
-                            drawStarsPrice(canvas, cell.getBoundsLeft(), cell.getY(), cell.getBoundsRight(), cell.getY() + cell.getHeight());
                         }
                     }
                 }
@@ -790,7 +789,6 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
                         if (b > chatListView.getMeasuredHeight() + dp(20)) {
                             b = chatListView.getMeasuredHeight() + dp(20);
                         }
-                        drawStarsPrice(canvas, l, t, r, b);
                         group.transitionParams.cell = null;
                     }
                 }
@@ -1932,42 +1930,9 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
         return dummyMessageCell.computeWidth(object, groupedMessagesMap.get(object.getGroupId()));
     }
 
-    private Text buttonText;
-    private Paint buttonBgPaint;
 
-    public void setStars(long stars) {
-        buttonText = stars <= 0 ? null : new Text(StarsFormat.replaceStarsWithPlain(LocaleController.formatPluralStringComma("UnlockPaidContent", (int) stars), .7f), 14, AndroidUtilities.bold());
-        if (buttonBgPaint == null) {
-            buttonBgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            buttonBgPaint.setColor(0x40000000);
-        }
-        chatListView.invalidate();
-        for (int i = 0; i < messageObjects.size(); ++i) {
-            MessageObject msg = messageObjects.get(i);
-            if (msg != null && msg.messageOwner != null && msg.messageOwner.media != null) {
-                msg.messageOwner.media.spoiler = stars > 0;
-            }
-        }
-        adapter.notifyDataSetChanged();
-    }
-
-    public void drawStarsPrice(Canvas canvas, float l, float t, float r, float b) {
-        if (buttonText == null || buttonBgPaint == null) return;
-        final float cx = (l + r) / 2f, cy = (t + b) / 2f;
-
-        final float buttonWidth = dp(14 + 14) + buttonText.getCurrentWidth();
-        final float buttonHeight = dp(32);
-        AndroidUtilities.rectTmp.set(
-            cx - buttonWidth / 2f,
-            cy - buttonHeight / 2f,
-            cx + buttonWidth / 2f,
-            cy + buttonHeight / 2f
-        );
-        canvas.save();
-        canvas.drawRoundRect(AndroidUtilities.rectTmp, buttonHeight / 2f, buttonHeight / 2f, buttonBgPaint);
-        buttonText.draw(canvas, cx - buttonWidth / 2f + dp(14), cy, 0xFFFFFFFF, 1f);
-        canvas.restore();
-    }
+    // LoogriGram: the send preview drew an "Unlock for N Stars" button over
+    // media that was being sold. Nothing charges for media.
 
     private void checkBitmapMatrix() {
         Blur3Utils.checkBitmapSourceMatrixScale(iBlur3SourceBitmap, windowView);

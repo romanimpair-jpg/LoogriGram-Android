@@ -3657,7 +3657,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             boolean hasMessageToEffect = false;
             MessageObject messageWithCaption = null;
 
-            boolean canHaveStars = false;
             ArrayList<MessageObject> messageObjects = new ArrayList<>();
             int id = 0;
             if (currentAttachLayout == photoLayout || currentAttachLayout == photoPreviewLayout) {
@@ -3795,7 +3794,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                             if (messageWithCaption == null && !TextUtils.isEmpty(msg.message)) {
                                 messageWithCaption = messageObject;
                             }
-                            canHaveStars = true;
                         }
                     }
                 }
@@ -3949,34 +3947,8 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     }
                 });
             }
-            if (editingMessageObject == null && canHaveStars && chatActivity != null && ChatObject.isChannelAndNotMegaGroup(chatActivity.getCurrentChat()) && chatActivity.getCurrentChatInfo() != null && chatActivity.getCurrentChatInfo().paid_media_allowed) {
-                ActionBarMenuSubItem item = options.add(R.drawable.menu_feature_paid, getString(R.string.PaidMediaButton), null).getLast();
-                item.setOnClickListener(v -> {
-                    if (photoLayout == null) return;
-                    StarsIntroActivity.showMediaPriceSheet(context, photoLayout.getStarsPrice(), true, (amount, done) -> {
-                        done.run();
-                        photoLayout.setStarsPrice(amount);
-                        if (amount != null && amount > 0) {
-                            item.setText(getString(R.string.PaidMediaPriceButton));
-                            item.setSubtext(formatPluralString("Stars", (int) (long) amount));
-                            messageSendPreview.setStars(amount);
-                        } else {
-                            item.setText(getString(R.string.PaidMediaButton));
-                            item.setSubtext(null);
-                            messageSendPreview.setStars(0);
-                        }
-                    }, resourcesProvider);
-                });
-                long amount = photoLayout.getStarsPrice();
-                if (amount > 0) {
-                    item.setText(getString(R.string.PaidMediaPriceButton));
-                    item.setSubtext(formatPluralString("Stars", (int) amount));
-                } else {
-                    item.setText(getString(R.string.PaidMediaButton));
-                    item.setSubtext(null);
-                }
-                messageSendPreview.setStars(amount);
-            }
+            // LoogriGram: "Sell this media for N Stars" stood here. Nothing
+            // charges for what it sends; see ChatAttachAlertPhotoLayout.
             options.setupSelectors();
             messageSendPreview.setItemOptions(options);
 

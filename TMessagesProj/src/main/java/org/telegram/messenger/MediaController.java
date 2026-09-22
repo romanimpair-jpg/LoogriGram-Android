@@ -587,7 +587,6 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
         public boolean isMuted;
         public boolean canDeleteAfter;
         public boolean hasSpoiler;
-        public long starsAmount;
         public String emoji;
         public Boolean discardLivePhoto;
 
@@ -700,7 +699,6 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
         public void copyFrom(MediaEditState state) {
             super.copyFrom(state);
             this.hasSpoiler = state instanceof PhotoEntry && ((PhotoEntry) state).hasSpoiler;
-            this.starsAmount = state instanceof PhotoEntry ? ((PhotoEntry) state).starsAmount : 0;
             this.parsedXmp = state instanceof PhotoEntry && ((PhotoEntry) state).parsedXmp;
             this.isLivePhoto = state instanceof PhotoEntry && ((PhotoEntry) state).isLivePhoto;
             this.livePhotoVideoOffset = state instanceof PhotoEntry ? ((PhotoEntry) state).livePhotoVideoOffset : 0;
@@ -713,7 +711,6 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
             photoEntry.isMuted = isMuted;
             photoEntry.canDeleteAfter = canDeleteAfter;
             photoEntry.hasSpoiler = hasSpoiler;
-            photoEntry.starsAmount = starsAmount;
             photoEntry.isChatPreviewSpoilerRevealed = isChatPreviewSpoilerRevealed;
             photoEntry.isAttachSpoilerRevealed = isAttachSpoilerRevealed;
             photoEntry.emojiMarkup = emojiMarkup;
@@ -738,7 +735,6 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                 }
             }
             hasSpoiler = false;
-            starsAmount = 0;
             super.reset();
         }
 

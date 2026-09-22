@@ -100,8 +100,6 @@ public class PhotoAttachPhotoCell extends FrameLayout {
     private boolean hasSpoiler;
     private boolean highQuality;
 
-    private long stars;
-    private boolean starsSelectedMultiple;
 
     private Path path = new Path();
     private float spoilerRevealX;
@@ -138,9 +136,6 @@ public class PhotoAttachPhotoCell extends FrameLayout {
 //                        float alphaProgress = CubicBezierInterpolator.DEFAULT.getInterpolation(1f - imageViewCrossfadeProgress);
 //                        float alpha = hasSpoiler ? alphaProgress : 1f - alphaProgress;
                         spoilerEffect2.draw(canvas, container, imageView.getMeasuredWidth(), imageView.getMeasuredHeight());
-                        if (photoEntry != null && photoEntry.starsAmount > 0) {
-                            imageView.drawBlurredText(canvas, 1f);
-                        }
                         if (spoilerRevealProgress != 0f) {
                             canvas.restore();
                         }
@@ -380,39 +375,8 @@ public class PhotoAttachPhotoCell extends FrameLayout {
         }
     }
 
-    private SpannableString star, lock;
-    public void setStarsPrice(long stars, boolean multiple) {
-        if (multiple != starsSelectedMultiple || stars != this.stars) {
-            this.stars = stars;
-            this.starsSelectedMultiple = multiple;
-
-            SpannableStringBuilder s = null;
-            if (stars > 0) {
-                s = new SpannableStringBuilder();
-                if (star == null) {
-                    star = new SpannableString("⭐");
-                    ColoredImageSpan span = new ColoredImageSpan(R.drawable.star_small_inner);
-                    span.setScale(.7f, .7f);
-                    star.setSpan(span, 0, star.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                }
-                s.append(star);
-                s.append(" ");
-                if (multiple) {
-                    if (lock == null) {
-                        lock = new SpannableString("l");
-                        ColoredImageSpan span = new ColoredImageSpan(R.drawable.msg_mini_lock2);
-                        lock.setSpan(span, 0, lock.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    }
-                    s.append(lock);
-                } else {
-                    s.append(Long.toString(stars));
-                }
-            }
-            imageView.setBlurredText(s);
-            imageView.invalidate();
-            container.invalidate();
-        }
-    }
+    // LoogriGram: the price badge a photo carried when it was for sale
+    // stood here. Nothing charges for media.
 
     private void updateSpoilers2(boolean hasSpoiler) {
         if (container == null || imageView == null || imageView.getMeasuredHeight() <= 0 || imageView.getMeasuredWidth() <= 0) {
@@ -551,7 +515,6 @@ public class PhotoAttachPhotoCell extends FrameLayout {
         requestLayout();
         setHasSpoiler(entry.hasSpoiler);
         setHighQuality(entry.isHighQuality() && isChecked());
-        setStarsPrice(entry.starsAmount, selectedMultiple);
     }
 
     public void setPhotoEntry(MediaController.SearchImage searchImage, boolean needCheckShow, boolean last) {
@@ -592,7 +555,6 @@ public class PhotoAttachPhotoCell extends FrameLayout {
         requestLayout();
         setHasSpoiler(false);
         setHighQuality(false);
-        setStarsPrice(0, false);
     }
 
     public boolean isChecked() {

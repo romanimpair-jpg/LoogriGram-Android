@@ -644,7 +644,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         public boolean updateStickersOrder;
         public boolean hasMediaSpoilers;
         public TLRPC.VideoSize emojiMarkup;
-        public long stars;
         public boolean highQuality;
         public MediaController.PhotoEntry originalPhotoEntry;
         public long livePhotoVideoOffset;
@@ -846,7 +845,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         public long groupId;
         public int finalGroupMessage;
         public boolean scheduled;
-        public boolean paidMedia;
         public boolean pollMedia;
 
         public Object parentObject;
@@ -1335,7 +1333,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                                     } else if (obj.scheduled) {
                                         mode = ChatActivity.MODE_SCHEDULED;
                                     }
-                                    if ((message.paidMedia || message.pollMedia) && b != 0) break;
+                                    if (message.pollMedia && b != 0) break;
                                     getMessagesStorage().putMessages(messages, false, true, false, 0, mode, threadMessageId);
                                     break;
                                 }
@@ -4268,7 +4266,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             sendMessageParams.quick_reply_shortcut_id :
             sendMessageChatArguments.quickReplyShortcutId;
 
-        long stars = sendMessageParams.stars;
         int pollIndex = sendMessageParams.pollIndex;
         PollSendParams pollSendParams = sendMessageParams.pollSendParams;
         TL_iv.RichMessage richMessage = sendMessageParams.richMessage;
@@ -5051,16 +5048,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 isFinalGroupMedia = params.get("final") != null;
             }
 
-            if (stars > 0) {
-                TLRPC.MessageMedia media = newMsg.media;
-                TLRPC.TL_messageMediaPaidMedia paidMedia = new TLRPC.TL_messageMediaPaidMedia();
-                paidMedia.stars_amount = stars;
-                TLRPC.TL_messageExtendedMedia extMedia = new TLRPC.TL_messageExtendedMedia();
-                extMedia.attachPath = newMsg.attachPath;
-                extMedia.media = media;
-                paidMedia.extended_media.add(extMedia);
-                newMsg.media = paidMedia;
-            }
             if (pollSendParams != null) {
                 if (newMsg.media != null && !(newMsg.media instanceof TLRPC.TL_messageMediaPoll)) {
                     PollAttachedMediaPack.setMessageMedia(pollSendParams.poll, pollIndex, newMsg.media);
@@ -5635,12 +5622,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         inputMediaStory.peer = MessagesController.getInstance(currentAccount).getInputPeer(sendingStory.dialogId);
                         inputMedia = inputMediaStory;
                     }
-                    if (groupId == 0 && stars > 0 && inputMedia != null) {
-                        TLRPC.TL_inputMediaPaidMedia inputPaidMedia = new TLRPC.TL_inputMediaPaidMedia();
-                        inputPaidMedia.stars_amount = stars;
-                        inputPaidMedia.extended_media.add(inputMedia);
-                        inputMedia = inputPaidMedia;
-                    }
 
                     TLObject reqSend;
 
@@ -5695,56 +5676,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                             request = req;
                             delayedMessage.pollMedia = true;
                             delayedMessage.sendRequest = request;
-                        } else if (stars > 0) {
-                            TLRPC.TL_messages_sendMedia req = new TLRPC.TL_messages_sendMedia();
-                            req.ephemeralReceiverBotId = ephemeralReceiverBotId;
-                            req.peer = sendToPeer;
-                            req.silent = newMsg.silent;
-                            req.message = caption;
-                            if (entities != null && !entities.isEmpty()) {
-                                req.entities = entities;
-                                req.flags |= 8;
-                            }
-
-                            if (newMsg.replyStory != null) {
-                                req.flags |= 1;
-                                req.reply_to = createReplyInput(replyToStoryItem);
-                            } else if (newMsg.reply_to instanceof TLRPC.TL_messageReplyHeader) {
-                                req.flags |= 1;
-                                req.reply_to = createReplyInput((TLRPC.TL_messageReplyHeader) newMsg.reply_to);
-                            }
-                            if (scheduleDate != 0) {
-                                req.schedule_date = scheduleDate;
-                                req.flags |= 1024;
-                                if (scheduleRepeatPeriod != 0) {
-                                    req.flags |= TLObject.FLAG_24;
-                                    req.schedule_repeat_period = scheduleRepeatPeriod;
-                                }
-                            }
-                            if (newMsg.quick_reply_shortcut != null) {
-                                req.quick_reply_shortcut = newMsg.quick_reply_shortcut;
-                                req.flags |= 131072;
-                            }
-                            if (newMsg.effect != 0) {
-                                req.flags |= 262144;
-                                req.effect = newMsg.effect;
-                            }
-                            req.invert_media = sendMessageParams.invert_media;
-
-                            TLRPC.TL_inputMediaPaidMedia media = new TLRPC.TL_inputMediaPaidMedia();
-                            media.stars_amount = stars;
-                            req.random_id = newMsg.random_id;
-                            req.media = media;
-                            applyMonoForumPeerId(req, sendMessageParams.monoForumPeer);
-                            if (sendMessageParams.suggestionParams != null) {
-                                req.suggested_post = sendMessageParams.suggestionParams.toTl();
-                            } else if (retryMessageObject != null && retryMessageObject.messageOwner != null && retryMessageObject.messageOwner.suggested_post != null) {
-                                req.suggested_post = retryMessageObject.messageOwner.suggested_post;
-                            }
-
-                            request = req;
-                            delayedMessage.paidMedia = true;
-                            delayedMessage.sendRequest = request;
                         } else {
                             TLRPC.TL_messages_sendMultiMedia req = new TLRPC.TL_messages_sendMultiMedia();
                             req.peer = sendToPeer;
@@ -5774,19 +5705,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                             applyMonoForumPeerId(req, sendMessageParams.monoForumPeer);
                             request = req;
                             delayedMessage.sendRequest = request;
-                        }
-                        if (delayedMessage.paidMedia && !delayedMessage.messages.isEmpty()) {
-                            TLRPC.Message firstMessage = delayedMessage.messages.get(0);
-                            TLRPC.MessageMedia media = newMsg.media;
-                            if (media instanceof TLRPC.TL_messageMediaPaidMedia && !media.extended_media.isEmpty() && media.extended_media.get(0) instanceof TLRPC.TL_messageExtendedMedia) {
-                                media = ((TLRPC.TL_messageExtendedMedia) media.extended_media.get(0)).media;
-                            }
-                            if (media != null && firstMessage.media instanceof TLRPC.TL_messageMediaPaidMedia) {
-                                TLRPC.TL_messageExtendedMedia extMedia = new TLRPC.TL_messageExtendedMedia();
-                                extMedia.attachPath = newMsg.attachPath;
-                                extMedia.media = media;
-                                firstMessage.media.extended_media.add(extMedia);
-                            }
                         }
                         if (delayedMessage.pollMedia && !delayedMessage.messages.isEmpty()) {
                             TLRPC.Message firstMessage = delayedMessage.messages.get(0);
@@ -11150,7 +11068,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                                     sendMessageParams.sendMessageChatArguments = sendMessageChatArguments;
                                     sendMessageParams.effect_id = effectId;
                                     sendMessageParams.invert_media = invertMedia;
-                                    sendMessageParams.stars = info.stars;
                                     sendMessageParams.pollIndex = info.pollIndex;
                                     sendMessageParams.cover = coverFinal;
                                     sendMessageParams.monoForumPeer = monoForumPeerId;
@@ -11363,7 +11280,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                                         sendMessageParams.sendMessageChatArguments = sendMessageChatArguments;
                                         sendMessageParams.effect_id = effectId;
                                         sendMessageParams.invert_media = invertMedia;
-                                        sendMessageParams.stars = info.stars;
                                         sendMessageParams.pollIndex = info.pollIndex;
                                         sendMessageParams.monoForumPeer = monoForumPeerId;
                                         sendMessageParams.suggestionParams = suggestionParams;
@@ -11998,7 +11914,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         @Deprecated // use SendMessageChatArguments
         public int quick_reply_shortcut_id;
         public long effect_id;
-        public long stars;
         public long monoForumPeer;
         public boolean sendingHighQuality;
         public MessageSuggestionParams suggestionParams;

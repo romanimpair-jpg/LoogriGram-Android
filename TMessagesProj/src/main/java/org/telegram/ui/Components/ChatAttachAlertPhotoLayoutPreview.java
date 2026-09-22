@@ -1918,7 +1918,6 @@ public class ChatAttachAlertPhotoLayoutPreview extends ChatAttachAlert.AttachAle
             private float groupWidth = 0, groupHeight = 0;
             private float previousGroupWidth = 0, previousGroupHeight = 0;
             public ArrayList<MediaCell> media = new ArrayList<>();
-            public long stars;
 
             public void detach() {
                 for (int i = 0; i < media.size(); ++i) {
@@ -2461,13 +2460,11 @@ public class ChatAttachAlertPhotoLayoutPreview extends ChatAttachAlert.AttachAle
                 groupWidth = group.width / 1000f;
                 groupHeight = group.height;
                 lastMediaUpdate = animated ? now : 0;
-                stars = 0;
                 List<MediaController.PhotoEntry> photoEntries = new ArrayList<>(group.positions.keySet());
                 final int photoEntriesCount = photoEntries.size();
                 for (int j = 0; j < photoEntriesCount; ++j) {
                     MediaController.PhotoEntry photoEntry = photoEntries.get(j);
                     MessageObject.GroupedMessagePosition pos = group.positions.get(photoEntry);
-                    stars = Math.max(stars, photoEntry.starsAmount);
                     MediaCell properCell = null;
                     final int mediaCount = media.size();
                     for (int i = 0; i < mediaCount; ++i) {
@@ -2526,10 +2523,6 @@ public class ChatAttachAlertPhotoLayoutPreview extends ChatAttachAlert.AttachAle
                 return getT() >= 0.95f ? this.groupHeight * maxHeight * getPreviewScale() : measure();
             }
 
-            private final RectF buttonTextRect = new RectF();
-            private Text buttonText;
-            private long buttonTextPrice;
-            private final Paint buttonTextBgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
             private final MessageDrawable messageBackground = (MessageDrawable) getThemedDrawable(Theme.key_drawable_msgOutMedia);
             private final MessageDrawable.PathDrawParams backgroundCacheParams = new MessageDrawable.PathDrawParams();
@@ -2582,29 +2575,9 @@ public class ChatAttachAlertPhotoLayoutPreview extends ChatAttachAlert.AttachAle
                     }
                 }
 
-                drawStarsButton(canvas);
-
                 return update;
             }
 
-            public void drawStarsButton(Canvas canvas) {
-                if (stars <= 0) return;
-
-                if (buttonText == null || buttonTextPrice != stars) {
-                    buttonText = new Text(StarsFormat.replaceStarsWithPlain(LocaleController.formatPluralStringComma("UnlockPaidContent", (int) (buttonTextPrice = stars)), .7f), 14, AndroidUtilities.bold());
-                }
-                final float buttonWidth = dp(14 + 14) + buttonText.getCurrentWidth();
-                final float buttonHeight = dp(32);
-                buttonTextRect.set(
-                        left + (width - buttonWidth) / 2f,
-                        top + (height - buttonHeight) / 2f,
-                        left + (width + buttonWidth) / 2f,
-                        top + (height + buttonHeight) / 2f
-                );
-                buttonTextBgPaint.setColor(0x60000000);
-                canvas.drawRoundRect(buttonTextRect, buttonHeight / 2f, buttonHeight / 2f, buttonTextBgPaint);
-                buttonText.draw(canvas, left + width / 2f - buttonWidth / 2f + dp(14), top + height / 2f, 0xFFFFFFFF, 1f);
-            }
         }
     }
 
