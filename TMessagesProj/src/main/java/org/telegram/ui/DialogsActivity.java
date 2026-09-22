@@ -159,7 +159,6 @@ import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Adapters.DialogsAdapter;
 import org.telegram.ui.Adapters.DialogsSearchAdapter;
 import org.telegram.ui.Adapters.FiltersView;
-import org.telegram.ui.Cells.ActiveGiftAuctionsHintCell;
 import org.telegram.ui.Cells.AnimatedStatusView;
 import org.telegram.ui.Cells.ArchiveHintInnerCell;
 import org.telegram.ui.Cells.DialogCell;
@@ -614,7 +613,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private FrameLayout fragmentContextViewWrapper;
     private DialogsActivityTopPanelLayout topPanelLayout;
     private DialogsActivityTopBubblesFadeView topBubblesFadeView;
-    private ActiveGiftAuctionsHintCell activeGiftAuctionsHintCell;
     private DialogsHintCell dialogsHintCell;
     private UnconfirmedAuthHintCell authHintCell;
     private Long cacheSize, deviceSize;
@@ -6263,7 +6261,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
         checkCommunityPendingRequestsVisible(true);
         checkUnconfirmedAuthHintCellVisibility();
-        checkActiveGiftAuctionsHintCellVisibility();
     }
 
     private void checkUnconfirmedAuthHintCellVisibility() {
@@ -6289,25 +6286,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
     }
 
-    private void checkActiveGiftAuctionsHintCellVisibility() {
-        if (fragmentView == null || topPanelLayout == null) {
-            return;
-        }
-
-        final boolean isVisible = !isInPreviewMode()
-            && folderId == 0 && communityId == 0 && initialDialogsType == DIALOGS_TYPE_DEFAULT
-            && getGiftAuctionsController().hasActiveAuctions()
-            && (rightSlidingDialogContainer == null || !rightSlidingDialogContainer.hasFragment())
-            && !animatorSearchVisible.getValue();
-
-        if (isVisible && activeGiftAuctionsHintCell == null) {
-            activeGiftAuctionsHintCell = new ActiveGiftAuctionsHintCell(getContext(), currentAccount);
-            topPanelLayout.addView(activeGiftAuctionsHintCell);
-        }
-        if (activeGiftAuctionsHintCell != null) {
-            topPanelLayout.setViewVisible(activeGiftAuctionsHintCell, isVisible);
-        }
-    }
+    // LoogriGram: a panel above the chat list counted down the gift auctions
+    // you were bidding in. Nothing bids.
 
     private void createGroupForThis() {
         AlertDialog progress = new AlertDialog(getContext(), AlertDialog.ALERT_TYPE_SPINNER);

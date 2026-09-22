@@ -14,7 +14,6 @@ import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_payments;
 import org.telegram.tgnet.tl.TL_stars;
 import org.telegram.tgnet.tl.TL_update;
-import org.telegram.ui.Gifts.AuctionBidSheet;
 import org.telegram.ui.Stars.StarsController;
 
 import java.util.ArrayList;
@@ -197,91 +196,9 @@ public class GiftAuctionController extends BaseController {
     }
 
 
-    public void sendBid(long giftId, AuctionBidSheet.Params params, long amount, Utilities.Callback2<Boolean, String> whenDone) {
-        final AuctionInternal auction = auctions.get(giftId);
-        if (auction == null || auction.pendingBid) {
-            whenDone.run(false, null);
-            return;
-        }
-
-        if (!StarsController.getInstance(currentAccount).balanceAvailable()) {
-            StarsController.getInstance(currentAccount).getBalance(() -> {
-                if (!StarsController.getInstance(currentAccount).balanceAvailable()) {
-                    if (whenDone != null) {
-                        whenDone.run(false, "NO_BALANCE");
-                    }
-                    return;
-                }
-                sendBid(giftId, params, amount, whenDone);
-            });
-            return;
-        }
-
-        final boolean hasBid = auction.hasBid();
-        auction.pendingBid = true;
-
-
-        final TLRPC.TL_payments_getPaymentForm req = new TLRPC.TL_payments_getPaymentForm();
-        final TLRPC.TL_inputInvoiceStarGiftAuctionBid invoice = new TLRPC.TL_inputInvoiceStarGiftAuctionBid();
-        invoice.gift_id = giftId;
-        invoice.bid_amount = amount;
-        invoice.update_bid = hasBid;
-
-        if (params != null)  {
-            if (params.dialogId == 0) {
-                invoice.peer = new TLRPC.TL_inputPeerSelf();
-            } else {
-                invoice.peer = getMessagesController().getInputPeer(params.dialogId);
-            }
-            invoice.message = params.message;
-            invoice.hide_name = params.hideName;
-        } else if (!hasBid) {
-            // default params
-            invoice.peer = new TLRPC.TL_inputPeerSelf();
-            invoice.hide_name = false;
-        }
-
-        req.invoice = invoice;
-
-        getConnectionsManager().sendRequestTyped(req, AndroidUtilities::runOnUIThread, (res, err) -> {
-            if (err != null) {
-                whenDone.run(false, err.text);
-                auction.pendingBid = false;
-                return;
-            } else if (!(res instanceof TLRPC.TL_payments_paymentFormStarGift)) {
-                whenDone.run(false, "NO_PAYMENT_FORM");
-                auction.pendingBid = false;
-                return;
-            }
-
-            final TLRPC.TL_payments_paymentFormStarGift form = (TLRPC.TL_payments_paymentFormStarGift) res;
-            TL_stars.TL_payments_sendStarsForm req2 = new TL_stars.TL_payments_sendStarsForm();
-            req2.form_id = form.form_id;
-            req2.invoice = req.invoice;
-            getConnectionsManager().sendRequestTyped(req2, AndroidUtilities::runOnUIThread, (res2, err2) -> {
-                auction.pendingBid = false;
-                if (res2 instanceof TLRPC.TL_payments_paymentResult) {
-                    final TLRPC.TL_payments_paymentResult paymentResult = (TLRPC.TL_payments_paymentResult) res2;
-                    Utilities.stageQueue.postRunnable(() -> {
-                        MessagesController.getInstance(currentAccount).processUpdates(paymentResult.updates, false);
-                    });
-
-                    whenDone.run(true, null);
-                } else if (err2 != null) {
-                    whenDone.run(false, err2.text);
-                } else {
-                    whenDone.run(false, null);
-                }
-            });
-        });
-    }
-
-
-
-
-
-
-
+    // LoogriGram: sendBid stood here - it is what paid for a bid. The rest
+    // of this controller is still read by the gift sheet's craft preview and
+    // goes when that does.
     private long calculateUserAuctionsHash() {
         List<Long> userAuctions = new ArrayList<>();
 
