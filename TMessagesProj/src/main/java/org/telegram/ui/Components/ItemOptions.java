@@ -76,7 +76,6 @@ import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceBitmap;
 import org.telegram.ui.Components.blur3.utils.Blur3Utils;
 import org.telegram.ui.ContactsActivity;
 import org.telegram.ui.DialogsActivity;
-import org.telegram.ui.Gifts.GiftSheet;
 import org.telegram.ui.Gifts.GiftViews;
 import org.telegram.ui.MainTabsActivity;
 import org.telegram.ui.ProfileActivity;

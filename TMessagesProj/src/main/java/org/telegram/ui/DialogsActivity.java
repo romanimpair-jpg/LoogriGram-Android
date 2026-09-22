@@ -6055,34 +6055,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 MessagesController.getInstance(currentAccount).removeSuggestion(0, "STARS_SUBSCRIPTION_LOW_BALANCE");
                 updateDialogsHint();
             });
-        } else if (folderId == 0 && communityId == 0 && !getMessagesController().premiumPurchaseBlocked() && BirthdayController.getInstance(currentAccount).contains() && !getMessagesController().dismissedSuggestions.contains("BIRTHDAY_CONTACTS_TODAY")) {
-            BirthdayController.BirthdayState state = BirthdayController.getInstance(currentAccount).getState();
-            ArrayList<TLRPC.User> users = state.today;
-            dialogsHintCellVisible = true;
-            dialogsHintCell.setOnClickListener(v -> {
-                UserSelectorBottomSheet.open(0, state);
-            });
-            dialogsHintCell.setAvatars(currentAccount, users);
-            dialogsHintCell.setText(Emoji.replaceWithRestrictedEmoji(AndroidUtilities.replaceSingleTag(
-                users.size() == 1 ?
-                    LocaleController.formatString(R.string.BirthdayTodaySingleTitle, UserObject.getForcedFirstName(users.get(0))) :
-                    LocaleController.formatPluralString("BirthdayTodayMultipleTitle", users.size()),
-                Theme.key_windowBackgroundWhiteValueText,
-                AndroidUtilities.REPLACING_TAG_TYPE_LINKBOLD,
-                null
-            ), dialogsHintCell.titleView, this::updateDialogsHint),
-                LocaleController.formatString(users.size() == 1 ? R.string.BirthdayTodaySingleMessage2 : R.string.BirthdayTodayMultipleMessage2)
-            );
-            dialogsHintCell.setOnCloseListener(v -> {
-                BirthdayController.getInstance(currentAccount).hide();
-                MessagesController.getInstance(currentAccount).removeSuggestion(0, "BIRTHDAY_CONTACTS_TODAY");
-                updateDialogsHint();
-                BulletinFactory.of(this)
-                        .createSimpleBulletin(R.raw.gift, LocaleController.getString(R.string.BoostingPremiumChristmasToast), 4)
-                        .setDuration(Bulletin.DURATION_PROLONG)
-                        .show();
-            });
-            StarsController.getInstance(currentAccount).loadStarGifts();
         } else if (
             folderId == 0 && communityId == 0 &&
             MessagesController.getInstance(currentAccount).pendingSuggestions.contains("BIRTHDAY_SETUP") &&
@@ -6158,23 +6130,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     .setDuration(Bulletin.DURATION_PROLONG)
                     .show();
             });
-        } else if (isPremiumChristmasHintVisible()) {
-            dialogsHintCellVisible = true;
-            dialogsHintCell.setOnClickListener(v -> UserSelectorBottomSheet.open());
-            dialogsHintCell.setText(Emoji.replaceEmoji(AndroidUtilities.replaceSingleTag(
-                    LocaleController.getString(R.string.GiftPremiumEventAdsTitle),
-                    Theme.key_windowBackgroundWhiteValueText,
-                    AndroidUtilities.REPLACING_TAG_TYPE_LINKBOLD,
-                    null
-            ), null, false), LocaleController.formatString(R.string.BoostingPremiumChristmasSubTitle));
-            dialogsHintCell.setOnCloseListener(v -> {
-                MessagesController.getInstance(currentAccount).removeSuggestion(0, "PREMIUM_CHRISTMAS");
-                updateDialogsHint();
-                BulletinFactory.of(this)
-                        .createSimpleBulletin(R.raw.gift, LocaleController.getString(R.string.BoostingPremiumChristmasToast), 4)
-                        .setDuration(Bulletin.DURATION_PROLONG)
-                        .show();
-            });
+        // LoogriGram: two hints stood here - "it is their birthday, send a
+        // gift" and the Premium-gifting promotion. Both opened the gift
+        // picker, and premiumPurchaseBlocked already kept the first hidden.
         } else if (isPremiumRestoreHintVisible()) {
             dialogsHintCellVisible = true;
             dialogsHintCell.setOnClickListener(v -> {

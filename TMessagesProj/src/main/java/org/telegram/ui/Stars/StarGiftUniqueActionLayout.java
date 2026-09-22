@@ -48,7 +48,6 @@ import org.telegram.ui.Components.Particles;
 import org.telegram.ui.Components.StarGiftPatterns;
 import org.telegram.ui.Components.Text;
 import org.telegram.ui.Gifts.GiftMessageDrawable;
-import org.telegram.ui.Gifts.GiftSheet;
 import org.telegram.ui.Gifts.GiftViews;
 import org.telegram.ui.LaunchActivity;
 

@@ -139,7 +139,7 @@ public class ProfileGiftsContainer extends FrameLayout implements NotificationCe
     private final ViewPagerFixed.TabsView tabsView;
 
     private final FrameLayout buttonContainer;
-    private final CharSequence sendGiftsToFriendsText, addGiftsText;
+    private final CharSequence addGiftsText;
     private final ButtonWithCounterView button;
     private int buttonContainerHeightDp;
 
@@ -1346,14 +1346,9 @@ public class ProfileGiftsContainer extends FrameLayout implements NotificationCe
             checkbox.setChecked(list.chat_notifications_enabled, false);
         }
 
-        final TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(dialogId);
-        final boolean sendToSpecificDialog = dialogId < 0 || user != null && !UserObject.isUserSelf(user) && !UserObject.isBot(user);
-
-        final SpannableStringBuilder sb = new SpannableStringBuilder("G " + (sendToSpecificDialog ? (dialogId < 0 ? getString(R.string.ProfileGiftsSendChannel) : formatString(R.string.ProfileGiftsSendUser, DialogObject.getShortName(dialogId))) : getString(R.string.ProfileGiftsSend)));
-        final ColoredImageSpan span = new ColoredImageSpan(R.drawable.filled_gift_simple);
-        sb.setSpan(span, 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        sendGiftsToFriendsText = sb;
-
+        // LoogriGram: "Send gifts to friends" was the other half of this
+        // button. Nothing sends a gift, so what is left is adding gifts you
+        // were given to one of your own collections.
         final SpannableStringBuilder sb2 = new SpannableStringBuilder("+ " + getString(R.string.ProfileGiftsAdd));
         final ColoredImageSpan span2 = new ColoredImageSpan(R.drawable.filled_add_album);
         sb2.setSpan(span2, 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -1363,22 +1358,10 @@ public class ProfileGiftsContainer extends FrameLayout implements NotificationCe
         button.setUseWrapContent(true);
         button.setPadding(dp(16), 0, dp(16), 0);
         button.setRoundRadius(dp(19));
-        button.setText(sendGiftsToFriendsText, false);
+        button.setText(addGiftsText, false);
         button.setStateListAnimator(null);
         button2.addView(button, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, Gravity.CENTER));
-        button2.setOnClickListener(v -> {
-            if (!collections.isMine() || viewPager.getCurrentPosition() == 0) {
-                if (sendToSpecificDialog) {
-                    new GiftSheet(getContext(), currentAccount, dialogId, null, null)
-                        .setBirthday(BirthdayController.getInstance(currentAccount).isToday(dialogId))
-                        .show();
-                } else {
-                    UserSelectorBottomSheet.open(UserSelectorBottomSheet.TYPE_STAR_GIFT, 0, BirthdayController.getInstance(currentAccount).getState());
-                }
-            } else {
-                addGifts();
-            }
-        });
+        button2.setOnClickListener(v -> addGifts());
 
         button.setVisibility(canSwitchNotify() ? View.GONE : View.VISIBLE);
         checkboxLayout.setVisibility(canSwitchNotify() ? View.VISIBLE : View.GONE);
@@ -1525,7 +1508,10 @@ public class ProfileGiftsContainer extends FrameLayout implements NotificationCe
     }
 
     private boolean shouldHideButton(int page) {
-        if (page == 0) return false;
+        // LoogriGram: the first page's button sent gifts, so the button now
+        // belongs to your own collection pages only.
+        if (!collections.isMine()) return true;
+        if (page == 0) return true;
         final int index = page - 1;
         if (index < 0 || index >= collections.getCollections().size()) return true;
         final StarsController.GiftsList list = collections.getListByIndex(index);
@@ -1561,7 +1547,7 @@ public class ProfileGiftsContainer extends FrameLayout implements NotificationCe
         buttonContainer.setTranslationY(ty - buttonContainerOffset);
         buttonContainer.setAlpha(factor);
         buttonContainer.setVisibility(factor > 0 ? View.VISIBLE : View.INVISIBLE);
-        button.setText(!collections.isMine() || viewPager.getPositionAnimated() < 0.5f ? sendGiftsToFriendsText : addGiftsText, true);
+        button.setText(addGiftsText, true);
         Bulletin.updateCurrentPosition();
     }
 

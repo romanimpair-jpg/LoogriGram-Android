@@ -169,7 +169,6 @@ import org.telegram.ui.Components.spoilers.SpoilersTextView;
 import org.telegram.ui.DialogsActivity;
 import org.telegram.ui.Gifts.GiftMessageBottomSheet;
 import org.telegram.ui.Gifts.GiftMessageView;
-import org.telegram.ui.Gifts.GiftSheet;
 import org.telegram.ui.Gifts.GiftViews;
 import org.telegram.ui.Gifts.ProfileGiftsContainer;
 import org.telegram.ui.Gifts.ResaleGiftsFragment;
@@ -4680,9 +4679,9 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
 
             if (selfId != fromId || isForChannel) {
                 final TLRPC.User fromUser = MessagesController.getInstance(currentAccount).getUser(fromId);
-                tableView.addRowUser(getString(R.string.Gift2From), currentAccount, fromId, () -> openProfile(fromId), fromId != selfId && fromId != UserObject.ANONYMOUS && !fromBot && !UserObject.isDeleted(fromUser) && !isForChannel ? getString(R.string.Gift2ButtonSendGift) : null, () -> {
-                    new GiftSheet(getContext(), currentAccount, fromId, this::dismiss).show();
-                });
+                // LoogriGram: this row carried a "Send gift" button back to
+                // the sender. The row itself still opens their profile.
+                tableView.addRowUser(getString(R.string.Gift2From), currentAccount, fromId, () -> openProfile(fromId));
             }
             tableView.addRow(getString(R.string.StarsTransactionDate), LocaleController.formatString(R.string.formatDateAtTime, LocaleController.getInstance().getFormatterGiveawayCard().format(new Date(savedStarGift.date * 1000L)), LocaleController.getInstance().getFormatterDay().format(new Date(savedStarGift.date * 1000L))));
             tableView.addRow(getString(R.string.Gift2Value), replaceStarsWithPlain(TextUtils.concat("⭐️ " + LocaleController.formatNumber(savedStarGift.gift.stars + savedStarGift.upgrade_stars, ','), " ", canConvert() && !refunded ? ButtonSpan.make(formatPluralStringComma("Gift2ButtonSell", (int) savedStarGift.convert_stars), this::convert, resourcesProvider) : ""), .8f));
@@ -5023,19 +5022,13 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             final TLRPC.User fromUser = MessagesController.getInstance(currentAccount).getUser(fromId);
             if (auctionPeer != null) {
                 long auctionToDid = DialogObject.getPeerDialogId(auctionPeer);
-                tableView.addRowUser(getString(R.string.Gift2To), currentAccount, auctionToDid, () -> openProfile(auctionToDid), null, isForChannel ? null : () -> {
-                    new GiftSheet(getContext(), currentAccount, auctionToDid, this::dismiss).show();
-                });
+                tableView.addRowUser(getString(R.string.Gift2To), currentAccount, auctionToDid, () -> openProfile(auctionToDid));
             } else {
                 if (fromId != selfId || prepaid_upgrade || isForChannel) {
-                    tableView.addRowUser(getString(R.string.Gift2From), currentAccount, fromId, () -> openProfile(fromId), fromId != selfId && fromId != UserObject.ANONYMOUS && !UserObject.isDeleted(fromUser) && !fromBot && !isForChannel ? getString(R.string.Gift2ButtonSendGift) : null, isForChannel ? null : () -> {
-                        new GiftSheet(getContext(), currentAccount, fromId, this::dismiss).show();
-                    });
+                    tableView.addRowUser(getString(R.string.Gift2From), currentAccount, fromId, () -> openProfile(fromId));
                 }
                 if (toId != selfId || isForChannel) {
-                    tableView.addRowUser(getString(R.string.Gift2To), currentAccount, toId, () -> openProfile(toId), null, isForChannel ? null : () -> {
-                        new GiftSheet(getContext(), currentAccount, toId, this::dismiss).show();
-                    });
+                    tableView.addRowUser(getString(R.string.Gift2To), currentAccount, toId, () -> openProfile(toId));
                 }
             }
             tableView.addRowDateTime(getString(R.string.StarsTransactionDate), date);

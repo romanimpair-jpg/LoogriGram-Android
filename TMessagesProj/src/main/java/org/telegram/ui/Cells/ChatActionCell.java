@@ -134,7 +134,6 @@ import org.telegram.ui.Components.TopicSeparator;
 import org.telegram.ui.Components.TypefaceSpan;
 import org.telegram.ui.Components.URLSpanNoUnderline;
 import org.telegram.ui.Components.spoilers.SpoilerEffect;
-import org.telegram.ui.Gifts.GiftSheet;
 import org.telegram.ui.Gifts.GiftViews;
 import org.telegram.ui.GradientClip;
 import org.telegram.ui.LaunchActivity;

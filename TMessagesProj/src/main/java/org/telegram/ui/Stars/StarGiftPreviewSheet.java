@@ -71,7 +71,6 @@ import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceRenderNode
 import org.telegram.ui.Components.chat.ViewPositionWatcher;
 import org.telegram.ui.Components.glass.GlassTabView;
 import org.telegram.ui.Components.glass.GlassTabsView;
-import org.telegram.ui.Gifts.GiftSheet;
 import org.telegram.ui.Gifts.GiftViews;
 
 import java.util.ArrayList;

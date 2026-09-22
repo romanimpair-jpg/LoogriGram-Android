@@ -119,7 +119,6 @@ import org.telegram.ui.Components.UItem;
 import org.telegram.ui.Components.UniversalAdapter;
 import org.telegram.ui.Components.UniversalRecyclerView;
 import org.telegram.ui.Components.ViewPagerFixed;
-import org.telegram.ui.Gifts.GiftSheet;
 import org.telegram.ui.Gifts.GiftViews;
 import org.telegram.ui.Gifts.ResaleGiftsFragment;
 import org.telegram.ui.Components.StarGiftPatterns;

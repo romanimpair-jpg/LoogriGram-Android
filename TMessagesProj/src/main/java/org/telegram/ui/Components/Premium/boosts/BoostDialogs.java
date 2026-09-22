@@ -843,10 +843,7 @@ public class BoostDialogs {
         AlertDialog.Builder builder = new AlertDialog.Builder(baseFragment.getContext(), baseFragment.getResourceProvider());
         builder.setTitle(LocaleController.getString(R.string.BoostingMoreBoostsNeeded));
         builder.setMessage(AndroidUtilities.replaceTags(LocaleController.formatPluralString("BoostingGetMoreBoostByGiftingCount", BoostRepository.boostsPerSentGift(), chat.title)));
-        builder.setNegativeButton(getString("GiftPremium", R.string.GiftPremium), (dialogInterface, i) -> {
-            bottomSheet.dismiss();
-            UserSelectorBottomSheet.open();
-        });
+        // LoogriGram: the other button offered to gift Premium for boosts.
         builder.setPositiveButton(getString("Close", R.string.Close), (dialogInterface, i) -> {
 
         });
