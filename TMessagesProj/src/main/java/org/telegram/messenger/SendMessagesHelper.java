@@ -7082,7 +7082,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             } else {
                 mode = ChatActivity.MODE_DEFAULT;
             }
-            if (message.paidMedia || message.pollMedia) {
+            if (message.pollMedia) {
                 ArrayList<MessageObject> firstMessageObject = new ArrayList<>();
                 firstMessageObject.add(message.messageObjects.get(0));
                 ArrayList<TLRPC.Message> firstMessage = new ArrayList<>();
@@ -9698,7 +9698,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 
                 TLRPC.TL_messages_messages messagesRes = new TLRPC.TL_messages_messages();
                 messagesRes.messages.add(prevMessage.messageOwner);
-                if (!message.paidMedia && !message.pollMedia) {
+                if (!message.pollMedia) {
                     accountInstance.getMessagesStorage().putMessages(messagesRes, message.peer, -2, 0, false, scheduleDate != 0 ? 1 : 0, 0);
                 }
                 instance.sendReadyToSendGroup(message, true, true);
