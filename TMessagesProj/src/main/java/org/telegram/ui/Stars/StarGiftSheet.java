@@ -1066,7 +1066,6 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             .addIf(link != null, R.drawable.msg_share, getString(R.string.ShareFile), () -> {
                 onSharePressed(null);
             })
-            .addIf(giftUnique != null && giftUnique.offer_min_stars > 0, R.drawable.input_suggest_paid_24, getString(R.string.GiftOfferToBuyMenu), this::showGiftOfferSheet)
             .addIf(canSetAsTheme(), R.drawable.msg_colors, getString(R.string.GiftThemesSetIn), this::openSetAsTheme)
             .addIf(canTransfer(), R.drawable.menu_feature_transfer, getString(R.string.Gift2TransferOption), this::openTransfer)
             .addIf(savedStarGift == null && getDialogId() != 0, R.drawable.msg_view_file, getString(R.string.Gift2ViewInProfile), this::openInProfile)
@@ -1077,15 +1076,8 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             .show();
     }
 
-    private void showGiftOfferSheet() {
-        final TL_stars.TL_starGiftUnique giftUnique = getUniqueGift();
-        new GiftOfferSheet(getContext(), currentAccount, DialogObject.getPeerDialogId(giftUnique.owner_id), giftUnique, resourcesProvider, () -> {
-            if (closeParentSheet != null) {
-                closeParentSheet.run(false);
-            }
-            dismiss();
-        }).show();
-    }
+    // LoogriGram: "Offer to buy" opened GiftOfferSheet here. Nothing buys a
+    // gift, and an offer someone makes for one of ours is held unread.
 
     private boolean canSetAsTheme() {
         final TL_stars.TL_starGiftUnique giftUnique = getUniqueGift();
