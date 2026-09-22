@@ -167,7 +167,6 @@ import org.telegram.ui.Components.TextHelper;
 import org.telegram.ui.Components.ViewPagerFixed;
 import org.telegram.ui.Components.spoilers.SpoilersTextView;
 import org.telegram.ui.DialogsActivity;
-import org.telegram.ui.Gifts.GiftMessageBottomSheet;
 import org.telegram.ui.Gifts.GiftMessageView;
 import org.telegram.ui.Gifts.GiftViews;
 import org.telegram.ui.Gifts.ProfileGiftsContainer;
@@ -246,7 +245,6 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
     private MessageObject messageObject;
     private String slug;
     private TL_stars.TL_starGiftUnique slugStarGift;
-    private boolean resale;
     private boolean messageObjectRepolling;
     private boolean messageObjectRepolled;
     private boolean userStarGiftRepolling;
@@ -565,7 +563,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         wearLayout.setAlpha(0.0f);
         craftLayout.setAlpha(0.0f);
 
-        topView = new TopView(context, resourcesProvider, this::onBackPressed, this::onMenuPressed, v -> openCrafting(true), this::onTransferClick, this::onWearPressed, this::onSharePressed, this::onResellPressed, this::onUpdatePriceClick);
+        topView = new TopView(context, resourcesProvider, this::onBackPressed, this::onMenuPressed, v -> openCrafting(true), this::onTransferClick, this::onWearPressed, this::onSharePressed);
         topView.craftTopView.helpButton.setOnClickListener(v -> {
             if (v.getAlpha() < 1) return;
             openCraftInfo();
@@ -1053,9 +1051,6 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             .addIf(canCraft(), R.drawable.outline_craft, getString(R.string.GiftCraft), () -> {
                 openCrafting(true);
             })
-            .addIf(getUniqueGift() != null && isMineWithActions(currentAccount, DialogObject.getPeerDialogId(getUniqueGift().owner_id)) && getUniqueGift().resell_amount != null, R.drawable.menu_edit_price, getString(R.string.Gift2ChangePrice), () -> {
-                onUpdatePriceClick(null);
-            })
             .addIf(link != null, R.drawable.msg_link, getString(R.string.CopyLink), () -> {
                 AndroidUtilities.addToClipboard(link);
                 getBulletinFactory()
@@ -1358,147 +1353,10 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         shareAlert.show();
     }
 
-    public void onUpdatePriceClick(View btn) {
-        final TL_stars.TL_starGiftUnique gift = getUniqueGift();
-        if (gift == null) return;
-        StarsIntroActivity.showGiftResellPriceSheet(getContext(), currentAccount, gift, null, (price, done) -> {
-            final TL_stars.StarsAmount tlAmount = price.toTl();
-            final TL_stars.updateStarGiftPrice req = new TL_stars.updateStarGiftPrice();
-            req.stargift = getInputStarGift();
-            req.resell_amount = tlAmount;
-            ConnectionsManager.getInstance(currentAccount).sendRequest(req, (res, err) -> {
-                if (res instanceof TLRPC.Updates) {
-                    MessagesController.getInstance(currentAccount).processUpdates((TLRPC.Updates) res, false);
-                    AndroidUtilities.runOnUIThread(() -> {
-                        gift.flags |= 16;
-                        gift.resale_ton_only = price.currency == AmountUtils.Currency.TON;
-                        gift.resell_amount = new ArrayList<>();
-                        gift.resell_amount.add(price.convertTo(AmountUtils.Currency.STARS).toTl());
-                        gift.resell_amount.add(price.convertTo(AmountUtils.Currency.TON).toTl());
-                        topView.setResellPrice(price);
-                        if (onGiftUpdatedListener != null) {
-                            onGiftUpdatedListener.run();
-                        }
-                        if (done != null) {
-                            done.run();
-                        }
-                    });
-                } else if (err != null) {
-                    AndroidUtilities.runOnUIThread(() -> {
-                        getBulletinFactory().showForError(err);
-                        if (done != null) {
-                            done.run();
-                        }
-                    });
-                }
-            });
-        }, resourcesProvider);
-    }
+        // LoogriGram: putting a gift up for sale, taking it off sale and
+    // changing its price stood here. Nothing here sells a gift.
 
-    public void onResellPressed(View btn) {
-        if (btn.getAlpha() < 0.99f) {
-            cantWithBlockchainGiftAlert(1);
-            return;
-        }
-        final TL_stars.TL_starGiftUnique gift = getUniqueGift();
-        if (gift == null) return;
-        if (gift.resell_amount != null) {
-            new AlertDialog.Builder(getContext(), resourcesProvider)
-                .setTitle(formatString(R.string.Gift2UnlistTitle, getGiftName()))
-                .setMessage(getString(R.string.Gift2UnlistText))
-                .setPositiveButton(getString(R.string.Gift2ActionUnlist), (d, w) -> {
-                    final Browser.Progress progress = d.makeButtonLoading(AlertDialog.BUTTON_POSITIVE);
-                    progress.init();
-                    final TL_stars.updateStarGiftPrice req = new TL_stars.updateStarGiftPrice();
-                    req.stargift = getInputStarGift();
-                    req.resell_amount = TL_stars.StarsAmount.ofStars(0);
-                    ConnectionsManager.getInstance(currentAccount).sendRequest(req, (res, err) -> {
-                        if (res instanceof TLRPC.Updates) {
-                            MessagesController.getInstance(currentAccount).processUpdates((TLRPC.Updates) res, false);
-                            AndroidUtilities.runOnUIThread(() -> {
-                                progress.end();
-                                gift.flags &=~ 16;
-                                gift.resale_ton_only = false;
-                                gift.resell_amount = null;
-                                topView.setResellPrice(AmountUtils.Amount.fromNano(0, AmountUtils.Currency.STARS));
-                                if (onGiftUpdatedListener != null) {
-                                    onGiftUpdatedListener.run();
-                                }
-
-                                getBulletinFactory()
-                                    .createSimpleBulletin(R.raw.contact_check, LocaleController.formatString(R.string.Gift2ResaleDisable, getGiftName()))
-                                    .show();
-                            });
-                        } else if (err != null && err.text.startsWith("STARGIFT_RESELL_TOO_EARLY_")) {
-                            final long time = Long.parseLong(err.text.substring("STARGIFT_RESELL_TOO_EARLY_".length()));
-                            AndroidUtilities.runOnUIThread(() -> {
-                                progress.end();
-                                showTimeoutAlert(getContext(), true, (int) time);
-                            });
-                        } else if (err != null) {
-                            AndroidUtilities.runOnUIThread(() -> {
-                                progress.end();
-                                getBulletinFactory().showForError(err);
-                            });
-                        }
-                    });
-                })
-                .setNegativeButton(getString(R.string.Cancel), (d, w) -> {
-
-                }).show();
-        } else {
-            if (canResellAt() > ConnectionsManager.getInstance(currentAccount).getCurrentTime()) {
-                showTimeoutAlertAt(getContext(), true, canResellAt());
-                return;
-            }
-            StarsIntroActivity.showGiftResellPriceSheet(getContext(), currentAccount, (price, done) -> {
-                final TL_stars.StarsAmount tlAmount = price.toTl();
-                final TL_stars.updateStarGiftPrice req = new TL_stars.updateStarGiftPrice();
-                req.stargift = getInputStarGift();
-                req.resell_amount = tlAmount;
-                ConnectionsManager.getInstance(currentAccount).sendRequest(req, (res, err) -> {
-                    if (res instanceof TLRPC.Updates) {
-                        MessagesController.getInstance(currentAccount).processUpdates((TLRPC.Updates) res, false);
-                        AndroidUtilities.runOnUIThread(() -> {
-                            gift.flags |= 16;
-                            gift.resale_ton_only = price.currency == AmountUtils.Currency.TON;
-                            gift.resell_amount = new ArrayList<>();
-                            gift.resell_amount.add(price.convertTo(AmountUtils.Currency.STARS).toTl());
-                            gift.resell_amount.add(price.convertTo(AmountUtils.Currency.TON).toTl());
-                            topView.setResellPrice(price);
-                            if (onGiftUpdatedListener != null) {
-                                onGiftUpdatedListener.run();
-                            }
-                            if (done != null) {
-                                done.run();
-                            }
-
-                            getBulletinFactory()
-                                .createSimpleBulletin(R.raw.contact_check, LocaleController.formatString(R.string.Gift2ResaleEnable, getGiftName()))
-                                .show();
-                        });
-                    } else if (err != null && err.text.startsWith("STARGIFT_RESELL_TOO_EARLY_")) {
-                        final long time = Long.parseLong(err.text.substring("STARGIFT_RESELL_TOO_EARLY_".length()));
-                        AndroidUtilities.runOnUIThread(() -> {
-                            showTimeoutAlert(getContext(), true, (int) time);
-                            if (done != null) {
-                                done.run();
-                            }
-                        });
-                    } else if (err != null) {
-                        AndroidUtilities.runOnUIThread(() -> {
-                            getBulletinFactory().showForError(err);
-                            if (done != null) {
-                                done.run();
-                            }
-                        });
-                    }
-                });
-            }, resourcesProvider);
-        }
-    }
-
-    private void repostStory(View cell) {
+        private void repostStory(View cell) {
         Activity activity = LaunchActivity.instance;
         if (activity == null) {
             return;
@@ -2003,8 +1861,6 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
 
         private CraftTopView craftTopView;
 
-        private boolean hasResellPrice;
-        private final TextView resellPriceView;
         private final ImageView closeView;
         private final ImageView craftView;
         public final ImageView optionsView;
@@ -2041,14 +1897,10 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         }
 
         private View.OnClickListener onShareClick;
-        private View.OnClickListener onResellClick;
-        private View.OnClickListener onUpdatePriceClick;
-        public TopView(Context context, Theme.ResourcesProvider resourcesProvider, Runnable dismiss, OnClickListener onMenuClick, OnClickListener onCraftClick, OnClickListener onTransferClick, OnClickListener onWearClick, OnClickListener onShareClick, OnClickListener onResellClick, OnClickListener onUpdatePriceClick) {
+        public TopView(Context context, Theme.ResourcesProvider resourcesProvider, Runnable dismiss, OnClickListener onMenuClick, OnClickListener onCraftClick, OnClickListener onTransferClick, OnClickListener onWearClick, OnClickListener onShareClick) {
             super(context);
             this.resourcesProvider = resourcesProvider;
             this.onShareClick = onShareClick;
-            this.onResellClick = onResellClick;
-            this.onUpdatePriceClick = onUpdatePriceClick;
 
             setWillNotDraw(false);
 
@@ -2091,17 +1943,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             collectionReleasedView.setLinkTextColor(0xFFFFFFFF);
             collectionReleasedView.setPadding(dp(7), 0, dp(7), 0);
 
-            resellPriceView = new TextView(context);
-            resellPriceView.setPadding(dp(8), 0, dp(8), 0);
-            resellPriceView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
-            resellPriceView.setTextColor(0xFFFFFFFF);
-            resellPriceView.setTypeface(AndroidUtilities.bold());
-            resellPriceView.setAlpha(0.f);
-            resellPriceView.setScaleX(0.4f);
-            resellPriceView.setScaleY(0.4f);
-            resellPriceView.setVisibility(View.GONE);
-            resellPriceView.setGravity(Gravity.CENTER);
-            ScaleStateListAnimator.apply(resellPriceView);
+            // LoogriGram: a gift up for sale carried its price here.
 
             buttonsLayout = new LinearLayout(context) {
                 @Override
@@ -2194,7 +2036,6 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                         subtitleView[i].setDisablePaddingsOffsetY(true);
 
                         subtitleContainer.addView(subtitleView[i], LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER));
-                        subtitleContainer.addView(resellPriceView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 20.33f, Gravity.CENTER));
 
                         layout[i].addView(subtitleContainer, subtitleViewLayoutParams[i] = LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 24, 0, 24, i == PAGE_CRAFT ? 6 : 0));
                     } else {
@@ -2235,7 +2076,6 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             addView(closeView, LayoutHelper.createFrame(28, 28, Gravity.RIGHT | Gravity.TOP, 0, 12, 12, 0));
             closeView.setOnClickListener(v -> dismiss.run());
             closeView.setVisibility(View.GONE);
-//            addView(resellPriceView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 24, Gravity.LEFT | Gravity.TOP, 12, 14, 0, 0));
 
             craftView = new ImageView(context);
             craftView.setImageResource(R.drawable.filled_forge);
@@ -2321,12 +2161,6 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             closeView.setVisibility(backdrop[0] != null && p.to == PAGE_WEAR || backdrop[1] != null && p.to == PAGE_UPGRADE ? View.VISIBLE : View.GONE);
             optionsView.setAlpha(lerp(false, backdrop[0] != null, p.at(PAGE_INFO)));
             optionsView.setVisibility(backdrop[0] != null && p.to == PAGE_INFO ? View.VISIBLE : View.GONE);
-            if (!resellPriceViewInProgress) {
-                resellPriceView.setAlpha(lerp(false, hasResellPrice, p.at(PAGE_INFO)));
-                resellPriceView.setScaleX(lerp(0.4f, hasResellPrice ? 1.0f : 0.4f, p.at(PAGE_INFO)));
-                resellPriceView.setScaleY(lerp(0.4f, hasResellPrice ? 1.0f : 0.4f, p.at(PAGE_INFO)));
-                resellPriceView.setVisibility(hasResellPrice && p.to == PAGE_INFO ? View.VISIBLE : View.INVISIBLE);
-            }
             final int black = Theme.getColor(Theme.key_dialogTextBlack, resourcesProvider);
             for (int i = 0; i < 2; ++i) {
                 titleView[i].setTextColor(backdrop[Math.min(1, i)] == null ? black : 0xFFFFFFFF);
@@ -2397,7 +2231,6 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         private boolean hasRibbon;
         private boolean hasLink;
         public void setGift(TL_stars.StarGift gift, boolean isOwner, boolean isHost, boolean worn, boolean hasLink, boolean rolling) {
-            hasResellPrice = false;
             final int page = 0;
             final boolean withButtons = isOwner || isHost;
             if (gift instanceof TL_stars.TL_starGiftUnique) {
@@ -2408,32 +2241,6 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 if (withButtons) {
                     buttons[1].set(worn ? R.drawable.filled_crown_off : R.drawable.filled_crown_on, getString(worn ? R.string.Gift2ActionWearOff : R.string.Gift2ActionWear), false);
                 }
-                if (gift.resell_amount != null) {
-                    hasResellPrice = true;
-
-                    final AmountUtils.Amount price = gift.getResellAmount(gift.resale_ton_only ? AmountUtils.Currency.TON : AmountUtils.Currency.STARS);
-                    resellPriceView.setText(LocaleController.formatSpannable(R.string.GiftOnSale, StarsFormat.replaceStars(
-                        price.currency == AmountUtils.Currency.TON,
-                        "⭐️ " + StarsFormat.formatStarsAmount(price.toTl(), 1, ',')),
-                        0.9f
-                    ));
-
-                    final int backgroundColor = ColorUtils.blendARGB(backdrop[0].edge_color | 0xFF000000, backdrop[0].pattern_color | 0xFF000000, .25f);
-                    resellPriceView.setBackground(Theme.createRoundRectDrawable(dp(12), backgroundColor));
-                    if (isMine(UserConfig.selectedAccount, DialogObject.getPeerDialogId(gift.owner_id))) {
-                        resellPriceView.setOnClickListener(view -> {
-                            if (resellPriceView.getVisibility() != View.VISIBLE) return;
-                            if (onUpdatePriceClick != null) {
-                                onUpdatePriceClick.onClick(view);
-                            }
-                        });
-                        ScaleStateListAnimator.apply(resellPriceView);
-                    } else {
-                        resellPriceView.setOnClickListener(null);
-                        ScaleStateListAnimator.reset(resellPriceView);
-                    }
-                }
-
                 if (isOwner) {
                     buttons[0].setAlpha(1.0f);
                     buttons[0].set(R.drawable.filled_gift_transfer, getString(R.string.Gift2ActionTransfer), false);
@@ -2445,18 +2252,10 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                     buttons[0].set(R.drawable.filled_gift_transfer, sb, false);
                 }
                 buttons[1].setAlpha(isOwner || isHost ? 1.0f : 0.5f);
-                if (isOwner) {
-                    if (gift.resell_amount != null) {
-                        buttons[2].set(R.drawable.filled_gift_sell_off, getString(R.string.Gift2ActionUnlist), false);
-                        buttons[2].setOnClickListener(onResellClick);
-                    } else {
-                        buttons[2].set(R.drawable.filled_gift_sell_on, getString(R.string.Gift2ActionResell), false);
-                        buttons[2].setOnClickListener(onResellClick);
-                    }
-                } else {
-                    buttons[2].set(R.drawable.filled_share, getString(R.string.Gift2ActionShare), false);
-                    buttons[2].setOnClickListener(onShareClick);
-                }
+                // LoogriGram: the owner had Sell / Unlist here. Sharing is what
+                // everyone gets now.
+                buttons[2].set(R.drawable.filled_share, getString(R.string.Gift2ActionShare), false);
+                buttons[2].setOnClickListener(onShareClick);
                 hasRibbon = gift.crafted;
                 ribbon.drawable.setBackdrop(backdrop[page], false, true);
             } else {
@@ -2495,74 +2294,6 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
 
         public TL_stars.starGiftAttributePattern getUpgradePatternAttribute() {
             return patternAttribute[1];
-        }
-
-        private boolean resellPriceViewInProgress;
-        public void setResellPrice(AmountUtils.Amount price) {
-            hasResellPrice = !price.isZero();
-            if (hasResellPrice) {
-                resellPriceView.setText(LocaleController.formatSpannable(R.string.GiftOnSale, StarsFormat.replaceStars(
-                    price.currency == AmountUtils.Currency.TON,
-                    "⭐️ " + StarsFormat.formatStarsAmount(price.toTl(), 1, ','),
-                    0.9f
-                )));
-
-                final int backgroundColor = ColorUtils.blendARGB(backdrop[0].edge_color | 0xFF000000, backdrop[0].pattern_color | 0xFF000000, .25f);
-                resellPriceView.setBackground(Theme.createRoundRectDrawable(dp(12), backgroundColor));
-                resellPriceView.setVisibility(View.VISIBLE);
-                resellPriceViewInProgress = true;
-                resellPriceView.animate()
-                    .scaleX(1.0f)
-                    .scaleY(1.0f)
-                    .alpha(1.0f)
-                    .setDuration(420)
-                    .setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT)
-                    .setListener(new AnimatorListenerAdapter() {
-                        @Override
-                        public void onAnimationEnd(Animator animation) {
-                            resellPriceViewInProgress = false;
-                        }
-                    })
-                    .start();
-                subtitleView[PAGE_INFO]
-                    .animate()
-                    .alpha(0.0f)
-                    .setDuration(420)
-                    .setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT)
-                    .start();
-            } else {
-                resellPriceView.animate()
-                    .scaleX(0.4f)
-                    .scaleY(0.4f)
-                    .alpha(0.0f)
-                    .setDuration(420)
-                    .setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT)
-                    .setListener(new AnimatorListenerAdapter() {
-                        @Override
-                        public void onAnimationEnd(Animator animation) {
-                            resellPriceView.setVisibility(View.INVISIBLE);
-                        }
-                    })
-                    .setListener(new AnimatorListenerAdapter() {
-                        @Override
-                        public void onAnimationEnd(Animator animation) {
-                            resellPriceViewInProgress = false;
-                        }
-                    })
-                    .start();
-                subtitleView[PAGE_INFO]
-                    .animate()
-                    .alpha(1.0f)
-                    .setDuration(420)
-                    .setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT)
-                    .start();
-            }
-            if (hasResellPrice) {
-                buttons[2].set(R.drawable.filled_gift_sell_off, getString(R.string.Gift2ActionUnlist), true);
-            } else {
-                buttons[2].set(R.drawable.filled_gift_sell_on, getString(R.string.Gift2ActionResell), true);
-            }
-            buttons[2].setOnClickListener(onResellClick);
         }
 
         public void setPreviewingAttributes(/* int page = 1, */ArrayList<TL_stars.StarGiftAttribute> sampleAttributes) {
@@ -3184,16 +2915,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         return 0;
     }
 
-    public int canResellAt() {
-        if (messageObject != null && messageObject.messageOwner != null && messageObject.messageOwner.action instanceof TLRPC.TL_messageActionStarGiftUnique) {
-            return ((TLRPC.TL_messageActionStarGiftUnique) messageObject.messageOwner.action).can_resell_at;
-        } else if (savedStarGift != null) {
-            return savedStarGift.can_resell_at;
-        }
-        return 0;
-    }
-
-    public boolean canTransfer() {
+        public boolean canTransfer() {
         if (getInputStarGift() == null) return false;
         TL_stars.TL_starGiftUnique gift;
         if (messageObject != null && messageObject.messageOwner != null && messageObject.messageOwner.action instanceof TLRPC.TL_messageActionStarGiftUnique) {
@@ -4018,7 +3740,6 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         this.slug = slug;
         this.slugStarGift = gift;
         this.giftsList = list;
-        this.resale = gift.resell_amount != null && !isMine(currentAccount, DialogObject.getPeerDialogId(gift.owner_id));
 
         if (!rolling && roller != null && roller.isRolling() && roller.rollingGift != null && roller.rollingGift.id != gift.id) {
             roller.detach();
@@ -4050,11 +3771,6 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             afterTableTextView.setVisibility(View.VISIBLE);
         } else {
             afterTableTextView.setVisibility(View.GONE);
-        }
-
-        if (resale) {
-            setButtonTextResale(gift);
-            button.setOnClickListener(v -> onBuyPressed());
         }
 
         if (firstSet) {
@@ -4351,11 +4067,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         }
 
         if (!(roller != null && roller.isRolling())) {
-            if (!isMine(currentAccount, DialogObject.getPeerDialogId(gift.owner_id)) && gift.resell_amount != null) {
-                button.setFilled(true);
-                setButtonTextResale(gift);
-                button.setOnClickListener(v -> onBuyPressed());
-            } else if (upgradedOnce && viewPager != null && giftsList != null && getListPosition() >= 0 && giftsList.findGiftToUpgrade(getListPosition()) >= 0) {
+            if (upgradedOnce && viewPager != null && giftsList != null && getListPosition() >= 0 && giftsList.findGiftToUpgrade(getListPosition()) >= 0) {
                 button.setFilled(false);
                 final int index = giftsList.findGiftToUpgrade(getListPosition());
                 SpannableStringBuilder sb = new SpannableStringBuilder();
@@ -4550,19 +4262,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         }));
     }
 
-    private void setButtonTextResale(TL_stars.StarGift gift) {
-        final AmountUtils.Amount stars = gift.getResellAmount(AmountUtils.Currency.STARS);
-        if (gift.resale_ton_only) {
-            final AmountUtils.Amount ton = gift.getResellAmount(AmountUtils.Currency.TON);
-            button.setText(StarsFormat.replaceStars(true, LocaleController.formatString(R.string.ResellGiftBuyTON, ton.asFormatString())), !firstSet);
-            button.setSubText(StarsFormat.replaceStars(formatPluralStringComma("ResellGiftBuyEq", (int) stars.asDecimal())), !firstSet);
-        } else {
-            button.setText(StarsFormat.replaceStars(formatPluralStringComma("ResellGiftBuy", (int) stars.asDecimal())), !firstSet);
-            button.setSubText(null, !firstSet);
-        }
-    }
-
-    public boolean isSaved() {
+        public boolean isSaved() {
         if (messageObject != null && messageObject.messageOwner != null) {
             TLRPC.MessageAction _action = messageObject.messageOwner.action;
             if (_action instanceof TLRPC.TL_messageActionStarGift) {
@@ -6976,65 +6676,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         return BulletinFactory.of(bottomBulletinContainer, resourcesProvider);
     }
 
-    public void onBuyPressed() {
-        final TL_stars.TL_starGiftUnique gift = getUniqueGift();
-        if (button.isLoading() || gift == null) return;
-
-        final long to = slugStarGift != null && resale && dialogId != 0 ? dialogId : UserConfig.getInstance(currentAccount).getClientUserId();
-        final AmountUtils.Currency currency = gift.resale_ton_only ?
-            AmountUtils.Currency.TON : AmountUtils.Currency.STARS;
-
-        if (slugStarGift != null && resale) {
-            GiftMessageBottomSheet giftMessageBottomSheet = new GiftMessageBottomSheet(getContext(), resourcesProvider, gift, to);
-            giftMessageBottomSheet.setCallback((message, hideMyName) -> {
-                if (giftMessageBottomSheet.isLoading()) {
-                    return;
-                }
-                performBuyPressed(gift, to, currency, message, hideMyName, giftMessageBottomSheet);
-            });
-            giftMessageBottomSheet.show();
-            return;
-        }
-        performBuyPressed(gift, to, currency, null, true, null);
-    }
-
-    private void performBuyPressed(TL_stars.TL_starGiftUnique gift, long to,
-                                   AmountUtils.Currency currency,
-                                   TLRPC.TL_textWithEntities message, boolean hideMyName,
-                                   GiftMessageBottomSheet giftMessageBottomSheet
-    ) {
-
-        button.setLoading(true);
-        if (giftMessageBottomSheet != null) {
-            giftMessageBottomSheet.setLoading(true);
-        }
-
-        StarsController.getInstance(currentAccount, currency).getResellingGiftForm(gift, to, message, hideMyName, form -> {
-            button.setLoading(false);
-            if (giftMessageBottomSheet != null) {
-                giftMessageBottomSheet.setLoading(false);
-            }
-            if (form == null) return;
-            final PaymentFormState initial = new PaymentFormState(currency, form);
-
-            new ResaleBuyTransferAlert(getContext(), resourcesProvider, gift, initial, currentAccount, to, getGiftName(), false, (state, progress) -> {
-                progress.init();
-                StarsController.getInstance(currentAccount, state.currency).buyResellingGift(state.form, gift, to, message, hideMyName, (status, err) -> {
-                    progress.end();
-                    if (status) {
-                        if (boughtGift != null) {
-                            boughtGift.onBoughtGift(gift, to, giftMessageBottomSheet != null);
-                        }
-                        if (giftMessageBottomSheet != null) {
-                            AndroidUtilities.runOnUIThread(giftMessageBottomSheet::dismiss);
-                            skipDismissAnimation();
-                        }
-                        dismiss();
-                    }
-                });
-            }).show();
-        });
-    }
+            // LoogriGram: buying a listed gift, in Stars or TON, stood here.
 
     @Override
     public void onBackPressed() {
@@ -8164,24 +7806,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                     sb.append(" ");
                     sb.append(getString(R.string.GiftValueOnSaleTelegram));
                     button1.setText(AndroidUtilities.replaceArrows(sb, false, dp(2), dp(1)), false);
-                    button1.setOnClickListener(v -> {
-                        final BaseFragment lastFragment = LaunchActivity.getLastFragment();
-                        if (lastFragment == null) return;
-                        final BaseFragment.BottomSheetParams bottomSheetParams = new BaseFragment.BottomSheetParams();
-                        bottomSheetParams.transitionFromLeft = true;
-                        bottomSheetParams.allowNestedScroll = false;
-                        final ResaleGiftsFragment fragment = new ResaleGiftsFragment(dialogId, collectionTitle, giftId, resourcesProvider);
-                        fragment.setCloseParentSheet((fragmentsImmediately) -> {
-                            if (closeParentSheet != null) {
-                                closeParentSheet.run(fragmentsImmediately);
-                            }
-                            if (fragmentsImmediately) {
-                                skipDismissAnimation();
-                            }
-                            dismiss();
-                        });
-                        lastFragment.showAsSheet(fragment, bottomSheetParams);
-                    });
+                    // LoogriGram: this opened the list of these gifts for sale.
                     linearLayout.addView(button1, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 42, Gravity.FILL_HORIZONTAL, 0, 0, 0, 2));
                 }
 
