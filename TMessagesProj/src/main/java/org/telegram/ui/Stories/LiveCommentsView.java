@@ -697,7 +697,6 @@ public class LiveCommentsView extends FrameLayout implements NotificationCenter.
             NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.liveStoryMessageUpdate);
         }
         if (changed) {
-            closeBulletin.run();
             if (inputCall == null) {
                 AndroidUtilities.cancelRunOnUIThread(pollStarsRunnable);
             } else {
@@ -752,9 +751,6 @@ public class LiveCommentsView extends FrameLayout implements NotificationCenter.
         }
     }
 
-    private long totalStars;
-    private long localStars;
-    private boolean sentStars;
     private ArrayList<TL_phone.groupCallDonor> topDonors = new ArrayList<>();
 
     private boolean polling;
@@ -777,21 +773,7 @@ public class LiveCommentsView extends FrameLayout implements NotificationCenter.
                 MessagesController.getInstance(currentAccount).putUsers(res.users, false);
                 MessagesController.getInstance(currentAccount).putChats(res.chats, false);
 
-                boolean sentStars = false;
-                for (int i = 0; i < res.top_donors.size(); ++i) {
-                    if (res.top_donors.get(i).my) {
-                        sentStars = res.top_donors.get(i).stars > 0;
-                        break;
-                    }
-                }
-                boolean starsUpdated = res.total_stars != totalStars || this.sentStars != sentStars;
-                totalStars = res.total_stars;
                 topDonors = res.top_donors;
-                this.sentStars = sentStars;
-
-                if (starsUpdated) {
-                    onStarsCountUpdated();
-                }
                 updateMessagesPlaces();
             }
 
@@ -815,144 +797,9 @@ public class LiveCommentsView extends FrameLayout implements NotificationCenter.
         return null;
     }
 
-    public static final long REACTIONS_TIMEOUT = 5_000;
-    private Bulletin starsBulletin;
-    private Bulletin.TwoLineAnimatedLottieLayout bulletinLayout;
-    private Bulletin.UndoButton bulletinButton;
-    private Bulletin.TimerView timerView;
-
-    public void sendStars(long stars, boolean withEffects) {
-        if (starsBulletin == null || !starsBulletin.isShowing()) {
-            final Theme.ResourcesProvider resourcesProvider = new DarkThemeResourceProvider();
-            bulletinLayout = new Bulletin.TwoLineAnimatedLottieLayout(getContext(), resourcesProvider);
-            bulletinLayout.setAnimation(R.raw.stars_topup);
-            bulletinLayout.titleTextView.setText(getStarsToastTitle());
-            bulletinButton = new Bulletin.UndoButton(getContext(), true, false, resourcesProvider);
-            bulletinButton.setText(LocaleController.getString(R.string.StarsSentUndo));
-            bulletinButton.setUndoAction(this::cancelStars);
-            timerView = new Bulletin.TimerView(getContext(), resourcesProvider);
-            timerView.timeLeft = REACTIONS_TIMEOUT;
-            timerView.setColor(Theme.getColor(Theme.key_undo_cancelColor, resourcesProvider));
-            bulletinButton.addView(timerView, LayoutHelper.createFrame(20, 20, Gravity.RIGHT | Gravity.CENTER_VERTICAL, 0, 0, 12, 0));
-            bulletinButton.undoTextView.setPadding(dp(12), dp(8), dp(20 + 10), dp(8));
-            bulletinLayout.setButton(bulletinButton);
-            starsBulletin = BulletinFactory.of(topBulletinContainer, resourcesProvider).create(bulletinLayout, -1);
-            starsBulletin.hideAfterBottomSheet = false;
-            starsBulletin.show(true);
-            starsBulletin.setOnHideListener(closeBulletin);
-        }
-
-        localStars += stars;
-        onCancelledStarReaction(getDefaultPeerId());
-        onStarReaction(getDefaultPeerId(), getTotalMyStars(), (int) localStars);
-
-        bulletinLayout.titleTextView.setText(getStarsToastTitle());
-        bulletinLayout.subtitleTextView.setText(getStarsToastSubtitle());
-        timerView.timeLeft = REACTIONS_TIMEOUT;
-
-        AndroidUtilities.cancelRunOnUIThread(closeBulletin);
-        AndroidUtilities.runOnUIThread(closeBulletin, REACTIONS_TIMEOUT);
-
-        onStarsButtonPressed(localStars, withEffects);
-        onStarsCountUpdated();
-    }
-
-    private int getTotalMyStars() {
-        int stars = 0;
-        stars += localStars;
-        for (int i = 0; i < topDonors.size(); ++i) {
-            if (topDonors.get(i).my) {
-                stars += topDonors.get(i).stars;
-            }
-        }
-        return stars;
-    }
-
-    public void openStarsSheet(boolean disabledPaidFeatures) {
-        closeBulletin.run();
-        final ArrayList<TLRPC.MessageReactor> reactors = new ArrayList<>();
-        if (topDonors != null) {
-            for (int i = 0; i < topDonors.size(); ++i) {
-                final TL_phone.groupCallDonor donor = topDonors.get(i);
-                final TLRPC.TL_messageReactor r = new TLRPC.TL_messageReactor();
-                r.anonymous = donor.anonymous;
-                r.my = donor.my;
-                r.count = (int) donor.stars;
-                r.peer_id = donor.peer_id;
-                reactors.add(r);
-            }
-        }
-        long send_as = UserConfig.getInstance(currentAccount).getClientUserId();
-        final TLRPC.Peer sendAsPeer = getDefaultSendAs();
-        if (sendAsPeer != null)
-            send_as = DialogObject.getPeerDialogId(sendAsPeer);
-        final StarsReactionsSheet sheet = new StarsReactionsSheet(getContext(), currentAccount, dialogId, null, null, reactors, !disabledPaidFeatures, true, send_as, new DarkThemeResourceProvider() {
-            @Override
-            public void appendColors() {
-                sparseIntArray.put(Theme.key_divider, 0x14FFFFFF);
-            }
-        });
-        sheet.setLiveCommentsView(this);
-        sheet.setOnSend((peer, stars) -> {
-            closeBulletin.run();
-            localStars = stars;
-            Bulletin b = BulletinFactory.of(topBulletinContainer, new DarkThemeResourceProvider())
-                .createSimpleBulletin(R.raw.stars_topup, getStarsToastTitle(), getStarsToastSubtitle());
-            b.hideAfterBottomSheet = false;
-            b.show(true);
-
-            localStars = 0;
-            sentStars = true;
-
-            int msg_id = send(new TLRPC.TL_textWithEntities(), stars);
-
-            final long minStars = livePlayer == null ? 0 : livePlayer.getSendPaidMessagesStars();
-            final boolean fromAdmin = getDefaultPeerId() == this.dialogId && isAdmin();
-            if (stars < minStars && !fromAdmin) {
-                return Integer.MIN_VALUE;
-            }
-
-            return msg_id;
-        });
-        sheet.show();
-    }
-
-    private Runnable closeBulletin = () -> {
-        AndroidUtilities.cancelRunOnUIThread(this.closeBulletin);
-        if (starsBulletin != null) {
-            starsBulletin.hide();
-            starsBulletin = null;
-        }
-        if (localStars > 0) {
-            final long stars = localStars;
-            localStars = 0;
-            sentStars = true;
-            send(new TLRPC.TL_textWithEntities(), stars);
-        } else {
-            onStarsCountUpdated();
-        }
-    };
-
-    public void cancelStars() {
-        localStars = 0;
-        onCancelledStarReaction(getDefaultPeerId());
-        onStarsButtonCancelled();
-        onStarsCountUpdated();
-    }
-
-    private String getStarsToastTitle() {
-//        if (isAnonymous()) {
-//            return getString(R.string.StarsSentAnonymouslyTitle);
-//        } else if (getPeerId() != 0 && getPeerId() != UserConfig.getInstance(currentAccount).getClientUserId()) {
-//            return formatString(R.string.StarsSentTitleChannel, DialogObject.getShortName(getPeerId()));
-//        } else {
-            return getString(R.string.StarsSentTitle);
-//        }
-    }
-
-    private CharSequence getStarsToastSubtitle() {
-        return AndroidUtilities.replaceTags(LocaleController.formatPluralStringComma("PaidMessageSentSubtitle", Math.max(0, (int) localStars)));
-    }
+    // LoogriGram: sending Stars to a live stood here - the +1 tap, the
+    // amount sheet, the undo toast and the donor entry they made for us.
+    // Nothing pays. What other people donate is still read and shown.
 
     public boolean isCollapsed() {
         return collapsed;
@@ -1030,11 +877,6 @@ public class LiveCommentsView extends FrameLayout implements NotificationCenter.
             }
         }
         if (message == null) return;
-
-        if (message.id < 0 && message.isReaction && message.stars > 0) {
-            totalStars -= message.stars;
-            onStarsCountUpdated();
-        }
 
         boolean updatedTopMessages = false;
         for (int i = 0; i < topMessages.size(); ++i) {
@@ -1220,39 +1062,7 @@ public class LiveCommentsView extends FrameLayout implements NotificationCenter.
         }
     }
 
-    public long getStarsCount() {
-        return totalStars + localStars;
-    }
-
-    public boolean didSendStars() {
-        return sentStars || localStars > 0;
-    }
-
-    public boolean areSendingStars() {
-        return starsBulletin != null;
-    }
-
     protected void onMessagesCountUpdated() {
-
-    }
-
-    protected void onStarsButtonPressed(long sendingStars, boolean withEffects) {
-
-    }
-
-    protected void onStarsButtonCancelled() {
-
-    }
-
-    protected void onStarsCountUpdated() {
-
-    }
-
-    protected void onStarReaction(long dialogId, int totalStars, int stars) {
-
-    }
-
-    protected void onCancelledStarReaction(long dialogId) {
 
     }
 
@@ -1317,11 +1127,6 @@ public class LiveCommentsView extends FrameLayout implements NotificationCenter.
             }
         }
 
-        if (!isHistory && message.isReaction && message.stars > 0) {
-            totalStars += message.stars;
-            onStarsCountUpdated();
-        }
-
         int position = 0;
         if (message.id >= 0) {
             for (int i = messages.size() - 1; i >= 0; --i) {
@@ -1350,8 +1155,6 @@ public class LiveCommentsView extends FrameLayout implements NotificationCenter.
         onMessagesCountUpdated();
 
         if (!isHistory && id > 0 && message.stars > 0) {
-            int totalStars = (int) message.stars;
-
             TL_phone.groupCallDonor donor = null;
             for (int i = 0; i < topDonors.size(); ++i) {
                 if (DialogObject.getPeerDialogId(topDonors.get(i).peer_id) == message.dialogId) {
@@ -1373,9 +1176,6 @@ public class LiveCommentsView extends FrameLayout implements NotificationCenter.
                 topDonors.add(donor);
             }
             donor.stars += message.stars;
-            totalStars = (int) donor.stars;
-
-            onStarReaction(message.dialogId, totalStars, (int) message.stars);
         }
         updateMessagesPlaces();
 

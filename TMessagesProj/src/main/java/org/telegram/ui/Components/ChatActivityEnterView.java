@@ -3487,32 +3487,13 @@ public class ChatActivityEnterView extends FrameLayout implements
         viewParentForEmojiView = viewParent;
     }
 
-    private long paidMessagesPrice;
+    // LoogriGram: this kept the price pill on the send button in step with
+    // what the message would cost. Nothing is paid for, so all that is left is
+    // a live comment's length limit, which the free tier sets.
     public void updateSendButtonPaid() {
-        long paidMessagesPrice = getStarsPrice();
-        if (paidMessagesPrice > 0) {
-            paidMessagesPrice *= getMessagesCount();
-        }
-        if (this.paidMessagesPrice != paidMessagesPrice) {
-            final View oldSendButton = getSendButtonInternal();
-            this.paidMessagesPrice = paidMessagesPrice;
-            final View newSendButton = getSendButtonInternal();
-            if (oldSendButton != newSendButton) {
-                newSendButton.setVisibility(oldSendButton.getVisibility());
-                newSendButton.setAlpha(oldSendButton.getAlpha());
-                newSendButton.setScaleX(oldSendButton.getScaleX());
-                newSendButton.setScaleY(oldSendButton.getScaleY());
-
-                oldSendButton.setVisibility(View.GONE);
-            }
-            if (paidMessagesPrice > 0 || isLiveComment) {
-                sendButton.setStarsPrice(paidMessagesPrice, 1);
-            }
-            updateFieldRight(lastAttachVisible);
-        }
         if (isLiveComment) {
             createCaptionLimitView();
-            int newLimit = areLiveCommentsFree() ? HighlightMessageSheet.getMaxLength(currentAccount) : HighlightMessageSheet.getTierOption(currentAccount, (int) paidMessagesPrice, HighlightMessageSheet.TIER_LENGTH);
+            int newLimit = areLiveCommentsFree() ? HighlightMessageSheet.getMaxLength(currentAccount) : HighlightMessageSheet.getTierOption(currentAccount, 0, HighlightMessageSheet.TIER_LENGTH);
             if (currentLimit != newLimit) {
                 currentLimit = newLimit;
                 int beforeLimit;
@@ -3545,13 +3526,6 @@ public class ChatActivityEnterView extends FrameLayout implements
 
     public void setOnSendButtonLongClick(OnLongClickListener listener) {
         sendButton.setOnLongClickListener(listener != null ? listener : this::onSendLongClick);
-    }
-
-    // LoogriGram: this was the chat's price per message, drawn on the send
-    // button. Nothing pays it. What remains is the hook PeerStoriesView
-    // overrides for a paid live comment, which goes with paid live comments.
-    public long getStarsPrice() {
-        return 0;
     }
 
     public boolean areLiveCommentsFree() {
@@ -6700,7 +6674,6 @@ public class ChatActivityEnterView extends FrameLayout implements
         return replyingMessageObject;
     }
 
-    public final ColoredImageSpan[] spans = new ColoredImageSpan[1];
     public void updateFieldHint(boolean animated) {
         if (messageEditText == null) {
             return;
@@ -6845,7 +6818,6 @@ public class ChatActivityEnterView extends FrameLayout implements
         final boolean changed = animatorEphemeralMessageVisibility.getValue() != isEphemeralVisible;
         animatorEphemeralMessageVisibility.setValue(isEphemeralVisible, animated);
         if (sendButton != null) {
-            sendButton.hidePrice = isEphemeralVisible;
             sendButton.invalidate();
         }
         if (changed) {
@@ -7981,7 +7953,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                     }
                 }
             }
-        } else if (message.length() > 0 || forceShowSendButton || richDraftActive || audioToSend != null || videoToSendMessageObject != null || slowModeTimer == Integer.MAX_VALUE && !isSlowModeIgnored() || isLiveComment && getStarsPrice() > 0 || animatorIsBlockedByStreaming.getValue()) {
+        } else if (message.length() > 0 || forceShowSendButton || richDraftActive || audioToSend != null || videoToSendMessageObject != null || slowModeTimer == Integer.MAX_VALUE && !isSlowModeIgnored() || animatorIsBlockedByStreaming.getValue()) {
             shownSendButton = true;
             final String caption = messageEditText == null ? null : messageEditText.getCaption();
             boolean showBotButton = caption != null && (getSendButtonInternal().getVisibility() == VISIBLE || expandStickersButton != null && expandStickersButton.getVisibility() == VISIBLE);
@@ -9811,15 +9783,8 @@ public class ChatActivityEnterView extends FrameLayout implements
             createDoneButton(false);
             doneButton.setOnClickListener(view -> doneEditingMessage());
 
-            if (editingMessageObject.needResendWhenEdit() && paidMessagesPrice > 0) {
-                doneButton.setStarsPrice(paidMessagesPrice, 1, true);
-                doneButton.setLayoutParams(LayoutHelper.createFrame(DEFAULT_HEIGHT, DEFAULT_HEIGHT, Gravity.BOTTOM | Gravity.RIGHT));
-                doneButton.requestLayout();
-            } else {
-                doneButton.setStarsPrice(0, 1, true);
-                doneButton.setLayoutParams(LayoutHelper.createFrame(DEFAULT_HEIGHT, DEFAULT_HEIGHT, Gravity.BOTTOM | Gravity.RIGHT));
-                doneButton.requestLayout();
-            }
+            doneButton.setLayoutParams(LayoutHelper.createFrame(DEFAULT_HEIGHT, DEFAULT_HEIGHT, Gravity.BOTTOM | Gravity.RIGHT));
+            doneButton.requestLayout();
 
             doneButton.setOnLongClickListener(v -> {
                 if (messageObject.isMediaEmpty()) return false;
@@ -14696,11 +14661,6 @@ public class ChatActivityEnterView extends FrameLayout implements
         private float ephemeralFactor;
         private float sameWidthFactor;
 
-        private long starsPrice;
-        private int messagesCount;
-        private boolean hidePrice;
-        private final AnimatedTextView.AnimatedTextDrawable priceText;
-        private final AnimatedFloat animatedPriceVisible = new AnimatedFloat(this, 0, 320, CubicBezierInterpolator.EASE_OUT_QUINT);
 
         public boolean center;
 
@@ -14733,13 +14693,6 @@ public class ChatActivityEnterView extends FrameLayout implements
             this.resourcesProvider = resourcesProvider;
             this.isNewDesignSendButton = isNewDesignSendButton;
 
-            priceText = new AnimatedTextView.AnimatedTextDrawable();
-            priceText.setTextSize(dp(15));
-            priceText.setTypeface(AndroidUtilities.bold());
-            priceText.setTextColor(0xFFFFFFFF);
-            priceText.setGravity(Gravity.LEFT);
-            priceText.setCallback(this);
-            priceText.setOverrideFullWidth(AndroidUtilities.displaySize.x);
 
             drawable = context.getResources().getDrawable(resId).mutate();
             inactiveDrawable = context.getResources().getDrawable(resId).mutate();
@@ -14824,25 +14777,17 @@ public class ChatActivityEnterView extends FrameLayout implements
                 scrimViewBackgroundPaint.setAlpha((int) (Color.alpha(scrimViewBackgroundColor) * progress));
 
                 final float openProgress = open.get();
-                final float priceProgress = animatedPriceVisible.get();
 
                 final float right, cy, h;
+                right = lerp(getMeasuredWidth() - getMeasuredHeight() / 2.0f, getMeasuredWidth() - dp(4), openProgress) - circlePadX;
                 if (newCounterPos) {
-                    right = lerp(getMeasuredWidth() - getMeasuredHeight() / 2.0f, getMeasuredWidth() - dp(4), openProgress) - circlePadX;
                     h = getCircleHeight() * openProgress;
                     cy = getMeasuredHeight() - circlePadY - dp(4) - h / 2f;
                 } else {
-                    right = lerp(
-                            lerp(getMeasuredWidth() - getMeasuredHeight() / 2.0f, getMeasuredWidth() - dp(4), openProgress) - circlePadX,
-                            getMeasuredWidth() - dp(9),
-                            priceProgress);
-                    cy = lerp(
-                            getMeasuredHeight() - circlePadY - dp(4) - getCircleHeight() / 2f,
-                            getMeasuredHeight() - dp(24),
-                            priceProgress);
-                    h = lerp(getCircleHeight(), dp(32), priceProgress) * openProgress;
+                    cy = getMeasuredHeight() - circlePadY - dp(4) - getCircleHeight() / 2f;
+                    h = getCircleHeight() * openProgress;
                 }
-                final float w = lerp(getCircleWidth(), dp(isNewDesignSendButton ? (10 + 10) : (11 + 11)) + priceText.getCurrentWidth(), priceProgress) * openProgress;
+                final float w = getCircleWidth() * openProgress;
 
                 if (openProgress > 0 && w > 0 && h > 0) {
                     AndroidUtilities.rectTmp.set(right - w, cy - h / 2f, right, cy + h / 2f);
@@ -14851,7 +14796,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                     canvas.drawRoundRect(AndroidUtilities.rectTmp, r, r, scrimViewBackgroundPaint);
                 }
 
-                final float countScale = count.isNotEmpty() * (1.0f - priceProgress);
+                final float countScale = count.isNotEmpty();
                 if (countScale > 0) {
                     final float sz = Math.max(dp(9) + count.getCurrentWidth(), dp(18));
                     final float _cx, _cy;
@@ -14874,29 +14819,12 @@ public class ChatActivityEnterView extends FrameLayout implements
             circlePadY = y;
         }
 
-        private final ColoredImageSpan[] spans = new ColoredImageSpan[1];
-        public void setStarsPrice(long price, int count) {
-            setStarsPrice(price, count, true);
-        }
-        public void setStarsPrice(long price, int count, boolean animated) {
-            if (starsPrice == price && messagesCount == count) return;
-            starsPrice = price;
-            messagesCount = count;
-            if (price > 0) {
-                priceText.setText(StarsFormat.replaceStars("⭐️" + LocaleController.formatNumber(price * Math.max(1, messagesCount), ','), spans), animated);
-            } else {
-                priceText.setText("", animated);
-            }
-            if (!animated) {
-                animatedPriceVisible.force(starsPrice > 0);
-            } else {
-                invalidate();
-            }
-        }
+        // LoogriGram: the pill that drew a message's price stood here, with
+        // the width and height it added to the button. Nothing is paid for.
 
         @Override
         protected boolean verifyDrawable(@NonNull Drawable who) {
-            return who == count || who == emojiDrawable || who == priceText || super.verifyDrawable(who);
+            return who == count || who == emojiDrawable || super.verifyDrawable(who);
         }
 
         public void setEffect(long effectId) {
@@ -14909,7 +14837,7 @@ public class ChatActivityEnterView extends FrameLayout implements
         }
 
         public boolean isOpen() {
-            return starsPrice > 0;
+            return false;
         }
 
         public boolean isInScheduleMode() {
@@ -14994,7 +14922,6 @@ public class ChatActivityEnterView extends FrameLayout implements
             final float loadingShown = this.loadingAnimatedShown.set(this.loadingShown);
 
             final float openProgress = open.set(isOpen());
-            final float priceProgress = animatedPriceVisible.set(starsPrice > 0 && !hidePrice) * (1f - ephemeralFactor);
             final float appear = this.appear.set(1);
             if (openProgress < 1) {
                 canvas.save();
@@ -15003,28 +14930,20 @@ public class ChatActivityEnterView extends FrameLayout implements
                 canvas.scale(s, s, x + drawable.getIntrinsicWidth() / 2f, y + drawable.getIntrinsicHeight() / 2f);
                 canvas.rotate(60 * (1f - appear), x + drawable.getIntrinsicWidth() / 2f, y + drawable.getIntrinsicHeight() / 2f);
                 drawable.setBounds(x, y, x + drawable.getIntrinsicWidth(), y + drawable.getIntrinsicHeight());
-                drawable.setAlpha((int) (0xFF * (1.0f - priceProgress)));
+                drawable.setAlpha(0xFF);
                 drawable.draw(canvas);
                 canvas.restore();
             }
             final float right, cy, h;
+            right = lerp(getMeasuredWidth() - getMeasuredHeight() / 2.0f, getMeasuredWidth() - dp(4), openProgress) - circlePadX;
+            h = getCircleHeight() * openProgress;
             if (newCounterPos) {
-                right = lerp(getMeasuredWidth() - getMeasuredHeight() / 2.0f, getMeasuredWidth() - dp(4), openProgress) - circlePadX;
-                h = getCircleHeight() * openProgress;
                 cy = getMeasuredHeight() - circlePadY - dp(4) - h / 2f;
             } else {
-                right = lerp(
-                    lerp(getMeasuredWidth() - getMeasuredHeight() / 2.0f, getMeasuredWidth() - dp(4), openProgress) - circlePadX,
-                    getMeasuredWidth() - dp(9),
-                    priceProgress);
-                cy = lerp(
-                    getMeasuredHeight() - circlePadY - dp(4) - getCircleHeight() / 2f,
-                    getMeasuredHeight() - dp(24),
-                    priceProgress);
-                h = lerp(getCircleHeight(), dp(32), priceProgress) * openProgress;
+                cy = getMeasuredHeight() - circlePadY - dp(4) - getCircleHeight() / 2f;
             }
 
-            final float wn = lerp(getCircleWidth(), dp(isNewDesignSendButton ? (10 + 10) : (11 + 11)) + priceText.getCurrentWidth(), priceProgress);
+            final float wn = getCircleWidth();
             final float w = lerp(wn, h, sameWidthFactor) * openProgress;
             final float wOffset = wn - w;
 
@@ -15088,18 +15007,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                     canvas.scale(s, s, right - w / 2.0f, cy);
                     invalidate();
                 }
-                if (priceProgress > 0) {
-                    if (newCounterPos) {
-                        priceText.setBounds(right - priceText.getAnimateToWidth() - dp(11), cy - h / 2, right - dp(11), cy + h / 2);
-                    } else if (isNewDesignSendButton) {
-                        priceText.setBounds(backgroundRect.left + dp(10), backgroundRect.top, backgroundRect.right, backgroundRect.bottom);
-                    } else {
-                        priceText.setBounds(getMeasuredWidth() - priceText.getAnimateToWidth() - dp(9 + 11), getMeasuredHeight() - dp(48), getMeasuredWidth() - dp(9 + 11), getMeasuredHeight());
-                    }
-                    priceText.setAlpha((int) (0xFF * priceProgress * (1.0f - loadingShown)));
-                    priceText.draw(canvas);
-                }
-                drawableInverse.setAlpha((int) (0xFF * (1f - loadingShown) * (1f - priceProgress)));
+                drawableInverse.setAlpha((int) (0xFF * (1f - loadingShown)));
                 if (circleWidth > 0) {
                     drawableInverse.setBounds((int) (right - w / 2.0f - drawableInverse.getIntrinsicWidth() / 2.0f), (int) (cy - drawableInverse.getIntrinsicHeight() / 2.0f), (int) (right - w / 2.0f + drawableInverse.getIntrinsicWidth() / 2.0f), (int) (cy + drawableInverse.getIntrinsicHeight() / 2.0f));
                 } else {
@@ -15112,7 +15020,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                 canvas.restore();
             }
 
-            final float countScale = count.isNotEmpty() * (1.0f - priceProgress);
+            final float countScale = count.isNotEmpty();
             // when locked, the badge cut-out is drawn in draw() so it can punch through the View background too
             if (!locked) {
                 final float sz = Math.max(dp(9) + count.getCurrentWidth(), dp(18));
@@ -15144,8 +15052,8 @@ public class ChatActivityEnterView extends FrameLayout implements
 
             if (countScale < 1) {
                 final int r = dp(8);
-                final int _cx = (int) lerp(getMeasuredWidth() - getCircleWidth() / 2.0f - circlePadX + dp(12), right - dp(2), priceProgress);
-                final int _cy = (int) lerp(getMeasuredHeight() - getCircleHeight() / 2.0f - circlePadY + dp(10), getMeasuredHeight() - dp(12), priceProgress);
+                final int _cx = (int) (getMeasuredWidth() - getCircleWidth() / 2.0f - circlePadX + dp(12));
+                final int _cy = (int) (getMeasuredHeight() - getCircleHeight() / 2.0f - circlePadY + dp(10));
 
                 emojiDrawable.setBounds(_cx - r, _cy - r, _cx + r, _cy + r);
                 emojiDrawable.setAlpha((int) (0xFF * (1.0f - countScale)));
@@ -15202,9 +15110,7 @@ public class ChatActivityEnterView extends FrameLayout implements
         }
 
         public int width(int h) {
-            final float openProgress = isOpen() ? 1.0f : 0.0f;
-            final float priceProgress = starsPrice > 0 ? 1.0f : 0.0f;
-            return (int) lerp(circlePadX + getCircleWidth() + circlePadX, dp(9 + 9) + dp(isNewDesignSendButton ? (10 + 10) : (11 + 11)) + priceText.getAnimateToWidth(), priceProgress * openProgress);
+            return (int) (circlePadX + getCircleWidth() + circlePadX);
         }
 
         public int height() {
@@ -15212,8 +15118,7 @@ public class ChatActivityEnterView extends FrameLayout implements
         }
 
         public int height(int h) {
-            final float priceProgress = starsPrice > 0 ? 1.0f : 0.0f;
-            return (int) lerp(circlePadY + getCircleHeight() + circlePadY, dp(32), priceProgress);
+            return (int) (circlePadY + getCircleHeight() + circlePadY);
         }
 
         @Override
@@ -15271,9 +15176,7 @@ public class ChatActivityEnterView extends FrameLayout implements
             btn.count.setText(this.count.getText(), false);
             btn.countBounceScale = countBounceScale;
             btn.setEmoji(emojiDrawable.getDrawable());
-            btn.setStarsPrice(starsPrice, messagesCount);
             btn.open.force(open.get());
-            btn.animatedPriceVisible.force(animatedPriceVisible.get());
             btn.setCircleSize(circleWidth, circleHeight);
             btn.setCirclePadding(circlePadX, circlePadY);
         }
@@ -15306,9 +15209,7 @@ public class ChatActivityEnterView extends FrameLayout implements
         private void checkBackgroundRect() {
             final float margin = dpf2(3);
             final float height = dpf2(38);
-            final float width = lerp(
-                Math.max(height, dpf2(10 + 10) + priceText.getCurrentWidth()),
-                height, sameWidthFactor);
+            final float width = height;
             backgroundRect.set(
                     getMeasuredWidth() - width - margin,
                     getMeasuredHeight() - height - margin,

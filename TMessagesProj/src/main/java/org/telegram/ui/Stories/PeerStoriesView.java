@@ -318,8 +318,6 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
     private boolean isUploading, isEditing, isFailed;
     private FrameLayout selfView;
     private CommentButton commentButton;
-    private PaidReactionButton.PaidReactionButtonEffectsView starsButtonEffectsView;
-    private PaidReactionButton starsButton;
     private MuteButton muteButton;
     ChatActivityEnterView chatActivityEnterView;
     ChatActivitySideControlsButtonsLayout sideControlsButtonsLayout;
@@ -2367,37 +2365,6 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
                 }
             }
 
-            @Override
-            protected void onStarsCountUpdated() {
-                starsButton.setCount((int) getStarsCount());
-                starsButton.setFilled(areSendingStars());
-            }
-
-            @Override
-            protected void onStarsButtonPressed(long sendingStars, boolean withEffects) {
-                if (withEffects) {
-                    starsButton.playEffect(sendingStars);
-                } else {
-                    starsButton.stopEffects();
-                }
-            }
-
-            @Override
-            protected void onStarReaction(long dialogId, int totalStars, int stars) {
-                if (starsButtonEffectsView == null) return;
-                starsButtonEffectsView.pushChip(dialogId, totalStars, stars);
-            }
-
-            @Override
-            protected void onCancelledStarReaction(long dialogId) {
-                if (starsButtonEffectsView == null) return;
-                starsButtonEffectsView.removeChipsFrom(dialogId);
-            }
-
-            @Override
-            protected void onStarsButtonCancelled() {
-                starsButton.stopEffects();
-            }
         };
         storyContainer.addView(liveCommentsShadowView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 200, Gravity.BOTTOM | Gravity.FILL_HORIZONTAL));
         storyContainer.addView(liveCommentsView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, 0, 0, 64, 0, 0));
@@ -3021,29 +2988,8 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
         addView(commentButton, LayoutHelper.createFrame(38 + 8, 38 + 4, Gravity.LEFT | Gravity.BOTTOM, 7, 0, 7, 3));
     }
 
-    private void createPaidReactionsButton() {
-        if (starsButton != null || getContext() == null) return;
-        starsButtonEffectsView = new PaidReactionButton.PaidReactionButtonEffectsView(getContext(), currentAccount);
-        starsButton = new PaidReactionButton(getContext(), starsButtonEffectsView, blurredBackgroundColorProvider);
-        starsButton.setOnClickListener(v -> {
-            if (disabledPaidFeatures(false)) {
-                liveCommentsView.openStarsSheet(disabledPaidFeatures(false));
-            } else {
-                final StarsController s = StarsController.getInstance(currentAccount);
-                if (s.balanceAvailable() && s.balance.amount <= 0) {
-                    liveCommentsView.openStarsSheet(disabledPaidFeatures(false));
-                } else {
-                    liveCommentsView.sendStars(+1, true);
-                }
-            }
-        });
-        starsButton.setOnLongClickListener(v -> {
-            liveCommentsView.openStarsSheet(disabledPaidFeatures(false));
-            return true;
-        });
-        addView(starsButton, LayoutHelper.createFrame(38 + 8, 38 + 4, Gravity.RIGHT | Gravity.BOTTOM, 7, 0, 7, 3));
-        addView(starsButtonEffectsView, LayoutHelper.createFrame(200, 200, Gravity.RIGHT | Gravity.BOTTOM, 0, 0, 0, 0));
-    }
+    // LoogriGram: the button that tapped Stars into a live stood here, with
+    // the chips its donations threw. Nothing pays; see LiveCommentsView.
 
     private void createMuteButton() {
         if (muteButton != null || getContext() == null) return;
@@ -5316,7 +5262,6 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
                     createEnterView();
                 }
                 createCommentButton();
-                createPaidReactionsButton();
                 createMuteButton();
                 chatActivityEnterView.setVisibility(View.VISIBLE);
             } else if ((UserObject.isService(dialogId) || isBotsPreview()) && chatActivityEnterView != null) {
@@ -5372,17 +5317,6 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
             muteButton.setMuted(LivePlayer.recording != null && LivePlayer.recording.isMuted(), true);
             muteButton.setConnected(LivePlayer.recording == null || LivePlayer.recording.isConnected(), true);
         }
-        if (starsButton != null) {
-            starsButtonEffectsView.setVisibility(!unsupported && currentStory.isLive ? View.VISIBLE : View.GONE);
-            starsButton.setVisibility(!unsupported && currentStory.isLive ? View.VISIBLE : View.GONE);
-            final FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) starsButton.getLayoutParams();
-            final int rightMargin = muteButton != null && muteButton.getVisibility() == View.VISIBLE ? dp(54) : dp(7);
-            if (lp.rightMargin != rightMargin) {
-                lp.rightMargin = rightMargin;
-                starsButton.setLayoutParams(lp);
-            }
-        }
-
         if (!currentStory.isLive && (currentStory.caption != null || currentStory.getReply() != null || currentStory.getMusic() != null) && !unsupported) {
             storyCaptionView.captionTextview.setText(currentStory.caption, currentStory.getReply(), currentStory.getMusic(), storyViewer.isTranslating && !currentStory.captionTranslated && currentStory.storyItem != null && currentStory.storyItem.translated, oldStoryItem == currentStory.storyItem);
             storyCaptionView.setVisibility(View.VISIBLE);
@@ -7396,13 +7330,13 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
                 hintView.updatePosition();
             } else if (child != instantCameraView && child != storyContainer && child != shareButton && child != bottomActionsLinearLayout && child != repostButtonContainer && child != mediaBanTooltip && child != likeButtonContainer && (likesReactionLayout == null || likesReactionLayout.getReactionsWindow() == null || child != likesReactionLayout.getReactionsWindow().windowView)) {
                 float keyboard = progressToKeyboard;
-                if (child == commentButton || child == starsButton || child == muteButton || child == starsButtonEffectsView) {
+                if (child == commentButton || child == muteButton) {
                     keyboard = 0f;
                 }
 
                 float alpha;
                 float translationY = -enterViewBottomOffset * (1f - keyboard) - dp(7) * keyboard - animatingKeyboardHeight - dp(8) * (1f - keyboard) - dp(20) * storyViewer.swipeToReplyProgress;
-                if (child == commentButton || child == starsButton || child == muteButton || child == starsButtonEffectsView) {
+                if (child == commentButton || child == muteButton) {
                     translationY += animatingKeyboardHeight;
                 }
                 if (BIG_SCREEN) {
