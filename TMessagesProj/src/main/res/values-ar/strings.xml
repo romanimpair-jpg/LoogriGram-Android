@@ -388,11 +388,7 @@
     <string name="ShowTranslateButton">إظهار زر الترجمة</string>
     <string name="ShowTranslateChatButton">ترجمة المحادثات&#160;بأكملها</string>
     <string name="DoNotTranslate">عدم ترجمة</string>
-    <string name="Languages_zero"></string>
     <string name="Languages_one">لغة واحدة</string>
-    <string name="Languages_two">لغتين</string>
-    <string name="Languages_few">%1$d لغات</string>
-    <string name="Languages_many">%1$d لغةً</string>
     <string name="Languages_other">%1$d لغةٍ</string>
     <string name="ChooseLanguages">اختيار اللغات</string>
     <string name="TranslateMessagesInfo1">سيظهر زر «الترجمة» عند الضغط مرة واحدة على رسالة نصيّة.</string>
@@ -1069,14 +1065,9 @@
     <string name="AddToTheGroupForwardCount">عدد الرسائل اﻷخيرة المراد تحويلها:</string>
     <string name="AddToTheGroup">إضافة %1$s للمجموعة؟</string>
     <string name="AddManyMembersAlertTitle_one">إضافة عضو</string>
-    <string name="AddManyMembersAlertTitle_two">إضافة عضوين</string>
-    <string name="AddManyMembersAlertTitle_few">إضافة %1$d أعضاء</string>
-    <string name="AddManyMembersAlertTitle_many">إضافة %1$d عضوًا</string>
     <string name="AddManyMembersAlertTitle_other">إضافة %1$d عضوٍ</string>
     <string name="AddMembersAlertNamesText">هل ترغب حقًا بإضافة %1$s إلى **%2$s**؟</string>
     <string name="AddManyMembersAlertNamesText_one">هل تريدون فعلًا إضافة عضو واحد إلى **%2$s**؟</string>
-    <string name="AddManyMembersAlertNamesText_two">هل تريدون فعلًا إضافة عضوين إلى **%2$s**؟</string>
-    <string name="AddManyMembersAlertNamesText_few">هل تريدون فعلًا %1$d أعضاء إلى **%2$s**؟</string>
     <string name="AddManyMembersAlertNamesText_other">هل تريدون فعلًا إضافة %1$d عضوٍ إلى **%2$s**؟</string>
     <string name="AddMembersForwardMessages">عرض آخر 100 رسالة للأعضاء الجدد</string>
     <string name="AddOneMemberForwardMessages">عرض آخر 100 رسالة لـ **%1$s**</string>
