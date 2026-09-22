@@ -210,7 +210,6 @@ import org.telegram.ui.Components.chat.ChatInputViewsContainer;
 import org.telegram.ui.Components.chat.ViewPositionWatcher;
 import org.telegram.ui.Components.chat.layouts.ChatActivityFadeView;
 import org.telegram.ui.Components.inset.WindowInsetsStateHolder;
-import org.telegram.ui.Gifts.GiftSheet;
 import org.telegram.ui.Stars.StarGiftSheet;
 import org.telegram.ui.Stars.StarsController;
 import org.telegram.ui.Stars.StarsIntroActivity;
@@ -6061,10 +6060,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             ArrayList<TLRPC.User> users = state.today;
             dialogsHintCellVisible = true;
             dialogsHintCell.setOnClickListener(v -> {
-                if (state != null && state.today.size() == 1) {
-                    showDialog(new GiftSheet(getContext(), currentAccount, state.today.get(0).id, null, null).setBirthday());
-                    return;
-                }
                 UserSelectorBottomSheet.open(0, state);
             });
             dialogsHintCell.setAvatars(currentAccount, users);

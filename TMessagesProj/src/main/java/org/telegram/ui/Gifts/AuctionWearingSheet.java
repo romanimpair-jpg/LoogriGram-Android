@@ -65,7 +65,7 @@ public class AuctionWearingSheet extends BottomSheetWithRecyclerListView impleme
 
     private final StarGiftSheet.TopView topView;
     private final TextView giftNameTextView;
-    private final GiftSheet.GiftCell giftCell2;
+    private final GiftViews.GiftCell giftCell2;
     private final ButtonWithCounterView buttonView;
 
     private GiftAuctionController.Auction auction;
@@ -242,7 +242,7 @@ public class AuctionWearingSheet extends BottomSheetWithRecyclerListView impleme
         horizontalLayout.setGravity(Gravity.CENTER);
         horizontalLayout.setClickable(true);
 
-        GiftSheet.GiftCell giftCell = new GiftSheet.GiftCell(context, currentAccount, resourcesProvider) {
+        GiftViews.GiftCell giftCell = new GiftViews.GiftCell(context, currentAccount, resourcesProvider) {
             @Override
             public boolean dispatchTouchEvent(MotionEvent ev) {
                 return false;
@@ -263,7 +263,7 @@ public class AuctionWearingSheet extends BottomSheetWithRecyclerListView impleme
         imageView.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_windowBackgroundWhiteGrayIcon), PorterDuff.Mode.SRC_IN));
         horizontalLayout.addView(imageView, LayoutHelper.createLinear(24, 24, 0f, Gravity.CENTER_VERTICAL, 12, 0, 12, 0));
 
-        giftCell2 = new GiftSheet.GiftCell(context, currentAccount, resourcesProvider) {
+        giftCell2 = new GiftViews.GiftCell(context, currentAccount, resourcesProvider) {
             @Override
             public boolean dispatchTouchEvent(MotionEvent ev) {
                 return false;
@@ -279,7 +279,7 @@ public class AuctionWearingSheet extends BottomSheetWithRecyclerListView impleme
                 super.onSizeChanged(w, h, oldw, oldh);
                 path.rewind();
                 rectF.set(0, 0, w, h);
-                rectF.inset(dp(GiftSheet.CardBackground.PADDING_HORIZONTAL_DP), dp(GiftSheet.CardBackground.PADDING_VERTICAL_DP));
+                rectF.inset(dp(GiftViews.CardBackground.PADDING_HORIZONTAL_DP), dp(GiftViews.CardBackground.PADDING_VERTICAL_DP));
                 path.addRoundRect(rectF, dp(11), dp(11), Path.Direction.CW);
             }
 

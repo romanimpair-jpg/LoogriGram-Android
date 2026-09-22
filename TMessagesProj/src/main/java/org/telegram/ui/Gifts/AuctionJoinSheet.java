@@ -133,7 +133,7 @@ public class AuctionJoinSheet extends BottomSheetWithRecyclerListView implements
 
         linearLayout.addView(headerContainer);
 
-        GiftSheet.GiftCell giftCell = new GiftSheet.GiftCell(context, currentAccount, resourcesProvider) {
+        GiftViews.GiftCell giftCell = new GiftViews.GiftCell(context, currentAccount, resourcesProvider) {
             @Override
             public boolean dispatchTouchEvent(MotionEvent ev) {
                 return false;

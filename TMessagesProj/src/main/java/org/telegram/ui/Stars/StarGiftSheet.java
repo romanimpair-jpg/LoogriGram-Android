@@ -170,6 +170,7 @@ import org.telegram.ui.DialogsActivity;
 import org.telegram.ui.Gifts.GiftMessageBottomSheet;
 import org.telegram.ui.Gifts.GiftMessageView;
 import org.telegram.ui.Gifts.GiftSheet;
+import org.telegram.ui.Gifts.GiftViews;
 import org.telegram.ui.Gifts.ProfileGiftsContainer;
 import org.telegram.ui.Gifts.ResaleGiftsFragment;
 import org.telegram.ui.GradientClip;
@@ -1985,7 +1986,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         private final LinearLayout[] layout = new LinearLayout[5];
         private final FrameLayout.LayoutParams[] layoutLayoutParams = new FrameLayout.LayoutParams[5];
 
-        private final GiftSheet.Ribbon ribbon;
+        private final GiftViews.Ribbon ribbon;
         private final LinkSpanDrawable.LinksTextView[] titleView = new LinkSpanDrawable.LinksTextView[5];
         private final LinkSpanDrawable.LinksTextView releasedView;
         private final TextView collectionReleasedView;
@@ -2258,7 +2259,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             optionsView.setOnClickListener(onMenuClick);
             optionsView.setVisibility(View.GONE);
 
-            ribbon = new GiftSheet.Ribbon(context);
+            ribbon = new GiftViews.Ribbon(context);
             ribbon.setText(getString(R.string.GiftCrafted), true);
             ribbon.drawable.setParticles(true);
             ribbon.drawable.setLeft(true);
@@ -8583,7 +8584,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         private final TextView failedTitle;
         private final TextView failedSubtitle;
         private final LinearLayout failedGiftsLayout;
-        private GiftSheet.GiftCell[] failedGifts;
+        private GiftViews.GiftCell[] failedGifts;
 
         private final FrameLayout buttonsLayout;
         private final FrameLayout precraftingLayout;
@@ -9170,10 +9171,10 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                                 failedGifts = null;
                             }
 
-                            failedGifts = new GiftSheet.GiftCell[gifts.size()];
+                            failedGifts = new GiftViews.GiftCell[gifts.size()];
                             for (int i = 0; i < gifts.size(); ++i) {
                                 final TL_stars.StarGift gift = gifts.get(i);
-                                final GiftSheet.GiftCell cell = new GiftSheet.GiftCell(getContext(), currentAccount, resourcesProvider);
+                                final GiftViews.GiftCell cell = new GiftViews.GiftCell(getContext(), currentAccount, resourcesProvider);
 
                                 cell.setStarsGift(gift, false, false, false, false, true);
                                 cell.chanceTextView.setVisibility(View.GONE);
@@ -9486,7 +9487,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
 
             private final FrameLayout layout;
             private final ImageView plus;
-            private final GiftSheet.CardBackground giftBackground;
+            private final GiftViews.CardBackground giftBackground;
             private final FrameLayout giftLayout;
             private final BackupImageView giftImage;
 
@@ -9510,7 +9511,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 layout.addView(plus, LayoutHelper.createFrame(24, 24, Gravity.CENTER));
 
                 giftLayout = new FrameLayout(context);
-                giftLayout.setBackground(giftBackground = new GiftSheet.CardBackground(giftLayout, null, false));
+                giftLayout.setBackground(giftBackground = new GiftViews.CardBackground(giftLayout, null, false));
                 giftBackground.setRoundRadius(dp(18));
                 giftBackground.setPadding(false);
                 layout.addView(giftLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.FILL));

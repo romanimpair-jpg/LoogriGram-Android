@@ -287,7 +287,6 @@ import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceColor;
 import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceRenderNode;
 import org.telegram.ui.Components.chat.ViewPositionWatcher;
 import org.telegram.ui.Components.voip.VoIPHelper;
-import org.telegram.ui.Gifts.GiftSheet;
 import org.telegram.ui.Stars.ProfileGiftsView;
 import org.telegram.ui.Components.StarGiftPatterns;
 import org.telegram.ui.Stars.StarGiftSheet;
@@ -577,7 +576,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private final static int edit_avatar = 34;
     private final static int delete_avatar = 35;
     private final static int add_photo = 36;
-    private final static int gift_premium = 38;
     private final static int channel_stories = 39;
     private final static int edit_color = 40;
     private final static int edit_profile = 41;
@@ -2744,8 +2742,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     presentFragment(StatisticActivity.create(chat, false));
                 } else if (id == view_discussion) {
                     openDiscussion();
-                } else if (id == gift_premium) {
-                    onGiftPermiumClicked();
                 } else if (id == channel_stories) {
                     Bundle args = new Bundle();
                     args.putInt("type", MediaActivity.TYPE_ARCHIVED_CHANNEL_STORIES);
@@ -3870,9 +3866,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
             actionsView.setOnActionClickListener((key, x, y) -> {
                 switch (key) {
-                    case ProfileActionsView.KEY_GIFT:
-                        onGiftPermiumClicked();
-                        break;
                     case ProfileActionsView.KEY_SHARE:
                         onShareClicked();
                         break;
@@ -6037,19 +6030,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         avatarImage.setRoundRadiusForExpand((int) AndroidUtilities.lerp(getSmallAvatarRoundRadius(), 0f, currentExpandAnimatorValue));
     }
 
-    private void onGiftPermiumClicked() {
-        if (userInfo != null && UserObject.areGiftsDisabled(userInfo)) {
-            BaseFragment lastFragment = LaunchActivity.getSafeLastFragment();
-            if (lastFragment != null) {
-                BulletinFactory.of(lastFragment).createSimpleBulletin(R.raw.error, AndroidUtilities.replaceTags(LocaleController.formatString(R.string.UserDisallowedGifts, DialogObject.getShortName(getDialogId())))).show();
-            }
-            return;
-        }
-        if (currentChat != null) {
-            HintsController.Hint.ChannelGiftHint.doNotShowAgain();
-        }
-        showDialog(new GiftSheet(getContext(), currentAccount, getDialogId(), null, null));
-    }
+    // LoogriGram: onGiftPermiumClicked opened the gift sheet from the profile's
+    // Gift action and its "Send a gift" menu item. Both are gone; a gift
+    // someone sends still arrives and still shows on the profile.
 
     private void onCallClicked(boolean isVideoCall) {
         if (userId != 0) {
@@ -9095,13 +9078,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 if (avatarImage != null) {
                     avatarImage.setHasStories(needInsetForStories());
                 }
-                if (chatId != 0) {
-                    boolean gift = !BuildVars.IS_BILLING_UNAVAILABLE && !getMessagesController().premiumPurchaseBlocked() && chatInfo != null && chatInfo.stargifts_available;
-                    otherItem.setSubItemShown(gift_premium, gift);
-                    if (actionsView != null) {
-                        actionsView.set(ProfileActionsView.KEY_GIFT, gift);
-                    }
-                }
             }
         } else if (id == NotificationCenter.chatInfoDidLoad) {
             final TLRPC.ChatFull chatFull = (TLRPC.ChatFull) args[0];
@@ -10290,13 +10266,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             avatarImage.setHasStories(needInsetForStories());
         }
         fetchUsersFromChannelInfo();
-        if (chatId != 0) {
-            boolean gift = !BuildVars.IS_BILLING_UNAVAILABLE && !getMessagesController().premiumPurchaseBlocked() && chatInfo != null && chatInfo.stargifts_available;
-            otherItem.setSubItemShown(gift_premium, gift);
-            if (actionsView != null) {
-                actionsView.set(ProfileActionsView.KEY_GIFT, gift);
-            }
-        }
     }
 
     private boolean needInsetForStories() {
@@ -11967,7 +11936,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
         boolean shareAction = false;
         boolean discussAction = false;
-        boolean giftAction = false;
         boolean streamAction = false;
         boolean voiceChatAction = false;
         boolean leaveAction = false;
@@ -12058,11 +12026,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     otherItem.addSubItem(delete_contact, R.drawable.msg_delete, LocaleController.getString(R.string.DeleteContact));
                 }
                 if (!UserObject.isDeleted(user) && !isBot && currentEncryptedChat == null && !userBlocked && userId != 333000 && userId != 777000 && userId != 42777) {
-                    if (!BuildVars.IS_BILLING_UNAVAILABLE && !user.self && !user.bot && !MessagesController.isSupportUser(user) && !getMessagesController().premiumPurchaseBlocked()) {
-                        StarsController.getInstance(currentAccount).loadStarGifts();
-                        otherItem.addSubItem(gift_premium, R.drawable.msg_gift_premium, LocaleController.getString(R.string.ProfileSendAGift));
-                        giftAction = true;
-                    }
                     otherItem.addSubItem(start_secret_chat, R.drawable.msg_secret, LocaleController.getString(R.string.StartEncryptedChat));
                     otherItem.setSubItemShown(start_secret_chat, DialogObject.isEmpty(getMessagesController().isUserContactBlocked(userId)));
 
@@ -12146,12 +12109,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     if (ChatObject.isPublic(chat)) {
                         otherItem.addSubItem(share, R.drawable.msg_share, LocaleController.getString(R.string.BotShare));
                         shareAction = !chat.creator;
-                    }
-                    if (!BuildVars.IS_BILLING_UNAVAILABLE && !getMessagesController().premiumPurchaseBlocked()) {
-                        StarsController.getInstance(currentAccount).loadStarGifts();
-                        otherItem.addSubItem(gift_premium, R.drawable.msg_gift_premium, LocaleController.getString(R.string.ProfileSendAGiftToChannel));
-                        otherItem.setSubItemShown(gift_premium, chatInfo != null && chatInfo.stargifts_available);
-                        giftAction = true;
                     }
                     if (chatInfo != null && chatInfo.linked_chat_id != 0) {
                         otherItem.addSubItem(view_discussion, R.drawable.msg_discussion, LocaleController.getString(R.string.ViewDiscussion));
@@ -12241,7 +12198,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             actionsView.set(ProfileActionsView.KEY_VOICE_CHAT, voiceChatAction);
             actionsView.set(ProfileActionsView.KEY_STREAM, streamAction);
 
-            actionsView.set(ProfileActionsView.KEY_GIFT, giftAction);
             callItemVisible = videoCallItemVisible = false;
             if (!discussAction) {
                 if (isTopic) {
@@ -15300,17 +15256,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             args.putLong("chat_id", chatId);
             args.putLong("user_id", userId);
             presentFragment(new QrActivity(args));
-        } else if (parent.getTag() != null && ((int) parent.getTag()) == birthdayRow) {
-            if (userId == getUserConfig().getClientUserId()) {
-                presentFragment(new PremiumPreviewFragment("my_profile_gift"));
-                return;
-            }
-            if (UserObject.areGiftsDisabled(userInfo)) {
-                BulletinFactory.of(this).createSimpleBulletin(R.raw.error, AndroidUtilities.replaceTags(LocaleController.formatString(R.string.UserDisallowedGifts, DialogObject.getShortName(userId)))).show();
-                return;
-            }
-            showDialog(new GiftSheet(getContext(), currentAccount, userId, null, null));
         }
+        // LoogriGram: tapping a birthday offered to buy a gift for it.
     }
 
     private boolean fullyVisible;

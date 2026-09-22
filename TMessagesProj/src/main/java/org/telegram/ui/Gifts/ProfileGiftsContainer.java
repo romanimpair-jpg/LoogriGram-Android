@@ -272,8 +272,8 @@ public class ProfileGiftsContainer extends FrameLayout implements NotificationCe
 
             reorder = new ItemTouchHelper(new ItemTouchHelper.Callback() {
                 private TL_stars.SavedStarGift getSavedGift(RecyclerView.ViewHolder holder) {
-                    if (holder.itemView instanceof GiftSheet.GiftCell) {
-                        final GiftSheet.GiftCell cell = (GiftSheet.GiftCell) holder.itemView;
+                    if (holder.itemView instanceof GiftViews.GiftCell) {
+                        final GiftViews.GiftCell cell = (GiftViews.GiftCell) holder.itemView;
                         return cell.getSavedGift();
                     }
                     return null;
@@ -548,8 +548,8 @@ public class ProfileGiftsContainer extends FrameLayout implements NotificationCe
             parent.updatedReordering(parent.isReordering());
             for (int i = 0; i < listView.getChildCount(); ++i) {
                 final View child = listView.getChildAt(i);
-                if (child instanceof GiftSheet.GiftCell) {
-                    ((GiftSheet.GiftCell) child).setReordering(reordering, true);
+                if (child instanceof GiftViews.GiftCell) {
+                    ((GiftViews.GiftCell) child).setReordering(reordering, true);
                 }
             }
             if (listView.adapter != null) {
@@ -590,7 +590,7 @@ public class ProfileGiftsContainer extends FrameLayout implements NotificationCe
             for (int i = 0; i < listView.getChildCount(); ++i) {
                 final View child = listView.getChildAt(i);
                 final int position = listView.getChildAdapterPosition(child);
-                if (child instanceof GiftSheet.GiftCell) {
+                if (child instanceof GiftViews.GiftCell) {
                     if (position == 0) {
                         return Math.max(0, child.getY());
                     }
@@ -617,7 +617,7 @@ public class ProfileGiftsContainer extends FrameLayout implements NotificationCe
                 int spanCountLeft = 3;
                 for (TL_stars.SavedStarGift userGift : list.gifts) {
                     items.add(
-                        GiftSheet.GiftCell.Factory.asStarGift(0, userGift, true, false, isCollection)
+                        GiftViews.GiftCell.Factory.asStarGift(0, userGift, true, false, isCollection)
                             .setReordering(reordering && (list == parent.list ? userGift.pinned_to_top : true))
                     );
                     spanCountLeft--;
@@ -717,8 +717,8 @@ public class ProfileGiftsContainer extends FrameLayout implements NotificationCe
 
         public boolean onItemLongPress(UItem item, View view, int position, float x, float y) {
             if (list == null) return false;
-            if (view instanceof GiftSheet.GiftCell && item.object instanceof TL_stars.SavedStarGift) {
-                final GiftSheet.GiftCell cell = (GiftSheet.GiftCell) view;
+            if (view instanceof GiftViews.GiftCell && item.object instanceof TL_stars.SavedStarGift) {
+                final GiftViews.GiftCell cell = (GiftViews.GiftCell) view;
                 final TL_stars.SavedStarGift savedStarGift = (TL_stars.SavedStarGift) item.object;
                 final ItemOptions o = ItemOptions.makeOptions(parent.fragment, view, true);
                 parent.currentMenu = o;
@@ -841,7 +841,7 @@ public class ProfileGiftsContainer extends FrameLayout implements NotificationCe
                             final boolean newPinned = !savedStarGift.pinned_to_top;
                             if (list.togglePinned(savedStarGift, newPinned, false)) {
                                 new UnpinSheet(getContext(), parent.dialogId, savedStarGift, resourcesProvider, () -> {
-                                    ((GiftSheet.GiftCell) view).setPinned(newPinned, true);
+                                    ((GiftViews.GiftCell) view).setPinned(newPinned, true);
                                     listView.scrollToPosition(0);
                                     return BulletinFactory.of(parent.fragment);
                                 }).show();
@@ -855,7 +855,7 @@ public class ProfileGiftsContainer extends FrameLayout implements NotificationCe
                                     .createSimpleBulletin(R.raw.ic_unpin, getString(R.string.Gift2Unpinned))
                                     .show();
                             }
-                            ((GiftSheet.GiftCell) view).setPinned(newPinned, true);
+                            ((GiftViews.GiftCell) view).setPinned(newPinned, true);
                             listView.scrollToPosition(0);
                         });
                         o.addIf(savedStarGift.pinned_to_top, R.drawable.tabs_reorder, getString(R.string.Gift2Reorder), () -> {
@@ -968,7 +968,7 @@ public class ProfileGiftsContainer extends FrameLayout implements NotificationCe
                 o.hideScrimUnder();
                 o.forceBottom(true);
                 o.show();
-                ((GiftSheet.GiftCell) view).imageView.getImageReceiver().startAnimation(true);
+                ((GiftViews.GiftCell) view).imageView.getImageReceiver().startAnimation(true);
                 return true;
             }
             return false;
@@ -2316,10 +2316,10 @@ public class ProfileGiftsContainer extends FrameLayout implements NotificationCe
                     final long id = g.msg_id == 0 ? g.saved_id : g.msg_id;
                     if (selectedGiftIds.contains(id)) {
                         selectedGiftIds.remove(id);
-                        ((GiftSheet.GiftCell) view).setChecked(false, true);
+                        ((GiftViews.GiftCell) view).setChecked(false, true);
                     } else {
                         selectedGiftIds.add(id);
-                        ((GiftSheet.GiftCell) view).setChecked(true, true);
+                        ((GiftViews.GiftCell) view).setChecked(true, true);
                     }
 
                     button.setEnabled(selectedGiftIds.size() > 0);
@@ -2410,7 +2410,7 @@ public class ProfileGiftsContainer extends FrameLayout implements NotificationCe
                     if (g.collection_id.contains(collectionId))
                         continue;
                     items.add(
-                        GiftSheet.GiftCell.Factory.asStarGift(0, g, true, true, false)
+                        GiftViews.GiftCell.Factory.asStarGift(0, g, true, true, false)
                             .setChecked(selectedGiftIds.contains(g.msg_id == 0 ? g.saved_id : g.msg_id))
                             .setSpanCount(1)
                     );
