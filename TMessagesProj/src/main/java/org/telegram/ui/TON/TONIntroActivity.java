@@ -68,7 +68,6 @@ import org.telegram.ui.Components.UItem;
 import org.telegram.ui.Components.UniversalAdapter;
 import org.telegram.ui.GradientHeaderActivity;
 import org.telegram.ui.LaunchActivity;
-import org.telegram.ui.Stars.BotStarsActivity;
 import org.telegram.ui.Stars.BotStarsController;
 import org.telegram.ui.Stars.ExplainStarsSheet;
 import org.telegram.ui.Stars.StarsController;
@@ -310,9 +309,7 @@ public class TONIntroActivity extends GradientHeaderActivity implements Notifica
         ssb.setSpan(new ColoredImageSpan(R.drawable.mini_stats, ColoredImageSpan.ALIGN_CENTER), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         ssb.append(getString(R.string.TonStats));
         withdrawButton.setText(ssb, false);
-        withdrawButton.setOnClickListener(v -> {
-            presentFragment(new BotStarsActivity(BotStarsActivity.TYPE_TON, getUserConfig().getClientUserId()));
-        });
+        // LoogriGram: this opened your TON earnings and withdrawals.
         twoButtonsLayout.addView(withdrawButton, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48, Gravity.CENTER, 1, 0, 0, 0, 0));
 
         balanceLayout.addView(buttonsLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.CENTER, 20, 6, 20, 4));

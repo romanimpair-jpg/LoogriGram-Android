@@ -395,9 +395,7 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
         ssb.setSpan(new ColoredImageSpan(R.drawable.mini_stats, ColoredImageSpan.ALIGN_CENTER), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         ssb.append(getString(R.string.StarsStats));
         withdrawButton.setText(ssb, false);
-        withdrawButton.setOnClickListener(v -> {
-            presentFragment(new BotStarsActivity(BotStarsActivity.TYPE_STARS, getUserConfig().getClientUserId()));
-        });
+        // LoogriGram: this opened your Stars earnings and withdrawals.
         twoButtonsLayout.addView(withdrawButton, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48, Gravity.CENTER, 1, 0, 0, 0, 0));
 
         balanceLayout.addView(buttonsLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.CENTER, 20, 17, 20, 0));
