@@ -18,15 +18,19 @@ depends on.
 |---|---|
 | Fork, CI, degoogling | Done. No Google bytecode in the APK, verified in the dex |
 | Installed on the phone | **Yes.** `gf20af361`, installed 2026-09-22 over `adb` (`adb install -r` succeeded, so the key matched); launches clean |
-| Pending build | `gf2f12360`, dispatched 2026-09-22 ([run 35662105360](https://github.com/romanimpair-jpg/LoogriGram-Android/actions/runs/35662105360)) — 9 commits past the installed one: the rest of paid messages so far and every build warning. **Not yet known to succeed** |
+| Pending build | `gaf5d70a5`, dispatched 2026-09-22 ([run 35796008121](https://github.com/romanimpair-jpg/LoogriGram-Android/actions/runs/35796008121)) — 22 commits past the installed one, 26,440 lines lighter. Every commit in it passed `compile`. **Not yet known to succeed** |
 | App name | Done — launcher, in-app strings, and the two wordmark screens |
 | Phone contacts | **Never touched.** Permissions, account and sync adapter all gone |
 | Updater | Ours, from this repo's releases. Checks on every cold start, then hourly; manual row in Settings (2026-09-21). The installed `gf20af361` is the first build with that behaviour — **its automatic check is still untested**, it needs a later release to find |
 | Ads | **Gone**, all three surfaces, down to `MessageObject`'s fields (2026-09-21) |
 | Money messages | Held in history, never drawn — desktop's hidden-content rule. The chat list no longer rises for one |
-| Paid messages | **Mostly done** (2026-09-21/22): users who charge are locked, nothing ever pays, no price shown where you write. Left: setting a price on your own messages — see "Paid messages" |
+| Paid messages | **Done** (2026-09-21/22): users who charge are locked, nothing ever pays, nothing charges. The price-setting half went with the privacy option, the group permission and a live's price per comment |
+| Paid media, live comments | **Gone** (2026-09-22): no price on a photo or album, no paid or highlighted live comment, no Star donations to a live |
+| Paid reactions | **Gone** (2026-09-22): the star is not offered among the reactions, and its sheet and flying-star overlay are deleted. Left: the drawing of one that *arrives*, and the now-uncalled bookkeeping in `StarsController` |
+| Gifts | Sending, auctions, selling, buying and crafting all **deleted** (2026-09-22). Receiving is untouched. Left: the buy-a-collectible tab in `PeerColorActivity`, which still holds `ResaleGiftsFragment` |
+| Location | **Gone** (2026-09-22): the map screens are deleted, every received location opens in a maps app, and the weather sticker went with them |
 | Photo/video viewer | **Fixed** 2026-09-20; was our own null dereference, see the traps |
-| Build warnings | **All fixed** in `f2f12360` (native, CMake, Gradle, Kotlin, CI); the native half is only proven once the pending build finishes. Still open: 40 AAPT resource warnings, upstream's strings |
+| Build warnings | **None of ours are left.** Native, CMake, Gradle, Kotlin and CI fixed in `d6b0890c`/`f2f12360`; both AAPT sets fixed 2026-09-22 (`663ec903`, `77673c28`). What remains is javac's two notes, which are upstream's and third-party's — see "The javac notes are not ours" |
 | Ghost mode | Working in first use; not yet checked against a second account |
 | Push transport | Working; **not yet trusted over hours idle**. FCM is impossible here — see below |
 
@@ -50,16 +54,25 @@ The installed APK: ~44.5 MB, `lib/arm64-v8a/libtmessages.49.so` only, signed
 fingerprint is how to confirm a later build carries the same key - and it must,
 because Android will refuse an update signed with any other.
 
-### Start here next session (written 2026-09-22)
+### Start here next session (written 2026-09-22, late)
 
-1. **Did `gf2f12360` build?** The user reports back; don't poll. Every commit
-   in it passed `compile`, so a failure is native or packaging. The native
-   changes are exactly the five warning fixes in `d6b0890c` (libtgvoip's
-   `aesOut` vectors, the `RtcEventLogFactory` constructor) and the
-   `project(tmessages)` line in `jni/CMakeLists.txt` - look there first. On
-   success, grep the log for `C/C++: .*warning:`; it should find none.
-2. **Test the updater, for real this time.** `gf20af361` is the first build
-   that checks on every cold start. When `gf2f12360` is published, a cold
+1. **Did `gaf5d70a5` build?** The user reports back; don't poll. Every commit
+   in it passed `compile`, and nothing in it touches `jni/`, so a failure
+   would be packaging or resources rather than native.
+2. **Look at the three screens this session rebuilt.** None of it has been
+   seen running - `compile` type-checks, it does not draw:
+   - the **gift sheet** (`StarGiftSheet`): open a gift you were given. Its
+     pages animate between info, upgrade and wear, and crafting's two pages
+     were cut out of that machine; check the sheet opens on the right page,
+     the height animates cleanly, and the action row reads Transfer / Wear /
+     Share, with Share where Sell used to be.
+   - the **reactions picker**: the star must not appear in it, and the other
+     reactions must still send.
+   - the **profile colour screen** (`PeerColorActivity`): its collectible
+     tabs still list gifts you own; only buying is meant to be gone, and the
+     buy tab is still there until the next cut.
+3. **Test the updater, for real this time.** `gf20af361` is the first build
+   that checks on every cold start. When `gaf5d70a5` is published, a cold
    start of the installed app should show the sixth tab ("Update?"), then the
    percentage, then "Install". Also try Settings → "Check for updates" (bottom
    of the help section, the build's tag underneath): with nothing newer it says
@@ -67,18 +80,14 @@ because Android will refuse an update signed with any other.
    offer itself. The phone is reachable over USB:
    `C:\Users\Loogris\platform-tools\adb.exe` (not on PATH), package
    `com.loogrimedia.loogrigram`.
-3. **Check the paid-message lock on the phone** (needs a user who charges per
+4. **Check the paid-message lock on the phone** (needs a user who charges per
    message - any account can set a price on itself in official Telegram):
    their chat shows "X only accepts paid messages, which LoogriGram doesn't
    send." instead of a compose field; their row is padlocked in the share and
    forward pickers and a tap there says the same line; a story reply to them
    is locked too. A group that charges must still open and read normally, and
    a send there should end in the same line as a toast.
-4. **The last cut from 2026-09-21 is still unverified on screen** - see the
-   list below; it shipped in `ge9a33bc2` and nobody has looked yet.
-5. Then finish paid messages: setting a price on your own messages (privacy,
-   group permissions, channel direct messages). See "Paid messages" and
-   "Remaining work".
+5. Then continue the money removal where it stopped - see "Remaining work".
 
 Unverified from 2026-09-21 (ads and money-row removal), since a compile cannot
 see layout:
@@ -264,7 +273,38 @@ Each of these was hit here. Do not relearn them.
    it. Everything currently sitting at the probe stage is listed under
    "Remaining work" below and should be finished that way.
 
-10. **Large scripted removals fail in the same few ways.** Each of these cost a
+9b. **A range cut needs a unique anchor and a size cap.** Cutting from a
+    signature to the next one is the fastest way to remove a method, and it
+    reached past its target three times on 2026-09-22. Once because the
+    closing anchor matched later than intended, taking `isInScheduleMode`
+    out of `RichEditor` with `openLocationPicker`. Once because two loose
+    methods sat *between* the nested classes being moved out of `GiftSheet`,
+    so they travelled with them. And once, worst, because the opening anchor
+    was not unique: `if (visibleReaction != null && visibleReaction.isStar)`
+    appears twice in `ChatActivity`, sixty lines apart, and the cut started
+    at the wrong one and swallowed **681 lines** - `closeMenu`,
+    `createEmptyView` and `selectReaction` among them. Nothing about the
+    result looked wrong; the reported line count did.
+
+    So: assert the opening anchor appears exactly once, assert how many
+    lines the cut may span, and read the count the script prints. All three
+    were caught that way in the end, the third only after it had been
+    applied and had to be reverted.
+
+10. **What survives a removal is the reference nowhere near it.** Every
+    compile failure on 2026-09-22 was the same shape: the feature's own code
+    came out cleanly, and what broke the build was a mention of it somewhere
+    structurally unrelated - `DialogsActivity` nulling the auctions panel in
+    its destroy path and registering its theme colours, `hideHints` hiding
+    the birthday hint, the gift sheet detaching the craft picker in
+    `dismiss()`, `PendingPaidReactions` holding the overlay it hid on
+    cancel, a `runLinkRequest` call site passing `null, null` where the
+    others passed the variables, and a second caller of a constructor whose
+    signature had just lost two arguments. Grepping the feature's own names
+    finds none of these. Grep for the *field* and the *type* as well, and
+    expect the compile to find one or two anyway.
+
+10c. **Large scripted removals fail in the same few ways.** Each of these cost a
     failed compile on 2026-09-21; check them *before* dispatching:
     - deleting a public member: grep its callers across the tree, not the file
       (`removeFromSponsored` had seven outside `ChatActivity`);
@@ -431,19 +471,49 @@ matters because an account can still hold contacts imported before this.
 **Location.** Cannot geolocate: every location permission is gone from all six
 manifests, which the OS enforces and GrapheneOS shows in app info.
 `ACCESS_MEDIA_LOCATION` went too — that one exposes photo EXIF coordinates.
-Received locations open in any maps app via a `geo:` intent, guarded at
-`LocationActivity.onFragmentCreate` because seven of nineteen entry points do
-not check `isMapsInstalled`.
+Received locations open in any maps app via a `geo:` intent - from a message,
+a poll answer, shared media, the admin log, a group's address, a business
+address and a story's location sticker, each handing the point over directly
+with a "no maps app installed" bulletin when nothing answers. **The map
+screens are deleted** (2026-09-22, 8,408 lines): `LocationActivity`,
+`ChatAttachAlertLocationLayout`, their adapters and cells,
+`SharingLocationsAlert`, `IMapsProvider` and the provider hook in
+`ApplicationLoader`, plus `isMapsInstalled`, which had been answering false to
+keep them shut. Picking a location is gone with them: the attach menu's
+Location layout, a story's location sticker, an article's map block and the
+`/map` command, a business address's "set it on a map", a group's location,
+and the live-location bar and its deep links, none of which could work anyway
+without a location permission. The weather sticker went too - it fetches your
+coordinates to look up the forecast, so without the permission its button
+spun and did nothing. What still renders: a weather or location sticker
+someone else placed, a map block in an article you are reading, and the
+server-rendered map image of a business address.
 
-**Gifts.** Sending blocked at `GiftSheet.show`/`SendGiftSheet.show` — one
-chokepoint for eighteen call sites. **Receiving must keep working**, and that
-settles the shape of the rest of the money removal: `ui/Stars` and `ui/Gifts`
-**cannot be deleted as a block.** `StarGiftSheet` is genuinely mixed -
-`ChatActionCell` opens it for a gift someone was *given* and `ChatMessageCell`
-draws its gift icon in link previews, while `PeerColorActivity` uses its
-resale/buy alert. The profile gifts tab (`ProfileGiftsContainer`/`View`) and
-`StarGiftUniqueActionLayout` are display too. The end state is splitting the
-display half out from the buying/selling half, not deleting directories.
+**Gifts: received, never traded** (2026-09-22). **Receiving must keep
+working**, which is why `ui/Stars` and `ui/Gifts` come apart file by file
+rather than as a block, and why the pattern for a mixed file is to extract
+the display half first and then delete the rest. `GiftSheet` was the model
+case: two thirds of it was display - the gift card, ribbon, cell and tabs
+that `ChatActionCell` draws a received gift with, `ItemOptions` scrims, and
+`PeerColorActivity` picks profile collectibles from - so those moved out
+unchanged as **`GiftViews`** (2,080 lines, 73 references repointed) and the
+sheet itself went.
+
+Deleted with it: every way to send a gift (a channel's Gift button, "Send
+gift to X" on a message, the profile's Gift action and menu item, the two
+birthday prompts, the compose bar's gift button - all of which sat behind
+`premiumPurchaseBlocked()` and had been unreachable since the premium economy
+was neutralised); the gift auctions, five sheets and a hint panel and
+`SendGiftSheet` with them; listing a gift for sale, changing its price and
+buying a listed one; the bot and channel earnings screen; and crafting,
+which reads like tidying what you own but chooses the other gifts from
+`ResaleGiftsList(...).forCraft()` - gifts **for sale, sorted by price** - so
+it is buying, and took `GiftAuctionController` and `StarGiftPreviewSheet`
+with it.
+
+Still standing: `PeerColorActivity`'s buy-a-collectible tab, the last holder
+of `ResaleGiftsFragment` and `ResaleBuyTransferAlert`, and gift transfers.
+`StarGiftSheet` itself stays - it is how a gift someone was given is shown.
 
 **Helpers freed from money screens** (2026-09-20/21), so the screens can go
 without taking ordinary rendering with them: `messenger.StarsFormat` (the
@@ -494,6 +564,30 @@ unreachable behind the gift-sending block. Both go with their own removals.
 
 ---
 
+### The javac notes are not ours
+
+Every build ends with javac's two summary notes - "uses or overrides a
+deprecated API" and "uses unchecked or unsafe operations" - and they are the
+last warnings in the log. They are not this fork's, and chasing them is a
+trap worth refusing once, in writing.
+
+A one-off `-Xlint:deprecation,unchecked` run (`dc7a5695`, reverted in
+`e2cfe9dc`) counted **7,945** warnings behind them. 7,609 are in
+`org/telegram/**`: the client's own source, which *is* ours to edit - there is
+no other project to fork - but which we did not write. Of those, 4,393 are
+calls to Android and JDK APIs that Google deprecated, and 3,053 are calls to
+helpers Telegram deprecated itself and never finished migrating. The rest are
+in code vendored into the tree: ExoPlayer, AndroidX RecyclerView, WebRTC, and
+the `jlatexmath` module the second note names by file. **The fork's own three
+files produce none**, and the seven that sat on lines this fork touched were
+fixed in `f812b149`.
+
+So the answer to "can we fix the warnings" is: ours are all fixed. Rewriting
+7,609 upstream call sites would change no behaviour, would bury the
+`LoogriGram:` comments that are this fork's only audit, and the Android half
+(theming in `getDrawable`, layout defaults in `StaticLayout.Builder`) carries
+visual risk no compile can catch.
+
 ## Survived, against expectation
 
 Upstream had non-Google implementations sitting behind the Google ones:
@@ -524,65 +618,61 @@ out of a class that is being deleted or changing how a message renders.
 
 In rough order of how much is left behind:
 
-- **Paid messages, the price-setting half** - next. Desktop's `9d363a2689`
-  is the map: the "Charge for messages" privacy option with its star slider
-  and "Remove fee" exceptions (`NoPaidMessages` key), a group's "charge Stars"
-  permission toggle, and a channel's direct-messages price (keep the toggle
-  that allows direct messages at all - that is not money). Also the
-  `messagesFeeUpdated` / `nopaid_messages_exception` machinery in
-  `StarsController` and `TopicsController`, and the remaining
-  `StarsNeededSheet` callers outside send paths (`ChatActionCell`,
-  `PostsSearchContainer`, `StakedDiceSheet`). When `getSendPaidMessagesStars`
-  and `DialogObject.getMessagesStarsPrice` lose their last readers (the gift
-  sheets), delete both.
-- **Paid live comments.** `LiveCommentsView.send(text, stars)`, the price
-  pill in `ChatActivityEnterView.SendButton` (`setStarsPrice`), the
-  `isLiveComment` tiers (`HighlightMessageSheet`) and
-  `PeerStoriesView.getStarsPrice`. Desktop removed its equivalent.
-- **Paid media** (sending photos with a price): `SendMessageParams.stars`,
-  `ChatAttachAlertPhotoLayout.setStarsPrice`, `showMediaPriceSheet`. Separate
-  from paid messages - left alone on purpose.
-- **Stars / Gifts / TON UI.** The helper extraction is finished (see "Helpers
-  freed from money screens"), so what is left is real coupling, measured
-  2026-09-21 as non-money files still touching `ui/Stars`, `ui/Gifts`, `ui/TON`:
-  `StarsController` 33 (`ChatActivity` 24 refs, `SendMessagesHelper` 17,
-  `PeerColorActivity` 14, `MessagesController` 14, `AlertsCreator` 13),
-  `StarsIntroActivity` 19, `GiftSheet` 8, `StarGiftSheet` 7,
-  `BotStarsController` 5. Shape: split the display half (received gifts) out
-  of the buy/sell half, then delete the rest - not the directories whole. The
-  three affiliate fragments are now reached only from other money screens and
-  go with them. `AmountUtils` lives in `messenger/utils/tlutils` and stays.
-  `ChannelMonetizationLayout` (ad revenue, plus the "switch off ads for
-  subscribers" toggle) and `BillingController`'s last callers go here too.
-- **Location.** `LocationActivity` and `ChatAttachAlertLocationLayout` remain,
-  unreachable, holding ~135 references to `IMapsProvider` between them. Deleting
-  them lets the interface and the `onFragmentCreate` guard go too.
+- **The buy-a-collectible tab in `PeerColorActivity`** - next, and the
+  smallest of what is left. Choosing a profile colour lists collectible gifts
+  per model in tabs; alongside the ones you own it lists ones **for sale**,
+  and buying one applies it. 50 references to `resaleGifts`,
+  `selectedResaleGift` and `selectedTabGift`, woven through that screen's tab
+  paging, plus its `buy()` and the `ResaleBuyTransferAlert` it opens. It is
+  the last thing holding `ResaleGiftsFragment` (2,293 lines) and that alert,
+  so both go with it. Risky only in that the screen has tabs and a pager and
+  cannot be checked by compiling.
+- **The Stars wallet.** `StarsIntroActivity` (5,344), `TONIntroActivity`
+  (855), `StarsController` (3,600) and `BotStarsController`, plus
+  `ExplainStarsSheet`, `BalanceCloud` and `StakedDiceSheet`. Two things fall
+  out when the controller goes: the paid-reaction bookkeeping inside it
+  (`sendPaidReaction`, `commitPaidReaction`, `undoPaidReaction`,
+  `PendingPaidReactions`), which nothing has called since paid reactions were
+  removed, and `ReactionsLayoutInBubble`'s drawing of a paid reaction that
+  *arrives* on a message - desktop dropped that display too.
+- **Transfers.** `onTransferClick` in the gift sheet moves a collectible to
+  someone else, with a TON export option beside it. Not a purchase, but it is
+  the same market, and the TON half is crypto.
+- **`MessageSuggestionOfferSheet`** and the priced suggested posts around it.
+- **Premium economy.** The three forced getters leave every branch behind them
+  in place. Settings and the own-profile menu lost their rows on 2026-09-21,
+  and this session turned the gift entry points behind
+  `premiumPurchaseBlocked()` into real deletions, but
+  `PremiumPreviewFragment` (with its "no ads" row), `GiftPremiumBottomSheet`,
+  `LimitReachedBottomSheet`'s boost-level lists and the tier cells are still
+  dead weight.
 - **Chromecast.** Four files reduced to Google-free stubs so ~98 call sites in
   `MediaController`, `PhotoViewer` and `AudioPlayerAlert` keep compiling.
   Deleting them means editing those three files (4k, 24k and 6k lines).
-- **Premium economy.** The three forced getters leave every branch behind them in
-  place. Settings and the own-profile menu have lost their Premium, Stars,
-  MyTON, Business and Send-a-Gift rows (2026-09-21), but
-  `PremiumPreviewFragment` (with its "no ads" row), `GiftPremiumBottomSheet`,
-  `LimitReachedBottomSheet`'s boost-level feature lists and the tier cells are
-  still largely dead weight.
-- **`if (true)` guards** still standing, each of which should become a
-  deletion: `isMapsInstalled`, `GiftSheet.show` / `SendGiftSheet.show`. Done:
-  `getSponsoredMessages` and everything behind it (2026-09-21), `VideoAds.make`,
-  the four ad beacons, `checkAppUpdate` (2026-09-20). A plain `grep -rn "if
-  (true)"` also finds `MessagesController` (`addPhotoAtStart`),
-  `AndroidUtilities`, `ChatActivity` and `DialogsSearchAdapter` - their origin
-  was not checked; some may be upstream's own.
-- **Build warnings.** Native, CMake, Gradle, Kotlin (`buildSrc`) and CI all
-  fixed 2026-09-22 (`d6b0890c`, `f2f12360`). The node `punycode` / `url.parse`
-  deprecations in the log come from inside GitHub's own actions. Still open:
-  40 AAPT "multiple substitutions in
-  non-positional format" on upstream strings - about half are gift/Stars
-  strings that die with the money removal; the rest (`AddManyMembersAlert*`,
-  `Languages_*`, `NoContactsYet*`, `YourEmailCode*`, `ResetAccount*`,
-  `formatterMonth*`, `UnconfirmedAuthMultipleFrom_*`, `WidgetPasscodeEnable2`,
-  `StoryAddedToAlbum*`) want `%s` turned into `%1$s`, which no compile can
-  check and a wrong one throws at display time.
+- **`if (true)` guards.** Both gift guards the earlier notes listed are now
+  deletions: `GiftSheet.show` and `SendGiftSheet.show` went with the sheets
+  themselves. `isMapsInstalled` went with the map screens. A plain
+  `grep -rn "if (true)"` still finds `MessagesController`
+  (`addPhotoAtStart`), `AndroidUtilities`, `ChatActivity` and
+  `DialogsSearchAdapter` - their origin was never checked; some may be
+  upstream's own.
+- **The javac notes are not ours.** A one-off `-Xlint` run measured 7,945
+  warnings behind javac's two summary notes. 7,609 are in
+  `org/telegram/**` - the client's own source, which is ours to edit but not
+  ours to blame: 4,393 are calls to Android and JDK APIs Google deprecated
+  (`Resources.getDrawable` 590, `View.setBackgroundDrawable` 323, the
+  `StaticLayout` constructor 260, `Canvas.saveLayerAlpha` 223, `Camera`,
+  `AsyncTask`), and 3,053 are calls to helpers **Telegram itself** deprecated
+  and never finished migrating (`LocaleController.getString(String,int)` 840,
+  `formatString` 730, `AndroidUtilities.statusBarHeight` 556, `UndoView` 295).
+  About 336 more are in vendored ExoPlayer, AndroidX and WebRTC, and the
+  `jlatexmath` note comes from a vendored library module. **The fork's own
+  three files produce zero**, and the seven on lines this fork touched were
+  fixed in `f812b149`. Leave the rest: rewriting 7,609 upstream call sites
+  changes no behaviour, buries the `LoogriGram:` diff that is this fork's only
+  audit, and the Android half carries real visual risk. The only safe subset,
+  if the number ever matters, is the two `LocaleController` helpers - 1,570 of
+  them, a pure rename with both sides in our tree.
 - **Done on 2026-09-20, for the record:** `ObjectDetectionEmojis` deleted,
   `CaptchaController` folded into its one caller, `BillingController`'s currency
   half extracted as `CurrencyFormat` (61 call sites) with `BillingUtilities`
@@ -599,6 +689,23 @@ In rough order of how much is left behind:
   screens and the compose field (`80e73326`..`60ef620c`), the refused-price
   fields (`8f352db4`); the updater's start-up check and Settings row
   (`a1d5345d`); every build warning but AAPT's (`d6b0890c`, `f2f12360`).
+- **Done on 2026-09-22, for the record** (22 commits, `77673c28..af5d70a5`,
+  26,440 lines net): both AAPT warning sets; paid live comments, in both
+  directions, and the send button's price pill; paid media; gift offers; the
+  whole Location subsystem, 8,408 lines, and the weather sticker with it -
+  it asks the phone where you are to look the forecast up, and could not
+  work without the permission this build never requests; gift sending and
+  `GiftSheet`, whose display half was extracted first as `GiftViews`; gift
+  auctions, taking `SendGiftSheet`; selling, pricing and buying a listed
+  gift; the bot and channel earnings screen; paid reactions; and crafting,
+  which took `GiftAuctionController` and `StarGiftPreviewSheet` with it.
+
+  Two repairs on the way, both from a crash the night before: nine source
+  files had been truncated to zero bytes (`ChatActivity.java` among them),
+  restored from `HEAD`, and four loose git objects were empty, refetched
+  from GitHub's API and checked against their SHAs. `git fsck` is clean
+  apart from one unreachable commit left by the original shallow fetch of
+  upstream.
 
 ### Then
 
