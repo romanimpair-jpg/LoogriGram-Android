@@ -4983,10 +4983,6 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
 
     @Override
     public void dismiss() {
-        if (giftsToCraft != null) {
-            giftsToCraft.detach();
-            giftsToCraft = null;
-        }
         if (roller != null) {
             roller.detach();
         }
