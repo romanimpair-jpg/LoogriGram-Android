@@ -2886,24 +2886,11 @@ public class EmojiBottomSheet extends BottomSheet implements NotificationCenter.
             setPadding(0, 0, 0, 0);
             if (canShowWidget(WIDGET_LINK))
                 widgets.add(new Button(WIDGET_LINK, R.drawable.msg_limit_links, LocaleController.getString(R.string.StoryWidgetLink)).needsPremium());
-            // LoogriGram: no location widget - there is no picker to choose
-            // one with, and nothing here may ask the phone where it is.
-            if (canShowWidget(WIDGET_WEATHER)) {
-                Weather.State weather = Weather.getCached();
-                Button[] btn = new Button[] { null };
-                CharSequence text = Emoji.replaceEmoji((weather == null ? "🌤" : weather.getEmoji()) + " " + (weather == null ? (Weather.isDefaultCelsius() ? "24°C" : "72°F") : weather.getTemperature()), textPaint.getFontMetricsInt(), false);
-                if (MessagesController.getInstance(currentAccount).storyWeatherPreload && PermissionRequest.hasPermission(Manifest.permission.ACCESS_COARSE_LOCATION) && weather == null) {
-                    text = new SpannableStringBuilder("___");
-                    ((SpannableStringBuilder) text).setSpan(new LoadingSpan(this, dp(68)), 0, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    btn[0] = new Button(this, WIDGET_WEATHER, text);
-                    Weather.fetch(false, state -> {
-                        btn[0].setText(Emoji.replaceEmoji((state == null ? "🌤" : state.getEmoji()) + " " + (state == null ? (Weather.isDefaultCelsius() ? "24°C" : "72°F") : state.getTemperature()), textPaint.getFontMetricsInt(), false));
-                        invalidate();
-                        requestLayout();
-                    });
-                }
-                widgets.add(btn[0] == null ? new Button(this, WIDGET_WEATHER, text) : btn[0]);
-            }
+            // LoogriGram: no location or weather widget. Both say where you
+            // are - the weather one fetches your coordinates to look the
+            // forecast up - and neither can work without a location
+            // permission, which this build never asks for. The weather button
+            // would have spun and then done nothing at all.
             if (canShowWidget(WIDGET_AUDIO))
                 widgets.add(new Button(WIDGET_AUDIO, R.drawable.filled_widget_music, LocaleController.getString(R.string.StoryWidgetAudio)));
             if (canShowWidget(WIDGET_PHOTO))

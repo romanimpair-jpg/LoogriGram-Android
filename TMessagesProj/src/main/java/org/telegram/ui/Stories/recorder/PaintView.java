@@ -1921,16 +1921,6 @@ public class PaintView extends SizeNotifierFrameLayoutPhoto implements IPhotoPai
                 if (isBot) {
                     return widgetId == WIDGET_PHOTO;
                 }
-                if (widgetId == WIDGET_WEATHER) {
-                    boolean hasWeather = false;
-                    for (int i = 0; i < entitiesView.getChildCount(); ++i) {
-                        if (entitiesView.getChildAt(i) instanceof WeatherView) {
-                            hasWeather = true;
-                            break;
-                        }
-                    }
-                    return !hasWeather;
-                }
                 return true;
             }
 
@@ -1986,17 +1976,10 @@ public class PaintView extends SizeNotifierFrameLayoutPhoto implements IPhotoPai
             return true;
         });
         alert.whenWidgetSelected(widgetId -> {
-            if (widgetId == EmojiBottomSheet.WIDGET_WEATHER) {
-                closing[0] = false;
-                Weather.fetch(true, weather -> {
-                    if (weather != null) {
-                        alert.dismiss();
-                        onOpenCloseStickersAlert(false);
-                        appearAnimation(createWeatherView(weather, false));
-                    }
-                });
-                return false;
-            } else if (widgetId == EmojiBottomSheet.WIDGET_PHOTO) {
+            // LoogriGram: the weather widget is not offered; see
+            // EmojiBottomSheet. A weather sticker someone else placed still
+            // renders, and one already in a draft is still drawn.
+            if (widgetId == EmojiBottomSheet.WIDGET_PHOTO) {
                 alert.dismiss();
                 onGalleryClick();
                 return true;
