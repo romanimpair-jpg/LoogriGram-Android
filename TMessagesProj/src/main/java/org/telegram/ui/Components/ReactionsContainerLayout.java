@@ -1139,18 +1139,12 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
             fillRecentReactionsList(visibleReactions);
         } else if (hitLimit) {
             allReactionsAvailable = false;
-            if (reactionsChat != null && reactionsChat.paid_reactions_available) {
-                hasStar = true;
-                visibleReactions.add(ReactionsLayoutInBubble.VisibleReaction.asStar());
-            }
+            // LoogriGram: the star reaction is not offered - sending one pays
+            // Stars for it.
             for (TLRPC.ReactionCount result : messageObject.messageOwner.reactions.results) {
                 visibleReactions.add(ReactionsLayoutInBubble.VisibleReaction.fromTL(result.reaction));
             }
         } else if (reactionsChat != null) {
-            if (reactionsChat != null && reactionsChat.paid_reactions_available) {
-                hasStar = true;
-                visibleReactions.add(ReactionsLayoutInBubble.VisibleReaction.asStar());
-            }
             if (reactionsChat.available_reactions instanceof TLRPC.TL_chatReactionsAll) {
                 TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(reactionsChat.id);
                 if (chat != null && !ChatObject.isChannelAndNotMegaGroup(chat)) {
