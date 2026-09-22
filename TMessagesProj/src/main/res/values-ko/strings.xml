@@ -979,7 +979,6 @@
     <string name="ShareYouLocationTitle">현재 위치를 공유할까요?</string>
     <string name="ShareYouLocationInfo">현재 위치를 봇에게 보냅니다.</string>
     <string name="ShareYouLocationUnable">앱에서 현재 위치를 확인하지 못하였습니다.</string>
-    <string name="ShareYouLocationUnableManually">직접 선택</string>
     <string name="ShareYouLocationInline">봇이 요청을 받을 때마다 회원님의 위치를 확인합니다.이는 상세 위치 정보를 제공하는 데 사용됩니다.</string>
     <string name="ShareYouPhoneNumberTitle">전화번호를 공유할까요?</string>
     <string name="AreYouSureShareMyContactInfoBot">봇이 회원님의 전화번호를 감지할 것입니다. 이는 다른 서비스와 통합하는 데 도움이 됩니다.</string>

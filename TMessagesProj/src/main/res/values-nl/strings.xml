@@ -932,7 +932,6 @@
     <string name="ShareYouLocationTitle">Locatie delen?</string>
     <string name="ShareYouLocationInfo">Hierdoor wordt je huidige locatie met de bot gedeeld.</string>
     <string name="ShareYouLocationUnable">Huidige locatie kon niet worden vastgesteld</string>
-    <string name="ShareYouLocationUnableManually">Handmatig kiezen</string>
     <string name="ShareYouLocationInline">Deze bot wil toegang tot je locatie bij elk verzoek dat je verstuurt. Dit kan worden gebruikt om locatiespecifieke resultaten te verschaffen.</string>
     <string name="ShareYouPhoneNumberTitle">Telefoonnummer delen?</string>
     <string name="AreYouSureShareMyContactInfoBot">De bot krijgt je telefoonnummer, dit kan handig zijn voor de integratie met andere diensten.</string>

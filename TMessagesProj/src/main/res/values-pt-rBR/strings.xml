@@ -1079,7 +1079,6 @@
     <string name="ShareYouLocationTitle">Compartilhar a Sua Localização?</string>
     <string name="ShareYouLocationInfo">Isso irá enviar sua localização atual ao bot.</string>
     <string name="ShareYouLocationUnable">O app não conseguiu determinar a sua localização atual.</string>
-    <string name="ShareYouLocationUnableManually">Escolher manualmente</string>
     <string name="ShareYouLocationInline">Este bot gostaria de saber a sua localização sempre que você o usar. Isso pode ser utilizado para mostrar resultados baseados em localização.</string>
     <string name="ShareYouPhoneNumberTitle">Compartilhar seu número de telefone?</string>
     <string name="AreYouSureShareMyContactInfoBot">O bot saberá seu número de telefone. Isso pode ser útil para a integração com outros serviços.</string>

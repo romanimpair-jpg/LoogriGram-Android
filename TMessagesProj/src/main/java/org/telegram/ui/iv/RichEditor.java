@@ -1891,6 +1891,9 @@ public class RichEditor extends BaseFragment implements NotificationCenter.Notif
         }, getResourceProvider());
     }
 
+    private boolean isInScheduleMode() {
+        return editingMessageObject == null && chatActivity != null && chatActivity.isInScheduleMode();
+    }
 
     private void sendMessage() {
         if (isSendLocked()) {

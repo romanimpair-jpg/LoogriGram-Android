@@ -1225,7 +1225,6 @@
     <string name="ShareYouLocationTitle">Deinen Standort teilen?</string>
     <string name="ShareYouLocationInfo">Teilt deinen aktuellen Standort mit dem Bot.</string>
     <string name="ShareYouLocationUnable">App kann deinen aktuellen Standort nicht bestimmen</string>
-    <string name="ShareYouLocationUnableManually">Selbst wählen</string>
     <string name="ShareYouLocationInline">Dieser Bot möchte bei jeder Anfrage deinen Standort wissen. Das kann für standortabhängig aufbereitete Informationen benutzt werden.</string>
     <string name="ShareYouPhoneNumberTitle">Deine Telefonnummer teilen?</string>
     <string name="AreYouSureShareMyContactInfoBot">Der Bot wird deine Nummer sehen. Das kann für verschiedene Dienste nützlich sein.</string>

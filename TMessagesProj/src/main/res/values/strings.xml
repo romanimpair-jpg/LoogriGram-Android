@@ -4017,7 +4017,6 @@
     <string name="ShareYouLocationTitle">Share your location?</string>
     <string name="ShareYouLocationInfo">This will send your current location to the bot.</string>
     <string name="ShareYouLocationUnable">App was unable to determine your current location</string>
-    <string name="ShareYouLocationUnableManually">Choose manually</string>
     <string name="ShareYouLocationInline">This bot would like to know your location each time you send it a request. This can be used to provide location-specific results.</string>
     <string name="ShareYouPhoneNumberTitle">Share your phone number?</string>
     <string name="AreYouSureShareMyContactInfoBot">The bot will know your phone number. This can be useful for integration with other services.</string>
@@ -6932,7 +6931,6 @@
     <string name="LimitReachedStoriesMonthly">You can post **%1$d** stories in a month.\nSubscribe to **Telegram Premium** to increase this limit to **%2$d**.</string>
     <string name="LimitReachedStoriesMonthlyPremium">Sorry, you can’t post more than **%1$d** stories in a month.</string>
     <string name="UsersDeselectAll">Deselect All</string>
-    <string name="StoryWidgetLocation">Location</string>
     <string name="StoryWidgetAudio">Audio</string>
     <string name="StoryWidgetPhoto">Photo</string>
     <string name="StoryWidgetLink">Link</string>
@@ -7909,7 +7907,6 @@
     <string name="BusinessProfileLocation">Location</string>
     <string name="BusinessLocationInfo">Display the location of your business on your account.</string>
     <string name="BusinessLocationAddress">Enter Address</string>
-    <string name="BusinessLocationMap">Set Location on Map</string>
     <string name="BusinessLocationClear">Remove Location</string>
     <string name="BusinessLocationUnsavedChanges">You have changed the business location. Apply changes?</string>
     <string name="BusinessLocationClearTitle">Remove Location</string>

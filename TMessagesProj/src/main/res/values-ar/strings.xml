@@ -1094,7 +1094,6 @@
     <string name="ShareYouLocationTitle">مشاركة موقعك؟</string>
     <string name="ShareYouLocationInfo">بهذه العملية سترسل موقعك الحالي للبوت.</string>
     <string name="ShareYouLocationUnable">التطبيق غير قادر على تحديد موقعك الحالي</string>
-    <string name="ShareYouLocationUnableManually">الاختيار يدويًا</string>
     <string name="ShareYouLocationInline">يرغب هذا البوت بمعرفة موقعك عند كل مرة ترسل له طلبًا، يمكن استخدام هذا لتوفير نتائجَ مخصصةٍ لموقعك.</string>
     <string name="ShareYouPhoneNumberTitle">مشاركة رقم هاتفك؟</string>
     <string name="AreYouSureShareMyContactInfoBot">سيطلع البوت على رقم هاتفك. قد يكون هذا مفيدًا عند التعامل مع خدماتٍ أخرى.</string>
