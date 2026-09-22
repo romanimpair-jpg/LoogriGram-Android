@@ -79,7 +79,6 @@ import org.telegram.ui.ActionBar.BottomSheet;
 import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.GraySectionCell;
-import org.telegram.ui.Cells.SlideIntChooseView;
 import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Components.AlertsCreator;
@@ -151,7 +150,6 @@ public class StoryPrivacyBottomSheet extends BottomSheet implements Notification
     private boolean allowCover = true;
     private boolean canChangePeer = true;
     private boolean isRtmpStream = false;
-    private int commentsPrice = 0;
     private int storiesCount = 1;
 
     private HashSet<Long> mergeUsers(ArrayList<Long> users, HashMap<Long, ArrayList<Long>> usersByGroup) {
@@ -1277,14 +1275,8 @@ public class StoryPrivacyBottomSheet extends BottomSheet implements Notification
                     pad.subtractHeight += dp(12 + 40);
                 }
 
-                if (isLive && allowComments) {
-                    items.add(ItemInner.asHeaderCell(getString(R.string.LiveStoryPricePerComment)));
-                    pad.subtractHeight += dp(40);
-                    items.add(ItemInner.asSlider(8));
-                    pad.subtractHeight += dp(75);
-                    items.add(ItemInner.asShadow(getString(R.string.LiveStoryPricePerCommentInfo)));
-                    pad.subtractHeight += dp(50);
-                }
+                // LoogriGram: a price per comment stood here, for a live of your
+                // own. Nothing here is charged for, so comments are free or off.
             } else if (pageType == PAGE_TYPE_CLOSE_FRIENDS) {
                 headerView.setText(getString(R.string.StoryPrivacyAlertCloseFriendsTitle));
                 headerView.setCloseImageVisible(true);
@@ -1998,7 +1990,7 @@ public class StoryPrivacyBottomSheet extends BottomSheet implements Notification
 
             @Override
             public boolean isEnabled(RecyclerView.ViewHolder holder) {
-                return (holder.getItemViewType() == VIEW_TYPE_USER && canChangePeer) || holder.getItemViewType() == VIEW_TYPE_CHECK || holder.getItemViewType() == VIEW_TYPE_BUTTON || holder.getItemViewType() == VIEW_TYPE_SLIDER;
+                return (holder.getItemViewType() == VIEW_TYPE_USER && canChangePeer) || holder.getItemViewType() == VIEW_TYPE_CHECK || holder.getItemViewType() == VIEW_TYPE_BUTTON;
             }
 
             @NonNull
@@ -2035,8 +2027,6 @@ public class StoryPrivacyBottomSheet extends BottomSheet implements Notification
                     view = new TextCell(context, 23, true, true, resourcesProvider);
                 } else if (viewType == VIEW_TYPE_BUTTON) {
                     view = new TextCell(context, 23, true, false, resourcesProvider);
-                } else if (viewType == VIEW_TYPE_SLIDER) {
-                    view = new SlideIntChooseView(context, resourcesProvider);
                 } else {
                     view = new View(context) {
                         @Override
@@ -2126,12 +2116,6 @@ public class StoryPrivacyBottomSheet extends BottomSheet implements Notification
                     }
                 } else if (viewType == VIEW_TYPE_HEADER_CELL) {
                     ((org.telegram.ui.Cells.HeaderCell) holder.itemView).setText(item.text);
-                } else if (viewType == VIEW_TYPE_SLIDER) {
-                    int max = (int) MessagesController.getInstance(currentAccount).starsPaidMessageAmountMax;
-                    final int[] steps = SlideIntChooseView.cut(new int[] { 0, 1, 10, 50, 100, 200, 250, 400, 500, 1000, 2500, 5000, 7500, 9000, 10_000 }, max);
-                    ((SlideIntChooseView) holder.itemView).set((int) Utilities.clamp(commentsPrice, max, 0), SlideIntChooseView.Options.make(0, steps, 20, (type, val) -> type == 0 ? val == 0 ? getString(R.string.LiveStoryPricePerCommentFree) : LocaleController.formatPluralStringComma("Stars", val) : "" + val), newValue -> {
-                        commentsPrice = newValue;
-                    });
                 }
             }
 
@@ -2361,7 +2345,7 @@ public class StoryPrivacyBottomSheet extends BottomSheet implements Notification
             button.setLoading(true);
         }
         if (onDone != null) {
-            onDone.done(privacy, allowComments, allowScreenshots, keepOnMyPage, isRtmpStream, selectedPeer, commentsPrice, loaded != null ? () -> {
+            onDone.done(privacy, allowComments, allowScreenshots, keepOnMyPage, isRtmpStream, selectedPeer, loaded != null ? () -> {
                 if (button != null) {
                     button.setLoading(false);
                 }
@@ -2500,7 +2484,6 @@ public class StoryPrivacyBottomSheet extends BottomSheet implements Notification
             boolean keepInProfile,
             boolean isRtmpStream,
             TLRPC.InputPeer peer,
-            int pricePerComment,
             Runnable loaded,
             Runnable cancelled
         );
@@ -2611,11 +2594,10 @@ public class StoryPrivacyBottomSheet extends BottomSheet implements Notification
         return this;
     }
 
-    public StoryPrivacyBottomSheet set(boolean allowComments, boolean allowScreenshots, boolean keepOnMyPage, int price) {
+    public StoryPrivacyBottomSheet set(boolean allowComments, boolean allowScreenshots, boolean keepOnMyPage) {
         this.allowComments = allowComments;
         this.allowScreenshots = allowScreenshots;
         this.keepOnMyPage = keepOnMyPage;
-        this.commentsPrice = price;
 
         View[] viewPages = viewPager.getViewPages();
         if (viewPages[0] instanceof Page) {
@@ -2703,7 +2685,6 @@ public class StoryPrivacyBottomSheet extends BottomSheet implements Notification
     public static final int VIEW_TYPE_CHECK = 7;
     public static final int VIEW_TYPE_HEADER_CELL = 8;
     public static final int VIEW_TYPE_BUTTON = 9;
-    public static final int VIEW_TYPE_SLIDER = 10;
     public static final int VIEW_TYPE_HEADER3 = 11;
 
     private static final int OPTION_EDIT_COVER = 0;
@@ -2816,11 +2797,6 @@ public class StoryPrivacyBottomSheet extends BottomSheet implements Notification
             item.id = id;
             return item;
         }
-        public static ItemInner asSlider(int id) {
-            ItemInner item = new ItemInner(VIEW_TYPE_SLIDER, false);
-            item.id = id;
-            return item;
-        }
 
         public static ItemInner asNoUsers() {
             return new ItemInner(VIEW_TYPE_NO_USERS, false);
@@ -2856,8 +2832,6 @@ public class StoryPrivacyBottomSheet extends BottomSheet implements Notification
             } else if (viewType == VIEW_TYPE_CHECK && (resId != i.resId || !TextUtils.equals(text, i.text) || checked != i.checked)) {
                 return false;
             } else if (viewType == VIEW_TYPE_BUTTON && (id != i.id || drawable != i.drawable || !TextUtils.equals(text, i.text) || !TextUtils.equals(text2, i.text2))) {
-                return false;
-            } else if (viewType == VIEW_TYPE_SLIDER && (id != i.id)) {
                 return false;
             }
             return true;

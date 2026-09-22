@@ -3253,7 +3253,7 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
                             }
                         }
                     })
-                    .whenSelectedRules((privacy, allowComments, allowScreenshots, keepInProfile, isRtmpStream, sendAs, pricePerComment, whenDone, cancelled) -> {
+                    .whenSelectedRules((privacy, allowComments, allowScreenshots, keepInProfile, isRtmpStream, sendAs, whenDone, cancelled) -> {
                         if (outputEntry == null) {
                             return;
                         }
@@ -3330,7 +3330,7 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
             .whenSelectedPeer(peer -> {
                 livePeerView.set(livePeer = peer);
             })
-            .whenSelectedRules((privacy, allowComments, allowScreenshots, keepInProfile, isRtmpStream, sendAs, pricePerComment, whenDone, cancelled) -> {
+            .whenSelectedRules((privacy, allowComments, allowScreenshots, keepInProfile, isRtmpStream, sendAs, whenDone, cancelled) -> {
                 PermissionRequest.ensureAllPermissions(R.raw.permission_request_camera, R.string.PermissionNoCameraMicVideo, isRtmpStream ? new String[] {} : new String[] { Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO }, granted -> {
                     if (!granted) {
                         if (cancelled != null) {
@@ -3348,7 +3348,7 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
                     req2.random_id = Utilities.random.nextLong();
                     req2.rtmp_stream = isRtmpStream;
                     req2.messages_enabled = allowComments;
-                    req2.send_paid_messages_stars = (long) pricePerComment;
+                    // LoogriGram: no price per comment; see StoryPrivacyBottomSheet.
                     ConnectionsManager.getInstance(currentAccount).sendRequest(req2, (res2, err2) -> AndroidUtilities.runOnUIThread(() -> {
                         if (res2 instanceof TLRPC.Updates) {
                             MessagesController.getInstance(currentAccount).processUpdates((TLRPC.Updates) res2, false);

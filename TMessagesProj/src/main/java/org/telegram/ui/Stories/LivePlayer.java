@@ -882,10 +882,19 @@ public class LivePlayer implements NotificationCenter.NotificationCenterDelegate
         return 0;
     }
 
+    // LoogriGram: a live that charges Stars per comment is closed to us, the
+    // way a user who charges per message is: nothing here pays. Upstream's own
+    // comments-off lock is what shows it, with our own line beneath it.
+    public boolean commentsPaid() {
+        if (call == null) return false;
+        if (isAdmin()) return false;
+        return call.send_paid_messages_stars > 0;
+    }
+
     public boolean commentsDisabled() {
         if (call == null) return false;
         if (isAdmin()) return false;
-        return !call.messages_enabled;
+        return !call.messages_enabled || commentsPaid();
     }
 
     public boolean sendAsDisabled() {

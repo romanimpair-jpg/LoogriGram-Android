@@ -1133,19 +1133,18 @@ public class LiveCommentsView extends FrameLayout implements NotificationCenter.
         return defPeer == null ? UserConfig.getInstance(currentAccount).getClientUserId() : DialogObject.getPeerDialogId(defPeer);
     }
 
-    public int send(TLRPC.TL_textWithEntities text, long stars) {
-        return send(getDefaultPeerId(), text, stars);
+    public int send(TLRPC.TL_textWithEntities text) {
+        return send(getDefaultPeerId(), text);
     }
 
-    public int send(long send_as, TLRPC.TL_textWithEntities text, long stars) {
+    // LoogriGram: a comment carried the Stars you paid to send or highlight it
+    // (allow_paid_stars). Nothing here pays, and a live that charges per
+    // comment is locked shut in PeerStoriesView, so a comment is always free.
+    public int send(long send_as, TLRPC.TL_textWithEntities text) {
         final int id = UserConfig.getInstance(currentAccount).getNewMessageId();
         final TL_phone.sendGroupCallMessage req = new TL_phone.sendGroupCallMessage();
         req.call = inputCall;
         req.message = text;
-        if (stars > 0) {
-            req.flags |= TLObject.FLAG_0;
-            req.allow_paid_stars = stars;
-        }
         req.random_id = Utilities.random.nextLong();
         req.flags |= TLObject.FLAG_1;
         req.send_as = MessagesController.getInstance(currentAccount).getInputPeer(send_as);
@@ -1161,9 +1160,7 @@ public class LiveCommentsView extends FrameLayout implements NotificationCenter.
             } else if (err != null) {
                 AndroidUtilities.runOnUIThread(() -> {
                     delete(id);
-                    if ("BALANCE_TOO_LOW".equalsIgnoreCase(err.text)) {
-                        new StarsIntroActivity.StarsNeededSheet(getContext(), new DarkThemeResourceProvider(), stars, StarsIntroActivity.StarsNeededSheet.TYPE_LIVE_COMMENTS, "", () -> send(send_as, text, stars), dialogId).show();
-                    } else if ("GROUPCALL_INVALID".equalsIgnoreCase(err.text)) {
+                    if ("GROUPCALL_INVALID".equalsIgnoreCase(err.text)) {
                         if (livePlayer != null) {
                             livePlayer.storyDeleted();
                         }
@@ -1174,33 +1171,13 @@ public class LiveCommentsView extends FrameLayout implements NotificationCenter.
             }
         });
 
-        if (topDonors != null && stars > 0) {
-            TL_phone.groupCallDonor myDonor = null;
-            for (int i = 0; i < topDonors.size(); ++i) {
-                if (topDonors.get(i).my) {
-                    myDonor = topDonors.get(i);
-                    break;
-                }
-            }
-            if (myDonor != null) {
-                myDonor.stars += stars;
-            } else {
-                myDonor = new TL_phone.groupCallDonor();
-                myDonor.my = true;
-                myDonor.anonymous = false;
-                myDonor.peer_id = MessagesController.getInstance(currentAccount).getPeer(send_as);
-                myDonor.stars = stars;
-                topDonors.add(myDonor);
-            }
-        }
-
         push(
             ConnectionsManager.getInstance(UserConfig.selectedAccount).getCurrentTime(),
             id,
             send_as == this.dialogId || isAdmin(),
             send_as,
             text,
-            stars,
+            0,
             false
         );
 
