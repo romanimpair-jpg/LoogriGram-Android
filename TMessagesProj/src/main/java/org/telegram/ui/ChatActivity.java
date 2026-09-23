@@ -304,7 +304,6 @@ import org.telegram.ui.Components.voip.CellFlickerDrawable;
 import org.telegram.ui.Components.voip.VoIPHelper;
 import org.telegram.ui.Delegates.ChatActivityMemberRequestsDelegate;
 import org.telegram.ui.Stars.StarsController;
-import org.telegram.ui.Stars.StarsIntroActivity;
 import org.telegram.ui.Stars.MessageSuggestionOfferSheet;
 import org.telegram.ui.Stories.StoriesListPlaceProvider;
 import org.telegram.ui.Stories.StoriesUtilities;
@@ -27978,10 +27977,14 @@ public class ChatActivity extends BaseFragment implements
     private TL_keyboard.KeyboardInlineButton pinnedButton(MessageObject message) {
         if (message != null && message.messageOwner != null && message.messageOwner.reply_markup instanceof TLRPC.TL_replyInlineMarkup) {
             final TLRPC.TL_replyInlineMarkup replyInlineMarkup = (TLRPC.TL_replyInlineMarkup) message.messageOwner.reply_markup;
-            return replyInlineMarkup.rows != null && replyInlineMarkup.rows.size() == 1 &&
+            final TL_keyboard.KeyboardInlineButton button = replyInlineMarkup.rows != null && replyInlineMarkup.rows.size() == 1 &&
                 replyInlineMarkup.rows.get(0) != null && replyInlineMarkup.rows.get(0).buttons != null &&
                 replyInlineMarkup.rows.get(0).buttons.size() == 1 ?
                 replyInlineMarkup.rows.get(0).buttons.get(0) : null;
+            // LoogriGram: a pinned invoice put its Pay button on the pinned
+            // bar, priced in Stars. The invoice itself is held and never
+            // drawn, and a Buy button does nothing here, so it is not offered.
+            return TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeBuy.class) ? null : button;
         }
         return null;
     }
@@ -28066,9 +28069,6 @@ public class ChatActivity extends BaseFragment implements
                 pinnedMessageButton[animateToNext != 0 ? 0 : 1].setOnLongClickListener(null);
                 if (botButton != null) {
                     CharSequence string = new SpannableString(botButton.text);
-                    if (TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeBuy.class) && pinnedMessageObject != null && MessageObject.getMedia(pinnedMessageObject.messageOwner) instanceof TLRPC.TL_messageMediaInvoice) {
-                        string = StarsFormat.replaceStars(string);
-                    }
                     string = Emoji.replaceEmoji(string, buttonTextView.getPaint().getFontMetricsInt(), false);
                     buttonTextView.setText(string);
                     final MessageObject buttonMessage = pinnedMessageObject;
@@ -28078,7 +28078,6 @@ public class ChatActivity extends BaseFragment implements
                                 !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeCallback.class) &&
                                 !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeGame.class) &&
                                 !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeUrl.class) &&
-                                !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeBuy.class) &&
                                 !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeUrlAuth.class) &&
                                 !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeUserProfile.class)) {
                             return;
@@ -28092,7 +28091,6 @@ public class ChatActivity extends BaseFragment implements
                                 !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeSwitchInline.class) &&
                                 !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeCallback.class) &&
                                 !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeGame.class) &&
-                                !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeBuy.class) &&
                                 !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeUrlAuth.class) &&
                                 !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeUserProfile.class)) {
                             return false;
@@ -30215,22 +30213,8 @@ public class ChatActivity extends BaseFragment implements
                     BulletinFactory.of(this).createErrorBulletin(LocaleController.getString(R.string.MessageNotFound), themeDelegate).show();
                 }
                 return true;
-            } else if (!longpress && message.messageOwner.action instanceof TLRPC.TL_messageActionPaymentSent) {
-                TLRPC.TL_payments_getPaymentReceipt req = new TLRPC.TL_payments_getPaymentReceipt();
-                req.msg_id = message.getId();
-                req.peer = getMessagesController().getInputPeer(message.messageOwner.peer_id);
-                getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                    if (response instanceof TLRPC.TL_payments_paymentReceiptStars) {
-                        StarsIntroActivity.showTransactionSheet(getContext(), false, currentAccount, (TLRPC.TL_payments_paymentReceiptStars) response, resourceProvider);
-                    } else if (response instanceof TLRPC.PaymentReceipt) {
-                        presentFragment(new PaymentFormActivity((TLRPC.PaymentReceipt) response));
-                    }
-                }), ConnectionsManager.RequestFlagFailOnServerErrors);
-                return true;
-            } else if (!longpress && message.messageOwner.action instanceof TLRPC.TL_messageActionPaymentRefunded) {
-                TLRPC.TL_messageActionPaymentRefunded action = (TLRPC.TL_messageActionPaymentRefunded) message.messageOwner.action;
-                StarsIntroActivity.showTransactionSheet(getContext(), currentAccount, message.messageOwner.date, action, resourceProvider);
-                return true;
+            // LoogriGram: tapping a "payment sent" or "payment refunded" service
+            // message opened its receipt here. Both are held and never drawn.
             } else if (message.messageOwner.action instanceof TLRPC.TL_messageActionGroupCall || message.messageOwner.action instanceof TLRPC.TL_messageActionInviteToGroupCall || message.messageOwner.action instanceof TLRPC.TL_messageActionGroupCallScheduled) {
                 if (getParentActivity() == null) {
                     return false;
@@ -35494,38 +35478,6 @@ public class ChatActivity extends BaseFragment implements
         };
     }
 
-    private Browser.Progress makeProgressForPaidMedia(ChatMessageCell cell) {
-        if (progressDialogCurrent != null) {
-            progressDialogCurrent.cancel(true);
-            progressDialogCurrent = null;
-        }
-        if (cell == null || cell.getMessageObject() == null) {
-            return progressDialogCurrent = null;
-        }
-        final int id = cell.getMessageObject().getId();
-        return progressDialogCurrent = new Browser.Progress() {
-            @Override
-            public void init() {
-                progressDialogAtMessageId = id;
-                progressDialogAtMessageType = PROGRESS_PAID_MEDIA;
-                progressDialogBotButtonUrl = null;
-
-                cell.invalidate();
-            }
-
-            @Override
-            public void end(boolean replaced) {
-                if (!replaced) {
-                    AndroidUtilities.runOnUIThread(() -> {
-                        if (progressDialogAtMessageId == id) {
-                            resetProgressDialogLoading();
-                        }
-                    }, 240);
-                }
-            }
-        };
-    }
-
     private void loadFullRichMessage(ChatMessageCell cell) {
         if (cell == null) return;
         final MessageObject messageObject = cell.getMessageObject();
@@ -36439,7 +36391,6 @@ public class ChatActivity extends BaseFragment implements
                             !(TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeCallback.class)) &&
                             !(TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeGame.class)) &&
                             !(TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeUrl.class)) &&
-                            !(TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeBuy.class)) &&
                             !(TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeUrlAuth.class)) &&
                             !(TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeUserProfile.class)) &&
                             !(TLKeyboardHelper.isType(button, TL_keyboard.TL_buttonTypeRequestPeer.class)) &&
@@ -39050,7 +39001,6 @@ public class ChatActivity extends BaseFragment implements
                     !(TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeSwitchInline.class)) &&
                     !(TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeCallback.class)) &&
                     !(TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeGame.class)) &&
-                    !(TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeBuy.class)) &&
                     !(TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeUrlAuth.class)) &&
                     !(TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeUserProfile.class)) &&
                     !(TLKeyboardHelper.isType(button, TL_keyboard.TL_buttonTypeRequestPeer.class)) &&
@@ -39197,7 +39147,6 @@ public class ChatActivity extends BaseFragment implements
                     !TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeSwitchInline.class) &&
                     !TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeCallback.class) &&
                     !TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeGame.class) &&
-                    !TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeBuy.class) &&
                     !TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeUrlAuth.class) &&
                     !TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeUserProfile.class)) {
                 return;
@@ -39850,11 +39799,6 @@ public class ChatActivity extends BaseFragment implements
         }
 
         @Override
-        public void didPressExtendedMediaPreview(ChatMessageCell cell, TL_keyboard.KeyboardInlineButton button) {
-            getSendMessagesHelper().sendCallback(true, cell.getMessageObject(), button, ChatActivity.this);
-        }
-
-        @Override
         public void needOpenWebView(MessageObject message, String url, String title, String description, String originalUrl, int w, int h) {
             try {
                 EmbedBottomSheet.show(ChatActivity.this, message, photoViewerProvider, title, description, originalUrl, url, w, h, isKeyboardVisible());
@@ -40115,15 +40059,7 @@ public class ChatActivity extends BaseFragment implements
         @Override
         public void didPressGroupImage(ChatMessageCell cell, ImageReceiver imageReceiver, TLRPC.MessageExtendedMedia media, float x, float y) {
             final MessageObject message = cell.getMessageObject();
-            if (media instanceof TLRPC.TL_messageExtendedMediaPreview) {
-                final Browser.Progress progress = makeProgressForPaidMedia(cell);
-                Runnable cancel = StarsController.getInstance(currentAccount).pay(message, progress::end);
-                if (cancel != null) {
-                    progress.onCancel(cancel);
-                    progress.init();
-                }
-                return;
-            }
+            // LoogriGram: a paid album's locked preview paid to unlock it here.
             final TLRPC.Message omsg = message.messageOwner;
             if (!(message.messageOwner.media instanceof TLRPC.TL_messageMediaPaidMedia)) return;
             TLRPC.TL_messageMediaPaidMedia paidMedia = (TLRPC.TL_messageMediaPaidMedia) message.messageOwner.media;
@@ -41593,7 +41529,7 @@ public class ChatActivity extends BaseFragment implements
         themeDescriptions.add(new ThemeDescription(chatListView, ThemeDescription.FLAG_TEXTCOLOR, new Class[]{ChatActionCell.class}, getThemedPaint(Theme.key_paint_chatActionText), null, null, Theme.key_chat_serviceText));
         themeDescriptions.add(new ThemeDescription(chatListView, ThemeDescription.FLAG_LINKCOLOR, new Class[]{ChatActionCell.class}, getThemedPaint(Theme.key_paint_chatActionText), null, null, Theme.key_chat_serviceLink));
 
-        themeDescriptions.add(new ThemeDescription(chatListView, 0, new Class[]{ChatMessageCell.class}, null, new Drawable[]{Theme.chat_botCardDrawable, getThemedDrawable(Theme.key_drawable_shareIcon), getThemedDrawable(Theme.key_drawable_replyIcon), getThemedDrawable(Theme.key_drawable_botInline), getThemedDrawable(Theme.key_drawable_botLink), getThemedDrawable(Theme.key_drawable_botLock), getThemedDrawable(Theme.key_drawable_botInvite), getThemedDrawable(Theme.key_drawable_goIcon), getThemedDrawable(Theme.key_drawable_commentSticker)}, null, Theme.key_chat_serviceIcon));
+        themeDescriptions.add(new ThemeDescription(chatListView, 0, new Class[]{ChatMessageCell.class}, null, new Drawable[]{getThemedDrawable(Theme.key_drawable_shareIcon), getThemedDrawable(Theme.key_drawable_replyIcon), getThemedDrawable(Theme.key_drawable_botInline), getThemedDrawable(Theme.key_drawable_botLink), getThemedDrawable(Theme.key_drawable_botLock), getThemedDrawable(Theme.key_drawable_botInvite), getThemedDrawable(Theme.key_drawable_goIcon), getThemedDrawable(Theme.key_drawable_commentSticker)}, null, Theme.key_chat_serviceIcon));
 
         themeDescriptions.add(new ThemeDescription(chatListView, 0, new Class[]{ChatMessageCell.class, ChatActionCell.class}, null, null, null, Theme.key_chat_serviceBackground));
         themeDescriptions.add(new ThemeDescription(chatListView, 0, new Class[]{ChatMessageCell.class, ChatActionCell.class}, null, null, null, Theme.key_chat_serviceBackgroundSelected));

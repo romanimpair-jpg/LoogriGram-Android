@@ -226,8 +226,6 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
 
     private boolean isViewPortByMeasureSuppressed;
 
-    private String currentPaymentSlug;
-
     private AlertDialog currentDialog;
     private int dialogSequentialOpenTimes;
     private long lastDialogClosed;
@@ -725,21 +723,13 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
         }
     }
 
-    public void onInvoiceStatusUpdate(String slug, String status) {
-        onInvoiceStatusUpdate(slug, status, false);
-    }
-
-    public void onInvoiceStatusUpdate(String slug, String status, boolean ignoreCurrentCheck) {
+    private void onInvoiceStatusUpdate(String slug, String status) {
         try {
             JSONObject data = new JSONObject();
             data.put("slug", slug);
             data.put("status", status);
             notifyEvent("invoice_closed", data);
             FileLog.d("invoice_closed " + data);
-
-            if (!ignoreCurrentCheck && Objects.equals(currentPaymentSlug, slug)) {
-                currentPaymentSlug = null;
-            }
         } catch (JSONException e) {
             FileLog.e(e);
         }
@@ -1827,26 +1817,11 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
                 try {
                     JSONObject jsonData = new JSONObject(eventData);
                     String slug = jsonData.optString("slug");
-
-                    if (currentPaymentSlug != null) {
-                        onInvoiceStatusUpdate(slug, "cancelled", true);
-                        break;
-                    }
-
-                    currentPaymentSlug = slug;
-
-                    TLRPC.TL_payments_getPaymentForm req = new TLRPC.TL_payments_getPaymentForm();
-                    TLRPC.TL_inputInvoiceSlug invoiceSlug = new TLRPC.TL_inputInvoiceSlug();
-                    invoiceSlug.slug = slug;
-                    req.invoice = invoiceSlug;
-
-                    ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                        if (error != null) {
-                            onInvoiceStatusUpdate(slug, "failed");
-                        } else {
-                            delegate.onWebAppOpenInvoice(invoiceSlug, slug, response);
-                        }
-                    }));
+                    // LoogriGram: the mini app asked us to pay an invoice. Upstream
+                    // fetched its payment form and opened it; nothing is paid here,
+                    // so it gets the answer it already handles for a form that
+                    // could not be fetched, straight away rather than never.
+                    onInvoiceStatusUpdate(slug, "failed");
                 } catch (JSONException e) {
                     FileLog.e(e);
                 }
@@ -3563,15 +3538,6 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
          * @param chatTypes Chat types
          */
         void onWebAppSwitchInlineQuery(TLRPC.User botUser, String query, List<String> chatTypes);
-
-        /**
-         * Called when web app attempts to open invoice
-         *
-         * @param inputInvoice Invoice source
-         * @param slug      Invoice slug for the form
-         * @param response  Payment request response
-         */
-        void onWebAppOpenInvoice(TLRPC.InputInvoice inputInvoice, String slug, TLObject response);
 
         /**
          * Setups main button

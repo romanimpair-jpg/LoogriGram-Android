@@ -5619,8 +5619,6 @@ public class RichMessageLayout {
                 return R.drawable.bot_webview;
             } else if (type instanceof TL_keyboard.TL_inlineButtonTypeSwitchInline) {
                 return R.drawable.mini_inline_switch_16;
-            } else if (type instanceof TL_keyboard.TL_inlineButtonTypeBuy) {
-                return R.drawable.bot_card;
             } else if (type instanceof TL_keyboard.TL_inlineButtonTypeUserProfile) {
                 return R.drawable.mini_inline_profile_16;
             }

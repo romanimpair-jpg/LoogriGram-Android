@@ -2486,7 +2486,6 @@ public class Theme {
     public static Drawable chat_moreIconDrawable;
     public static Drawable chat_goIconDrawable;
     public static Drawable chat_botLinkDrawable;
-    public static Drawable chat_botCardDrawable;
     public static Drawable chat_botInlineDrawable;
     public static Drawable chat_botWebViewDrawable;
     public static Drawable chat_botInviteDrawable;
@@ -8251,7 +8250,6 @@ public class Theme {
 
             chat_botLinkDrawable = resources.getDrawable(R.drawable.bot_link);
             chat_botInlineDrawable = resources.getDrawable(R.drawable.bot_lines);
-            chat_botCardDrawable = resources.getDrawable(R.drawable.bot_card);
             chat_botWebViewDrawable = resources.getDrawable(R.drawable.bot_webview);
             chat_botInviteDrawable = resources.getDrawable(R.drawable.bot_invite);
             chat_botLockDrawable = resources.getDrawable(R.drawable.permission_locked);

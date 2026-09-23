@@ -74,7 +74,6 @@ class BotButton {
         Canvas canvas,
         RectF rect,
         boolean drawProgress,
-        boolean drawBuyCard,
         Theme.ResourcesProvider resourcesProvider
     ) {
         boolean invalidate = false;
@@ -231,11 +230,8 @@ class BotButton {
             final int x = (int) rect.right - dp(3) - drawable.getIntrinsicWidth();
             BaseCell.setDrawableBounds(drawable, x, rect.top + dp(3));
             drawable.draw(canvas);
-        } else if (TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeBuy.class) && drawBuyCard) {
-            final int x = (int) rect.right - dp(5) - Theme.chat_botCardDrawable.getIntrinsicWidth();
-            BaseCell.setDrawableBounds(Theme.chat_botCardDrawable, x, rect.top + dp(4));
-            Theme.chat_botCardDrawable.draw(canvas);
         }
+        // LoogriGram: an unpaid invoice's Pay button drew a card icon here.
 
         canvas.restore();
 

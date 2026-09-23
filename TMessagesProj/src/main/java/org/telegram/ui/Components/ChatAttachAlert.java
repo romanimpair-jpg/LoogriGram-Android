@@ -120,7 +120,6 @@ import org.telegram.messenger.utils.GradientProtectionDrawable;
 import org.telegram.messenger.utils.RectFMergeBounding;
 import org.telegram.messenger.utils.ViewOutlineProviderImpl;
 import org.telegram.tgnet.ConnectionsManager;
-import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenuItem;
@@ -159,12 +158,10 @@ import org.telegram.ui.GradientClip;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.MessageSendPreview;
 import org.telegram.ui.PassportActivity;
-import org.telegram.ui.PaymentFormActivity;
 import org.telegram.ui.PhotoPickerActivity;
 import org.telegram.ui.PhotoPickerSearchActivity;
 import org.telegram.ui.PhotoViewer;
 import org.telegram.ui.PremiumPreviewFragment;
-import org.telegram.ui.Stars.StarsController;
 import org.telegram.ui.Stars.StarsIntroActivity;
 import org.telegram.ui.Stars.MessageSuggestionOfferSheet;
 import org.telegram.ui.Stories.recorder.HintView2;
@@ -181,7 +178,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 
 import me.vkryl.android.animator.BoolAnimator;
@@ -358,46 +354,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     @Override
                     public void onWebAppSetBackgroundColor(int color) {
                         webViewLayout.setCustomBackground(color);
-                    }
-
-                    @Override
-                    public void onWebAppOpenInvoice(TLRPC.InputInvoice inputInvoice, String slug, TLObject response) {
-                        BaseFragment parentFragment = baseFragment;
-                        PaymentFormActivity paymentFormActivity = null;
-                        if (response instanceof TLRPC.TL_payments_paymentFormStars) {
-                            final AlertDialog progressDialog = new AlertDialog(getContext(), AlertDialog.ALERT_TYPE_SPINNER);
-                            progressDialog.showDelayed(150);
-                            StarsController.getInstance(currentAccount).openPaymentForm(null, inputInvoice, (TLRPC.TL_payments_paymentFormStars) response, () -> {
-                                progressDialog.dismiss();
-                            }, status -> {
-                                webViewLayout.getWebViewContainer().onInvoiceStatusUpdate(slug, status);
-                            });
-                            AndroidUtilities.hideKeyboard(webViewLayout);
-                            return;
-                        } else if (response instanceof TLRPC.PaymentForm) {
-                            TLRPC.PaymentForm form = (TLRPC.PaymentForm) response;
-                            MessagesController.getInstance(currentAccount).putUsers(form.users, false);
-                            paymentFormActivity = new PaymentFormActivity(form, slug, parentFragment);
-                        } else if (response instanceof TLRPC.PaymentReceipt) {
-                            paymentFormActivity = new PaymentFormActivity((TLRPC.PaymentReceipt) response);
-                        }
-
-                        if (paymentFormActivity != null) {
-                            webViewLayout.scrollToTop();
-
-                            AndroidUtilities.hideKeyboard(webViewLayout);
-                            OverlayActionBarLayoutDialog overlayActionBarLayoutDialog = new OverlayActionBarLayoutDialog(parentFragment.getParentActivity(), resourcesProvider);
-                            overlayActionBarLayoutDialog.show();
-                            paymentFormActivity.setPaymentFormCallback(status -> {
-                                if (status != PaymentFormActivity.InvoiceStatus.PENDING) {
-                                    overlayActionBarLayoutDialog.dismiss();
-                                }
-
-                                webViewLayout.getWebViewContainer().onInvoiceStatusUpdate(slug, status.name().toLowerCase(Locale.ROOT));
-                            });
-                            paymentFormActivity.setResourcesProvider(resourcesProvider);
-                            overlayActionBarLayoutDialog.addFragment(paymentFormActivity);
-                        }
                     }
 
                     @Override

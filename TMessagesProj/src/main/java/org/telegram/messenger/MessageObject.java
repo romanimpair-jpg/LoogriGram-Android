@@ -53,13 +53,11 @@ import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.ringtone.RingtoneDataStore;
 import org.telegram.messenger.utils.tlutils.AmountUtils;
-import org.telegram.messenger.utils.tlutils.TLKeyboardHelper;
 import org.telegram.messenger.utils.tlutils.TlUtils;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.tgnet.tl.TL_keyboard;
 import org.telegram.tgnet.tl.TL_iv;
 import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.Theme;
@@ -4522,16 +4520,13 @@ public class MessageObject {
                 for (int b = 0; b < size; b++) {
                     BotInlineKeyboard.Button button = inlineKeyboard.getButton(a, b);
                     botButtonsLayout.append(a).append(b);
-                    CharSequence text;
-                    if ((button instanceof BotInlineKeyboard.ButtonBot) && TLKeyboardHelper.isType(((BotInlineKeyboard.ButtonBot) button).button, TL_keyboard.TL_inlineButtonTypeBuy.class) && (getMedia(messageOwner).flags & 4) != 0) {
-                        text = getString(R.string.PaymentReceipt);
-                    } else {
-                        String str = button.getText();
-                        if (str == null) {
-                            str = "";
-                        }
-                        text = Emoji.replaceEmoji(str, Theme.chat_msgBotButtonPaint.getFontMetricsInt(), false);
+                    // LoogriGram: a paid invoice's Pay button was measured as
+                    // "Receipt". Invoices are held and never drawn.
+                    String str = button.getText();
+                    if (str == null) {
+                        str = "";
                     }
+                    CharSequence text = Emoji.replaceEmoji(str, Theme.chat_msgBotButtonPaint.getFontMetricsInt(), false);
                     StaticLayout staticLayout = new StaticLayout(text, Theme.chat_msgBotButtonPaint, dp(2000), Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
                     if (staticLayout.getLineCount() > 0) {
                         float width = staticLayout.getLineWidth(0);

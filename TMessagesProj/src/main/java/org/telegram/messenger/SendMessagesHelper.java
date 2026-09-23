@@ -51,7 +51,6 @@ import androidx.annotation.UiThread;
 import androidx.collection.LongSparseArray;
 import androidx.core.view.inputmethod.InputContentInfoCompat;
 
-import org.json.JSONObject;
 import org.telegram.messenger.audioinfo.AudioInfo;
 import org.telegram.messenger.support.SparseLongArray;
 import org.telegram.messenger.utils.EphemeralMessagesHelper;
@@ -92,16 +91,12 @@ import org.telegram.ui.Components.poll.attached.PollAttachedMediaSticker;
 import org.telegram.ui.Components.voip.AnimatedFileInfo;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.OAuthSheet;
-import org.telegram.ui.Stars.StarsController;
-import org.telegram.ui.Stars.StarsIntroActivity;
 import org.telegram.ui.TON.TONIntroActivity;
-import org.telegram.ui.bots.BotWebViewSheet;
 import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.Premium.LimitReachedBottomSheet;
 import org.telegram.ui.Components.Reactions.ReactionsLayoutInBubble;
 import org.telegram.ui.Components.Reactions.ReactionsUtils;
-import org.telegram.ui.PaymentFormActivity;
 import org.telegram.ui.Stories.MessageMediaStoryFull;
 import org.telegram.ui.TwoStepVerificationActivity;
 import org.telegram.ui.TwoStepVerificationSetupActivity;
@@ -3872,11 +3867,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             type = 1;
         } else {
             cacheFinal = cache;
-            if (TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeBuy.class)) {
-                type = 2;
-            } else {
-                type = 0;
-            }
+            type = 0;
         }
         final String key = messageObject.getDialogId() + "_" + messageObject.getId() + "_" + Utilities.bytesToHex(button.getData()) + "_" + type;
         waitingForCallback.put(key, true);
@@ -3930,22 +3921,9 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                     } else if (response instanceof TLRPC.TL_urlAuthResultDefault) {
                         AlertsCreator.showOpenUrlAlert(parentFragment, buttonTypeUrlAuth.url, false, true);
                     }
-                } else if (TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeBuy.class)) {
-                    if (response instanceof TLRPC.TL_payments_paymentFormStars) {
-                        TLRPC.InputInvoice inputInvoice = ((TLRPC.TL_payments_getPaymentForm) request[0]).invoice;
-                        StarsController.getInstance(currentAccount).openPaymentForm(messageObject, inputInvoice, (TLRPC.TL_payments_paymentFormStars) response, () -> {
-                            waitingForCallback.remove(key);
-                            finalKeys.remove(key);
-                        }, status -> {});
-                    } else if (response instanceof TLRPC.PaymentForm) {
-                        final TLRPC.PaymentForm form = (TLRPC.PaymentForm) response;
-                        getMessagesController().putUsers(form.users, false);
-                        parentFragment.presentFragment(new PaymentFormActivity(form, messageObject, parentFragment));
-                    } else if (response instanceof TLRPC.TL_payments_paymentReceiptStars) {
-                        StarsIntroActivity.showTransactionSheet(LaunchActivity.instance != null ? LaunchActivity.instance : ApplicationLoader.applicationContext, false, currentAccount, (TLRPC.TL_payments_paymentReceiptStars) response, null);
-                    } else if (response instanceof TLRPC.PaymentReceipt) {
-                        parentFragment.presentFragment(new PaymentFormActivity((TLRPC.PaymentReceipt) response));
-                    }
+                    // LoogriGram: a Buy button's answer - the invoice's payment
+                    // form, or its receipt once paid - was opened here. Nothing
+                    // presses one any more; see didPressedBotButton.
                 } else {
                     TLRPC.TL_messages_botCallbackAnswer res = (TLRPC.TL_messages_botCallbackAnswer) response;
                     final TL_keyboard.TL_inlineButtonTypeCallback buttonTypeCallback = TLKeyboardHelper.getType(button, TL_keyboard.TL_inlineButtonTypeCallback.class);
@@ -4108,28 +4086,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 req.flags |= 2;
                 request[0] = req;
                 getConnectionsManager().sendRequest(req, requestDelegate, ConnectionsManager.RequestFlagFailOnServerErrors);
-            } else if (TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeBuy.class)) {
-                if ((messageObject.messageOwner.media.flags & 4) == 0) {
-                    TLRPC.TL_payments_getPaymentForm req = new TLRPC.TL_payments_getPaymentForm();
-                    TLRPC.TL_inputInvoiceMessage inputInvoice = new TLRPC.TL_inputInvoiceMessage();
-                    inputInvoice.msg_id = messageObject.getId();
-                    inputInvoice.peer = getMessagesController().getInputPeer(messageObject.messageOwner.peer_id);
-                    req.invoice = inputInvoice;
-                    final JSONObject themeParams = BotWebViewSheet.makeThemeParams(null);
-                    if (themeParams != null) {
-                        req.theme_params = new TLRPC.TL_dataJSON();
-                        req.theme_params.data = themeParams.toString();
-                        req.flags |= 1;
-                    }
-                    request[0] = req;
-                    getConnectionsManager().sendRequest(req, requestDelegate, ConnectionsManager.RequestFlagFailOnServerErrors);
-                } else {
-                    TLRPC.TL_payments_getPaymentReceipt req = new TLRPC.TL_payments_getPaymentReceipt();
-                    req.msg_id = messageObject.messageOwner.media.receipt_msg_id;
-                    req.peer = getMessagesController().getInputPeer(messageObject.messageOwner.peer_id);
-                    request[0] = req;
-                    getConnectionsManager().sendRequest(req, requestDelegate, ConnectionsManager.RequestFlagFailOnServerErrors);
-                }
             } else {
                 if (messageObject.isEphemeral()) {
                     TL_ephemeral.TL_getCallbackAnswer req = new TL_ephemeral.TL_getCallbackAnswer();
@@ -4166,8 +4122,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             type = 3;
         } else if (TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeGame.class)) {
             type = 1;
-        } else if (TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeBuy.class)) {
-            type = 2;
         } else {
             type = 0;
         }

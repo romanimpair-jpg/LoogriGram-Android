@@ -544,9 +544,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         default void didToggleRichMessageCheckbox(ChatMessageCell cell, boolean checked, Runnable revertOnError) {
         }
 
-        default void didPressExtendedMediaPreview(ChatMessageCell cell, TL_keyboard.KeyboardInlineButton button) {
-        }
-
         default void didPressUserStatus(ChatMessageCell cell, TLRPC.User user, TLRPC.Document document, String giftSlug) {
 
         }
@@ -5881,18 +5878,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             startRevealMedia(lastTouchX, lastTouchY);
             return;
         }
-        if (currentMessageObject.type == MessageObject.TYPE_EXTENDED_MEDIA_PREVIEW) {
-            if (currentMessageObject.messageOwner != null && currentMessageObject.messageOwner.media != null &&
-                    !currentMessageObject.messageOwner.media.extended_media.isEmpty() && currentMessageObject.messageOwner.reply_markup instanceof TLRPC.TL_replyInlineMarkup) {
-                final TLRPC.TL_replyInlineMarkup replyInlineMarkup = (TLRPC.TL_replyInlineMarkup) currentMessageObject.messageOwner.reply_markup;
-                for (TL_keyboard.KeyboardInlineButtonRow row : replyInlineMarkup.rows) {
-                    for (TL_keyboard.KeyboardInlineButton button : row.buttons) {
-                        delegate.didPressExtendedMediaPreview(this, button);
-                        return;
-                    }
-                }
-            }
-        } else if (currentMessageObject.type == MessageObject.TYPE_PHOTO || currentMessageObject.isAnyKindOfSticker()) {
+        // LoogriGram: an invoice's locked preview pressed its Pay button here.
+        // Invoices are held and never drawn, so no cell has that type.
+        if (currentMessageObject.type == MessageObject.TYPE_PHOTO || currentMessageObject.isAnyKindOfSticker()) {
             if (buttonState == -1) {
                 delegate.didPressImage(this, lastTouchX, lastTouchY, false);
             } else if (buttonState == 0) {
@@ -10651,13 +10639,11 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             if (row == rows - 1) {
                                 botButton.positionFlags |= MessageObject.POSITION_FLAG_BOTTOM;
                             }
-                            CharSequence buttonText;
+                            // LoogriGram: a paid invoice's Pay button read "Receipt" here,
+                            // and an unpaid one had its price drawn in Stars below. Only
+                            // invoices carry one, and they are held and never drawn.
+                            CharSequence buttonText = inlineButton.getText();
                             TextPaint botButtonPaint = (TextPaint) getThemedPaint(Theme.key_paint_chatBotButton);
-                            if (TLKeyboardHelper.isType(botButton.button, TL_keyboard.TL_inlineButtonTypeBuy.class) && (MessageObject.getMedia(messageObject.messageOwner).flags & 4) != 0) {
-                                buttonText = getString(R.string.PaymentReceipt);
-                            } else {
-                                buttonText = inlineButton.getText();
-                            }
 
                             if (inlineButton instanceof BotInlineKeyboard.ButtonCustom) {
                                 if (((BotInlineKeyboard.ButtonCustom) inlineButton).id == BotInlineKeyboard.ButtonCustom.OPEN_MESSAGE_THREAD) {
@@ -10669,9 +10655,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                                 }
                             }
 
-                            if (TLKeyboardHelper.isType(botButton.button, TL_keyboard.TL_inlineButtonTypeBuy.class) && MessageObject.getMedia(messageObject.messageOwner) instanceof TLRPC.TL_messageMediaInvoice) {
-                                buttonText = StarsFormat.replaceStars(buttonText);
-                            }
                             if (TLKeyboardHelper.isType(botButton.button, TL_keyboard.TL_inlineButtonTypeCopy.class)) {
                                 buttonText = new SpannableStringBuilder("c ").append(buttonText);
                                 final ColoredImageSpan span = new ColoredImageSpan(R.drawable.menu_copy_s);
@@ -16185,7 +16168,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 }
             }
 
-            if (button.draw(canvas, rect, drawProgress, hasInvoicePreview && hasInvoicePrice, resourcesProvider)) {
+            if (button.draw(canvas, rect, drawProgress, resourcesProvider)) {
                 invalidate = true;
             }
         }
@@ -16199,7 +16182,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     public final boolean drawButtonProgress(TL_keyboard.KeyboardButtonProto button) {
         if (TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeCallback.class) ||
                 TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeGame.class) ||
-                TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeBuy.class) ||
                 TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeUrlAuth.class)) {
             return SendMessagesHelper.getInstance(currentAccount).isSendingCallback(currentMessageObject, button);
         }

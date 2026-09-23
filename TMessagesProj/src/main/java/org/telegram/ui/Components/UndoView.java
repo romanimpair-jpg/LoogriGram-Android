@@ -54,14 +54,12 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.SavedMessagesController;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
-import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.Forum.ForumUtilities;
 import org.telegram.ui.Components.Premium.boosts.BoostRepository;
-import org.telegram.ui.PaymentFormActivity;
 
 import java.util.ArrayList;
 
@@ -177,7 +175,8 @@ public class UndoView extends FrameLayout {
     public final static int ACTION_GIGAGROUP_CANCEL = 75;
     public final static int ACTION_GIGAGROUP_SUCCESS = 76;
 
-    public final static int ACTION_PAYMENT_SUCCESS = 77;
+    // LoogriGram: 77 was ACTION_PAYMENT_SUCCESS, a "payment sent" toast that
+    // opened the receipt. Nothing showed it outside the payment form.
     public final static int ACTION_PIN_DIALOGS = 78;
     public final static int ACTION_UNPIN_DIALOGS = 79;
     public final static int ACTION_EMAIL_COPIED = 80;
@@ -353,7 +352,7 @@ public class UndoView extends FrameLayout {
                 currentAction == ACTION_CHAT_UNARCHIVED || currentAction == ACTION_VOIP_MUTED || currentAction == ACTION_VOIP_UNMUTED || currentAction == ACTION_VOIP_REMOVED || currentAction == ACTION_VOIP_KICKED ||
                 currentAction == ACTION_VOIP_LINK_COPIED || currentAction == ACTION_VOIP_INVITED || currentAction == ACTION_VOIP_MUTED_FOR_YOU || currentAction == ACTION_VOIP_UNMUTED_FOR_YOU ||
                 currentAction == ACTION_REPORT_SENT || currentAction == ACTION_VOIP_USER_CHANGED || currentAction == ACTION_VOIP_CAN_NOW_SPEAK || currentAction == ACTION_VOIP_RECORDING_STARTED ||
-                currentAction == ACTION_VOIP_RECORDING_FINISHED || currentAction == ACTION_VOIP_SOUND_MUTED || currentAction == ACTION_VOIP_SOUND_UNMUTED || currentAction == ACTION_PAYMENT_SUCCESS ||
+                currentAction == ACTION_VOIP_RECORDING_FINISHED || currentAction == ACTION_VOIP_SOUND_MUTED || currentAction == ACTION_VOIP_SOUND_UNMUTED ||
                 currentAction == ACTION_VOIP_USER_JOINED || currentAction == ACTION_PIN_DIALOGS || currentAction == ACTION_UNPIN_DIALOGS || currentAction == ACTION_VOIP_VIDEO_RECORDING_STARTED ||
                 currentAction == ACTION_VOIP_VIDEO_RECORDING_FINISHED || currentAction == ACTION_RINGTONE_ADDED;
     }
@@ -618,27 +617,6 @@ public class UndoView extends FrameLayout {
                 subInfoText = null;
                 icon = R.raw.voip_invite;
                 timeLeft = 3000;
-            } else if (action == ACTION_PAYMENT_SUCCESS) {
-                infoText = (CharSequence) infoObject;
-                subInfoText = null;
-                icon = R.raw.payment_success;
-                timeLeft = 5000;
-                if (parentFragment != null && infoObject2 instanceof TLRPC.Message) {
-                    TLRPC.Message message = (TLRPC.Message) infoObject2;
-                    setOnTouchListener(null);
-                    infoTextView.setMovementMethod(null);
-                    setOnClickListener(v -> {
-                        hide(true, 1);
-                        TLRPC.TL_payments_getPaymentReceipt req = new TLRPC.TL_payments_getPaymentReceipt();
-                        req.msg_id = message.id;
-                        req.peer = parentFragment.getMessagesController().getInputPeer(message.peer_id);
-                        parentFragment.getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                            if (response instanceof TLRPC.PaymentReceipt) {
-                                parentFragment.presentFragment(new PaymentFormActivity((TLRPC.PaymentReceipt) response));
-                            }
-                        }), ConnectionsManager.RequestFlagFailOnServerErrors);
-                    });
-                }
             } else if (action == ACTION_VOIP_MUTED) {
                 String name;
                 if (infoObject instanceof TLRPC.User) {

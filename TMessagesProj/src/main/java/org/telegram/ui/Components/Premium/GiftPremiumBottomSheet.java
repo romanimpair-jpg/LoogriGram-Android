@@ -33,17 +33,14 @@ import org.telegram.messenger.browser.Browser;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.BaseFragment;
-import org.telegram.ui.ActionBar.INavigationLayout;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
-import org.telegram.ui.ChatActivity;
 import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.BottomSheetWithRecyclerListView;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PremiumPreviewFragment;
-import org.telegram.ui.ProfileActivity;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -226,41 +223,6 @@ public class GiftPremiumBottomSheet extends BottomSheetWithRecyclerListView impl
         premiumButtonView.setFlickerDisabled(false);
     }
 
-    private void onGiftSuccess(boolean fromGooglePlay) {
-        TLRPC.UserFull full = MessagesController.getInstance(currentAccount).getUserFull(user.id);
-        if (full != null) {
-            user.premium = true;
-            MessagesController.getInstance(currentAccount).putUser(user, true);
-            NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.userInfoDidLoad, user.id, full);
-        }
-
-        if (getBaseFragment() != null) {
-            List<BaseFragment> fragments = new ArrayList<>(((LaunchActivity) getBaseFragment().getParentActivity()).getActionBarLayout().getFragmentStack());
-
-            INavigationLayout layout = getBaseFragment().getParentLayout();
-            ChatActivity lastChatActivity = null;
-            for (BaseFragment fragment : fragments) {
-                if (fragment instanceof ChatActivity) {
-                    lastChatActivity = (ChatActivity) fragment;
-                    if (lastChatActivity.getDialogId() != user.id) {
-                        fragment.removeSelfFromStack();
-                    }
-                } else if (fragment instanceof ProfileActivity) {
-                    if (fromGooglePlay && layout.getLastFragment() == fragment) {
-                        fragment.finishFragment();
-                    } else {
-                        fragment.removeSelfFromStack();
-                    }
-                }
-            }
-            if (lastChatActivity == null || lastChatActivity.getDialogId() != user.id) {
-                Bundle args = new Bundle();
-                args.putLong("user_id", user.id);
-                layout.presentFragment(new ChatActivity(args), true);
-            }
-        }
-    }
-
     private void onGiftPremium() {
         GiftTier tier = giftTiers.get(selectedTierIndex);
         // LoogriGram: the Play purchase branch is gone; gifting goes through
@@ -268,10 +230,10 @@ public class GiftPremiumBottomSheet extends BottomSheetWithRecyclerListView impl
             if (getBaseFragment().getParentActivity() instanceof LaunchActivity) {
                 Uri uri = Uri.parse(tier.giftOption.bot_url);
                 if (uri.getHost().equals("t.me")) {
+                    // LoogriGram: an invoice link also left a callback to report the
+                    // gift once paid. Invoice links open nothing now.
                     if (!uri.getPath().startsWith("/$") && !uri.getPath().startsWith("/invoice/")) {
                         ((LaunchActivity) getBaseFragment().getParentActivity()).setNavigateToPremiumBot(true);
-                    } else {
-                        ((LaunchActivity) getBaseFragment().getParentActivity()).setNavigateToPremiumGiftCallback(()-> onGiftSuccess(false));
                     }
                 }
                 Browser.openUrl(getBaseFragment().getParentActivity(), tier.giftOption.bot_url);
