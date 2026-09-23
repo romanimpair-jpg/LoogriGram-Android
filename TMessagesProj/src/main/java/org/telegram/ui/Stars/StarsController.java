@@ -499,36 +499,9 @@ public class StarsController {
         return subscriptionsEndReached;
     }
 
-    public final ArrayList<TL_stars.StarsSubscription> insufficientSubscriptions = new ArrayList<>();
-    private boolean insufficientSubscriptionsLoading;
-    public void loadInsufficientSubscriptions() {
-        if (insufficientSubscriptionsLoading) return;
-        insufficientSubscriptionsLoading = true;
-        TL_stars.TL_getStarsSubscriptions req = new TL_stars.TL_getStarsSubscriptions();
-        req.peer = new TLRPC.TL_inputPeerSelf();
-        req.missing_balance = true;
-        req.offset = "";
-        ConnectionsManager.getInstance(currentAccount).sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
-            insufficientSubscriptionsLoading = false;
-            if (res instanceof TL_stars.StarsStatus) {
-                TL_stars.StarsStatus r = (TL_stars.StarsStatus) res;
-                MessagesController.getInstance(currentAccount).putUsers(r.users, false);
-                MessagesController.getInstance(currentAccount).putChats(r.chats, false);
-                insufficientSubscriptions.addAll(r.subscriptions);
-                updateBalance(r.balance);
-                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.starSubscriptionsLoaded);
-            }
-        }));
-    }
-    public void invalidateInsufficientSubscriptions(boolean load) {
-        if (insufficientSubscriptionsLoading) return;
-        insufficientSubscriptions.clear();
-        insufficientSubscriptionsLoading = false;
-        if (load) loadInsufficientSubscriptions();
-    }
-    public boolean hasInsufficientSubscriptions() {
-        return !insufficientSubscriptions.isEmpty();
-    }
+    // LoogriGram: insufficientSubscriptions and the three methods around it stood here.
+    // They asked the server which Stars subscriptions the balance could no longer cover,
+    // and the chat-list hint that was their only reader is gone.
 
 
     public Theme.ResourcesProvider getResourceProvider() {

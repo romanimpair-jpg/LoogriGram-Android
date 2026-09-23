@@ -12,7 +12,6 @@ import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.AndroidUtilities.dpf2;
 import static org.telegram.messenger.AndroidUtilities.lerp;
 import static org.telegram.messenger.LocaleController.formatPluralString;
-import static org.telegram.messenger.LocaleController.formatPluralStringComma;
 import static org.telegram.messenger.LocaleController.formatString;
 import static org.telegram.messenger.LocaleController.getString;
 import static org.telegram.ui.Components.AlertsCreator.createClearOrDeleteDialogsAlert;
@@ -118,7 +117,6 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaController;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
-import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.VideoEditedInfo;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
@@ -211,7 +209,6 @@ import org.telegram.ui.Components.chat.layouts.ChatActivityFadeView;
 import org.telegram.ui.Components.inset.WindowInsetsStateHolder;
 import org.telegram.ui.Stars.StarGiftSheet;
 import org.telegram.ui.Stars.StarsController;
-import org.telegram.ui.Stars.StarsIntroActivity;
 import org.telegram.ui.Stories.StealthModeAlert;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 import org.telegram.ui.bots.BotWebViewSheet;
@@ -5742,36 +5739,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
     }
 
-    public boolean isStarsSubscriptionHintVisible() {
-        if (folderId != 0 || communityId != 0) {
-            return false;
-        }
-
-        if (MessagesController.getInstance(currentAccount).pendingSuggestions.contains("STARS_SUBSCRIPTION_LOW_BALANCE")) {
-            StarsController c = StarsController.getInstance(currentAccount);
-            if (!c.hasInsufficientSubscriptions()) {
-                c.loadInsufficientSubscriptions();
-                return false;
-            } else {
-                long starsNeeded = -c.balance.amount;
-                for (int i = 0; i < c.insufficientSubscriptions.size(); ++i) {
-                    final TL_stars.StarsSubscription sub = c.insufficientSubscriptions.get(i);
-                    final long did = DialogObject.getPeerDialogId(sub.peer);
-                    if (did >= 0) {
-                        TLRPC.User user = getMessagesController().getUser(did);
-                        if (user == null) continue;
-                    } else {
-                        TLRPC.Chat chat = getMessagesController().getChat(-did);
-                        if (chat == null) continue;
-                    }
-                    starsNeeded += sub.pricing.amount;
-                }
-                return starsNeeded > 0;
-            }
-        }
-
-        return false;
-    }
+    // LoogriGram: isStarsSubscriptionHintVisible stood here. It added up what the
+    // Stars subscriptions about to lapse would cost to keep, against the balance.
 
     private boolean isCommunityPendingRequestsVisible() {
         return communityId != 0 && communityFull != null && communityFull.requests_pending > 0
@@ -6014,44 +5983,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 MessagesController.getInstance(currentAccount).removeSuggestion(0, suggestion.suggestion);
                 updateDialogsHint();
             });
-        } else if (isStarsSubscriptionHintVisible()) {
-            StarsController c = StarsController.getInstance(currentAccount);
-            dialogsHintCellVisible = true;
-            StringBuilder s = new StringBuilder();
-            long starsNeeded = 0;
-            long _firstDialogId = 0;
-            if (c.hasInsufficientSubscriptions()) {
-                for (int i = 0; i < c.insufficientSubscriptions.size(); ++i) {
-                    final TL_stars.StarsSubscription sub = c.insufficientSubscriptions.get(i);
-                    final long did = DialogObject.getPeerDialogId(sub.peer);
-                    if (_firstDialogId == 0) _firstDialogId = did;
-                    if (did >= 0) {
-                        TLRPC.User user = getMessagesController().getUser(did);
-                        if (user == null) continue;
-                        if (s.length() > 0) s.append(", ");
-                        s.append(UserObject.getUserName(user));
-                    } else {
-                        TLRPC.Chat chat = getMessagesController().getChat(-did);
-                        if (chat == null) continue;
-                        if (s.length() > 0) s.append(", ");
-                        s.append(chat.title);
-                    }
-                    starsNeeded += sub.pricing.amount;
-                }
-            }
-            final String starsNeededName = s.toString();
-            final long starsNeededFinal = starsNeeded;
-            final long firstDialogId = _firstDialogId;
-            dialogsHintCell.setOnClickListener(v -> {
-                new StarsIntroActivity.StarsNeededSheet(getContext(), getResourceProvider(), starsNeededFinal, StarsIntroActivity.StarsNeededSheet.TYPE_SUBSCRIPTION_KEEP, starsNeededName, () -> {
-                    updateDialogsHint();
-                }, firstDialogId).show();
-            });
-            dialogsHintCell.setText(StarsFormat.replaceStarsWithPlain(formatPluralStringComma("StarsSubscriptionExpiredHintTitle2", (int) (starsNeeded - c.balance.amount <= 0 ? starsNeeded : starsNeeded - c.balance.amount), starsNeededName), .72f), LocaleController.getString(R.string.StarsSubscriptionExpiredHintText));
-            dialogsHintCell.setOnCloseListener(v -> {
-                MessagesController.getInstance(currentAccount).removeSuggestion(0, "STARS_SUBSCRIPTION_LOW_BALANCE");
-                updateDialogsHint();
-            });
+        // LoogriGram: a hint over the chat list stood here, naming the Stars
+        // subscriptions about to lapse and what buying more would cost to keep them.
         } else if (
             folderId == 0 && communityId == 0 &&
             MessagesController.getInstance(currentAccount).pendingSuggestions.contains("BIRTHDAY_SETUP") &&
