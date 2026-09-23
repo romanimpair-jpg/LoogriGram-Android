@@ -9,7 +9,6 @@ import static org.telegram.messenger.LocaleController.getString;
 import static org.telegram.messenger.StarsFormat.formatStarsAmount;
 import static org.telegram.messenger.StarsFormat.replaceStars;
 import static org.telegram.messenger.StarsFormat.replaceStarsWithPlain;
-import static org.telegram.ui.ChatEditActivity.applyNewSpan;
 import static org.telegram.ui.Stars.StarsController.findAttribute;
 import static org.telegram.ui.Stars.StarsIntroActivity.StarsTransactionView.getPlatformDrawable;
 import static org.telegram.messenger.AndroidUtilities.percents;
@@ -122,7 +121,6 @@ import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.ButtonSpan;
 import org.telegram.ui.Components.ColoredImageSpan;
-import org.telegram.ui.Components.ColorfulTextCell;
 import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.EditTextBoldCursor;
@@ -159,8 +157,6 @@ import org.telegram.ui.PrivacyControlActivity;
 import org.telegram.ui.ProfileActivity;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 import org.telegram.ui.Stories.recorder.HintView2;
-import org.telegram.ui.bots.AffiliateProgramFragment;
-import org.telegram.ui.bots.ChannelAffiliateProgramsFragment;
 
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -697,7 +693,6 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
     private final int BUTTON_EXPAND = -1;
     private final int BUTTON_GIFT = -2;
     private final int BUTTON_SUBSCRIPTIONS_EXPAND = -3;
-    private final int BUTTON_AFFILIATE = -4;
 
     public void fillItems(ArrayList<UItem> items, UniversalAdapter adapter) {
         if (getContext() == null) {
@@ -715,11 +710,9 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
 
         items.add(UItem.asShadow(null));
 
-        if (getMessagesController().starrefConnectAllowed) {
-            items.add(ColorfulTextCell.Factory.as(BUTTON_AFFILIATE, getThemedColor(Theme.key_color_green), R.drawable.filled_earn_stars, applyNewSpan(getString(R.string.UserAffiliateProgramRowTitle)), getString(R.string.UserAffiliateProgramRowText)));
-            items.add(UItem.asShadow(null));
-        }
-
+        // LoogriGram: an "Affiliate programs" row stood here, opening the
+        // list of bots that pay a commission for promoting them. Deleted with
+        // the affiliate screens.
         if (c.hasSubscriptions()) {
             items.add(UItem.asHeader(getString(R.string.StarMySubscriptions)));
             for (int i = 0; i < c.subscriptions.size(); ++i) {
@@ -750,12 +743,6 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
         } else if (item.id == BUTTON_SUBSCRIPTIONS_EXPAND) {
             StarsController.getInstance(currentAccount).loadSubscriptions();
             adapter.update(true);
-        } else if (item.id == BUTTON_AFFILIATE) {
-            if (MessagesController.getInstance(currentAccount).isFrozen()) {
-                AccountFrozenAlert.show(currentAccount);
-                return;
-            }
-            presentFragment(new ChannelAffiliateProgramsFragment(getUserConfig().getClientUserId()));
         } else if (item.instanceOf(StarTierView.Factory.class)) {
             if (item.object instanceof TL_stars.TL_starsTopupOption) {
                 StarsController.getInstance(currentAccount).buy(getParentActivity(), (TL_stars.TL_starsTopupOption) item.object, (success, error) -> {
@@ -4086,16 +4073,10 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
                     tableView.addRow(getString(R.string.StarsTransactionFullPrice), replaceStarsWithPlain(transaction.amount, "⭐️ " + LocaleController.formatNumber(fullPrice, ','), .8f));
                 }
             } else if (affiliate_to_bot) {
-                final long botId = dialogId;
                 final long channelId = DialogObject.getPeerDialogId(transaction.starref_peer);
                 final long referredUserId = did;
-                tableView.addRowLink(getString(R.string.StarAffiliateReason), getString(R.string.StarAffiliateReasonProgram), () -> {
-                    sheet[0].dismiss();
-                    final BaseFragment lastFragment = LaunchActivity.getSafeLastFragment();
-                    if (lastFragment != null) {
-                        lastFragment.presentFragment(new AffiliateProgramFragment(botId));
-                    }
-                });
+                // LoogriGram: a "Reason: affiliate program" row opened the
+                // bot's affiliate program screen, which is deleted.
                 tableView.addRowUser(getString(R.string.StarAffiliate), currentAccount, channelId, () -> {
                     sheet[0].dismiss();
                     final BaseFragment lastFragment = LaunchActivity.getSafeLastFragment();
@@ -4113,13 +4094,9 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
                 tableView.addRow(getString(R.string.StarAffiliateCommission), percents(transaction.starref_commission_permille));
             } else if (affiliate_to_channel) {
                 final long botId = did;
-                final long channelId = dialogId;
-                tableView.addRowLink(getString(R.string.StarAffiliateReason), getString(R.string.StarAffiliateReasonProgram), () -> {
-                    BotStarsController.getInstance(currentAccount).getConnectedBot(context, dialogId, botId, connectedBot -> {
-                        sheet[0].dismiss();
-                        ChannelAffiliateProgramsFragment.showShareAffiliateAlert(context, currentAccount, connectedBot, dialogId, resourcesProvider);
-                    });
-                });
+                // LoogriGram: a "Reason: affiliate program" row fetched our
+                // referral link to share it again. Deleted with the affiliate
+                // screens.
                 tableView.addRowUser(getString(R.string.StarAffiliateMiniApp), currentAccount, botId, () -> {
                     sheet[0].dismiss();
                     final BaseFragment lastFragment = LaunchActivity.getSafeLastFragment();

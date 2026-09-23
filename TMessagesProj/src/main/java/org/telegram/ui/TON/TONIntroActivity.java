@@ -37,7 +37,6 @@ import org.telegram.messenger.BirthdayController;
 import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.StarsFormat;
@@ -45,7 +44,6 @@ import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.utils.tlutils.AmountUtils;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_stars;
-import org.telegram.ui.AccountFrozenAlert;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.BackDrawable;
 import org.telegram.ui.ActionBar.BaseFragment;
@@ -74,7 +72,6 @@ import org.telegram.ui.Stars.StarsController;
 import org.telegram.ui.Stars.StarsIntroActivity;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 import org.telegram.ui.Stories.recorder.HintView2;
-import org.telegram.ui.bots.ChannelAffiliateProgramsFragment;
 
 import java.util.ArrayList;
 
@@ -610,7 +607,6 @@ public class TONIntroActivity extends GradientHeaderActivity implements Notifica
     private final int BUTTON_EXPAND = -1;
     private final int BUTTON_GIFT = -2;
     private final int BUTTON_SUBSCRIPTIONS_EXPAND = -3;
-    private final int BUTTON_AFFILIATE = -4;
 
     public void fillItems(ArrayList<UItem> items, UniversalAdapter adapter) {
         if (getContext() == null) {
@@ -643,12 +639,6 @@ public class TONIntroActivity extends GradientHeaderActivity implements Notifica
         } else if (item.id == BUTTON_SUBSCRIPTIONS_EXPAND) {
             StarsController.getTonInstance(currentAccount).loadSubscriptions();
             adapter.update(true);
-        } else if (item.id == BUTTON_AFFILIATE) {
-            if (MessagesController.getInstance(currentAccount).isFrozen()) {
-                AccountFrozenAlert.show(currentAccount);
-                return;
-            }
-            presentFragment(new ChannelAffiliateProgramsFragment(getUserConfig().getClientUserId()));
         }
     }
 

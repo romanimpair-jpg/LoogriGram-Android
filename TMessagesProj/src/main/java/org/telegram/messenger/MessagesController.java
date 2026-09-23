@@ -672,10 +672,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public float starsUsdSellRate1000;
     public float starsUsdWithdrawRate1000;
     public Set<String> starrefStartParamPrefixes = new HashSet<>();
-    public boolean starrefProgramAllowed;
-    public boolean starrefConnectAllowed;
-    public int starrefMinCommissionPermille;
-    public int starrefMaxCommissionPermille;
     public int botVerificationDescriptionLengthLimit;
     public long paidReactionsPrivacyTime;
     public Long paidReactionsPrivacy;
@@ -1800,11 +1796,7 @@ public class MessagesController extends BaseController implements NotificationCe
         starsSubscriptionAmountMax = mainPreferences.getLong("starsSubscriptionAmountMax", 2500L);
         starsUsdSellRate1000 = mainPreferences.getFloat("starsUsdSellRate1000", 2000);
         starsUsdWithdrawRate1000 = mainPreferences.getFloat("starsUsdWithdrawRate1000", 1200);
-        starrefProgramAllowed = mainPreferences.getBoolean("starrefProgramAllowed", false);
-        starrefConnectAllowed = mainPreferences.getBoolean("starrefConnectAllowed", false);
         starrefStartParamPrefixes = mainPreferences.getStringSet("starrefStartParamPrefixes", new HashSet<>(Arrays.asList("_tgr_")));
-        starrefMinCommissionPermille = mainPreferences.getInt("starrefMinCommissionPermille", 1);
-        starrefMaxCommissionPermille = mainPreferences.getInt("starrefMaxCommissionPermille", 400);
         botVerificationDescriptionLengthLimit = mainPreferences.getInt("botVerificationDescriptionLengthLimit", 70);
         paidReactionsPrivacyTime = mainPreferences.getLong("paidReactionsAnonymousTime", 0);
         stargiftsCraftAttributesPermilles = Arrays.stream(mainPreferences.getString("stargiftsCraftAttributesPermilles", "90,,80,200,,70,190,460,,60,180,450,1000").split(",,"))
@@ -4713,50 +4705,6 @@ public class MessagesController extends BaseController implements NotificationCe
                         ignoreRestrictionReasons = newReasons;
                         editor.putStringSet("ignoreRestrictionReasons", ignoreRestrictionReasons);
                         changed = true;
-                    }
-                    break;
-                }
-                case "starref_program_allowed": {
-                    if (value.value instanceof TLRPC.TL_jsonBool) {
-                        TLRPC.TL_jsonBool bool = (TLRPC.TL_jsonBool) value.value;
-                        if (bool.value != starrefProgramAllowed) {
-                            starrefProgramAllowed = bool.value;
-                            editor.putBoolean("starrefProgramAllowed", starrefProgramAllowed);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "starref_connect_allowed": {
-                    if (value.value instanceof TLRPC.TL_jsonBool) {
-                        TLRPC.TL_jsonBool bool = (TLRPC.TL_jsonBool) value.value;
-                        if (bool.value != starrefConnectAllowed) {
-                            starrefConnectAllowed = bool.value;
-                            editor.putBoolean("starrefConnectAllowed", starrefConnectAllowed);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "starref_min_commission_permille": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != starrefMinCommissionPermille) {
-                            starrefMinCommissionPermille = (int) num.value;
-                            editor.putInt("starrefMinCommissionPermille", starrefMinCommissionPermille);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "starref_max_commission_permille": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != starrefMaxCommissionPermille) {
-                            starrefMaxCommissionPermille = (int) num.value;
-                            editor.putInt("starrefMaxCommissionPermille", starrefMaxCommissionPermille);
-                            changed = true;
-                        }
                     }
                     break;
                 }

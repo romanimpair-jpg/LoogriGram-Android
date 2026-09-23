@@ -28,7 +28,6 @@ import android.text.Editable;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.text.SpannableString;
-import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextPaint;
 import android.text.TextUtils;
@@ -369,7 +368,6 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
             getNotificationCenter().addObserver(this, NotificationCenter.chatInfoDidLoad);
             getNotificationCenter().addObserver(this, NotificationCenter.chatSwitchedForum);
             getNotificationCenter().addObserver(this, NotificationCenter.chatAvailableReactionsUpdated);
-            getNotificationCenter().addObserver(this, NotificationCenter.channelConnectedBotsUpdate);
         } else {
             avatarDrawable.setInfo(5, currentUser.first_name, null);
             isChannel = false;
@@ -416,7 +414,6 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
             getNotificationCenter().removeObserver(this, NotificationCenter.chatInfoDidLoad);
             getNotificationCenter().removeObserver(this, NotificationCenter.chatSwitchedForum);
             getNotificationCenter().removeObserver(this, NotificationCenter.chatAvailableReactionsUpdated);
-            getNotificationCenter().removeObserver(this, NotificationCenter.channelConnectedBotsUpdate);
         } else {
             getNotificationCenter().removeObserver(this, NotificationCenter.userInfoDidLoad);
         }
@@ -1508,16 +1505,6 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
         return fragmentView;
     }
 
-    public static CharSequence applyNewSpan(String str) {
-        SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder(str);
-        spannableStringBuilder.append("  d");
-        FilterCreateActivity.NewSpan span = new FilterCreateActivity.NewSpan(false, 10);
-        span.setTypeface(AndroidUtilities.getTypeface("fonts/num.otf"));
-        span.setColor(Theme.getColor(Theme.key_premiumGradient1));
-        spannableStringBuilder.setSpan(span, spannableStringBuilder.length() - 1, spannableStringBuilder.length(), 0);
-        return spannableStringBuilder;
-    }
-
     private void updatePublicLinksCount() {
         if (publicLinkCell == null) {
             return;
@@ -1741,11 +1728,6 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
             Long uid = (Long) args[0];
             if (uid == userId) {
                 setInfo(getMessagesController().getUserFull(userId));
-            }
-        } else if (id == NotificationCenter.channelConnectedBotsUpdate) {
-            Long did = (Long) args[0];
-            if (did == -chatId) {
-
             }
         } else if (id == NotificationCenter.dialogDeleted) {
             long dialogId = (long) args[0];
