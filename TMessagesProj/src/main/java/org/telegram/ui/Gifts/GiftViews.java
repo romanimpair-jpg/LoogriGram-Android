@@ -32,46 +32,31 @@ import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import android.os.Bundle;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
-import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewTreeObserver;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.FrameLayout;
-import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.graphics.ColorUtils;
-import androidx.recyclerview.widget.DefaultItemAnimator;
-import androidx.recyclerview.widget.GridLayoutManager;
 
 
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.BillingController;
-import org.telegram.messenger.BirthdayController;
-import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.DocumentObject;
-import org.telegram.messenger.Emoji;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.ImageLocation;
 import org.telegram.messenger.ImageReceiver;
 import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.MediaDataController;
-import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
-import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.SvgHelper;
@@ -82,40 +67,23 @@ import org.telegram.messenger.utils.Choreographer60FpsContent;
 import org.telegram.messenger.utils.DrawableUtils;
 import org.telegram.messenger.utils.tlutils.AmountUtils;
 import org.telegram.tgnet.ConnectionsManager;
-import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_stars;
-import org.telegram.ui.AccountFrozenAlert;
-import org.telegram.ui.ActionBar.AlertDialog;
-import org.telegram.ui.ActionBar.BaseFragment;
-import org.telegram.ui.ActionBar.INavigationLayout;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.ChatActivity;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
-import org.telegram.ui.Components.AnimatedEmojiSpan;
 import org.telegram.ui.Components.AnimatedFloat;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.BatchParticlesDrawHelper;
-import org.telegram.ui.Components.BottomSheetWithRecyclerListView;
-import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.CheckBox2;
 import org.telegram.ui.Components.ColoredImageSpan;
 import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.CompatDrawable;
 import org.telegram.ui.Components.CubicBezierInterpolator;
-import org.telegram.ui.Components.EffectsTextView;
-import org.telegram.ui.Components.ExtendedGridLayoutManager;
-import org.telegram.ui.Components.FlickerLoadingView;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Components.LinkSpanDrawable;
 import org.telegram.ui.Components.Particles;
 import org.telegram.ui.Components.Premium.GiftPremiumBottomSheet;
 import org.telegram.ui.Components.Premium.PremiumLockIconView;
-import org.telegram.ui.Components.Premium.PremiumPreviewBottomSheet;
-import org.telegram.ui.Components.Premium.StarParticlesView;
-import org.telegram.ui.Components.Premium.boosts.BoostRepository;
-import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.ScaleStateListAnimator;
 import org.telegram.ui.Components.Shaker;
@@ -125,23 +93,10 @@ import org.telegram.ui.Components.UItem;
 import org.telegram.ui.Components.UniversalAdapter;
 import org.telegram.ui.Components.UniversalRecyclerView;
 import org.telegram.ui.Components.blur3.utils.NinePatchBuilder;
-import org.telegram.ui.LaunchActivity;
-import org.telegram.ui.PremiumPreviewFragment;
-import org.telegram.ui.ProfileActivity;
-import org.telegram.ui.Stars.ExplainStarsSheet;
 import org.telegram.ui.Components.StarGiftPatterns;
-import org.telegram.ui.Stars.StarGiftSheet;
-import org.telegram.ui.Stars.StarsController;
 import org.telegram.ui.Stars.StarsIntroActivity;
-import org.telegram.ui.Stories.recorder.HintView2;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 // LoogriGram: these were nested inside GiftSheet, which sold gifts and is
 // deleted. They are display only and are used well outside gifting: a gift
@@ -1936,209 +1891,8 @@ public class GiftViews {
         }
     }
 
-    public static class Tabs extends FrameLayout {
-
-        private final Theme.ResourcesProvider resourcesProvider;
-
-        private final HorizontalScrollView scrollView;
-        private final LinearLayout layout;
-        private int selected;
-        private AnimatedFloat animatedSelected;
-        private final ArrayList<TextView> tabs = new ArrayList<>();
-
-        private final RectF flooredRect = new RectF(), ceiledRect = new RectF();
-        private final RectF selectedRect = new RectF();
-        private final Paint selectedPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-
-        public Tabs(Context context, boolean center, Theme.ResourcesProvider resourcesProvider) {
-            super(context);
-
-            this.resourcesProvider = resourcesProvider;
-
-            layout = new LinearLayout(context) {
-                @Override
-                protected void dispatchDraw(@NonNull Canvas canvas) {
-                    selectedPaint.setColor(Theme.multAlpha(Theme.getColor(Theme.key_dialogGiftsTabText), .1f));
-                    final float selected = animatedSelected.set(Tabs.this.selected);
-
-                    int flooredIndex = Utilities.clamp((int) Math.floor(selected), tabs.size() - 1, 0);
-                    int ceiledIndex = Utilities.clamp((int) Math.ceil(selected), tabs.size() - 1, 0);
-                    if (flooredIndex < tabs.size()) {
-                        setBounds(flooredRect, tabs.get(flooredIndex));
-                    } else if (ceiledIndex < tabs.size()) {
-                        setBounds(flooredRect, tabs.get(ceiledIndex));
-                    } else {
-                        flooredRect.set(0,0,0,0);
-                    }
-                    if (ceiledIndex < tabs.size()) {
-                        setBounds(ceiledRect, tabs.get(ceiledIndex));
-                    } else if (flooredIndex < tabs.size()) {
-                        setBounds(ceiledRect, tabs.get(flooredIndex));
-                    } else {
-                        ceiledRect.set(0,0,0,0);
-                    }
-                    lerp(flooredRect, ceiledRect, selected - flooredIndex, selectedRect);
-
-                    final float r = selectedRect.height() / 2f;
-                    canvas.drawRoundRect(selectedRect, r, r, selectedPaint);
-
-                    super.dispatchDraw(canvas);
-                }
-
-                private final void setBounds(RectF rect, View view) {
-                    rect.set(view.getLeft(), view.getTop(), view.getRight(), view.getBottom());
-                }
-            };
-            layout.setClipToPadding(false);
-            layout.setClipChildren(false);
-            layout.setOrientation(LinearLayout.HORIZONTAL);
-            layout.setPadding(0, dp(8), 0, dp(10));
-
-            if (center) {
-                scrollView = null;
-                addView(layout, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, Gravity.CENTER_HORIZONTAL));
-            } else {
-                layout.setPadding(dp(12), dp(8), dp(12), dp(3));
-
-                scrollView = new HorizontalScrollView(context);
-                scrollView.setHorizontalScrollBarEnabled(false);
-                scrollView.setClipToPadding(false);
-                scrollView.setClipChildren(false);
-                scrollView.addView(layout, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, Gravity.FILL));
-                addView(scrollView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.FILL));
-            }
-
-            setHorizontalScrollBarEnabled(false);
-            setClipToPadding(false);
-            setClipChildren(false);
-
-            animatedSelected = new AnimatedFloat(layout, 0, 320, CubicBezierInterpolator.EASE_OUT_QUINT);
-        }
-
-        public void setSelected(int selected, boolean animated) {
-            this.selected = selected;
-            if (!animated) {
-                animatedSelected.set(selected, true);
-            }
-            layout.invalidate();
-        }
-
-        private int lastId = Integer.MIN_VALUE;
-        public void set(int id, ArrayList<CharSequence> tabs, int selected, Utilities.Callback<Integer> whenTabSelected) {
-            final boolean animated = lastId == id;
-            lastId = id;
-
-            if (this.tabs.size() != tabs.size()) {
-                int a = 0;
-                for (int i = 0; i < this.tabs.size(); ++i) {
-                    CharSequence tabText = a < tabs.size() ? tabs.get(a) : null;
-                    if (tabText == null) {
-                        layout.removeView(this.tabs.remove(i));
-                        i--;
-                    } else {
-                        this.tabs.get(i).setText(tabText);
-                    }
-                    a++;
-                }
-                for (; a < tabs.size(); ++a) {
-                    final LinkSpanDrawable.LinksTextView tab = new LinkSpanDrawable.LinksTextView(getContext());
-                    tab.setGravity(Gravity.CENTER);
-                    tab.setText(tabs.get(a));
-                    tab.setTypeface(AndroidUtilities.bold());
-                    tab.setTextColor(Theme.blendOver(Theme.getColor(Theme.key_dialogGiftsBackground), Theme.getColor(Theme.key_dialogGiftsTabText)));
-                    tab.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
-                    tab.setPadding(dp(12), 0, dp(12), 0);
-                    tab.setEllipsize(TextUtils.TruncateAt.END);
-                    tab.setSingleLine();
-                    tab.setMaxLines(1);
-                    ScaleStateListAnimator.apply(tab, 0.075f, 1.4f);
-                    layout.addView(tab, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, 26));
-                    this.tabs.add(tab);
-                }
-            }
-
-            this.selected = selected;
-            if (!animated) {
-                animatedSelected.set(selected, true);
-            }
-            layout.invalidate();
-
-            for (int i = 0; i < this.tabs.size(); ++i) {
-                final int tabIndex = i;
-                this.tabs.get(i).setOnClickListener(v -> {
-//                    final TextView tab = this.tabs.get(tabIndex);
-//                    smoothScrollTo(tab.getLeft() + tab.getWidth() / 2 - getWidth() / 2, 0);
-                    if (whenTabSelected != null) {
-                        whenTabSelected.run(tabIndex);
-                    }
-                });
-            }
-        }
-
-        @Override
-        protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-            super.onMeasure(
-                MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY),
-                heightMeasureSpec
-            );
-        }
-
-        public void updateColors() {
-            for (int i = 0; i < this.tabs.size(); ++i) {
-                final TextView textView = this.tabs.get(i);
-                textView.setTextColor(Theme.blendOver(Theme.getColor(Theme.key_dialogGiftsBackground), Theme.getColor(Theme.key_dialogGiftsTabText)));
-            }
-            layout.invalidate();
-        }
-
-        public static class Factory extends UItem.UItemFactory<Tabs> {
-            static { setup(new Factory()); }
-
-            @Override
-            public Tabs createView(Context context, RecyclerListView listView, int currentAccount, int classGuid, Theme.ResourcesProvider resourcesProvider) {
-                return new Tabs(context, true, resourcesProvider);
-            }
-
-            @Override
-            public void bindView(View view, UItem item, boolean divider, UniversalAdapter adapter, UniversalRecyclerView listView) {
-                ((Tabs) view).set(item.id, (ArrayList<CharSequence>) item.object, item.intValue, (Utilities.Callback<Integer>) item.object2);
-            }
-
-            public static UItem asTabs(int id, ArrayList<CharSequence> tabs, int selected, Utilities.Callback<Integer> whenTabSelected) {
-                final UItem item = UItem.ofFactory(Factory.class);
-                item.id = id;
-                item.object = tabs;
-                item.intValue = selected;
-                item.object2 = whenTabSelected;
-                return item;
-            }
-
-            private static boolean eq(ArrayList<CharSequence> a, ArrayList<CharSequence> b) {
-                if (a == b) return true;
-                if (a == null && b == null) return true;
-                if (a == null || b == null) return false;
-                if (a.size() != b.size()) return false;
-                for (int i = 0; i < a.size(); ++i) {
-                    if (!TextUtils.equals(a.get(i), b.get(i)))
-                        return false;
-                }
-                return true;
-            }
-
-            @Override
-            public boolean equals(UItem a, UItem b) {
-                return (
-                    a.id == b.id &&
-                    eq((ArrayList<CharSequence>) a.object, (ArrayList<CharSequence>) b.object)
-                );
-            }
-
-            @Override
-            public boolean contentsEquals(UItem a, UItem b) {
-                return a.intValue == b.intValue && a.object2 == b.object2 && equals(a, b);
-            }
-        }
-
-    }
+    // LoogriGram: the Tabs row stood here. Its only two users were the resale
+    // browser and the profile-colour screen's buy-a-collectible tab, and both
+    // are gone; nothing in the tree lists gifts by model any more.
 
 }
