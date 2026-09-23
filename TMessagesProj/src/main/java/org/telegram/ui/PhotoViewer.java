@@ -173,7 +173,6 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaController;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
-import org.telegram.messenger.MessageSuggestionParams;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
@@ -311,7 +310,6 @@ import org.telegram.ui.Components.blur3.utils.Blur3Utils;
 import org.telegram.ui.Components.chat.ViewPositionWatcher;
 import org.telegram.ui.Components.spoilers.SpoilersTextView;
 import org.telegram.ui.Components.voip.AnimatedFileInfo;
-import org.telegram.ui.Stars.StarsController;
 import org.telegram.ui.Stories.DarkThemeResourceProvider;
 import org.telegram.ui.Stories.recorder.CaptionContainerView;
 import org.telegram.ui.Stories.recorder.HintView2;
@@ -7352,19 +7350,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         pickerViewSendButton.setContentDescription(getString("Send", R.string.Send));
         ScaleStateListAnimator.apply(pickerViewSendButton);
         pickerViewSendButton.setOnClickListener(v -> {
-            if (parentChatActivity != null && parentChatActivity.editingMessageObject != null && parentChatActivity.editingMessageObject.needResendWhenEdit() && !ChatObject.canManageMonoForum(currentAccount, parentChatActivity.editingMessageObject.getDialogId())) {
-                final MessageSuggestionParams params = parentFragment != null && parentChatActivity.messageSuggestionParams != null ?
-                        parentChatActivity.messageSuggestionParams :
-                        MessageSuggestionParams.of(parentChatActivity.editingMessageObject.messageOwner.suggested_post);
-
-                if (!StarsController.isEnoughAmount(currentAccount, params.amount)) {
-                    if (parentChatActivity != null) {
-                        parentChatActivity.showSuggestionOfferForEditMessage(params);
-                    }
-
-                    return;
-                }
-            }
+            // LoogriGram: re-opened the offer sheet when the balance could not cover the
+            // suggestion's price. A suggestion has no price, so there is nothing to cover.
 
             if (captionEdit.isCaptionOverLimit()) {
                 AndroidUtilities.shakeViewSpring(captionEdit.limitTextView, shiftDp = -shiftDp);

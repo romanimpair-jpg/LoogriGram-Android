@@ -13,7 +13,6 @@ import static org.telegram.messenger.AndroidUtilities.lerp;
 import static org.telegram.messenger.LocaleController.formatPluralStringComma;
 import static org.telegram.messenger.LocaleController.formatString;
 import static org.telegram.messenger.LocaleController.getString;
-import static org.telegram.messenger.AndroidUtilities.percents;
 
 import android.Manifest;
 import android.animation.Animator;
@@ -307,7 +306,6 @@ import org.telegram.ui.Delegates.ChatActivityMemberRequestsDelegate;
 import org.telegram.ui.Stars.StarsController;
 import org.telegram.ui.Stars.StarsIntroActivity;
 import org.telegram.ui.Stars.MessageSuggestionOfferSheet;
-import org.telegram.messenger.utils.tlutils.AmountUtils;
 import org.telegram.ui.Stories.StoriesListPlaceProvider;
 import org.telegram.ui.Stories.StoriesUtilities;
 import org.telegram.ui.Stories.PublicStoriesList;
@@ -315,7 +313,6 @@ import org.telegram.ui.Stories.recorder.HintView2;
 import org.telegram.ui.Stories.recorder.PreviewView;
 import org.telegram.ui.Stories.recorder.StoryEntry;
 import org.telegram.ui.Stories.recorder.StoryRecorder;
-import org.telegram.ui.TON.TONIntroActivity;
 import org.telegram.ui.bots.BotCommandsMenuContainer;
 import org.telegram.ui.bots.BotCommandsMenuView;
 import org.telegram.ui.bots.BotWebViewSheet;
@@ -1227,7 +1224,7 @@ public class ChatActivity extends BaseFragment implements
     public final static int OPTION_EDIT_TODO = 109;
     public final static int OPTION_ADD_TO_TODO = 110;
 
-    public final static int OPTION_SUGGESTION_EDIT_PRICE = 111;
+    // LoogriGram: OPTION_SUGGESTION_EDIT_PRICE was 111, and is gone with the price.
     public final static int OPTION_SUGGESTION_EDIT_TIME = 112;
     public final static int OPTION_SUGGESTION_EDIT_MESSAGE = 113;
     public final static int OPTION_SUGGESTION_ADD_OFFER = 114;
@@ -14718,25 +14715,12 @@ public class ChatActivity extends BaseFragment implements
                     replyIconImageView.setImageResource(R.drawable.filled_paid_suggest_24);
                     replyNameTextView.setText(LocaleController.getString(R.string.PostSuggestionsOfferChangeTitle));
 
-                    final boolean isTon = messageSuggestionParams.amount != null && messageSuggestionParams.amount.currency == AmountUtils.Currency.TON;
-                    final ColoredImageSpan[] spanArr = new ColoredImageSpan[1];
-
-                    final String amountString = messageSuggestionParams.amount != null ? messageSuggestionParams.amount.asDecimalString(): "0";
-
+                    // LoogriGram: the line under the title named the price, alone or
+                    // beside the time. With no price it is the time, or nothing.
                     if (messageSuggestionParams.isEmpty()) {
                         replyObjectTextView.setText(LocaleController.getString(R.string.SuggestAPostBelowSubtitle));
-                    } else if (messageSuggestionParams.time <= 0) {
-                        replyObjectTextView.setText(StarsFormat.replaceStarsWithPlain(isTon,
-                                LocaleController.formatString(R.string.SuggestAPostBelowSubtitleStars, amountString ), 0.66f, spanArr));
                     } else {
-                        replyObjectTextView.setText(StarsFormat.replaceStarsWithPlain(isTon,
-                                LocaleController.formatSpannable(R.string.SuggestAPostBelowSubtitleStarsAndTime, amountString,
-                                        Emoji.replaceEmoji("\uD83D\uDCC6 " + MessageSuggestionOfferSheet.formatDateTime(messageSuggestionParams.time), replyObjectTextView.getPaint().getFontMetricsInt(), true)
-                                ), 0.66f, spanArr));
-                    }
-
-                    if (isTon && spanArr[0] != null) {
-                        spanArr[0].setColorKey(Theme.key_chat_replyPanelIcons);
+                        replyObjectTextView.setText(Emoji.replaceEmoji("\uD83D\uDCC6 " + MessageSuggestionOfferSheet.formatDateTime(messageSuggestionParams.time), replyObjectTextView.getPaint().getFontMetricsInt(), true));
                     }
 
                     if (chatActivityEnterTopView.isEditMode()) {
@@ -15236,25 +15220,11 @@ public class ChatActivity extends BaseFragment implements
                 replyNameTextView.setText(LocaleController.getString(R.string.SuggestAPostBelow));
 
 
-                final boolean isTon = suggestionParams.amount != null && suggestionParams.amount.currency == AmountUtils.Currency.TON;
-                final ColoredImageSpan[] spanArr = new ColoredImageSpan[1];
-
-                final String amountString = suggestionParams.amount != null ? suggestionParams.amount.asDecimalString(): "0";
-
+                // LoogriGram: as above - the price is gone, so the line is the time or nothing.
                 if (suggestionParams.isEmpty()) {
                     replyObjectTextView.setText(LocaleController.getString(R.string.SuggestAPostBelowSubtitle));
-                } else if (suggestionParams.time <= 0) {
-                    replyObjectTextView.setText(StarsFormat.replaceStarsWithPlain(isTon,
-                        LocaleController.formatString(R.string.SuggestAPostBelowSubtitleStars, amountString ), 0.66f, spanArr));
                 } else {
-                    replyObjectTextView.setText(StarsFormat.replaceStarsWithPlain(isTon,
-                        LocaleController.formatSpannable(R.string.SuggestAPostBelowSubtitleStarsAndTime, amountString,
-                            Emoji.replaceEmoji("\uD83D\uDCC6 " + MessageSuggestionOfferSheet.formatDateTime(suggestionParams.time), replyObjectTextView.getPaint().getFontMetricsInt(), true)
-                    ), 0.66f, spanArr));
-                }
-
-                if (isTon && spanArr[0] != null) {
-                    spanArr[0].setColorKey(Theme.key_chat_replyPanelIcons);
+                    replyObjectTextView.setText(Emoji.replaceEmoji("\uD83D\uDCC6 " + MessageSuggestionOfferSheet.formatDateTime(suggestionParams.time), replyObjectTextView.getPaint().getFontMetricsInt(), true));
                 }
             }
 
@@ -30480,10 +30450,7 @@ public class ChatActivity extends BaseFragment implements
                     icons.add(R.drawable.msg_edit);
                 }
 
-                items.add(LocaleController.getString(R.string.EditOfferPrice));
-                options.add(OPTION_SUGGESTION_EDIT_PRICE);
-                icons.add(R.drawable.menu_edit_price);
-
+                // LoogriGram: an "Edit Price" row stood here. A suggestion has no price.
                 items.add(LocaleController.getString(R.string.EditOfferTime));
                 options.add(OPTION_SUGGESTION_EDIT_TIME);
                 icons.add(R.drawable.msg_calendar2);
@@ -33495,8 +33462,7 @@ public class ChatActivity extends BaseFragment implements
             case OPTION_WELCOME_REVERT:
                 getMessagesController().revertWelcomeEphemeralMessage(selectedObject);
                 break;
-            case OPTION_SUGGESTION_ADD_OFFER:
-            case OPTION_SUGGESTION_EDIT_PRICE: {
+            case OPTION_SUGGESTION_ADD_OFFER: {
                 final MessageObject msg = selectedObjectGroup != null ? selectedObjectGroup.findPrimaryMessageObject() : selectedObject;
                 final TLRPC.SuggestedPost suggestedPost = msg != null && msg.messageOwner != null ? msg.messageOwner.suggested_post : null;
 
@@ -33512,14 +33478,15 @@ public class ChatActivity extends BaseFragment implements
                 final MessageObject msg = selectedObjectGroup != null ? selectedObjectGroup.findPrimaryMessageObject() : selectedObject;
                 final TLRPC.SuggestedPost suggestedPost = msg != null && msg.messageOwner != null ? msg.messageOwner.suggested_post : null;
 
-                checkStarsNeedSheet(() -> AlertsCreator.createSuggestedMessageDatePickerDialog(getContext(), suggestedPost != null ? suggestedPost.schedule_date : 0, (notify, scheduleDate, scheduleRepeatPeriod) -> {
+                // LoogriGram: changing the time asked for the price to be covered first.
+                AlertsCreator.createSuggestedMessageDatePickerDialog(getContext(), suggestedPost != null ? suggestedPost.schedule_date : 0, (notify, scheduleDate, scheduleRepeatPeriod) -> {
                     if (notify) {
-                        final TLRPC.SuggestedPost newSuggestedPost = MessageSuggestionParams.of(AmountUtils.Amount.of(suggestedPost != null ? suggestedPost.price : null), scheduleDate).toTl();
+                        final TLRPC.SuggestedPost newSuggestedPost = MessageSuggestionParams.ofTime(scheduleDate).toTl();
                         if (msg != null && msg.messageOwner != null && newSuggestedPost != null) {
                             getMessagesController().addOfferToSuggestedMessage(msg, newSuggestedPost);
                         }
                     }
-                }, getResourceProvider(), AlertsCreator.SUGGEST_DATE_PICKER_MODE_EDIT).show(), AmountUtils.Amount.of(suggestedPost != null ? suggestedPost.price : null), !ChatObject.canManageMonoForum(currentAccount, getDialogId()));
+                }, getResourceProvider(), AlertsCreator.SUGGEST_DATE_PICKER_MODE_EDIT).show();
                 break;
             }
         }
@@ -33541,38 +33508,9 @@ public class ChatActivity extends BaseFragment implements
         }).show();
     }
 
-    public void checkStarsNeedSheet(Runnable runnable, AmountUtils.Amount amountRequired, boolean needCheck) {
-        if (amountRequired == null || !needCheck) {
-            runnable.run();
-            return;
-        }
-
-        Runnable onLoad = () -> {
-            if (isFinished) {
-                return;
-            }
-
-            final StarsController starsController = StarsController.getInstance(currentAccount, amountRequired.currency);
-            if (AmountUtils.Amount.ofSafe(starsController.getBalance()).asNano() < amountRequired.asNano()) {
-                if (amountRequired.currency == AmountUtils.Currency.STARS) {
-                    new StarsIntroActivity.StarsNeededSheet(getContext(), getResourceProvider(), amountRequired.asDecimal(),
-                        StarsIntroActivity.StarsNeededSheet.TYPE_PRIVATE_MESSAGE,
-                        ForumUtilities.getMonoForumTitle(currentAccount, getDialogId(), true), null, getDialogId()).show();
-                } else if (amountRequired.currency == AmountUtils.Currency.TON) {
-                    new TONIntroActivity.StarsNeededSheet(getContext(), getResourceProvider(), amountRequired, true, null).show();
-                }
-            } else {
-                runnable.run();
-            }
-        };
-
-        final StarsController starsController = StarsController.getInstance(currentAccount, amountRequired.currency);
-        if (!starsController.balanceAvailable()) {
-            starsController.getBalance(true, onLoad, true);
-        } else {
-            onLoad.run();
-        }
-    }
+    // LoogriGram: checkStarsNeedSheet stood here. It loaded the balance, compared it
+    // with a suggestion's price and opened the buy-Stars or buy-TON sheet when it fell
+    // short. Nothing has a price to fall short of.
 
     @Override
     public boolean didSelectDialogs(DialogsActivity fragment, ArrayList<MessagesStorage.TopicKey> dids, CharSequence message, boolean param, boolean notify, int scheduleDate, int scheduleRepeatPeriod, TopicsFragment topicsFragment) {
@@ -34747,15 +34685,8 @@ public class ChatActivity extends BaseFragment implements
 
         animatorRoundMessageCameraVisibility.setValue(false, true);
 
-        if (editingMessageObject != null && editingMessageObject.needResendWhenEdit() && !ChatObject.canManageMonoForum(currentAccount, editingMessageObject.getDialogId())) {
-            final MessageSuggestionParams params = messageSuggestionParams != null ? messageSuggestionParams :
-                MessageSuggestionParams.of(editingMessageObject.messageOwner.suggested_post);
-
-            if (!StarsController.isEnoughAmount(currentAccount, params.amount)) {
-                showSuggestionOfferForEditMessage(params);
-                return;
-            }
-        }
+        // LoogriGram: re-opened the offer sheet when the balance could not cover the
+        // suggestion's price. A suggestion has no price, so there is nothing to cover.
 
         if (videoEditedInfo != null && videoEditedInfo.roundVideo) {
             AndroidUtilities.runOnUIThread(closeInstantCameraAnimation = () -> {
@@ -39150,64 +39081,17 @@ public class ChatActivity extends BaseFragment implements
                     final boolean isDirectAdmin = ChatObject.canManageMonoForum(currentAccount, currentChat);
                     final boolean canPostMessages = isDirectAdmin && ChatObject.canUserDoChannelDirectAdminAction(currentAccount, currentChat, ChatObject.ACTION_POST);
 
+                    // LoogriGram: the body of this confirmation was the money - what the post
+                    // would pay, the commission taken out of it, and the hours it could not
+                    // be taken down for without a refund. A suggestion carries no price, so
+                    // only the "N suggested a post" line and the schedule are left, and the
+                    // Stars disclaimer that sat under the dialog goes with them.
                     final Runnable onLoad = () -> {
                         final SpannableStringBuilder ssb = new SpannableStringBuilder();
                         ssb.append(AndroidUtilities.replaceTags(LocaleController.formatString(R.string.SuggestedMessageAcceptInfo,
                                 getMessagesController().getPeerName(DialogObject.getPeerDialogId(message.from_id)))));
 
-                        ssb.append("\n\n");
-
-                        AmountUtils.Amount amount = AmountUtils.Amount.ofSafe(message.suggested_post.price);
-                        final int permille = amount.currency == AmountUtils.Currency.TON ?
-                                getMessagesController().config.tonSuggestedPostCommissionPermille.get():
-                                getMessagesController().config.starsSuggestedPostCommissionPermille.get();
-
-                        if (isDirectAdmin) {
-                            amount = AmountUtils.Amount.fromNano(amount.asNano()  / 1000 * permille, amount.currency);
-                        }
-
-                        if (message.suggested_post.schedule_date == 0) {
-                            if (isDirectAdmin) {
-                                ssb.append(AndroidUtilities.replaceTags(LocaleController.formatString(
-                                    R.string.SuggestedMessageAcceptInfoAnytimeAdmin2,
-                                    amount.formatAsDecimalSpaced(),
-                                    percents(permille)
-                                )));
-                            } else {
-                                ssb.append(AndroidUtilities.replaceTags(LocaleController.formatString(
-                                    R.string.SuggestedMessageAcceptInfoAnytimeUser2,
-                                    amount.formatAsDecimalSpaced()
-                                )));
-                            }
-                        } else {
-                            if (isDirectAdmin) {
-                                ssb.append(AndroidUtilities.replaceTags(LocaleController.formatString(
-                                    R.string.SuggestedMessageAcceptInfoAdmin2,
-                                    amount.formatAsDecimalSpaced(),
-                                    MessageSuggestionOfferSheet.formatDateTime(message.suggested_post.schedule_date),
-                                    percents(permille)
-                                )));
-                            } else {
-                                ssb.append(AndroidUtilities.replaceTags(LocaleController.formatString(
-                                    R.string.SuggestedMessageAcceptInfoUser2,
-                                    amount.formatAsDecimalSpaced(),
-                                    MessageSuggestionOfferSheet.formatDateTime(message.suggested_post.schedule_date)
-                                )));
-                            }
-                        }
-
-                        ssb.append(' ');
-                        ssb.append(AndroidUtilities.replaceTags(LocaleController.formatString(
-                            R.string.SuggestedMessageAcceptInfo3,
-                            MessagesController.getInstance(currentAccount).config.starsSuggestedPostAgeMin.get(TimeUnit.HOURS)
-                        )));
-
-                        final Bulletin[] bulletin = new Bulletin[1];
-                        final DialogInterface.OnDismissListener onDismiss = d -> {
-                            if (bulletin[0] != null) {
-                                bulletin[0].hide();
-                            }
-                        };
+                        final DialogInterface.OnDismissListener onDismiss = d -> {};
 
                         final AlertDialog[] dialog = new AlertDialog[1];
 
@@ -39237,16 +39121,9 @@ public class ChatActivity extends BaseFragment implements
                         });
 
                         dialog[0].setOnDismissListener(onDismiss);
-
-                        if (isDirectAdmin &&  amount.currency == AmountUtils.Currency.STARS) {
-                            bulletin[0] = BulletinFactory.of(Bulletin.BulletinWindow.make(getContext()), resourceProvider)
-                                    .createSimpleBulletin(R.raw.info, getString(R.string.SuggestedMessageAcceptStarsDisclaimer), 10)
-                                    .setDuration(60_000)
-                                    .show(true);
-                        }
                     };
 
-                    checkStarsNeedSheet(onLoad, AmountUtils.Amount.of(message.suggested_post != null ? message.suggested_post.price : null), !isDirectAdmin);
+                    onLoad.run();
                 }
             } else if (button.id == BotInlineKeyboard.ButtonCustom.SUGGESTION_EDIT) {
                 createMenu(cell, true, false, cell.getLastTouchX(), cell.getLastTouchY(), true, false, true);

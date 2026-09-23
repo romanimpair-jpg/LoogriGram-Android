@@ -198,7 +198,6 @@ import org.telegram.ui.MultiContactsSelectorBottomSheet;
 import org.telegram.ui.PhotoViewer;
 import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.ProfileActivity;
-import org.telegram.ui.Stars.StarsController;
 import org.telegram.ui.StickersActivity;
 import org.telegram.ui.Stories.HighlightMessageSheet;
 import org.telegram.ui.Stories.recorder.CaptionContainerView;
@@ -7411,18 +7410,8 @@ public class ChatActivityEnterView extends FrameLayout implements
             return;
         }
 
-        if (editingMessageObject.needResendWhenEdit() && !ChatObject.canManageMonoForum(currentAccount, editingMessageObject.getDialogId())) {
-            final MessageSuggestionParams params = parentFragment != null && parentFragment.messageSuggestionParams != null ?
-                parentFragment.messageSuggestionParams : MessageSuggestionParams.of(editingMessageObject.messageOwner.suggested_post);
-
-            if (!StarsController.isEnoughAmount(currentAccount, params.amount)) {
-                if (parentFragment != null) {
-                    parentFragment.showSuggestionOfferForEditMessage(params);
-                }
-
-                return;
-            }
-        }
+        // LoogriGram: re-opened the offer sheet when the balance could not cover the
+        // suggestion's price. A suggestion has no price, so there is nothing to cover.
 
         if (currentLimit - codePointCount < 0) {
             if (captionLimitView != null) {

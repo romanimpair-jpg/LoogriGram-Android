@@ -3004,12 +3004,6 @@ public class StarsController {
     // out, and the price read back off the request. Nothing here pays, so it
     // is gone with every caller in SendMessagesHelper.
 
-    public static boolean isEnoughAmount(int currentAccount, AmountUtils.Amount amount) {
-        if (amount == null) {
-            return true;
-        }
-
-        AmountUtils.Amount balance = getInstance(currentAccount, amount.currency).getBalanceAmount();
-        return balance.asNano() >= amount.asNano();
-    }
+    // LoogriGram: isEnoughAmount stood here. Its four callers all asked whether the
+    // balance covered a suggested post's price before sending; there is no price.
 }

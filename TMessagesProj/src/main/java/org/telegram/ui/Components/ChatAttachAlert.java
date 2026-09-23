@@ -4124,19 +4124,8 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     }
 
     private void onWriteButtonPressed() {
-        if (editingMessageObject != null && editingMessageObject.needResendWhenEdit() && !ChatObject.canManageMonoForum(currentAccount, editingMessageObject.getDialogId())) {
-            if (baseFragment instanceof ChatActivity) {
-                final ChatActivity chatActivity = (ChatActivity) baseFragment;
-                final MessageSuggestionParams params = chatActivity.messageSuggestionParams != null ?
-                        chatActivity.messageSuggestionParams :
-                        MessageSuggestionParams.of(editingMessageObject.messageOwner.suggested_post);
-
-                if (!StarsController.isEnoughAmount(currentAccount, params.amount)) {
-                    chatActivity.showSuggestionOfferForEditMessage(params);
-                    return;
-                }
-            }
-        }
+        // LoogriGram: re-opened the offer sheet when the balance could not cover the
+        // suggestion's price. A suggestion has no price, so there is nothing to cover.
 
         if (currentLimit - codepointCount < 0) {
             AndroidUtilities.shakeView(captionLimitView);

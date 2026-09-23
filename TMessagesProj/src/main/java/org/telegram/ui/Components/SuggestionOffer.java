@@ -72,12 +72,7 @@ public class SuggestionOffer {
         float rowsInfoWidth = 0;
         rows.clear();
 
-        if (suggestionOffer.amount != null && !suggestionOffer.amount.isZero()) {
-            rows.add(new Row(
-                new Text(getString(R.string.SuggestionOfferInfoPrice), paint),
-                new Text(LocaleController.bold(suggestionOffer.amount.formatAsDecimalSpaced()), paint)
-            ));
-        }
+        // LoogriGram: a Price row stood here. A suggested post has no price.
         if (suggestedPost.schedule_date > 0) {
             rows.add(new Row(
                 new Text(getString(R.string.SuggestionOfferInfoTime), paint),

@@ -1,26 +1,29 @@
 package org.telegram.messenger;
 
-import androidx.annotation.Nullable;
-
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.messenger.utils.tlutils.AmountUtils;
 
+/**
+ * LoogriGram: a suggested post carries a publishing time and nothing else.
+ *
+ * Upstream lets a post be suggested for a price in Stars or TON - the channel
+ * is paid to publish it, and refunded if it is taken down early. That is a
+ * money feature in both directions, so the price is gone: the amount field,
+ * the currency it was in, and the minimum and maximum the server advertises.
+ * A free suggestion is upstream's own case ("Offer for free"), and toTl never
+ * set the price when it was zero, so what is left is the shape the server
+ * already expects.
+ */
 public class MessageSuggestionParams {
-    public final @Nullable AmountUtils.Amount amount;
     public final long time;
 
-    private MessageSuggestionParams(@Nullable AmountUtils.Amount amount, long time) {
-        this.amount = amount;
+    private MessageSuggestionParams(long time) {
         this.time = time;
     }
 
-    public @Nullable TLRPC.SuggestedPost toTl() {
+    public TLRPC.SuggestedPost toTl() {
         TLRPC.SuggestedPost suggestedPost = new TLRPC.SuggestedPost();
 
-        if (amount != null && !amount.isZero()) {
-            suggestedPost.price = amount.toTl();
-        }
         if (time > 0) {
             suggestedPost.schedule_date = (int) time;
             suggestedPost.flags |= TLObject.FLAG_0;
@@ -30,11 +33,11 @@ public class MessageSuggestionParams {
     }
 
     public boolean isEmpty() {
-        return (amount == null || amount.isZero()) && time <= 0;
+        return time <= 0;
     }
 
     public static MessageSuggestionParams empty() {
-        return new MessageSuggestionParams(AmountUtils.Amount.fromDecimal(0, AmountUtils.Currency.STARS), 0);
+        return new MessageSuggestionParams(0);
     }
 
     public static MessageSuggestionParams of(TLRPC.SuggestedPost suggestedPost) {
@@ -42,14 +45,14 @@ public class MessageSuggestionParams {
             return empty();
         }
 
-        return new MessageSuggestionParams(AmountUtils.Amount.of(suggestedPost.price), suggestedPost.schedule_date);
+        return new MessageSuggestionParams(suggestedPost.schedule_date);
     }
 
     public static MessageSuggestionParams of(TLRPC.TL_messageActionSuggestedPostApproval approval) {
-        return of(AmountUtils.Amount.of(approval.price), approval.schedule_date);
+        return ofTime(approval.schedule_date);
     }
 
-    public static MessageSuggestionParams of(AmountUtils.Amount amount, long time) {
-        return new MessageSuggestionParams(amount, time);
+    public static MessageSuggestionParams ofTime(long time) {
+        return new MessageSuggestionParams(time);
     }
 }

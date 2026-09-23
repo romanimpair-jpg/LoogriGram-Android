@@ -4837,26 +4837,19 @@ public class MessageObject {
                     final String userName = DialogObject.getName(getUser(users, sUsers, DialogObject.getPeerDialogId(messageOwner.saved_peer_id)));
                     final MessageSuggestionParams sp = obtainSuggestionOfferFromReply();
 
+                    // LoogriGram: both of these named the amount refunded or paid when
+                    // one was known. Nothing we suggest has a price, so they take the
+                    // "amount unknown" wording upstream already ships. Both actions are
+                    // hidden content in any case - see LoogriGramHidden.
                     if (messageOwner.action instanceof TLRPC.TL_messageActionSuggestedPostRefund) {
                         final boolean refundByUser = ((TLRPC.TL_messageActionSuggestedPostRefund) messageOwner.action).payer_initiated;
-                        if (sp != null && sp.amount != null) {
-                            final int key = refundByUser ? R.string.SuggestedOfferRefundByUserAmountF : R.string.SuggestedOfferRefundByAdminAmountF;
-                            messageText = StarsFormat.replaceStars(sp.amount.currency == AmountUtils.Currency.TON,
-                                LocaleController.formatString(key, userName, channelName, sp.amount.asDecimalString()));
-                        } else {
-                            final int key = refundByUser ?
-                                R.string.SuggestedOfferRefundByUserAmountUnknown :
-                                R.string.SuggestedOfferRefundByAdminAmountUnknown;
+                        final int key = refundByUser ?
+                            R.string.SuggestedOfferRefundByUserAmountUnknown :
+                            R.string.SuggestedOfferRefundByAdminAmountUnknown;
 
-                            messageText = LocaleController.formatString(key, userName, channelName);
-                        }
+                        messageText = LocaleController.formatString(key, userName, channelName);
                     } else if (messageOwner.action instanceof TLRPC.TL_messageActionSuggestedPostSuccess) {
-                        if (sp != null && sp.amount != null) {
-                            messageText = StarsFormat.replaceStars(sp.amount.currency == AmountUtils.Currency.TON,
-                                LocaleController.formatString(R.string.SuggestedOfferCompleteAmountF, channelName, sp.amount.asDecimalString()));
-                        } else {
-                            messageText = LocaleController.formatString(R.string.SuggestedOfferCompleteAmountUnknown, channelName);
-                        }
+                        messageText = LocaleController.formatString(R.string.SuggestedOfferCompleteAmountUnknown, channelName);
                     }
 
                 } else if (messageOwner.action instanceof TLRPC.TL_messageActionChatAddUser) {
@@ -13035,12 +13028,9 @@ public class MessageObject {
         final boolean isAdmin = ChatObject.canManageMonoForum(currentAccount, DialogObject.getPeerDialogId(messageOwner.peer_id));
         final SpannableStringBuilder ssb = new SpannableStringBuilder();
 
-        if (approval.balance_too_low) {
-            ssb.append(AndroidUtilities.replaceTags(
-                LocaleController.formatString(R.string.SuggestionAgreementNotEnoughStars,
-                userName
-            )));
-        } else if (approval.rejected) {
+        // LoogriGram: a "they did not have enough Stars" branch stood first here. A
+        // suggestion carries no price, so an approval can never fail on a balance.
+        if (approval.rejected) {
             boolean byAdmin = true;
             boolean fromYou = false;
             if (replyMessageObject != null && replyMessageObject.messageOwner != null) {
@@ -13092,51 +13082,9 @@ public class MessageObject {
 
                 ssb.append(AndroidUtilities.replaceTags(LocaleController.formatString(key, channelName)));
             }
-            if (suggestionOffer.amount != null && !suggestionOffer.amount.isZero()) {
-                final boolean isTon = suggestionOffer.amount.currency == AmountUtils.Currency.TON;
-
-                {
-                    final String text = isAdmin ?
-                        LocaleController.formatString(R.string.SuggestionAgreementReachedAdmin2, userName, suggestionOffer.amount.asDecimalString()) :
-                        LocaleController.formatString(R.string.SuggestionAgreementReachedUser2, suggestionOffer.amount.asDecimalString());
-
-                    ssb.append("\n\n");
-                    ssb.setSpan(new RelativeSizeSpan(0.6f), ssb.length() - 1, ssb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    ssb.append(StarsFormat.replaceStars(suggestionOffer.amount.currency == AmountUtils.Currency.TON, AndroidUtilities.replaceTags(text)));
-                }
-                {
-                    final int key;
-                    if (isTon) {
-                        key = isAdmin ?
-                            R.string.SuggestionAgreementReachedAdmin3TON:
-                            R.string.SuggestionAgreementReachedUser3TON;
-                    } else {
-                        key = isAdmin ?
-                            R.string.SuggestionAgreementReachedAdmin3Stars:
-                            R.string.SuggestionAgreementReachedUser3Stars;
-                    }
-
-                    ssb.append("\n\n");
-                    ssb.setSpan(new RelativeSizeSpan(0.6f), ssb.length() - 1, ssb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    ssb.append(AndroidUtilities.replaceTags(LocaleController.formatString(key, channelName, hours)));
-                }
-                {
-                    final int key;
-                    if (isTon) {
-                        key = isAdmin ?
-                            R.string.SuggestionAgreementReachedAdmin4TON:
-                            R.string.SuggestionAgreementReachedUser4TON;
-                    } else {
-                        key = isAdmin ?
-                            R.string.SuggestionAgreementReachedAdmin4Stars:
-                            R.string.SuggestionAgreementReachedUser4Stars;
-                    }
-
-                    ssb.append("\n\n");
-                    ssb.setSpan(new RelativeSizeSpan(0.6f), ssb.length() - 1, ssb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    ssb.append(AndroidUtilities.replaceTags(LocaleController.formatString(key, channelName, hours)));
-                }
-            }
+            // LoogriGram: three further paragraphs followed, naming the price agreed, the
+            // hours before the post could be taken down and the refund that would follow
+            // if it were. None of that exists without a price.
         }
 
         return ssb;

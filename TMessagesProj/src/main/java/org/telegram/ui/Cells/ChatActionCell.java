@@ -81,7 +81,6 @@ import org.telegram.messenger.ImageReceiver;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
-import org.telegram.messenger.MessageSuggestionParams;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
@@ -142,7 +141,6 @@ import org.telegram.ui.ProfileActivity;
 import org.telegram.ui.Stars.StarGiftSheet;
 import org.telegram.ui.Stars.StarGiftUniqueActionLayout;
 import org.telegram.ui.Stars.StarsIntroActivity;
-import org.telegram.messenger.utils.tlutils.AmountUtils;
 import org.telegram.ui.Stories.StoriesUtilities;
 import org.telegram.ui.Stories.UploadingDotsSpannable;
 import org.telegram.ui.Stories.recorder.HintView2;
@@ -1377,9 +1375,6 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
                             } else if (messageObject.type == MessageObject.TYPE_GIFT_STARS) {
                                 playSoundEffect(SoundEffectConstants.CLICK);
                                 openStarsGiftTransaction();
-                            } else if (messageObject.messageOwner != null && messageObject.messageOwner.action instanceof TLRPC.TL_messageActionSuggestedPostApproval && ((TLRPC.TL_messageActionSuggestedPostApproval) messageObject.messageOwner.action).balance_too_low) {
-                                playSoundEffect(SoundEffectConstants.CLICK);
-                                openStarsNeedSheet();
                             } else {
                                 ImageUpdater imageUpdater = MessagesController.getInstance(currentAccount).photoSuggestion.get(messageObject.messageOwner.local_id);
                                 if (imageUpdater == null) {
@@ -1619,15 +1614,8 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
         }
     }
 
-    private void openStarsNeedSheet() {
-        final MessageSuggestionParams params = currentMessageObject.obtainSuggestionOffer();
-        if (params.amount == null || params.amount.currency != AmountUtils.Currency.STARS) {
-            return;
-        }
-
-        new StarsIntroActivity.StarsNeededSheet(getContext(), themeDelegate, params.amount.asDecimal(), StarsIntroActivity.StarsNeededSheet.TYPE_PRIVATE_MESSAGE, ForumUtilities.getMonoForumTitle(currentAccount, currentMessageObject.getDialogId(), true), null, currentMessageObject.getDialogId())
-            .show();
-    }
+    // LoogriGram: openStarsNeedSheet stood here. Tapping a "your balance was too low"
+    // approval notice offered to buy the Stars it wanted; nothing here pays.
 
     private void openLink(CharacterStyle link) {
         if (delegate != null && link instanceof URLSpan) {
