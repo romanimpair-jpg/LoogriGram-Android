@@ -3702,52 +3702,14 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 }
             }
 
-            final boolean canDelete = (
-                isMine(currentAccount, DialogObject.getPeerDialogId(gift.owner_id)) && (
-                    savedStarGift != null && savedStarGift.drop_original_details_stars >= 0
-                    ||
-                    messageObject != null && messageObject.messageOwner != null && messageObject.messageOwner.action instanceof TLRPC.TL_messageActionStarGiftUnique &&
-                    ((TLRPC.TL_messageActionStarGiftUnique) messageObject.messageOwner.action).drop_original_details_stars >= 0
-                )
-            );
-            if (canDelete) {
-                final LinearLayout layout = new LinearLayout(getContext());
-                layout.setPadding(dp(12.66f), dp(9.33f), dp(12.66f), dp(9.33f));
-                layout.setOrientation(LinearLayout.HORIZONTAL);
-
-                final SpoilersTextView textView = new SpoilersTextView(getContext());
-                textView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
-                textView.setLinkTextColor(Theme.getColor(Theme.key_chat_messageLinkIn, resourcesProvider));
-                textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 12);
-                textView.setGravity(Gravity.LEFT);
-                textView.setText(detailsText);
-                layout.addView(textView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 1, Gravity.CENTER_VERTICAL | Gravity.LEFT));
-
-                final ImageView deleteView = new ImageView(getContext());
-                deleteView.setScaleType(ImageView.ScaleType.CENTER);
-                deleteView.setBackground(Theme.createRadSelectorDrawable(Theme.multAlpha(Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider), .10f), 6, 6));
-                deleteView.setImageResource(R.drawable.menu_delete_old);
-                deleteView.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider), PorterDuff.Mode.SRC_IN));
-                ScaleStateListAnimator.apply(deleteView);
-                deleteView.setOnClickListener(v -> {
-                    showDeleteDescriptionAlert(detailsText);
-                });
-                layout.addView(deleteView, LayoutHelper.createLinear(32, 32, 0, Gravity.CENTER_VERTICAL | Gravity.RIGHT, 8, 0, 0, 0));
-
-                final TableRow row = new TableRow(getContext());
-                TableRow.LayoutParams lp;
-                lp = new TableRow.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT);
-                lp.span = 2;
-                final TableView.TableRowFullContent cell = new TableView.TableRowFullContent(tableView, layout, true);
-                row.addView(cell, lp);
-                tableView.addView(row);
-            } else {
-                tableRow = tableView.addFullRow(detailsText);
-                tableRow.setFilled(true);
-                SpoilersTextView textView = (SpoilersTextView) tableRow.getChildAt(0);
-                textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 12);
-                textView.setGravity(Gravity.CENTER);
-            }
+            // LoogriGram: a delete button sat in this row when the gift was ours and the
+            // server quoted a price for dropping its "originally sent by" details. Paying
+            // Stars to erase a line of provenance is a purchase; the row is plain now.
+            tableRow = tableView.addFullRow(detailsText);
+            tableRow.setFilled(true);
+            SpoilersTextView textView = (SpoilersTextView) tableRow.getChildAt(0);
+            textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 12);
+            textView.setGravity(Gravity.CENTER);
         }
 
         if (!(roller != null && roller.isRolling())) {
@@ -3855,96 +3817,9 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         }
     }
 
-    private void showDeleteDescriptionAlert(CharSequence text) {
-        final TL_stars.TL_starGiftUnique gift = getUniqueGift();
-        final TL_stars.InputSavedStarGift inputGift = getInputStarGift();
-        if (inputGift == null || gift == null) return;
-
-        final TLRPC.TL_inputInvoiceStarGiftDropOriginalDetails invoice = new TLRPC.TL_inputInvoiceStarGiftDropOriginalDetails();
-        invoice.stargift = inputGift;
-
-        final TLRPC.TL_payments_getPaymentForm req = new TLRPC.TL_payments_getPaymentForm();
-        req.invoice = invoice;
-        final JSONObject themeParams = BotWebViewSheet.makeThemeParams(resourcesProvider);
-        if (themeParams != null) {
-            req.theme_params = new TLRPC.TL_dataJSON();
-            req.theme_params.data = themeParams.toString();
-            req.flags |= 1;
-        }
-
-        ConnectionsManager.getInstance(currentAccount).sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
-            if (res instanceof TLRPC.PaymentForm) {
-                final TLRPC.PaymentForm form = (TLRPC.PaymentForm) res;
-
-                long _stars = 0;
-                for (TLRPC.TL_labeledPrice price : form.invoice.prices) {
-                    _stars += price.amount;
-                }
-                final long stars = _stars;
-
-                final LinearLayout layout = new LinearLayout(getContext());
-                layout.setOrientation(LinearLayout.VERTICAL);
-                layout.setPadding(dp(23), 0, dp(23), 0);
-
-                final TextView textView = TextHelper.makeTextView(getContext(), 16, Theme.key_dialogTextBlack, false);
-                textView.setText(getString(R.string.Gift2RemoveDescriptionText));
-                layout.addView(textView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 0, 0, 16));
-
-                final TableView tableView = new TableView(getContext(), resourcesProvider);
-                final TableView.TableRowFullContent tableRow = tableView.addFullRow(text);
-                tableRow.setFilled(true);
-                SpoilersTextView textView2 = (SpoilersTextView) tableRow.getChildAt(0);
-                textView2.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 12);
-                textView2.setGravity(Gravity.CENTER);
-                layout.addView(tableView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 0, 0, 0));
-
-                new AlertDialog.Builder(getContext(), resourcesProvider)
-                    .setTitle(getString(R.string.Gift2RemoveDescriptionTitle))
-                    .setView(layout)
-                    .setNegativeButton(getString(R.string.Cancel), null)
-                    .setPositiveButton(replaceStars(formatString(R.string.Gift2RemoveDescriptionButton, (int) stars)), (di, w) -> {
-                        if (gift == null) return;
-
-                        final Browser.Progress progress = di.makeButtonLoading(AlertDialog.BUTTON_POSITIVE);
-                        progress.init();
-
-                        final TL_stars.TL_payments_sendStarsForm req2 = new TL_stars.TL_payments_sendStarsForm();
-                        req2.form_id = form.form_id;
-                        req2.invoice = invoice;
-                        ConnectionsManager.getInstance(currentAccount).sendRequest(req2, (res2, err2) -> AndroidUtilities.runOnUIThread(() -> {
-                            progress.end();
-                            di.dismiss();
-
-                            if (res2 instanceof TLRPC.TL_payments_paymentResult) {
-                                for (int i = 0; i < gift.attributes.size(); ++i) {
-                                    if (gift.attributes.get(i) instanceof TL_stars.starGiftAttributeOriginalDetails) {
-                                        gift.attributes.remove(i);
-                                        i--;
-                                    }
-                                }
-                                set(gift, savedStarGift != null ? savedStarGift.refunded : false);
-
-                                AndroidUtilities.runOnUIThread(() -> {
-                                    getBulletinFactory()
-                                        .createSimpleBulletin(R.raw.ic_delete, AndroidUtilities.replaceTags(formatString(R.string.GiftRemovedDescription, gift.title + " #" + gift.num)))
-                                        .show();
-                                });
-                            } else if (err2 != null && "BALANCE_TOO_LOW".equalsIgnoreCase(err2.text)) {
-                                new StarsIntroActivity.StarsNeededSheet(getContext(), resourcesProvider, stars, StarsIntroActivity.StarsNeededSheet.TYPE_REMOVE_GIFT_DESCRIPTION, null, () -> {
-                                    showDeleteDescriptionAlert(text);
-                                }, 0).show();
-                            } else if (err2 != null) {
-                                getBulletinFactory().showForError(err2);
-                            }
-                        }));
-                    })
-                    .show();
-
-            } else if (err != null) {
-                getBulletinFactory().showForError(err);
-            }
-        }));
-    }
+    // LoogriGram: showDeleteDescriptionAlert stood here. It fetched a payment form
+    // for dropping a gift's original details, quoted the price on the confirm button,
+    // sent the Stars form and offered to buy more when the balance was short.
 
         public boolean isSaved() {
         if (messageObject != null && messageObject.messageOwner != null) {
