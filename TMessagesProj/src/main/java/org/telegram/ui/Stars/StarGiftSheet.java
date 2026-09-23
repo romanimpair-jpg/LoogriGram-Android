@@ -6,7 +6,6 @@ import static org.telegram.messenger.AndroidUtilities.formatDuration;
 import static org.telegram.messenger.AndroidUtilities.lerp;
 import static org.telegram.messenger.AndroidUtilities.randomOf;
 import static org.telegram.messenger.AndroidUtilities.replaceArrows;
-import static org.telegram.messenger.AndroidUtilities.replaceUnderstood;
 import static org.telegram.messenger.LocaleController.formatNumber;
 import static org.telegram.messenger.LocaleController.formatPluralString;
 import static org.telegram.messenger.LocaleController.formatPluralStringComma;
@@ -16,9 +15,7 @@ import static org.telegram.messenger.LocaleController.getString;
 import static org.telegram.messenger.MessagesController.findUpdates;
 import static org.telegram.ui.Stars.StarsController.findAttribute;
 import static org.telegram.ui.Stars.StarsController.findAttributes;
-import static org.telegram.ui.Stars.StarsController.showNoSupportDialog;
 import static org.telegram.ui.Stars.StarsIntroActivity.addAvailabilityRow;
-import static org.telegram.messenger.StarsFormat.replaceStars;
 import static org.telegram.messenger.StarsFormat.replaceStarsWithPlain;
 import static org.telegram.ui.Stars.StarsIntroActivity.setGiftImage;
 import static org.telegram.messenger.AndroidUtilities.percents;
@@ -84,7 +81,6 @@ import androidx.collection.LongSparseArray;
 import androidx.core.graphics.ColorUtils;
 import androidx.recyclerview.widget.RecyclerView;
 
-import org.json.JSONObject;
 import org.telegram.messenger.CurrencyFormat;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
@@ -146,7 +142,6 @@ import org.telegram.ui.Components.LinkPath;
 import org.telegram.ui.Components.LinkSpanDrawable;
 import org.telegram.ui.Components.LoadingSpan;
 import org.telegram.ui.Components.Particles;
-import org.telegram.ui.Components.Premium.LimitPreviewView;
 import org.telegram.ui.Components.Premium.LimitReachedBottomSheet;
 import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.Components.RLottieDrawable;
@@ -174,7 +169,6 @@ import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 import org.telegram.ui.Stories.recorder.HintView2;
 import org.telegram.ui.Stories.recorder.StoryEntry;
 import org.telegram.ui.Stories.recorder.StoryRecorder;
-import org.telegram.ui.bots.BotWebViewSheet;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -202,11 +196,10 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
     private final LinkSpanDrawable.LinksTextView afterTableTextView;
     private final ButtonWithCounterView button;
     private final FrameLayout buttonContainer;
-    private final LinkSpanDrawable.LinksTextView underButtonLinkTextView;
-    private final FrameLayout underButtonContainer;
+    // LoogriGram: underButtonContainer and its link stood here. The bar under the
+    // button held one thing, "Upgrade costs" - a link into the price schedule.
     private final View buttonShadow;
     private final FrameLayout bottomBulletinContainer;
-    private UpgradePricesSheet upgradeSheet;
 
     private boolean upgradedOnce = false;
 
@@ -544,17 +537,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         buttonContainer.addView(button, buttonLayoutParams);
         container.addView(buttonContainer, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 12 + 48 + 12, Gravity.BOTTOM | Gravity.FILL_HORIZONTAL));
 
-        underButtonContainer = new FrameLayout(context);
-        underButtonContainer.setBackgroundColor(getThemedColor(Theme.key_dialogBackground));
 
-        underButtonLinkTextView = new LinkSpanDrawable.LinksTextView(context);
-        underButtonLinkTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 12);
-        underButtonLinkTextView.setTextColor(Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider));
-        underButtonLinkTextView.setLinkTextColor(Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider));
-        underButtonLinkTextView.setGravity(Gravity.CENTER);
-        underButtonContainer.addView(underButtonLinkTextView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 16, 8, 16, 14));
-        container.addView(underButtonContainer, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM | Gravity.FILL_HORIZONTAL));
-        underButtonContainer.setVisibility(View.GONE);
 
         recyclerListView.setOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -1355,7 +1338,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             if (adapter != null) {
                 adapter.setHeights(
                     topView.getFinalHeight(),
-                    getBottomHeight() + (currentPage.to(PAGE_UPGRADE) && underButtonContainer.getVisibility() == View.VISIBLE ? underButtonContainer.getMeasuredHeight() : 0)
+                    getBottomHeight()
                 );
             }
             onSwitchedPage();
@@ -1443,7 +1426,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             if (adapter != null) {
                 adapter.setHeights(
                     topView.getFinalHeight(),
-                    getBottomHeight() + (currentPage.to(PAGE_UPGRADE) && underButtonContainer.getVisibility() == View.VISIBLE ? underButtonContainer.getMeasuredHeight() : 0)
+                    getBottomHeight()
                 );
             }
         }
@@ -2549,7 +2532,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             lastTop = container.top();
         }
         currentPage = new PageTransition(currentPage == null ? PAGE_INFO : currentPage.to, page, 0.0f);
-        adapter.setHeights(topView.getFinalHeight(), getBottomHeight() + (currentPage.to(PAGE_UPGRADE) && underButtonContainer.getVisibility() == View.VISIBLE ? underButtonContainer.getMeasuredHeight() : 0));
+        adapter.setHeights(topView.getFinalHeight(), getBottomHeight());
         if (currentPage.to == PAGE_INFO && roller != null) {
             roller.stopPreload();
         }
@@ -2569,7 +2552,8 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                     infoLayout.setVisibility(page == PAGE_INFO ? View.VISIBLE : View.GONE);
                     upgradeLayout.setVisibility(page == PAGE_UPGRADE ? View.VISIBLE : View.GONE);
                     wearLayout.setVisibility(page == PAGE_WEAR ? View.VISIBLE : View.GONE);
-                    updateUnderButtonContainer();
+                    buttonContainer.setTranslationY(0);
+                    bottomBulletinContainer.setTranslationY(0);
                     switchingPagesAnimator = null;
                     if (done != null) {
                         done.run();
@@ -2586,7 +2570,8 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             infoLayout.setVisibility(page == PAGE_INFO ? View.VISIBLE : View.GONE);
             upgradeLayout.setVisibility(page == PAGE_UPGRADE ? View.VISIBLE : View.GONE);
             wearLayout.setVisibility(page == PAGE_WEAR ? View.VISIBLE : View.GONE);
-            updateUnderButtonContainer();
+            buttonContainer.setTranslationY(0);
+            bottomBulletinContainer.setTranslationY(0);
             if (done != null) {
                 done.run();
             }
@@ -2598,17 +2583,9 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         }
     }
 
-    private void updateUnderButtonContainer() {
-        if (underButtonContainer.getVisibility() == View.VISIBLE) {
-            buttonContainer.setTranslationY(-underButtonContainer.getMeasuredHeight() * currentPage.at(PAGE_UPGRADE));
-            underButtonContainer.setTranslationY(underButtonContainer.getMeasuredHeight() * (1.0f - currentPage.at(PAGE_UPGRADE)));
-            bottomBulletinContainer.setTranslationY(-underButtonContainer.getMeasuredHeight() * currentPage.at(PAGE_UPGRADE));
-        } else {
-            buttonContainer.setTranslationY(0);
-            underButtonContainer.setTranslationY(0);
-            bottomBulletinContainer.setTranslationY(0);
-        }
-    }
+    // LoogriGram: updateUnderButtonContainer slid the button up to make room for that
+    // bar. With the bar gone both stay where they are, so its two callers set the
+    // translations it used to zero directly.
 
     private int getBottomHeight() {
         if (currentPage.to(PAGE_UPGRADE)) return upgradeLayout.getMeasuredHeight();
@@ -2627,7 +2604,8 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         container.updateTranslations();
         container.invalidate();
         buttonContainer.setVisibility(View.VISIBLE);
-        updateUnderButtonContainer();
+        buttonContainer.setTranslationY(0);
+        bottomBulletinContainer.setTranslationY(0);
     }
 
     // LoogriGram: canTransferAt read the server's "not before" date for a transfer and
@@ -3895,7 +3873,8 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                     savedStarGift.gift.title + " #" + formatNumber(savedStarGift.gift_num, ',') : getString(R.string.Gift2TitleSaved);
 
                 topView.setText(0, title, refunded ? null :
-                    savedStarGift.can_upgrade ? AndroidUtilities.replaceTags(getString(R.string.Gift2SelfInfoUpgrade)) :
+                    // LoogriGram: "you can upgrade this" only when the sender paid for it.
+                    savedStarGift.can_upgrade && savedStarGift.upgrade_stars > 0 ? AndroidUtilities.replaceTags(getString(R.string.Gift2SelfInfoUpgrade)) :
                     savedStarGift.convert_stars > 0 ? AndroidUtilities.replaceTags(formatPluralStringComma("Gift2SelfInfoConvert", (int) savedStarGift.convert_stars)) :
                     AndroidUtilities.replaceTags(getString(R.string.Gift2SelfInfo)),
                     null, releasedByText(savedStarGift.gift)
@@ -3954,17 +3933,16 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 tableView.addFullRow(savedStarGift.message.text, savedStarGift.message.entities);
             }
 
-            if (myProfile && savedStarGift.can_upgrade) {
+            // LoogriGram: upstream offered this whether or not the upgrade was paid for,
+            // and charged when it was not. It is only offered when the sender paid.
+            if (myProfile && savedStarGift.can_upgrade && savedStarGift.upgrade_stars > 0) {
                 SpannableStringBuilder sb = new SpannableStringBuilder("^  ");
                 if (upgradeIconSpan == null) {
                     upgradeIconSpan = new ColoredImageSpan(new UpgradeIcon(button, Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider)));
                 }
                 sb.setSpan(upgradeIconSpan, 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                sb.append(
-                    savedStarGift.upgrade_stars > 0 ?
-                        getString(R.string.Gift2UpgradeButtonFree) :
-                        getString(R.string.Gift2UpgradeButtonGift)
-                );
+                // LoogriGram: the other label was "Upgrade for N Stars".
+                sb.append(getString(R.string.Gift2UpgradeButtonFree));
                 button.setFilled(true);
                 button.setText(sb, !firstSet);
                 button.setSubText(null, !firstSet);
@@ -3988,19 +3966,8 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                     overrideNextIndex = index;
                     viewPager.scrollToPosition(viewPager.getCurrentPosition() + (index > getListPosition() ? +1 : -1));
                 });
-            } else if (savedStarGift.gift instanceof TL_stars.TL_starGift && !TextUtils.isEmpty(savedStarGift.prepaid_upgrade_hash)) {
-                SpannableStringBuilder sb = new SpannableStringBuilder("^  ");
-                if (upgradeIconSpan == null) {
-                    upgradeIconSpan = new ColoredImageSpan(new UpgradeIcon(button, Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider)));
-                }
-                sb.setSpan(upgradeIconSpan, 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                sb.append(getString(R.string.Gift2GiftAnUpgrade));
-                button.setFilled(true);
-                button.setText(sb, !firstSet);
-                button.setSubText(null, !firstSet);
-                button.setOnClickListener(v -> {
-                    openUpgrade();
-                });
+            // LoogriGram: a "Gift an Upgrade" button stood here, paying for someone
+            // else's gift to be upgraded.
             } else {
                 button.setFilled(true);
                 button.setText(getString(R.string.OK), !firstSet);
@@ -4147,7 +4114,6 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             boolean can_upgrade, upgraded, prepaid_upgrade;
             long convert_stars, upgrade_stars;
             TLRPC.Peer from_id, peer;
-            String prepaid_upgrade_hash;
             int giftNum = 0;
             if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionStarGift) {
                 final TLRPC.TL_messageActionStarGift action = (TLRPC.TL_messageActionStarGift) messageObject.messageOwner.action;
@@ -4164,7 +4130,6 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 from_id = action.from_id;
                 peer = action.peer;
                 prepaid_upgrade = action.prepaid_upgrade;
-                prepaid_upgrade_hash = action.prepaid_upgrade_hash;
                 auctionPeer = action.auction_acquired ? action.to_id : null;
                 giftNum = action.gift_num;
             } else {
@@ -4182,7 +4147,6 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 from_id = action.from_id;
                 peer = action.peer;
                 prepaid_upgrade = false;
-                prepaid_upgrade_hash = null;
             }
 
             final String name = DialogObject.getShortName(dialogId);
@@ -4195,7 +4159,8 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                     stargift.title + " #" + formatNumber(giftNum, ',') : getString(R.string.Gift2TitleSaved);
 
                 topView.setText(0, title, refunded ? null :
-                    can_upgrade ? AndroidUtilities.replaceTags(getString(R.string.Gift2SelfInfoUpgrade)) :
+                    // LoogriGram: as above.
+                    can_upgrade && upgrade_stars > 0 ? AndroidUtilities.replaceTags(getString(R.string.Gift2SelfInfoUpgrade)) :
                     convert_stars > 0 ? AndroidUtilities.replaceTags(formatPluralStringComma(converted ? "Gift2SelfInfoConverted" : "Gift2SelfInfoConvert", (int) convert_stars)) :
                     AndroidUtilities.replaceTags(getString(R.string.Gift2SelfInfo)),
                     null, releasedByText(stargift)
@@ -4260,17 +4225,15 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 tableView.addFullRow(message.text, message.entities);
             }
 
-            if (!out && can_upgrade && !refunded) {
+            // LoogriGram: as above - only an upgrade the sender paid for is offered.
+            if (!out && can_upgrade && !refunded && upgrade_stars > 0) {
                 SpannableStringBuilder sb = new SpannableStringBuilder("^  ");
                 if (upgradeIconSpan == null) {
                     upgradeIconSpan = new ColoredImageSpan(new UpgradeIcon(button, Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider)));
                 }
                 sb.setSpan(upgradeIconSpan, 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                sb.append(
-                    upgrade_stars > 0 ?
-                        getString(R.string.Gift2UpgradeButtonFree) :
-                        getString(R.string.Gift2UpgradeButtonGift)
-                );
+                // LoogriGram: the other label was "Upgrade for N Stars".
+                sb.append(getString(R.string.Gift2UpgradeButtonFree));
                 button.setFilled(true);
                 button.setText(sb, !firstSet);
                 button.setSubText(null, !firstSet);
@@ -4294,19 +4257,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                     overrideNextIndex = index;
                     viewPager.scrollToPosition(viewPager.getCurrentPosition() + (index > getListPosition() ? +1 : -1));
                 });
-            } else if (stargift instanceof TL_stars.TL_starGift && !TextUtils.isEmpty(prepaid_upgrade_hash)) {
-                SpannableStringBuilder sb = new SpannableStringBuilder("^  ");
-                if (upgradeIconSpan == null) {
-                    upgradeIconSpan = new ColoredImageSpan(new UpgradeIcon(button, Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider)));
-                }
-                sb.setSpan(upgradeIconSpan, 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                sb.append(getString(R.string.Gift2GiftAnUpgrade));
-                button.setFilled(true);
-                button.setText(sb, !firstSet);
-                button.setSubText(null, !firstSet);
-                button.setOnClickListener(v -> {
-                    openUpgrade();
-                });
+            // LoogriGram: as above - "Gift an Upgrade" stood here.
             } else {
                 button.setFilled(true);
                 button.setText(getString(R.string.OK), !firstSet);
@@ -4940,11 +4891,10 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
     }
 
     private ArrayList<TL_stars.StarGiftAttribute> sample_attributes;
-    private ArrayList<TL_stars.StarGiftUpgradePrice> prices;
-    private ArrayList<TL_stars.StarGiftUpgradePrice> next_prices;
 
-    private boolean requesting_upgrade_form;
-    private TLRPC.PaymentForm upgrade_form;
+    // LoogriGram: prices, next_prices, requesting_upgrade_form and upgrade_form stood
+    // here - the schedule an upgrade's price steps down through, and the payment form
+    // fetched to charge us for one.
     private void openUpgrade() {
         if (currentHintView != null) {
             currentHintView.hide();
@@ -4958,7 +4908,6 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         long gift_id;
         boolean name_hidden;
         boolean hasMessage;
-        String prepaid_upgrade_hash;
         final TL_stars.InputSavedStarGift inputStarGift = getInputStarGift();
         if (inputStarGift == null) return;
         final boolean isForChannel, was_prepaid_by_not_gift_sender;
@@ -4971,7 +4920,6 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 name_hidden = action.name_hidden;
                 hasMessage = action.message != null && !TextUtils.isEmpty(action.message.text);
                 isForChannel = action.peer instanceof TLRPC.TL_peerChannel;
-                prepaid_upgrade_hash = action.prepaid_upgrade_hash;
                 was_prepaid_by_not_gift_sender =
                     action.prepaid_upgrade ?
                         DialogObject.getPeerDialogId(action.from_id) != messageObject.getFromChatId() :
@@ -4985,7 +4933,6 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             name_hidden = savedStarGift.gift instanceof TL_stars.TL_starGift && savedStarGift.name_hidden;
             hasMessage = savedStarGift.message != null && !TextUtils.isEmpty(savedStarGift.message.text);
             isForChannel = dialogId < 0;
-            prepaid_upgrade_hash = savedStarGift.prepaid_upgrade_hash;
             was_prepaid_by_not_gift_sender = savedStarGift.upgrade_separate;
         } else {
             return;
@@ -5000,88 +4947,47 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 checkboxTextView.setText(getString(R.string.Gift2AddSenderName));
             }
         }
-        checkbox.setChecked(!name_hidden && paid_stars > 0 && !was_prepaid_by_not_gift_sender, false);
+        checkbox.setChecked(!name_hidden && !was_prepaid_by_not_gift_sender, false);
 
-        if (sample_attributes == null || paid_stars <= 0 && upgrade_form == null) {
-            if (sample_attributes == null) {
-                StarsController.getInstance(currentAccount).getStarGiftPreview(gift_id, preview -> {
-                    if (preview == null) return;
-                    sample_attributes = preview.sample_attributes;
-                    prices = preview.prices;
-                    next_prices = preview.next_prices;
-                    openUpgradeAfter();
-                });
-            }
-
-            if (paid_stars <= 0 && upgrade_form == null) {
-                requesting_upgrade_form = true;
-
-                final TLRPC.TL_payments_getPaymentForm req = new TLRPC.TL_payments_getPaymentForm();
-                if (!TextUtils.isEmpty(prepaid_upgrade_hash)) {
-                    final TLRPC.TL_inputInvoiceStarGiftPrepaidUpgrade invoice = new TLRPC.TL_inputInvoiceStarGiftPrepaidUpgrade();
-                    invoice.hash = prepaid_upgrade_hash;
-                    invoice.peer = MessagesController.getInstance(currentAccount).getInputPeer(dialogId);
-                    req.invoice = invoice;
-                } else {
-                    final TLRPC.TL_inputInvoiceStarGiftUpgrade invoice = new TLRPC.TL_inputInvoiceStarGiftUpgrade();
-                    invoice.keep_original_details = checkbox.isChecked();
-                    invoice.stargift = inputStarGift;
-                    req.invoice = invoice;
-                }
-                final JSONObject themeParams = BotWebViewSheet.makeThemeParams(resourcesProvider);
-                if (themeParams != null) {
-                    req.theme_params = new TLRPC.TL_dataJSON();
-                    req.theme_params.data = themeParams.toString();
-                    req.flags |= 1;
-                }
-
-                ConnectionsManager.getInstance(currentAccount).sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
-                    requesting_upgrade_form = false;
-                    if (res instanceof TLRPC.PaymentForm) {
-                        TLRPC.PaymentForm form = (TLRPC.PaymentForm) res;
-                        MessagesController.getInstance(currentAccount).putUsers(form.users, false);
-                        upgrade_form = form;
-                        openUpgradeAfter();
-                    } else {
-                        getBulletinFactory().makeForError(err).ignoreDetach().show();
-                    }
-                }));
-            }
+        // LoogriGram: an upgrade the sender did not pay for was bought here, with a
+        // payment form fetched up front so the page could quote a price. Nothing buys
+        // one, so there is nothing to open unless it is already paid for.
+        if (paid_stars <= 0) {
+            return;
+        }
+        if (sample_attributes == null) {
+            StarsController.getInstance(currentAccount).getStarGiftPreview(gift_id, preview -> {
+                if (preview == null) return;
+                sample_attributes = preview.sample_attributes;
+                openUpgradeAfter();
+            });
         } else {
             openUpgradeAfter();
         }
     }
 
+    // LoogriGram: this page had two jobs and only one is left. It could offer to prepay
+    // someone else's upgrade, or to buy our own, with the price on the button, a link to
+    // the schedule that price steps down through, and a countdown to the next step. What
+    // remains is the upgrade a sender has already paid for, which is a gift like the gift
+    // itself and costs us nothing to take.
     private void openUpgradeAfter() {
         long stars;
-        boolean prepaying;
-        TL_stars.StarGift stargift;
         if (messageObject != null) {
             TLRPC.MessageAction action = messageObject.messageOwner.action;
             if (action instanceof TLRPC.TL_messageActionStarGift) {
                 stars = ((TLRPC.TL_messageActionStarGift) action).upgrade_stars;
-                stargift = ((TLRPC.TL_messageActionStarGift) action).gift;
-                prepaying = stars <= 0 && !TextUtils.isEmpty(((TLRPC.TL_messageActionStarGift) action).prepaid_upgrade_hash);
             } else {
                 return;
             }
         } else if (savedStarGift != null) {
             stars = savedStarGift.upgrade_stars;
-            stargift = savedStarGift.gift;
-            prepaying = stars <= 0 && !TextUtils.isEmpty(savedStarGift.prepaid_upgrade_hash);
         } else {
             return;
         }
 
-        if (sample_attributes == null || stars <= 0 && upgrade_form == null) {
+        if (sample_attributes == null || stars <= 0) {
             return;
-        }
-
-        long price = 0;
-        if (upgrade_form != null) {
-            for (int i = 0; i < upgrade_form.invoice.prices.size(); ++i) {
-                price += upgrade_form.invoice.prices.get(i).amount;
-            }
         }
 
         if (roller == null) {
@@ -5089,193 +4995,26 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         }
         roller.preload(sample_attributes);
         topView.setPreviewingAttributes(sample_attributes);
-        if (prepaying) {
-            topView.setText(1, getString(R.string.Gift2PrepayUpgradeTitle), formatString(R.string.Gift2PrepayUpgradeText, DialogObject.getShortName(currentAccount, dialogId)), null, null);
-        } else {
-            topView.setText(1, getString(R.string.Gift2UpgradeTitle), getString(R.string.Gift2UpgradeText), null, null);
-        }
+        topView.setText(1, getString(R.string.Gift2UpgradeTitle), getString(R.string.Gift2UpgradeText), null, null);
 
         button.setFilled(true);
         button.setSubText(null, true);
-        final long _price = price;
-        if (price > 0) {
-            final int now = ConnectionsManager.getInstance(currentAccount).getCurrentTime();
-            TL_stars.StarGiftUpgradePrice next = null;
-            int nextIndex = -1;
-            if (next_prices != null) {
-                for (int i = 0; i < next_prices.size(); ++i) {
-                    TL_stars.StarGiftUpgradePrice __price = next_prices.get(i);
-                    if (__price.date >= now) {
-                        nextIndex = i;
-                        next = __price;
-                        break;
-                    }
-                }
-            }
-            if (prices != null && next != null && !prices.isEmpty()) {
-                underButtonContainer.setVisibility(View.VISIBLE);
-                underButtonLinkTextView.setText(AndroidUtilities.replaceArrows(AndroidUtilities.replaceSingleTag("**" + LocaleController.getString(R.string.Gift2UpgradeCostsInfo) + "**", this::openUpgradePrices), false, dp(2 / 3f), dp(.66f)));
-            } else {
-                underButtonContainer.setVisibility(View.GONE);
-            }
-            updateUnderButtonContainer();
-            if (prepaying) {
-                button.setText(StarsFormat.replaceStars(LocaleController.formatString(R.string.Gift2PrepayUpgradeButton, price), 1.13f, starCached), true);
-            } else {
-                button.setText(StarsFormat.replaceStars(LocaleController.formatString(R.string.Gift2UpgradeButton, price), 1.13f, starCached), true);
-            }
-        } else {
-            button.setText(getString(R.string.Confirm), true);
-        }
+        button.setText(getString(R.string.Confirm), true);
         button.setOnClickListener(v -> doUpgrade());
-        if (prepaying) {
-            checkboxLayout.setVisibility(View.GONE);
-            checkboxSeparator.setVisibility(View.GONE);
-        } else {
-            checkboxLayout.setVisibility(View.VISIBLE);
-            checkboxSeparator.setVisibility(View.VISIBLE);
-        }
+        checkboxLayout.setVisibility(View.VISIBLE);
+        checkboxSeparator.setVisibility(View.VISIBLE);
 
-        if (prepaying) {
-            upgradeFeatureCells[0].set(R.drawable.menu_feature_unique,   getString(R.string.Gift2UpgradeFeature1Title), prepaying ? formatString(R.string.Gift2PrepayUpgradeFeature1Text, DialogObject.getShortName(currentAccount, dialogId)) : getString(R.string.Gift2UpgradeFeature1Text));
-            upgradeFeatureCells[1].set(R.drawable.menu_feature_transfer, getString(R.string.Gift2UpgradeFeature2Title), prepaying ? formatString(R.string.Gift2PrepayUpgradeFeature2Text, DialogObject.getShortName(currentAccount, dialogId)) : getString(R.string.Gift2UpgradeFeature2Text));
-            upgradeFeatureCells[2].set(R.drawable.menu_feature_tradable, getString(R.string.Gift2UpgradeFeature3Title), prepaying ? formatString(R.string.Gift2PrepayUpgradeFeature3Text, DialogObject.getShortName(currentAccount, dialogId)) : getString(R.string.Gift2UpgradeFeature3Text));
-        } else {
-            upgradeFeatureCells[0].set(R.drawable.menu_feature_unique, getString(R.string.Gift2UpgradeFeature1Title), getString(R.string.GiftsFeature1Text));
-            upgradeFeatureCells[1].set(R.drawable.menu_feature_tradable, getString(R.string.Gift2UpgradeFeature3Title), getString(R.string.GiftsFeature2Text));
-            upgradeFeatureCells[2].set(R.drawable.menu_wear, getString(R.string.GiftsFeature3Title), getString(R.string.GiftsFeature3Text));
-        }
+        upgradeFeatureCells[0].set(R.drawable.menu_feature_unique, getString(R.string.Gift2UpgradeFeature1Title), getString(R.string.GiftsFeature1Text));
+        upgradeFeatureCells[1].set(R.drawable.menu_feature_tradable, getString(R.string.Gift2UpgradeFeature3Title), getString(R.string.GiftsFeature2Text));
+        upgradeFeatureCells[2].set(R.drawable.menu_wear, getString(R.string.GiftsFeature3Title), getString(R.string.GiftsFeature3Text));
 
-        AndroidUtilities.runOnUIThread(() -> {
-            switchPage(PAGE_UPGRADE, true);
-            if (_price > 0) {
-                AndroidUtilities.cancelRunOnUIThread(tickUpgradePriceRunnable);
-                AndroidUtilities.runOnUIThread(tickUpgradePriceRunnable);
-            }
-        });
+        AndroidUtilities.runOnUIThread(() -> switchPage(PAGE_UPGRADE, true));
     }
 
-    private void openUpgradePrices() {
-        if (upgrade_form == null) return;
-
-        long form_price = 0;
-        for (int i = 0; i < upgrade_form.invoice.prices.size(); ++i) {
-            form_price += upgrade_form.invoice.prices.get(i).amount;
-        }
-
-        upgradeSheet = new UpgradePricesSheet(getContext(), form_price, prices, resourcesProvider);
-        upgradeSheet.show();
-    }
-
-    private final ColoredImageSpan[] starCached = new ColoredImageSpan[1];
-    private final Runnable tickUpgradePriceRunnable = this::tickUpgradePrice;
-    private void tickUpgradePrice() {
-        if (currentPage.to != PAGE_UPGRADE) return;
-        if (isDismissed()) return;
-
-        final boolean prepaying;
-        final String prepaid_upgrade_hash;
-        final TL_stars.InputSavedStarGift inputStarGift = getInputStarGift();
-        if (messageObject != null) {
-            final TLRPC.MessageAction action = messageObject.messageOwner.action;
-            if (action instanceof TLRPC.TL_messageActionStarGift) {
-                final TLRPC.TL_messageActionStarGift action2 = (TLRPC.TL_messageActionStarGift) action;
-                final long stars = action2.upgrade_stars;
-                prepaid_upgrade_hash = action2.prepaid_upgrade_hash;
-                prepaying = stars <= 0 && !TextUtils.isEmpty(prepaid_upgrade_hash);
-            } else return;
-        } else if (savedStarGift != null) {
-            final long stars = savedStarGift.upgrade_stars;
-            prepaid_upgrade_hash = savedStarGift.prepaid_upgrade_hash;
-            prepaying = stars <= 0 && !TextUtils.isEmpty(prepaid_upgrade_hash);
-        } else return;
-
-        final int now = ConnectionsManager.getInstance(currentAccount).getCurrentTime();
-        TL_stars.StarGiftUpgradePrice next = null;
-        int nextIndex = -1;
-        if (next_prices != null) {
-            for (int i = 0; i < next_prices.size(); ++i) {
-                TL_stars.StarGiftUpgradePrice price = next_prices.get(i);
-                if (price.date >= now) {
-                    nextIndex = i;
-                    next = price;
-                    break;
-                }
-            }
-        }
-
-        long form_price = 0;
-        if (upgrade_form != null) {
-            for (int i = 0; i < upgrade_form.invoice.prices.size(); ++i) {
-                form_price += upgrade_form.invoice.prices.get(i).amount;
-            }
-        }
-        if (nextIndex > 0 && !requesting_upgrade_form) {
-            requesting_upgrade_form = true;
-            if (next_prices != null) {
-                for (int i = 0; i < nextIndex; ++i) {
-                    next_prices.remove((int) 0);
-                }
-            }
-
-            final TLRPC.TL_payments_getPaymentForm req = new TLRPC.TL_payments_getPaymentForm();
-            if (!TextUtils.isEmpty(prepaid_upgrade_hash)) {
-                final TLRPC.TL_inputInvoiceStarGiftPrepaidUpgrade invoice = new TLRPC.TL_inputInvoiceStarGiftPrepaidUpgrade();
-                invoice.hash = prepaid_upgrade_hash;
-                invoice.peer = MessagesController.getInstance(currentAccount).getInputPeer(dialogId);
-                req.invoice = invoice;
-            } else {
-                final TLRPC.TL_inputInvoiceStarGiftUpgrade invoice = new TLRPC.TL_inputInvoiceStarGiftUpgrade();
-                invoice.keep_original_details = checkbox.isChecked();
-                invoice.stargift = inputStarGift;
-                req.invoice = invoice;
-            }
-            final JSONObject themeParams = BotWebViewSheet.makeThemeParams(resourcesProvider);
-            if (themeParams != null) {
-                req.theme_params = new TLRPC.TL_dataJSON();
-                req.theme_params.data = themeParams.toString();
-                req.flags |= 1;
-            }
-
-            ConnectionsManager.getInstance(currentAccount).sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
-                requesting_upgrade_form = false;
-                if (res instanceof TLRPC.PaymentForm) {
-                    TLRPC.PaymentForm form = (TLRPC.PaymentForm) res;
-                    MessagesController.getInstance(currentAccount).putUsers(form.users, false);
-                    upgrade_form = form;
-                    AndroidUtilities.cancelRunOnUIThread(tickUpgradePriceRunnable);
-                    AndroidUtilities.runOnUIThread(tickUpgradePriceRunnable);
-                } else {
-                    getBulletinFactory().makeForError(err).ignoreDetach().show();
-                }
-            }));
-        }
-
-        if (prepaying) {
-            button.setText(StarsFormat.replaceStars(LocaleController.formatString(R.string.Gift2PrepayUpgradeButton, form_price), 1.13f, starCached), true);
-        } else {
-            button.setText(StarsFormat.replaceStars(LocaleController.formatString(R.string.Gift2UpgradeButton, form_price), 1.13f, starCached), true);
-        }
-        if (upgradeSheet != null) {
-            upgradeSheet.setCurrentPrice(form_price);
-        }
-
-        if (next != null) {
-            final int remaining = next.date - now;
-            final String remainingStr;
-            if (remaining < 24 * 60 * 60) {
-                remainingStr = AndroidUtilities.formatDuration(remaining, false, true);
-            } else {
-                remainingStr = LocaleController.formatPluralString("Days", Math.round(remaining / (24 * 60 * 60.0f)));
-            }
-            button.setSubTextHacks(false, true, true, false);
-            button.setSubText(LocaleController.formatString(R.string.Gift2UpgradeButtonDecreasesIn, remainingStr), true);
-
-            AndroidUtilities.runOnUIThread(tickUpgradePriceRunnable, 1000);
-        } else {
-            button.setSubText(null, true);
-        }
-    }
+    // LoogriGram: openUpgradePrices opened that schedule, and tickUpgradePrice counted
+    // the current step down second by second, re-fetching the payment form each time the
+    // price changed and re-labelling the button with it. An upgrade we can take is one
+    // the sender already paid for, and that has no price to watch.
 
     private int applyNewGiftFromUpdates(TL_stars.InputSavedStarGift fromGift, TLRPC.Updates updates, Runnable done) {
         if (updates == null) {
@@ -5369,191 +5108,59 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
     private void doUpgrade() {
         if (button.isLoading()) return;
 
-        long stars;
-        String prepaid_upgrade_hash;
         final TL_stars.InputSavedStarGift inputStarGift = getInputStarGift();
         if (inputStarGift == null) {
             return;
         }
+        final long stars;
         if (messageObject != null) {
             TLRPC.MessageAction action = messageObject.messageOwner.action;
             if (action instanceof TLRPC.TL_messageActionStarGift) {
                 stars = ((TLRPC.TL_messageActionStarGift) action).upgrade_stars;
-                prepaid_upgrade_hash = stars <= 0 ? ((TLRPC.TL_messageActionStarGift) action).prepaid_upgrade_hash : null;
             } else {
                 return;
             }
         } else if (savedStarGift != null) {
             stars = savedStarGift.upgrade_stars;
-            prepaid_upgrade_hash = stars <= 0 ? savedStarGift.prepaid_upgrade_hash : null;
         } else {
             return;
         }
 
-        if (stars <= 0 && upgrade_form == null) {
+        // LoogriGram: the other half of this method paid for the upgrade - a balance
+        // check, a Stars form carrying either our own invoice or a prepaid-upgrade hash
+        // bought for someone else, and a buy-Stars sheet when the balance was short. Only
+        // the plain request the sender already paid for is left.
+        if (stars <= 0) {
             return;
         }
 
         button.setLoading(true);
-        if (stars > 0) {
-            final TL_stars.upgradeStarGift req = new TL_stars.upgradeStarGift();
-            req.keep_original_details = checkbox.isChecked();
-            req.stargift = inputStarGift;
-            ConnectionsManager.getInstance(currentAccount).sendRequest(req, (res, err) -> {
-                if (res instanceof TLRPC.Updates) {
-                    MessagesController.getInstance(currentAccount).putUsers(((TLRPC.Updates) res).users, false);
-                    MessagesController.getInstance(currentAccount).putChats(((TLRPC.Updates) res).chats, false);
+        final TL_stars.upgradeStarGift req = new TL_stars.upgradeStarGift();
+        req.keep_original_details = checkbox.isChecked();
+        req.stargift = inputStarGift;
+        ConnectionsManager.getInstance(currentAccount).sendRequest(req, (res, err) -> {
+            if (res instanceof TLRPC.Updates) {
+                MessagesController.getInstance(currentAccount).putUsers(((TLRPC.Updates) res).users, false);
+                MessagesController.getInstance(currentAccount).putChats(((TLRPC.Updates) res).chats, false);
+            }
+            AndroidUtilities.runOnUIThread(() -> {
+                if (err != null || !(res instanceof TLRPC.Updates)) {
+                    getBulletinFactory()
+                        .showForError(err);
+                    return;
                 }
-                AndroidUtilities.runOnUIThread(() -> {
-                    if (err != null || !(res instanceof TLRPC.Updates)) {
-                        getBulletinFactory()
-                            .showForError(err);
-                        return;
-                    }
 
-                    upgradedOnce = true;
-                    upgrade_form = null;
-                    applyNewGiftFromUpdates(inputStarGift, (TLRPC.Updates) res, () -> {
-                        button.setLoading(false);
-                        switchPage(PAGE_INFO, true);
-                    });
+                upgradedOnce = true;
+                applyNewGiftFromUpdates(inputStarGift, (TLRPC.Updates) res, () -> {
+                    button.setLoading(false);
+                    switchPage(PAGE_INFO, true);
+                });
 
-                    Utilities.stageQueue.postRunnable(() -> {
-                        MessagesController.getInstance(currentAccount).processUpdates((TLRPC.Updates) res, false);
-                    });
+                Utilities.stageQueue.postRunnable(() -> {
+                    MessagesController.getInstance(currentAccount).processUpdates((TLRPC.Updates) res, false);
                 });
             });
-        } else {
-
-            StarsController s = StarsController.getInstance(currentAccount);
-            if (!s.balanceAvailable()) {
-                s.getBalance(() -> {
-                    if (!s.balanceAvailable()) {
-                        getBulletinFactory()
-                            .createSimpleBulletin(R.raw.error, formatString(R.string.UnknownErrorCode, "NO_BALANCE"))
-                            .ignoreDetach()
-                            .show();
-                        return;
-                    }
-                    button.setLoading(false);
-                    doUpgrade();
-                });
-                return;
-            }
-
-            final TL_stars.TL_payments_sendStarsForm req2 = new TL_stars.TL_payments_sendStarsForm();
-            req2.form_id = upgrade_form.form_id;
-            if (!TextUtils.isEmpty(prepaid_upgrade_hash)) {
-                final TLRPC.TL_inputInvoiceStarGiftPrepaidUpgrade invoice = new TLRPC.TL_inputInvoiceStarGiftPrepaidUpgrade();
-                invoice.hash = prepaid_upgrade_hash;
-                invoice.peer = MessagesController.getInstance(currentAccount).getInputPeer(dialogId);
-                req2.invoice = invoice;
-            } else {
-                final TLRPC.TL_inputInvoiceStarGiftUpgrade invoice = new TLRPC.TL_inputInvoiceStarGiftUpgrade();
-                invoice.keep_original_details = checkbox.isChecked();
-                invoice.stargift = inputStarGift;
-                req2.invoice = invoice;
-            }
-
-            long _formStars = 0;
-            for (TLRPC.TL_labeledPrice price : upgrade_form.invoice.prices) {
-                _formStars += price.amount;
-            }
-            final long formStars = _formStars;
-
-            ConnectionsManager.getInstance(currentAccount).sendRequest(req2, (res2, err2) -> AndroidUtilities.runOnUIThread(() -> {
-                if (res2 instanceof TLRPC.TL_payments_paymentResult) {
-                    TLRPC.TL_payments_paymentResult r = (TLRPC.TL_payments_paymentResult) res2;
-                    MessagesController.getInstance(currentAccount).putUsers(r.updates.users, false);
-                    MessagesController.getInstance(currentAccount).putChats(r.updates.chats, false);
-
-                    StarsController.getInstance(currentAccount).invalidateTransactions(false);
-                    StarsController.getInstance(currentAccount).invalidateBalance();
-
-                    if (!TextUtils.isEmpty(prepaid_upgrade_hash) && savedStarGift != null) {
-                        savedStarGift.flags &=~ 65536;
-                        savedStarGift.prepaid_upgrade_hash = null;
-                    }
-
-                    upgradedOnce = true;
-                    upgrade_form = null;
-                    applyNewGiftFromUpdates(inputStarGift, r.updates, () -> {
-                        button.setLoading(false);
-                        if (!TextUtils.isEmpty(prepaid_upgrade_hash)) {
-                            dismiss();
-
-                            final BaseFragment fragment = LaunchActivity.getLastFragment();
-                            if (fragment == null) return;
-
-                            ChatActivity chatActivity;
-                            if (!(fragment instanceof ChatActivity && ((ChatActivity) fragment).getDialogId() == dialogId)) {
-                                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.closeProfileActivity, dialogId, false);
-                                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.closeChatActivity, dialogId, false);
-                                chatActivity = ChatActivity.of(dialogId);
-                                chatActivity.whenFullyVisible(() -> {
-                                    BulletinFactory.of(chatActivity)
-                                        .createSimpleBulletin(
-                                                R.raw.gift,
-                                                getString(R.string.StarsGiftUpgradeCompleted),
-                                                AndroidUtilities.replaceTags(formatString(R.string.StarsGiftUpgradeCompletedText, DialogObject.getShortName(dialogId))),
-                                                getString(R.string.StarsGiftUpgradeCompletedMoreButton), () -> {
-                                                    final Bundle args = new Bundle();
-                                                    if (dialogId >= 0) {
-                                                        args.putLong("user_id", dialogId);
-                                                    } else {
-                                                        args.putLong("chat_id", -dialogId);
-                                                    }
-                                                    if (dialogId == UserConfig.getInstance(currentAccount).getClientUserId()) {
-                                                        args.putBoolean("my_profile", true);
-                                                    }
-                                                    args.putBoolean("open_gifts", true);
-                                                    args.putBoolean("open_gifts_upgradable", true);
-                                                    presentFragment(new ProfileActivity(args));
-                                                }
-                                        )
-                                        .show(true);
-                                });
-                                fragment.presentFragment(chatActivity);
-                            } else {
-                                chatActivity = (ChatActivity) fragment;
-                                BulletinFactory.of(chatActivity)
-                                    .createSimpleBulletin(R.raw.gift, getString(R.string.StarsGiftUpgradeCompleted), AndroidUtilities.replaceTags(formatString(R.string.StarsGiftUpgradeCompletedText, DialogObject.getShortName(dialogId))))
-                                    .show(true);
-                            }
-
-                        } else {
-                            switchPage(PAGE_INFO, true);
-                        }
-                    });
-
-                    Utilities.stageQueue.postRunnable(() -> {
-                        MessagesController.getInstance(currentAccount).processUpdates(r.updates, false);
-                    });
-                } else if (err2 != null && "BALANCE_TOO_LOW".equals(err2.text)) {
-                    if (!MessagesController.getInstance(currentAccount).starsPurchaseAvailable()) {
-                        button.setLoading(false);
-                        showNoSupportDialog(getContext(), resourcesProvider);
-                        return;
-                    }
-                    StarsController.getInstance(currentAccount).invalidateBalance(() -> {
-                        final boolean[] purchased = new boolean[] { false };
-                        StarsIntroActivity.StarsNeededSheet sheet = new StarsIntroActivity.StarsNeededSheet(getContext(), resourcesProvider, formStars, StarsIntroActivity.StarsNeededSheet.TYPE_STAR_GIFT_UPGRADE, null, () -> {
-                            purchased[0] = true;
-                            button.setLoading(false);
-                            doUpgrade();
-                        }, 0);
-                        sheet.setOnDismissListener(d -> {
-                            button.setLoading(false);
-                        });
-                        sheet.show();
-                    });
-                } else {
-                    getBulletinFactory()
-                        .showForError(err2);
-                }
-            }));
-
-        }
+        });
     }
 
     // LoogriGram: the whole transfer path stood here, 618 lines of it -
@@ -6454,79 +6061,8 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         }));
     }
 
-    private final static class UpgradePricesSheet extends BottomSheetLayouted {
-
-        private ArrayList<TL_stars.StarGiftUpgradePrice> prices;
-        private LimitPreviewView limitPreviewView;
-
-        public UpgradePricesSheet(
-            Context context,
-            long currentPrice,
-            ArrayList<TL_stars.StarGiftUpgradePrice> prices,
-            Theme.ResourcesProvider resourcesProvider
-        ) {
-            super(context, resourcesProvider);
-            this.prices = prices;
-            final float pad = (float) backgroundPaddingLeft / AndroidUtilities.density;
-
-            final LimitPreviewView limitPreviewView = this.limitPreviewView = new LimitPreviewView(getContext(), R.drawable.star, 0, 0, resourcesProvider);
-            limitPreviewView.setTranslationY(-dp(14));
-            limitPreviewView.setIconScale(1.8f);
-            layout.addView(limitPreviewView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, pad, 20, pad, 10));
-            setCurrentPrice(currentPrice);
-
-            final TextView header = TextHelper.makeTextView(context, 20, Theme.key_windowBackgroundWhiteBlackText, true);
-            header.setGravity(Gravity.CENTER);
-            header.setText(getString(R.string.Gift2UpgradeCostsTitle));
-            setTitle(getString(R.string.Gift2UpgradeCostsTitle));
-            layout.addView(header, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 32, 0, 32, 0));
-
-            final TextView subtitle = TextHelper.makeTextView(context, 14, Theme.key_windowBackgroundWhiteBlackText, false);
-            subtitle.setGravity(Gravity.CENTER);
-            subtitle.setText(getString(R.string.Gift2UpgradeCostsText));
-            layout.addView(subtitle, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 32, 10, 32, 10));
-
-            final int now = ConnectionsManager.getInstance(currentAccount).getCurrentTime();
-            final TableView tableView = new TableView(context, resourcesProvider);
-            boolean hadRecentPrices = false;
-            for (int i = 0; i < prices.size(); ++i) {
-                final TL_stars.StarGiftUpgradePrice price = prices.get(i);
-                if (now > price.date && (i + 1 >= prices.size() || now > prices.get(i + 1).date)) continue;
-                hadRecentPrices = true;
-                final Date date = new Date(price.date * 1000L);
-                tableView.addRow(
-                    LocaleController.getInstance().getFormatterDay().format(date) + ", " + LocaleController.getInstance().getFormatterDayMonth().format(date),
-                    replaceStarsWithPlain("⭐️ " + LocaleController.formatNumber((int) price.upgrade_stars, ','), .8f)
-                );
-            }
-            if (!hadRecentPrices) {
-                for (final TL_stars.StarGiftUpgradePrice price : prices) {
-                    final Date date = new Date(price.date * 1000L);
-                    tableView.addRow(
-                            LocaleController.getInstance().getFormatterDay().format(date) + ", " + LocaleController.getInstance().getFormatterDayMonth().format(date),
-                            replaceStarsWithPlain("⭐️ " + LocaleController.formatNumber((int) price.upgrade_stars, ','), .8f)
-                    );
-                }
-            }
-            layout.addView(tableView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.FILL_HORIZONTAL, pad + 14, 16, pad + 14, 15));
-
-            final TextView footer = TextHelper.makeTextView(context, 12, Theme.key_windowBackgroundWhiteGrayText, false);
-            footer.setGravity(Gravity.CENTER);
-            footer.setText(getString(R.string.Gift2UpgradeCostsFooter));
-            layout.addView(footer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 32, 0, 32, 15));
-
-            createButton();
-            button.setText(replaceUnderstood(getString(R.string.Understood)), false);
-            button.setOnClickListener(v -> dismiss());
-        }
-
-        public void setCurrentPrice(long price) {
-            if (prices == null || prices.isEmpty()) return;
-            final TL_stars.StarGiftUpgradePrice fromPrice = prices.get(0);
-            final TL_stars.StarGiftUpgradePrice toPrice = prices.get(prices.size() - 1);
-            limitPreviewView.setStarsUpgradePrice(fromPrice, price, toPrice);
-        }
-    }
+    // LoogriGram: UpgradePricesSheet stood here. It listed the schedule the price of
+    // an upgrade steps down through, so you could decide when to buy.
 
     public static class ActionView extends View {
 
