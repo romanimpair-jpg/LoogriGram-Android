@@ -28,7 +28,6 @@ import android.graphics.RadialGradient;
 import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
@@ -2040,152 +2039,6 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
                 return TextUtils.equals(subA.id, subB.id);
             }
         }
-    }
-
-    public static BottomSheet openStarsChannelInviteSheet(
-        Context context,
-        Theme.ResourcesProvider resourcesProvider,
-        int currentAccount,
-        TLRPC.ChatInvite chatInvite,
-        Utilities.Callback<Utilities.Callback<Boolean>> whenConfirmed,
-        Runnable whenDismissed
-    ) {
-        BottomSheet.Builder b = new BottomSheet.Builder(context, false, resourcesProvider);
-
-        LinearLayout linearLayout = new LinearLayout(context);
-        linearLayout.setOrientation(LinearLayout.VERTICAL);
-        linearLayout.setPadding(dp(16), 0, dp(16), dp(8));
-
-        FrameLayout topView = new FrameLayout(context);
-        topView.addView(makeParticlesView(context, 40, 0), LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
-
-        BackupImageView imageView = new BackupImageView(context);
-        imageView.setRoundRadius(dp(80));
-        AvatarDrawable avatarDrawable = new AvatarDrawable();
-        avatarDrawable.setPeerColor(chatInvite.color);
-        avatarDrawable.setText(chatInvite.title);
-        if (chatInvite.photo != null) {
-            TLRPC.PhotoSize photoSize = FileLoader.getClosestPhotoSizeWithSize(chatInvite.photo.sizes, dp(80));
-            imageView.setImage(ImageLocation.getForPhoto(photoSize, chatInvite.photo), "80_80", avatarDrawable, chatInvite);
-        } else {
-            imageView.setImageDrawable(avatarDrawable);
-        }
-
-        topView.addView(imageView, LayoutHelper.createFrame(80, 80, Gravity.CENTER));
-
-        Drawable starBg = context.getResources().getDrawable(R.drawable.star_small_outline);
-        starBg.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_dialogBackground, resourcesProvider), PorterDuff.Mode.SRC_IN));
-        Drawable starFg = context.getResources().getDrawable(R.drawable.star_small_inner);
-
-        ImageView starBgView = new ImageView(context);
-        starBgView.setImageDrawable(starBg);
-        topView.addView(starBgView, LayoutHelper.createFrame(26, 26, Gravity.CENTER));
-        starBgView.setTranslationX(dp(26));
-        starBgView.setTranslationY(dp(26));
-        starBgView.setScaleX(1.2f);
-        starBgView.setScaleY(1.2f);
-
-        ImageView starFgView = new ImageView(context);
-        starFgView.setImageDrawable(starFg);
-        topView.addView(starFgView, LayoutHelper.createFrame(26, 26, Gravity.CENTER));
-        starFgView.setTranslationX(dp(26));
-        starFgView.setTranslationY(dp(26));
-
-        StarsBalanceView balanceView = new StarsBalanceView(context, currentAccount, resourcesProvider);
-        ScaleStateListAnimator.apply(balanceView);
-        balanceView.setOnClickListener(v -> {
-            if (balanceView.lastBalance <= 0) return;
-            BaseFragment lastFragment = LaunchActivity.getLastFragment();
-            if (lastFragment != null) {
-                BaseFragment.BottomSheetParams bottomSheetParams = new BaseFragment.BottomSheetParams();
-                bottomSheetParams.transitionFromLeft = true;
-                bottomSheetParams.allowNestedScroll = false;
-                lastFragment.showAsSheet(new StarsIntroActivity(), bottomSheetParams);
-            }
-        });
-        topView.addView(balanceView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.RIGHT, 0, 0, -8, 0));
-
-        linearLayout.addView(topView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 117, Gravity.FILL_HORIZONTAL));
-
-        TextView titleView = new TextView(context);
-        titleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
-        titleView.setTypeface(AndroidUtilities.bold());
-        titleView.setTextColor(Theme.getColor(Theme.key_dialogTextBlack, resourcesProvider));
-        titleView.setText(getString(R.string.StarsSubscribeTitle));
-        titleView.setGravity(Gravity.CENTER);
-        linearLayout.addView(titleView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 0, 8, 0, 0));
-
-        TextView subtitleView = new TextView(context);
-        subtitleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
-        subtitleView.setTextColor(Theme.getColor(Theme.key_dialogTextBlack, resourcesProvider));
-        if (chatInvite.subscription_pricing.period == StarsController.PERIOD_MONTHLY) {
-            subtitleView.setText(AndroidUtilities.replaceTags(formatPluralString("StarsSubscribeText", (int) chatInvite.subscription_pricing.amount, chatInvite.title)));
-        } else {
-            final String period = chatInvite.subscription_pricing.period == StarsController.PERIOD_5MINUTES ? "5 minutes" : "a minute";
-            subtitleView.setText(AndroidUtilities.replaceTags(formatPluralString("StarsSubscribeTextTest", (int) chatInvite.subscription_pricing.amount, chatInvite.title, period)));
-        }
-        subtitleView.setMaxWidth(HintView2.cutInFancyHalf(subtitleView.getText(), subtitleView.getPaint()));
-        subtitleView.setGravity(Gravity.CENTER);
-        linearLayout.addView(subtitleView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 0, 6, 0, 22));
-
-        if (!TextUtils.isEmpty(chatInvite.about)) {
-            TextView aboutView = new TextView(context);
-            aboutView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
-            aboutView.setTextColor(Theme.getColor(Theme.key_dialogTextBlack, resourcesProvider));
-            aboutView.setText(Emoji.replaceEmoji(chatInvite.about, aboutView.getPaint().getFontMetricsInt(), false));
-            aboutView.setGravity(Gravity.CENTER);
-            linearLayout.addView(aboutView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 0, 6, 0, 22));
-        }
-
-        ButtonWithCounterView button = new ButtonWithCounterView(context, resourcesProvider);
-        button.setText(getString(R.string.StarsSubscribeButton), false);
-        linearLayout.addView(button, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48));
-
-        LinkSpanDrawable.LinksTextView infoTextView = new LinkSpanDrawable.LinksTextView(context, resourcesProvider);
-        infoTextView.setText(AndroidUtilities.replaceSingleTag(getString(R.string.StarsSubscribeInfo), () -> {
-            Browser.openUrl(context, getString(R.string.StarsSubscribeInfoLink));
-        }));
-        infoTextView.setGravity(Gravity.CENTER);
-        infoTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
-        infoTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText4, resourcesProvider));
-        infoTextView.setLinkTextColor(Theme.getColor(Theme.key_chat_messageLinkIn, resourcesProvider));
-        linearLayout.addView(infoTextView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 14, 14, 14, 6));
-
-        b.setCustomView(linearLayout);
-        BottomSheet sheet = b.create();
-
-        button.setOnClickListener(v -> {
-            if (whenConfirmed != null) {
-                sheet.setCanDismissWithSwipe(false);
-                button.setLoading(true);
-                whenConfirmed.run(close -> {
-                    if (close) {
-                        sheet.dismiss();
-                    } else {
-                        AndroidUtilities.runOnUIThread(() -> {
-                            sheet.setCanDismissWithSwipe(false);
-                            button.setLoading(false);
-                        }, 400);
-                    }
-                });
-            } else {
-                sheet.dismiss();
-            }
-        });
-        sheet.setOnDismissListener(d -> {
-            if (whenDismissed != null) {
-                whenDismissed.run();
-            }
-        });
-
-        sheet.fixNavigationBar(Theme.getColor(Theme.key_dialogBackground, resourcesProvider));
-        BaseFragment lastFragment = LaunchActivity.getSafeLastFragment();
-        if (!AndroidUtilities.isTablet() && lastFragment != null && !AndroidUtilities.hasDialogOnTop(lastFragment)) {
-            sheet.makeAttached(lastFragment);
-        }
-
-        sheet.show();
-        return sheet;
     }
 
     public static class StarsOptionsSheet extends BottomSheetWithRecyclerListView implements NotificationCenter.NotificationCenterDelegate {
@@ -4409,57 +4262,8 @@ public class StarsIntroActivity extends GradientHeaderActivity implements Notifi
             textView.setGravity(Gravity.CENTER);
             linearLayout.addView(textView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 26, 7, 26, 15));
 
-            if (subscription.chat_invite_hash != null || subscription.invoice_slug != null) {
-                ButtonWithCounterView button = new ButtonWithCounterView(context, true, resourcesProvider).setRound();
-                button.setText(getString(R.string.StarsSubscriptionAgain), false);
-                linearLayout.addView(button, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48));
-                button.setOnClickListener(v -> {
-                    if (button.isLoading()) return;
-                    button.setLoading(true);
-                    if (subscription.chat_invite_hash != null) {
-                        TLRPC.TL_messages_checkChatInvite req = new TLRPC.TL_messages_checkChatInvite();
-                        req.hash = subscription.chat_invite_hash;
-                        ConnectionsManager.getInstance(currentAccount).sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
-                            button.setLoading(false);
-                            if (res instanceof TLRPC.ChatInvite) {
-                                TLRPC.ChatInvite invite = (TLRPC.ChatInvite) res;
-                                if (invite.subscription_pricing == null) { // wtf
-                                    BulletinFactory.of(sheet[0].topBulletinContainer, resourcesProvider).createErrorBulletin(getString(R.string.UnknownError)).show(false);
-                                    return;
-                                }
-                                final long stars = invite.subscription_pricing.amount;
-                                StarsController.getInstance(currentAccount).subscribeTo(req.hash, invite, (status, dialogId) -> {
-                                    if ("paid".equals(status) && dialogId != 0) {
-                                        AndroidUtilities.runOnUIThread(() -> {
-                                            BaseFragment lastFragment = LaunchActivity.getSafeLastFragment();
-                                            if (lastFragment == null) return;
-                                            BaseFragment chatActivity = ChatActivity.of(dialogId);
-                                            lastFragment.presentFragment(chatActivity);
-
-                                            TLRPC.Chat newChat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
-                                            if (newChat != null) {
-                                                AndroidUtilities.runOnUIThread(() -> {
-                                                    BulletinFactory.of(chatActivity).createSimpleBulletin(R.raw.stars_send, getString(R.string.StarsSubscriptionCompleted), AndroidUtilities.replaceTags(formatPluralString("StarsSubscriptionCompletedText", (int) stars, newChat.title))).show(true);
-                                                }, 250);
-                                            }
-                                        });
-                                    }
-                                });
-                            } else {
-                                BulletinFactory.of(sheet[0].topBulletinContainer, resourcesProvider).createErrorBulletin(LocaleController.getString(R.string.LinkHashExpired)).show(false);
-                            }
-                        }));
-                    } else if (subscription.invoice_slug != null) {
-                        maybeCloseAfterUpdate[0] = true;
-                        Browser.openUrl(context, Uri.parse("https://t.me/$" + subscription.invoice_slug), true, false, false, new Browser.Progress() {
-                            @Override
-                            public void end() {
-                                button.setLoading(false);
-                            }
-                        }, null, false, true, false);
-                    }
-                });
-            }
+            // LoogriGram: "Subscribe again" renewed the subscription here - through
+            // the channel's invite link, or the bot's invoice link. Renewing is paying.
         }
 
         b.setCustomView(linearLayout);

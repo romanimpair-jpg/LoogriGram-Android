@@ -9,7 +9,6 @@
 package org.telegram.ui;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
-import static org.telegram.messenger.LocaleController.formatPluralString;
 import static org.telegram.messenger.LocaleController.formatString;
 import static org.telegram.ui.Components.Premium.LimitReachedBottomSheet.TYPE_BOOSTS_FOR_USERS;
 
@@ -209,7 +208,6 @@ import org.telegram.ui.Components.voip.RTMPStreamPipOverlay;
 import org.telegram.ui.Components.voip.VoIPHelper;
 import org.telegram.ui.Components.ISuperRipple;
 import org.telegram.ui.Stars.StarGiftSheet;
-import org.telegram.ui.Stars.StarsController;
 import org.telegram.ui.Components.SuperRipple;
 import org.telegram.ui.Stories.StoriesController;
 import org.telegram.ui.Stories.StoriesListPlaceProvider;
@@ -4666,25 +4664,16 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 
                                 }
                             } else if (invite.subscription_pricing != null && !invite.can_refulfill_subscription) {
-                                final long stars = invite.subscription_pricing.amount;
-                                MessagesController.getInstance(intentAccount).putChat(invite.chat, false);
-                                StarsController.getInstance(currentAccount).subscribeTo(group, invite, (status, dialogId) -> {
-                                    if ("paid".equals(status) && dialogId != 0) {
-                                        AndroidUtilities.runOnUIThread(() -> {
-                                            BaseFragment lastFragment = getSafeLastFragment();
-                                            if (lastFragment == null) return;
-                                            BaseFragment chatActivity = ChatActivity.of(dialogId);
-                                            lastFragment.presentFragment(chatActivity);
-
-                                            TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
-                                            if (chat != null) {
-                                                AndroidUtilities.runOnUIThread(() -> {
-                                                    BulletinFactory.of(chatActivity).createSimpleBulletin(R.raw.stars_send, LocaleController.getString(R.string.StarsSubscriptionCompleted), AndroidUtilities.replaceTags(formatPluralString("StarsSubscriptionCompletedText", (int) stars, chat.title))).show(true);
-                                                }, 250);
-                                            }
-                                        });
-                                    }
-                                });
+                                // LoogriGram: joining through this link costs a Stars
+                                // subscription. Upstream sold it here; nothing is paid, so
+                                // say so, the way the error branch below reports a link
+                                // that cannot be used. A subscription already paid for
+                                // (can_refulfill_subscription) still rejoins below, free.
+                                AlertDialog.Builder builder = new AlertDialog.Builder(LaunchActivity.this);
+                                builder.setTitle(LocaleController.getString(R.string.AppName));
+                                builder.setMessage(AndroidUtilities.replaceTags(LocaleController.formatString(R.string.LoogriGramPaidJoinLocked, invite.title)));
+                                builder.setPositiveButton(LocaleController.getString(R.string.OK), null);
+                                showAlertDialog(builder);
                             } else {
                                 BaseFragment fragment = mainFragmentsStack.get(mainFragmentsStack.size() - 1);
                                 fragment.showDialog(new JoinGroupAlert(LaunchActivity.this, invite, group, fragment, (fragment instanceof ChatActivity ? ((ChatActivity) fragment).themeDelegate : null)));

@@ -11233,6 +11233,9 @@
     <!-- LoogriGram: a live stream that charges Stars per comment. Shown where
          upstream shows "Comments Disabled", because that is what it is here. -->
     <string name="LoogriGramPaidCommentsLocked">This live only takes paid comments, which LoogriGram doesn\'t send.</string>
+    <!-- LoogriGram: an invite link that charges a Stars subscription to join.
+         See LaunchActivity; the chat's title fills %1$s. -->
+    <string name="LoogriGramPaidJoinLocked">**%1$s** charges a subscription to join, which LoogriGram doesn\'t pay.</string>
     <!-- LoogriGram: the server wants a fee before it sends this number a
          login code. Upstream sold it on a page of its own; see
          LoginActivity.fillNextCodeParams. -->

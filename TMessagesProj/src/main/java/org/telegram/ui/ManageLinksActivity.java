@@ -49,7 +49,6 @@ import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
-import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.SvgHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.TLObject;
@@ -81,8 +80,6 @@ import org.telegram.ui.Components.RecyclerItemsEnterAnimator;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.ShareAlert;
 import org.telegram.ui.Components.TimerParticles;
-import org.telegram.ui.Stars.StarsController;
-import org.telegram.ui.Stories.recorder.HintView2;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -135,7 +132,6 @@ public class ManageLinksActivity extends BaseFragment implements NotificationCen
 
     Drawable linkIcon;
     Drawable linkIconRevoked;
-    Drawable linkIconRevenue;
 
     boolean hasMore;
     boolean deletingRevokedLinks;
@@ -673,7 +669,6 @@ public class ManageLinksActivity extends BaseFragment implements NotificationCen
 
         linkIcon = ContextCompat.getDrawable(context, R.drawable.msg_link_1);
         linkIconRevoked = ContextCompat.getDrawable(context, R.drawable.msg_link_2);
-        linkIconRevenue = ContextCompat.getDrawable(context, R.drawable.large_income);
         linkIcon.setColorFilter(new PorterDuffColorFilter(Color.WHITE, PorterDuff.Mode.MULTIPLY));
         updateRows(true);
 
@@ -1030,10 +1025,6 @@ public class ManageLinksActivity extends BaseFragment implements NotificationCen
         private final TextView titleView;
         private final TextView subtitleView;
 
-        private final LinearLayout priceLayout;
-        private final TextView priceTitleView;
-        private final TextView priceSubitleView;
-
         TLRPC.TL_chatInviteExported invite;
         int position;
         Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -1151,27 +1142,6 @@ public class ManageLinksActivity extends BaseFragment implements NotificationCen
 
             setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
             setWillNotDraw(false);
-
-            priceLayout = new LinearLayout(context);
-            priceLayout.setOrientation(LinearLayout.VERTICAL);
-
-            priceTitleView = new TextView(context);
-            priceTitleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
-            priceTitleView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
-            priceTitleView.setLines(1);
-            priceTitleView.setEllipsize(TextUtils.TruncateAt.END);
-            priceTitleView.setTypeface(AndroidUtilities.bold());
-            priceTitleView.setGravity(Gravity.RIGHT);
-            priceLayout.addView(priceTitleView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.RIGHT));
-
-            priceSubitleView = new TextView(context);
-            priceSubitleView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
-            priceSubitleView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText));
-            priceSubitleView.setGravity(Gravity.RIGHT);
-            priceLayout.addView(priceSubitleView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.RIGHT, 0, 1, 0, 0));
-            addView(priceLayout, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.RIGHT | Gravity.CENTER_VERTICAL, 0, 0, 18, 0));
-
-            priceLayout.setVisibility(View.GONE);
         }
 
         boolean timerRunning;
@@ -1279,10 +1249,9 @@ public class ManageLinksActivity extends BaseFragment implements NotificationCen
                 lastDrawExpringProgress = timeProgress;
             }
 
-            if (invite.subscription_pricing != null) {
-                linkIconRevenue.setBounds(cX - dp(12), cY - dp(12), cX + dp(12), cY + dp(12));
-                linkIconRevenue.draw(canvas);
-            } else if (invite.revoked) {
+            // LoogriGram: a link that charges drew a green income icon, and its
+            // price and period at the right. Neither is shown now.
+            if (invite.revoked) {
                 linkIconRevoked.setBounds(cX - dp(12), cY - dp(12), cX + dp(12), cY + dp(12));
                 linkIconRevoked.draw(canvas);
             } else {
@@ -1300,9 +1269,7 @@ public class ManageLinksActivity extends BaseFragment implements NotificationCen
         }
 
         private int getColor(int state, float progress) {
-            if (invite != null && invite.subscription_pricing != null) {
-                return Theme.getColor(Theme.key_color_green);
-            } else if (state == LINK_STATE_RED) {
+            if (state == LINK_STATE_RED) {
                 return Theme.getColor(Theme.key_chat_attachAudioBackground);
             } else if (state == LINK_STATE_GREEN) {
                 if (progress > 0.5f) {
@@ -1334,25 +1301,8 @@ public class ManageLinksActivity extends BaseFragment implements NotificationCen
                 return;
             }
 
-            int rightMargin = dp(30);
-            if (invite.subscription_pricing != null) {
-                priceLayout.setVisibility(View.VISIBLE);
-                optionsView.setVisibility(View.GONE);
-
-                priceTitleView.setText(StarsFormat.replaceStarsWithPlain("⭐️ " + LocaleController.formatNumber(invite.subscription_pricing.amount, ','), .75f));
-                if (invite.subscription_pricing.period == StarsController.PERIOD_MONTHLY) {
-                    priceSubitleView.setText(getString(R.string.StarsParticipantSubscriptionPerMonth));
-                } else if (invite.subscription_pricing.period == StarsController.PERIOD_5MINUTES) {
-                    priceSubitleView.setText("per 5 minutes");
-                } else if (invite.subscription_pricing.period == StarsController.PERIOD_MINUTE) {
-                    priceSubitleView.setText("each minute");
-                }
-                rightMargin = dp(18 + 10) + (int) Math.max(HintView2.measureCorrectly(priceTitleView.getText(), priceTitleView.getPaint()), HintView2.measureCorrectly(priceSubitleView.getText(), priceSubitleView.getPaint()));
-            } else {
-                priceLayout.setVisibility(View.GONE);
-                optionsView.setVisibility(View.GONE);
-            }
-            ((MarginLayoutParams) textLayout.getLayoutParams()).rightMargin = rightMargin;
+            optionsView.setVisibility(View.GONE);
+            ((MarginLayoutParams) textLayout.getLayoutParams()).rightMargin = dp(30);
 
             if (!TextUtils.isEmpty(invite.title)) {
                 SpannableStringBuilder builder = new SpannableStringBuilder(invite.title);
@@ -1370,7 +1320,7 @@ public class ManageLinksActivity extends BaseFragment implements NotificationCen
 
             String joinedString = "";
             if (invite.usage == 0 && invite.usage_limit == 0 && invite.requested == 0) {
-                joinedString = getString(invite.subscription_pricing != null ? R.string.NoOneSubscribed : R.string.NoOneJoined);
+                joinedString = getString(R.string.NoOneJoined);
             } else {
                 if (invite.usage_limit > 0 && invite.usage == 0 && !invite.expired && !invite.revoked) {
                     joinedString = LocaleController.formatPluralString("CanJoin", invite.usage_limit);
@@ -1397,7 +1347,7 @@ public class ManageLinksActivity extends BaseFragment implements NotificationCen
                 spannableStringBuilder.append(getString(R.string.Permanent));
             } else if (invite.expired || invite.revoked) {
                 if (invite.revoked && invite.usage == 0) {
-                    joinedString = getString(invite.subscription_pricing != null ? R.string.NoOneSubscribed : R.string.NoOneJoined);
+                    joinedString = getString(R.string.NoOneJoined);
                     spannableStringBuilder.clear();
                     spannableStringBuilder.append(joinedString);
                 }

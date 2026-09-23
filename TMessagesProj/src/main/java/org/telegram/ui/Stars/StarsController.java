@@ -49,7 +49,6 @@ import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.Vector;
 import org.telegram.tgnet.tl.TL_stars;
-import org.telegram.tgnet.tl.TL_update;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
@@ -865,77 +864,6 @@ public class StarsController {
         // above returns instead, because billing is never ready.
     }
 
-    private boolean paymentFormOpened;
-
-    public void subscribeTo(String hash, TLRPC.ChatInvite chatInvite, Utilities.Callback2<String, Long> whenAllDone) {
-        if (chatInvite == null || chatInvite.subscription_pricing == null) return;
-
-        final Context context = LaunchActivity.instance != null ? LaunchActivity.instance : ApplicationLoader.applicationContext;
-        final Theme.ResourcesProvider resourcesProvider = getResourceProvider();
-        final long stars = chatInvite.subscription_pricing.amount;
-
-        if (context == null) return;
-
-        final int currentAccount = UserConfig.selectedAccount;
-
-        final boolean[] allDone = new boolean[] { false };
-        StarsIntroActivity.openStarsChannelInviteSheet(context, resourcesProvider, currentAccount, chatInvite, whenDone -> {
-            if (balance.amount < stars) {
-                if (!MessagesController.getInstance(currentAccount).starsPurchaseAvailable()) {
-                    paymentFormOpened = false;
-                    if (whenDone != null) {
-                        whenDone.run(false);
-                    }
-                    if (!allDone[0] && whenAllDone != null) {
-                        whenAllDone.run("cancelled", 0L);
-                        allDone[0] = true;
-                    }
-                    showNoSupportDialog(context, resourcesProvider);
-                    return;
-                }
-                final boolean[] purchased = new boolean[] { false };
-                StarsIntroActivity.StarsNeededSheet sheet = new StarsIntroActivity.StarsNeededSheet(context, resourcesProvider, stars, StarsIntroActivity.StarsNeededSheet.TYPE_SUBSCRIPTION_BUY, chatInvite.title, () -> {
-                    purchased[0] = true;
-                    payAfterConfirmed(hash, chatInvite, (did, success) -> {
-                        allDone[0] = true;
-                        if (whenAllDone != null) {
-                            whenAllDone.run(success ? "paid" : "failed", did);
-                        }
-                        if (whenDone != null) {
-                            whenDone.run(true);
-                        }
-                    });
-                }, 0); // TODO: purpose peer for chat invite?
-                sheet.setOnDismissListener(d -> {
-                    if (whenDone != null && !purchased[0]) {
-                        whenDone.run(false);
-                        paymentFormOpened = false;
-                        if (!allDone[0] && whenAllDone != null) {
-                            whenAllDone.run("cancelled", 0L);
-                            allDone[0] = true;
-                        }
-                    }
-                });
-                sheet.show();
-            } else {
-                payAfterConfirmed(hash, chatInvite, (did, success) -> {
-                    if (whenDone != null) {
-                        whenDone.run(true);
-                    }
-                    allDone[0] = true;
-                    if (whenAllDone != null) {
-                        whenAllDone.run(success ? "paid" : "failed", did);
-                    }
-                });
-            }
-        }, () -> {
-            paymentFormOpened = false;
-            if (!allDone[0] && whenAllDone != null) {
-                whenAllDone.run("cancelled", 0L);
-                allDone[0] = true;
-            }
-        });
-    }
 
     public static void showNoSupportDialog(Context context, Theme.ResourcesProvider resourcesProvider) {
         new AlertDialog.Builder(context, resourcesProvider)
@@ -943,96 +871,6 @@ public class StarsController {
             .setMessage(getString(R.string.StarsNotAvailableText))
             .setPositiveButton(getString(R.string.OK), null)
             .show();
-    }
-
-    private void payAfterConfirmed(String hash, TLRPC.ChatInvite chatInvite, Utilities.Callback2<Long, Boolean> whenDone) {
-        if (chatInvite == null || chatInvite.subscription_pricing == null) {
-            return;
-        }
-
-        final Context context = ApplicationLoader.applicationContext;
-        final Theme.ResourcesProvider resourcesProvider = getResourceProvider();
-
-        if (context == null) {
-            return;
-        }
-
-        final long stars = chatInvite.subscription_pricing.amount;
-        final String channel = chatInvite.title;
-
-        TLRPC.TL_inputInvoiceChatInviteSubscription inputInvoice = new TLRPC.TL_inputInvoiceChatInviteSubscription();
-        inputInvoice.hash = hash;
-
-        TL_stars.TL_payments_sendStarsForm req2 = new TL_stars.TL_payments_sendStarsForm();
-        req2.form_id = chatInvite.subscription_form_id;
-        req2.invoice = inputInvoice;
-        ConnectionsManager.getInstance(currentAccount).sendRequest(req2, (res2, err2) -> AndroidUtilities.runOnUIThread(() -> {
-            paymentFormOpened = false;
-            BaseFragment fragment = LaunchActivity.getLastFragment();
-            BulletinFactory b = !AndroidUtilities.hasDialogOnTop(fragment) ? BulletinFactory.of(fragment) : BulletinFactory.global();
-            if (res2 instanceof TLRPC.TL_payments_paymentResult) {
-                TLRPC.TL_payments_paymentResult result = (TLRPC.TL_payments_paymentResult) res2;
-                Utilities.stageQueue.postRunnable(() -> {
-                    MessagesController.getInstance(currentAccount).processUpdates(result.updates, false);
-                });
-
-                long dialogId = 0;
-                if (result.updates.update instanceof TL_update.TL_updateChannel) {
-                    TL_update.TL_updateChannel upd = (TL_update.TL_updateChannel) result.updates.update;
-                    dialogId = -upd.channel_id;
-                }
-                if (result.updates.updates != null) {
-                    for (int i = 0; i < result.updates.updates.size(); ++i) {
-                        if (result.updates.updates.get(i) instanceof TL_update.TL_updateChannel) {
-                            TL_update.TL_updateChannel upd = (TL_update.TL_updateChannel) result.updates.updates.get(i);
-                            dialogId = -upd.channel_id;
-                        }
-                    }
-                }
-
-                if (whenDone != null) {
-                    whenDone.run(dialogId, true);
-                }
-
-                if (dialogId == 0) {
-                    b.createSimpleBulletin(R.raw.stars_send, getString(R.string.StarsSubscriptionCompleted), AndroidUtilities.replaceTags(formatPluralString("StarsSubscriptionCompletedText", (int) stars, channel))).show();
-                }
-                if (LaunchActivity.instance != null && LaunchActivity.instance.getFireworksOverlay() != null) {
-                    LaunchActivity.instance.getFireworksOverlay().start(true);
-                }
-
-                invalidateTransactions(true);
-                invalidateSubscriptions(true);
-            } else if (err2 != null && "BALANCE_TOO_LOW".equals(err2.text)) {
-                if (!MessagesController.getInstance(currentAccount).starsPurchaseAvailable()) {
-                    if (whenDone != null) {
-                        whenDone.run(0L, false);
-                    }
-                    showNoSupportDialog(context, resourcesProvider);
-                    return;
-                }
-                final boolean[] purchased = new boolean[] { false };
-                StarsIntroActivity.StarsNeededSheet sheet = new StarsIntroActivity.StarsNeededSheet(context, resourcesProvider, stars, StarsIntroActivity.StarsNeededSheet.TYPE_SUBSCRIPTION_BUY, chatInvite.title, () -> {
-                    purchased[0] = true;
-                    payAfterConfirmed(hash, chatInvite, (did, success) -> {
-                        if (whenDone != null) {
-                            whenDone.run(did, success);
-                        }
-                    });
-                }, 0); // TODO: purpose peer for chat invite?
-                sheet.setOnDismissListener(d -> {
-                    if (whenDone != null && !purchased[0]) {
-                        whenDone.run(0L, false);
-                    }
-                });
-                sheet.show();
-            } else {
-                if (whenDone != null) {
-                    whenDone.run(0L, false);
-                }
-                b.createSimpleBulletin(R.raw.error, formatString(R.string.UnknownErrorCode, err2 != null ? err2.text : "FAILED_SEND_STARS")).show();
-            }
-        }));
     }
 
     // LoogriGram: what is left of upstream's star-reactions section. Nothing can
