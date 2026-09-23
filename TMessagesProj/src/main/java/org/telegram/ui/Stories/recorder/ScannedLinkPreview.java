@@ -296,20 +296,19 @@ public class ScannedLinkPreview extends View {
                 }
 
                 final String first = segments.get(0);
-                final String referrer = uri.getQueryParameter("ref");
 
-                if (TextUtils.isEmpty(referrer)) {
-                    TLObject obj = mc.getUserOrChat(first);
-                    if (obj instanceof TLRPC.User) {
-                        whenResolved.run(fromUser(link, (TLRPC.User) obj));
-                        return null;
-                    } else if (obj instanceof TLRPC.Chat) {
-                        whenResolved.run(fromChat(link, (TLRPC.Chat) obj));
-                        return null;
-                    }
+                // LoogriGram: a ?ref= affiliate referrer used to skip this
+                // cache so the resolve could carry it to the server.
+                final TLObject cached = mc.getUserOrChat(first);
+                if (cached instanceof TLRPC.User) {
+                    whenResolved.run(fromUser(link, (TLRPC.User) cached));
+                    return null;
+                } else if (cached instanceof TLRPC.Chat) {
+                    whenResolved.run(fromChat(link, (TLRPC.Chat) cached));
+                    return null;
                 }
 
-                return mc.getUserNameResolver().resolve(first, referrer, did -> {
+                return mc.getUserNameResolver().resolve(first, did -> {
                     if (did == null) {
                         whenResolved.run(null);
                     } else {

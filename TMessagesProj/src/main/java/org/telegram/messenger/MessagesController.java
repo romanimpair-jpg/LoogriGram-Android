@@ -671,7 +671,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public long starsSubscriptionAmountMax;
     public float starsUsdSellRate1000;
     public float starsUsdWithdrawRate1000;
-    public Set<String> starrefStartParamPrefixes = new HashSet<>();
     public int botVerificationDescriptionLengthLimit;
     public long paidReactionsPrivacyTime;
     public Long paidReactionsPrivacy;
@@ -1796,7 +1795,6 @@ public class MessagesController extends BaseController implements NotificationCe
         starsSubscriptionAmountMax = mainPreferences.getLong("starsSubscriptionAmountMax", 2500L);
         starsUsdSellRate1000 = mainPreferences.getFloat("starsUsdSellRate1000", 2000);
         starsUsdWithdrawRate1000 = mainPreferences.getFloat("starsUsdWithdrawRate1000", 1200);
-        starrefStartParamPrefixes = mainPreferences.getStringSet("starrefStartParamPrefixes", new HashSet<>(Arrays.asList("_tgr_")));
         botVerificationDescriptionLengthLimit = mainPreferences.getInt("botVerificationDescriptionLengthLimit", 70);
         paidReactionsPrivacyTime = mainPreferences.getLong("paidReactionsAnonymousTime", 0);
         stargiftsCraftAttributesPermilles = Arrays.stream(mainPreferences.getString("stargiftsCraftAttributesPermilles", "90,,80,200,,70,190,460,,60,180,450,1000").split(",,"))
@@ -4578,25 +4576,6 @@ public class MessagesController extends BaseController implements NotificationCe
                     if (!webAppAllowedProtocols.equals(newProtocols)) {
                         webAppAllowedProtocols = newProtocols;
                         editor.putStringSet("webAppAllowedProtocols", webAppAllowedProtocols);
-                        changed = true;
-                    }
-                    break;
-                }
-                case "starref_start_param_prefixes": {
-                    HashSet<String> newPrefixes = new HashSet<>();
-                    if (value.value instanceof TLRPC.TL_jsonArray) {
-                        TLRPC.TL_jsonArray array = (TLRPC.TL_jsonArray) value.value;
-                        for (int b = 0, N2 = array.value.size(); b < N2; b++) {
-                            TLRPC.JSONValue val = array.value.get(b);
-                            if (val instanceof TLRPC.TL_jsonString) {
-                                TLRPC.TL_jsonString string = (TLRPC.TL_jsonString) val;
-                                newPrefixes.add(string.value.toLowerCase());
-                            }
-                        }
-                    }
-                    if (!starrefStartParamPrefixes.equals(newPrefixes)) {
-                        starrefStartParamPrefixes = newPrefixes;
-                        editor.putStringSet("starrefStartParamPrefixes", starrefStartParamPrefixes);
                         changed = true;
                     }
                     break;

@@ -1879,7 +1879,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 
                     if (data != null) {
                         String username = null;
-                        String referrer = null;
                         String login = null;
                         String group = null;
                         String sticker = null;
@@ -2187,24 +2186,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                                                 }
                                                 botUser = data.getQueryParameter("start");
                                                 botChat = data.getQueryParameter("startgroup");
-                                                if (!TextUtils.isEmpty(username)) {
-                                                    referrer = data.getQueryParameter("ref");
-                                                    if (TextUtils.isEmpty(referrer) && !TextUtils.isEmpty(botUser)) {
-                                                        for (String prefix : MessagesController.getInstance(intentAccount[0]).starrefStartParamPrefixes) {
-                                                            if (botUser.startsWith(prefix)) {
-                                                                referrer = botUser.substring(prefix.length());
-                                                                break;
-                                                            }
-                                                        }
-                                                    } else if (TextUtils.isEmpty(referrer) && !TextUtils.isEmpty(startApp)) {
-                                                        for (String prefix : MessagesController.getInstance(intentAccount[0]).starrefStartParamPrefixes) {
-                                                            if (startApp.startsWith(prefix)) {
-                                                                referrer = startApp.substring(prefix.length());
-                                                                break;
-                                                            }
-                                                        }
-                                                    }
-                                                }
                                                 botChannel = data.getQueryParameter("startchannel");
                                                 botChatAdminParams = data.getQueryParameter("admin");
                                                 game = data.getQueryParameter("game");
@@ -2325,24 +2306,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                                             commentId = Utilities.parseInt(data.getQueryParameter("comment"));
                                             if (commentId == 0) {
                                                 commentId = null;
-                                            }
-                                        }
-                                        if (!TextUtils.isEmpty(username)) {
-                                            referrer = data.getQueryParameter("ref");
-                                            if (TextUtils.isEmpty(referrer) && !TextUtils.isEmpty(botUser)) {
-                                                for (String prefix : MessagesController.getInstance(intentAccount[0]).starrefStartParamPrefixes) {
-                                                    if (botUser.startsWith(prefix)) {
-                                                        referrer = botUser.substring(prefix.length());
-                                                        break;
-                                                    }
-                                                }
-                                            } else if (TextUtils.isEmpty(referrer) && !TextUtils.isEmpty(startApp)) {
-                                                for (String prefix : MessagesController.getInstance(intentAccount[0]).starrefStartParamPrefixes) {
-                                                    if (startApp.startsWith(prefix)) {
-                                                        referrer = startApp.substring(prefix.length());
-                                                        break;
-                                                    }
-                                                }
                                             }
                                         }
                                     } else if (url.startsWith("tg:invoice") || url.startsWith("tg://invoice")) {
@@ -2724,7 +2687,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                                 if (message != null && message.startsWith("@")) {
                                     message = " " + message;
                                 }
-                                runLinkRequest(intentAccount[0], username, group, sticker, emoji, botUser, botChat, botChannel, botChatAdminParams, message, contactToken, folderSlug, text, hasUrl, messageId, channelId, threadId, commentId, game, auth, lang, unsupportedUrl, code, login, wallPaper, inputInvoiceSlug, uniqueGiftSlug, theme, voicechat, videochat, livestream, 0, videoTimestamp, setAsAttachBot, attachMenuBotToOpen, attachMenuBotChoose, botAppMaybe, startApp, progress, forceNotInternalForApps, storyId, liveStory, storyAlbumId, giftCollectionId, isBoost, chatLinkSlug, botCompact, botFullscreen, openedTelegram, openProfile, forceRequest, referrer, taskId, openDirect, optionId);
+                                runLinkRequest(intentAccount[0], username, group, sticker, emoji, botUser, botChat, botChannel, botChatAdminParams, message, contactToken, folderSlug, text, hasUrl, messageId, channelId, threadId, commentId, game, auth, lang, unsupportedUrl, code, login, wallPaper, inputInvoiceSlug, uniqueGiftSlug, theme, voicechat, videochat, livestream, 0, videoTimestamp, setAsAttachBot, attachMenuBotToOpen, attachMenuBotChoose, botAppMaybe, startApp, progress, forceNotInternalForApps, storyId, liveStory, storyAlbumId, giftCollectionId, isBoost, chatLinkSlug, botCompact, botFullscreen, openedTelegram, openProfile, forceRequest, taskId, openDirect, optionId);
                             } else {
                                 try (Cursor cursor = getContentResolver().query(intent.getData(), null, null, null, null)) {
                                     if (cursor != null) {
@@ -3845,13 +3808,12 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         boolean openedTelegram,
         boolean openProfile,
         boolean forceRequest,
-        String referrer,
         Integer taskId,
         boolean openDirect,
         byte[] pollOptionId
     ) {
         if (state == 0 && ChatActivity.SCROLL_DEBUG_DELAY && progress != null) {
-            Runnable runnable = () -> runLinkRequest(intentAccount, username, group, sticker, emoji, botUser, botChat, botChannel, botChatAdminParams, message, contactToken, folderSlug, text, hasUrl, messageId, channelId, threadId, commentId, game, auth, lang, unsupportedUrl, code, loginToken, wallPaper, inputInvoiceSlug, uniqueGiftSlug, theme, voicechat, videochat, livestream, 1, videoTimestamp, setAsAttachBot, attachMenuBotToOpen, attachMenuBotChoose, botAppMaybe, botAppStartParam, progress, forceNotInternalForApps, storyId, liveStory, storyAlbumId, giftCollectionId, isBoost, chatLinkSlug, botCompact, botFullscreen, openedTelegram, openProfile, forceRequest, referrer, taskId, openDirect, pollOptionId);
+            Runnable runnable = () -> runLinkRequest(intentAccount, username, group, sticker, emoji, botUser, botChat, botChannel, botChatAdminParams, message, contactToken, folderSlug, text, hasUrl, messageId, channelId, threadId, commentId, game, auth, lang, unsupportedUrl, code, loginToken, wallPaper, inputInvoiceSlug, uniqueGiftSlug, theme, voicechat, videochat, livestream, 1, videoTimestamp, setAsAttachBot, attachMenuBotToOpen, attachMenuBotChoose, botAppMaybe, botAppStartParam, progress, forceNotInternalForApps, storyId, liveStory, storyAlbumId, giftCollectionId, isBoost, chatLinkSlug, botCompact, botFullscreen, openedTelegram, openProfile, forceRequest, taskId, openDirect, pollOptionId);
             progress.init();
             progress.onCancel(() -> AndroidUtilities.cancelRunOnUIThread(runnable));
             AndroidUtilities.runOnUIThread(runnable, 7500);
@@ -3861,7 +3823,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 if (account != intentAccount) {
                     switchToAccount(account, true);
                 }
-                runLinkRequest(account, username, group, sticker, emoji, botUser, botChat, botChannel, botChatAdminParams, message, contactToken, folderSlug, text, hasUrl, messageId, channelId, threadId, commentId, game, auth, lang, unsupportedUrl, code, loginToken, wallPaper, inputInvoiceSlug, uniqueGiftSlug, theme, voicechat, videochat, livestream, 1, videoTimestamp, setAsAttachBot, attachMenuBotToOpen, attachMenuBotChoose, botAppMaybe, botAppStartParam, progress, forceNotInternalForApps, storyId, liveStory, storyAlbumId, giftCollectionId, isBoost, chatLinkSlug, botCompact, botFullscreen, openedTelegram, openProfile, forceRequest, referrer, taskId, openDirect, pollOptionId);
+                runLinkRequest(account, username, group, sticker, emoji, botUser, botChat, botChannel, botChatAdminParams, message, contactToken, folderSlug, text, hasUrl, messageId, channelId, threadId, commentId, game, auth, lang, unsupportedUrl, code, loginToken, wallPaper, inputInvoiceSlug, uniqueGiftSlug, theme, voicechat, videochat, livestream, 1, videoTimestamp, setAsAttachBot, attachMenuBotToOpen, attachMenuBotChoose, botAppMaybe, botAppStartParam, progress, forceNotInternalForApps, storyId, liveStory, storyAlbumId, giftCollectionId, isBoost, chatLinkSlug, botCompact, botFullscreen, openedTelegram, openProfile, forceRequest, taskId, openDirect, pollOptionId);
             }).show();
             return;
         } else if (code != null) {
@@ -4057,20 +4019,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             if (progress != null) {
                 progress.init();
             }
-            MessagesController.getInstance(intentAccount).getUserNameResolver().resolve(username, referrer, (peerId) -> {
-                if (peerId != null && peerId == Long.MAX_VALUE) {
-                    try {
-                        dismissLoading.run();
-                    } catch (Exception e) {
-                        FileLog.e(e);
-                    }
-                    new AlertDialog.Builder(this, null)
-                        .setTitle(LocaleController.getString(R.string.AffiliateLinkExpiredTitle))
-                        .setMessage(LocaleController.getString(R.string.AffiliateLinkExpiredText))
-                        .setNegativeButton(LocaleController.getString(R.string.OK), null)
-                        .show();
-                    return;
-                }
+            MessagesController.getInstance(intentAccount).getUserNameResolver().resolve(username, (peerId) -> {
                 if (!LaunchActivity.this.isFinishing()) {
                     boolean hideProgressDialog = true;
                     if (liveStory && peerId != null) {
@@ -4169,7 +4118,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                                     getAttachMenuBot.bot = MessagesController.getInstance(intentAccount).getInputUser(peerId);
                                     ConnectionsManager.getInstance(intentAccount).sendRequest(getAttachMenuBot, (response1, error1) -> AndroidUtilities.runOnUIThread(() -> {
                                         if (error1 != null) {
-                                            AndroidUtilities.runOnUIThread(() -> runLinkRequest(intentAccount, username, group, sticker, emoji, botUser, botChat, botChannel, botChatAdminParams, message, contactToken, folderSlug, text, hasUrl, messageId, channelId, threadId, commentId, game, auth, lang, unsupportedUrl, code, loginToken, wallPaper, inputInvoiceSlug, uniqueGiftSlug, theme, voicechat, videochat, livestream, state, videoTimestamp, setAsAttachBot, attachMenuBotToOpen, attachMenuBotChoose, null, null, progress, forceNotInternalForApps, storyId, liveStory, storyAlbumId, giftCollectionId, isBoost, chatLinkSlug, botCompact, botFullscreen, openedTelegram, openProfile, forceRequest, referrer, taskId, openDirect, pollOptionId));
+                                            AndroidUtilities.runOnUIThread(() -> runLinkRequest(intentAccount, username, group, sticker, emoji, botUser, botChat, botChannel, botChatAdminParams, message, contactToken, folderSlug, text, hasUrl, messageId, channelId, threadId, commentId, game, auth, lang, unsupportedUrl, code, loginToken, wallPaper, inputInvoiceSlug, uniqueGiftSlug, theme, voicechat, videochat, livestream, state, videoTimestamp, setAsAttachBot, attachMenuBotToOpen, attachMenuBotChoose, null, null, progress, forceNotInternalForApps, storyId, liveStory, storyAlbumId, giftCollectionId, isBoost, chatLinkSlug, botCompact, botFullscreen, openedTelegram, openProfile, forceRequest, taskId, openDirect, pollOptionId));
                                         } else if (response1 instanceof TLRPC.TL_attachMenuBotsBot) {
                                             TLRPC.TL_attachMenuBotsBot bot = (TLRPC.TL_attachMenuBotsBot) response1;
                                             TLRPC.TL_attachMenuBot attachBot = bot.bot;
@@ -4189,7 +4138,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                                                             MediaDataController.getInstance(intentAccount).loadAttachMenuBots(false, true, null);
                                                         }
                                                     }), ConnectionsManager.RequestFlagInvokeAfter | ConnectionsManager.RequestFlagFailOnServerErrors);
-                                                    processWebAppBot(intentAccount, username, group, sticker, emoji, botUser, botChat, botChannel, botChatAdminParams, message, contactToken, folderSlug, text, hasUrl, messageId, channelId, threadId, commentId, game, auth, lang, unsupportedUrl, code, loginToken, wallPaper, inputInvoiceSlug, uniqueGiftSlug, theme, voicechat, videochat, livestream, state, videoTimestamp, setAsAttachBot, attachMenuBotToOpen, attachMenuBotChoose, botAppMaybe, botAppStartParam, progress, forceNotInternalForApps, storyId, false, storyAlbumId, giftCollectionId, isBoost, chatLinkSlug, user, dismissLoading, botAttachable, true, botCompact, botFullscreen, openedTelegram, openProfile, forceRequest, referrer, openDirect);
+                                                    processWebAppBot(intentAccount, username, group, sticker, emoji, botUser, botChat, botChannel, botChatAdminParams, message, contactToken, folderSlug, text, hasUrl, messageId, channelId, threadId, commentId, game, auth, lang, unsupportedUrl, code, loginToken, wallPaper, inputInvoiceSlug, uniqueGiftSlug, theme, voicechat, videochat, livestream, state, videoTimestamp, setAsAttachBot, attachMenuBotToOpen, attachMenuBotChoose, botAppMaybe, botAppStartParam, progress, forceNotInternalForApps, storyId, false, storyAlbumId, giftCollectionId, isBoost, chatLinkSlug, user, dismissLoading, botAttachable, true, botCompact, botFullscreen, openedTelegram, openProfile, forceRequest, openDirect);
                                                 }, null, progress != null ? progress::end : null);
                                             } else if (attachBot.request_write_access || forceNotInternalForApps) {
                                                 AtomicBoolean allowWrite = new AtomicBoolean(true);
@@ -4208,15 +4157,15 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                                                             MediaDataController.getInstance(intentAccount).loadAttachMenuBots(false, true, null);
                                                         }
                                                     }), ConnectionsManager.RequestFlagInvokeAfter | ConnectionsManager.RequestFlagFailOnServerErrors);
-                                                    processWebAppBot(intentAccount, username, group, sticker, emoji, botUser, botChat, botChannel, botChatAdminParams, message, contactToken, folderSlug, text, hasUrl, messageId, channelId, threadId, commentId, game, auth, lang, unsupportedUrl, code, loginToken, wallPaper, inputInvoiceSlug, uniqueGiftSlug, theme, voicechat, videochat, livestream, state, videoTimestamp, setAsAttachBot, attachMenuBotToOpen, attachMenuBotChoose, botAppMaybe, botAppStartParam, progress, forceNotInternalForApps, storyId, false, storyAlbumId, giftCollectionId, isBoost, chatLinkSlug, user, dismissLoading, false, false, botCompact, botFullscreen, openedTelegram, openProfile, forceRequest, referrer, openDirect);
+                                                    processWebAppBot(intentAccount, username, group, sticker, emoji, botUser, botChat, botChannel, botChatAdminParams, message, contactToken, folderSlug, text, hasUrl, messageId, channelId, threadId, commentId, game, auth, lang, unsupportedUrl, code, loginToken, wallPaper, inputInvoiceSlug, uniqueGiftSlug, theme, voicechat, videochat, livestream, state, videoTimestamp, setAsAttachBot, attachMenuBotToOpen, attachMenuBotChoose, botAppMaybe, botAppStartParam, progress, forceNotInternalForApps, storyId, false, storyAlbumId, giftCollectionId, isBoost, chatLinkSlug, user, dismissLoading, false, false, botCompact, botFullscreen, openedTelegram, openProfile, forceRequest, openDirect);
                                                 });
                                             } else {
-                                                processWebAppBot(intentAccount, username, group, sticker, emoji, botUser, botChat, botChannel, botChatAdminParams, message, contactToken, folderSlug, text, hasUrl, messageId, channelId, threadId, commentId, game, auth, lang, unsupportedUrl, code, loginToken, wallPaper, inputInvoiceSlug, uniqueGiftSlug, theme, voicechat, videochat, livestream, state, videoTimestamp, setAsAttachBot, attachMenuBotToOpen, attachMenuBotChoose, botAppMaybe, botAppStartParam, progress, forceNotInternalForApps, storyId, false, storyAlbumId, giftCollectionId, isBoost, chatLinkSlug, user, dismissLoading, false, false, botCompact, botFullscreen, openedTelegram, openProfile, forceRequest, referrer, openDirect);
+                                                processWebAppBot(intentAccount, username, group, sticker, emoji, botUser, botChat, botChannel, botChatAdminParams, message, contactToken, folderSlug, text, hasUrl, messageId, channelId, threadId, commentId, game, auth, lang, unsupportedUrl, code, loginToken, wallPaper, inputInvoiceSlug, uniqueGiftSlug, theme, voicechat, videochat, livestream, state, videoTimestamp, setAsAttachBot, attachMenuBotToOpen, attachMenuBotChoose, botAppMaybe, botAppStartParam, progress, forceNotInternalForApps, storyId, false, storyAlbumId, giftCollectionId, isBoost, chatLinkSlug, user, dismissLoading, false, false, botCompact, botFullscreen, openedTelegram, openProfile, forceRequest, openDirect);
                                             }
                                         }
                                     }));
                                 } else {
-                                    processWebAppBot(intentAccount, username, group, sticker, emoji, botUser, botChat, botChannel, botChatAdminParams, message, contactToken, folderSlug, text, hasUrl, messageId, channelId, threadId, commentId, game, auth, lang, unsupportedUrl, code, loginToken, wallPaper, inputInvoiceSlug, uniqueGiftSlug, theme, voicechat, videochat, livestream, state, videoTimestamp, setAsAttachBot, attachMenuBotToOpen, attachMenuBotChoose, botAppMaybe, botAppStartParam, progress, forceNotInternalForApps, storyId, false, storyAlbumId, giftCollectionId, isBoost, chatLinkSlug, user, dismissLoading, false, false, botCompact, botFullscreen, openedTelegram, openProfile, forceRequest, referrer, openDirect);
+                                    processWebAppBot(intentAccount, username, group, sticker, emoji, botUser, botChat, botChannel, botChatAdminParams, message, contactToken, folderSlug, text, hasUrl, messageId, channelId, threadId, commentId, game, auth, lang, unsupportedUrl, code, loginToken, wallPaper, inputInvoiceSlug, uniqueGiftSlug, theme, voicechat, videochat, livestream, state, videoTimestamp, setAsAttachBot, attachMenuBotToOpen, attachMenuBotChoose, botAppMaybe, botAppStartParam, progress, forceNotInternalForApps, storyId, false, storyAlbumId, giftCollectionId, isBoost, chatLinkSlug, user, dismissLoading, false, false, botCompact, botFullscreen, openedTelegram, openProfile, forceRequest, openDirect);
                                 }
                                 return;
                             }
@@ -4487,7 +4436,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                                                     return;
                                                 }
 
-                                                runLinkRequest(intentAccount, username, group, sticker, emoji, botUser, botChat, botChannel, botChatAdminParams, message, contactToken, folderSlug, text, hasUrl, messageId, channelId, threadId, commentId, game, auth, lang, unsupportedUrl, code, loginToken, wallPaper, inputInvoiceSlug, uniqueGiftSlug, theme, voicechat, videochat, livestream, state, videoTimestamp, setAsAttachBot, attachMenuBotToOpen, attachMenuBotChoose, botAppMaybe, botAppStartParam, progress, forceNotInternalForApps, storyId, liveStory, storyAlbumId, giftCollectionId, isBoost, chatLinkSlug, botCompact, botFullscreen, openedTelegram, openProfile, forceRequest, referrer, taskId, openDirect, pollOptionId);
+                                                runLinkRequest(intentAccount, username, group, sticker, emoji, botUser, botChat, botChannel, botChatAdminParams, message, contactToken, folderSlug, text, hasUrl, messageId, channelId, threadId, commentId, game, auth, lang, unsupportedUrl, code, loginToken, wallPaper, inputInvoiceSlug, uniqueGiftSlug, theme, voicechat, videochat, livestream, state, videoTimestamp, setAsAttachBot, attachMenuBotToOpen, attachMenuBotChoose, botAppMaybe, botAppStartParam, progress, forceNotInternalForApps, storyId, liveStory, storyAlbumId, giftCollectionId, isBoost, chatLinkSlug, botCompact, botFullscreen, openedTelegram, openProfile, forceRequest, taskId, openDirect, pollOptionId);
                                             } else {
                                                 try {
                                                     dismissLoading.run();
@@ -5359,7 +5308,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         boolean openedTelegram,
         boolean openProfile,
         boolean forceRequest,
-        String referrer,
         boolean openDirect
     ) {
         final TLRPC.TL_messages_getBotApp getBotApp = new TLRPC.TL_messages_getBotApp();
@@ -5372,7 +5320,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 progress.end();
             }
             if (error1 != null) {
-                AndroidUtilities.runOnUIThread(() -> runLinkRequest(intentAccount, username, group, sticker, emoji, botUser, botChat, botChannel, botChatAdminParams, message, contactToken, folderSlug, text, hasUrl, messageId, channelId, threadId, commentId, game, auth, lang, unsupportedUrl, code, loginToken, wallPaper, inputInvoiceSlug, uniqueGiftSlug, theme, voicechat, videochat, livestream, state, videoTimestamp, setAsAttachBot, attachMenuBotToOpen, attachMenuBotChoose, null, null, progress, forceNotInternalForApps, storyId, liveStory, storyAlbumId, giftCollectionId, isBoost, chatLinkSlug, botCompact, botFullscreen, openedTelegram, openProfile, forceRequest, referrer, null, openDirect, null));
+                AndroidUtilities.runOnUIThread(() -> runLinkRequest(intentAccount, username, group, sticker, emoji, botUser, botChat, botChannel, botChatAdminParams, message, contactToken, folderSlug, text, hasUrl, messageId, channelId, threadId, commentId, game, auth, lang, unsupportedUrl, code, loginToken, wallPaper, inputInvoiceSlug, uniqueGiftSlug, theme, voicechat, videochat, livestream, state, videoTimestamp, setAsAttachBot, attachMenuBotToOpen, attachMenuBotChoose, null, null, progress, forceNotInternalForApps, storyId, liveStory, storyAlbumId, giftCollectionId, isBoost, chatLinkSlug, botCompact, botFullscreen, openedTelegram, openProfile, forceRequest, null, openDirect, null));
             } else {
                 TLRPC.TL_messages_botApp botApp = (TLRPC.TL_messages_botApp) response1;
                 AndroidUtilities.runOnUIThread(() -> {

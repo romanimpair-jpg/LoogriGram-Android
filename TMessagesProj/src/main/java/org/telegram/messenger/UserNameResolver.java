@@ -27,25 +27,19 @@ public class UserNameResolver {
     LruCache<String, CachedPeer> resolvedCache = new LruCache<>(100);
     HashMap<String, ArrayList<Consumer<Long>>> resolvingConsumers = new HashMap<>();
 
+    // LoogriGram: two longer forms took an affiliate referrer, sent as
+    // resolveUsername.referer to credit whoever shared the link with a
+    // commission on what we spend, and a force flag nothing passed. The
+    // referrer is never sent now, so the cache always answers first.
     public Runnable resolve(String username, Consumer<Long> resolveConsumer) {
-        return resolve(username, null, resolveConsumer);
-    }
-
-    public Runnable resolve(String username, String referrer, Consumer<Long> resolveConsumer) {
-        return resolve(username, referrer, false, resolveConsumer);
-    }
-
-    public Runnable resolve(String username, String referrer, boolean force, Consumer<Long> resolveConsumer) {
-        if (TextUtils.isEmpty(referrer) && !force) {
-            CachedPeer cachedPeer = resolvedCache.get(username);
-            if (cachedPeer != null) {
-                if (System.currentTimeMillis() - cachedPeer.time < CACHE_TIME) {
-                    resolveConsumer.accept(cachedPeer.peerId);
-                    FileLog.d("resolve username from cache " + username + " " + cachedPeer.peerId);
-                    return null;
-                } else {
-                    resolvedCache.remove(username);
-                }
+        CachedPeer cachedPeer = resolvedCache.get(username);
+        if (cachedPeer != null) {
+            if (System.currentTimeMillis() - cachedPeer.time < CACHE_TIME) {
+                resolveConsumer.accept(cachedPeer.peerId);
+                FileLog.d("resolve username from cache " + username + " " + cachedPeer.peerId);
+                return null;
+            } else {
+                resolvedCache.remove(username);
             }
         }
 
@@ -67,10 +61,6 @@ public class UserNameResolver {
         } else {
             TLRPC.TL_contacts_resolveUsername resolveUsername = new TLRPC.TL_contacts_resolveUsername();
             resolveUsername.username = username;
-            if (!TextUtils.isEmpty(referrer)) {
-                resolveUsername.flags |= 1;
-                resolveUsername.referer = referrer;
-            }
             req = resolveUsername;
         }
         final int reqId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
@@ -79,12 +69,6 @@ public class UserNameResolver {
                 return;
             }
             if (error != null) {
-                if (error != null && error.text != null && "STARREF_EXPIRED".equals(error.text)) {
-                    for (int i = 0; i < finalConsumers.size(); i++) {
-                        finalConsumers.get(i).accept(Long.MAX_VALUE);
-                    }
-                    return;
-                }
                 for (int i = 0; i < finalConsumers.size(); i++) {
                     finalConsumers.get(i).accept(null);
                 }
