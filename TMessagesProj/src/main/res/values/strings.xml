@@ -11233,6 +11233,10 @@
     <!-- LoogriGram: a live stream that charges Stars per comment. Shown where
          upstream shows "Comments Disabled", because that is what it is here. -->
     <string name="LoogriGramPaidCommentsLocked">This live only takes paid comments, which LoogriGram doesn\'t send.</string>
+    <!-- LoogriGram: the server wants a fee before it sends this number a
+         login code. Upstream sold it on a page of its own; see
+         LoginActivity.fillNextCodeParams. -->
+    <string name="LoogriGramLoginCodeFee">Telegram only sends a login code to this number for a fee, which LoogriGram doesn\'t pay.</string>
     <!-- LoogriGram: a channel's direct messages, without the fee upstream
          offered beside the switch. See PostSuggestionsEditActivity. -->
     <string name="LoogriGramDirectMessagesHint">Allow users to send messages to your channel.</string>
