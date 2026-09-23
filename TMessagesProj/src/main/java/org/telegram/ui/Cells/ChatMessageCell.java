@@ -1003,18 +1003,14 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     public final GiveawayMessageCell giveawayMessageCell = new GiveawayMessageCell(this);
     public final GiveawayResultsMessageCell giveawayResultsMessageCell = new GiveawayResultsMessageCell(this);
 
-    private boolean playedDice;
+    // LoogriGram: playedDice tracked the same thing.
     private long starsPrice;
     private Text starsPriceText;
     private LinkPath starsPriceTextPath;
     private CornerPathEffect starsPriceTextPathEffect;
     public int starsPriceTopPadding;
 
-    private long diceStakeOutcome;
-    private Text bottomActionText;
-    private LinkPath bottomActionTextPath;
-    private CornerPathEffect bottomActionTextPathEffect;
-    public int bottomActionPadding;
+    // LoogriGram: diceStakeOutcome and the bottomAction* views it drew stood here.
 
     public TopicSeparator topicSeparator;
     public int topicSeparatorTopPadding;
@@ -6792,7 +6788,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             if (messageIdChanged) {
                 isPressed = false;
                 isCheckPressed = true;
-                playedDice = false;
             }
             gamePreviewPressed = false;
             sideButtonPressed = false;
@@ -10861,7 +10856,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
             final int starsPriceMessagesCount;
             final long starsPrice;
-            final long diceStakeOutcome = currentMessageObject == null || !playedDice ? 0 : currentMessageObject.getStakedDiceWinAmount();
             if (currentMessageObject != null && currentMessageObject.getDialogId() < 0) {
                 starsPrice = 0;
                 starsPriceMessagesCount = 0;
@@ -10928,46 +10922,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     starsPriceTopPadding = 0;
                 }
             }
-            if (this.diceStakeOutcome != diceStakeOutcome) {
-                this.diceStakeOutcome = diceStakeOutcome;
-                if (diceStakeOutcome != 0) {
-                    final CharSequence text;
-                    if (currentMessageObject.isOutOwner() && !currentMessageObject.isForwarded()) {
-                        if (diceStakeOutcome > 0) {
-                            text = StarsFormat.replaceDiamond(formatString(R.string.StakeDiceActionYouWon, StarsFormat.formatTON(diceStakeOutcome)), 0.825f);
-                        } else {
-                            text = StarsFormat.replaceDiamond(formatString(R.string.StakeDiceActionYouLost, StarsFormat.formatTON(-diceStakeOutcome)), 0.825f);
-                        }
-                    } else {
-                        final TLObject fromObject = currentMessageObject.getFromPeerObject();
-                        if (diceStakeOutcome > 0) {
-                            text = StarsFormat.replaceDiamond(replaceWithLink(formatString(R.string.StakeDiceActionWon, StarsFormat.formatTON(diceStakeOutcome)), "un1", fromObject), 0.825f);
-                        } else {
-                            text = StarsFormat.replaceDiamond(replaceWithLink(formatString(R.string.StakeDiceActionLost, StarsFormat.formatTON(-diceStakeOutcome)), "un1", fromObject), 0.825f);
-                        }
-                    }
-                    bottomActionText = new Text(text, 14, AndroidUtilities.bold())
-                        .multiline(3)
-                        .setMaxWidth(currentMessageObject.getMaxMessageTextWidth())
-                        .align(Layout.Alignment.ALIGN_CENTER)
-                        .lineSpacing(dp(2));
-                    if (bottomActionTextPath == null) {
-                        bottomActionTextPath = new LinkPath();
-                        bottomActionTextPath.setUseCornerPathImplementation(true);
-                        bottomActionTextPathEffect = new CornerPathEffect(dp(16));
-                    } else {
-                        bottomActionTextPath.rewind();
-                    }
-                    bottomActionTextPath.setPadding(dp(9), dp(2.66f));
-                    bottomActionPadding = (int) (bottomActionText.getHeight() + dp(6.66f));
-                    bottomActionTextPath.setCurrentLayout(bottomActionText.getLayout(), 0, 0);
-                    bottomActionText.getLayout().getSelectionPath(0, text.length(), bottomActionTextPath);
-                    bottomActionTextPath.closeRects();
-                } else {
-                    bottomActionText = null;
-                    bottomActionPadding = 0;
-                }
-            }
+            // LoogriGram: the banner under a rolled dice said how much TON was won or
+            // lost on it. That banner had no other use, so the text, its rounded
+            // background path, the padding it claimed and the animation between states
+            // are all gone with it.
 
             suggestionOffer = null;
             suggestionOfferTopPadding = 0;
@@ -13446,7 +13404,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
         updateSelectionTextPosition();
 
-        final int normHeight = starsPriceTopPadding + topicSeparatorTopPadding + suggestionOfferTopPadding + totalHeight + keyboardHeight + askBotForumBottomPadding + bottomActionPadding;
+        final int normHeight = starsPriceTopPadding + topicSeparatorTopPadding + suggestionOfferTopPadding + totalHeight + keyboardHeight + askBotForumBottomPadding;
         int resultHeight = normHeight;
         ChatActivityDraftMessageMeasureController botDraftHeightController = getDraftMessageMeasureController();
         if (botDraftHeightController != null) {
@@ -14908,26 +14866,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
         }
         transitionParams.recordDrawingState();
-
-        checkStakedDice();
     }
 
-    private void checkStakedDice() {
-        if (currentMessageObject == null || !currentMessageObject.isStakedDice()) return;
-        if (playedDice) return;
-
-        final Drawable drawable = photoImage.getDrawable();
-        if (!(drawable instanceof RLottieDiceDrawable)) return;
-        final RLottieDiceDrawable lottieDrawable = (RLottieDiceDrawable) drawable;
-        if (!lottieDrawable.hasBaseDice()) return;
-
-        if (!playedDice && lottieDrawable.isDiceRevealed()) {
-            playedDice = true;
-            if (delegate != null) {
-                delegate.forceUpdate(this, false);
-            }
-        }
-    }
+    // LoogriGram: checkStakedDice stood here. It watched a staked roll land so the cell
+    // could redraw with the won-or-lost banner under it; there is no banner.
 
     public void startRevealMedia() {
         startRevealMedia(
@@ -18147,10 +18089,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         } else {
             currentTimeString = timeString;
         }
-        if (currentMessageObject.isStakedDice()) {
-            currentTimeString = TextUtils.concat("💎", StarsFormat.formatTON(currentMessageObject.getStakedDiceAmount()), "  ", currentTimeString);
-            currentTimeString = StarsFormat.replaceDiamond(currentTimeString, 0.55f, null, 0, dp(-.33f), 1.05f);
-        }
+        // LoogriGram: a staked dice put the TON staked on it in front of the timestamp.
         final long starsPrice = currentMessageObject.getDialogId() < 0 ? getStarsPrice() : 0;
         if (starsPrice > 0) {
             currentTimeString = TextUtils.concat("⭐️", AndroidUtilities.formatWholeNumber((int) starsPrice, 0), "  ", currentTimeString);
@@ -20647,9 +20586,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         if (starsPriceText != null && (currentPosition == null || (currentPosition.flags & MessageObject.POSITION_FLAG_TOP) != 0 && (currentPosition.flags & MessageObject.POSITION_FLAG_LEFT) != 0)) {
             return true;
         }
-        if (bottomActionText != null && (currentPosition == null || (currentPosition.flags & MessageObject.POSITION_FLAG_BOTTOM) != 0 && (currentPosition.flags & MessageObject.POSITION_FLAG_LEFT) != 0)) {
-            return true;
-        }
         if (topicSeparator != null && (currentPosition == null || (currentPosition.flags & MessageObject.POSITION_FLAG_TOP) != 0 && (currentPosition.flags & MessageObject.POSITION_FLAG_LEFT) != 0)) {
             return true;
         }
@@ -20701,13 +20637,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         return starsPriceTopPadding;
     }
 
-    public int getBottomActionPadding() {
-        if (transitionParams.animateBottomActionPadding) {
-            return lerp(transitionParams.animateBottomActionPaddingFrom, bottomActionPadding, transitionParams.animateChangeProgress);
-        }
-        return bottomActionPadding;
-    }
-
     public void drawOutboundsContent(Canvas canvas) {
         if (channelRecommendationsCell != null && currentMessageObject != null && currentMessageObject.type == MessageObject.TYPE_JOINED_CHANNEL) {
             channelRecommendationsCell.draw(canvas);
@@ -20754,37 +20683,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             starsPriceText.draw(canvas, (getParentWidth() - starsPriceText.getWidth()) / 2.0f, -getStarsPriceTopPadding() + dp(6.83f), getThemedColor(Theme.key_chat_serviceText), alpha);
             canvas.restore();
         }
-        if (bottomActionText != null && (currentPosition == null || (currentPosition.flags & MessageObject.POSITION_FLAG_BOTTOM) != 0 && (currentPosition.flags & MessageObject.POSITION_FLAG_LEFT) != 0)) {
-            final float y = getHeight() - getPaddingTop() - transitionParams.deltaTop + transitionParams.deltaBottom - getBottomActionPadding() - dp(9);
-            final float appear = transitionParams.animateBottomActionText ? transitionParams.animateChangeProgress : 1.0f;
-            final float alpha = transitionParams.ignoreAlpha ? timeAlpha : getAlpha() * appear;
-            final float scale = lerp(0.6f, 1.0f, appear);
-            canvas.save();
-            canvas.translate((getParentWidth() - bottomActionText.getWidth()) / 2.0f, y + dp(4.5f) + dp(3.33f));
-            canvas.scale(scale, scale, getParentWidth() / 2.0f, dp(6.83f) - dp(4.5f) - dp(3.33f));
-            applyServiceShaderMatrix(getMeasuredWidth(), backgroundHeight, getX(), viewTop + y + dp(4.5f) + dp(3.33f));
-            final Paint backgroundPaint = getThemedPaint(Theme.key_paint_chatActionBackground);
-            int oldAlpha = backgroundPaint.getAlpha();
-            backgroundPaint.setPathEffect(bottomActionTextPathEffect);
-            backgroundPaint.setAlpha((int) (oldAlpha * alpha));
-            canvas.drawPath(bottomActionTextPath, backgroundPaint);
-            backgroundPaint.setPathEffect(null);
-            backgroundPaint.setAlpha(oldAlpha);
-            if (hasGradientService()) {
-                final Paint darkenPaint = getThemedPaint(Theme.key_paint_chatActionBackgroundDarken);
-                oldAlpha = darkenPaint.getAlpha();
-                darkenPaint.setPathEffect(bottomActionTextPathEffect);
-                darkenPaint.setAlpha((int) (oldAlpha * alpha));
-                canvas.drawPath(bottomActionTextPath, darkenPaint);
-                darkenPaint.setPathEffect(null);
-                darkenPaint.setAlpha(oldAlpha);
-            }
-            canvas.restore();
-            canvas.save();
-            canvas.scale(scale, scale, getParentWidth() / 2.0f, y + dp(6.83f));
-            bottomActionText.draw(canvas, (getParentWidth() - bottomActionText.getWidth()) / 2.0f, y + dp(6.83f), getThemedColor(Theme.key_chat_serviceText), alpha);
-            canvas.restore();
-        }
+        // LoogriGram: the won/lost banner was drawn here.
 
         if (topicSeparator != null && (currentPosition == null || (currentPosition.flags & MessageObject.POSITION_FLAG_TOP) != 0 && (currentPosition.flags & MessageObject.POSITION_FLAG_LEFT) != 0)) {
             float alpha = transitionParams.ignoreAlpha ? timeAlpha : getAlpha();
@@ -27654,9 +27553,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         public boolean lastDrawingSmallImage;
         public int lastDrawnMonoforumPadding;
         public int lastDrawnStarsPriceTopPadding;
-        public int lastDrawnBottomActionPadding;
         public boolean lastDrawnStarsPriceText;
-        public boolean lastDrawnBottomActionText;
 
         public boolean lastIsPinned;
         private boolean animatePinned;
@@ -27774,9 +27671,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         public int animateStarsPriceTopPaddingFrom;
         public boolean animateStarsPriceTopPadding;
 
-        public boolean animateBottomActionText;
-        public int animateBottomActionPaddingFrom;
-        public boolean animateBottomActionPadding;
 
         public boolean lastDrawingLinkAbove;
         public boolean animateLinkAbove;
@@ -27930,9 +27824,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             lastDrawingSmallImage = isSmallImage;
             lastDrawnMonoforumPadding = topicSeparatorTopPadding;
             lastDrawnStarsPriceTopPadding = starsPriceTopPadding;
-            lastDrawnBottomActionPadding = bottomActionPadding;
             lastDrawnStarsPriceText = starsPriceText != null;
-            lastDrawnBottomActionText = bottomActionText != null;
             lastDrawingLinkPreviewHeight = linkPreviewHeight;
             lastDrawingLinkAbove = linkPreviewAbove;
             lastDrawingMediaAbove = captionAbove;
@@ -28199,19 +28091,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             animateStarsPriceText = false;
             if ((starsPriceText != null) != lastDrawnStarsPriceText) {
                 animateStarsPriceText = true;
-                changed = true;
-            }
-
-            animateBottomActionPadding = false;
-            if (bottomActionPadding != lastDrawnBottomActionPadding) {
-                animateBottomActionPaddingFrom = lastDrawnBottomActionPadding;
-                animateBottomActionPadding = true;
-                changed = true;
-            }
-
-            animateBottomActionText = false;
-            if ((bottomActionText != null) != lastDrawnBottomActionText) {
-                animateBottomActionText = true;
                 changed = true;
             }
 
@@ -28576,8 +28455,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             animateMonoforumPadding = false;
             animateStarsPriceTopPadding = false;
             animateStarsPriceText = false;
-            animateBottomActionText = false;
-            animateBottomActionPadding = false;
             needsStopClipping = false;
             animateLinkAbove = false;
             animateMediaAbove = false;

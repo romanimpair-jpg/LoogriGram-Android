@@ -716,9 +716,8 @@ public class MessagesController extends BaseController implements NotificationCe
     public HashSet<Long> whitelistedBots;
     public int[] starsGroupcallMessageLimits;
     public int starsGroupcallMessageAmountMax;
-    public long tonStakeddiceStakeAmountMin;
-    public long tonStakeddiceStakeAmountMax;
-    public long[] tonStakediceStakeSuggestedAmounts;
+    // LoogriGram: the smallest, largest and suggested TON stakes for a dice roll stood
+    // here. Nothing stakes, so the server's answer has no reader.
     public int[][] stargiftsCraftAttributesPermilles;
 
     private final SharedPreferences notificationsPreferences;
@@ -1808,9 +1807,6 @@ public class MessagesController extends BaseController implements NotificationCe
         starrefMaxCommissionPermille = mainPreferences.getInt("starrefMaxCommissionPermille", 400);
         botVerificationDescriptionLengthLimit = mainPreferences.getInt("botVerificationDescriptionLengthLimit", 70);
         paidReactionsPrivacyTime = mainPreferences.getLong("paidReactionsAnonymousTime", 0);
-        tonStakeddiceStakeAmountMin = mainPreferences.getLong("tonStakeddiceStakeAmountMin", 100000000L);
-        tonStakeddiceStakeAmountMax = mainPreferences.getLong("tonStakeddiceStakeAmountMax", 50000000000L);
-        tonStakediceStakeSuggestedAmounts = Arrays.stream(mainPreferences.getString("tonStakediceStakeSuggestedAmounts", "100000000,1000000000,2000000000,5000000000,10000000000,20000000000").split(",")).mapToLong(Long::parseLong).toArray();
         stargiftsCraftAttributesPermilles = Arrays.stream(mainPreferences.getString("stargiftsCraftAttributesPermilles", "90,,80,200,,70,190,460,,60,180,450,1000").split(",,"))
                 .map(r -> Arrays.stream(r.split(","))
                     .mapToInt(Integer::parseInt)
@@ -4922,42 +4918,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
-                case "ton_stakedice_stake_amount_min": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        final TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (tonStakeddiceStakeAmountMin != (long) num.value) {
-                            editor.putLong("tonStakeddiceStakeAmountMin", tonStakeddiceStakeAmountMin = (long) num.value);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "ton_stakedice_stake_amount_max": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        final TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (tonStakeddiceStakeAmountMax != (long) num.value) {
-                            editor.putLong("tonStakeddiceStakeAmountMax", tonStakeddiceStakeAmountMax = (long) num.value);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "ton_stakedice_stake_suggested_amounts": {
-                    if (value.value instanceof TLRPC.TL_jsonArray) {
-                        final TLRPC.TL_jsonArray arr = (TLRPC.TL_jsonArray) value.value;
-                        final long[] values = new long[arr.value.size()];
-                        for (int i = 0; i < arr.value.size(); ++i) {
-                            if (arr.value.get(i) instanceof TLRPC.TL_jsonNumber) {
-                                values[i] = (long) ((TLRPC.TL_jsonNumber) arr.value.get(i)).value;
-                            }
-                        }
-                        if (!Arrays.equals(values, tonStakediceStakeSuggestedAmounts)) {
-                            editor.putString("tonStakeddiceStakeSuggestedAmounts", Arrays.stream(tonStakediceStakeSuggestedAmounts = values).mapToObj(String::valueOf).collect(Collectors.joining(",")));
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
+                // LoogriGram: the three ton_stakedice_* config keys were read here.
                 case "stargifts_craft_attribute_permilles": {
                     if (value.value instanceof TLRPC.TL_jsonArray) {
                         final TLRPC.TL_jsonArray arr = (TLRPC.TL_jsonArray) value.value;
@@ -18705,8 +18666,8 @@ public class MessagesController extends BaseController implements NotificationCe
             } else if (baseUpdate instanceof TL_update.TL_updateGroupCallEncryptedMessage) {
                 GroupCallMessagesController.getInstance(currentAccount)
                     .processUpdate((TL_update.TL_updateGroupCallEncryptedMessage) baseUpdate);
-            } else if (baseUpdate instanceof TL_update.TL_updateEmojiGameInfo) {
-                stakeDiceInfo = ((TL_update.TL_updateEmojiGameInfo) baseUpdate).info;
+            // LoogriGram: TL_updateEmojiGameInfo carried the terms of the staked-dice
+            // game - the hash to roll against and the stakes on offer. Nothing stakes.
             } else if (baseUpdate instanceof TL_update.TL_updateReadMessagesContents) {
                 TL_update.TL_updateReadMessagesContents update = (TL_update.TL_updateReadMessagesContents) baseUpdate;
                 markContentAsReadMessagesDate = update.date;
@@ -25104,29 +25065,8 @@ public class MessagesController extends BaseController implements NotificationCe
         emailSuggestionWasShown = true;
     }
 
-    private ArrayList<Utilities.Callback<Boolean>> loadingStakeDiceInfo;
-    public TLRPC.EmojiGameInfo stakeDiceInfo;
-    public void loadStakeDiceInfo(Utilities.Callback<Boolean> isAvailable) {
-        if (stakeDiceInfo != null) {
-            isAvailable.run(stakeDiceInfo instanceof TLRPC.TL_emojiGameDiceInfo);
-            return;
-        }
-        if (loadingStakeDiceInfo != null) {
-            loadingStakeDiceInfo.add(isAvailable);
-            return;
-        }
-        loadingStakeDiceInfo = new ArrayList<>();
-        loadingStakeDiceInfo.add(isAvailable);
-        getConnectionsManager().sendRequestTyped(new TLRPC.TL_messages_getEmojiGameInfo(), AndroidUtilities::runOnUIThread, (res, err) -> {
-            if (res != null) {
-                stakeDiceInfo = res;
-            }
-            for (Utilities.Callback<Boolean> callback : loadingStakeDiceInfo) {
-                callback.run(stakeDiceInfo instanceof TLRPC.TL_emojiGameDiceInfo);
-            }
-            loadingStakeDiceInfo = null;
-        });
-    }
+    // LoogriGram: loadStakeDiceInfo and the stakeDiceInfo it cached stood here. They
+    // asked the server whether dice could be rolled for TON, and on what terms.
 
 
     public boolean isWebBrowserUseCustomTabs() {

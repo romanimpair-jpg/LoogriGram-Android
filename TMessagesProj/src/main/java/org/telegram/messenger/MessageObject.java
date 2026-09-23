@@ -11001,49 +11001,10 @@ public class MessageObject {
         return getMedia(messageOwner) instanceof TLRPC.TL_messageMediaDice;
     }
 
-    public boolean isStakeableDice() {
-        final TLRPC.TL_messageMediaDice mediaDice = getMedia(messageOwner, TLRPC.TL_messageMediaDice.class);
-        return mediaDice != null && TextUtils.equals("\uD83C\uDFB2", mediaDice.emoticon);
-    }
-
-    public boolean isStakedDice() {
-        final TLRPC.MessageMedia media = getMedia(messageOwner);
-        if (media instanceof TLRPC.TL_messageMediaDice)
-            return ((TLRPC.TL_messageMediaDice) media).game_outcome != null;
-        return false;
-    }
-
-    public static long getStakedDiceWinAmount(TLRPC.TL_messageMediaDice media) {
-        if (media.game_outcome != null) {
-            if (media.game_outcome.ton_amount > 0) {
-                return media.game_outcome.ton_amount;
-            } else {
-                return -media.game_outcome.stake_ton_amount;
-            }
-        }
-        return 0;
-    }
-
-    public long getStakedDiceWinAmount() {
-        final TLRPC.MessageMedia media = getMedia(messageOwner);
-        if (media instanceof TLRPC.TL_messageMediaDice && ((TLRPC.TL_messageMediaDice) media).game_outcome != null) {
-            final TLRPC.TL_messages_emojiGameOutcome outcome = ((TLRPC.TL_messageMediaDice) media).game_outcome;
-            if (outcome.ton_amount > 0) {
-                return outcome.ton_amount;
-            } else {
-                return -outcome.stake_ton_amount;
-            }
-        }
-        return 0;
-    }
-
-    public long getStakedDiceAmount() {
-        final TLRPC.MessageMedia media = getMedia(messageOwner);
-        if (media instanceof TLRPC.TL_messageMediaDice && ((TLRPC.TL_messageMediaDice) media).game_outcome != null) {
-            return ((TLRPC.TL_messageMediaDice) media).game_outcome.stake_ton_amount;
-        }
-        return 0;
-    }
+    // LoogriGram: isStakeableDice, isStakedDice, both getStakedDiceWinAmount forms and
+    // getStakedDiceAmount stood here. A dice can be rolled with TON staked on it; these
+    // said whether one could be, whether one was, and for how much. Nothing stakes and
+    // nothing draws a stake.
 
     public String getDiceEmoji() {
         if (!isDice()) {

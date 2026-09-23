@@ -40462,24 +40462,10 @@ public class ChatActivity extends BaseFragment implements
                     });
                 };
 
-                if (message.isStakeableDice()) {
-                    getMessagesController().loadStakeDiceInfo(available -> {
-                        if (available) {
-                            StakedDiceSheet.showStakeToast(ChatActivity.this, message.getDiceValue(), message.getStakedDiceAmount(), stake -> {
-                                if (checkSlowModeAlert()) {
-                                    SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(message.getDiceEmoji(), dialog_id, replyingMessageObject, getThreadMessage(), null, false, null, null, null, true, 0, 0, null, false);
-                                    params.sendMessageChatArguments = getMessageChatSendParams();
-                                    params.dice_stake = stake;
-                                    getSendMessagesHelper().sendMessage(params);
-                                }
-                            });
-                        } else {
-                            toastForNotStackedDice.run();
-                        }
-                    });
-                } else {
-                    toastForNotStackedDice.run();
-                }
+                // LoogriGram: tapping a dice offered to roll another one with TON staked
+                // on the outcome, through StakedDiceSheet. It is gambling with money; the
+                // plain "roll one too" toast is all that is offered.
+                toastForNotStackedDice.run();
             } else if (message.isAnimatedEmoji() && (!message.isAnimatedAnimatedEmoji() || emojiAnimationsOverlay.supports(MessageObject.findAnimatedEmojiEmoticon(message.getDocument())) && currentUser != null) || message.isPremiumSticker()) {
                 restartSticker(cell);
                 emojiAnimationsOverlay.onTapItem(cell, ChatActivity.this, true);

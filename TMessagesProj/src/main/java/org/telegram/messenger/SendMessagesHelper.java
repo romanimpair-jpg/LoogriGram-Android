@@ -4487,12 +4487,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         final TLRPC.TL_messageMediaDice mediaDice = new TLRPC.TL_messageMediaDice();
                         mediaDice.emoticon = message;
                         mediaDice.value = -1;
-                        if (sendMessageParams.dice_stake > 0) {
-                            mediaDice.game_outcome = new TLRPC.TL_messages_emojiGameOutcome();
-                            mediaDice.game_outcome.seed = new byte[] {};
-                            mediaDice.game_outcome.ton_amount = 0;
-                            mediaDice.game_outcome.stake_ton_amount = sendMessageParams.dice_stake;
-                        }
+                        // LoogriGram: a stake put a pending game_outcome on the local copy.
                         newMsg.media = mediaDice;
                         type = MEDIA_TYPE_DICE;
                         caption = "";
@@ -5601,21 +5596,11 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                             inputMedia = inputMediaPoll;
                         }
                     } else if (type == MEDIA_TYPE_DICE) {
-                        if (sendMessageParams.dice_stake > 0) {
-                            final TLRPC.TL_inputMediaStakeDice inputMediaStakeDice = new TLRPC.TL_inputMediaStakeDice();
-                            inputMediaStakeDice.ton_amount = sendMessageParams.dice_stake;
-                            inputMediaStakeDice.client_seed = Utilities.random.generateSeed(32);
-                            final TLRPC.EmojiGameInfo info = getMessagesController().stakeDiceInfo;
-                            if (!(info instanceof TLRPC.TL_emojiGameDiceInfo)) {
-                                return;
-                            }
-                            inputMediaStakeDice.game_hash = ((TLRPC.TL_emojiGameDiceInfo) info).game_hash;
-                            inputMedia = inputMediaStakeDice;
-                        } else {
-                            TLRPC.TL_inputMediaDice inputMediaDice = new TLRPC.TL_inputMediaDice();
-                            inputMediaDice.emoticon = message;
-                            inputMedia = inputMediaDice;
-                        }
+                        // LoogriGram: a staked roll went as TL_inputMediaStakeDice, carrying
+                        // the TON put on it and the server's game hash. A dice is just a dice.
+                        TLRPC.TL_inputMediaDice inputMediaDice = new TLRPC.TL_inputMediaDice();
+                        inputMediaDice.emoticon = message;
+                        inputMedia = inputMediaDice;
                     } else if (type == MEDIA_TYPE_STORY) {
                         TLRPC.TL_inputMediaStory inputMediaStory = new TLRPC.TL_inputMediaStory();
                         inputMediaStory.id = sendingStory.id;
@@ -8291,8 +8276,8 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 TLRPC.TL_messageMediaDice mediaDiceNew = (TLRPC.TL_messageMediaDice) sentMessage.media;
                 mediaDice.value = mediaDiceNew.value;
                 mediaDice.flags = mediaDiceNew.flags;
-                mediaDice.game_outcome = mediaDiceNew.game_outcome;
-                StarsController.getInstance(currentAccount, true).invalidateBalance();
+                // LoogriGram: the roll's outcome was copied back and the TON balance
+                // refreshed off it. Nothing was staked, so there is no outcome to take.
             } else if (newMsg.media.photo != null) {
                 strippedOld = FileLoader.getClosestPhotoSizeWithSize(newMsg.media.photo.sizes, 40);
                 if (sentMessage != null && sentMessage.media != null && sentMessage.media.photo != null) {
@@ -11919,7 +11904,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         public MessageSuggestionParams suggestionParams;
         public boolean isLivePhoto;
         public long livePhotoTimestamp;
-        public long dice_stake;
         public long ephemeralReceiverBotId;
         public TL_iv.RichMessage richMessage;
         public ArrayList<TLRPC.InputUser> richMessageInputUsers;
