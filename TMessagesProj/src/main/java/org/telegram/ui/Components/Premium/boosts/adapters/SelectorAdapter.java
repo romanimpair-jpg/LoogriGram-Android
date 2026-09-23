@@ -372,14 +372,8 @@ public class SelectorAdapter extends AdapterWithDiffUtils {
             return item;
         }
 
-        public static Item asCustomUser(int id, Drawable icon, CharSequence title, CharSequence subtitle) {
-            Item item = new Item(VIEW_TYPE_USER, true);
-            item.id = id;
-            item.icon = icon;
-            item.text = title;
-            item.subtext = subtitle;
-            return item;
-        }
+        // LoogriGram: asCustomUser stood here. Its one caller was the "Export to TON"
+        // row at the top of the collectible transfer picker.
 
         public static Item asUser(TLRPC.User user, boolean checked) {
             Item item = new Item(VIEW_TYPE_USER, true);
@@ -435,14 +429,10 @@ public class SelectorAdapter extends AdapterWithDiffUtils {
             return item;
         }
 
-        public static Item asChat(TLRPC.Chat chat, boolean checked) {
-            Item item = new Item(VIEW_TYPE_USER, true);
-            item.chat = chat;
-            item.user = null;
-            item.peer = null;
-            item.checked = checked;
-            return item;
-        }
+        // LoogriGram: asChat stood here, and only the transfer picker built one - it was
+        // the only mode that let a channel be chosen. Item.chat and the cell branch that
+        // draws one stay: they are the adapter's own shape, and UserSelectorBottomSheet
+        // still reads the field.
 
         public long getDialogId() {
             if (user != null) return user.id;

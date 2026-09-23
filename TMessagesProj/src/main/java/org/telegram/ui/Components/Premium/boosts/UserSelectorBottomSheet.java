@@ -1,7 +1,6 @@
 package org.telegram.ui.Components.Premium.boosts;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
-import static org.telegram.messenger.LocaleController.formatPluralString;
 import static org.telegram.messenger.LocaleController.formatPluralStringComma;
 import static org.telegram.messenger.LocaleController.getString;
 
@@ -12,7 +11,6 @@ import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.SpannableStringBuilder;
@@ -35,7 +33,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BirthdayController;
-import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.LocaleController;
@@ -62,7 +59,6 @@ import org.telegram.ui.Components.BottomSheetWithRecyclerListView;
 import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.CheckBox2;
-import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.ItemOptions;
 import org.telegram.ui.Components.LayoutHelper;
@@ -96,7 +92,8 @@ public class UserSelectorBottomSheet extends BottomSheetWithRecyclerListView imp
     public static final int TYPE_PREMIUM = 0;
     public static final int TYPE_STARS = 1;
     public static final int TYPE_STAR_GIFT = 2;
-    public static final int TYPE_TRANSFER = 3;
+    // LoogriGram: TYPE_TRANSFER was 3. Only handing a collectible to someone else
+    // opened this sheet in that mode, and that is gone with its TON export option.
     public static final int TYPE_CALL = 4;
 
     private static UserSelectorBottomSheet instance;
@@ -248,7 +245,7 @@ public class UserSelectorBottomSheet extends BottomSheetWithRecyclerListView imp
     }
 
     private void checkEditTextHint() {
-        if (!selectedIds.isEmpty() || type == TYPE_STARS || type == TYPE_STAR_GIFT || type == TYPE_TRANSFER || type == TYPE_CALL) {
+        if (!selectedIds.isEmpty() || type == TYPE_STARS || type == TYPE_STAR_GIFT || type == TYPE_CALL) {
             if (!isHintSearchText) {
                 isHintSearchText = true;
                 AndroidUtilities.runOnUIThread(() -> searchField.setHintText(getString(R.string.Search), true), 10);
@@ -334,7 +331,7 @@ public class UserSelectorBottomSheet extends BottomSheetWithRecyclerListView imp
         };
         searchField.setBackgroundColor(getThemedColor(Theme.key_dialogBackground));
         searchField.setOnSearchTextChange(this::onSearch);
-        searchField.setHintText(getString(!selectedIds.isEmpty() || type == TYPE_STARS || type == TYPE_STAR_GIFT || type == TYPE_TRANSFER || type == TYPE_CALL ? R.string.Search : R.string.GiftPremiumUsersSearchHint), false);
+        searchField.setHintText(getString(!selectedIds.isEmpty() || type == TYPE_STARS || type == TYPE_STAR_GIFT || type == TYPE_CALL ? R.string.Search : R.string.GiftPremiumUsersSearchHint), false);
 
         sectionCell = new View(getContext()) {
             @Override
@@ -425,20 +422,9 @@ public class UserSelectorBottomSheet extends BottomSheetWithRecyclerListView imp
             if (view instanceof SelectorUserCell) {
                 TLRPC.User user = ((SelectorUserCell) view).getUser();
                 TLRPC.Chat chat = ((SelectorUserCell) view).getChat();
-                if (user == null && chat == null && type == TYPE_TRANSFER) {
-                    if (onUserSelectedListener != null) {
-                        onUserSelectedListener.run(-99L);
-                    }
-                    return;
-                }
                 if (user == null && chat == null) return;
                 long id = user != null ? user.id : -chat.id;
-                if (type == TYPE_TRANSFER) {
-                    if (onUserSelectedListener != null) {
-                        onUserSelectedListener.run(id);
-                    }
-                    return;
-                } else if (type == TYPE_STARS) {
+                if (type == TYPE_STARS) {
                     if (searchField != null) {
                         AndroidUtilities.hideKeyboard(searchField.getEditText());
                     }
@@ -852,7 +838,6 @@ public class UserSelectorBottomSheet extends BottomSheetWithRecyclerListView imp
         return h;
     }
 
-    private Drawable tonIcon;
 
     @SuppressLint("NotifyDataSetChanged")
     public void updateItems(boolean animated, boolean notify) {
@@ -872,27 +857,12 @@ public class UserSelectorBottomSheet extends BottomSheetWithRecyclerListView imp
                     if (excludeUserIds.contains(user.id)) continue;
                     items.add(decorate(Item.asUser(user, selectedIds.contains(did))));
                 } else if (peer instanceof TLRPC.Chat) {
-                    final TLRPC.Chat chat = (TLRPC.Chat) peer;
-                    if (type != TYPE_TRANSFER) continue;
-                    if (!ChatObject.isChannelAndNotMegaGroup(chat)) continue;
-                    did = -chat.id;
-                    h += dp(56);
-                    if (excludeUserIds.contains(-chat.id)) continue;
-                    items.add(Item.asChat(chat, selectedIds.contains(did)));
+                    // LoogriGram: only the transfer picker listed channels here.
+                    continue;
                 }
             }
         } else {
-            if (includeTonOption && type == TYPE_TRANSFER) {
-                if (tonIcon == null) {
-                    final CombinedDrawable icon = new CombinedDrawable(
-                        Theme.createCircleDrawable(dp(46), Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider)),
-                        getContext().getResources().getDrawable(R.drawable.mini_gram_72).mutate()
-                    );
-                    icon.setIconSize(dp(24), dp(24));
-                    tonIcon = icon;
-                }
-                items.add(Item.asCustomUser(2, tonIcon, getString(R.string.Gift2ExportTONTitle), tonDays > 0 ? formatPluralString("Gift2ExportTONUnlocksIn", tonDays) : ""));
-            }
+            // LoogriGram: an "Export to TON" row stood at the top of the transfer picker.
             final TLRPC.UserFull userFull = MessagesController.getInstance(currentAccount).getUserFull(UserConfig.getInstance(currentAccount).getClientUserId());
             if (userFull == null) {
                 MessagesController.getInstance(currentAccount).loadFullUser(UserConfig.getInstance(currentAccount).getCurrentUser(), 0, true);
@@ -1000,9 +970,6 @@ public class UserSelectorBottomSheet extends BottomSheetWithRecyclerListView imp
     }
 
     public View.OnClickListener openOptions(TLRPC.User user) {
-        if (type == TYPE_TRANSFER) {
-            return null;
-        }
         return (View view) -> {
             ItemOptions.makeOptions(container, resourcesProvider, (View) view.getParent())
                 .add(R.drawable.profile_discuss, LocaleController.getString(R.string.SendMessage), () -> {
@@ -1094,13 +1061,7 @@ public class UserSelectorBottomSheet extends BottomSheetWithRecyclerListView imp
         return this;
     }
 
-    private boolean includeTonOption;
-    private int tonDays;
-    public void addTONOption(int days) {
-        includeTonOption = true;
-        tonDays = days;
-        updateItems(false, true);
-    }
+    // LoogriGram: addTONOption stood here, with the flag and the countdown it set.
 
 
     @Override
