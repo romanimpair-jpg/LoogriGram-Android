@@ -17,8 +17,10 @@ and quiet about overrides and common names like add() or apply().
 
     python loogrigram-tools/check_swallowed.py [<range>]
 
-<range> defaults to origin/dev..HEAD. Run it before dispatching a compile; it
-takes a few seconds and costs nothing.
+<range> defaults to origin/dev..HEAD. A bare revision (HEAD) checks the
+uncommitted working tree against it, which is the one to run before
+committing. Run it before dispatching a compile; it takes a few seconds and
+costs nothing.
 """
 import os
 import re
@@ -28,7 +30,9 @@ import sys
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = 'TMessagesProj/src/main/java'
 RANGE = sys.argv[1] if len(sys.argv) > 1 else 'origin/dev..HEAD'
-REV = RANGE.split('..')[-1] or 'HEAD'      # grep that revision, not the worktree
+# A range greps its end revision; a bare revision greps the working tree,
+# because that is what `git diff <rev>` compared it with.
+REV = (RANGE.split('..')[-1] or 'HEAD') if '..' in RANGE else None
 
 DECL = re.compile(
     r'^\s*(?:@\w+\s+)*(?:public|private|protected)\s+'
@@ -44,10 +48,15 @@ def git(*args):
                           capture_output=True).stdout.decode('utf-8', 'replace')
 
 
+def grep(pattern):
+    rev = [REV] if REV else []
+    return git('grep', '-nE', pattern, *rev, '--', SRC).splitlines()
+
+
 def body(grep_line):
-    # git grep with a rev prints  rev:path:lineno:text
-    parts = grep_line.split(':', 3)
-    return parts[-1] if len(parts) == 4 else grep_line
+    # git grep prints  rev:path:lineno:text  with a rev, path:lineno:text without
+    parts = grep_line.split(':', 3 if REV else 2)
+    return parts[-1] if len(parts) == (4 if REV else 3) else grep_line
 
 
 def main():
@@ -66,11 +75,10 @@ def main():
     orphans = []
     for name in candidates:
         pat = r'\b%s\s*\(' % re.escape(name)
-        decls = git('grep', '-nE', r'(public|private|protected|default).*' + pat,
-                    REV, '--', SRC).splitlines()
+        decls = grep(r'(public|private|protected|default).*' + pat)
         if any(DECL.match(body(l)) for l in decls):
             continue                           # still declared somewhere
-        calls = [l for l in git('grep', '-nE', pat, REV, '--', SRC).splitlines()
+        calls = [l for l in grep(pat)
                  if l.strip() and not body(l).lstrip().startswith('//')]
         if calls:
             orphans.append((name, calls))
