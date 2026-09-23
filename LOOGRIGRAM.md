@@ -17,8 +17,8 @@ depends on.
 | Part | State |
 |---|---|
 | Fork, CI, degoogling | Done. No Google bytecode in the APK, verified in the dex |
-| Installed on the phone | **Yes.** `gf20af361`, installed 2026-09-22 over `adb` (`adb install -r` succeeded, so the key matched); launches clean |
-| Pending build | `gaf5d70a5`, dispatched 2026-09-22 ([run 35796008121](https://github.com/romanimpair-jpg/LoogriGram-Android/actions/runs/35796008121)) — 22 commits past the installed one, 26,440 lines lighter. Every commit in it passed `compile`. **Not yet known to succeed** |
+| Installed on the phone | **Yes.** `gf20af361`, installed 2026-09-22 over `adb` (`adb install -r` succeeded, so the key matched); launches clean. `gaf5d70a5` built green on 2026-09-22 but was never installed |
+| Pending build | `g1ec92ae0`, dispatched 2026-09-23 ([run 35843410240](https://github.com/romanimpair-jpg/LoogriGram-Android/actions/runs/35843410240)) — 35 commits past the installed one. HEAD compiles; **the full build is not yet known to succeed** |
 | App name | Done — launcher, in-app strings, and the two wordmark screens |
 | Phone contacts | **Never touched.** Permissions, account and sync adapter all gone |
 | Updater | Ours, from this repo's releases. Checks on every cold start, then hourly; manual row in Settings (2026-09-21). The installed `gf20af361` is the first build with that behaviour — **its automatic check is still untested**, it needs a later release to find |
@@ -26,8 +26,11 @@ depends on.
 | Money messages | Held in history, never drawn — desktop's hidden-content rule. The chat list no longer rises for one |
 | Paid messages | **Done** (2026-09-21/22): users who charge are locked, nothing ever pays, nothing charges. The price-setting half went with the privacy option, the group permission and a live's price per comment |
 | Paid media, live comments | **Gone** (2026-09-22): no price on a photo or album, no paid or highlighted live comment, no Star donations to a live |
-| Paid reactions | **Gone** (2026-09-22): the star is not offered among the reactions, and its sheet and flying-star overlay are deleted. Left: the drawing of one that *arrives*, and the now-uncalled bookkeeping in `StarsController` |
-| Gifts | Sending, auctions, selling, buying and crafting all **deleted** (2026-09-22). Receiving is untouched. Left: the buy-a-collectible tab in `PeerColorActivity`, which still holds `ResaleGiftsFragment` |
+| Paid reactions | **Gone** (2026-09-22/23). The star is not offered, its sheet and flying-star overlay are deleted, the bookkeeping that tracked one of ours in flight is gone, and one that *arrives* is no longer drawn — no button is built for it, and the particle halo that was the whole of the reaction row's overlay pass went with it |
+| Gifts | Sending, auctions, selling, buying, crafting, the buy-a-collectible tab, transfers and the TON export all **deleted** (2026-09-22/23). Nothing is paid for a gift and nothing is paid *by* one: no converting one back into Stars, no paying to erase its provenance, and an upgrade only when the sender already paid for it. **Receiving is untouched**, and the gift sheet holds no money surface at all |
+| Suggested posts | **Free only** (2026-09-23). Suggesting a post to a channel stays — it is a publishing time and nothing else, upstream's own "Offer for free" case. The price, the Stars/TON tabs, the balance, the accept dialog's payment and commission paragraphs and the "Edit Price" menu row are gone |
+| Staked dice | **Gone** (2026-09-23). A 🎲 could be rolled with TON staked on it; `StakedDiceSheet` and the won/lost banner are deleted. Plain dice and the slot machine are untouched |
+| Paid search | **Gone** (2026-09-23). Global post search stays free-with-a-daily-quota; the "Search for N Stars" button past the limit is a countdown now |
 | Location | **Gone** (2026-09-22): the map screens are deleted, every received location opens in a maps app, and the weather sticker went with them |
 | Photo/video viewer | **Fixed** 2026-09-20; was our own null dereference, see the traps |
 | Build warnings | **None of ours are left.** Native, CMake, Gradle, Kotlin and CI fixed in `d6b0890c`/`f2f12360`; both AAPT sets fixed 2026-09-22 (`663ec903`, `77673c28`). What remains is javac's two notes, which are upstream's and third-party's — see "The javac notes are not ours" |
@@ -54,54 +57,49 @@ The installed APK: ~44.5 MB, `lib/arm64-v8a/libtmessages.49.so` only, signed
 fingerprint is how to confirm a later build carries the same key - and it must,
 because Android will refuse an update signed with any other.
 
-### Start here next session (written 2026-09-22, late)
+### Start here next session (written 2026-09-23)
 
-1. **Did `gaf5d70a5` build?** The user reports back; don't poll. Every commit
-   in it passed `compile`, and nothing in it touches `jni/`, so a failure
-   would be packaging or resources rather than native.
-2. **Look at the three screens this session rebuilt.** None of it has been
-   seen running - `compile` type-checks, it does not draw:
-   - the **gift sheet** (`StarGiftSheet`): open a gift you were given. Its
-     pages animate between info, upgrade and wear, and crafting's two pages
-     were cut out of that machine; check the sheet opens on the right page,
-     the height animates cleanly, and the action row reads Transfer / Wear /
-     Share, with Share where Sell used to be.
-   - the **reactions picker**: the star must not appear in it, and the other
-     reactions must still send.
-   - the **profile colour screen** (`PeerColorActivity`): its collectible
-     tabs still list gifts you own; only buying is meant to be gone, and the
-     buy tab is still there until the next cut.
-3. **Test the updater, for real this time.** `gf20af361` is the first build
-   that checks on every cold start. When `gaf5d70a5` is published, a cold
-   start of the installed app should show the sixth tab ("Update?"), then the
-   percentage, then "Install". Also try Settings → "Check for updates" (bottom
-   of the help section, the build's tag underneath): with nothing newer it says
-   "LoogriGram is up to date (g…)". After installing, the new build must not
-   offer itself. The phone is reachable over USB:
-   `C:\Users\Loogris\platform-tools\adb.exe` (not on PATH), package
-   `com.loogrimedia.loogrigram`.
-4. **Check the paid-message lock on the phone** (needs a user who charges per
-   message - any account can set a price on itself in official Telegram):
-   their chat shows "X only accepts paid messages, which LoogriGram doesn't
-   send." instead of a compose field; their row is padlocked in the share and
-   forward pickers and a tap there says the same line; a story reply to them
-   is locked too. A group that charges must still open and read normally, and
-   a send there should end in the same line as a toast.
-5. Then continue the money removal where it stopped - see "Remaining work".
+1. **Did `g1ec92ae0` build?** The user reports back; don't poll. It is 35
+   commits past the installed `gf20af361` and the first full build since
+   2026-09-22. HEAD compiles - verified by reading the run's `conclusion`, not
+   a watch command's exit code, and see trap 0d for why that distinction cost
+   half a day.
+2. **Install it and look at the three screens this session rewrote**, none of
+   which has been seen running:
+   - **`PeerColorActivity`** (profile colour / reply colour): it lost its tab
+     row entirely - with resale gone only "My Gifts" was left, and a one-tab
+     row is pointless - and gained back upstream's plain "Use a gift" header,
+     whose cell, bind case and string were all still present. The screen has a
+     pager and cannot be checked by compiling.
+   - **`StarGiftSheet`'s action row**: two buttons now, Wear and Share, where
+     there were three. Open a gift you were given.
+   - **The gift upgrade page**: it should appear *only* when the sender
+     prepaid the upgrade, and the button should read "Upgrade for Free" and
+     then Confirm. If a gift whose upgrade is not paid for still shows the
+     button, the condition at both call sites is wrong.
+3. **Then continue the money removal** - see "Remaining work". The next thing
+   is the Stars wallet itself, and it is now much less tangled: eight
+   `StarsNeededSheet` call sites remain, seven of them inside `StarsController`
+   (bot payments, Stars subscriptions, buying a gift, the Stars deep link),
+   one in `StarsIntroActivity`, plus one TON site in `SendMessagesHelper`.
+   `StarGiftSheet` has none.
 
-Unverified from 2026-09-21 (ads and money-row removal), since a compile cannot
-see layout:
+Still unverified from earlier sessions, since a compile cannot see layout:
    - chat list: a gift or payment arriving must not move the chat to the top
      or blank its preview; the unread badge must still count it and clear;
    - opening a channel: scrolling to the newest message, the jump-to-bottom
-     button, and new messages arriving while open (`processNewMessages` lost
-     all its ad placement);
+     button, and new messages arriving while open;
    - message bubbles: link previews with photos, the side share/go-to button's
      position, name tap highlight, time placement;
    - global search results list, and "show more" there;
-   - reporting a message or chat (the report sheet lost its ad mode);
+   - reporting a message or chat;
    - Settings and your own profile no longer list Premium, Stars, TON,
-     Business or Send a Gift; a bot you own has no balance or affiliate rows.
+     Business or Send a Gift; a bot you own has no balance or affiliate rows;
+   - the paid-message lock (needs a user who charges per message): their chat
+     shows "X only accepts paid messages, which LoogriGram doesn't send."
+     instead of a compose field, and their row is padlocked in the share and
+     forward pickers;
+   - the updater's automatic check, which has still never found a release.
 
 ---
 
@@ -117,6 +115,10 @@ see layout:
 - Every deviation carries a `LoogriGram:` comment, so
   `grep -rn "LoogriGram:" TMessagesProj/src` lists the whole behavioural diff.
   Keep this up — it is the only practical audit of the fork.
+- `loogrigram-tools/` holds this side's checkers, as the desktop fork does.
+  `check_swallowed.py` lists declarations a commit range removed that nothing
+  declares any more but something still calls — the mistake trap 0d describes.
+  Run it before every compile; it takes seconds.
 
 The workflow must exist on the default branch for `workflow_dispatch` to work,
 which is why the CI commits are on `dev` as well as `patches`.
@@ -208,6 +210,30 @@ Each of these was hit here. Do not relearn them.
    failure sat between. Release builds log nothing by default (Telegram's own
    logging is off until Settings → tap the version ten times → Enable logs),
    so print rather than reason when a bug is reproducible.
+
+0d. **A brace-matched range deletion swallows its neighbours, and
+   `gh run watch --exit-status` will not tell you.** Cutting a feature usually
+   means deleting one contiguous range. Checking that the range's braces
+   balance is not enough: an unrelated method sitting inside it balances too,
+   so it goes with the cut. On 2026-09-23 the gift-transfer deletion (618
+   lines) took `presentFragment` and both `getInputStarGift` forms with it,
+   leaving thirteen call sites pointing at nothing.
+
+   That would have been a four-minute fix, except that the next four compiles
+   were read off `gh run watch --exit-status`, **which exits 0 for a failed
+   run**. Four more commits were built on a tree that did not compile. Read the
+   run's own verdict, always:
+
+   ```
+   gh run view <id> --repo romanimpair-jpg/LoogriGram-Android      --json conclusion --jq .conclusion
+   gh run view <id> --repo ... --log-failed | grep "error:"
+   ```
+
+   `loogrigram-tools/check_swallowed.py` now catches the first half locally, in
+   seconds: it lists every declaration a commit range removed that has no
+   declaration left anywhere but still has callers. Pointed at the bad range it
+   names `getInputStarGift` and its thirteen call sites. Run it before every
+   compile.
 
 1. **A dependency you remove may be supplying something unrelated.** Dropping
    `androidx.mediarouter` with Chromecast took `androidx.media` with it, which
@@ -618,30 +644,26 @@ out of a class that is being deleted or changing how a message renders.
 
 In rough order of how much is left behind:
 
-- **The buy-a-collectible tab in `PeerColorActivity`** - next, and the
-  smallest of what is left. Choosing a profile colour lists collectible gifts
-  per model in tabs; alongside the ones you own it lists ones **for sale**,
-  and buying one applies it. 50 references to `resaleGifts`,
-  `selectedResaleGift` and `selectedTabGift`, woven through that screen's tab
-  paging, plus its `buy()` and the `ResaleBuyTransferAlert` it opens. It is
-  the last thing holding `ResaleGiftsFragment` (2,293 lines) and that alert,
-  so both go with it. Risky only in that the screen has tabs and a pager and
-  cannot be checked by compiling.
-- **The Stars wallet.** `StarsIntroActivity` (5,344), `TONIntroActivity`
-  (855), `StarsController` (3,600) and `BotStarsController`, plus
-  `ExplainStarsSheet`, `BalanceCloud` and `StakedDiceSheet`. Two things fall
-  out when the controller goes: the paid-reaction bookkeeping inside it
-  (`sendPaidReaction`, `commitPaidReaction`, `undoPaidReaction`,
-  `PendingPaidReactions`), which nothing has called since paid reactions were
-  removed, and `ReactionsLayoutInBubble`'s drawing of a paid reaction that
-  *arrives* on a message - desktop dropped that display too.
-- **Transfers.** `onTransferClick` in the gift sheet moves a collectible to
-  someone else, with a TON export option beside it. Not a purchase, but it is
-  the same market, and the TON half is crypto.
-- **`MessageSuggestionOfferSheet`** and the priced suggested posts around it.
+- **The Stars wallet** - next, and much less tangled than it was.
+  `StarsIntroActivity` (5,109), `TONIntroActivity` (852), what is left of
+  `StarsController` (~2,900 after this session) and `BotStarsController`, plus
+  `ExplainStarsSheet` and `BalanceCloud`. Eight `StarsNeededSheet` call sites
+  remain: seven inside `StarsController` (bot payments via `openPaymentForm`,
+  Stars subscriptions via `subscribeTo`, `buyStarGift`, the Stars deep link),
+  one in `StarsIntroActivity` and one TON site in `SendMessagesHelper`.
+  `StarGiftSheet` has none.
+
+  **`StarsController` cannot simply go.** Its gift-list half - `GiftsList`,
+  `GiftsCollections`, `IGiftsList`, `sortedGifts`, `getStarGiftPreview` -
+  serves *receiving* gifts, which is untouched, and 43 files reference the
+  class. It wants the treatment `CurrencyFormat` got out of `BillingController`:
+  extract the list half first, then delete the wallet half around it. `MessageId`
+  is a second, smaller case of the same thing - it is a (dialog, message) pair
+  that merely lives in the class, and `MessagesController` keys its delivery
+  reports on it.
 - **Premium economy.** The three forced getters leave every branch behind them
   in place. Settings and the own-profile menu lost their rows on 2026-09-21,
-  and this session turned the gift entry points behind
+  and 2026-09-22 turned the gift entry points behind
   `premiumPurchaseBlocked()` into real deletions, but
   `PremiumPreviewFragment` (with its "no ads" row), `GiftPremiumBottomSheet`,
   `LimitReachedBottomSheet`'s boost-level lists and the tier cells are still
@@ -649,10 +671,8 @@ In rough order of how much is left behind:
 - **Chromecast.** Four files reduced to Google-free stubs so ~98 call sites in
   `MediaController`, `PhotoViewer` and `AudioPlayerAlert` keep compiling.
   Deleting them means editing those three files (4k, 24k and 6k lines).
-- **`if (true)` guards.** Both gift guards the earlier notes listed are now
-  deletions: `GiftSheet.show` and `SendGiftSheet.show` went with the sheets
-  themselves. `isMapsInstalled` went with the map screens. A plain
-  `grep -rn "if (true)"` still finds `MessagesController`
+- **`if (true)` guards.** Every guard the earlier notes listed is now a
+  deletion. A plain `grep -rn "if (true)"` still finds `MessagesController`
   (`addPhotoAtStart`), `AndroidUtilities`, `ChatActivity` and
   `DialogsSearchAdapter` - their origin was never checked; some may be
   upstream's own.
@@ -706,6 +726,25 @@ In rough order of how much is left behind:
   from GitHub's API and checked against their SHAs. `git fsck` is clean
   apart from one unreachable commit left by the original shallow fetch of
   upstream.
+
+- **Done on 2026-09-23, for the record** (13 commits, `8197b9f4..1ec92ae0`,
+  about 6,900 lines net): the buy-a-collectible tab and with it
+  `ResaleGiftsFragment` and `GiftViews.Tabs`; `ResaleBuyTransferAlert`,
+  `PaymentFormState` and `StarsController`'s resale form and purchase; the
+  paid-reaction bookkeeping and then the drawing of one that arrives, which
+  took the reaction row's whole overlay pass, the picker's star and seven
+  lottie and drawable resources; priced suggested posts, down to
+  `MessageSuggestionParams.amount` and `StarsController.isEnoughAmount`; gift
+  transfers and the TON export, taking `UserSelectorBottomSheet`'s
+  `TYPE_TRANSFER`; paying to erase a gift's provenance; paying to upgrade a
+  gift, keeping the case the sender paid for; converting a gift back into
+  Stars; staked dice, including `StakedDiceSheet` and the won/lost banner; the
+  pay-to-search button; and the keep-your-paid-subscriptions hint.
+
+  One repair on the way, and it is trap 0d: the transfer cut swallowed
+  `presentFragment` and both `getInputStarGift` forms, and four compiles were
+  misread as green before anyone noticed. `loogrigram-tools/check_swallowed.py`
+  exists because of it.
 
 ### Then
 
