@@ -5,8 +5,6 @@ import static org.telegram.messenger.LocaleController.formatPluralStringComma;
 import static org.telegram.messenger.LocaleController.formatString;
 import static org.telegram.messenger.LocaleController.getString;
 import static org.telegram.ui.DialogsActivity.highlightFoundQuote;
-
-import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 import android.text.SpannableStringBuilder;
@@ -21,17 +19,14 @@ import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
-
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
-import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
@@ -42,14 +37,8 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.DialogCell;
 import org.telegram.ui.ChatActivity;
 import org.telegram.ui.Components.Premium.PremiumPreviewBottomSheet;
-import org.telegram.ui.LaunchActivity;
-import org.telegram.ui.PhotoViewer;
 import org.telegram.ui.PremiumPreviewFragment;
-import org.telegram.ui.Stars.StarsController;
-import org.telegram.ui.Stars.StarsIntroActivity;
-import org.telegram.ui.Stories.DarkThemeResourceProvider;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.regex.Matcher;
@@ -94,7 +83,7 @@ public class PostsSearchContainer extends FrameLayout {
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 final boolean news = TextUtils.isEmpty(lastQuery);
                 if (!(news ? newsMessages: messages).isEmpty() && (!listView.canScrollVertically(1) || isLoadingVisible())) {
-                    load(false);
+                    load();
                 }
                 if (listView.scrollingByUser && !isEmpty && fragment != null && fragment.getParentActivity() != null) {
                     AndroidUtilities.hideKeyboard(fragment.getParentActivity().getCurrentFocus());
@@ -208,7 +197,8 @@ public class PostsSearchContainer extends FrameLayout {
         return false;
     }
 
-    private void load(final boolean pay) {
+    // LoogriGram: load(pay) sent allow_paid_stars to search past the free daily quota.
+    private void load() {
         if (loading) return;
 
         final boolean news = TextUtils.isEmpty(lastQuery);
@@ -250,14 +240,6 @@ public class PostsSearchContainer extends FrameLayout {
                 req.offset_peer = new TLRPC.TL_inputPeerEmpty();
             }
         }
-        final long paying;
-        if (pay && flood != null) {
-            req.flags |= 4;
-            req.allow_paid_stars = paying = flood.stars_amount;
-        } else {
-            paying = 0;
-        }
-
         reqId = connectionsManager.sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
             reqId = -1;
             loading = false;
@@ -313,28 +295,24 @@ public class PostsSearchContainer extends FrameLayout {
                 if (!messages.isEmpty() && !(news ? newsMessagesEndReached : endReached)) {
                     AndroidUtilities.runOnUIThread(() -> {
                         if (!(news ? newsMessages : messages).isEmpty() && (!listView.canScrollVertically(1) || isLoadingVisible())) {
-                            load(false);
+                            load();
                         }
                     });
                 }
 
-                if (pay && paying > 0 && !news) {
-                    BulletinFactory.of(fragment)
-                        .createSimpleBulletin(R.raw.stars_topup, AndroidUtilities.replaceTags(formatPluralStringComma("SearchPaidStars", (int) paying)))
-                        .show();
-                }
+                // LoogriGram: a "you spent N Stars on this search" toast followed.
 
             } else if (err != null && err.text.startsWith("FLOOD_WAIT_") && err.text.contains("_OR_STARS_")) {
                 final Pattern pattern = Pattern.compile("FLOOD_WAIT_(\\d+)_OR_STARS_(\\d+)");
                 final Matcher matcher = pattern.matcher(err.text);
                 if (matcher != null && matcher.matches()) {
+                    // LoogriGram: the error names a wait and a price to skip it. Only the
+                    // wait is kept - nothing offers the price.
                     final int waitSeconds = Integer.parseInt(matcher.group(1));
-                    final int starsPrice = Integer.parseInt(matcher.group(2));
 
                     if (flood != null) {
                         flood.flags |= 2;
                         flood.wait_till = connectionsManager.getCurrentTime() + waitSeconds;
-                        flood.stars_amount = starsPrice;
                     }
 
                     updateEmptyView();
@@ -343,18 +321,9 @@ public class PostsSearchContainer extends FrameLayout {
             } else if (err != null && "PREMIUM_ACCOUNT_REQUIRED".equalsIgnoreCase(err.text)) {
                 updateEmptyView();
                 listView.adapter.update(true);
-            } else if (err != null && "BALANCE_TOO_LOW".equalsIgnoreCase(err.text)) {
-                updateEmptyView();
-                listView.adapter.update(true);
-                StarsController.getInstance(currentAccount).getBalance(true, () -> {
-                    final Activity activity = AndroidUtilities.getActivity();
-                    final BaseFragment lastFragment = LaunchActivity.getSafeLastFragment();
-                    final Theme.ResourcesProvider resourcesProvider = PhotoViewer.getInstance().isVisible() || lastFragment != null && lastFragment.hasShownSheet() ? new DarkThemeResourceProvider() : (lastFragment != null ? lastFragment.getResourceProvider() : null);
-                    new StarsIntroActivity.StarsNeededSheet(activity, resourcesProvider, paying, StarsIntroActivity.StarsNeededSheet.TYPE_SEARCH, "", () -> {
-                        load(true);
-                    }, 0).show();
-                }, true);
             }
+            // LoogriGram: a BALANCE_TOO_LOW branch followed, offering to buy the Stars the
+            // search wanted. Nothing pays to search, so the server cannot answer that.
         }), ConnectionsManager.RequestFlagDoNotWaitFloodWait);
 
         updateEmptyView();
@@ -384,7 +353,7 @@ public class PostsSearchContainer extends FrameLayout {
             endReached = false;
             messages.clear();
 
-            load(false);
+            load();
         } else {
             loadFlood(q);
 
@@ -421,7 +390,7 @@ public class PostsSearchContainer extends FrameLayout {
             if (res instanceof TLRPC.SearchPostsFlood) {
                 flood = (TLRPC.SearchPostsFlood) res;
                 if (flood.query_is_free) {
-                    load(false);
+                    load();
                 } else {
                     updateEmptyView();
                     listView.adapter.update(true);
@@ -442,8 +411,7 @@ public class PostsSearchContainer extends FrameLayout {
             MessagesController.getGlobalMainSettings().edit()
                 .putInt("searchpostsnew", MessagesController.getGlobalMainSettings().getInt("searchpostsnew", 0) + 1)
                 .apply();
-
-            StarsController.getInstance(currentAccount).getBalance();
+            // LoogriGram: the Stars balance was loaded here, for the pay-to-search button.
         }
     }
 
@@ -502,7 +470,6 @@ public class PostsSearchContainer extends FrameLayout {
     private ColoredImageSpan searchSpan;
     private ColoredImageSpan arrowSpan;
     private ForegroundColorAlphaSpan colorSpan;
-    private ColoredImageSpan[] starSpan = new ColoredImageSpan[1];
     private final Runnable updateEmptyViewRunnable = this::updateEmptyView;
     private void updateEmptyView() {
         AndroidUtilities.cancelRunOnUIThread(updateEmptyViewRunnable);
@@ -541,14 +508,15 @@ public class PostsSearchContainer extends FrameLayout {
             final int m = (S - h * 3600) / 60;
             final int s = S - h * 3600 - m * 60;
 
-            emptyButton.setVisibility(View.VISIBLE);
-            emptyButton.setText(StarsFormat.replaceStars(formatPluralStringComma("SearchPostsButtonPay", (int) flood.stars_amount), 1.13f, starSpan), true);
-            emptyButton.setSubText(formatString(R.string.SearchPostsFreeSearchUnlocksIn, (h > 0 ? h + ":" : "") + (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s)), true);
-            emptyButton.subText.setHacks(false, true, true);
-            emptyButton.setOnClickListener(v -> {
-                emptyButton.setLoading(true);
-                load(true);
-            });
+            // LoogriGram: a "Search for N Stars" button stood here, with the countdown to
+            // the next free search as its subtext. There is only the countdown to wait out,
+            // so it moves into the text above where the button was.
+            emptyTextView.setText(TextUtils.concat(
+                formatPluralStringComma("SearchPostsLimitReachedText", flood.total_daily),
+                "\n\n",
+                formatString(R.string.SearchPostsFreeSearchUnlocksIn, (h > 0 ? h + ":" : "") + (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s))
+            ));
+            emptyButton.setVisibility(View.GONE);
             AndroidUtilities.runOnUIThread(updateEmptyViewRunnable, 1000);
 
             emptyUnderButtonTextView.setVisibility(View.GONE);
@@ -589,7 +557,7 @@ public class PostsSearchContainer extends FrameLayout {
             emptyButton.setSubText(null, true);
             emptyButton.setOnClickListener(v -> {
                 emptyButton.setLoading(true);
-                load(false);
+                load();
             });
             if (flood != null) {
                 emptyUnderButtonTextView.setVisibility(View.VISIBLE);
