@@ -4999,6 +4999,92 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         });
     }
 
+    // LoogriGram: presentFragment and both getInputStarGift forms sat inside the
+    // range the transfer cut removed and were swallowed with it. They are
+    // upstream's and unrelated to transfers; restored verbatim.
+
+    private void presentFragment(BaseFragment fragment) {
+        final BaseFragment lastFragment = LaunchActivity.getSafeLastFragment();
+        if (lastFragment == null) return;
+
+        final BaseFragment.BottomSheetParams params = new BaseFragment.BottomSheetParams();
+        params.transitionFromLeft = true;
+        params.allowNestedScroll = false;
+        lastFragment.showAsSheet(fragment, params);
+    }
+
+    public static TL_stars.InputSavedStarGift getInputStarGift(long dialogId, TL_stars.SavedStarGift g) {
+        if (!TextUtils.isEmpty(g.gift.slug)) {
+            final TL_stars.TL_inputSavedStarGiftSlug inputSavedStarGiftSlug = new TL_stars.TL_inputSavedStarGiftSlug();
+            inputSavedStarGiftSlug.slug = g.gift.slug;
+            return inputSavedStarGiftSlug;
+        }
+        final TL_stars.TL_inputSavedStarGiftChat stargift = new TL_stars.TL_inputSavedStarGiftChat();
+        stargift.peer = MessagesController.getInstance(UserConfig.selectedAccount).getInputPeer(dialogId);
+        stargift.saved_id = g.saved_id;
+        return stargift;
+    }
+
+    private TL_stars.InputSavedStarGift getInputStarGift() {
+        if (dialogId < 0) {
+            final TL_stars.TL_inputSavedStarGiftChat stargift = new TL_stars.TL_inputSavedStarGiftChat();
+            stargift.peer = MessagesController.getInstance(currentAccount).getInputPeer(dialogId);
+            if (messageObject != null && messageObject.messageOwner != null) {
+                if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionStarGift) {
+                    final TLRPC.TL_messageActionStarGift action = (TLRPC.TL_messageActionStarGift) messageObject.messageOwner.action;
+                    if ((action.flags & 4096) == 0) {
+                        return null;
+                    }
+                    stargift.saved_id = action.saved_id;
+                } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionStarGiftUnique) {
+                    final TLRPC.TL_messageActionStarGiftUnique action = (TLRPC.TL_messageActionStarGiftUnique) messageObject.messageOwner.action;
+                    if ((action.flags & 128) == 0) {
+                        return null;
+                    }
+                    stargift.saved_id = action.saved_id;
+                } else return null;
+            } else if (savedStarGift != null) {
+                if ((savedStarGift.flags & 2048) == 0) {
+                    return null;
+                }
+                stargift.saved_id = savedStarGift.saved_id;
+            } else if (slugStarGift != null && !TextUtils.isEmpty(slug)) {
+                final TL_stars.TL_inputSavedStarGiftSlug inputSavedStarGiftSlug = new TL_stars.TL_inputSavedStarGiftSlug();
+                inputSavedStarGiftSlug.slug = slug;
+                return inputSavedStarGiftSlug;
+            }
+            return stargift;
+        } else if (messageObject != null && messageObject.getDialogId() < 0 && messageObject.messageOwner != null && messageObject.messageOwner.action instanceof TLRPC.TL_messageActionStarGift && (messageObject.messageOwner.action.flags & 4096) != 0) {
+            final TLRPC.TL_messageActionStarGift action = (TLRPC.TL_messageActionStarGift) messageObject.messageOwner.action;
+            final TL_stars.TL_inputSavedStarGiftChat stargift = new TL_stars.TL_inputSavedStarGiftChat();
+            stargift.peer = MessagesController.getInstance(currentAccount).getInputPeer(messageObject.getDialogId());
+            stargift.saved_id = action.saved_id;
+            return stargift;
+        } else if (messageObject != null && messageObject.getDialogId() < 0 && messageObject.messageOwner != null && messageObject.messageOwner.action instanceof TLRPC.TL_messageActionStarGiftUnique && (messageObject.messageOwner.action.flags & 128) != 0) {
+            final TLRPC.TL_messageActionStarGiftUnique action = (TLRPC.TL_messageActionStarGiftUnique) messageObject.messageOwner.action;
+            final TL_stars.TL_inputSavedStarGiftChat stargift = new TL_stars.TL_inputSavedStarGiftChat();
+            stargift.peer = MessagesController.getInstance(currentAccount).getInputPeer(messageObject.getDialogId());
+            stargift.saved_id = action.saved_id;
+            return stargift;
+        } else {
+            final TL_stars.TL_inputSavedStarGiftUser stargift = new TL_stars.TL_inputSavedStarGiftUser();
+            if (messageObject != null) {
+                if (messageObject.messageOwner != null && messageObject.messageOwner.action instanceof TLRPC.TL_messageActionStarGift && (messageObject.messageOwner.action.flags & 32768) != 0) {
+                    stargift.msg_id = ((TLRPC.TL_messageActionStarGift) messageObject.messageOwner.action).gift_msg_id;
+                } else {
+                    stargift.msg_id = messageObject.getId();
+                }
+            } else if (savedStarGift != null) {
+                stargift.msg_id = savedStarGift.msg_id;
+            } else if (slugStarGift != null && !TextUtils.isEmpty(slug)) {
+                final TL_stars.TL_inputSavedStarGiftSlug inputSavedStarGiftSlug = new TL_stars.TL_inputSavedStarGiftSlug();
+                inputSavedStarGiftSlug.slug = slug;
+                return inputSavedStarGiftSlug;
+            }
+            return stargift;
+        }
+    }
+
     // LoogriGram: the whole transfer path stood here, 618 lines of it -
     // cantWithBlockchainGiftAlert, onTransferClick, openTransfer, both
     // openTransferAlert overloads, initTONTransfer and doTransfer. Handing a
