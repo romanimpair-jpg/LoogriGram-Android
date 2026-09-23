@@ -25,10 +25,7 @@ import androidx.core.util.Consumer;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
-import org.telegram.messenger.UserConfig;
-import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.BlurredRecyclerView;
@@ -39,7 +36,6 @@ import org.telegram.ui.Components.TextViewSwitcher;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.ArrayList;
 
 @SuppressWarnings("FieldCanBeLocal")
 public class DialogsEmptyCell extends LinearLayout {
@@ -75,8 +71,6 @@ public class DialogsEmptyCell extends LinearLayout {
 
     @RawRes
     private int prevIcon;
-
-    private final int currentAccount = UserConfig.selectedAccount;
 
     public DialogsEmptyCell(Context context) {
         super(context);
@@ -321,10 +315,6 @@ public class DialogsEmptyCell extends LinearLayout {
                 totalHeight -= ((BlurredRecyclerView) getParent()).blurTopPadding;
             }
 
-            ArrayList<TLRPC.RecentMeUrl> arrayList = MessagesController.getInstance(currentAccount).hintDialogs;
-            if (!arrayList.isEmpty()) {
-                totalHeight -= AndroidUtilities.dp(72) * arrayList.size() + arrayList.size() - 1 + AndroidUtilities.dp(12 + 38);
-            }
             super.onMeasure(
                 MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY),
                 MeasureSpec.makeMeasureSpec(totalHeight, MeasureSpec.EXACTLY));

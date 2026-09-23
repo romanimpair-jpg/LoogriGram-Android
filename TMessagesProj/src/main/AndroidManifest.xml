@@ -537,12 +537,6 @@
         <!-- LoogriGram: the updater's install session reports here. -->
         <receiver android:name=".LoogriGramInstallReceiver" android:exported="false" />
 
-        <receiver android:name=".RefererReceiver" android:exported="true" android:permission="android.permission.INSTALL_PACKAGES">
-            <intent-filter>
-                <action android:name="com.android.vending.INSTALL_REFERRER" />
-            </intent-filter>
-        </receiver>
-
         <receiver android:name=".WearReplyReceiver" android:enabled="true"/>
 
         <receiver android:name=".StopLiveLocationReceiver" android:enabled="true"/>

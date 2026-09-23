@@ -12,7 +12,6 @@ import static org.telegram.messenger.LocaleController.formatPluralString;
 import static org.telegram.messenger.LocaleController.getString;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
@@ -21,7 +20,6 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.SystemClock;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -54,7 +52,6 @@ import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.ArchiveHintCell;
 import org.telegram.ui.Cells.DialogCell;
-import org.telegram.ui.Cells.DialogMeUrlCell;
 import org.telegram.ui.Cells.DialogsEmptyCell;
 import org.telegram.ui.Cells.DialogsHintCell;
 import org.telegram.ui.Cells.DialogsRequestedEmptyCell;
@@ -89,9 +86,9 @@ import java.util.Objects;
 public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements DialogCell.DialogCellDelegate {
     public final static int VIEW_TYPE_DIALOG = 0,
             VIEW_TYPE_FLICKER = 1,
-            VIEW_TYPE_RECENTLY_VIEWED = 2,
+            // LoogriGram: 2 and 4 were the "Recently viewed" header and its
+            // t.me link rows; see updateItemList.
             VIEW_TYPE_DIVIDER = 3,
-            VIEW_TYPE_ME_URL = 4,
             VIEW_TYPE_EMPTY = 5,
             VIEW_TYPE_USER = 6,
             VIEW_TYPE_HEADER = 7,
@@ -126,7 +123,6 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
     private int currentCount;
     private boolean isOnlySelect;
     private ArrayList<Long> selectedDialogs;
-    private boolean hasHints;
     private boolean hasChatlistHint;
     private int currentAccount;
     private boolean dialogsListFrozen;
@@ -157,7 +153,6 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
         dialogsType = type;
         folderId = folder;
         isOnlySelect = onlySelect;
-        hasHints = folder == 0 && type == 0 && !onlySelect;
         selectedDialogs = selected;
         currentAccount = account;
         communityId = fragment != null ? fragment.getCommunityId() : 0;
@@ -184,9 +179,6 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
     public int fixPosition(int position) {
         if (hasChatlistHint) {
             position--;
-        }
-        if (hasHints) {
-            position -= 2 + MessagesController.getInstance(currentAccount).hintDialogs.size();
         }
         if (allowForwardAsStories && dialogsType == DialogsActivity.DIALOGS_TYPE_FORWARD) {
             position -= 1;
@@ -281,7 +273,6 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
     private class ItemInternal extends AdapterWithDiffUtils.Item {
 
         TLRPC.Dialog dialog;
-        TLRPC.RecentMeUrl recentMeUrl;
         TLRPC.TL_contact contact;
         boolean isForumCell;
         private boolean pinned;
@@ -373,12 +364,6 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             }
         }
 
-        public ItemInternal(int viewTypeMeUrl, TLRPC.RecentMeUrl recentMeUrl) {
-            super(viewTypeMeUrl, true);
-            this.recentMeUrl = recentMeUrl;
-            stableId = stableIdPointer++;
-        }
-
         public ItemInternal(int viewTypeEmpty) {
             super(viewTypeEmpty, true);
             this.emptyType = viewTypeEmpty;
@@ -428,9 +413,6 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             if (viewType == VIEW_TYPE_HEADER_2) {
                 return dialog != null && itemInternal.dialog != null && dialog.id == itemInternal.dialog.id && dialog.isFolder == itemInternal.dialog.isFolder;
             }
-            if (viewType == VIEW_TYPE_ME_URL) {
-                return recentMeUrl != null && itemInternal.recentMeUrl != null && recentMeUrl.url != null && recentMeUrl.url.equals(recentMeUrl.url);
-            }
             if (viewType == VIEW_TYPE_USER) {
                 return contact != null && itemInternal.contact != null && contact.user_id == itemInternal.contact.user_id;
             }
@@ -445,7 +427,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
 
         @Override
         public int hashCode() {
-            return Objects.hash(dialog, chat, recentMeUrl, contact, title);
+            return Objects.hash(dialog, chat, contact, title);
         }
     }
 
@@ -466,8 +448,6 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             return item.dialog;
         } else if (item.contact != null) {
             return MessagesController.getInstance(currentAccount).getUser(item.contact.user_id);
-        } else if (item.recentMeUrl != null) {
-            return item.recentMeUrl;
         }
         return null;
     }
@@ -538,10 +518,6 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
 
     public ViewPager getArchiveHintCellPager() {
         return archiveHintCell != null ? archiveHintCell.getViewPager() : null;
-    }
-
-    public void updateHasHints() {
-        hasHints = folderId == 0 && dialogsType == DialogsActivity.DIALOGS_TYPE_DEFAULT && !isOnlySelect && !MessagesController.getInstance(currentAccount).hintDialogs.isEmpty();
     }
 
     boolean isCalculatingDiff;
@@ -697,27 +673,6 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                 }
                 view = flickerLoadingView;
                 break;
-            case VIEW_TYPE_RECENTLY_VIEWED: {
-                HeaderCell headerCell = new HeaderCell(mContext);
-                headerCell.setText(getString(R.string.RecentlyViewed));
-
-                TextView textView = new TextView(mContext);
-                textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
-                textView.setTypeface(AndroidUtilities.bold());
-                textView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueHeader));
-                textView.setText(getString(R.string.RecentlyViewedHide));
-                textView.setGravity((LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.CENTER_VERTICAL);
-                headerCell.addView(textView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.TOP, 17, 15, 17, 0));
-                textView.setOnClickListener(view1 -> {
-                    MessagesController.getInstance(currentAccount).hintDialogs.clear();
-                    SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-                    preferences.edit().remove("installReferer").commit();
-                    notifyDataSetChanged();
-                });
-
-                view = headerCell;
-                break;
-            }
             case VIEW_TYPE_DIVIDER:
                 FrameLayout frameLayout = new FrameLayout(mContext) {
                     @Override
@@ -730,9 +685,6 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                 v.setBackgroundDrawable(Theme.getThemedDrawableByKey(mContext, R.drawable.greydivider, Theme.key_windowBackgroundGrayShadow));
                 frameLayout.addView(v, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
                 view = frameLayout;
-                break;
-            case VIEW_TYPE_ME_URL:
-                view = new DialogMeUrlCell(mContext);
                 break;
             case VIEW_TYPE_EMPTY:
                 view = new DialogsEmptyCell(mContext);
@@ -1059,11 +1011,6 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             }
             case VIEW_TYPE_REQUIRED_EMPTY: {
                 ((DialogsRequestedEmptyCell) holder.itemView).set(requestPeerType);
-                break;
-            }
-            case VIEW_TYPE_ME_URL: {
-                DialogMeUrlCell cell = (DialogMeUrlCell) holder.itemView;
-                cell.setRecentMeUrl((TLRPC.RecentMeUrl) getItem(i));
                 break;
             }
             case VIEW_TYPE_USER: {
@@ -1561,7 +1508,6 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
 
     private void updateItemListForCommunity() {
         itemInternals.clear();
-        updateHasHints();
 
         MessagesController messagesController = MessagesController.getInstance(currentAccount);
         MessagesController.CommunityPeersDialog communityPeersDialog = messagesController.buildCommunityPeers(communityId);
@@ -1611,7 +1557,6 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
         }
 
         itemInternals.clear();
-        updateHasHints();
 
         MessagesController messagesController = MessagesController.getInstance(currentAccount);
 
@@ -1632,7 +1577,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             return;
         }
 
-        if (!hasHints && dialogsType == 0 && folderId == 0 && messagesController.isDialogsEndReached(folderId) && !forceUpdatingContacts) {
+        if (dialogsType == 0 && folderId == 0 && messagesController.isDialogsEndReached(folderId) && !forceUpdatingContacts) {
             if (messagesController.getAllFoldersDialogsCount() <= 10 && ContactsController.getInstance(currentAccount).doneLoadingContacts && !ContactsController.getInstance(currentAccount).contacts.isEmpty()) {
                 onlineContacts = new ArrayList<>(ContactsController.getInstance(currentAccount).contacts);
                 long selfId = UserConfig.getInstance(currentAccount).clientUserId;
@@ -1748,13 +1693,11 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             }
             itemInternals.add(new ItemInternal(VIEW_TYPE_LAST_EMPTY));
             stopUpdate = true;
-        } else if (hasHints) {
-            int count = MessagesController.getInstance(currentAccount).hintDialogs.size();
-            itemInternals.add(new ItemInternal(VIEW_TYPE_RECENTLY_VIEWED));
-            for (int k = 0; k < count; k++) {
-                itemInternals.add(new ItemInternal(VIEW_TYPE_ME_URL, MessagesController.getInstance(currentAccount).hintDialogs.get(k)));
-            }
-            itemInternals.add(new ItemInternal(VIEW_TYPE_DIVIDER));
+        // LoogriGram: a "Recently viewed" section stood here - t.me links the
+        // server suggested for the referrer Google Play passed at install
+        // (help.getRecentMeUrls). Play no longer sends that broadcast and this
+        // app is not installed from Play, so the list could never fill; the
+        // receiver, the referrer and the request are gone with it.
         } else if (dialogsType == DialogsActivity.DIALOGS_TYPE_IMPORT_HISTORY_GROUPS || dialogsType == DialogsActivity.DIALOGS_TYPE_IMPORT_HISTORY) {
             itemInternals.add(new ItemInternal(VIEW_TYPE_HEADER));
             itemInternals.add(new ItemInternal(VIEW_TYPE_TEXT));

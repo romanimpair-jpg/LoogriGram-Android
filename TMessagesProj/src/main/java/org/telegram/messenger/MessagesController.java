@@ -155,7 +155,6 @@ public class MessagesController extends BaseController implements NotificationCe
 
     private final LongSparseArray<TLRPC.TL_chatInviteExported> exportedChats = new LongSparseArray<>();
 
-    public ArrayList<TLRPC.RecentMeUrl> hintDialogs = new ArrayList<>();
     public final SparseArray<ArrayList<TLRPC.Dialog>> dialogsByFolder = new SparseArray<>();
     private final LongSparseArray<ArrayList<TLRPC.Dialog>> dialogsByCommunity = new LongSparseArray<>();
     protected final ArrayList<TLRPC.Dialog> allDialogs = new ArrayList<>();
@@ -555,7 +554,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public String suggestedLangCode;
     public boolean qrLoginCamera;
     public boolean saveGifsWithStickers;
-    private String installReferer;
     public Set<String> pendingSuggestions;
     public Set<String> dismissedSuggestions;
     public TLRPC.TL_pendingSuggestion customPendingSuggestion;
@@ -1600,7 +1598,6 @@ public class MessagesController extends BaseController implements NotificationCe
         mapProvider = mainPreferences.getInt("mapProvider", 0);
         availableMapProviders = mainPreferences.getInt("availableMapProviders", 3);
         mapKey = mainPreferences.getString("pk", null);
-        installReferer = mainPreferences.getString("installReferer", null);
         revokeTimeLimit = mainPreferences.getInt("revokeTimeLimit", 2147483647);
         revokeTimePmLimit = mainPreferences.getInt("revokeTimePmLimit", 2147483647);
         canRevokePmInbox = mainPreferences.getBoolean("canRevokePmInbox", canRevokePmInbox);
@@ -7079,14 +7076,6 @@ public class MessagesController extends BaseController implements NotificationCe
         return new ArrayList<>(activeVoiceChatsMap.keySet());
     }
 
-    public void setReferer(String referer) {
-        if (referer == null) {
-            return;
-        }
-        installReferer = referer;
-        mainPreferences.edit().putString("installReferer", referer).commit();
-    }
-
     public void putEncryptedChat(TLRPC.EncryptedChat encryptedChat, boolean fromCache) {
         if (encryptedChat == null) {
             return;
@@ -12118,30 +12107,6 @@ public class MessagesController extends BaseController implements NotificationCe
         } else if (mode == ChatActivity.MODE_DEFAULT) {
             lastServerQueryTime.put(dialogId, SystemClock.elapsedRealtime());
         }
-    }
-
-    public void loadHintDialogs() {
-        if (!hintDialogs.isEmpty() || TextUtils.isEmpty(installReferer)) {
-            return;
-        }
-        TLRPC.TL_help_getRecentMeUrls req = new TLRPC.TL_help_getRecentMeUrls();
-        req.referer = installReferer;
-        getConnectionsManager().sendRequest(req, (response, error) -> {
-            if (error == null) {
-                AndroidUtilities.runOnUIThread(() -> {
-                    /*installReferer = null;
-                    mainPreferences.edit().remove("installReferer").commit();*/
-
-                    TLRPC.TL_help_recentMeUrls res = (TLRPC.TL_help_recentMeUrls) response;
-                    putUsers(res.users, false);
-                    putChats(res.chats, false);
-                    hintDialogs.clear();
-                    hintDialogs.addAll(res.urls);
-
-                    getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
-                });
-            }
-        });
     }
 
     public TLRPC.TL_dialogFolder ensureFolderDialogExists(int folderId, boolean[] folderCreated) {

@@ -2984,7 +2984,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             MessagesController messagesController = accountInstance.getMessagesController();
             messagesController.loadGlobalNotificationsSettings();
             messagesController.loadDialogs(0, 0, 100, true);
-            messagesController.loadHintDialogs();
             messagesController.loadUserInfo(accountInstance.getUserConfig().getCurrentUser(), false, 0);
             accountInstance.getContactsController().checkInviteText();
             accountInstance.getMediaDataController().checkAllMedia(false);
@@ -10285,7 +10284,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
 
         if (viewPage.dialogsAdapter.isDataSetChanged() || newMessage) {
-            viewPage.dialogsAdapter.updateHasHints();
             int newItemCount = viewPage.dialogsAdapter.getItemCount();
             if (newItemCount == 1 && oldItemCount == 1 && viewPage.dialogsAdapter.getItemViewType(0) == 5) {
                 viewPage.updateList(true);
