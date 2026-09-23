@@ -294,7 +294,7 @@ public abstract class BaseChartView<T extends ChartData, L extends LineViewData>
         }
 
         if (legendShowing && selectedIndex < chartData.x.length) {
-            legendSignatureView.setData(selectedIndex, chartData.x[selectedIndex], (ArrayList<LineViewData>) lines, false, chartData.yTooltipFormatter, chartData.yRate);
+            legendSignatureView.setData(selectedIndex, chartData.x[selectedIndex], (ArrayList<LineViewData>) lines, false);
         }
 
         invalidatePickerChart = true;
@@ -820,7 +820,7 @@ public abstract class BaseChartView<T extends ChartData, L extends LineViewData>
         }
 
         if (!heightChanged && newMaxHeight == animateToMinHeight) return;
-        final ChartHorizontalLinesData newData = createHorizontalLinesData(newMaxHeight, newMinHeight, chartData.yTickFormatter);
+        final ChartHorizontalLinesData newData = createHorizontalLinesData(newMaxHeight, newMinHeight);
         newMaxHeight = newData.values[newData.values.length - 1];
         newMinHeight = newData.values[0];
 
@@ -928,8 +928,10 @@ public abstract class BaseChartView<T extends ChartData, L extends LineViewData>
         alphaAnimator.start();
     }
 
-    protected ChartHorizontalLinesData createHorizontalLinesData(long newMaxHeight, long newMinHeight, int formatter) {
-        return new ChartHorizontalLinesData(newMaxHeight, newMinHeight, useMinHeight, chartData.yRate, formatter, signaturePaint, signaturePaint2);
+    protected ChartHorizontalLinesData createHorizontalLinesData(long newMaxHeight, long newMinHeight) {
+        // LoogriGram: k was the graph's USD rate, which only revenue graphs
+        // carried; 0 is what every other graph always had.
+        return new ChartHorizontalLinesData(newMaxHeight, newMinHeight, useMinHeight, 0, signaturePaint, signaturePaint2);
     }
 
     ValueAnimator createAnimator(float f1, float f2, ValueAnimator.AnimatorUpdateListener l) {
@@ -1127,7 +1129,7 @@ public abstract class BaseChartView<T extends ChartData, L extends LineViewData>
 
     public void moveLegend(float offset) {
         if (chartData == null || selectedIndex < 0 || selectedIndex >= chartData.x.length || !legendShowing) return;
-        legendSignatureView.setData(selectedIndex, chartData.x[selectedIndex], (ArrayList<LineViewData>) lines, false, chartData.yTooltipFormatter, chartData.yRate);
+        legendSignatureView.setData(selectedIndex, chartData.x[selectedIndex], (ArrayList<LineViewData>) lines, false);
         legendSignatureView.setVisibility(VISIBLE);
         legendSignatureView.measure(
                 MeasureSpec.makeMeasureSpec(getMeasuredWidth(), MeasureSpec.AT_MOST),
@@ -1212,11 +1214,7 @@ public abstract class BaseChartView<T extends ChartData, L extends LineViewData>
             pickerMaxHeight = 0;
             pickerMinHeight = Integer.MAX_VALUE;
             initPickerMaxHeight();
-            if (chartData.yTooltipFormatter == ChartData.FORMATTER_TON || chartData.yTooltipFormatter == ChartData.FORMATTER_XTR) {
-                legendSignatureView.setSize(2 * lines.size());
-            } else {
-                legendSignatureView.setSize(lines.size());
-            }
+            legendSignatureView.setSize(lines.size());
 
             invalidatePickerChart = true;
             updateLineSignature();
@@ -1439,7 +1437,7 @@ public abstract class BaseChartView<T extends ChartData, L extends LineViewData>
 
         updatePickerMinMaxHeight();
         if (legendShowing)
-            legendSignatureView.setData(selectedIndex, chartData.x[selectedIndex], (ArrayList<LineViewData>) lines, true, chartData.yTooltipFormatter, chartData.yRate);
+            legendSignatureView.setData(selectedIndex, chartData.x[selectedIndex], (ArrayList<LineViewData>) lines, true);
     }
 
     protected void updatePickerMinMaxHeight() {

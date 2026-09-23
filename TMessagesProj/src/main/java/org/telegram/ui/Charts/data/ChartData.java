@@ -10,7 +10,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.telegram.messenger.SegmentTree;
 import org.telegram.ui.ActionBar.ThemeColors;
-import org.telegram.ui.Stars.StarsController;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -30,14 +29,10 @@ public class ChartData {
 
     public float oneDayPercentage = 0f;
 
-    public static final int FORMATTER_TON = 1;
-    public static final int FORMATTER_XTR = 2;
-
-    public int xTickFormatter = 0;
-    public int xTooltipFormatter = 0;
-    public float yRate = 0;
-    public int yTickFormatter = 0;
-    public int yTooltipFormatter = 0;
+    // LoogriGram: four axis and tooltip formatters stood here, with a USD
+    // rate. The graph JSON only ever named TON or Stars in them, and only
+    // for the revenue graphs of the deleted Monetization tab, so a chart is
+    // always plain numbers now.
 
     protected ChartData() {
     }
@@ -80,13 +75,6 @@ public class ChartData {
         JSONObject colors = jsonObject.optJSONObject("colors");
         JSONObject names = jsonObject.optJSONObject("names");
 
-        try {
-            xTickFormatter = getFormatter(jsonObject.getString("xTickFormatter"));
-            yTickFormatter = getFormatter(jsonObject.getString("yTickFormatter"));
-            xTooltipFormatter = getFormatter(jsonObject.getString("xTooltipFormatter"));
-            yTooltipFormatter = getFormatter(jsonObject.getString("yTooltipFormatter"));
-        } catch (Exception ignore) {}
-
         Pattern colorPattern = Pattern.compile("(.*)(#.*)");
         for (int i = 0; i < lines.size(); i++) {
             ChartData.Line line = lines.get(i);
@@ -109,13 +97,6 @@ public class ChartData {
             }
 
         }
-    }
-
-    public int getFormatter(String value) {
-        if (TextUtils.isEmpty(value)) return 0;
-        if (value.contains("TON")) return FORMATTER_TON;
-        if (value.contains(StarsController.currency)) return FORMATTER_XTR;
-        return 0;
     }
 
 

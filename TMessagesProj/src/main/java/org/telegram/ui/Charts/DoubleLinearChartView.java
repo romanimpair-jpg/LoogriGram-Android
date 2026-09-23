@@ -324,7 +324,7 @@ public class DoubleLinearChartView extends BaseChartView<DoubleLinearChartData, 
     }
 
     @Override
-    protected ChartHorizontalLinesData createHorizontalLinesData(long newMaxHeight, long newMinHeight, int formatter) {
+    protected ChartHorizontalLinesData createHorizontalLinesData(long newMaxHeight, long newMinHeight) {
         float k;
         if (chartData.linesK.length < 2) {
             k = 1;
@@ -332,6 +332,6 @@ public class DoubleLinearChartView extends BaseChartView<DoubleLinearChartData, 
             int rightIndex = chartData.linesK[0] == 1 ? 1 : 0;
             k = chartData.linesK[rightIndex];
         }
-        return new ChartHorizontalLinesData(newMaxHeight, newMinHeight, useMinHeight, k, formatter, signaturePaint, signaturePaint2);
+        return new ChartHorizontalLinesData(newMaxHeight, newMinHeight, useMinHeight, k, signaturePaint, signaturePaint2);
     }
 }

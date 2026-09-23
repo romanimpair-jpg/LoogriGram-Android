@@ -1,25 +1,14 @@
 package org.telegram.ui.Charts.view_data;
 
-import static org.telegram.messenger.AndroidUtilities.dp;
-
 import android.graphics.Canvas;
 import android.text.Layout;
 import android.text.StaticLayout;
 import android.text.TextPaint;
 
-import org.telegram.messenger.CurrencyFormat;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BillingController;
-import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.StarsFormat;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.ChannelMonetizationLayout;
-import org.telegram.ui.Charts.data.ChartData;
 import org.telegram.ui.Components.AnimatedEmojiSpan;
-
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.util.Locale;
 
 public class ChartHorizontalLinesData {
 
@@ -37,7 +26,6 @@ public class ChartHorizontalLinesData {
         long newMinHeight,
         boolean useMinHeight,
         float k,
-        int formatter,
         TextPaint firstTextPaint, TextPaint secondTextPaint
     ) {
         if (!useMinHeight) {
@@ -70,17 +58,17 @@ public class ChartHorizontalLinesData {
             boolean skipFloatValues = step / k < 1;
             for (int i = 1; i < n; i++) {
                 values[i] = i * step;
-                valuesStr[i] = format(0, firstTextPaint, values[i], formatter);
+                valuesStr[i] = format(values[i]);
                 if (k > 0) {
                     float v2 = (values[i] / k);
                     if (skipFloatValues) {
-                        if (v2 - ((long) v2) < 0.01f || formatter == ChartData.FORMATTER_TON || formatter == ChartData.FORMATTER_XTR) {
-                            valuesStr2[i] = format(1, secondTextPaint, (long) v2, formatter);
+                        if (v2 - ((long) v2) < 0.01f) {
+                            valuesStr2[i] = format((long) v2);
                         } else {
                             valuesStr2[i] = "";
                         }
                     } else {
-                        valuesStr2[i] = format(1, secondTextPaint, (long) v2, formatter);
+                        valuesStr2[i] = format((long) v2);
                     }
                 }
             }
@@ -118,45 +106,25 @@ public class ChartHorizontalLinesData {
             boolean skipFloatValues = step / k < 1;
             for (int i = 0; i < n; i++) {
                 values[i] = newMinHeight + (long) (i * step);
-                valuesStr[i] = format(0, firstTextPaint, newMinHeight + (long) (i * step), formatter);
+                valuesStr[i] = format(newMinHeight + (long) (i * step));
                 if (k > 0) {
                     float v = (values[i] / k);
                     if (skipFloatValues) {
-                        if (v - ((long) v) < 0.01f || formatter == ChartData.FORMATTER_TON || formatter == ChartData.FORMATTER_XTR) {
-                            valuesStr2[i] = format(1, secondTextPaint, (long) v, formatter);
+                        if (v - ((long) v) < 0.01f) {
+                            valuesStr2[i] = format((long) v);
                         } else {
                             valuesStr2[i] = "";
                         }
                     } else {
-                        valuesStr2[i] = format(1, secondTextPaint, (long) v, formatter);
+                        valuesStr2[i] = format((long) v);
                     }
                 }
             }
         }
     }
 
-    private DecimalFormat formatterTON;
-    public CharSequence format(int a, TextPaint paint, long v, int formatter) {
-        if (formatter == ChartData.FORMATTER_TON) {
-            if (a == 1) {
-                return "≈" + CurrencyFormat.format(v, "USD");
-            }
-            if (formatterTON == null) {
-                DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
-                symbols.setDecimalSeparator('.');
-                formatterTON = new DecimalFormat("#.##", symbols);
-                formatterTON.setMinimumFractionDigits(2);
-                formatterTON.setMaximumFractionDigits(6);
-                formatterTON.setGroupingUsed(false);
-            }
-            formatterTON.setMaximumFractionDigits(v > 1_000_000_000 ? 2 : 6);
-            return ChannelMonetizationLayout.replaceTON("TON " + formatterTON.format(v / 1_000_000_000.0), paint, .8f, -dp(.66f), false);
-        } else if (formatter == ChartData.FORMATTER_XTR) {
-            if (a == 1) {
-                return "≈" + CurrencyFormat.format(v, "USD");
-            }
-            return StarsFormat.replaceStarsWithPlain("XTR " + LocaleController.formatNumber(v, ' '), .65f);
-        }
+    // LoogriGram: TON and Stars axes are gone with the revenue graphs.
+    public CharSequence format(long v) {
         return AndroidUtilities.formatWholeNumber((int) v, 0);
     }
 
