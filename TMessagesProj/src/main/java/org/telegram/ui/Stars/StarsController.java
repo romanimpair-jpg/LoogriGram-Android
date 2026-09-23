@@ -1,6 +1,5 @@
 package org.telegram.ui.Stars;
 
-import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.LocaleController.formatPluralString;
 import static org.telegram.messenger.LocaleController.formatPluralStringComma;
 import static org.telegram.messenger.LocaleController.formatString;
@@ -13,7 +12,6 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.LongSparseArray;
-import android.view.Gravity;
 import android.view.View;
 
 import androidx.annotation.NonNull;
@@ -35,7 +33,6 @@ import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.FileRefController;
-import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
@@ -61,7 +58,6 @@ import org.telegram.ui.ChatActivity;
 import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.BulletinFactory;
-import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.SharedMediaLayout;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PaymentFormActivity;
@@ -1374,10 +1370,11 @@ public class StarsController {
         }));
     }
 
-    // ===== STAR REACTIONS =====
-
-    public static final long REACTIONS_TIMEOUT = 5_000;
-    public PendingPaidReactions currentPendingReactions;
+    // LoogriGram: what is left of upstream's star-reactions section. Nothing can
+    // send a paid reaction any more, so REACTIONS_TIMEOUT, currentPendingReactions,
+    // the PendingPaidReactions class and the six methods around it are gone.
+    // MessageId only ever borrowed this section: it is a (dialog, message) pair,
+    // and MessagesController keys its delivery reports on it.
 
     public static class MessageId {
         public long did;
@@ -1412,412 +1409,6 @@ public class StarsController {
         }
     }
 
-    public long getPaidReactionsDialogId(MessageObject messageObject) {
-        if (currentPendingReactions != null && currentPendingReactions.message.equals(MessageId.from(messageObject)) && currentPendingReactions.peer != null) {
-            return currentPendingReactions.peer;
-        }
-        Long messageSettings = messageObject == null ? null : messageObject.getMyPaidReactionPeer();
-        if (messageSettings != null) {
-            return messageSettings;
-        }
-        final MessagesController messagesController = MessagesController.getInstance(currentAccount);
-        Long peer = messagesController.getPaidReactionsDialogId();
-        return peer != null ? peer : 0;
-    }
-
-    public long getPaidReactionsDialogId(MessageId id, TLRPC.MessageReactions reactions) {
-        if (currentPendingReactions != null && currentPendingReactions.message.equals(id) && currentPendingReactions.peer != null) {
-            return currentPendingReactions.peer;
-        }
-        Long messageSettings = MessageObject.getMyPaidReactionPeer(reactions);
-        if (messageSettings != null) {
-            return messageSettings;
-        }
-        final MessagesController messagesController = MessagesController.getInstance(currentAccount);
-        Long peer = messagesController.getPaidReactionsDialogId();
-        return peer != null ? peer : 0;
-    }
-
-    public class PendingPaidReactions {
-
-        public MessageId message;
-        public MessageObject messageObject;
-        public ChatActivity chatActivity;
-        public Bulletin bulletin;
-        public Bulletin.TwoLineAnimatedLottieLayout bulletinLayout;
-        public Bulletin.UndoButton bulletinButton;
-        public Bulletin.TimerView timerView;
-
-        public boolean wasChosen;
-
-        public long amount;
-        public long lastTime;
-        public boolean committed = false;
-        public boolean cancelled = false;
-
-        public long not_added;
-        public boolean applied;
-        public boolean shownBulletin;
-
-        public Long peer = null;
-        public long getPeerId() {
-            if (peer != null) return peer;
-            return getPaidReactionsDialogId(messageObject);
-        }
-
-        public boolean isAnonymous() {
-            return getPeerId() == UserObject.ANONYMOUS;
-        }
-
-        // LoogriGram: the overlay that drew the stars flying off the message
-        // is deleted with the rest of paid reactions.
-
-        public String getToastTitle() {
-            if (isAnonymous()) {
-                return getString(R.string.StarsSentAnonymouslyTitle);
-            } else if (getPeerId() != 0 && getPeerId() != UserConfig.getInstance(currentAccount).getClientUserId()) {
-                return formatString(R.string.StarsSentTitleChannel, DialogObject.getShortName(getPeerId()));
-            } else {
-                return getString(R.string.StarsSentTitle);
-            }
-        }
-
-        public PendingPaidReactions(
-            MessageId message,
-            MessageObject messageObject,
-            ChatActivity chatActivity,
-            long currentTime,
-            boolean affect
-        ) {
-            this.message = message;
-            this.messageObject = messageObject;
-            this.chatActivity = chatActivity;
-
-            final Context context = getContext(chatActivity);
-            bulletinLayout = new Bulletin.TwoLineAnimatedLottieLayout(context, chatActivity.themeDelegate);
-            bulletinLayout.setAnimation(R.raw.stars_topup);
-            bulletinLayout.titleTextView.setText(getToastTitle());
-            bulletinButton = new Bulletin.UndoButton(context, true, false, chatActivity.themeDelegate);
-            bulletinButton.setText(LocaleController.getString(R.string.StarsSentUndo));
-            bulletinButton.setUndoAction(this::cancel);
-            timerView = new Bulletin.TimerView(context, chatActivity.themeDelegate);
-            timerView.timeLeft = REACTIONS_TIMEOUT;
-            timerView.setColor(Theme.getColor(Theme.key_undo_cancelColor, chatActivity.themeDelegate));
-            bulletinButton.addView(timerView, LayoutHelper.createFrame(20, 20, Gravity.RIGHT | Gravity.CENTER_VERTICAL, 0, 0, 12, 0));
-            bulletinButton.undoTextView.setPadding(dp(12), dp(8), dp(20 + 10), dp(8));
-            bulletinLayout.setButton(bulletinButton);
-            bulletin = BulletinFactory.of(chatActivity).create(bulletinLayout, -1);
-            bulletin.hideAfterBottomSheet = false;
-            if (affect) {
-                bulletin.show(true);
-                shownBulletin = true;
-            }
-            bulletin.setOnHideListener(closeRunnable);
-
-            this.amount = 0;
-            this.lastTime = System.currentTimeMillis();
-
-            wasChosen = messageObject.isPaidReactionChosen();
-        }
-
-        public void add(long amount, boolean affect) {
-            if (committed || cancelled) {
-                if (BuildVars.DEBUG_PRIVATE_VERSION) {
-                    throw new RuntimeException("adding more amount to committed reactions");
-                } else {
-                    return;
-                }
-            }
-            this.amount += amount;
-            this.lastTime = System.currentTimeMillis();
-
-            bulletinLayout.subtitleTextView.cancelAnimation();
-            bulletinLayout.subtitleTextView.setText(AndroidUtilities.replaceTags(LocaleController.formatPluralString("StarsSentText", (int) this.amount)), true);
-
-            if (shownBulletin) {
-                timerView.timeLeft = REACTIONS_TIMEOUT;
-                AndroidUtilities.cancelRunOnUIThread(closeRunnable);
-                AndroidUtilities.runOnUIThread(closeRunnable, REACTIONS_TIMEOUT);
-            }
-
-            if (affect) {
-                applied = true;
-                messageObject.addPaidReactions((int) +amount, true, getPeerId());
-                minus += amount;
-                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.didUpdateReactions, messageObject.getDialogId(), messageObject.getId(), messageObject.messageOwner.reactions);
-                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.starBalanceUpdated);
-            } else {
-                applied = false;
-                if (messageObject.ensurePaidReactionsExist(true)) {
-                    not_added--;
-                }
-                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.didUpdateReactions, messageObject.getDialogId(), messageObject.getId(), messageObject.messageOwner.reactions);
-                not_added += amount;
-            }
-
-            bulletinLayout.titleTextView.setText(getToastTitle());
-        }
-
-        public void apply() {
-            if (!applied) {
-                applied = true;
-                messageObject.addPaidReactions((int) +not_added, true, getPeerId());
-                minus += not_added;
-                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.starBalanceUpdated);
-                not_added = 0;
-                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.didUpdateReactions, messageObject.getDialogId(), messageObject.getId(), messageObject.messageOwner.reactions);
-            }
-            if (!shownBulletin) {
-                shownBulletin = true;
-
-                timerView.timeLeft = REACTIONS_TIMEOUT;
-                AndroidUtilities.cancelRunOnUIThread(closeRunnable);
-                AndroidUtilities.runOnUIThread(closeRunnable, REACTIONS_TIMEOUT);
-
-                bulletin.show(true);
-                bulletin.setOnHideListener(closeRunnable);
-            }
-
-            bulletinLayout.titleTextView.setText(getToastTitle());
-        }
-
-        public final Runnable closeRunnable = this::close;
-        public void close() {
-            AndroidUtilities.cancelRunOnUIThread(closeRunnable);
-
-            if (applied) {
-                commit();
-            } else {
-                cancelled = true;
-                messageObject.addPaidReactions((int) -amount, wasChosen, getPeerId());
-                minus -= amount;
-                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.starBalanceUpdated);
-            }
-            bulletin.hide();
-
-            if (currentPendingReactions == this) {
-                currentPendingReactions = null;
-            }
-        }
-
-        public final Runnable cancelRunnable = this::cancel;
-        public void cancel() {
-            AndroidUtilities.cancelRunOnUIThread(closeRunnable);
-
-            cancelled = true;
-            bulletin.hide();
-
-            messageObject.addPaidReactions((int) -amount, wasChosen, getPeerId());
-            minus -= amount;
-            NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.starBalanceUpdated);
-            NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.didUpdateReactions, messageObject.getDialogId(), messageObject.getId(), messageObject.messageOwner.reactions);
-
-            if (currentPendingReactions == this) {
-                currentPendingReactions = null;
-            }
-        }
-
-        public void commit() {
-            if (committed || cancelled) {
-                return;
-            }
-
-            final StarsController starsController = StarsController.getInstance(currentAccount);
-            final MessagesController messagesController = MessagesController.getInstance(currentAccount);
-            final ConnectionsManager connectionsManager = ConnectionsManager.getInstance(currentAccount);
-
-            final long totalStars = amount;
-            if (starsController.balanceAvailable() && starsController.getBalance(false) < totalStars) {
-                cancelled = true;
-
-                messageObject.addPaidReactions((int) -amount, wasChosen, getPeerId());
-                minus = 0;
-                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.starBalanceUpdated);
-                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.didUpdateReactions, messageObject.getDialogId(), messageObject.getId(), messageObject.messageOwner.reactions);
-
-                String name;
-                if (message.did >= 0) {
-                    TLRPC.User user = chatActivity.getMessagesController().getUser(message.did);
-                    name = UserObject.getForcedFirstName(user);
-                } else {
-                    TLRPC.Chat chat = chatActivity.getMessagesController().getChat(-message.did);
-                    name = chat == null ? "" : chat.title;
-                }
-                Context context = chatActivity.getContext();
-                if (context == null) context = LaunchActivity.instance;
-                if (context == null) context = ApplicationLoader.applicationContext;
-                new StarsIntroActivity.StarsNeededSheet(context, chatActivity.getResourceProvider(), totalStars, StarsIntroActivity.StarsNeededSheet.TYPE_REACTIONS, name, () -> {
-                    sendPaidReaction(messageObject, chatActivity, totalStars, true, true, peer);
-                }, 0).show();
-
-                return;
-            }
-
-            committed = true;
-
-            final TLRPC.TL_messages_sendPaidReaction req = new TLRPC.TL_messages_sendPaidReaction();
-            req.peer = messagesController.getInputPeer(message.did);
-            req.msg_id = message.mid;
-            req.random_id = Utilities.random.nextLong() & 0xFFFFFFFFL | ((long) connectionsManager.getCurrentTime() << 32L);
-            req.count = (int) amount;
-            req.flags |= 1;
-            final long privacyDialogId = getPeerId();
-            if (privacyDialogId == 0 || privacyDialogId == UserConfig.getInstance(currentAccount).getClientUserId()) {
-                req.privacy = new TL_stars.paidReactionPrivacyDefault();
-            } else if (privacyDialogId == UserObject.ANONYMOUS) {
-                req.privacy = new TL_stars.paidReactionPrivacyAnonymous();
-            } else {
-                req.privacy = new TL_stars.paidReactionPrivacyPeer();
-                req.privacy.peer = messagesController.getInputPeer(privacyDialogId);
-            }
-
-            invalidateBalance();
-
-            connectionsManager.sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                if (response != null) {
-                    Utilities.stageQueue.postRunnable(() -> {
-                        messagesController.processUpdates((TLRPC.Updates) response, false);
-                    });
-                } else if (error != null) {
-                    messageObject.addPaidReactions((int) -amount, wasChosen, getPeerId());
-                    NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.didUpdateReactions, messageObject.getDialogId(), messageObject.getId(), messageObject.messageOwner.reactions);
-
-                    if ("BALANCE_TOO_LOW".equals(error.text)) {
-                        String name;
-                        if (message.did >= 0) {
-                            TLRPC.User user = chatActivity.getMessagesController().getUser(message.did);
-                            name = UserObject.getForcedFirstName(user);
-                        } else {
-                            TLRPC.Chat chat = chatActivity.getMessagesController().getChat(-message.did);
-                            name = chat == null ? "" : chat.title;
-                        }
-                        Context context = chatActivity.getContext();
-                        if (context == null) context = LaunchActivity.instance;
-                        if (context == null) context = ApplicationLoader.applicationContext;
-                        new StarsIntroActivity.StarsNeededSheet(context, chatActivity.getResourceProvider(), totalStars, StarsIntroActivity.StarsNeededSheet.TYPE_REACTIONS, name, () -> {
-                            sendPaidReaction(messageObject, chatActivity, totalStars, true, true, peer);
-                        }, 0).show();
-                    }
-
-                    invalidateTransactions(false);
-                    invalidateBalance();
-                }
-            }));
-        }
-    }
-
-    public StarsController.PendingPaidReactions sendPaidReaction(MessageObject messageObject, ChatActivity chatActivity) {
-        return sendPaidReaction(messageObject, chatActivity, +1, true, true, null);
-    }
-
-    public Context getContext(BaseFragment fragment) {
-        if (fragment != null && fragment.getContext() != null)
-            return fragment.getContext();
-        if (LaunchActivity.instance != null && !LaunchActivity.instance.isFinishing())
-            return LaunchActivity.instance;
-        if (ApplicationLoader.applicationContext != null)
-            return ApplicationLoader.applicationContext;
-        return null;
-    }
-
-    public StarsController.PendingPaidReactions sendPaidReaction(
-        MessageObject messageObject,
-        ChatActivity chatActivity,
-        long amount,
-        boolean affect,
-        boolean checkBalance,
-        Long peer
-    ) {
-        final MessageId key = MessageId.from(messageObject);
-        final StarsController s = StarsController.getInstance(currentAccount);
-        final long totalStars = amount;
-        final Context context = getContext(chatActivity);
-        if (context == null) return null;
-        if (checkBalance && s.balanceAvailable() && s.getBalance(false) <= 0) {
-            final long dialogId = chatActivity.getDialogId();
-            String name;
-            if (dialogId >= 0) {
-                TLRPC.User user = chatActivity.getMessagesController().getUser(dialogId);
-                name = UserObject.getForcedFirstName(user);
-            } else {
-                TLRPC.Chat chat = chatActivity.getMessagesController().getChat(-dialogId);
-                name = chat == null ? "" : chat.title;
-            }
-            if (context == null) return null;
-            new StarsIntroActivity.StarsNeededSheet(context, chatActivity.getResourceProvider(), totalStars, StarsIntroActivity.StarsNeededSheet.TYPE_REACTIONS, name, () -> {
-                sendPaidReaction(messageObject, chatActivity, totalStars, true, true, peer);
-            }, 0).show();
-            return null;
-        }
-        if (currentPendingReactions == null || !currentPendingReactions.message.equals(key)) {
-            if (currentPendingReactions != null) {
-                currentPendingReactions.close();
-            }
-            currentPendingReactions = new PendingPaidReactions(key, messageObject, chatActivity, ConnectionsManager.getInstance(currentAccount).getCurrentTime(), affect);
-            currentPendingReactions.peer = peer;
-        }
-        if (currentPendingReactions.amount + amount > MessagesController.getInstance(currentAccount).starsPaidReactionAmountMax) {
-            currentPendingReactions.close();
-            currentPendingReactions = new PendingPaidReactions(key, messageObject, chatActivity, ConnectionsManager.getInstance(currentAccount).getCurrentTime(), affect);
-        }
-        final long totalStars2 = currentPendingReactions.amount + amount;
-        if (checkBalance && s.balanceAvailable() && s.getBalance(false) < totalStars2) {
-            currentPendingReactions.cancel();
-            final long dialogId = chatActivity.getDialogId();
-            String name;
-            if (dialogId >= 0) {
-                TLRPC.User user = chatActivity.getMessagesController().getUser(dialogId);
-                name = UserObject.getForcedFirstName(user);
-            } else {
-                TLRPC.Chat chat = chatActivity.getMessagesController().getChat(-dialogId);
-                name = chat == null ? "" : chat.title;
-            }
-            new StarsIntroActivity.StarsNeededSheet(context, chatActivity.getResourceProvider(), totalStars2, StarsIntroActivity.StarsNeededSheet.TYPE_REACTIONS, name, () -> {
-                sendPaidReaction(messageObject, chatActivity, totalStars2, true, true, peer);
-            }, 0).show();
-            return null;
-        }
-        currentPendingReactions.add(amount, (messageObject != null && !messageObject.doesPaidReactionExist()) || affect);
-        currentPendingReactions.peer = peer;
-        return currentPendingReactions;
-    }
-
-    public void undoPaidReaction() {
-        if (currentPendingReactions != null) {
-            currentPendingReactions.cancel();
-        }
-    }
-
-    public void commitPaidReaction() {
-        if (currentPendingReactions != null) {
-            currentPendingReactions.close();
-        }
-    }
-
-    public boolean hasPendingPaidReactions(MessageObject messageObject) {
-        if (currentPendingReactions == null) return false;
-        if (messageObject == null) return false;
-        final MessageId key = MessageId.from(messageObject);
-        if (currentPendingReactions.message.did != key.did || currentPendingReactions.message.mid != key.mid) return false;
-        if (!currentPendingReactions.applied) return false;
-        return true;
-    }
-
-    public long getPendingPaidReactions(MessageObject messageObject) {
-        if (messageObject == null || messageObject.messageOwner == null) return 0;
-        if ((messageObject.messageOwner.isThreadMessage || messageObject.isForwardedChannelPost()) && messageObject.messageOwner.fwd_from != null) {
-            return getPendingPaidReactions(messageObject.getFromChatId(), messageObject.messageOwner.fwd_from.saved_from_msg_id);
-        } else {
-            return getPendingPaidReactions(messageObject.getDialogId(), messageObject.getId());
-        }
-    }
-
-    public long getPendingPaidReactions(long dialogId, int messageId) {
-        if (currentPendingReactions == null) return 0;
-        if (currentPendingReactions.message.did != dialogId || currentPendingReactions.message.mid != messageId) return 0;
-        if (!currentPendingReactions.applied) return 0;
-        return currentPendingReactions.amount;
-    }
 
 
     // ===== STAR GIFTS =====

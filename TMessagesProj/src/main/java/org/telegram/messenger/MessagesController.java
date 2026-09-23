@@ -20555,11 +20555,8 @@ public class MessagesController extends BaseController implements NotificationCe
                     } else if (baseUpdate instanceof TL_update.TL_updateMessageReactions) {
                         TL_update.TL_updateMessageReactions update = (TL_update.TL_updateMessageReactions) baseUpdate;
                         long dialogId = MessageObject.getPeerId(update.peer);
-                        long pendingPaid = StarsController.getInstance(currentAccount).getPendingPaidReactions(dialogId, update.msg_id);
-                        if (pendingPaid != 0) {
-                            final StarsController starsController = StarsController.getInstance(currentAccount);
-                            MessageObject.addPaidReactions(currentAccount, update.reactions, (int) pendingPaid, starsController.getPaidReactionsDialogId(StarsController.MessageId.from(dialogId, update.msg_id), update.reactions), true);
-                        }
+                        // LoogriGram: a paid reaction of our own can no longer be in flight,
+                        // so nothing has to be added back into the arriving reaction counts.
                         getNotificationCenter().postNotificationName(NotificationCenter.didUpdateReactions, dialogId, update.msg_id, update.reactions);
                     } else if (baseUpdate instanceof TL_update.TL_updateMessageExtendedMedia) {
                         TL_update.TL_updateMessageExtendedMedia extendedMedia = (TL_update.TL_updateMessageExtendedMedia) baseUpdate;

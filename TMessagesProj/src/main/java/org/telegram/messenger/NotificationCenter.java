@@ -153,7 +153,9 @@ public class NotificationCenter {
     public static final int quickRepliesUpdated = totalEvents++;
     public static final int quickRepliesDeleted = totalEvents++;
     public static final int bookmarkAdded = totalEvents++;
-    public static final int starReactionAnonymousUpdate = totalEvents++;
+    // LoogriGram: starReactionAnonymousUpdate stood here. It told a chat that the
+    // peer behind our own paid reaction had changed, and only the paid-reaction
+    // sheet ever posted it.
     public static final int businessLinksUpdated = totalEvents++;
     public static final int businessLinkCreated = totalEvents++;
     public static final int needDeleteBusinessLink = totalEvents++;

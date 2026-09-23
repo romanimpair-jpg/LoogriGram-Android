@@ -12182,61 +12182,10 @@ public class MessageObject {
         return false;
     }
 
-    public void addPaidReactions(int amount, boolean chosen, long peer) {
-        if (messageOwner.reactions == null) {
-            messageOwner.reactions = new TLRPC.TL_messageReactions();
-            messageOwner.reactions.reactions_as_tags = MessageObject.getDialogId(messageOwner) == UserConfig.getInstance(currentAccount).getClientUserId();
-            messageOwner.reactions.can_see_list = isFromGroup() || isFromUser();
-        }
-        addPaidReactions(currentAccount, messageOwner.reactions, amount, peer, chosen);
-    }
-
-    public Long getMyPaidReactionPeer() {
-        if (messageOwner == null || messageOwner.reactions == null) return null;
-        if (messageOwner.reactions.top_reactors == null) return null;
-        for (TLRPC.MessageReactor reactor : messageOwner.reactions.top_reactors) {
-            if (reactor != null && reactor.my) {
-                if (reactor.anonymous) {
-                    return UserObject.ANONYMOUS;
-                } else if (reactor.peer_id != null) {
-                    return DialogObject.getPeerDialogId(reactor.peer_id);
-                }
-            }
-        }
-        return null;
-    }
-
-    public static Long getMyPaidReactionPeer(TLRPC.MessageReactions reactions) {
-        if (reactions == null) return null;
-        if (reactions.top_reactors == null) return null;
-        for (TLRPC.MessageReactor reactor : reactions.top_reactors) {
-            if (reactor != null && reactor.my) {
-                if (reactor.anonymous) {
-                    return UserObject.ANONYMOUS;
-                } else if (reactor.peer_id != null) {
-                    return DialogObject.getPeerDialogId(reactor.peer_id);
-                }
-            }
-        }
-        return null;
-    }
-
-    public void setMyPaidReactionDialogId(long dialogId) {
-        if (messageOwner == null || messageOwner.reactions == null) return;
-        if (messageOwner.reactions.top_reactors == null) return;
-        for (final TLRPC.MessageReactor reactor : messageOwner.reactions.top_reactors) {
-            if (reactor != null && reactor.my) {
-                reactor.anonymous = dialogId == UserObject.ANONYMOUS;
-                if (reactor.anonymous) {
-                    reactor.flags &=~ 8;
-                    reactor.peer_id = null;
-                } else {
-                    reactor.flags |= 8;
-                    reactor.peer_id = MessagesController.getInstance(currentAccount).getPeer(dialogId);
-                }
-            }
-        }
-    }
+    // LoogriGram: addPaidReactions, getMyPaidReactionPeer (both forms) and
+    // setMyPaidReactionDialogId stood here. They kept our own paid reaction and
+    // the peer it was sent under in the local counts while it was in flight;
+    // nothing can send one now.
 
     public boolean doesPaidReactionExist() {
         if (messageOwner.reactions == null) {
@@ -12252,79 +12201,8 @@ public class MessageObject {
         return false;
     }
 
-    public boolean ensurePaidReactionsExist(boolean chosen) {
-        if (messageOwner.reactions == null) {
-            messageOwner.reactions = new TLRPC.TL_messageReactions();
-            messageOwner.reactions.reactions_as_tags = MessageObject.getDialogId(messageOwner) == UserConfig.getInstance(currentAccount).getClientUserId();
-            messageOwner.reactions.can_see_list = isFromGroup() || isFromUser();
-        }
-        TLRPC.ReactionCount reactionCount = null;
-        for (int i = 0; i < messageOwner.reactions.results.size(); i++) {
-            if (messageOwner.reactions.results.get(i).reaction instanceof TLRPC.TL_reactionPaid) {
-                reactionCount = messageOwner.reactions.results.get(i);
-            }
-        }
-        if (reactionCount == null) {
-            reactionCount = new TLRPC.TL_reactionCount();
-            reactionCount.reaction = new TLRPC.TL_reactionPaid();
-            reactionCount.count = 1;
-            reactionCount.chosen = chosen;
-            messageOwner.reactions.results.add(0, reactionCount);
-            return true;
-        }
-        return false;
-    }
-
-    public static void addPaidReactions(
-        int currentAccount,
-        TLRPC.MessageReactions reactions,
-        int amount,
-        long peer,
-        boolean chosen
-    ) {
-        TLRPC.ReactionCount reactionCount = null;
-        for (int i = 0; i < reactions.results.size(); i++) {
-            if (reactions.results.get(i).reaction instanceof TLRPC.TL_reactionPaid) {
-                reactionCount = reactions.results.get(i);
-            }
-        }
-        TLRPC.MessageReactor reactor = null;
-        for (int i = 0; i < reactions.top_reactors.size(); i++) {
-            if (reactions.top_reactors.get(i).my) {
-                reactor = reactions.top_reactors.get(i);
-                break;
-            }
-        }
-        if (reactionCount == null && amount > 0) {
-            reactionCount = new TLRPC.TL_reactionCount();
-            reactionCount.reaction = new TLRPC.TL_reactionPaid();
-            reactions.results.add(0, reactionCount);
-        }
-        if (reactionCount != null) {
-            reactionCount.chosen = chosen;
-            reactionCount.count = Math.max(0, reactionCount.count + amount);
-            if (reactionCount.count <= 0) {
-                reactions.results.remove(reactionCount);
-            }
-        }
-        if (reactor == null && amount > 0) {
-            reactor = new TLRPC.TL_messageReactor();
-            reactor.my = true;
-            reactions.top_reactors.add(reactor);
-        }
-        if (reactor != null) {
-            reactor.count = Math.max(0, reactor.count + amount);
-            reactor.anonymous = peer == UserObject.ANONYMOUS;
-            if (peer == 0 || peer == UserObject.ANONYMOUS) {
-                reactor.peer_id = MessagesController.getInstance(currentAccount).getPeer(UserConfig.getInstance(currentAccount).getClientUserId());
-            } else {
-                reactor.peer_id = MessagesController.getInstance(currentAccount).getPeer(peer);
-            }
-            if (reactor.count <= 0) {
-                reactions.top_reactors.remove(reactor);
-            }
-        }
-    }
+    // LoogriGram: ensurePaidReactionsExist stood here. It put a paid reaction on a
+    // message before we sent one, so the count had something to grow from.
 
     public boolean selectReaction(ReactionsLayoutInBubble.VisibleReaction visibleReaction, boolean big, boolean fromDoubleTap) {
         if (messageOwner.reactions == null) {

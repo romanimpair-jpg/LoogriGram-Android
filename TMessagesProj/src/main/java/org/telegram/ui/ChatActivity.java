@@ -2886,8 +2886,7 @@ public class ChatActivity extends BaseFragment implements
                 .add(NotificationCenter.chatSearchResultsLoading)
                 .add(NotificationCenter.didUpdateMessagesViews)
                 .add(NotificationCenter.didUpdatePollResults)
-                .add(NotificationCenter.availableEffectsUpdate)
-                .add(NotificationCenter.starReactionAnonymousUpdate);
+                .add(NotificationCenter.availableEffectsUpdate);
             if (currentEncryptedChat != null) {
                 observersGroup.add(NotificationCenter.didVerifyMessagesStickers);
             }
@@ -24314,15 +24313,6 @@ public class ChatActivity extends BaseFragment implements
             updateVisibleRows(msg -> msg != null && msg.getFactCheck() != null);
         } else if (id == NotificationCenter.availableEffectsUpdate) {
             updateVisibleRows(msg -> msg != null && msg.getEffect() != null);
-        } else if (id == NotificationCenter.starReactionAnonymousUpdate) {
-            final long did = (long) args[0];
-            final int  mid = (int) args[1];
-            final long peer = (long) args[2];
-            if (dialog_id != did) return;
-            MessageObject messageObject = messagesDict[0].get(mid);
-            if (messageObject != null) {
-                messageObject.setMyPaidReactionDialogId(peer);
-            }
         } else if (id == NotificationCenter.starBalanceUpdated) {
             updateTopPanel(true);
             updateBottomOverlay(true);
