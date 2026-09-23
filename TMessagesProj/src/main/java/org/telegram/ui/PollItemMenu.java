@@ -772,9 +772,8 @@ public class PollItemMenu extends Dialog {
                             y = actionCell.reactionsLayoutInBubble.y + btn.y + btn.height / 2f;
                         }
                     }
-                    if (visibleReaction != null && visibleReaction.isStar) {
-                        longpress = true;
-                    }
+                    // LoogriGram: a star was treated as a long press, because that is
+                    // what opened the pay-to-react sheet. Nothing offers a star now.
                     chatActivity.selectReaction(cell, message, finalReactionsLayout, v, x, y, visibleReaction,false, longpress, addToRecent, false);
                     dismiss(false);
                 }

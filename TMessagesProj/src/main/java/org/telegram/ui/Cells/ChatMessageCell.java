@@ -141,7 +141,6 @@ import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.WebFile;
 import org.telegram.messenger.browser.Browser;
-import org.telegram.messenger.utils.Choreographer60FpsContent;
 import org.telegram.messenger.utils.CountdownTimer;
 import org.telegram.messenger.utils.DrawableUtils;
 import org.telegram.messenger.utils.tlutils.TLKeyboardHelper;
@@ -6328,8 +6327,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         if (channelRecommendationsCell != null) {
             channelRecommendationsCell.onDetachedFromWindow();
         }
-
-        Choreographer60FpsContent.getInstance().removeFrameCallback(invalidateOutboundsRunnable);
     }
 
     @Override
@@ -12214,7 +12211,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         );
     }
 
-    private final Runnable invalidateOutboundsRunnable = this::invalidateOutbounds;
     public void invalidateOutbounds() {
         if (delegate == null || !delegate.canDrawOutboundsContent()) {
             if (getParent() instanceof View) {
@@ -20667,7 +20663,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             return false;
         }
         return (
-            reactionsLayoutInBubble.hasOverlay() ||
             (!transitionParams.transitionBotButtons.isEmpty() && transitionParams.animateBotButtonsChanged) ||
             !botButtons.isEmpty() ||
             drawSideButton != 0 ||
@@ -20857,11 +20852,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
         }
 
-        if (reactionsLayoutInBubble.hasOverlay() && drawReactionsLayoutOverlay(canvas, 1f)) {
-            Choreographer60FpsContent.getInstance().addFrameCallback(invalidateOutboundsRunnable, 15);
-        } else {
-            Choreographer60FpsContent.getInstance().removeFrameCallback(invalidateOutboundsRunnable);
-        }
+        // LoogriGram: the reaction row has no overlay left to draw. Nothing asks for
+        // the 60fps frame callback its particles needed, so the callback, the runnable
+        // behind it and the detach that cancelled it are all gone.
 
         if ((currentNameStatusDrawable != null || currentNameEmojiStatusDrawable != null || topicButton != null && (drawTopic || transitionParams.animateDrawTopic)) && drawNameLayout && nameLayout != null && (currentPosition == null || currentPosition.minX == 0 && currentPosition.minY == 0) && !(currentMessageObject.deleted && !drawingToBitmap && currentMessagesGroup != null && currentMessagesGroup.messages.size() >= 1)) {
             int color;
@@ -23105,39 +23098,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         canvas.restoreToCount(saveCount);
     }
 
-    public boolean drawReactionsLayoutOverlay(Canvas canvas, float alpha) {
-        if (isRoundVideo) {
-            reactionsLayoutInBubble.drawServiceShaderBackground = 1f - getVideoTranscriptionProgress();
-        }
-        if (!reactionsVisible) {
-            return false;
-        }
-        if (hasReactionsToDraw()) {
-            if (reactionsLayoutInBubble.drawServiceShaderBackground > 0) {
-                applyServiceShaderMatrix();
-            }
-            boolean restore = false;
-            if (alpha * getAlpha() != 1f) {
-                AndroidUtilities.rectTmp.set(0, 0, getWidth(), getHeight());
-                canvas.saveLayerAlpha(AndroidUtilities.rectTmp, (int) (0xFF * alpha * getAlpha()), Canvas.ALL_SAVE_FLAG);
-                restore = true;
-            }
-            final boolean needsInvalidate;
-            if (reactionsLayoutInBubble.drawServiceShaderBackground > 0 || !transitionParams.animateBackgroundBoundsInner || currentPosition != null || isRoundVideo) {
-                needsInvalidate = reactionsLayoutInBubble.drawOverlay(canvas, transitionParams.animateChange ? transitionParams.animateChangeProgress : 1f);
-            } else {
-                canvas.save();
-                canvas.clipRect(0, 0, getMeasuredWidth(), getBackgroundDrawableBottom() + transitionParams.deltaBottom);
-                needsInvalidate = reactionsLayoutInBubble.drawOverlay(canvas, transitionParams.animateChange ? transitionParams.animateChangeProgress : 1f);
-                canvas.restore();
-            }
-            if (restore) {
-                canvas.restore();
-            }
-            return true;
-        }
-        return false;
-    }
+    // LoogriGram: drawReactionsLayoutOverlay stood here; see hasOutboundsContent.
 
     private void drawCaptionLayout(Canvas canvas, MessageObject.TextLayoutBlocks captionLayout, boolean origin, boolean selectionOnly, float alpha) {
         int x;

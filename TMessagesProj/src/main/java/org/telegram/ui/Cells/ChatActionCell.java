@@ -3795,24 +3795,8 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
         }
     }
 
-    public void drawReactionsLayoutOverlay(Canvas canvas, boolean fromParent) {
-        final float alpha = fromParent ? getAlpha() : 1.0f;
-        if (themeDelegate != null) {
-            themeDelegate.applyServiceShaderMatrix(getMeasuredWidth(), backgroundHeight, viewTranslationX, viewTop + dp(4));
-        } else {
-            Theme.applyServiceShaderMatrix(getMeasuredWidth(), backgroundHeight, viewTranslationX, viewTop + dp(4));
-        }
-        if (currentMessageObject != null && currentMessageObject.shouldDrawReactions() && (!reactionsLayoutInBubble.isSmall || transitionParams.animateChange && reactionsLayoutInBubble.animateHeight)) {
-            reactionsLayoutInBubble.drawServiceShaderBackground = 1.0f;
-            if (alpha < 1) {
-                canvas.saveLayerAlpha(0, 0, getWidth(), getHeight(), (int) (0xFF * alpha), Canvas.ALL_SAVE_FLAG);
-            }
-            reactionsLayoutInBubble.drawOverlay(canvas, transitionParams.animateChange ? transitionParams.animateChangeProgress : 1f);
-            if (alpha < 1) {
-                canvas.restore();
-            }
-        }
-    }
+    // LoogriGram: drawReactionsLayoutOverlay stood here, and nothing had called it
+    // for a while. The only overlay a reaction row ever had was the paid one.
 
     @Override
     public int getBoundsLeft() {

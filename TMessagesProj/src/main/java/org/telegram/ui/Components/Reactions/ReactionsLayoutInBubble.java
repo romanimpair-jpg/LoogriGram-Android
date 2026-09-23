@@ -32,13 +32,10 @@ import org.telegram.messenger.DocumentObject;
 import org.telegram.messenger.Emoji;
 import org.telegram.messenger.ImageLocation;
 import org.telegram.messenger.ImageReceiver;
-import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
-import org.telegram.messenger.R;
-import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.SvgHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
@@ -58,7 +55,6 @@ import org.telegram.ui.Components.AvatarsDrawable;
 import org.telegram.ui.Components.ButtonBounce;
 import org.telegram.ui.Components.CounterView;
 import org.telegram.ui.Components.CubicBezierInterpolator;
-import org.telegram.ui.Components.Particles;
 import org.telegram.ui.Components.RLottieDrawable;
 
 import java.util.ArrayList;
@@ -128,8 +124,7 @@ public class ReactionsLayoutInBubble {
     private int lastDrawTotalHeight;
     private int animateFromTotalHeight;
     public boolean hasUnreadReactions;
-    public boolean hasPaidReaction;
-
+    
     private static int pointer = 1;
 
     private final static Comparator<TLObject> usersComparator = (user1, user2) -> (int) (getPeerId(user1) - getPeerId(user2));
@@ -169,7 +164,6 @@ public class ReactionsLayoutInBubble {
         this.messageObject = messageObject;
         ArrayList<ReactionButton> oldButtons = new ArrayList<>(reactionButtons);
         hasUnreadReactions = false;
-        hasPaidReaction = false;
         reactionButtons.clear();
         if (messageObject != null) {
             boolean forceLikeDislikeReactions = false; /*!messageObject.isOutOwner()
@@ -187,18 +181,16 @@ public class ReactionsLayoutInBubble {
                 for (int i = 0; i < messageObject.messageOwner.reactions.results.size(); i++) {
                     totalCount += messageObject.messageOwner.reactions.results.get(i).count;
                 }
-                boolean includeEmptyStarButton = false;
                 boolean includeEmptyLikeButton = forceLikeDislikeReactions;
                 boolean includeEmptyDislikeButton = forceLikeDislikeReactions;
 
+                // LoogriGram: no paid reactions. The empty star button that invited one
+                // is gone, and a paid reaction someone else sent is not drawn either -
+                // a count of Stars paid is a money surface like any other.
                 final TLRPC.ChatFull chatInfo = MessagesController.getInstance(currentAccount).getChatFull(-messageObject.getDialogId());
-                if (!isSmall && !messageObject.messageOwner.reactions.results.isEmpty() && chatInfo != null && chatInfo.paid_reactions_available) {
-                    boolean hasPaidReaction = false;
+                if (!isSmall && !messageObject.messageOwner.reactions.results.isEmpty() && chatInfo != null) {
                     for (int i = 0; i < messageObject.messageOwner.reactions.results.size(); i++) {
                         TLRPC.ReactionCount reactionCount = messageObject.messageOwner.reactions.results.get(i);
-                        if (reactionCount.reaction instanceof TLRPC.TL_reactionPaid) {
-                            hasPaidReaction = true;
-                        }
                         if (reactionCount.reaction instanceof TLRPC.TL_reactionEmoji) {
                             String emoji = ((TLRPC.TL_reactionEmoji) reactionCount.reaction).emoticon;
                             if (TextUtils.equals("\uD83D\uDC4D", emoji)) {
@@ -209,15 +201,9 @@ public class ReactionsLayoutInBubble {
                             }
                         }
                     }
-                    if (!hasPaidReaction) {
-                        includeEmptyStarButton = true;
-                    }
                 }
 
                 ArrayList<TLRPC.Reaction> forcedReactions = new ArrayList<>();
-                if (includeEmptyStarButton) {
-                    forcedReactions.add(new TLRPC.TL_reactionPaid());
-                }
                 if (includeEmptyLikeButton) {
                     TLRPC.TL_reactionEmoji emoji = new TLRPC.TL_reactionEmoji();
                     emoji.emoticon = "\uD83D\uDC4D";
@@ -238,6 +224,9 @@ public class ReactionsLayoutInBubble {
                         reactionCount.count = 0;
                     } else {
                         reactionCount = messageObject.messageOwner.reactions.results.get(i);
+                        if (reactionCount.reaction instanceof TLRPC.TL_reactionPaid) {
+                            continue;
+                        }
                     }
                     ReactionButton old = null;
                     for (int j = 0; j < oldButtons.size(); ++j) {
@@ -250,7 +239,6 @@ public class ReactionsLayoutInBubble {
                     ReactionButton button = new ReactionLayoutButton(old, reactionCount, isSmall, isTag);
                     button.inGroup = messageObject.hasValidGroupId();
                     reactionButtons.add(button);
-                    hasPaidReaction = hasPaidReaction || button.paid;
                     if (!isSmall && !isTag && messageObject.messageOwner.reactions.recent_reactions != null) {
                         ArrayList<TLObject> users = null;
 
@@ -484,56 +472,8 @@ public class ReactionsLayoutInBubble {
         }
     }
 
-    public boolean hasOverlay() {
-        return hasPaidReaction && !(isEmpty && outButtons.isEmpty())
-            && LiteMode.isEnabled(LiteMode.FLAG_ANIMATED_EMOJI_REACTIONS)
-            && LiteMode.isEnabled(LiteMode.FLAG_PARTICLES);
-    }
-
-    public boolean drawOverlay(Canvas canvas, float animationProgress) {
-        if (isEmpty && outButtons.isEmpty()) {
-            return false;
-        }
-        float totalX = this.x;
-        float totalY = this.y;
-        if (isEmpty) {
-            totalX = lastDrawnX;
-            totalY = lastDrawnY;
-        } else if (animateMove) {
-            totalX = totalX * (animationProgress) + fromX * (1f - animationProgress);
-            totalY = totalY * (animationProgress) + fromY * (1f - animationProgress);
-        }
-        boolean needsInvalidate = false;
-        for (int i = 0; i < reactionButtons.size(); i++) {
-            ReactionButton reactionButton = reactionButtons.get(i);
-            if (!reactionButton.paid) continue;
-            canvas.save();
-            float x = reactionButton.x;
-            float y = reactionButton.y;
-            if (animationProgress != 1f && reactionButton.animationType == ANIMATION_TYPE_MOVE) {
-                x = reactionButton.x * animationProgress + reactionButton.animateFromX * (1f - animationProgress);
-                y = reactionButton.y * animationProgress + reactionButton.animateFromY * (1f - animationProgress);
-            }
-            float alpha = 1f;
-            if (animationProgress != 1f && reactionButton.animationType == ANIMATION_TYPE_IN) {
-                float s = 0.5f + 0.5f * animationProgress;
-                alpha = animationProgress;
-                canvas.scale(s, s, totalX + x + reactionButton.width / 2f, totalY + y + reactionButton.height / 2f);
-            }
-            needsInvalidate = needsInvalidate || reactionButton.drawOverlay(canvas, totalX + x, totalY + y, reactionButton.animationType == ANIMATION_TYPE_MOVE ? animationProgress : 1f, alpha, false);
-            canvas.restore();
-        }
-        for (int i = 0; i < outButtons.size(); i++) {
-            ReactionButton reactionButton = outButtons.get(i);
-            if (!reactionButton.paid) continue;
-            float s = 0.5f + 0.5f * (1f - animationProgress);
-            canvas.save();
-            canvas.scale(s, s, totalX + reactionButton.x + reactionButton.width / 2f, totalY + reactionButton.y + reactionButton.height / 2f);
-            needsInvalidate = needsInvalidate || outButtons.get(i).drawOverlay(canvas, totalX + reactionButton.x, totalY + reactionButton.y, 1f, (1f - animationProgress), false);
-            canvas.restore();
-        }
-        return needsInvalidate;
-    }
+    // LoogriGram: hasOverlay and drawOverlay stood here. They drew the glowing
+    // particle halo behind a paid reaction, the only button that ever had one.
 
     public void drawPreview(View view, Canvas canvas, int offset, Integer drawOnlyReaction) {
         if (isEmpty && outButtons.isEmpty()) {
@@ -704,9 +644,7 @@ public class ReactionsLayoutInBubble {
 
     public ReactionButton getReactionButton(VisibleReaction visibleReaction) {
         String hash;
-        if (visibleReaction.isStar) {
-            hash = "stars";
-        } else if (visibleReaction.emojicon != null) {
+        if (visibleReaction.emojicon != null) {
             hash = visibleReaction.emojicon;
         } else {
             hash = Long.toString(visibleReaction.documentId);
@@ -794,7 +732,6 @@ public class ReactionsLayoutInBubble {
         public int realCount;
         public int choosenOrder;
         public boolean drawImage = true;
-        public boolean paid;
         public boolean lastImageDrawn;
         public boolean wasDrawn;
         public String key;
@@ -842,9 +779,6 @@ public class ReactionsLayoutInBubble {
         private final Theme.ResourcesProvider resourcesProvider;
 
         public final ButtonBounce bounce;
-        private Particles particles;
-
-        private RLottieDrawable starDrawable;
 
         protected int getCacheType() {
             if (isTag) {
@@ -893,9 +827,7 @@ public class ReactionsLayoutInBubble {
             this.realCount = reactionCount.count;
             this.choosenOrder = reactionCount.chosen_order;
             this.isSmall = isSmall;
-            if (this.reaction instanceof TLRPC.TL_reactionPaid) {
-                this.key = "stars";
-            } else if (this.reaction instanceof TLRPC.TL_reactionEmoji) {
+            if (this.reaction instanceof TLRPC.TL_reactionEmoji) {
                 this.key = ((TLRPC.TL_reactionEmoji) this.reaction).emoticon;
             } else if (this.reaction instanceof TLRPC.TL_reactionCustomEmoji) {
                 this.key = Long.toString(((TLRPC.TL_reactionCustomEmoji) this.reaction).document_id);
@@ -907,26 +839,10 @@ public class ReactionsLayoutInBubble {
             counterDrawable.updateVisibility = false;
             counterDrawable.shortFormat = true;
 
+            // LoogriGram: the star branch stood first here, drawing a paid reaction with
+            // its own lottie star and a ring of particles. No button is built for one now.
             if (reaction != null) {
-                if (visibleReaction.isStar) {
-                    paid = true;
-                    if (LiteMode.isEnabled(LiteMode.FLAG_ANIMATED_EMOJI_REACTIONS)) {
-                        if (reuseFrom != null && reuseFrom.starDrawable != null) {
-                            starDrawable = reuseFrom.starDrawable;
-                        } else {
-                            starDrawable = new RLottieDrawable(R.raw.star_reaction_click, "star_reaction_click", dp(40), dp(40));
-                        }
-                        imageReceiver.setImageBitmap(starDrawable);
-                    } else {
-                        imageReceiver.setImageBitmap(ApplicationLoader.applicationContext.getResources().getDrawable(R.drawable.star_reaction).mutate());
-                    }
-//                    if (reuseFrom != null) {
-//                        imageReceiver.setImageBitmap(reuseFrom.imageReceiver.getImageDrawable());
-//                    } else {
-//                        imageReceiver.setImageBitmap(ApplicationLoader.applicationContext.getResources().getDrawable(R.drawable.star_small_inner));
-//                    }
-                    particles = reuseFrom != null && reuseFrom.particles != null ? reuseFrom.particles : new Particles(Particles.TYPE_RADIAL, SharedConfig.getDevicePerformanceClass() == SharedConfig.PERFORMANCE_CLASS_HIGH ? 18 : 8);
-                } else if (visibleReaction.emojicon != null) {
+                if (visibleReaction.emojicon != null) {
                     TLRPC.TL_availableReaction r = MediaDataController.getInstance(currentAccount).getReactionsMap().get(visibleReaction.emojicon);
                     if (r != null) {
                         //imageReceiver.setImage(ImageLocation.getForDocument(r.static_icon), "40_40", svgThumb, "webp", r, 1);
@@ -990,31 +906,6 @@ public class ReactionsLayoutInBubble {
             return false;
         }
 
-        public boolean drawOverlay(Canvas canvas, float x, float y, float progress, float alpha, boolean drawOverlayScrim) {
-            if (particles == null) return false;
-            if (!LiteMode.isEnabled(LiteMode.FLAG_ANIMATED_EMOJI_REACTIONS) || !LiteMode.isEnabled(LiteMode.FLAG_PARTICLES)) return false;
-
-            AndroidUtilities.rectTmp.set(x, y, x + width, y + height);
-            float rad = height / 2f;
-
-            particles.bounds.set(AndroidUtilities.rectTmp);
-            particles.bounds.inset(-dp(4), -dp(4));
-            particles.setBounds(particles.bounds);
-            final boolean needsPostInvalidate = particles.process();
-            particles.draw(canvas, ColorUtils.blendARGB(ColorUtils.setAlphaComponent(backgroundColor, 0xFF), ColorUtils.blendARGB(serviceTextColor, ColorUtils.setAlphaComponent(backgroundColor, 0xFF), .4f), getDrawServiceShaderBackground()));
-
-            if (isSelected) {
-                tagPath.rewind();
-                tagPath.addRoundRect(AndroidUtilities.rectTmp, rad, rad, Path.Direction.CW);
-
-                canvas.save();
-                canvas.clipPath(tagPath);
-                particles.draw(canvas, textColor);
-                canvas.restore();
-            }
-
-            return needsPostInvalidate;
-        }
 
         public void draw(Canvas canvas, float x, float y, float progress, float alpha, boolean drawOverlayScrim, boolean scrimProgressDirection, float scrimProgress) {
             wasDrawn = true;
@@ -1029,35 +920,21 @@ public class ReactionsLayoutInBubble {
             }
 
             if (choosen) {
-                if (paid) {
-                    backgroundColor = 0xFFE8AB02;
-                    textColor = 0xFFFFFFFF;
-                    serviceTextColor = 0xFFFFFFFF;
-                    serviceBackgroundColor = 0xFFE8AB02;
+                backgroundColor = Theme.getColor(isOutOwner() ? Theme.key_chat_outReactionButtonBackground : Theme.key_chat_inReactionButtonBackground, resourcesProvider);
+                textColor = Theme.getColor(isOutOwner() ? Theme.key_chat_outReactionButtonTextSelected : Theme.key_chat_inReactionButtonTextSelected, resourcesProvider);
+                if (parentView instanceof ChatActionCell) {
+                    serviceTextColor = Theme.getColor(Theme.key_chat_reactionServiceButtonTextSelected, resourcesProvider);
+                    serviceBackgroundColor = Theme.getColor(Theme.key_chat_reactionServiceButtonBackgroundSelected, resourcesProvider);
                 } else {
-                    backgroundColor = Theme.getColor(isOutOwner() ? Theme.key_chat_outReactionButtonBackground : Theme.key_chat_inReactionButtonBackground, resourcesProvider);
-                    textColor = Theme.getColor(isOutOwner() ? Theme.key_chat_outReactionButtonTextSelected : Theme.key_chat_inReactionButtonTextSelected, resourcesProvider);
-                    if (parentView instanceof ChatActionCell) {
-                        serviceTextColor = Theme.getColor(Theme.key_chat_reactionServiceButtonTextSelected, resourcesProvider);
-                        serviceBackgroundColor = Theme.getColor(Theme.key_chat_reactionServiceButtonBackgroundSelected, resourcesProvider);
-                    } else {
-                        serviceTextColor = Theme.getColor(isOutOwner() ? Theme.key_chat_outReactionButtonBackground : Theme.key_chat_inReactionButtonBackground, resourcesProvider);
-                        serviceBackgroundColor = Theme.getColor(isOutOwner() ? Theme.key_chat_outBubble : Theme.key_chat_inBubble, resourcesProvider);
-                    }
+                    serviceTextColor = Theme.getColor(isOutOwner() ? Theme.key_chat_outReactionButtonBackground : Theme.key_chat_inReactionButtonBackground, resourcesProvider);
+                    serviceBackgroundColor = Theme.getColor(isOutOwner() ? Theme.key_chat_outBubble : Theme.key_chat_inBubble, resourcesProvider);
                 }
             } else {
-                if (paid) {
-                    textColor = 0xFFE8AB02;
-                    backgroundColor = 0x40E8AB02;
-                    serviceTextColor = 0xFFFFFFFF;
-                    serviceBackgroundColor = Color.TRANSPARENT;
-                } else {
-                    textColor = Theme.getColor(isOutOwner() ? Theme.key_chat_outReactionButtonText : Theme.key_chat_inReactionButtonText, resourcesProvider);
-                    backgroundColor = Theme.getColor(isOutOwner() ? Theme.key_chat_outReactionButtonBackground : Theme.key_chat_inReactionButtonBackground, resourcesProvider);
-                    backgroundColor = ColorUtils.setAlphaComponent(backgroundColor, (int) (Color.alpha(backgroundColor) * 0.156f));
-                    serviceTextColor = Theme.getColor(Theme.key_chat_serviceText, resourcesProvider);
-                    serviceBackgroundColor = Color.TRANSPARENT;
-                }
+                textColor = Theme.getColor(isOutOwner() ? Theme.key_chat_outReactionButtonText : Theme.key_chat_inReactionButtonText, resourcesProvider);
+                backgroundColor = Theme.getColor(isOutOwner() ? Theme.key_chat_outReactionButtonBackground : Theme.key_chat_inReactionButtonBackground, resourcesProvider);
+                backgroundColor = ColorUtils.setAlphaComponent(backgroundColor, (int) (Color.alpha(backgroundColor) * 0.156f));
+                serviceTextColor = Theme.getColor(Theme.key_chat_serviceText, resourcesProvider);
+                serviceBackgroundColor = Color.TRANSPARENT;
             }
 
             if (drawBgOnlyIfChosen) {
@@ -1134,7 +1011,6 @@ public class ReactionsLayoutInBubble {
                 canvas.saveLayerAlpha(AndroidUtilities.rectTmp, 0xFF, Canvas.ALL_SAVE_FLAG);
                 AndroidUtilities.rectTmp.right -= dp(4);
             }
-            final boolean particlesEnabled = particles != null && LiteMode.isEnabled(LiteMode.FLAG_ANIMATED_EMOJI_REACTIONS);
             drawRoundRect(canvas, AndroidUtilities.rectTmp, rad, paint);
             if (isTag && drawTagDot()) {
                 Paint paint;
@@ -1153,10 +1029,7 @@ public class ReactionsLayoutInBubble {
 
             if (imageReceiver != null) {
                 int size, X;
-                if (paid) {
-                    size = dp(22);
-                    X = dp(4);
-                } else if (animatedEmojiDrawable != null) {
+                if (animatedEmojiDrawable != null) {
                     size = dp(24);
                     X = dp(6);
                     imageReceiver.setRoundRadius(dp(6));
@@ -1192,7 +1065,7 @@ public class ReactionsLayoutInBubble {
                 canvas.restore();
             } else if (counterDrawable != null && drawCounter()) {
                 canvas.save();
-                canvas.translate(x + dp(hasName && !drawTagDot() ? 10 : (hasName ? 9 : 8)) + dp(20) + dp(animatedEmojiDrawable != null ? 5 : 2) + tx + (paid ? -dp(1) : 0), y);
+                canvas.translate(x + dp(hasName && !drawTagDot() ? 10 : (hasName ? 9 : 8)) + dp(20) + dp(animatedEmojiDrawable != null ? 5 : 2) + tx, y);
                 counterDrawable.draw(canvas);
                 canvas.restore();
             }
@@ -1251,7 +1124,7 @@ public class ReactionsLayoutInBubble {
             if (animatedEmojiDrawable != null && animatedEmojiDrawableColor != lastDrawnTextColor) {
                 animatedEmojiDrawable.setColorFilter(new PorterDuffColorFilter(animatedEmojiDrawableColor = lastDrawnTextColor, PorterDuff.Mode.SRC_IN));
             }
-            if (drawImage && (paid || realCount > 1 || !isPlaying() || !isSelected)) {
+            if (drawImage && (realCount > 1 || !isPlaying() || !isSelected)) {
                 ImageReceiver imageReceiver2 = getImageReceiver();
                 boolean drawStaticImage = true;
                 if (imageReceiver2 != null) {
@@ -1392,9 +1265,7 @@ public class ReactionsLayoutInBubble {
             if (previewImageReceiver != null || previewAnimatedEmojiDrawable != null) return;
             View parent = parentView != null && parentView.getParent() instanceof View ? (View) parentView.getParent() : parentView;
             if (reaction != null) {
-                if (visibleReaction.isStar) {
-
-                } else if (visibleReaction.emojicon != null) {
+                if (visibleReaction.emojicon != null) {
                     TLRPC.TL_availableReaction r = MediaDataController.getInstance(currentAccount).getReactionsMap().get(visibleReaction.emojicon);
                     if (r != null && r.activate_animation != null) {
                         //imageReceiver.setImage(ImageLocation.getForDocument(r.static_icon), "40_40", svgThumb, "webp", r, 1);
@@ -1577,9 +1448,7 @@ public class ReactionsLayoutInBubble {
         @Override
         public int compare(ReactionButton o1, ReactionButton o2) {
             if (dialogId >= 0) {
-                if (o1.paid != o2.paid) {
-                    return o1.paid ? -1 : 1;
-                } else if (o1.isSelected != o2.isSelected) {
+                if (o1.isSelected != o2.isSelected) {
                     return o1.isSelected ? -1 : 1;
                 } else if (o1.isSelected) {
                     if (o1.choosenOrder != o2.choosenOrder) {
@@ -1588,9 +1457,7 @@ public class ReactionsLayoutInBubble {
                 }
                 return o1.reactionCount.lastDrawnPosition - o2.reactionCount.lastDrawnPosition;
             } else {
-                if (o1.paid != o2.paid) {
-                    return o1.paid ? -1 : 1;
-                } else if (o1.realCount != o2.realCount) {
+                if (o1.realCount != o2.realCount) {
                     return o2.realCount - o1.realCount;
                 }
             }
@@ -1658,11 +1525,10 @@ public class ReactionsLayoutInBubble {
 
         public long hash;
 
-        public static VisibleReaction asStar() {
-            VisibleReaction visibleReaction = new VisibleReaction();
-            visibleReaction.isStar = true;
-            return visibleReaction;
-        }
+        // LoogriGram: asStar stood here, and made the one VisibleReaction that was not
+        // read off a message - the star offered in the picker. isStar itself stays: a
+        // paid reaction can still arrive, and without the flag toTLReaction would turn
+        // one into a custom emoji with id 0 on the way back.
 
         public static VisibleReaction fromTL(TLRPC.Reaction reaction) {
             VisibleReaction visibleReaction = new VisibleReaction();

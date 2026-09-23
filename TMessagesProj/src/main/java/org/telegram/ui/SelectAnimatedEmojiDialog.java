@@ -1068,7 +1068,7 @@ public class SelectAnimatedEmojiDialog extends FrameLayout implements Notificati
         RecyclerListView.OnItemClickListener onItemClick = (view, position) -> {
             if (view instanceof ImageViewEmoji) {
                 ImageViewEmoji viewEmoji = (ImageViewEmoji) view;
-                if (viewEmoji.isDefaultReaction || viewEmoji.reaction != null && viewEmoji.reaction.isStar || type == TYPE_STICKER_SET_EMOJI || type == TYPE_EFFECTS) {
+                if (viewEmoji.isDefaultReaction || type == TYPE_STICKER_SET_EMOJI || type == TYPE_EFFECTS) {
                     incrementHintUse();
                     onReactionClick(viewEmoji, viewEmoji.reaction);
                 } else if (viewEmoji.isStaticIcon && viewEmoji.document != null) {
