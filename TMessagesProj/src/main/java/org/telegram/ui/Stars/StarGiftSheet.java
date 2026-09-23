@@ -3841,8 +3841,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         final String name = DialogObject.getShortName(dialogId);
 
         final long from_id = DialogObject.getPeerDialogId(savedStarGift.from_id);
-        final boolean fromBot = UserObject.isBot(MessagesController.getInstance(currentAccount).getUser(from_id));
-        final int within = MessagesController.getInstance(currentAccount).stargiftsConvertPeriodMax - (ConnectionsManager.getInstance(currentAccount).getCurrentTime() - savedStarGift.date);
+        // LoogriGram: fromBot and within were read only by the conversion wording.
         final long selfId = UserConfig.getInstance(currentAccount).getClientUserId();
         final long fromId = (savedStarGift.flags & 2) != 0 ? from_id : UserObject.ANONYMOUS;
         final boolean isForChannel = dialogId < 0;
@@ -3875,7 +3874,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 topView.setText(0, title, refunded ? null :
                     // LoogriGram: "you can upgrade this" only when the sender paid for it.
                     savedStarGift.can_upgrade && savedStarGift.upgrade_stars > 0 ? AndroidUtilities.replaceTags(getString(R.string.Gift2SelfInfoUpgrade)) :
-                    savedStarGift.convert_stars > 0 ? AndroidUtilities.replaceTags(formatPluralStringComma("Gift2SelfInfoConvert", (int) savedStarGift.convert_stars)) :
+                    // LoogriGram: a "convert this gift into N Stars" line stood here.
                     AndroidUtilities.replaceTags(getString(R.string.Gift2SelfInfo)),
                     null, releasedByText(savedStarGift.gift)
                 );
@@ -3894,22 +3893,12 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 topView.setText(
                     0,
                     title,
+                    // LoogriGram: the other wording counted the Stars this gift could be
+                    // sold back for, with a "More" link beside it into the sheet explaining
+                    // what Stars are. Upstream's own no-conversion wording is what is shown.
                     refunded || !myProfile ? null :
-                        TextUtils.concat(
-                            AndroidUtilities.replaceTags(fromBot || !canConvert() ? (
-                                myProfile ?
-                                    savedStarGift.unsaved ? LocaleController.getString(isForChannel ? R.string.Gift2Info2ChannelKeep : R.string.Gift2Info2BotKeep) : LocaleController.getString(isForChannel ? R.string.Gift2Info2ChannelRemove : R.string.Gift2Info2BotRemove) :
-                                    formatString(savedStarGift.can_upgrade && savedStarGift.upgrade_stars > 0 ? R.string.Gift2Info2OutUpgrade : R.string.Gift2Info2OutExpired, name)
-                            ) : myProfile ?
-                                formatPluralStringComma(within <= 0 ? (isForChannel ? "Gift2Info2ChannelExpired" : "Gift2Info2Expired") : (isForChannel ? "Gift2Info3Channel" : "Gift2Info3"), (int) savedStarGift.convert_stars) :
-                                formatPluralStringComma("Gift2Info2Out", (int) savedStarGift.convert_stars, name)
-                            ),
-                            " ",
-                            ((fromBot || !canConvert()) ? "" :
-                                AndroidUtilities.replaceArrows(AndroidUtilities.replaceSingleTag(getString(R.string.Gift2More).replace(' ', ' '), () -> {
-                                    new ExplainStarsSheet(getContext()).show();
-                                }), true)
-                            )
+                        AndroidUtilities.replaceTags(
+                            savedStarGift.unsaved ? LocaleController.getString(isForChannel ? R.string.Gift2Info2ChannelKeep : R.string.Gift2Info2BotKeep) : LocaleController.getString(isForChannel ? R.string.Gift2Info2ChannelRemove : R.string.Gift2Info2BotRemove)
                         ),
                     null, releasedByText(savedStarGift.gift)
                 );
@@ -3922,7 +3911,8 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 tableView.addRowUser(getString(R.string.Gift2From), currentAccount, fromId, () -> openProfile(fromId));
             }
             tableView.addRow(getString(R.string.StarsTransactionDate), LocaleController.formatString(R.string.formatDateAtTime, LocaleController.getInstance().getFormatterGiveawayCard().format(new Date(savedStarGift.date * 1000L)), LocaleController.getInstance().getFormatterDay().format(new Date(savedStarGift.date * 1000L))));
-            tableView.addRow(getString(R.string.Gift2Value), replaceStarsWithPlain(TextUtils.concat("⭐️ " + LocaleController.formatNumber(savedStarGift.gift.stars + savedStarGift.upgrade_stars, ','), " ", canConvert() && !refunded ? ButtonSpan.make(formatPluralStringComma("Gift2ButtonSell", (int) savedStarGift.convert_stars), this::convert, resourcesProvider) : ""), .8f));
+            // LoogriGram: a "Sell for N Stars" button sat beside this value.
+            tableView.addRow(getString(R.string.Gift2Value), replaceStarsWithPlain("⭐️ " + LocaleController.formatNumber(savedStarGift.gift.stars + savedStarGift.upgrade_stars, ','), .8f));
             if (savedStarGift.gift.limited && !refunded) {
                 addAvailabilityRow(tableView, currentAccount, savedStarGift.gift, resourcesProvider);
             }
@@ -4150,7 +4140,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             }
 
             final String name = DialogObject.getShortName(dialogId);
-            final boolean fromBot = UserObject.isBot(MessagesController.getInstance(currentAccount).getUser(dialogId));
+            // LoogriGram: fromBot was read only by the conversion wording.
             final boolean isForChannel = peer != null && DialogObject.getPeerDialogId(peer) < 0;
 
             topView.setGift(stargift, false, false, isWorn(currentAccount, getUniqueGift()), getLink() != null, false);
@@ -4161,7 +4151,9 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 topView.setText(0, title, refunded ? null :
                     // LoogriGram: as above.
                     can_upgrade && upgrade_stars > 0 ? AndroidUtilities.replaceTags(getString(R.string.Gift2SelfInfoUpgrade)) :
-                    convert_stars > 0 ? AndroidUtilities.replaceTags(formatPluralStringComma(converted ? "Gift2SelfInfoConverted" : "Gift2SelfInfoConvert", (int) convert_stars)) :
+                    // LoogriGram: a gift already converted still says so; offering to
+                    // convert one does not.
+                    converted && convert_stars > 0 ? AndroidUtilities.replaceTags(formatPluralStringComma("Gift2SelfInfoConverted", (int) convert_stars)) :
                     AndroidUtilities.replaceTags(getString(R.string.Gift2SelfInfo)),
                     null, releasedByText(stargift)
                 );
@@ -4180,21 +4172,13 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 topView.setText(
                     0,
                     title,
-                    refunded ? null : TextUtils.concat(
-                        AndroidUtilities.replaceTags(fromBot || !canSomeoneConvert() ? (
-                            out ?
-                                formatString(can_upgrade && upgrade_stars > 0 ? R.string.Gift2Info2OutUpgrade : R.string.Gift2Info2OutExpired, name) :
-                                getString(!saved ? (isForChannel ? R.string.Gift2Info2ChannelKeep : R.string.Gift2Info2BotKeep) : (isForChannel ? R.string.Gift2Info2ChannelRemove : R.string.Gift2Info2BotRemove))
-                        ) : out ?
-                            can_upgrade && upgrade_stars > 0 ? formatString(R.string.Gift2Info2OutUpgrade, name) : saved && !converted ? formatString(R.string.Gift2InfoOutPinned, name) : formatPluralStringComma(converted ? "Gift2InfoOutConverted" : "Gift2InfoOut", (int) convert_stars, name) :
-                            formatPluralStringComma(converted ? (isForChannel ? "Gift2InfoChannelConverted" : "Gift2InfoConverted") : (isForChannel ? "Gift2Info3Channel" : "Gift2Info3"), (int) convert_stars)
-                        ),
-                        " ",
-                        ((fromBot || !canConvert()) ? "" :
-                            AndroidUtilities.replaceArrows(AndroidUtilities.replaceSingleTag(getString(R.string.Gift2More).replace(' ', ' '), () -> {
-                                new ExplainStarsSheet(getContext()).show();
-                            }), true)
-                        )
+                    // LoogriGram: as in the block above - the wording that counted the
+                    // Stars this gift could be sold back for, and the "More" link into the
+                    // Stars explainer beside it, are gone.
+                    refunded ? null : AndroidUtilities.replaceTags(
+                        out ?
+                            formatString(can_upgrade && upgrade_stars > 0 ? R.string.Gift2Info2OutUpgrade : R.string.Gift2Info2OutExpired, name) :
+                            getString(!saved ? (isForChannel ? R.string.Gift2Info2ChannelKeep : R.string.Gift2Info2BotKeep) : (isForChannel ? R.string.Gift2Info2ChannelRemove : R.string.Gift2Info2BotRemove))
                     ),
                     null, releasedByText(stargift)
                 );
@@ -4216,7 +4200,8 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             }
             tableView.addRowDateTime(getString(R.string.StarsTransactionDate), date);
             if (stargift.stars > 0) {
-                tableView.addRow(getString(R.string.Gift2Value), replaceStarsWithPlain(TextUtils.concat("⭐️ " + LocaleController.formatNumber(stargift.stars + upgrade_stars, ','), " ", canConvert() && !refunded ? ButtonSpan.make(formatPluralStringComma("Gift2ButtonSell", (int) convert_stars), this::convert, resourcesProvider) : ""), .8f));
+                // LoogriGram: as above - no "Sell for N Stars" beside the value.
+                tableView.addRow(getString(R.string.Gift2Value), replaceStarsWithPlain("⭐️ " + LocaleController.formatNumber(stargift.stars + upgrade_stars, ','), .8f));
             }
             if (stargift != null && stargift.limited && !refunded) {
                 addAvailabilityRow(tableView, currentAccount, stargift, resourcesProvider);
@@ -4522,159 +4507,10 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         }
     }
 
-    private boolean canSomeoneConvert() {
-        if (getInputStarGift() == null) return false;
-        if (messageObject != null) {
-            if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionStarGift) {
-                final TLRPC.TL_messageActionStarGift action = (TLRPC.TL_messageActionStarGift) messageObject.messageOwner.action;
-                final boolean isForChannel = action.peer != null;
-                final boolean out = messageObject.isOutOwner();
-                final boolean self = messageObject.getDialogId() == UserConfig.getInstance(currentAccount).getClientUserId();
-                final int date = messageObject.messageOwner.date;
-                final int within = MessagesController.getInstance(currentAccount).stargiftsConvertPeriodMax - (ConnectionsManager.getInstance(currentAccount).getCurrentTime() - date);
-                return (!isForChannel || action.peer != null && isMineWithActions(currentAccount, DialogObject.getPeerDialogId(action.peer))) && !action.converted && action.convert_stars > 0 && within > 0;
-            }
-        } else if (savedStarGift != null) {
-            final int date = savedStarGift.date;
-            final int within = MessagesController.getInstance(currentAccount).stargiftsConvertPeriodMax - (ConnectionsManager.getInstance(currentAccount).getCurrentTime() - date);
-            return isMineWithActions(currentAccount, dialogId) && (savedStarGift.flags & (dialogId < 0 ? 2048 : 8)) != 0 && (savedStarGift.flags & 16) != 0 && (savedStarGift.flags & 2) != 0 && within > 0;
-        }
-        return false;
-    }
-
-    private boolean canConvert() {
-        if (getInputStarGift() == null) return false;
-        if (messageObject != null) {
-            if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionStarGift) {
-                final TLRPC.TL_messageActionStarGift action = (TLRPC.TL_messageActionStarGift) messageObject.messageOwner.action;
-                final boolean isForChannel = action.peer != null;
-                final boolean out = messageObject.isOutOwner();
-                final boolean self = messageObject.getDialogId() == UserConfig.getInstance(currentAccount).getClientUserId();
-                final int date = messageObject.messageOwner.date;
-                final int within = MessagesController.getInstance(currentAccount).stargiftsConvertPeriodMax - (ConnectionsManager.getInstance(currentAccount).getCurrentTime() - date);
-                return (!isForChannel && (!out || self) || action.peer != null && isMineWithActions(currentAccount, DialogObject.getPeerDialogId(action.peer))) && !action.converted && action.convert_stars > 0 && within > 0;
-            }
-        } else if (savedStarGift != null) {
-            final int date = savedStarGift.date;
-            final int within = MessagesController.getInstance(currentAccount).stargiftsConvertPeriodMax - (ConnectionsManager.getInstance(currentAccount).getCurrentTime() - date);
-            return isMineWithActions(currentAccount, dialogId) && (savedStarGift.flags & (dialogId < 0 ? 2048 : 8)) != 0 && (savedStarGift.flags & 16) != 0 && (savedStarGift.flags & 2) != 0 && within > 0;
-        }
-        return false;
-    }
-
-    private void convert() {
-        final long selfId = UserConfig.getInstance(currentAccount).getClientUserId();
-        final long fromId;
-        final long dialogId;
-        final long convert_stars;
-        final int date;
-        final TL_stars.InputSavedStarGift inputStarGift = getInputStarGift();
-        if (inputStarGift == null) {
-            return;
-        }
-        if (messageObject != null) {
-            date = messageObject.messageOwner.date;
-            final boolean out = messageObject.isOutOwner();
-            if (messageObject.messageOwner != null && messageObject.messageOwner.action instanceof TLRPC.TL_messageActionStarGift) {
-                final TLRPC.TL_messageActionStarGift action = (TLRPC.TL_messageActionStarGift) messageObject.messageOwner.action;
-                if (action.peer != null) {
-                    dialogId = DialogObject.getPeerDialogId(action.peer);
-                } else {
-                    dialogId = out ? messageObject.getDialogId() : selfId;
-                }
-                if (action.from_id != null) {
-                    fromId = DialogObject.getPeerDialogId(action.from_id);
-                } else {
-                    fromId = out ? selfId : messageObject.getDialogId();
-                }
-                convert_stars = action.convert_stars;
-            } else {
-                return;
-            }
-        } else if (savedStarGift != null) {
-            date = savedStarGift.date;
-            fromId = (savedStarGift.flags & 2) != 0 && !savedStarGift.name_hidden ? DialogObject.getPeerDialogId(savedStarGift.from_id) : UserObject.ANONYMOUS;
-            convert_stars = savedStarGift.convert_stars;
-            dialogId = this.dialogId;
-        } else {
-            return;
-        }
-        final int within = MessagesController.getInstance(currentAccount).stargiftsConvertPeriodMax - (ConnectionsManager.getInstance(currentAccount).getCurrentTime() - date);
-        final int withinDays = Math.max(1, within / (60 * 60 * 24));
-        new AlertDialog.Builder(getContext(), resourcesProvider)
-            .setTitle(getString(R.string.Gift2ConvertTitle))
-            .setMessage(AndroidUtilities.replaceTags(formatPluralString("Gift2ConvertText2", withinDays, UserObject.isService(fromId) || fromId == UserObject.ANONYMOUS ? getString(R.string.StarsTransactionHidden) : DialogObject.getShortName(fromId), formatPluralStringComma("Gift2ConvertStars", (int) convert_stars))))
-            .setPositiveButton(getString(R.string.Gift2ConvertButton), (di, w) -> {
-                final AlertDialog progressDialog = new AlertDialog(ApplicationLoader.applicationContext, AlertDialog.ALERT_TYPE_SPINNER);
-                progressDialog.showDelayed(500);
-                final TL_stars.convertStarGift req = new TL_stars.convertStarGift();
-                req.stargift = inputStarGift;
-                ConnectionsManager.getInstance(currentAccount).sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
-                    progressDialog.dismissUnless(400);
-                    BaseFragment lastFragment = LaunchActivity.getSafeLastFragment();
-                    if (lastFragment == null) return;
-                    if (res instanceof TLRPC.TL_boolTrue) {
-                        dismiss();
-                        StarsController.getInstance(currentAccount).invalidateProfileGifts(dialogId);
-                        if (dialogId >= 0) {
-                            final TLRPC.UserFull userFull = MessagesController.getInstance(currentAccount).getUserFull(selfId);
-                            if (userFull != null) {
-                                userFull.stargifts_count = Math.max(0, userFull.stargifts_count - 1);
-                                if (userFull.stargifts_count <= 0) {
-                                    userFull.flags2 &= ~256;
-                                }
-                            }
-                            StarsController.getInstance(currentAccount).invalidateBalance();
-                            StarsController.getInstance(currentAccount).invalidateTransactions(true);
-                            if (!(lastFragment instanceof StarsIntroActivity)) {
-                                final StarsIntroActivity fragment = new StarsIntroActivity();
-                                fragment.whenFullyVisible(() -> {
-                                    BulletinFactory.of(fragment)
-                                        .createSimpleBulletin(
-                                            R.raw.stars_topup,
-                                            LocaleController.getString(R.string.Gift2ConvertedTitle),
-                                            LocaleController.formatPluralStringComma("Gift2Converted", (int) convert_stars)
-                                        )
-                                        .show(true);
-                                });
-                                lastFragment.presentFragment(fragment);
-                            } else {
-                                BulletinFactory.of(lastFragment)
-                                    .createSimpleBulletin(
-                                        R.raw.stars_topup,
-                                        LocaleController.getString(R.string.Gift2ConvertedTitle),
-                                        LocaleController.formatPluralStringComma("Gift2Converted", (int) convert_stars)
-                                    )
-                                    .show(true);
-                            }
-                        } else {
-                            Bundle args = new Bundle();
-                            args.putLong("chat_id", -dialogId);
-                            args.putBoolean("start_from_monetization", true);
-                            final StatisticActivity fragment = new StatisticActivity(args);
-                            BotStarsController.getInstance(currentAccount).invalidateStarsBalance(dialogId);
-                            BotStarsController.getInstance(currentAccount).invalidateTransactions(dialogId, true);
-                            fragment.whenFullyVisible(() -> {
-                                BulletinFactory.of(fragment)
-                                    .createSimpleBulletin(
-                                        R.raw.stars_topup,
-                                        LocaleController.getString(R.string.Gift2ConvertedTitle),
-                                        LocaleController.formatPluralStringComma("Gift2ConvertedChannel", (int) convert_stars)
-                                    )
-                                    .show(true);
-                            });
-                            lastFragment.presentFragment(fragment);
-                        }
-                    } else if (err != null) {
-                        getBulletinFactory().createErrorBulletin(formatString(R.string.UnknownErrorCode, err.text)).show(false);
-                    } else {
-                        getBulletinFactory().createErrorBulletin(getString(R.string.UnknownError)).show(false);
-                    }
-                }));
-            })
-            .setNegativeButton(getString(R.string.Cancel), null)
-            .show();
-    }
+    // LoogriGram: canSomeoneConvert, canConvert and convert stood here. Telegram buys a
+    // gift back for Stars within a window after it is sent - convertStarGift - and the
+    // first two decided whether to offer that to us, or to say the other side could take
+    // it. Being paid is a money feature like paying, so none of it is offered.
 
     private void toggleShow() {
         if (button.isLoading()) return;

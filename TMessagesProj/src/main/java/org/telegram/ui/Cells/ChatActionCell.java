@@ -2175,8 +2175,9 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
                         }
                         sb.append(DialogObject.getShortName(sender));
                     }
-                    final int within = MessagesController.getInstance(currentAccount).stargiftsConvertPeriodMax - (ConnectionsManager.getInstance(currentAccount).getCurrentTime() - messageObject.messageOwner.date);
-                    final boolean canConvert = (messageObject.isOutOwner() && !self || !action.converted) && action.convert_stars > 0 && within > 0 && !action.refunded;
+                    // LoogriGram: canConvert chose between wording that named the Stars a
+                    // gift could be sold back for and upstream's own no-conversion wording.
+                    // Nothing sells a gift back, so the second is what is said.
                     CharSequence title;
                     if (action.refunded) {
                         title = getString(R.string.Gift2ActionConvertRefundedText);
@@ -2191,8 +2192,6 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
                     }  else if (isForChannel) {
                         if (action.converted) {
                             title = formatPluralStringComma("Gift2ActionConvertedInfo", (int) stars);
-                        } else if (canConvert && stars > 0) {
-                            title = AndroidUtilities.replaceTags(formatPluralStringComma("Gift2ActionInfoChannel", (int) stars));
                         } else {
                             title = AndroidUtilities.replaceTags(getString(R.string.Gift2ActionInfoChannelNoConvert));
                         }
@@ -2207,9 +2206,7 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
                     } else if (freeUpgrade) {
                         title = AndroidUtilities.replaceTags(messageObject.isOutOwner() ? formatString(R.string.Gift2ActionUpgradeOut, UserObject.getForcedFirstName(user)) : getString(R.string.Gift2ActionUpgrade));
                     } else if (messageObject.isOutOwner()) {
-                        if (canConvert && stars > 0) {
-                            title = AndroidUtilities.replaceTags(formatPluralStringComma("Gift2ActionOutInfo", (int) stars, UserObject.getForcedFirstName(user)));
-                        } else if (action.can_upgrade) {
+                        if (action.can_upgrade) {
                             title = AndroidUtilities.replaceTags(formatString(R.string.Gift2ActionOutInfoUpgrade, UserObject.getForcedFirstName(user)));
                         } else {
                             title = AndroidUtilities.replaceTags(formatString(R.string.Gift2ActionOutInfoNoConvert, UserObject.getForcedFirstName(user)));
@@ -2218,15 +2215,9 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
                         if (action.converted) {
                             title = formatPluralStringComma("Gift2ActionConvertedInfo", (int) stars);
                         } else if (action.saved) {
-                            if (!canConvert) {
-                                title = getString(R.string.Gift2ActionBotSavedInfo);
-                            } else {
-                                title = getString(R.string.Gift2ActionSavedInfo);
-                            }
-                        } else if (!canConvert) {
-                            title = getString(R.string.Gift2ActionBotInfo);
+                            title = getString(R.string.Gift2ActionBotSavedInfo);
                         } else {
-                            title = AndroidUtilities.replaceTags(formatPluralStringComma("Gift2ActionInfo", (int) stars));
+                            title = getString(R.string.Gift2ActionBotInfo);
                         }
                     }
                     CharSequence ribbon = null;
