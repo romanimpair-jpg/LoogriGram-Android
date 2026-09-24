@@ -1827,10 +1827,6 @@ public class ChatActivity extends BaseFragment implements
                 presentFragment(calendarActivity);
                 return;
             }
-            if (view instanceof ChatActionCell && ((ChatActionCell) view).getMessageObject() != null && ((ChatActionCell) view).getMessageObject().messageOwner.action instanceof TLRPC.TL_messageActionBoostApply) {
-                getNotificationCenter().postNotificationName(NotificationCenter.openBoostForUsersDialog, dialog_id);
-                return;
-            }
             if (view instanceof ChatActionCell && ((ChatActionCell) view).getMessageObject() != null && ((ChatActionCell) view).getMessageObject().messageOwner.action instanceof TLRPC.TL_messageActionSetSameChatWallPaper) {
                 int messageId = ((ChatActionCell) view).getMessageObject().getReplyMsgId();
                 AndroidUtilities.runOnUIThread(() -> {
@@ -40010,11 +40006,6 @@ public class ChatActivity extends BaseFragment implements
                 chatActivityEnterView.setFieldText("@" + username + " ");
                 chatActivityEnterView.openKeyboard();
             }
-        }
-
-        @Override
-        public void didPressBoostCounter(ChatMessageCell cell) {
-            getNotificationCenter().postNotificationName(NotificationCenter.openBoostForUsersDialog, dialog_id, cell);
         }
 
         @Override

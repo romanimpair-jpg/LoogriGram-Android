@@ -75,7 +75,6 @@ import android.text.style.LeadingMarginSpan;
 import android.text.style.StrikethroughSpan;
 import android.text.style.URLSpan;
 import android.util.Log;
-import android.util.Pair;
 import android.util.Property;
 import android.util.SparseArray;
 import android.util.StateSet;
@@ -188,7 +187,6 @@ import org.telegram.ui.Components.MotionBackgroundDrawable;
 import org.telegram.ui.Components.MsgClockDrawable;
 import org.telegram.ui.Components.Particles;
 import org.telegram.ui.Components.PostRunnableHolder;
-import org.telegram.ui.Components.Premium.boosts.BoostCounterSpan;
 import org.telegram.ui.Components.Premium.boosts.cells.msg.GiveawayMessageCell;
 import org.telegram.ui.Components.Premium.boosts.cells.msg.GiveawayResultsMessageCell;
 import org.telegram.ui.Components.QuoteHighlight;
@@ -562,9 +560,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
 
         default void didPressViaBot(ChatMessageCell cell, String username) {
-        }
-
-        default void didPressBoostCounter(ChatMessageCell cell) {
         }
 
         default void didPressChannelAvatar(ChatMessageCell cell, TLRPC.Chat chat, int postId, float touchX, float touchY, boolean asForward) {
@@ -1222,9 +1217,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private int nameLayoutSelectorColor;
     private Drawable nameLayoutSelector;
     private boolean nameLayoutPressed;
-    private boolean boostCounterPressed;
-    private int boostCounterSelectorColor;
-    private Drawable boostCounterLayoutSelector;
 
     private int nameStatusSelectorColor;
     private Drawable nameStatusSelector;
@@ -1643,8 +1635,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private StaticLayout adminLayout;
     private RectF adminLayoutRect = new RectF();
     private ButtonBounce adminLayoutBounce;
-    private RectF boostCounterBounds;
-    private BoostCounterSpan boostCounterSpan;
     private int nameWidth;
     private float nameOffsetX;
     private float nameX;
@@ -2117,48 +2107,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         return true;
     }
 
-    private boolean checkAdminMotionEvent(MotionEvent event) {
-        if (adminLayout == null || boostCounterBounds == null || currentUser == null && currentChat == null) {
-            boostCounterPressed = false;
-            return false;
-        }
-        final boolean pressed = boostCounterBounds.contains((int) getEventX(event), (int) getEventY(event));
-        if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            SpannableString spannableString = new SpannableString(adminLayout.getText());
-            BoostCounterSpan[] spans = spannableString.getSpans(0, spannableString.length(), BoostCounterSpan.class);
-            boostCounterPressed = pressed && spans != null && spans.length > 0;
-            if (boostCounterPressed) {
-                if (boostCounterLayoutSelector != null) {
-                    boostCounterLayoutSelector.setHotspot((int) getEventX(event), (int) getEventY(event));
-                    boostCounterLayoutSelector.setState(pressedState);
-                }
-            }
-        } else if (event.getAction() == MotionEvent.ACTION_UP || event.getAction() == MotionEvent.ACTION_CANCEL) {
-            if (event.getAction() == MotionEvent.ACTION_UP && boostCounterPressed) {
-                if (delegate != null) {
-                    delegate.didPressBoostCounter(this);
-                }
-            }
-            if (boostCounterLayoutSelector != null) {
-                boostCounterLayoutSelector.setState(StateSet.NOTHING);
-            }
-            boostCounterPressed = false;
-        }
-        return boostCounterPressed;
-    }
-
     private CharSequence getAdminAccessibilityText() {
         if (adminLayout == null || TextUtils.isEmpty(adminLayout.getText())) return null;
-        final SpannableStringBuilder text = new SpannableStringBuilder(adminLayout.getText());
-        final BoostCounterSpan[] spans = text.getSpans(0, text.length(), BoostCounterSpan.class);
-        for (int i = spans.length - 1; i >= 0; --i) {
-            final int start = text.getSpanStart(spans[i]);
-            final int end = text.getSpanEnd(spans[i]);
-            if (start >= 0 && end >= start) {
-                text.delete(start, end);
-            }
-        }
-        final String label = text.toString().trim();
+        final String label = adminLayout.getText().toString().trim();
         return TextUtils.isEmpty(label) ? null : label;
     }
 
@@ -4855,9 +4806,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         if (!result) {
             result = checkQuickShareMotionEvent(event);
         }
-        if(!result) {
-            result = checkAdminMotionEvent(event);
-        }
         if (!result) {
             result = checkNameMotionEvent(event);
         }
@@ -6827,8 +6775,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             ephemeralLayout = null;
             ephemeralWidth = 0;
             adminLayoutIsAdmin = adminLayoutIsOwner = adminLayoutIsTag = false;
-            boostCounterBounds = null;
-            boostCounterSpan = null;
             checkOnlyButtonPressed = false;
             replyTextLayout = null;
             AnimatedEmojiSpan.release(this, animatedEmojiReplyStack);
@@ -11906,9 +11852,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
         if (nameLayoutSelector != null) {
             nameLayoutSelector.setState(StateSet.NOTHING);
-        }
-        if (boostCounterLayoutSelector != null) {
-            boostCounterLayoutSelector.setState(StateSet.NOTHING);
         }
         resetCodeSelectors();
         if (replyBounce != null) {
@@ -18442,21 +18385,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 }
             }
 
-            int boosts = currentMessageObject.messageOwner.from_boosts_applied;
-            if (boosts > 0) {
-                if (adminString == null) {
-                    adminString = new SpannableStringBuilder();
-                }
-                Pair<SpannableString, BoostCounterSpan> pair = BoostCounterSpan.create(this, Theme.chat_namePaint, boosts);
-                boostCounterSpan = pair.second;
-                boostCounterSpan.isRtl = AndroidUtilities.isRTL(adminString);
-                boostCounterSpan.margin = isAdmin || isOwner;
-                if (boostCounterSpan.isRtl) {
-                    adminString.insert(0, pair.first);
-                } else {
-                    adminString.append(pair.first);
-                }
-            }
+            // LoogriGram: a member who boosted the group carried a badge here,
+            // after their admin title - a boost icon and "x3" for three boosts,
+            // tappable into the boost sheet. Boosts come from Premium, and
+            // Premium is honoured for nobody: everyone looks the same.
 
             if (adminString != null) {
                 StaticLayout staticLayout = new StaticLayout(adminString, Theme.chat_adminPaint, dp(300), Layout.Alignment.ALIGN_NORMAL, 0f, 0f, false);
@@ -18583,13 +18515,11 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     } else {
                         nameWidth = (int) Math.max(nameWidth, dp(32.33f) + adminLayout.getLineWidth(0) + (isAdmin ? dp(12) : 0) + dp(8));
                     }
-                    boostCounterBounds = new RectF();
                 } else {
                     adminLayout = null;
                     adminLayoutIsAdmin = false;
                     adminLayoutIsOwner = false;
                     adminLayoutIsTag = false;
-                    boostCounterBounds = null;
                 }
             } catch (Exception e) {
                 FileLog.e(e);
@@ -21704,31 +21634,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     ax -= dp(20) * avatarAlpha;
                 }
 
-                if (boostCounterSpan != null && boostCounterBounds != null) {
-                    final float bx = ax + lineWidth + dp(11) - dp(boostCounterSpan.isRtl ? 5f : 7.5f) - boostCounterSpan.getWidth();
-                    boostCounterBounds.set(bx, ay, bx + boostCounterSpan.getWidth(), ay + adminLayout.getHeight());
-                    if (boostCounterSpan.margin) {
-                        if (boostCounterSpan.isRtl) {
-                            boostCounterBounds.right -= dp(8);
-                        } else {
-                            boostCounterBounds.left += dp(8);
-                        }
-                    }
-                    // LoogriGram: renamed from selectorColor - the name selector's local
-                    // of that name used to be scoped by an isSponsored() check that is
-                    // gone, and now reaches this far.
-                    int boostSelectorColor = Theme.multAlpha(Theme.chat_namePaint.getColor(), .12f);
-                    if (boostCounterLayoutSelector == null) {
-                        boostCounterLayoutSelector = Theme.createRadSelectorDrawable(boostCounterSelectorColor = boostSelectorColor, 6, 6);
-                        boostCounterLayoutSelector.setCallback(this);
-                    } else if (boostCounterSelectorColor != boostSelectorColor) {
-                        Theme.setSelectorDrawableColor(boostCounterLayoutSelector, boostCounterSelectorColor = boostSelectorColor, true);
-                    }
-                    boostCounterLayoutSelector.setBounds((int) boostCounterBounds.left - dp(4), (int) boostCounterBounds.top, (int) (int) boostCounterBounds.right, (int) boostCounterBounds.bottom);
-                    boostCounterLayoutSelector.setAlpha((int) (0xFF * nameAlpha));
-                    boostCounterLayoutSelector.draw(canvas);
-                }
-
                 adminLayoutRect.set(ax - dp(6), ay - dp(1), ax2, ay + dp(15));
                 adminLayoutRect.inset(dp(-4), dp(-4));
                 final float scale = adminLayoutBounce == null ? 1.0f : adminLayoutBounce.getScale(.05f);
@@ -21739,13 +21644,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 }
                 if (adminLayoutIsAdmin) {
                     AndroidUtilities.rectTmp.set(-dp(6), -dp(1), ax2 - ax, dp(15));
-                    if (boostCounterSpan != null) {
-                        if (boostCounterSpan.isRtl) {
-                            AndroidUtilities.rectTmp.left += boostCounterSpan.getWidth();
-                        } else {
-                            AndroidUtilities.rectTmp.right -= boostCounterSpan.getWidth();
-                        }
-                    }
                     final int wasAlpha = Theme.chat_adminPaint.getAlpha();
                     Theme.chat_adminPaint.setAlpha((int) (wasAlpha * 0.12f));
                     canvas.drawRoundRect(AndroidUtilities.rectTmp, dp(8), dp(8), Theme.chat_adminPaint);
