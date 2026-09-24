@@ -220,9 +220,6 @@ public class NotificationCenter {
     public static final int suggestedFiltersLoaded = totalEvents++;
     public static final int updateBotMenuButton = totalEvents++;
     public static final int giftsToUserSent = totalEvents++;
-    public static final int didStartedMultiGiftsSelector = totalEvents++;
-    public static final int boostedChannelByUser = totalEvents++;
-    public static final int boostByChannelCreated = totalEvents++;
     public static final int didUpdatePremiumGiftStickers = totalEvents++;
     public static final int didUpdateTonGiftStickers = totalEvents++;
     public static final int didUpdatePremiumGiftFieldIcon = totalEvents++;
@@ -241,8 +238,6 @@ public class NotificationCenter {
     public static final int emojiKeywordsLoaded = totalEvents++;
     public static final int smsJobStatusUpdate = totalEvents++;
     public static final int storyQualityUpdate = totalEvents++;
-    public static final int groupRestrictionsUnlockedByBoosts = totalEvents++;
-    public static final int chatWasBoostedByUser = totalEvents++;
     public static final int groupPackUpdated = totalEvents++;
     public static final int timezonesUpdated = totalEvents++;
     public static final int customStickerCreated = totalEvents++;

@@ -42,7 +42,6 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.tl.TL_stars;
-import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.AnimatedTextView;
 import org.telegram.ui.Components.ColoredImageSpan;
@@ -625,54 +624,6 @@ public class LimitPreviewView extends LinearLayout {
         premiumLocked = true;
     }
 
-    public void setBoosts(TL_stories.TL_premium_boostsStatus boosts, boolean boosted) {
-        int k = boosts.current_level_boosts;
-        boolean isZeroLevelBoosts = boosts.current_level_boosts == boosts.boosts;
-        if ((isZeroLevelBoosts && boosted) || boosts.next_level_boosts == 0) {
-            percent = 1f;
-            defaultText.setText(LocaleController.formatString("BoostsLevel", R.string.BoostsLevel, boosts.level - 1));
-            premiumCount.setText(LocaleController.formatString("BoostsLevel", R.string.BoostsLevel, boosts.level));
-        } else {
-            percent = MathUtils.clamp((boosts.boosts - k) / (float) (boosts.next_level_boosts - k), 0, 1f);
-            defaultText.setText(LocaleController.formatString("BoostsLevel", R.string.BoostsLevel, boosts.level));
-            premiumCount.setText(LocaleController.formatString("BoostsLevel", R.string.BoostsLevel, boosts.level + 1));
-        }
-        ((FrameLayout.LayoutParams) premiumCount.getLayoutParams()).gravity = Gravity.RIGHT;
-        setType(LimitReachedBottomSheet.TYPE_BOOSTS);
-        defaultCount.setVisibility(View.GONE);
-        premiumText.setVisibility(View.GONE);
-
-        premiumCount.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
-        defaultText.setTextColor(Color.WHITE);
-
-        setIconValue(boosts.boosts, false);
-        isBoostsStyle = true;
-    }
-
-    public void setStarsUpgradePrice(
-        TL_stars.StarGiftUpgradePrice from,
-        long current_stars,
-        TL_stars.StarGiftUpgradePrice to
-    ) {
-        drawFromRight = true;
-        ratingPaint.setColor(Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider));
-        percent = AndroidUtilities.ilerp(current_stars, from.upgrade_stars, to.upgrade_stars);
-        defaultText.setText(LocaleController.formatPluralStringComma("Stars", (int) from.upgrade_stars));
-        premiumCount.setText(LocaleController.formatPluralStringComma("Stars", (int) to.upgrade_stars));
-        ((FrameLayout.LayoutParams) premiumCount.getLayoutParams()).gravity = Gravity.RIGHT;
-        setType(LimitReachedBottomSheet.TYPE_BOOSTS);
-        defaultCount.setVisibility(View.GONE);
-        premiumText.setVisibility(View.GONE);
-
-        premiumCount.setTextColor(isRatingNegative ? Color.WHITE : Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
-        defaultText.setTextColor(Color.WHITE);
-
-        setIconValue((int) current_stars, false);
-        isBoostsStyle = true;
-        isSimpleStyle = true;
-        isRatingStyle = true;
-    }
-
     public void setStarRating(TL_stars.Tl_starsRating rating) {
         isRatingNegative = false;
         ratingPaint.setColor(Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider));
@@ -693,7 +644,6 @@ public class LimitPreviewView extends LinearLayout {
             premiumCount.setText(LocaleController.formatString(R.string.StarRatingLevel, rating.level + 1));
         }
         ((FrameLayout.LayoutParams) premiumCount.getLayoutParams()).gravity = Gravity.RIGHT;
-        setType(LimitReachedBottomSheet.TYPE_BOOSTS);
         defaultCount.setVisibility(View.GONE);
         premiumText.setVisibility(View.GONE);
 

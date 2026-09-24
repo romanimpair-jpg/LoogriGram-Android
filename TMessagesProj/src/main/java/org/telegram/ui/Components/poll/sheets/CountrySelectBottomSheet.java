@@ -47,7 +47,6 @@ import org.telegram.ui.Components.FragmentSpansContainer;
 import org.telegram.ui.Components.GroupCreateSpan;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.Premium.boosts.BoostRepository;
-import org.telegram.ui.Components.Premium.boosts.SelectorBottomSheet;
 import org.telegram.ui.Components.Premium.boosts.cells.selector.SelectorCountryCell;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.ScaleStateListAnimator;
@@ -451,7 +450,7 @@ public class CountrySelectBottomSheet extends BottomSheetWithRecyclerListView im
             for (TLRPC.TL_help_country country : countriesMap.get(letter)) {
                 if (isSearching()) {
                     String q = translitSafe(query).toLowerCase();
-                    if (!SelectorBottomSheet.matchLocal(country, q)) continue;
+                    if (!matchCountry(country, q)) continue;
                 }
                 ah -= dp(44);
                 items.add(Factory.asCountry(country, selectedCountries.containsKey(country.iso2)));
@@ -520,5 +519,19 @@ public class CountrySelectBottomSheet extends BottomSheetWithRecyclerListView im
         } else if (id == ANIMATOR_ID_TOP_SAVE_BUTTON_VISIBILITY) {
             FragmentFloatingButton.setAnimatedVisibility(doneItem, factor);
         }
+    }
+
+    // LoogriGram: SelectorBottomSheet.matchLocal did this - the giveaway
+    // picker's search, gone with giveaways. Only its country half was used.
+    private static boolean matchCountry(TLRPC.TL_help_country country, String q) {
+        if (TextUtils.isEmpty(q)) {
+            return true;
+        }
+        final String name = translitSafe(country.default_name).toLowerCase();
+        if (name.startsWith(q) || name.contains(" " + q)) {
+            return true;
+        }
+        final String iso2 = translitSafe(country.iso2).toLowerCase();
+        return iso2.startsWith(q) || iso2.contains(" " + q);
     }
 }

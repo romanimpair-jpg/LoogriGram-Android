@@ -2887,7 +2887,6 @@ public class ChatActivity extends BaseFragment implements
             .add(NotificationCenter.messageReceivedByAck)
             .add(NotificationCenter.messageSendError)
             .add(NotificationCenter.chatInfoDidLoad)
-            .add(NotificationCenter.groupRestrictionsUnlockedByBoosts)
             .add(NotificationCenter.customStickerCreated)
             .add(NotificationCenter.contactsDidLoad)
             .add(NotificationCenter.messagePlayingProgressDidChanged)
@@ -22273,18 +22272,6 @@ public class ChatActivity extends BaseFragment implements
                 }
                 updateInfoTopView(openAnimationStartTime != 0 && SystemClock.elapsedRealtime() >= openAnimationStartTime + 150);
             }
-        } else if (id == NotificationCenter.groupRestrictionsUnlockedByBoosts) {
-            if (chatActivityEnterView != null) {
-                chatActivityEnterView.checkChannelRights();
-                chatActivityEnterView.setSlowModeTimer(0);
-            }
-            dismissCurrentDialog();
-            updateSecretStatus();
-            AndroidUtilities.runOnUIThread(() -> {
-                String title = LocaleController.getString(R.string.BoostingRemoveRestrictionsSuccessTitle);
-                String subTitle = LocaleController.getString(R.string.BoostingRemoveRestrictionsSuccessSubTitle);
-                BulletinFactory.of(ChatActivity.this).createSimpleBulletin(R.raw.chats_infotip, title, subTitle).show();
-            }, 350);
         } else if (id == NotificationCenter.chatInfoDidLoad) {
             TLRPC.ChatFull chatFull = (TLRPC.ChatFull) args[0];
             if (currentChat != null && chatFull.id == currentChat.id) {
