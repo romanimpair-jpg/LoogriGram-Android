@@ -18,13 +18,14 @@ depends on.
 |---|---|
 | Fork, CI, degoogling | Done. No Google bytecode in the APK, verified in the dex. The last Google-shaped code went on 2026-09-23/24: the Play install referrer and the four Chromecast stubs |
 | Installed on the phone | **Yes.** `gf20af361`, installed 2026-09-22 over `adb` (`adb install -r` succeeded, so the key matched); launches clean. Not rechecked since: the phone was not on USB on 2026-09-24. `gaf5d70a5` built green on 2026-09-22 but was never installed |
-| Latest release | `g1ec92ae0`, built green 2026-09-23 ([run 35843410240](https://github.com/romanimpair-jpg/LoogriGram-Android/actions/runs/35843410240)). **Do not install it**: it crashes opening any collectible gift (trap 0e, fixed in `ad610a75`). The installed updater will offer it |
-| Pending build | None dispatched. The code head, `a63e5697`, is 32 commits past `g1ec92ae0` and compiles ([run 36035481669](https://github.com/romanimpair-jpg/LoogriGram-Android/actions/runs/36035481669)) |
+| Latest release | `g1ec92ae0` (2026-09-23) until the full build below lands. **Do not install it**: it crashes opening any collectible gift (trap 0e, fixed in `ad610a75`). A buggy Latest is superseded by the next build, never deleted - the user's rule |
+| Pending build | Full build of `f2478ebb` dispatched 2026-09-25 ([run 36054333640](https://github.com/romanimpair-jpg/LoogriGram-Android/actions/runs/36054333640)); its result was not read here - the user reports builds. If green it is `gf2478ebb` and supersedes `g1ec92ae0`. Everything after it (the wallet and the rename) is compile-only |
 | App name | Done — launcher, in-app strings, and the two wordmark screens |
 | Phone contacts | **Never touched.** Permissions, account and sync adapter all gone |
-| Updater | Ours, from this repo's releases. Checks on every cold start, then hourly; manual row in Settings (2026-09-21). The installed `gf20af361` is the first build with that behaviour, and `g1ec92ae0` the first release published after it - so **its automatic check has something to find now, but nobody has seen it find it** |
+| Updater | Ours, from this repo's releases. Checks on every cold start, then hourly; manual row in Settings (2026-09-21). Since `ec7c9d55` (2026-09-24) a download waiting to be installed no longer blocks the check: a newer release replaces it and one no longer Latest is dropped - the installed `gf20af361` does not have that yet. **Nobody has seen the automatic check find a release** |
 | Ads | **Gone**, all three surfaces, down to `MessageObject`'s fields (2026-09-21) |
-| Money messages | Held in history, never drawn — desktop's hidden-content rule. The chat list no longer rises for one |
+| Money messages | Held in history, never drawn — desktop's hidden-content rule. The chat list no longer rises for one. **Their drawing code is deleted too** (2026-09-24/25): ChatActionCell's gift cards, the invoice card, paid media and `GroupMedia`, the eight message types nothing can have, the extended-media checks |
+| Stars wallet | **Gone** (2026-09-25): StarsIntroActivity, TONIntroActivity, PaymentFormActivity, BotStarsController and the wallet half of StarsController. What was left of it is `ui/Gifts/GiftsController` (gift catalogue and profile gift lists), `messenger.MessageId` is its own class |
 | Paid messages | **Done** (2026-09-21/22): users who charge are locked, nothing ever pays, nothing charges. The price-setting half went with the privacy option, the group permission and a live's price per comment |
 | Paid media, live comments | **Gone** (2026-09-22): no price on a photo or album, no paid or highlighted live comment, no Star donations to a live |
 | Paid reactions | **Gone** (2026-09-22/23). The star is not offered, its sheet and flying-star overlay are deleted, the bookkeeping that tracked one of ours in flight is gone, and one that *arrives* is no longer drawn — no button is built for it, and the particle halo that was the whole of the reaction row's overlay pass went with it |
@@ -60,15 +61,15 @@ The installed APK: ~44.5 MB, `lib/arm64-v8a/libtmessages.49.so` only, signed
 fingerprint is how to confirm a later build carries the same key - and it must,
 because Android will refuse an update signed with any other.
 
-### Start here next session (written 2026-09-24)
+### Start here next session (written 2026-09-25)
 
-1. **Do not install `g1ec92ae0`.** It is the Latest release, so the installed
-   updater will offer it, and it crashes opening any collectible gift (trap
-   0e). A newer full build supersedes it, or the release can be deleted -
-   either needs the user's go.
-2. **The next full build is `a63e5697` or later**: 32 commits and about
-   28,400 lines past `g1ec92ae0`, none of which has run. Ask first, as
-   always.
+1. **Ask the user how full build `f2478ebb` went** (run 36054333640). If it
+   failed, fix from `--log-failed`. If green, `gf2478ebb` supersedes the
+   crashing `g1ec92ae0`; don't install `g1ec92ae0`.
+2. **The commits after it are compile-only**: `9f187fe3`..`b5cf00ef`
+   (the market value row, the Premium tier, the wallet, LimitPreviewView,
+   Stars settings, the GiftsController rename); all six compile, the last
+   in run 36068062946. The next full build needs the user's go, as always.
 3. **After installing, look first where a mistake would be silent** - a
    compile draws nothing:
    - **the chat list**: tapping a chat must open *that* chat. `61055a34`
@@ -96,10 +97,20 @@ because Android will refuse an update signed with any other.
      channel screen);
    - **the gift upgrade page**, from the previous list and still unseen: it
      should appear *only* when the sender prepaid the upgrade, reading
-     "Upgrade for Free" and then Confirm.
-4. **Then continue** - see "Remaining work": the held money messages'
-   drawing, then the Stars wallet, then the Premium pass, then desktop
-   parity.
+     "Upgrade for Free" and then Confirm;
+   - **service messages** (ChatActionCell was cut by 1,335 lines): a
+     collectible's chat theme ("set a gift theme", View), a sharing offer
+     with its two buttons, a community change, a suggested profile photo,
+     a wallpaper message and a story mention must all still draw;
+   - **a received collectible's sheet**: no "Value" row, Share has no story
+     cell, the sticker and "Availability" row still draw (helpers moved to
+     GiftViews);
+   - **link previews**: boost, gift-code and auction links preview as plain
+     pages; a collectible's (`telegram_nft`) preview and button remain;
+   - **limit sheets** (LimitPreviewView lost its dark-gradient paths): the
+     bars and counters look as before.
+4. **Then continue** - see "Remaining work": the Premium pass (started:
+   the getter sites), then desktop parity.
 
 Still unverified from earlier sessions, since a compile cannot see layout:
    - chat list: a gift or payment arriving must not move the chat to the top
@@ -277,6 +288,24 @@ Each of these was hit here. Do not relearn them.
    its hash, store it with `git hash-object -w --no-filters`, rebuild the
    index, and `git checkout --` the damaged files. Nothing of that covers
    files outside git, so scan scratch files for NUL bytes too.
+
+0g. **A class's static helpers are used through `import static` lines,
+   which `closure.py` skips.** Deleting StarsIntroActivity looked safe by
+   closure until `check_dangling_imports.py` and `check_swallowed.py`
+   found StarGiftSheet, TableView and GiftViews calling three of its
+   helpers through static imports. After deleting any class run both, and
+   move the helpers out first. Then look one level deeper: classes only
+   the deleted files used (six after the wallet), resources only they
+   used (41 files), and interfaces whose only implementer they were
+   (LimitPreviewView's DarkGradientProvider).
+
+0h. **Tooling slips seen 2026-09-24/25.** `ed.cut_method` looped forever
+   when its replacement kept the method's signature - fixed, it now
+   resumes after the replacement (`test_cutm_keep.py`). A compile run sat
+   in "Clone" for 18 minutes; cancel and redispatch after five. The
+   PowerShell tool refuses `git rm "$dir/$file"` in a loop as "removal on
+   /" - run `git rm` from a Python script. And measure the numbers in a
+   commit message (`--numstat -w`, file counts) before writing them.
 
 1. **A dependency you remove may be supplying something unrelated.** Dropping
    `androidx.mediarouter` with Chromecast took `androidx.media` with it, which
@@ -734,18 +763,14 @@ out of a class that is being deleted or changing how a message renders.
 
 In rough order of how much is left behind:
 
-- **The held money messages' drawing** - next. `LoogriGramHidden` holds
-  these messages unshown, so the code that drew them is dead, and some of it
-  is interleaved with live actions. In `ChatActionCell` (4,076 lines): Stars
-  and TON gifts (`TYPE_GIFT_STARS`), `starGiftLayout`, `birthdayLayout`, the
-  suggested-post approval, gift offers and `USE_PREMIUM_GIFT_LOCAL_STICKER` -
-  keeping the live `TYPE_GIFT_THEME_UPDATE`, sharing offers and community
-  changes. Then the gift types in `MessageObject`, `MessagePreviewParams` and
-  `ChatActivity`; `ChatMessageCell`'s invoice preview and paid media
-  (`hasInvoicePreview` and friends); and the boost, gift-code
-  and auction link previews (`drawInstantViewType` 18, 20 and 22,
-  `instantViewTypeIsGiftAuction`).
-- **The Stars wallet.** `StarsIntroActivity` (4,618), `PaymentFormActivity`
+- **Done 2026-09-24/25:** the held money messages' drawing and the Stars
+  wallet, both below in the record. Left over from them: `MessageObject`'s
+  `updateMessageText` still builds text for the held actions before
+  `setType` clears it; `ChatMessageCell` still observes
+  `didUpdatePremiumGiftStickers`; `MediaDataController`'s Premium/TON gift
+  sticker packs lost their last drawing reader; `starsUsdSellRate1000` and
+  the TON config still have readers to trace.
+- **The Stars wallet** (done; kept for the record of what it was). `StarsIntroActivity` (4,618), `PaymentFormActivity`
   (4,835), `TONIntroActivity` (842), `BotStarsController` (277),
   `BalanceCloud`, `ExplainStarsSheet`, and the wallet half of
   `StarsController` (2,512 lines in all): the Stars deep link
@@ -765,9 +790,21 @@ In rough order of how much is left behind:
   is a second, smaller case of the same thing - it is a (dialog, message) pair
   that merely lives in the class, and `MessagesController` keys its delivery
   reports on it.
-- **Premium economy.** The three forced getters (`premiumFeaturesBlocked`,
-  `premiumPurchaseBlocked`, `starsPurchaseAvailable`: 84 uses in 36 files)
-  still leave every branch behind them in place. Settings and the
+- **Premium economy - next.** The three forced getters (`premiumFeaturesBlocked`,
+  `premiumPurchaseBlocked`, `starsPurchaseAvailable`: 79 uses in 35 files on
+  2026-09-25) still leave every branch behind them in place. Work them file
+  by file: substitute the constant, delete the branch, then whatever it
+  alone called (most sites cascade - caption-limit bulletins, the
+  transcription and translation trials, speed promos, premium restore and
+  Christmas hints, stealth mode, story quality, the Premium privacy rows).
+  A first batch was scripted but not applied (MessagesController's two
+  `filterPremiumStickers` early returns, EmojiAnimationsOverlay's
+  premium-sticker bulletin and its set fetch, PremiumGradient,
+  AppIconsSelectorCell, FloatingToolbar, UserCell's star/status). Note
+  `PremiumPreviewFragment.onFragmentCreate` returns false under the getter,
+  so that screen never opens - but it is referenced ~290 times from 70
+  files, mostly for its feature constants, so it wants the constants moved
+  out before it goes. Settings and the
   own-profile menu lost their rows on 2026-09-21, and 2026-09-22 turned the
   gift entry points into real deletions. Known pieces left:
   `PremiumPreviewFragment` (2,416 lines; its `if (false)` blocks, the "no
@@ -889,6 +926,19 @@ In rough order of how much is left behind:
   collectible gift that is in the published `g1ec92ae0` (trap 0e). And a
   second power cut left a corrupt index, three truncated objects and four
   NUL-filled source files that `git status` did not show (trap 0f).
+
+- **Done on 2026-09-24/25, for the record** (14 commits, `ec7c9d55`..`b5cf00ef`,
+  about 18,400 lines net): the updater lets a newer release replace a
+  waiting download; reposting a collectible to a story; ChatActionCell's
+  cards for the held gift messages (with StarGiftUniqueActionLayout and
+  SuggestBirthdayActionLayout); ChatMessageCell's invoice card; paid media
+  and GroupMedia; the eight message types nothing can have; the
+  extended-media checks; boost, gift-code and auction link previews as
+  plain pages; the gift sheet's market value; GiftCell's Premium tier; the
+  Stars and TON wallet (13,410 lines); LimitPreviewView's dark gradient;
+  nine dead Stars settings; and StarsController renamed GiftsController,
+  with MessageId in messenger. Full build `f2478ebb` covers the first
+  eight; every commit compiles (last: `b5cf00ef`, run 36068062946).
 
 ### Then
 
