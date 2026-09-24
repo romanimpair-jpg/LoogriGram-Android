@@ -2870,15 +2870,4 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView imp
         baseFragment.showDialog(limitReachedBottomSheet);
     }
 
-    public static void openBoostsForPostingStories(BaseFragment baseFragment, long dialogId, ChannelBoostsController.CanApplyBoost canApplyBoost, TL_stories.TL_premium_boostsStatus boostsStatus, Runnable statisticAction) {
-        if (baseFragment == null || canApplyBoost == null || boostsStatus == null || baseFragment.getContext() == null) {
-            return;
-        }
-        LimitReachedBottomSheet limitReachedBottomSheet = new LimitReachedBottomSheet(baseFragment, baseFragment.getContext(), LimitReachedBottomSheet.TYPE_BOOSTS_FOR_POSTING, baseFragment.getCurrentAccount(), baseFragment.getResourceProvider());
-        limitReachedBottomSheet.setCanApplyBoost(canApplyBoost);
-        limitReachedBottomSheet.setBoostsStats(boostsStatus, true);
-        limitReachedBottomSheet.setDialogId(dialogId);
-        limitReachedBottomSheet.showStatisticButtonInLink(statisticAction);
-        limitReachedBottomSheet.show();
-    }
 }

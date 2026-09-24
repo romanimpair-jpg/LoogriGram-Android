@@ -66,12 +66,10 @@ import org.telegram.ui.Components.Reactions.ReactionImageHolder;
 import org.telegram.ui.Components.Reactions.ReactionsLayoutInBubble;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PremiumPreviewFragment;
-import org.telegram.ui.StatisticActivity;
 import org.telegram.ui.Stories.bots.BotPreviewsEditContainer;
 import org.telegram.ui.Stories.recorder.DraftsController;
 import org.telegram.ui.Stories.recorder.StoryEntry;
 import org.telegram.ui.Stories.recorder.StoryPrivacyBottomSheet;
-import org.telegram.ui.Stories.recorder.StoryRecorder;
 import org.telegram.ui.Stories.recorder.StoryUploadingService;
 
 import java.io.File;
@@ -4527,44 +4525,19 @@ public class StoriesController {
         ConnectionsManager.getInstance(currentAccount).sendRequest(tl_stories_canSendStory, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
             if (err != null) {
                 if (err.text.contains("BOOSTS_REQUIRED")) {
-                    if (showLimitsBottomSheet) {
-                        MessagesController messagesController = MessagesController.getInstance(currentAccount);
-                        messagesController.getBoostsController().getBoostsStats(dialogId, boostsStatus -> {
-                            if (boostsStatus == null) {
-                                consumer.accept(false);
-                                return;
-                            }
-                            messagesController.getBoostsController().userCanBoostChannel(dialogId, boostsStatus, canApplyBoost -> {
-                                if (canApplyBoost == null) {
-                                    consumer.accept(false);
-                                    return;
-                                }
-                                BaseFragment lastFragment = LaunchActivity.getLastFragment();
-                                Runnable runnable = null;
-                                if (canPostStories(dialogId)) {
-                                    runnable = () -> {
-                                        TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
-                                        BaseFragment fragment = StatisticActivity.create(chat);
-                                        BaseFragment lastFragment1 = LaunchActivity.getLastFragment();
-                                        if (lastFragment1 != null) {
-                                            if (StoryRecorder.isVisible()) {
-                                                BaseFragment.BottomSheetParams params = new BaseFragment.BottomSheetParams();
-                                                params.transitionFromLeft = true;
-                                                lastFragment1.showAsSheet(fragment, params);
-                                            } else {
-                                                lastFragment1.presentFragment(fragment);
-                                            }
-                                        }
-                                    };
-                                }
-                                LimitReachedBottomSheet.openBoostsForPostingStories(lastFragment, dialogId, canApplyBoost, boostsStatus, runnable);
-                                consumer.accept(false);
-                            });
-                            consumer.accept(false);
-                        });
-                    } else {
-                        consumer.accept(false);
+                    // LoogriGram: this fetched the channel's boost status and
+                    // opened the "boost this channel" sheet, with a link into its
+                    // boost statistics for an admin. Boosts are honoured for
+                    // nobody, so the refusal is only explained.
+                    BaseFragment lastFragment = LaunchActivity.getLastFragment();
+                    if (showLimitsBottomSheet && lastFragment != null) {
+                        final TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
+                        new AlertDialog.Builder(lastFragment.getContext(), resourcesProvider)
+                            .setMessage(AndroidUtilities.replaceTags(LocaleController.formatString(R.string.LoogriGramStoriesNeedBoosts, chat != null ? chat.title : "")))
+                            .setPositiveButton(getString(R.string.OK), null)
+                            .show();
                     }
+                    consumer.accept(false);
                 } else if (err.text.startsWith("STORY_LIVE_ALREADY_")) {
                     BaseFragment lastFragment = LaunchActivity.getLastFragment();
                     if (showLimitsBottomSheet && lastFragment != null) {
