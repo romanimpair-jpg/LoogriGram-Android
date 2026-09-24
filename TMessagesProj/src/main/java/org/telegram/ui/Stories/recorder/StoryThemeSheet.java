@@ -18,7 +18,7 @@ import org.telegram.messenger.R;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.BackDrawable;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.ChannelColorActivity;
+import org.telegram.ui.ThemeChooser;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
 
@@ -29,7 +29,7 @@ public class StoryThemeSheet extends FrameLayout {
 
     private final TextView titleView;
 
-    private final ChannelColorActivity.ThemeChooser themeView;
+    private final ThemeChooser themeView;
 
     private final Theme.ResourcesProvider resourcesProvider;
     private final Runnable whenDie;
@@ -59,7 +59,7 @@ public class StoryThemeSheet extends FrameLayout {
         titleView.setText(LocaleController.getString(R.string.StorySetWallpaper));
         addView(titleView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.LEFT, 54, 16, 24, 0));
 
-        themeView = new ChannelColorActivity.ThemeChooser(context, false, currentAccount, resourcesProvider) {
+        themeView = new ThemeChooser(context, false, currentAccount, resourcesProvider) {
             @Override
             public boolean isDark() {
                 return currentEntry != null ? currentEntry.isDark : super.isDark();

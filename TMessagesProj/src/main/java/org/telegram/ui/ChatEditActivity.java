@@ -62,7 +62,6 @@ import org.telegram.messenger.browser.Browser;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_bots;
-import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
 import org.telegram.ui.ActionBar.AlertDialog;
@@ -132,7 +131,6 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
     private TextCell typeCell;
     private TextCell linkedCell;
     private TextCell suggestedCell;
-    private PeerColorActivity.ChangeNameColorCell colorCell;
     private TextCell historyCell;
     private TextCell reactionsCell;
     private TextInfoPrivacyCell settingsSectionCell;
@@ -197,7 +195,6 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
 
     private boolean historyHidden;
     private TLRPC.ChatReactions availableReactions;
-    private TL_stories.TL_premium_boostsStatus boostsStatus;
 
     private boolean createAfterUpload;
     private boolean donePressed;
@@ -892,18 +889,11 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
                 });
             }
 
-            if (ChatObject.isChannelAndNotMegaGroup(currentChat) && ChatObject.canChangeChatInfo(currentChat)) {
-                colorCell = new PeerColorActivity.ChangeNameColorCell(currentAccount, -currentChat.id, context, getResourceProvider());
-                colorCell.setBackground(Theme.getSelectorDrawable(true));
-                typeEditContainer.addView(colorCell, LayoutHelper.createLinear(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-                colorCell.setOnClickListener(v -> {
-                    presentFragment(new ChannelColorActivity(-currentChat.id).setOnApplied(this));
-
-                    MessagesController.getInstance(currentAccount).getMainSettings().edit().putInt("boostingappearance",
-                        MessagesController.getInstance(currentAccount).getMainSettings().getInt("boostingappearance", 0) + 1
-                    ).apply();
-                });
-            }
+            // LoogriGram: a channel's Appearance row stood here, opening
+            // ChannelColorActivity - name and profile colours, background and
+            // profile emoji, emoji status, wallpaper, each locked behind a boost
+            // level. Boost levels are honoured for nobody, as on desktop, so the
+            // screen is deleted. A group's row further down went the same way.
 
             // LoogriGram: a channel's "Auto-translate" switch stood here. It is
             // locked below a boost level (channelAutotranslationLevelMin) and
@@ -959,19 +949,6 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
 
                     builder.setCustomView(linearLayout);
                     showDialog(builder.create());
-                });
-            }
-
-            if (ChatObject.isMegagroup(currentChat) && ChatObject.hasAdminRights(currentChat) && !ChatObject.isCommunity(currentChat)) {
-                MessagesController.getInstance(currentAccount).getBoostsController().getBoostsStats(-currentChat.id, boostsStatus -> this.boostsStatus = boostsStatus);
-                colorCell = new PeerColorActivity.ChangeNameColorCell(currentAccount, -currentChat.id, context, getResourceProvider());
-                colorCell.setBackground(Theme.getSelectorDrawable(true));
-                typeEditContainer.addView(colorCell, LayoutHelper.createLinear(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-                colorCell.setOnClickListener(v -> {
-                    GroupColorActivity activity = new GroupColorActivity(-currentChat.id);
-                    activity.boostsStatus = boostsStatus;
-                    activity.setOnApplied(this);
-                    presentFragment(activity);
                 });
             }
 
@@ -2229,9 +2206,6 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
     }
 
     public void updateColorCell() {
-        if (colorCell != null) {
-            colorCell.set(currentChat, (historyCell != null && historyCell.getVisibility() == View.VISIBLE) || /*(signCell != null && signCell.getVisibility() == View.VISIBLE) || */(forumsCell != null && forumsCell.getVisibility() == View.VISIBLE) || ChatObject.isMegagroup(currentChat) && ChatObject.hasAdminRights(currentChat));
-        }
     }
 
     public void updateSuggestedCell(boolean animated) {

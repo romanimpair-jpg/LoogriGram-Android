@@ -42147,15 +42147,9 @@ public class ChatActivity extends BaseFragment implements
 
     private void showChatThemeBottomSheet() {
         if (currentChat != null) {
-            if (ChatObject.isMegagroup(currentChat)) {
-                if (ChatObject.hasAdminRights(currentChat)) {
-                    presentFragment(new GroupColorActivity(getDialogId()).setOnApplied(ChatActivity.this));
-                }
-            } else {
-                if (ChatObject.canChangeChatInfo(currentChat)) {
-                    presentFragment(new ChannelColorActivity(getDialogId()).setOnApplied(ChatActivity.this));
-                }
-            }
+            // LoogriGram: an admin tapping a group's or channel's "theme changed"
+            // message opened its Appearance screen, which is deleted - every
+            // option on it was locked behind a boost level.
             return;
         }
         chatThemeBottomSheet = new ChatThemeBottomSheet(ChatActivity.this, themeDelegate);

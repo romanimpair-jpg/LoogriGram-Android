@@ -71,7 +71,6 @@ import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.Cells.GroupCreateUserCell;
 import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.ShadowSectionCell;
-import org.telegram.ui.ChannelColorActivity;
 import org.telegram.ui.ChatActivity;
 import org.telegram.ui.ChatEditActivity;
 import org.telegram.ui.Components.AlertsCreator;
@@ -99,8 +98,6 @@ import org.telegram.ui.Components.RecyclerItemsEnterAnimator;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.ScaleStateListAnimator;
 import org.telegram.ui.Components.TypefaceSpan;
-import org.telegram.ui.DialogsActivity;
-import org.telegram.ui.GroupColorActivity;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.ProfileActivity;
@@ -1124,31 +1121,6 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView imp
                     return;
                 }
             }
-            if (lastFragment instanceof ChannelColorActivity) {
-                if (isGiveaway) {
-                    List<BaseFragment> fragmentStack = getBaseFragment().getParentLayout().getFragmentStack();
-                    List<BaseFragment> removedFragments = new ArrayList<>();
-                    BaseFragment targetFragment = null;
-                    for (int i = fragmentStack.size() - 2; i >= 0; i--) {
-                        BaseFragment fragment = fragmentStack.get(i);
-                        if (fragment instanceof ChatActivity || fragment instanceof DialogsActivity) {
-                            targetFragment = fragment;
-                            break;
-                        }
-                        removedFragments.add(fragment);
-                    }
-                    if (targetFragment == null) {
-                        return;
-                    }
-                    for (BaseFragment removedFragment : removedFragments) {
-                        getBaseFragment().getParentLayout().removeFragmentFromStack(removedFragment);
-                    }
-                    getBaseFragment().finishFragment();
-                    dismiss();
-                    BoostDialogs.showBulletin(targetFragment, chat, true);
-                    return;
-                }
-            }
             if (isGiveaway) {
                 if (StoryRecorder.isVisible()) {
                     ChatActivity chatFragment = ChatActivity.of(-chat.id);
@@ -1612,9 +1584,7 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView imp
                     builder.append(LocaleController.formatString(R.string.GroupBoostedByUserWithDescription, chat == null ? "" : chat.title));
                     descriptionStr = builder.toString();
                 } else {
-                    if (getBaseFragment() instanceof GroupColorActivity) {
-                        descriptionStr = LocaleController.formatPluralString("BoostingGroupBoostWhatAreBoostsDescription", BoostRepository.giveawayBoostsPerPremium());
-                    } else {
+                    {
                         SpannableStringBuilder builder = new SpannableStringBuilder(getBoostsDescriptionString(true));
                         if (ChatObject.hasAdminRights(getChat()) && isGroup) {
                             builder.append(" ").append(getString(R.string.BoostingPremiumUserCanBoostGroupWithLink));
@@ -1983,11 +1953,7 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView imp
             } else if (type == TYPE_BOOSTS_FOR_REMOVE_RESTRICTIONS) {
                 title.setText(getBoostsTitleString());
             } else if (type == TYPE_BOOSTS_FOR_USERS) {
-                if (getBaseFragment() instanceof GroupColorActivity) {
-                    title.setText(getString(R.string.BoostingGroupBoostWhatAreBoosts));
-                } else {
-                    title.setText(getBoostsTitleString());
-                }
+                title.setText(getBoostsTitleString());
             } else if (type == TYPE_BOOSTS_FOR_ADS) {
                 title.setText(getBoostsTitleString());
             } else if (type == TYPE_BOOSTS_FOR_AUTOTRANSLATION) {

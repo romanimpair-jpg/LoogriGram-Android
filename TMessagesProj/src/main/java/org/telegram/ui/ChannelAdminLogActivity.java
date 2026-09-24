@@ -3306,7 +3306,8 @@ public class ChannelAdminLogActivity extends BaseFragment implements Notificatio
                     public void didClickImage(ChatActionCell cell) {
                         MessageObject message = cell.getMessageObject();
                         if (message.type == MessageObject.TYPE_ACTION_WALLPAPER) {
-                            presentFragment(new ChannelColorActivity(getDialogId()).setOnApplied(ChannelAdminLogActivity.this));
+                            // LoogriGram: this opened the channel's Appearance screen,
+                            // which is deleted with the boost levels it was locked by.
                             return;
                         }
                         PhotoViewer.getInstance().setParentActivity(ChannelAdminLogActivity.this);
