@@ -118,7 +118,6 @@ public class NotificationCenter {
     public static final int recentDocumentsDidLoad = totalEvents++;
     public static final int needAddArchivedStickers = totalEvents++;
     public static final int archivedStickersCountDidLoad = totalEvents++;
-    public static final int paymentFinished = totalEvents++;
     public static final int channelRightsUpdated = totalEvents++;
     public static final int openArticle = totalEvents++;
     public static final int articleClosed = totalEvents++;
@@ -243,16 +242,11 @@ public class NotificationCenter {
     public static final int customStickerCreated = totalEvents++;
     public static final int premiumFloodWaitReceived = totalEvents++;
     public static final int availableEffectsUpdate = totalEvents++;
-    public static final int starOptionsLoaded = totalEvents++;
-    public static final int starGiftOptionsLoaded = totalEvents++;
-    public static final int starGiveawayOptionsLoaded = totalEvents++;
     public static final int starBalanceUpdated = totalEvents++;
-    public static final int starTransactionsLoaded = totalEvents++;
     public static final int starSubscriptionsLoaded = totalEvents++;
     public static final int factCheckLoaded = totalEvents++;
     public static final int botStarsUpdated = totalEvents++;
     public static final int botStarsTransactionsLoaded = totalEvents++;
-    public static final int channelStarsUpdated = totalEvents++;
     public static final int updateAllMessages = totalEvents++;
     public static final int starGiftsLoaded = totalEvents++;
     public static final int starUserGiftsLoaded = totalEvents++;

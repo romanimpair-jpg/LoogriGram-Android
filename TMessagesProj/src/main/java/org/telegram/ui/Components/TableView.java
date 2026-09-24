@@ -2,7 +2,6 @@ package org.telegram.ui.Components;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.LocaleController.getString;
-import static org.telegram.ui.Stars.StarsIntroActivity.StarsTransactionView.getPlatformDrawable;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -46,15 +45,36 @@ import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.TextViewWithLoading;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.AvatarSpan;
+import org.telegram.ui.Cells.SessionCell;
 import org.telegram.ui.ChatActivity;
 import org.telegram.ui.Components.spoilers.SpoilersTextView;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.Stories.recorder.HintView2;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Date;
 
 public class TableView extends TableLayout {
+
+    // LoogriGram: moved out of StarsIntroActivity.StarsTransactionView, the
+    // Stars transaction list, which is deleted; these rows and GiftViews still
+    // draw a platform icon with it.
+    public static HashMap<String, CombinedDrawable> cachedPlatformDrawables;
+    public static CombinedDrawable getPlatformDrawable(String platform) {
+        return getPlatformDrawable(platform, 44);
+    }
+    public static CombinedDrawable getPlatformDrawable(String platform, int sz) {
+        if (sz != 44) return SessionCell.createDrawable(sz, platform);
+        if (cachedPlatformDrawables == null) {
+            cachedPlatformDrawables = new HashMap<>();
+        }
+        CombinedDrawable drawable = cachedPlatformDrawables.get(platform);
+        if (drawable == null) {
+            cachedPlatformDrawables.put(platform, drawable = SessionCell.createDrawable(44, platform));
+        }
+        return drawable;
+    }
 
     private final Theme.ResourcesProvider resourcesProvider;
 

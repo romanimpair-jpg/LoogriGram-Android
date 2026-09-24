@@ -96,7 +96,6 @@ import org.telegram.ui.Components.spoilers.SpoilerEffect;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PeerColorActivity;
 import org.telegram.ui.PhotoViewer;
-import org.telegram.ui.Stars.StarsController;
 import org.telegram.ui.Stories.StoriesController;
 import org.telegram.ui.community.CommunityUtils;
 import org.telegram.ui.web.BotWebViewContainer;
@@ -3818,8 +3817,8 @@ public class MessageObject {
         final String name = fromUser != null ? UserObject.getFirstName(fromUser) : "";
         String currency;
         try {
-            if (StarsController.currency.equals(messageOwner.action.currency)) {
-                currency = StarsController.currency + " " + messageOwner.action.total_amount;
+            if (StarsFormat.currency.equals(messageOwner.action.currency)) {
+                currency = StarsFormat.currency + " " + messageOwner.action.total_amount;
             } else {
                 currency = LocaleController.getInstance().formatCurrencyString(messageOwner.action.total_amount, messageOwner.action.currency);
             }

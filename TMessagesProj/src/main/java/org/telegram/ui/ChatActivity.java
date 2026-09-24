@@ -296,7 +296,6 @@ import org.telegram.ui.Components.spoilers.SpoilerEffect;
 import org.telegram.ui.Components.voip.CellFlickerDrawable;
 import org.telegram.ui.Components.voip.VoIPHelper;
 import org.telegram.ui.Delegates.ChatActivityMemberRequestsDelegate;
-import org.telegram.ui.Stars.StarsController;
 import org.telegram.ui.Stars.MessageSuggestionOfferSheet;
 import org.telegram.ui.Stories.StoriesListPlaceProvider;
 import org.telegram.ui.Stories.StoriesUtilities;
@@ -3118,11 +3117,6 @@ public class ChatActivity extends BaseFragment implements
                 builder.setNegativeButton(LocaleController.getString(R.string.Cancel), (dialogInterface, i) -> finishFragment());
                 showDialog(builder.create());
             }, timeout * 1000L);
-        }
-
-        if (ChatObject.isMonoForum(currentChat)) {
-            // reload balance if needed
-            StarsController.getTonInstance(currentAccount).canUseTon();
         }
 
         if (isTopic || getMessagesController().isMonoForumWithManageRights(dialog_id) && getTopicId() != 0) {
@@ -43776,12 +43770,6 @@ public class ChatActivity extends BaseFragment implements
     }
 
     private void gotChatInfo() {
-        if (chatInfo != null && chatInfo.paid_reactions_available) {
-            getMessagesController().getPaidReactionsDialogId();
-            if (!StarsController.getInstance(currentAccount).balanceAvailable()) {
-                StarsController.getInstance(currentAccount).getBalance();
-            }
-        }
         if (chatInfo != null && chatInfo.bot_verification != null) {
             updateTopPanel(true);
         }

@@ -15,9 +15,9 @@ import static org.telegram.messenger.LocaleController.getString;
 import static org.telegram.messenger.MessagesController.findUpdates;
 import static org.telegram.ui.Stars.StarsController.findAttribute;
 import static org.telegram.ui.Stars.StarsController.findAttributes;
-import static org.telegram.ui.Stars.StarsIntroActivity.addAvailabilityRow;
+import static org.telegram.ui.Gifts.GiftViews.addAvailabilityRow;
 import static org.telegram.messenger.StarsFormat.replaceStarsWithPlain;
-import static org.telegram.ui.Stars.StarsIntroActivity.setGiftImage;
+import static org.telegram.ui.Gifts.GiftViews.setGiftImage;
 import static org.telegram.messenger.AndroidUtilities.percents;
 
 import android.animation.Animator;

@@ -108,7 +108,6 @@ import org.telegram.ui.MainTabsActivity;
 import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.ProfileActivity;
 import org.telegram.ui.SecretMediaViewer;
-import org.telegram.ui.Stars.BotStarsController;
 import org.telegram.ui.Stars.StarsController;
 import org.telegram.ui.Stories.StoriesController;
 import org.telegram.ui.ThemeActivity;
@@ -638,8 +637,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public float starsUsdSellRate1000;
     public float starsUsdWithdrawRate1000;
     public int botVerificationDescriptionLengthLimit;
-    public long paidReactionsPrivacyTime;
-    public Long paidReactionsPrivacy;
     public int savedDialogsPinnedLimitDefault;
     public int savedDialogsPinnedLimitPremium;
     public boolean savedViewAsChats;
@@ -1743,7 +1740,6 @@ public class MessagesController extends BaseController implements NotificationCe
         starsUsdSellRate1000 = mainPreferences.getFloat("starsUsdSellRate1000", 2000);
         starsUsdWithdrawRate1000 = mainPreferences.getFloat("starsUsdWithdrawRate1000", 1200);
         botVerificationDescriptionLengthLimit = mainPreferences.getInt("botVerificationDescriptionLengthLimit", 70);
-        paidReactionsPrivacyTime = mainPreferences.getLong("paidReactionsAnonymousTime", 0);
         stargiftsCraftAttributesPermilles = Arrays.stream(mainPreferences.getString("stargiftsCraftAttributesPermilles", "90,,80,200,,70,190,460,,60,180,450,1000").split(",,"))
                 .map(r -> Arrays.stream(r.split(","))
                     .mapToInt(Integer::parseInt)
@@ -1751,15 +1747,6 @@ public class MessagesController extends BaseController implements NotificationCe
                 .toArray(int[][]::new);
         config.load(mainPreferences);
 
-        final boolean paidReactionsActual = (System.currentTimeMillis() - paidReactionsPrivacyTime) < 1000 * 60 * 60 * 2;
-        paidReactionsPrivacy = null;
-        if ((System.currentTimeMillis() - paidReactionsPrivacyTime) < 1000 * 60 * 60 * 2) {
-            if (mainPreferences.contains("paidReactionsDialogId")) {
-                paidReactionsPrivacy = mainPreferences.getLong("paidReactionsDialogId", 0);
-            } else {
-                paidReactionsPrivacy = mainPreferences.getBoolean("paidReactionsAnonymous", false) ? UserObject.ANONYMOUS : 0;
-            }
-        }
         scheduleTranscriptionUpdate();
         BuildVars.GOOGLE_AUTH_CLIENT_ID = mainPreferences.getString("googleAuthClientId", BuildVars.GOOGLE_AUTH_CLIENT_ID);
         if (mainPreferences.contains("dcDomainName2")) {
@@ -19477,7 +19464,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     } else if (baseUpdate instanceof TL_update.TL_updateStarGiftAuctionState) {
                     } else if (baseUpdate instanceof TL_update.TL_updateStarGiftAuctionUserState) {
                     } else if (baseUpdate instanceof TL_update.TL_updateStarsRevenueStatus) {
-                        BotStarsController.getInstance(currentAccount).onUpdate((TL_update.TL_updateStarsRevenueStatus) baseUpdate);
+                        // LoogriGram: a bot's Stars revenue - nothing here earns or shows it.
                     } else if (baseUpdate instanceof TL_update.TL_updateUserStatus) {
                         TL_update.TL_updateUserStatus update = (TL_update.TL_updateUserStatus) baseUpdate;
                         TLRPC.User currentUser = getUser(update.user_id);
@@ -19642,10 +19629,7 @@ public class MessagesController extends BaseController implements NotificationCe
                         messageObjects.add(message);
                         getNotificationsController().processNewMessages(messageObjects, true, false, null);
                     } else if (baseUpdate instanceof TL_update.TL_updateStarsBalance) {
-                        TL_update.TL_updateStarsBalance update = (TL_update.TL_updateStarsBalance) baseUpdate;
-                        final boolean ton = update.balance instanceof TL_stars.TL_starsTonAmount;
-                        StarsController.getInstance(currentAccount, ton).updateBalance(update.balance);
-                        StarsController.getInstance(currentAccount, ton).invalidateTransactions(false);
+                        // LoogriGram: our Stars or TON balance - there is no wallet to update.
                     } else if (baseUpdate instanceof TL_update.TL_updateUser) {
                         TL_update.TL_updateUser update = (TL_update.TL_updateUser) baseUpdate;
                         TLRPC.User currentUser = getUser(update.user_id);
@@ -20297,12 +20281,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     } else if (QuickRepliesController.getInstance(currentAccount).processUpdate(baseUpdate, null, 0)) {
 
                     } else if (baseUpdate instanceof TL_update.TL_updatePaidReactionPrivacy) {
-                        TL_update.TL_updatePaidReactionPrivacy upd = (TL_update.TL_updatePaidReactionPrivacy) baseUpdate;
-                        mainPreferences.edit()
-                            .putLong("paidReactionsAnonymousTime", paidReactionsPrivacyTime = System.currentTimeMillis())
-                            .putLong("paidReactionsDialogId", paidReactionsPrivacy = upd.privacy.getDialogId())
-                            .apply();
-                        loadingArePaidReactionsAnonymous = false;
+                        // LoogriGram: whom our paid reactions were sent as. Nothing sends one.
                     } else if (baseUpdate instanceof TL_update.TL_updateGroupCallChainBlocks) {
                         final VoIPService service = VoIPService.getSharedInstance();
                         if (service != null && service.conference != null) {
@@ -24187,15 +24166,6 @@ public class MessagesController extends BaseController implements NotificationCe
             return contentSettings.sensitive_enabled;
         }
         return ignoreRestrictionReasons == null || ignoreRestrictionReasons.contains("sensitive");
-    }
-
-    private boolean loadingArePaidReactionsAnonymous;
-    public Long getPaidReactionsDialogId() {
-        if (paidReactionsPrivacy == null && !loadingArePaidReactionsAnonymous) {
-            loadingArePaidReactionsAnonymous = true;
-            getConnectionsManager().sendRequest(new TLRPC.TL_messages_getPaidReactionPrivacy(), null);
-        }
-        return paidReactionsPrivacy;
     }
 
     public boolean shouldShowMoveCaptionHint() {

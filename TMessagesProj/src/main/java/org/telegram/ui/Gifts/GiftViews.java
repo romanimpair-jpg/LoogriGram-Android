@@ -8,7 +8,7 @@ import static org.telegram.messenger.LocaleController.formatPluralStringComma;
 import static org.telegram.messenger.LocaleController.formatString;
 import static org.telegram.messenger.LocaleController.getString;
 import static org.telegram.ui.Stars.StarsController.findAttribute;
-import static org.telegram.ui.Stars.StarsIntroActivity.StarsTransactionView.getPlatformDrawable;
+import static org.telegram.ui.Components.TableView.getPlatformDrawable;
 import static org.telegram.messenger.AndroidUtilities.percents;
 
 import android.content.Context;
@@ -32,6 +32,8 @@ import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -39,6 +41,7 @@ import android.view.View;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.TableRow;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -79,17 +82,20 @@ import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.CompatDrawable;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.Components.LoadingSpan;
 import org.telegram.ui.Components.Particles;
 import org.telegram.ui.Components.Premium.PremiumLockIconView;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.ScaleStateListAnimator;
 import org.telegram.ui.Components.Shaker;
+import org.telegram.ui.Components.TableView;
 import org.telegram.ui.Components.Text;
 import org.telegram.ui.Components.UItem;
 import org.telegram.ui.Components.UniversalAdapter;
 import org.telegram.ui.Components.UniversalRecyclerView;
 import org.telegram.ui.Components.blur3.utils.NinePatchBuilder;
 import org.telegram.ui.Components.StarGiftPatterns;
+import org.telegram.ui.Stars.StarsController;
 
 import java.util.Arrays;
 
@@ -99,6 +105,62 @@ import java.util.Arrays;
 // scrims a gift cell, and PeerColorActivity picks a collectible for your
 // profile from them. Moved here unchanged.
 public class GiftViews {
+
+    // LoogriGram: setGiftImage and addAvailabilityRow were StarsIntroActivity's,
+    // which is deleted with the Stars wallet. A received gift's sheet still
+    // draws its sticker and its "Availability" row with them.
+    public static void setGiftImage(ImageReceiver imageReceiver, TLRPC.Document document, int size) {
+        if (document == null) {
+            imageReceiver.clearImage();
+            return;
+        }
+        final TLRPC.PhotoSize photoSize = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, size);
+        final SvgHelper.SvgDrawable svgThumb = DocumentObject.getSvgThumb(document.thumbs, Theme.key_windowBackgroundGray, 0.35f);
+        imageReceiver.setImage(
+            ImageLocation.getForDocument(document),
+            size + "_" + size,
+            ImageLocation.getForDocument(photoSize, document),
+            size + "_" + size,
+            svgThumb,
+            0,
+            null,
+            null,
+            0
+        );
+    }
+
+    public static void setGiftImage(ImageReceiver imageReceiver, TL_stars.StarGift gift, int size) {
+        setGiftImage(imageReceiver, gift == null ? null : gift.getDocument(), size);
+    }
+
+    public static void addAvailabilityRow(TableView tableView, int currentAccount, TL_stars.StarGift gift, Theme.ResourcesProvider resourcesProvider) {
+        final TableRow row = tableView.addRow(getString(R.string.Gift2Availability), "");
+        final TextView rowTextView = (TextView) ((TableView.TableRowContent) row.getChildAt(1)).getChildAt(0);
+        final SpannableStringBuilder sb = new SpannableStringBuilder("x ");
+        final LoadingSpan span = new LoadingSpan(rowTextView, dp(90), 0, resourcesProvider);
+        span.setColors(
+            Theme.multAlpha(rowTextView.getPaint().getColor(), .21f),
+            Theme.multAlpha(rowTextView.getPaint().getColor(), .08f)
+        );
+        sb.setSpan(span, 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        rowTextView.setText(sb, TextView.BufferType.SPANNABLE);
+        if (!gift.sold_out) {
+            StarsController.getInstance(currentAccount).getStarGift(gift.id, remoteGift -> {
+                if (remoteGift == null) return;
+                if (remoteGift instanceof TL_stars.TL_starGiftUnique) {
+                    rowTextView.setText(remoteGift.availability_remains <= 0 ? formatPluralStringComma("Gift2QuantityIssuedNone", remoteGift.availability_total) : formatPluralStringComma("Gift2QuantityIssued1", remoteGift.availability_issued) + formatPluralStringComma("Gift2QuantityIssued2", remoteGift.availability_total));
+                } else {
+                    rowTextView.setText(remoteGift.availability_remains <= 0 ? formatPluralStringComma("Gift2Availability2ValueNone", remoteGift.availability_total) : formatPluralStringComma("Gift2Availability4Value", remoteGift.availability_remains, LocaleController.formatNumber(remoteGift.availability_total, ',')));
+                }
+            });
+        } else {
+            if (gift instanceof TL_stars.TL_starGiftUnique) {
+                rowTextView.setText(gift.availability_remains <= 0 ? formatPluralStringComma("Gift2QuantityIssuedNone", gift.availability_total) : formatPluralStringComma("Gift2QuantityIssued1", gift.availability_issued) + formatPluralStringComma("Gift2QuantityIssued2", gift.availability_total));
+            } else {
+                rowTextView.setText(gift.availability_remains <= 0 ? formatPluralStringComma("Gift2Availability2ValueNone", gift.availability_total) : formatPluralStringComma("Gift2Availability4Value", gift.availability_remains, LocaleController.formatNumber(gift.availability_total, ',')));
+            }
+        }
+    }
 
     public static class GiftCell extends FrameLayout {
 
