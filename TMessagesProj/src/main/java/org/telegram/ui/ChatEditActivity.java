@@ -59,7 +59,6 @@ import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.browser.Browser;
-import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_bots;
@@ -88,7 +87,6 @@ import org.telegram.ui.Components.EditTextBoldCursor;
 import org.telegram.ui.Components.EditTextEmoji;
 import org.telegram.ui.Components.ImageUpdater;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Components.Premium.LimitReachedBottomSheet;
 import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.RadialProgressView;
 import org.telegram.ui.Components.Reactions.ChatCustomReactionsEditActivity;
@@ -135,7 +133,6 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
     private TextCell linkedCell;
     private TextCell suggestedCell;
     private PeerColorActivity.ChangeNameColorCell colorCell;
-    private TextCell autoTranslationCell;
     private TextCell historyCell;
     private TextCell reactionsCell;
     private TextInfoPrivacyCell settingsSectionCell;
@@ -908,77 +905,11 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
                 });
             }
 
-            if (ChatObject.isChannelAndNotMegaGroup(currentChat) && !ChatObject.isCommunity(currentChat)) {
-                final long dialogId = -currentChat.id;
-                autoTranslationCell = new TextCell(context, 23, false, true, resourceProvider);
-                autoTranslationCell.setBackground(Theme.getSelectorDrawable(true));
-                autoTranslationCell.setTextAndCheckAndIcon(getString(R.string.ChannelAutotranslation), currentChat.autotranslation, R.drawable.msg_translate, false);
-                getMessagesController().getBoostsController().getBoostsStats(dialogId, boostsStatus -> {
-                    if (boostsStatus != null) {
-                        autoTranslationCell.getCheckBox().setIcon(boostsStatus.level < getMessagesController().channelAutotranslationLevelMin ? R.drawable.permission_locked : 0);
-                    }
-                });
-                typeEditContainer.addView(autoTranslationCell, LayoutHelper.createLinear(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-                final boolean[] loading = new boolean[] { false };
-                autoTranslationCell.setOnClickListener(v -> {
-                    if (loading[0]) return;
-                    AlertDialog progressDialog = new AlertDialog(getParentActivity(), AlertDialog.ALERT_TYPE_SPINNER);
-                    progressDialog.showDelayed(400);
-                    loading[0] = true;
-                    final boolean newValue = !autoTranslationCell.isChecked();
-                    if (!autoTranslationCell.getCheckBox().hasIcon()) {
-                        autoTranslationCell.setChecked(newValue);
-                    }
-                    getMessagesController().getBoostsController().getBoostsStats(dialogId, boostsStatus -> {
-                        if (currentChat.level != boostsStatus.level) {
-                            currentChat.level = boostsStatus.level;
-                            getMessagesController().putChat(currentChat, false);
-                        }
-                        autoTranslationCell.getCheckBox().setIcon(boostsStatus.level < getMessagesController().channelAutotranslationLevelMin ? R.drawable.permission_locked : 0);
-
-                        if (newValue && boostsStatus.level < getMessagesController().channelAutotranslationLevelMin) {
-                            autoTranslationCell.setChecked(false);
-                            loading[0] = false;
-                            getMessagesController().getBoostsController().userCanBoostChannel(dialogId, boostsStatus, canApplyBoost -> {
-                                progressDialog.dismiss();
-                                if (getContext() == null) return;
-                                LimitReachedBottomSheet limitReachedBottomSheet = new LimitReachedBottomSheet(this, getContext(), LimitReachedBottomSheet.TYPE_BOOSTS_FOR_AUTOTRANSLATION, currentAccount, getResourceProvider());
-                                limitReachedBottomSheet.setCanApplyBoost(canApplyBoost);
-                                limitReachedBottomSheet.setBoostsStats(boostsStatus, true);
-                                limitReachedBottomSheet.setDialogId(dialogId);
-                                TLRPC.Chat channel = getMessagesController().getChat(-dialogId);
-                                if (channel != null) {
-                                    limitReachedBottomSheet.showStatisticButtonInLink(() -> {
-                                        presentFragment(StatisticActivity.create(channel));
-                                    });
-                                }
-                                showDialog(limitReachedBottomSheet);
-                            });
-                            return;
-                        }
-
-                        final TLRPC.TL_channels_toggleAutotranslation req = new TLRPC.TL_channels_toggleAutotranslation();
-                        req.channel = getMessagesController().getInputChannel(currentChat);
-                        req.enabled = newValue;
-                        autoTranslationCell.setChecked(newValue);
-                        loading[0] = false;
-                        progressDialog.dismiss();
-                        getConnectionsManager().sendRequest(req, (res, err) -> {
-                            if (res instanceof TLRPC.Updates) {
-                                getMessagesController().processUpdates((TLRPC.Updates) res, false);
-                                AndroidUtilities.runOnUIThread(() -> {
-                                    currentChat.autotranslation = newValue;
-                                    getMessagesController().putChat(currentChat, false);
-                                });
-                            } else {
-                                AndroidUtilities.runOnUIThread(() -> {
-                                    autoTranslationCell.setChecked(currentChat.autotranslation);
-                                });
-                            }
-                        }, ConnectionsManager.RequestFlagInvokeAfter);
-                    });
-                });
-            }
+            // LoogriGram: a channel's "Auto-translate" switch stood here. It is
+            // locked below a boost level (channelAutotranslationLevelMin) and
+            // offered the boost sheet when it was; boost levels are honoured
+            // for nobody, so the switch is not drawn. The channel's setting on
+            // the server is left as it is.
 
             if (!isChannel && ChatObject.canBlockUsers(currentChat) && (ChatObject.isChannel(currentChat) || currentChat.creator)) {
                 historyCell = new TextCell(context);
@@ -2299,7 +2230,7 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
 
     public void updateColorCell() {
         if (colorCell != null) {
-            colorCell.set(currentChat, (historyCell != null && historyCell.getVisibility() == View.VISIBLE) || /*(signCell != null && signCell.getVisibility() == View.VISIBLE) || */(forumsCell != null && forumsCell.getVisibility() == View.VISIBLE) || ChatObject.isMegagroup(currentChat) && ChatObject.hasAdminRights(currentChat) || (autoTranslationCell != null && autoTranslationCell.getVisibility() == View.VISIBLE));
+            colorCell.set(currentChat, (historyCell != null && historyCell.getVisibility() == View.VISIBLE) || /*(signCell != null && signCell.getVisibility() == View.VISIBLE) || */(forumsCell != null && forumsCell.getVisibility() == View.VISIBLE) || ChatObject.isMegagroup(currentChat) && ChatObject.hasAdminRights(currentChat));
         }
     }
 
