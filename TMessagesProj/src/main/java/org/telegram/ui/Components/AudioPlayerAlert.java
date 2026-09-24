@@ -94,7 +94,6 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.audioinfo.AudioInfo;
-import org.telegram.messenger.chromecast.ChromecastController;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.InputSerializedData;
 import org.telegram.tgnet.TLObject;
@@ -111,7 +110,6 @@ import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Adapters.FiltersView;
-import org.telegram.ui.CastSync;
 import org.telegram.ui.Cells.AudioPlayerCell;
 import org.telegram.ui.ChatActivity;
 import org.telegram.ui.ChooseQualityLayout;
@@ -155,9 +153,6 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
     private ClippingTextViewSwitcher authorTextView;
     private ActionBarMenuItem optionsButton;
     private ChooseQualityLayout.QualityIcon optionsIcon;
-    private ActionBarMenuSubItem castItem;
-    private CastMediaRouteButton castItemButton;
-    private boolean castAvailable;
     private LineProgressView progressView;
     private SeekBarView seekBarView;
     private SimpleTextView timeTextView;
@@ -1087,27 +1082,6 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
         bottomView.addView(optionsButton, LayoutHelper.createFrame(48, 48, Gravity.LEFT | Gravity.TOP));
 
 
-        castItemButton = new CastMediaRouteButton(context) {
-            @Override
-            public void stateUpdated(boolean connected) {
-                updateColors();
-                if (optionsIcon != null) {
-                    optionsIcon.setCasting(CastSync.isActive(), true);
-                }
-            }
-        };
-        castAvailable = true;
-        try {
-            // LoogriGram: no route selector - there are no Cast routes to
-            // discover, and the button is hidden. See CastMediaRouteButton.
-        } catch (Exception e) {
-            FileLog.e(e);
-            castAvailable = false;
-        }
-        castItemButton.setVisibility(View.INVISIBLE);
-        if (optionsIcon != null) {
-            optionsIcon.setCasting(CastSync.isActive(), true);
-        }
 
         optionsButton.setShowedFromBottom(true);
         optionsButton.setDelegate(this::onSubItemClick);
@@ -1673,10 +1647,6 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
             }
             playbackSpeedButton.setBackground(Theme.createSelectorDrawable(color & 0x19ffffff, 1, dp(14)));
         }
-        if (castItem != null) {
-            castItem.setEnabledByColor(castItemButton != null && castItemButton.isConnected(), getThemedColor(Theme.key_actionBarDefaultSubmenuItem), getThemedColor(Theme.key_actionBarDefaultSubmenuItemIcon), getThemedColor(Theme.key_featuredStickers_addButton));
-            castItem.setSelectorColor(castItemButton != null && castItemButton.isConnected() ? Theme.multAlpha(getThemedColor(Theme.key_featuredStickers_addButton), .10f) : getThemedColor(Theme.key_listSelector));
-        }
     }
 
     private void onSubItemClick(int id) {
@@ -1713,9 +1683,6 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
             dismiss();
         } else if (id == 5) {
             saveToMusic(messageObject);
-        } else if (id == 6) {
-            ChromecastController.getInstance().setCurrentMediaAndCastIfNeeded(MediaController.getInstance().getCurrentChromecastMedia());
-            castItemButton.performClick();
         } else if (id == 7) {
             saveToProfile(messageObject, false, () -> {
                 if (savedMusicList != null) {
@@ -1876,9 +1843,6 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
                         }
                     }
                 }
-            }
-            if (optionsIcon != null) {
-                optionsIcon.setCasting(CastSync.isActive(), true);
             }
         } else if (id == NotificationCenter.messagePlayingProgressDidChanged) {
             MessageObject messageObject = MediaController.getInstance().getPlayingMessageObject();
@@ -2893,17 +2857,9 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
             o.dismiss();
             onSubItemClick(4);
         });
-        if (castAvailable) {
-            castItem = o.add();
-            castItem.setTextAndIcon(getString(R.string.VideoPlayerChromecast), R.drawable.menu_video_chromecast);
-            castItem.setOnClickListener(v2 -> {
-                o.dismiss();
-                onSubItemClick(7);
-            });
-            AndroidUtilities.removeFromParent(castItemButton);
-            castItem.addView(castItemButton, 0, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
-            updateColors();
-        }
+        // LoogriGram: a Chromecast item stood here. There is no Cast receiver to
+        // find, yet it was always shown - and it called onSubItemClick(7), the
+        // "remove from profile" action, not 6, the cast one (as upstream does).
         o.addIf(isMyList(), R.drawable.msg_delete, getString(R.string.ProfilePlaylistRemoveFromProfile), true, () -> {
             o.dismiss();
             onSubItemClick(7);
