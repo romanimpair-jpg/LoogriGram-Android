@@ -205,11 +205,11 @@ public class MessagePreviewParams {
     public void updateReply(MessageObject replyMessageObject, MessageObject.GroupedMessages group, long dialogId, ChatActivity.ReplyQuote replyQuote) {
         if (isSecret || replyMessageObject == null || replyMessageObject.type == MessageObject.TYPE_DATE || replyMessageObject.type == MessageObject.TYPE_ACTION_PHOTO
                 || replyMessageObject.type == MessageObject.TYPE_ACTION_WALLPAPER || replyMessageObject.type == MessageObject.TYPE_SUGGEST_PHOTO
-                || replyMessageObject.type == MessageObject.TYPE_GIFT_PREMIUM || replyMessageObject.type == MessageObject.TYPE_GIFT_PREMIUM_CHANNEL || replyMessageObject.type == MessageObject.TYPE_PHONE_CALL) {
+                || replyMessageObject.type == MessageObject.TYPE_PHONE_CALL) {
             replyMessageObject = null;
             replyQuote = null;
         }
-        hasSecretMessages = replyMessageObject != null && (replyMessageObject.isVoiceOnce() || replyMessageObject.isRoundOnce() || replyMessageObject.type == MessageObject.TYPE_GIFT_STARS);
+        hasSecretMessages = replyMessageObject != null && (replyMessageObject.isVoiceOnce() || replyMessageObject.isRoundOnce());
         if (replyMessageObject != null || replyQuote != null) {
             if (group != null) {
                 replyMessage = new Messages(null, 1, group.messages, dialogId, null);

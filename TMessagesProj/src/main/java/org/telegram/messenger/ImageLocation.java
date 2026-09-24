@@ -423,7 +423,7 @@ public class ImageLocation {
     }
 
     private static String getStrippedKeyInternal(Object parentObject, Object fullObject, Object strippedObject) {
-        if (parentObject instanceof TLRPC.WebPage || parentObject instanceof MessageObject && (((MessageObject) parentObject).type == MessageObject.TYPE_PAID_MEDIA || ((MessageObject) parentObject).messageOwner != null && ((MessageObject) parentObject).messageOwner.rich_message != null)) {
+        if (parentObject instanceof TLRPC.WebPage || parentObject instanceof MessageObject && ((MessageObject) parentObject).messageOwner != null && ((MessageObject) parentObject).messageOwner.rich_message != null) {
             if (fullObject instanceof ImageLocation) {
                 ImageLocation imageLocation = (ImageLocation) fullObject;
                 if (imageLocation.document != null) {

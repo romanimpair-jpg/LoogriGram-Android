@@ -149,23 +149,18 @@ public class MessageObject {
     public static final int TYPE_ANIMATED_STICKER = 15;
     public static final int TYPE_PHONE_CALL = 16;
     public static final int TYPE_POLL = 17; // polls and todos
-    public static final int TYPE_GIFT_PREMIUM = 18;
     public static final int TYPE_EMOJIS = 19;
-    public static final int TYPE_EXTENDED_MEDIA_PREVIEW = 20;
     public static final int TYPE_SUGGEST_PHOTO = 21;
     public static final int TYPE_ACTION_WALLPAPER = 22;
     public static final int TYPE_STORY = 23;
     public static final int TYPE_STORY_MENTION = 24;
-    public static final int TYPE_GIFT_PREMIUM_CHANNEL = 25;
     // LoogriGram: 26 and 28 were TYPE_GIVEAWAY and TYPE_GIVEAWAY_RESULTS; a
     // giveaway is held unshown, so neither was assigned any more.
     public static final int TYPE_JOINED_CHANNEL = 27; // recommendations list
-    public static final int TYPE_PAID_MEDIA = 29; // messageMediaPaidMedia with stars
-    public static final int TYPE_GIFT_STARS = 30;
+    // LoogriGram: 18, 20, 25, 29, 30, 32, 33 and 34 were the gift, paid media
+    // and extended-media-preview types. Those messages are held with type -1
+    // (LoogriGramHidden), so the numbers are left unused.
     public static final int TYPE_GIFT_THEME_UPDATE = 31;
-    public static final int TYPE_SUGGEST_BIRTHDAY = 32;
-    public static final int TYPE_GIFT_OFFER = 33;
-    public static final int TYPE_GIFT_OFFER_REJECTED = 34;
     public static final int TYPE_SHARING_OFFER = 35;
     public static final int TYPE_ARTICLE = 36;
     public static final int TYPE_COMMUNITY_CHANGED = 37;
@@ -6576,7 +6571,8 @@ public class MessageObject {
         // LoogriGram: money messages are held but never drawn. contentType -1
         // with type -1 is upstream's own state for exactly that - it uses it
         // for a cleared history - so nothing downstream needs to learn a new
-        // case. See LoogriGramHidden for why the message is kept at all.
+        // case. See LoogriGramHidden for why the message is kept at all. The
+        // branches below that gave these messages their own types are gone.
         if (LoogriGramHidden.isHidden(messageOwner)) {
             contentType = -1;
             type = -1;
@@ -6604,8 +6600,6 @@ public class MessageObject {
                 } else {
                     type = TYPE_ANIMATED_STICKER;
                 }
-            } else if (messageOwner.media instanceof TLRPC.TL_messageMediaPaidMedia) {
-                type = TYPE_PAID_MEDIA;
             } else if (isMediaEmpty(false) && !isDice() && emojiOnlyCount >= 1 && !hasUnwrappedEmoji && messageOwner != null && !hasNonEmojiEntities()) {
                 type = TYPE_EMOJIS;
             } else if (isMediaEmpty()) {
@@ -6613,8 +6607,6 @@ public class MessageObject {
                 if (TextUtils.isEmpty(messageText) && eventId == 0) {
                     messageText = "";
                 }
-            } else if (hasExtendedMediaPreview()) {
-                type = TYPE_EXTENDED_MEDIA_PREVIEW;
             } else if (getMedia(messageOwner).ttl_seconds != 0 && (getMedia(messageOwner).photo instanceof TLRPC.TL_photoEmpty || getDocument() instanceof TLRPC.TL_documentEmpty || getMedia(messageOwner) instanceof TLRPC.TL_messageMediaDocument && getDocument() == null || forceExpired)) {
                 contentType = 1;
                 type = TYPE_DATE;
@@ -6712,15 +6704,6 @@ public class MessageObject {
                 photoThumbsObject = messageOwner.action.photo;
             } else if (messageOwner.action instanceof TLRPC.TL_messageActionLoginUnknownLocation) {
                 type = TYPE_TEXT;
-            } else if (messageOwner.action instanceof TLRPC.TL_messageActionGiftCode && ((TLRPC.TL_messageActionGiftCode) messageOwner.action).boost_peer != null) {
-                contentType = 1;
-                type = TYPE_GIFT_PREMIUM_CHANNEL;
-            } else if (messageOwner.action instanceof TLRPC.TL_messageActionGiftPremium || messageOwner.action instanceof TLRPC.TL_messageActionGiftCode) {
-                contentType = 1;
-                type = TYPE_GIFT_PREMIUM;
-            } else if (messageOwner.action instanceof TLRPC.TL_messageActionGiftStars || messageOwner.action instanceof TLRPC.TL_messageActionStarGift || messageOwner.action instanceof TLRPC.TL_messageActionPrizeStars || messageOwner.action instanceof TLRPC.TL_messageActionStarGiftUnique && ((TLRPC.TL_messageActionStarGiftUnique) messageOwner.action).refunded || messageOwner.action instanceof TLRPC.TL_messageActionGiftTon) {
-                contentType = 1;
-                type = TYPE_GIFT_STARS;
             } else if (messageOwner.action instanceof TLRPC.TL_messageActionChatEditPhoto || messageOwner.action instanceof TLRPC.TL_messageActionUserUpdatedPhoto) {
                 contentType = 1;
                 type = TYPE_ACTION_PHOTO;
@@ -6740,17 +6723,8 @@ public class MessageObject {
             } else if (messageOwner.action instanceof TLRPC.TL_messageActionSetChatTheme && ((TLRPC.TL_messageActionSetChatTheme) messageOwner.action).theme instanceof TLRPC.TL_chatThemeUniqueGift) {
                 type = TYPE_GIFT_THEME_UPDATE;
                 contentType = 1;
-            } else if (messageOwner.action instanceof TLRPC.TL_messageActionStarGiftPurchaseOffer) {
-                type = TYPE_GIFT_OFFER;
-                contentType = 1;
             } else if (messageOwner.action instanceof TLRPC.TL_messageActionChangeCommunity && ((TLRPC.TL_messageActionChangeCommunity) messageOwner.action).community_id != 0) {
                 type = TYPE_COMMUNITY_CHANGED;
-                contentType = 1;
-            } else if (messageOwner.action instanceof TLRPC.TL_messageActionStarGiftPurchaseOfferDeclined) {
-                type = TYPE_GIFT_OFFER_REJECTED;
-                contentType = 1;
-            } else if (messageOwner.action instanceof TLRPC.TL_messageActionSuggestBirthday) {
-                type = TYPE_SUGGEST_BIRTHDAY;
                 contentType = 1;
             } else if (messageOwner.action instanceof TLRPC.TL_messageActionNoForwardsRequest) {
                 type = TYPE_SHARING_OFFER;
@@ -10839,8 +10813,6 @@ public class MessageObject {
                 height += dp(42);
             }
             return height;
-        } else if (type == TYPE_EXTENDED_MEDIA_PREVIEW) {
-            return AndroidUtilities.getPhotoSize();
         } else if (type == TYPE_VOICE) {
             return dp(72);
         } else if (type == TYPE_CONTACT) {
@@ -10851,12 +10823,10 @@ public class MessageObject {
             return dp(114);
         } else if (type == TYPE_MUSIC) {
             return dp(82);
-        } else if (type == 10 || type == TYPE_SHARING_OFFER || type == TYPE_GIFT_OFFER || type == TYPE_GIFT_OFFER_REJECTED) {
+        } else if (type == 10 || type == TYPE_SHARING_OFFER) {
             return dp(30);
-        } else if (type == TYPE_ACTION_PHOTO || type == TYPE_GIFT_PREMIUM || type == TYPE_GIFT_THEME_UPDATE ||type == TYPE_GIFT_STARS || type == TYPE_GIFT_PREMIUM_CHANNEL || type == TYPE_SUGGEST_PHOTO) {
+        } else if (type == TYPE_ACTION_PHOTO || type == TYPE_GIFT_THEME_UPDATE || type == TYPE_SUGGEST_PHOTO) {
             return dp(50);
-        } else if (type == TYPE_SUGGEST_BIRTHDAY) {
-            return dp(234);
         } else if (type == TYPE_ROUND_VIDEO) {
             return AndroidUtilities.roundMessageSize;
         } else if (type == TYPE_EMOJIS) {
@@ -11511,7 +11481,7 @@ public class MessageObject {
 
     public boolean canForwardMessage() {
         if (isQuickReply()) return false;
-        if (type == TYPE_GIFT_STARS || type == TYPE_GIFT_THEME_UPDATE || type == TYPE_SUGGEST_BIRTHDAY || type == TYPE_GIFT_OFFER || type == TYPE_SHARING_OFFER || type == TYPE_COMMUNITY_CHANGED) return false;
+        if (type == TYPE_GIFT_THEME_UPDATE || type == TYPE_SHARING_OFFER || type == TYPE_COMMUNITY_CHANGED) return false;
         return !(messageOwner instanceof TLRPC.TL_message_secret) && !needDrawBluredPreview() && !isLiveLocation() && type != MessageObject.TYPE_PHONE_CALL && !messageOwner.noforwards;
     }
 
@@ -11833,15 +11803,7 @@ public class MessageObject {
         File cacheFile = null;
         attachPathExists = false;
         mediaExists = false;
-        if (type == TYPE_EXTENDED_MEDIA_PREVIEW) {
-            TLRPC.TL_messageExtendedMediaPreview preview = (TLRPC.TL_messageExtendedMediaPreview) messageOwner.media.extended_media.get(0);
-            if (preview.thumb != null) {
-                File file = FileLoader.getInstance(currentAccount).getPathToAttach(preview.thumb, useFileDatabaseQueue);
-                if (!mediaExists) {
-                    mediaExists = file.exists() || preview.thumb instanceof TLRPC.TL_photoStrippedSize;
-                }
-            }
-        } else if (type == TYPE_PHOTO) {
+        if (type == TYPE_PHOTO) {
             TLRPC.PhotoSize currentPhotoObject = FileLoader.getClosestPhotoSizeWithSize(photoThumbs, AndroidUtilities.getPhotoSize(true));
             if (currentPhotoObject != null) {
                 File file = FileLoader.getInstance(currentAccount).getPathToMessage(messageOwner, useFileDatabaseQueue);
@@ -12353,10 +12315,6 @@ public class MessageObject {
 
     public boolean isStoryMention() {
         return type == MessageObject.TYPE_STORY_MENTION && !isExpiredStory();
-    }
-
-    public boolean isAnyGift() {
-        return type == MessageObject.TYPE_GIFT_STARS || type == MessageObject.TYPE_GIFT_PREMIUM || type == MessageObject.TYPE_GIFT_PREMIUM_CHANNEL;
     }
 
     private static CharSequence[] userSpan;

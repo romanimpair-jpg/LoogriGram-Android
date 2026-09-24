@@ -2361,21 +2361,6 @@ public class NotificationsController extends BaseController implements Notificat
                         } else {
                             return LocaleController.getString(R.string.Message);
                         }
-                    } else if (messageObject.type == MessageObject.TYPE_PAID_MEDIA && MessageObject.getMedia(messageObject) instanceof TLRPC.TL_messageMediaPaidMedia) {
-                        TLRPC.TL_messageMediaPaidMedia paidMedia = (TLRPC.TL_messageMediaPaidMedia) MessageObject.getMedia(messageObject);
-                        final int count = paidMedia.extended_media.size();
-                        boolean video = false;
-                        for (int i = 0; i < count; ++i) {
-                            TLRPC.MessageExtendedMedia emedia = paidMedia.extended_media.get(i);
-                            if (emedia instanceof TLRPC.TL_messageExtendedMedia) {
-                                video = ((TLRPC.TL_messageExtendedMedia) emedia).media instanceof TLRPC.TL_messageMediaDocument &&
-                                        MessageObject.isVideoDocument(((TLRPC.TL_messageExtendedMedia) emedia).media.document);
-                            } else if (emedia instanceof TLRPC.TL_messageExtendedMediaPreview) {
-                                video = (((TLRPC.TL_messageExtendedMediaPreview) emedia).flags & 4) != 0;
-                            }
-                            if (video) break;
-                        }
-                        return LocaleController.formatString(R.string.AttachPaidMedia, count == 1 ? LocaleController.getString(video ? R.string.AttachVideo : R.string.AttachPhoto) : LocaleController.formatPluralString(video ? "Media" : "Photos", count));
                     } else if (messageObject.isVoiceOnce()) {
                         return LocaleController.getString(R.string.AttachOnceAudio);
                     } else if (messageObject.isRoundOnce()) {
@@ -3062,9 +3047,6 @@ public class NotificationsController extends BaseController implements Notificat
                             } else {
                                 msg = LocaleController.formatString(R.string.ChannelMessageNoText, name);
                             }
-                        } else if (messageObject.type == MessageObject.TYPE_PAID_MEDIA && MessageObject.getMedia(messageObject) instanceof TLRPC.TL_messageMediaPaidMedia) {
-                            TLRPC.TL_messageMediaPaidMedia paidMedia = (TLRPC.TL_messageMediaPaidMedia) MessageObject.getMedia(messageObject);
-                            msg = LocaleController.formatPluralString("NotificationChannelMessagePaidMedia", (int) paidMedia.stars_amount, getTitle(chat));
                         } else if (messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaPhoto) {
                             if (!shortMessage && Build.VERSION.SDK_INT >= 19 && !TextUtils.isEmpty(messageObject.messageOwner.message)) {
                                 msg = LocaleController.formatString(R.string.NotificationMessageText, name, "\uD83D\uDDBC " + messageObject.messageOwner.message);
@@ -3143,9 +3125,6 @@ public class NotificationsController extends BaseController implements Notificat
                             } else {
                                 msg = LocaleController.formatString(R.string.NotificationMessageGroupNoText, name, getTitle(chat));
                             }
-                        } else if (messageObject.type == MessageObject.TYPE_PAID_MEDIA && MessageObject.getMedia(messageObject) instanceof TLRPC.TL_messageMediaPaidMedia) {
-                            TLRPC.TL_messageMediaPaidMedia paidMedia = (TLRPC.TL_messageMediaPaidMedia) MessageObject.getMedia(messageObject);
-                            msg = LocaleController.formatPluralString("NotificationChatMessagePaidMedia", (int) paidMedia.stars_amount, name, getTitle(chat));
                         } else if (messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaPhoto) {
                             if (!shortMessage && Build.VERSION.SDK_INT >= 19 && !TextUtils.isEmpty(messageObject.messageOwner.message)) {
                                 msg = LocaleController.formatString(R.string.NotificationMessageGroupText, name, getTitle(chat), "\uD83D\uDDBC " + messageObject.messageOwner.message);
@@ -3223,9 +3202,6 @@ public class NotificationsController extends BaseController implements Notificat
                     }
                     if (ChatObject.isChannel(chat) && !chat.megagroup) {
                         msg = LocaleController.formatString(R.string.ChannelMessageNoText, name);
-                    } else if (messageObject.type == MessageObject.TYPE_PAID_MEDIA && MessageObject.getMedia(messageObject) instanceof TLRPC.TL_messageMediaPaidMedia) {
-                        TLRPC.TL_messageMediaPaidMedia paidMedia = (TLRPC.TL_messageMediaPaidMedia) MessageObject.getMedia(messageObject);
-                        msg = LocaleController.formatPluralString("NotificationMessagePaidMedia", (int) paidMedia.stars_amount, name);
                     } else {
                         msg = LocaleController.formatString(R.string.NotificationMessageGroupNoText, name, getTitle(chat));
                     }

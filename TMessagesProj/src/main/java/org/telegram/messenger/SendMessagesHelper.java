@@ -1543,31 +1543,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
     public void cancelSendingMessage(MessageObject object) {
         ArrayList<MessageObject> arrayList = new ArrayList<>();
         arrayList.add(object);
-        if (object != null && object.type == MessageObject.TYPE_PAID_MEDIA) {
-            DelayedMessage msg = null;
-            for (HashMap.Entry<String, ArrayList<DelayedMessage>> entry : delayedMessages.entrySet()) {
-                ArrayList<DelayedMessage> messages = entry.getValue();
-                for (int a = 0; a < messages.size(); a++) {
-                    DelayedMessage message = messages.get(a);
-                    if (message.type == 4) {
-                        for (int b = 0; b < message.messageObjects.size(); b++) {
-                            MessageObject messageObject = message.messageObjects.get(b);
-                            if (messageObject.getId() == object.getId()) {
-                                msg = message;
-                                break;
-                            }
-                        }
-                    }
-                    if (msg != null) {
-                        break;
-                    }
-                }
-            }
-            if (msg != null) {
-                arrayList.clear();
-                arrayList.addAll(msg.messageObjects);
-            }
-        }
         cancelSendingMessage(arrayList);
     }
 
