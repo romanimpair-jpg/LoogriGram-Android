@@ -36009,44 +36009,6 @@ public class ChatActivity extends BaseFragment implements
                     }
 
                     @Override
-                    public void forceUpdate(ChatActionCell cell, boolean anchorScroll) {
-                        if (cell == null) return;
-                        MessageObject messageObject = cell.getMessageObject();
-                        if (messageObject == null) return;
-                        messageObject.forceUpdate = true;
-                        int top = 0;
-                        int position = RecyclerListView.NO_POSITION;
-                        if (chatListView != null && chatLayoutManager != null && !chatLayoutManager.hasPendingScrollPosition()) {
-                            for (int i = chatListView.getChildCount() - 1; i >= 0; i--) {
-                                View v = chatListView.getChildAt(i);
-                                final int vposition = chatListView.getChildAdapterPosition(v);
-                                if (vposition < 0) continue;
-                                if (v instanceof ChatMessageCell) {
-                                    if (((ChatMessageCell) v).getCurrentMessagesGroup() != null) {
-                                        continue;
-                                    }
-                                    position = vposition;
-                                    top = getScrollingOffsetForView(v);
-                                    break;
-                                } else if (v instanceof ChatActionCell) {
-                                    position = vposition;
-                                    top = getScrollingOffsetForView(v);
-                                    break;
-                                }
-                            }
-                        }
-                        updateMessageAnimatedInternal(messageObject, false);
-                        if (anchorScroll && position >= 0) {
-                            chatLayoutManager.scrollToPositionWithOffset(position, top);
-                        }
-                    }
-
-                    @Override
-                    public void needShowEffectOverlay(ChatActionCell cell, TLRPC.Document document, TLRPC.VideoSize videoSize) {
-                        emojiAnimationsOverlay.showAnimationForActionCell(cell, document, videoSize);
-                    }
-
-                    @Override
                     public void didClickButton(ChatActionCell cell) {
                         if (cell == null) return;
                         MessageObject message = cell.getMessageObject();

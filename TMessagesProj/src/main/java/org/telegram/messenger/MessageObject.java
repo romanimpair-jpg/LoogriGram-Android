@@ -285,7 +285,6 @@ public class MessageObject {
     public int stableId;
 
     public boolean wasUnread;
-    public boolean playedGiftAnimation;
 
     public boolean hadAnimationNotReadyLoading;
 
