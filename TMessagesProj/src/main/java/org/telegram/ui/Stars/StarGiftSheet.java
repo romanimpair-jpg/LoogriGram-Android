@@ -79,9 +79,7 @@ import androidx.collection.LongSparseArray;
 import androidx.core.graphics.ColorUtils;
 import androidx.recyclerview.widget.RecyclerView;
 
-import org.telegram.messenger.CurrencyFormat;
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.BillingController;
 import org.telegram.messenger.BotWebViewVibrationEffect;
 import org.telegram.messenger.ChatObject;
@@ -94,7 +92,6 @@ import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
-import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
@@ -108,7 +105,6 @@ import org.telegram.tgnet.tl.TL_update;
 import org.telegram.ui.AccountFrozenAlert;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
-import org.telegram.ui.ActionBar.BottomSheet;
 import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.theme.ThemeKey;
@@ -3156,13 +3152,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             } else {
                 tableView.addRow(getString(R.string.Gift2Quantity), formatPluralStringComma("Gift2QuantityIssued1", gift.availability_issued) + formatPluralStringComma("Gift2QuantityIssued2", gift.availability_total));
             }
-            if (!TextUtils.isEmpty(gift.slug) && (gift.flags & 256) != 0) {
-                final String roundedValue = CurrencyFormat.format(gift.value_amount, gift.value_currency, CurrencyFormat.getExp(gift.value_currency), true);
-                final String value = CurrencyFormat.format(gift.value_amount, gift.value_currency);
-                tableView.addRow(getString(R.string.GiftValue2), "~" + roundedValue, getString(R.string.GiftValue2LearnMore), () -> {
-                    openValueStats(gift.gift_id, gift.title, getGiftName(), value, gift.getDocument(), gift.slug);
-                });
-            }
+            // LoogriGram: a "Value ~$X" row stood here, the gift's market price.
         }
         final TL_stars.starGiftAttributeOriginalDetails details = findAttribute(gift.attributes, TL_stars.starGiftAttributeOriginalDetails.class);
         if (details != null) {
@@ -5356,164 +5346,9 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
     // its last caller went with the profile-colour screen's buy tab.
 
 
-    private void openValueStats(
-        long giftId,
-        String collectionTitle,
-        String giftName,
-        String valuePrice,
-        TLRPC.Document sticker,
-        String slug
-    ) {
-        final AlertDialog progressDialog = new AlertDialog(ApplicationLoader.applicationContext, AlertDialog.ALERT_TYPE_SPINNER);
-        progressDialog.showDelayed(500);
-
-        final TL_stars.getUniqueStarGiftValueInfo req = new TL_stars.getUniqueStarGiftValueInfo();
-        req.slug = slug;
-        ConnectionsManager.getInstance(currentAccount).sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
-            progressDialog.dismiss();
-            if (res instanceof TL_stars.UniqueStarGiftValueInfo) {
-                final TL_stars.UniqueStarGiftValueInfo info = (TL_stars.UniqueStarGiftValueInfo) res;
-
-                final BottomSheet.Builder b = new BottomSheet.Builder(getContext(), false, resourcesProvider);
-
-                final LinearLayout linearLayout = new LinearLayout(getContext());
-                linearLayout.setOrientation(LinearLayout.VERTICAL);
-                linearLayout.setPadding(dp(16), dp(20), dp(16), dp(8));
-                linearLayout.setClipChildren(false);
-                linearLayout.setClipToPadding(false);
-
-                final BackupImageView imageView = new BackupImageView(getContext());
-                StarsIntroActivity.setGiftImage(imageView.getImageReceiver(), sticker, 160);
-                linearLayout.addView(imageView, LayoutHelper.createLinear(160, 160, Gravity.CENTER_HORIZONTAL, 0, 0, 0, 0));
-
-                final TextView priceTextView = new TextView(getContext());
-                priceTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
-                priceTextView.setTextColor(Theme.getColor(Theme.key_featuredStickers_buttonText, resourcesProvider));
-                priceTextView.setTypeface(AndroidUtilities.bold());
-                priceTextView.setPadding(dp(20), 0, dp(20), 0);
-                priceTextView.setBackground(Theme.createRoundRectDrawable(dp(21), Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider)));
-                priceTextView.setGravity(Gravity.CENTER);
-                linearLayout.addView(priceTextView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, 42, Gravity.CENTER_HORIZONTAL, 0, 12, 0, 15));
-                priceTextView.setText(valuePrice);
-
-                final TextView textView = new TextView(getContext());
-                textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
-                textView.setTextColor(Theme.getColor(Theme.key_dialogTextBlack, resourcesProvider));
-                textView.setGravity(Gravity.CENTER);
-                linearLayout.addView(textView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 16, 0, 16, 19));
-                if (info.value_is_average) {
-                    textView.setText(AndroidUtilities.replaceTags(formatString(R.string.GiftValueAverage, collectionTitle)));
-                } else if (info.last_sale_on_fragment) {
-                    textView.setText(AndroidUtilities.replaceTags(formatString(R.string.GiftValueLastFragment, giftName)));
-                } else {
-                    textView.setText(AndroidUtilities.replaceTags(formatString(R.string.GiftValueLastTelegram, giftName)));
-                }
-
-                final FrameLayout tableLayout = new FrameLayout(getContext());
-                tableLayout.setClipChildren(false);
-                tableLayout.setClipToPadding(false);
-                final HintView2[] hintView = new HintView2[1];
-                final Utilities.Callback2<View, CharSequence> showHint = (view, text) -> {
-                    if (hintView[0] != null) {
-                        hintView[0].hide();
-                    }
-                    text = AndroidUtilities.replaceTags(text);
-                    float x = view.getX() + ((View) view.getParent()).getX() + ((View) ((View) view.getParent()).getParent()).getX();
-                    float y = view.getY() + ((View) view.getParent()).getY() + ((View) ((View) view.getParent()).getParent()).getY();
-                    if (view instanceof ButtonSpan.TextViewButtons) {
-                        final ButtonSpan.TextViewButtons textView2 = (ButtonSpan.TextViewButtons) view;
-                        final Layout layout = textView2.getLayout();
-                        final CharSequence viewText = layout.getText();
-                        if (viewText instanceof Spanned) {
-                            ButtonSpan[] spans = ((Spanned) viewText).getSpans(0, viewText.length(), ButtonSpan.class);
-                            if (spans.length > 0 && spans[0] != null) {
-                                final int offset = ((Spanned) viewText).getSpanStart(spans[0]);
-                                x += layout.getPrimaryHorizontal(offset) + spans[0].getSize() / 2;
-                                y += layout.getLineTop(layout.getLineForOffset(offset));
-                            }
-                        }
-                    }
-
-                    final HintView2 thisHintView = hintView[0] = new HintView2(getContext(), HintView2.DIRECTION_BOTTOM);
-                    thisHintView.setMultilineText(true);
-                    thisHintView.setInnerPadding(11, 8, 11, 7);
-                    thisHintView.setRounding(10);
-                    thisHintView.setText(text);
-                    thisHintView.setOnHiddenListener(() -> AndroidUtilities.removeFromParent(thisHintView));
-                    thisHintView.setTranslationY(-dp(100) + y);
-                    thisHintView.setMaxWidthPx(dp(300));
-                    thisHintView.setPadding(dp(4), dp(4), dp(4), dp(4));
-                    thisHintView.setJointPx(0, x - dp(4));
-                    tableLayout.addView(thisHintView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 100, Gravity.TOP | Gravity.FILL_HORIZONTAL));
-                    thisHintView.show();
-                };
-
-                final TableView tableView = new TableView(getContext(), resourcesProvider);
-                tableLayout.addView(tableView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.FILL));
-                tableView.addRow(getString(R.string.GiftValueInitialSale), LocaleController.formatYearMonthDay(info.initial_sale_date, true));
-                tableView.addRow(getString(R.string.GiftValueInitialPrice), StarsFormat.replaceStarsWithPlain("⭐️" + info.initial_sale_stars + " (~" + CurrencyFormat.format(info.initial_sale_price, info.currency) + ")", .8f));
-                if (info.hasFlag(info.flags, TLObject.FLAG_0)) {
-                    tableView.addRow(getString(R.string.GiftValueLastSale), LocaleController.formatYearMonthDay(info.last_sale_date, true));
-                    int morePercent = (int) (Math.round(((double) info.last_sale_price / info.initial_sale_price) * 1000) / 10) - 100;
-                    if (morePercent > 0) {
-                        tableView.addRow(getString(R.string.GiftValueLastPrice), CurrencyFormat.format(info.last_sale_price, info.currency), "+" + LocaleController.formatNumber(morePercent, ' ') + "%", null);
-                    } else {
-                        tableView.addRow(getString(R.string.GiftValueLastPrice), CurrencyFormat.format(info.last_sale_price, info.currency));
-                    }
-                }
-                if (info.hasFlag(info.flags, TLObject.FLAG_2)) {
-                    final ButtonSpan.TextViewButtons[] view = new ButtonSpan.TextViewButtons[1];
-                    final Runnable hint = () -> showHint.run(view[0], LocaleController.formatString(R.string.GiftValueMinPriceInfo, CurrencyFormat.format(info.floor_price, info.currency), collectionTitle));
-                    TableRow row = tableView.addRow(getString(R.string.GiftValueMinPrice), CurrencyFormat.format(info.floor_price, info.currency), "?", hint);
-                    view[0] = (ButtonSpan.TextViewButtons) ((TableView.TableRowContent) row.getChildAt(1)).getChildAt(0);
-                    row.setOnClickListener(v -> hint.run());
-                }
-                if (info.hasFlag(info.flags, TLObject.FLAG_3)) {
-                    final ButtonSpan.TextViewButtons[] view = new ButtonSpan.TextViewButtons[1];
-                    final Runnable hint = () -> showHint.run(view[0], LocaleController.formatString(R.string.GiftValueAveragePriceInfo, CurrencyFormat.format(info.average_price, info.currency), collectionTitle));
-                    TableRow row = tableView.addRow(getString(R.string.GiftValueAveragePrice), CurrencyFormat.format(info.average_price, info.currency), "?", hint);
-                    view[0] = (ButtonSpan.TextViewButtons) ((TableView.TableRowContent) row.getChildAt(1)).getChildAt(0);
-                    row.setOnClickListener(v -> hint.run());
-                }
-                linearLayout.addView(tableLayout, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.FILL_HORIZONTAL, 0, 0, 0, 12));
-
-                if (info.listed_count > 0) {
-                    final ButtonWithCounterView button1 = new ButtonWithCounterView(getContext(), false, resourcesProvider);
-                    SpannableStringBuilder sb = new SpannableStringBuilder();
-                    sb.append(LocaleController.formatNumber(info.listed_count, ' '));
-                    sb.append(" ");
-                    sb.append("e");
-                    sb.setSpan(new AnimatedEmojiSpan(sticker, 1.5f, button1.getTextPaint().getFontMetricsInt()), sb.length() - 1, sb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    sb.append(" ");
-                    sb.append(getString(R.string.GiftValueOnSaleTelegram));
-                    button1.setText(AndroidUtilities.replaceArrows(sb, false, dp(2), dp(1)), false);
-                    // LoogriGram: this opened the list of these gifts for sale.
-                    linearLayout.addView(button1, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 42, Gravity.FILL_HORIZONTAL, 0, 0, 0, 2));
-                }
-
-                if (info.fragment_listed_count > 0) {
-                    final ButtonWithCounterView button2 = new ButtonWithCounterView(getContext(), false, resourcesProvider);
-                    SpannableStringBuilder sb = new SpannableStringBuilder();
-                    sb.append(LocaleController.formatNumber(info.fragment_listed_count, ' '));
-                    sb.append("e");
-                    sb.setSpan(new AnimatedEmojiSpan(sticker, 1.5f, button2.getTextPaint().getFontMetricsInt()), sb.length() - 1, sb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    sb.append(" ");
-                    sb.append(getString(R.string.GiftValueOnSaleFragment));
-                    button2.setText(AndroidUtilities.replaceArrows(sb, false, dp(2), dp(1)), false);
-                    button2.setOnClickListener(v -> {
-                        Browser.openUrlInSystemBrowser(getContext(), info.fragment_listed_url);
-                    });
-                    linearLayout.addView(button2, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 42, Gravity.FILL_HORIZONTAL, 0, 0, 0, 0));
-                }
-
-                b.setCustomView(linearLayout);
-
-                b.show();
-            } else if (err != null) {
-                getBulletinFactory().showForError(err);
-            }
-        }));
-    }
+    // LoogriGram: openValueStats stood here - a collectible's market value:
+    // its first and last sale prices, the floor and average price of its
+    // collection, how many are for sale and a link to buy one on Fragment.
 
     // LoogriGram: UpgradePricesSheet stood here. It listed the schedule the price of
     // an upgrade steps down through, so you could decide when to buy.
