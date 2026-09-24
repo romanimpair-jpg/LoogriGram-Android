@@ -2704,17 +2704,11 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 final Activity activity = lastFragment.getParentActivity();
                 int num = view.getTag() instanceof Integer ? (Integer) view.getTag() : -1;
                 if (num == 1) {
-                    if (!photosEnabled && !videosEnabled && checkCanRemoveRestrictionsByBoosts()) {
-                        return;
-                    }
                     if (!photosEnabled && !videosEnabled) {
                         showLayout(restrictedLayout = new ChatAttachRestrictedLayout(1, this, getContext(), resourcesProvider));
                     }
                     showLayout(photoLayout);
                 } else if (num == 3) {
-                    if (!musicEnabled && checkCanRemoveRestrictionsByBoosts()) {
-                        return;
-                    }
                     if (Build.VERSION.SDK_INT >= 33) {
                         if (activity.checkSelfPermission(Manifest.permission.READ_MEDIA_AUDIO) != PackageManager.PERMISSION_GRANTED) {
                             activity.requestPermissions(new String[]{Manifest.permission.READ_MEDIA_AUDIO}, BasePermissionsActivity.REQUEST_CODE_EXTERNAL_STORAGE);
@@ -2726,9 +2720,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     }
                     openAudioLayout(true);
                 } else if (num == 4) {
-                    if (!documentsEnabled && checkCanRemoveRestrictionsByBoosts()) {
-                        return;
-                    }
                     if (Build.VERSION.SDK_INT >= 33) {
                         if (activity.checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED ||
                                 activity.checkSelfPermission(Manifest.permission.READ_MEDIA_VIDEO) != PackageManager.PERMISSION_GRANTED) {
@@ -2746,9 +2737,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 // with the address book. A contact card received in a chat can
                 // still be viewed and forwarded.
                 } else if (num == LAYOUT_TYPE_POLL) {
-                    if (!pollsEnabled && checkCanRemoveRestrictionsByBoosts()) {
-                        return;
-                    }
                     if (!pollsEnabled) {
                         restrictedLayout = new ChatAttachRestrictedLayout(9, this, getContext(), resourcesProvider);
                         showLayout(restrictedLayout);
@@ -2758,9 +2746,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 } else if (num == 11) {
                     openQuickRepliesLayout();
                 } else if (num == 12) {
-                    if (!todoEnabled && checkCanRemoveRestrictionsByBoosts()) {
-                        return;
-                    }
                     if (!todoEnabled) {
                         restrictedLayout = new ChatAttachRestrictedLayout(9, this, getContext(), resourcesProvider);
                         showLayout(restrictedLayout);
@@ -4311,9 +4296,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
 
     public void openAttachLayoutForType(int layoutType) {
         if (layoutType == LAYOUT_TYPE_MUSIC) {
-            if (!musicEnabled && checkCanRemoveRestrictionsByBoosts()) {
-                return;
-            }
             final Activity activity = baseFragment != null ? baseFragment.getParentActivity() : null;
             if (activity != null) {
                 if (Build.VERSION.SDK_INT >= 33) {
@@ -4698,10 +4680,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             quickRepliesLayout.setupBlurredSearchField(iBlur3FactoryLiquidGlass);
         }
         showLayout(quickRepliesLayout);
-    }
-
-    public boolean checkCanRemoveRestrictionsByBoosts() {
-        return (baseFragment instanceof ChatActivity) && ((ChatActivity) baseFragment).checkCanRemoveRestrictionsByBoosts();
     }
 
     private void openAudioLayout(boolean show) {
@@ -5965,9 +5943,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         currentAttachLayout.onOpenAnimationEnd();
         AndroidUtilities.makeAccessibilityAnnouncement(getString("AccDescrAttachButton", R.string.AccDescrAttachButton));
         openTransitionFinished = true;
-        if (!videosEnabled && !photosEnabled) {
-            checkCanRemoveRestrictionsByBoosts();
-        }
     }
 
     @Override

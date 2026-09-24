@@ -342,10 +342,6 @@ public class ChatActivityEnterView extends FrameLayout implements
 
         void onUpdateSlowModeButton(View button, boolean show, CharSequence time);
 
-        default boolean checkCanRemoveRestrictionsByBoosts() {
-            return false;
-        }
-
         default void scrollToSendingMessage() {
 
         }
@@ -488,27 +484,17 @@ public class ChatActivityEnterView extends FrameLayout implements
 
     private static class SlowModeBtn extends FrameLayout {
         private final SimpleTextView textView;
-        private final RectF bgRect = new RectF();
-        private final Paint gradientPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final Drawable closeDrawable;
-        private boolean isPremiumMode = false;
 
+        // LoogriGram: the gradient pill with a close mark this drew behind the
+        // timer in "premium mode" - a group letting boosters skip slow mode -
+        // is gone with that; it is only the timer now.
         public SlowModeBtn(@NonNull Context context) {
             super(context);
             textView = new SimpleTextView(context);
             addView(textView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
-            setWillNotDraw(false);
-            closeDrawable = ContextCompat.getDrawable(context, R.drawable.msg_mini_close_tooltip);
-            closeDrawable.setBounds(0, 0, closeDrawable.getIntrinsicWidth(), closeDrawable.getIntrinsicHeight());
             setClipToPadding(false);
             setClipChildren(false);
             ScaleStateListAnimator.apply(this);
-        }
-
-        @Override
-        protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-            super.onLayout(changed, left, top, right, bottom);
-            gradientPaint.setShader(new LinearGradient(0, 0, getMeasuredWidth(), 0, new int[]{0xff7593ff, 0xffa472ff}, new float[]{0f, 1f}, Shader.TileMode.CLAMP));
         }
 
         public void setTextSize(int size) {
@@ -531,28 +517,10 @@ public class ChatActivityEnterView extends FrameLayout implements
             invalidate();
         }
 
-        public void setPremiumMode(boolean premiumMode) {
-            this.isPremiumMode = premiumMode;
-            invalidate();
-        }
-
         public CharSequence getText() {
             return textView.getText();
         }
 
-        @Override
-        protected void onDraw(Canvas canvas) {
-            if (isPremiumMode) {
-                canvas.save();
-                int heightRect = dp(26);
-                canvas.translate(dp(5), ((getMeasuredHeight() - heightRect) / 2f));
-                bgRect.set(-dp(5), 0f, (float) getMeasuredWidth() - getPaddingEnd(), (float) heightRect);
-                canvas.drawRoundRect(bgRect, heightRect / 2f, heightRect / 2f, gradientPaint);
-                canvas.translate(getMeasuredWidth() - getPaddingEnd() - dp(6) - closeDrawable.getIntrinsicWidth(), dp(5));
-                closeDrawable.draw(canvas);
-                canvas.restore();
-            }
-        }
 
         @Override
         protected boolean drawChild(Canvas canvas, View child, long drawingTime) {
@@ -3455,9 +3423,6 @@ public class ChatActivityEnterView extends FrameLayout implements
         sendButtonContainer.addView(slowModeButton, LayoutHelper.createFrame(74, DEFAULT_HEIGHT, Gravity.RIGHT | Gravity.BOTTOM));
         slowModeButton.setOnClickListener(v -> {
             if (delegate != null) {
-                if (delegate.checkCanRemoveRestrictionsByBoosts()) {
-                    return;
-                }
                 delegate.onUpdateSlowModeButton(slowModeButton, true, slowModeButton.getText());
             }
         });
@@ -4348,9 +4313,6 @@ public class ChatActivityEnterView extends FrameLayout implements
     }
 
     private void showRestrictedHint() {
-        if (delegate != null && delegate.checkCanRemoveRestrictionsByBoosts()) {
-            return;
-        }
         if (DialogObject.isChatDialog(dialog_id)) {
             TLRPC.Chat chat = accountInstance.getMessagesController().getChat(-dialog_id);
             BulletinFactory.of(parentFragment).createSimpleBulletin(R.raw.passcode_lock_close, LocaleController.formatString("SendPlainTextRestrictionHint", R.string.SendPlainTextRestrictionHint, ChatObject.getAllowedSendString(chat)), 3).show();
@@ -6059,7 +6021,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                         SendMessagesHelper.getInstance(currentAccount).isSendingMessageIdDialog(dialog_id))
         ) {
             TLRPC.Chat chat = accountInstance.getMessagesController().getChat(info.id);
-            if (!ChatObject.hasAdminRights(chat) && !ChatObject.isIgnoredChatRestrictionsForBoosters(info)) {
+            if (!ChatObject.hasAdminRights(chat)) {
                 currentTime = info.slowmode_seconds;
                 slowModeTimer = isUploading ? Integer.MAX_VALUE : Integer.MAX_VALUE - 1;
             } else {
@@ -6537,12 +6499,8 @@ public class ChatActivityEnterView extends FrameLayout implements
         if (emojiView != null) {
             emojiView.setChatInfo(info);
         }
-        if (slowModeButton != null) {
-            slowModeButton.setPremiumMode(ChatObject.isPossibleRemoveChatRestrictionsByBoosts(chatInfo));
-        }
-        if (ChatObject.isIgnoredChatRestrictionsForBoosters(chatInfo)) {
-            return;
-        }
+        // LoogriGram: a booster skipped slow mode here, and the slow-mode button
+        // turned into a gradient "boost to skip" pill in a group allowing it.
         setSlowModeTimer(chatInfo.slowmode_next_send_date);
     }
 
@@ -13198,7 +13156,7 @@ public class ChatActivityEnterView extends FrameLayout implements
             Integer newMsgId = (Integer) args[1];
             if (did == dialog_id && info != null && info.slowmode_seconds != 0 && !MessageObject.isEphemeralMessageId(newMsgId)) {
                 TLRPC.Chat chat = accountInstance.getMessagesController().getChat(info.id);
-                if (chat != null && !ChatObject.hasAdminRights(chat) && !ChatObject.isIgnoredChatRestrictionsForBoosters(chat)) {
+                if (chat != null && !ChatObject.hasAdminRights(chat)) {
                     info.slowmode_next_send_date = ConnectionsManager.getInstance(currentAccount).getCurrentTime() + info.slowmode_seconds;
                     info.flags |= 262144;
                     setSlowModeTimer(info.slowmode_next_send_date);

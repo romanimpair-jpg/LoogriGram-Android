@@ -123,29 +123,12 @@ public class ChatObject {
         return canSendPhoto(currentChat) || canSendVideo(currentChat) || canSendRoundVideo(currentChat) || canSendVoice(currentChat) || canSendDocument(currentChat) || canSendMusic(currentChat) || canSendStickers(currentChat);
     }
 
-    public static boolean isIgnoredChatRestrictionsForBoosters(TLRPC.ChatFull chatFull) {
-        return chatFull != null && chatFull.boosts_unrestrict > 0 && (chatFull.boosts_applied - chatFull.boosts_unrestrict) >= 0;
-    }
-
-    public static boolean isIgnoredChatRestrictionsForBoosters(TLRPC.Chat chat) {
-        if (chat != null) {
-            TLRPC.ChatFull chatFull = MessagesController.getInstance(UserConfig.selectedAccount).getChatFull(chat.id);
-            return isIgnoredChatRestrictionsForBoosters(chatFull);
-        }
-        return false;
-    }
-
-    public static boolean isPossibleRemoveChatRestrictionsByBoosts(TLRPC.Chat chat) {
-        if (chat != null) {
-            TLRPC.ChatFull chatFull = MessagesController.getInstance(UserConfig.selectedAccount).getChatFull(chat.id);
-            return isPossibleRemoveChatRestrictionsByBoosts(chatFull);
-        }
-        return false;
-    }
-
-    public static boolean isPossibleRemoveChatRestrictionsByBoosts(TLRPC.ChatFull chatFull) {
-        return chatFull != null && chatFull.boosts_unrestrict > 0;
-    }
+    // LoogriGram: isIgnoredChatRestrictionsForBoosters and
+    // isPossibleRemoveChatRestrictionsByBoosts stood here. A group can let a
+    // member who boosts it enough times skip its restrictions: the canSend
+    // checks below let such a member through, and every restricted control
+    // offered to boost. Boosts come from Premium, honoured for nobody - ours
+    // included - so a group's restrictions apply to us as written.
 
     public static String getAllowedSendString(TLRPC.Chat chat) {
         StringBuilder stringBuilder = new StringBuilder();
@@ -2158,67 +2141,40 @@ public class ChatObject {
     }
 
     public static boolean canSendStickers(TLRPC.Chat chat) {
-        if (isIgnoredChatRestrictionsForBoosters(chat)) {
-            return true;
-        }
         return canUserDoAction(chat, ACTION_SEND_STICKERS);
     }
 
     public static boolean canSendEmbed(TLRPC.Chat chat) {
-        if (isIgnoredChatRestrictionsForBoosters(chat)) {
-            return true;
-        }
         return canUserDoAction(chat, ACTION_EMBED_LINKS);
     }
 
     public static boolean canSendPhoto(TLRPC.Chat chat) {
-        if (isIgnoredChatRestrictionsForBoosters(chat)) {
-            return true;
-        }
         return canUserDoAction(chat, ACTION_SEND_PHOTO);
     }
 
     public static boolean canSendVideo(TLRPC.Chat chat) {
-        if (isIgnoredChatRestrictionsForBoosters(chat)) {
-            return true;
-        }
         return canUserDoAction(chat, ACTION_SEND_VIDEO);
     }
 
     public static boolean canSendMusic(TLRPC.Chat chat) {
-        if (isIgnoredChatRestrictionsForBoosters(chat)) {
-            return true;
-        }
         return canUserDoAction(chat, ACTION_SEND_MUSIC);
     }
 
     public static boolean canSendDocument(TLRPC.Chat chat) {
-        if (isIgnoredChatRestrictionsForBoosters(chat)) {
-            return true;
-        }
         return canUserDoAction(chat, ACTION_SEND_DOCUMENTS);
     }
 
     public static boolean canSendVoice(TLRPC.Chat chat) {
-        if (isIgnoredChatRestrictionsForBoosters(chat)) {
-            return true;
-        }
         return canUserDoAction(chat, ACTION_SEND_VOICE);
     }
 
     public static boolean canSendRoundVideo(TLRPC.Chat chat) {
-        if (isIgnoredChatRestrictionsForBoosters(chat)) {
-            return true;
-        }
         return canUserDoAction(chat, ACTION_SEND_ROUND);
     }
 
     public static boolean canSendPolls(TLRPC.Chat chat) {
         if (ChatObject.isMonoForum(chat) || false) {
             return false;
-        }
-        if (isIgnoredChatRestrictionsForBoosters(chat)) {
-            return true;
         }
         return canUserDoAction(chat, ACTION_SEND_POLLS);
     }
@@ -2227,16 +2183,10 @@ public class ChatObject {
         if (isNotInChat(chat) && chat != null && chat.join_to_send) {
             return false;
         }
-        if (isIgnoredChatRestrictionsForBoosters(chat)) {
-            return true;
-        }
         return canUserDoAction(chat, ACTION_SEND);
     }
 
     public static boolean canSendPlain(TLRPC.Chat chat) {
-        if (isIgnoredChatRestrictionsForBoosters(chat)) {
-            return true;
-        }
         return canUserDoAction(chat, ACTION_SEND_PLAIN);
     }
 

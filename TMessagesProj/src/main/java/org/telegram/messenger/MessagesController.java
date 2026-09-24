@@ -8628,18 +8628,6 @@ public class MessagesController extends BaseController implements NotificationCe
         });
     }
 
-    public void setBoostsToUnblockRestrictions(long chatId, int boosts) {
-        TLRPC.TL_channels_setBoostsToUnblockRestrictions req = new TLRPC.TL_channels_setBoostsToUnblockRestrictions();
-        req.boosts = boosts;
-        req.channel = getInputChannel(chatId);
-        getConnectionsManager().sendRequest(req, (response, error) -> {
-            if (error == null) {
-                getMessagesController().processUpdates((TLRPC.Updates) response, false);
-                AndroidUtilities.runOnUIThread(() -> loadFullChat(chatId, 0, true), 1000);
-            }
-        });
-    }
-
     public void setDefaultBannedRole(long chatId, TLRPC.TL_chatBannedRights rights, boolean isChannel, BaseFragment parentFragment) {
         if (rights == null) {
             return;

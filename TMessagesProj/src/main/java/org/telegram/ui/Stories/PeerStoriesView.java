@@ -75,7 +75,6 @@ import org.telegram.messenger.AnimationNotificationsLocker;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.BotWebViewVibrationEffect;
 import org.telegram.messenger.BuildVars;
-import org.telegram.messenger.ChannelBoostsController;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.DialogObject;
@@ -2917,37 +2916,12 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
         };
     }
 
-    private TL_stories.TL_premium_boostsStatus boostsStatus;
-    private ChannelBoostsController.CanApplyBoost canApplyBoost;
-
+    // LoogriGram: a group's story opened the "boost this group to lift its
+    // restrictions" sheet from here. A restricted group's story offers no
+    // reply field now, as upstream does for a group that allows no boosting,
+    // so only a user's story that is locked to us comes here.
     private void showPremiumBlockedToast() {
         if (areLiveCommentsDisabled) return;
-        if (isGroup) {
-            if (boostsStatus != null && canApplyBoost != null) {
-                LimitReachedBottomSheet.openBoostsForRemoveRestrictions(fragmentForLimit(), boostsStatus, canApplyBoost, dialogId, true);
-                return;
-            }
-            if (storyViewer != null) {
-                storyViewer.setOverlayVisible(true);
-            }
-            MessagesController.getInstance(currentAccount).getBoostsController().getBoostsStats(dialogId, boostsStatus -> {
-                if (boostsStatus == null) {
-                    if (storyViewer != null) {
-                        storyViewer.setOverlayVisible(false);
-                    }
-                    return;
-                }
-                this.boostsStatus = boostsStatus;
-                MessagesController.getInstance(currentAccount).getBoostsController().userCanBoostChannel(dialogId, boostsStatus, canApplyBoost -> {
-                    this.canApplyBoost = canApplyBoost;
-                    LimitReachedBottomSheet.openBoostsForRemoveRestrictions(fragmentForLimit(), boostsStatus, canApplyBoost, dialogId, true);
-                    if (storyViewer != null) {
-                        storyViewer.setOverlayVisible(false);
-                    }
-                });
-            });
-            return;
-        }
         AndroidUtilities.shakeViewSpring(chatActivityEnterView, shiftDp = -shiftDp);
         BotWebViewVibrationEffect.APP_ERROR.vibrate();
         // LoogriGram: no "Subscribe to Premium" button (premiumFeaturesBlocked
@@ -3436,23 +3410,27 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
 
             @Override
             public void needShowMediaBanHint() {
-                if (isGroup) {
-                    showPremiumBlockedToast();
-                    return;
-                }
                 if (mediaBanTooltip == null) {
                     mediaBanTooltip = new HintView(getContext(), 9, resourcesProvider);
                     mediaBanTooltip.setVisibility(View.GONE);
                     addView(mediaBanTooltip, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.TOP, 10, 0, 10, 0));
                 }
-                String title;
-                if (dialogId >= 0) {
-                    title = UserObject.getFirstName(MessagesController.getInstance(currentAccount).getUser(dialogId));
-                } else {
+                if (isGroup) {
+                    // LoogriGram: this opened the "boost this group to lift its
+                    // restrictions" sheet. It says what the group restricts, as
+                    // the chat screen does.
                     TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
-                    title = chat != null ? chat.title : "";
+                    mediaBanTooltip.setText(ChatObject.getRestrictedErrorText(chat, chatActivityEnterView.isInVideoMode() ? ChatObject.ACTION_SEND_ROUND : ChatObject.ACTION_SEND_VOICE));
+                } else {
+                    String title;
+                    if (dialogId >= 0) {
+                        title = UserObject.getFirstName(MessagesController.getInstance(currentAccount).getUser(dialogId));
+                    } else {
+                        TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
+                        title = chat != null ? chat.title : "";
+                    }
+                    mediaBanTooltip.setText(AndroidUtilities.replaceTags(LocaleController.formatString(chatActivityEnterView.isInVideoMode() ? R.string.VideoMessagesRestrictedByPrivacy : R.string.VoiceMessagesRestrictedByPrivacy, title)));
                 }
-                mediaBanTooltip.setText(AndroidUtilities.replaceTags(LocaleController.formatString(chatActivityEnterView.isInVideoMode() ? R.string.VideoMessagesRestrictedByPrivacy : R.string.VoiceMessagesRestrictedByPrivacy, title)));
                 mediaBanTooltip.showForView(chatActivityEnterView.getAudioVideoButtonContainer(), true);
             }
 
@@ -4123,8 +4101,6 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
         }
         currentImageTime = 0;
         switchEventSent = false;
-        boostsStatus = null;
-        canApplyBoost = null;
         if (isChannel) {
             createSelfPeerView();
             if (chatActivityEnterView == null && (isGroup || currentStory.isLive)) {
@@ -4132,7 +4108,7 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
             }
             if (chatActivityEnterView != null) {
                 TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
-                chatActivityEnterView.setVisibility(currentStory.isLive || !isBotsPreview() && isGroup && (ChatObject.canSendPlain(chat) || ChatObject.isPossibleRemoveChatRestrictionsByBoosts(chat)) ? View.VISIBLE : View.GONE);
+                chatActivityEnterView.setVisibility(currentStory.isLive || !isBotsPreview() && isGroup && ChatObject.canSendPlain(chat) ? View.VISIBLE : View.GONE);
                 chatActivityEnterView.setLiveComment(currentStory.isLive, disabledPaidFeatures(true));
                 chatActivityEnterView.getEditField().setText(storyViewer.getDraft(dialogId, currentStory.storyItem));
                 chatActivityEnterView.setDialogId(dialogId, currentAccount);
@@ -5266,7 +5242,7 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
                 chatActivityEnterView.setVisibility(View.VISIBLE);
             } else if ((UserObject.isService(dialogId) || isBotsPreview()) && chatActivityEnterView != null) {
                 chatActivityEnterView.setVisibility(View.GONE);
-            } else if (!isSelf && (!isChannel || isGroup && (ChatObject.canSendPlain(chat) || ChatObject.isPossibleRemoveChatRestrictionsByBoosts(chat))) && chatActivityEnterView != null) {
+            } else if (!isSelf && (!isChannel || isGroup && ChatObject.canSendPlain(chat)) && chatActivityEnterView != null) {
                 if (chatActivityEnterView == null) {
                     createEnterView();
                 }
@@ -5716,7 +5692,7 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
                     }
                 }
                 TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
-                if (!(isGroup && (ChatObject.canSendPlain(chat) || ChatObject.isPossibleRemoveChatRestrictionsByBoosts(chat))) && storyItem.views.views_count > 0) {
+                if (!(isGroup && ChatObject.canSendPlain(chat)) && storyItem.views.views_count > 0) {
                     selfStatusView.setText(storyViewer.storiesList == null ? getString(R.string.NobodyViews) : getString(R.string.NobodyViewsArchived));
                     selfStatusView.setTranslationX(AndroidUtilities.dp(16));
                     SpannableStringBuilder stringBuilder = new SpannableStringBuilder();

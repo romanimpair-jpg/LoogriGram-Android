@@ -114,7 +114,6 @@ import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.graphics.Insets;
-import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.dynamicanimation.animation.FloatValueHolder;
@@ -260,7 +259,6 @@ import org.telegram.ui.Components.FloatingDebug.FloatingDebugController;
 import org.telegram.ui.Components.FloatingDebug.FloatingDebugProvider;
 import org.telegram.ui.Components.Forum.ForumUtilities;
 import org.telegram.ui.Components.Premium.GiftPremiumBottomSheet;
-import org.telegram.ui.Components.Premium.LimitReachedBottomSheet;
 import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.Components.Premium.PremiumPreviewBottomSheet;
 import org.telegram.ui.Components.Premium.boosts.BoostDialogs;
@@ -2084,11 +2082,6 @@ public class ChatActivity extends BaseFragment implements
                     otherIcon.setIconVisible(false);
                 }
             }
-        }
-
-        @Override
-        public boolean checkCanRemoveRestrictionsByBoosts() {
-            return ChatActivity.this.checkCanRemoveRestrictionsByBoosts();
         }
 
         @Override
@@ -13069,9 +13062,6 @@ public class ChatActivity extends BaseFragment implements
         if (userInfo != null && userInfo.voice_messages_forbidden) {
             mediaBanTooltip.setText(AndroidUtilities.replaceTags(LocaleController.formatString(chatActivityEnterView.isInVideoMode() ? R.string.VideoMessagesRestrictedByPrivacy : R.string.VoiceMessagesRestrictedByPrivacy, currentUser.first_name)));
         } else if (!ChatObject.canSendVoice(currentChat) && !ChatObject.canSendRoundVideo(currentChat)) {
-            if (checkCanRemoveRestrictionsByBoosts()) {
-                return;
-            }
             if (chatActivityEnterView.isInVideoMode()) {
                 mediaBanTooltip.setText(ChatObject.getRestrictedErrorText(currentChat, ChatObject.ACTION_SEND_ROUND));
             } else {
@@ -18540,26 +18530,9 @@ public class ChatActivity extends BaseFragment implements
             }
         } else if (currentChat != null && !ChatObject.canSendMessages(currentChat) && !ChatObject.canSendAnyMedia(currentChat) && !currentChat.gigagroup && (!ChatObject.isChannel(currentChat) || currentChat.megagroup)) {
             if (currentChat.default_banned_rights != null && currentChat.default_banned_rights.send_messages) {
-                boolean unlockByBoosts = ChatObject.isPossibleRemoveChatRestrictionsByBoosts(currentChat);
-                if (unlockByBoosts) {
-                    Drawable drawable = ContextCompat.getDrawable(getContext(), R.drawable.filled_limit_boost).mutate();
-                    DrawableCompat.setTint(drawable, getThemedColor(Theme.key_featuredStickers_addButton));
-                    drawable.setBounds(0, 0, dp(14), dp(14));
-                    CombinedDrawable combinedDrawable = new CombinedDrawable(null, drawable, dp(-6), dp(-6));
-                    combinedDrawable.setIconSize(dp(14), dp(14));
-                    combinedDrawable.setCustomSize(dp(14), dp(14));
-
-                    SpannableStringBuilder builder = new SpannableStringBuilder("d " + LocaleController.getString(R.string.BoostingBoostToSendMessages));
-                    builder.setSpan(new ForegroundColorSpan(getThemedColor(Theme.key_featuredStickers_addButton)), 0, builder.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    builder.setSpan(new TypefaceSpan(AndroidUtilities.bold()), 0, builder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    builder.setSpan(new ImageSpan(combinedDrawable, ImageSpan.ALIGN_BASELINE), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-                    bottomOverlayText.setBackground(Theme.createSelectorWithBackgroundDrawable(0, Theme.getColor(Theme.key_listSelector)));
-                    bottomOverlayText.setText(builder);
-                    bottomOverlayText.setOnClickListener(v -> LimitReachedBottomSheet.openBoostsForRemoveRestrictions(this, boostsStatus, canApplyBoosts, dialog_id, false));
-                } else {
-                    bottomOverlayText.setText(LocaleController.getString(R.string.GlobalSendMessageRestricted));
-                }
+                // LoogriGram: a group that lets boosters skip its restrictions
+                // showed "Boost to send messages" here, opening the boost sheet.
+                bottomOverlayText.setText(LocaleController.getString(R.string.GlobalSendMessageRestricted));
             } else if (AndroidUtilities.isBannedForever(currentChat.banned_rights)) {
                 bottomOverlayText.setText(LocaleController.getString(R.string.SendMessageRestrictedForever));
             } else {
@@ -25159,7 +25132,7 @@ public class ChatActivity extends BaseFragment implements
                     if (newChat != null) {
                         currentChat = newChat;
                         if (!newChat.gigagroup && newChat.slowmode_enabled && messageObject.isSent() && chatMode != MODE_SCHEDULED) {
-                            if (chatInfo != null && !ChatObject.isIgnoredChatRestrictionsForBoosters(chatInfo)) {
+                            if (chatInfo != null) {
                                 int date = messageObject.messageOwner.date + chatInfo.slowmode_seconds;
                                 int currentTime = getConnectionsManager().getCurrentTime();
                                 if (date > getConnectionsManager().getCurrentTime()) {
@@ -43276,15 +43249,6 @@ public class ChatActivity extends BaseFragment implements
         if (messages.isEmpty() == (getMessagesController().isUserContactBlocked(getDialogId()) != null))
             return;
         getMessagesController().invalidateUserPremiumBlocked(getDialogId(), classGuid);
-    }
-
-    public boolean checkCanRemoveRestrictionsByBoosts() {
-        boolean result = ChatObject.isPossibleRemoveChatRestrictionsByBoosts(chatInfo);
-        if (result) {
-            AndroidUtilities.hideKeyboard(getParentActivity().getCurrentFocus());
-            LimitReachedBottomSheet.openBoostsForRemoveRestrictions(ChatActivity.this, boostsStatus, canApplyBoosts, dialog_id, false);
-        }
-        return result;
     }
 
     public void showPremiumFloodWaitBulletin(final boolean isUpload) {
