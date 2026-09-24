@@ -6850,7 +6850,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             useTranscribeButton = false;
             drawInstantView = false;
             drawInstantViewType = 0;
-            instantViewTypeIsGiftAuction = null;
             instantDrawable = null;
             instantDrawableColor = 0;
             groupCallDrawable = null;
@@ -7151,7 +7150,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 TLRPC.ThemeSettings androidThemeSettings = null;
                 ArrayList<TLRPC.Document> stickers = null;
                 long emoji_id = 0;
-                TLRPC.TL_webPageAttributeStarGiftAuction starGiftAuction = null;
                 TL_stars.StarGift stargift = null;
                 boolean stickersTextColor = false;
                 instantDrawable = null;
@@ -7160,15 +7158,11 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     if (messageObject.isUnsupported()) {
                         drawInstantView = true;
                         drawInstantViewType = 21;
-                    } else if ("telegram_channel_boost".equals(webpageType)) {
-                        drawInstantView = true;
-                        drawInstantViewType = 18;
-                    } else if ("telegram_group_boost".equals(webpageType)) {
-                        drawInstantView = true;
-                        drawInstantViewType = 22;
-                    } else if ("telegram_giftcode".equals(webpageType)) {
-                        drawInstantView = true;
-                        drawInstantViewType = 20;
+                    // LoogriGram: a boost link's and a gift code's previews had their
+                    // own name and button here, and a gift auction's (further down) a
+                    // countdown, its gift and its own button. Boosts, gift codes and
+                    // auctions are gone, so their links preview as plain pages - as
+                    // desktop shows story links. A boost link still opens its chat.
                     } else if ("telegram_livestream".equals(webpageType)) {
                         drawInstantView = true;
                         drawInstantViewType = 11;
@@ -7343,16 +7337,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             }
                         } catch (Exception ignore) {
 
-                        }
-                    } else if ("telegram_auction".equals(webpageType)) {
-                        final TLRPC.TL_webPageAttributeStarGiftAuction attr =
-                            TlUtils.findFirstInstance(webpage.attributes, TLRPC.TL_webPageAttributeStarGiftAuction.class);
-                        drawInstantView = true;
-                        drawInstantViewType = 26;
-                        if (attr != null) {
-                            instantViewTypeIsGiftAuction = attr.gift;
-                            stargift = attr.gift;
-                            starGiftAuction = attr;
                         }
                     } else if ("telegram_stickerset".equals(webpageType)) {
                         final TLRPC.TL_webPageAttributeStickerSet attr =
@@ -7533,13 +7517,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         TLRPC.TL_webPage webPage = (TLRPC.TL_webPage) webpage;
                         site_name = webPage.site_name;
                         title = drawInstantViewType != 6 && drawInstantViewType != 7 ? webPage.title : null;
-                        if (instantViewTypeIsGiftAuction != null) {
-                            if (instantViewTypeIsGiftAuction.auction_start_date > ConnectionsManager.getInstance(currentAccount).getCurrentTime()) {
-                                title = getString(R.string.Gift2LinkUpcomingAuction);
-                            } else {
-                                title = getString(R.string.Gift2LinkGiftAuction);
-                            }
-                        }
                         author = drawInstantViewType != 6 && drawInstantViewType != 7 ? webPage.author : null;
                         description = drawInstantViewType != 6 && drawInstantViewType != 7 ? webPage.description : null;
                         photo = webPage.photo;
@@ -7562,7 +7539,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             linkPreviewMaxWidth = Math.max(AndroidUtilities.displaySize.y / 3, currentMessageObject.textWidth);
                         }
                         final boolean isSmallImageType = isSmallImageLinkPreviewType(type);
-                        smallImage = !slideshow && (!drawInstantView || drawInstantViewType == 1 || drawInstantViewType == 29 || drawInstantViewType == 2 || drawInstantViewType == 9 || drawInstantViewType == 11 || drawInstantViewType == 25 || drawInstantViewType == 13 || drawInstantViewType == 18 || drawInstantViewType == 20 || drawInstantViewType == 22 || drawInstantViewType == INSTANT_BUTTON_TYPE_PROFILE || drawInstantViewType == INSTANT_BUTTON_TYPE_AI_STYLE) && document == null && isSmallImageType || (drawInstantViewType == 23 || drawInstantViewType == 24 || drawInstantViewType == 28) && stickers != null && !stickers.isEmpty();
+                        smallImage = !slideshow && (!drawInstantView || drawInstantViewType == 1 || drawInstantViewType == 29 || drawInstantViewType == 2 || drawInstantViewType == 9 || drawInstantViewType == 11 || drawInstantViewType == 25 || drawInstantViewType == 13 || drawInstantViewType == INSTANT_BUTTON_TYPE_PROFILE || drawInstantViewType == INSTANT_BUTTON_TYPE_AI_STYLE) && document == null && isSmallImageType || (drawInstantViewType == 23 || drawInstantViewType == 24 || drawInstantViewType == 28) && stickers != null && !stickers.isEmpty();
                         TLRPC.MessageMedia media = MessageObject.getMedia(messageObject.messageOwner);
                         if (media != null && !(drawInstantViewType == 23 || drawInstantViewType == 24 || drawInstantViewType == 28 || drawInstantViewType == 25)) {
                             if (media.force_large_media) {
@@ -7588,11 +7565,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         linkPreviewAbove = false;
                         smallImage = false;
                     }
-                    if (drawInstantViewType == 18) {
-                        site_name = getString("BoostChannel", R.string.BoostChannel);
-                    } else if (drawInstantViewType == 22) {
-                        site_name = getString("BoostGroup", R.string.BoostGroup);
-                    } else if (drawInstantViewType == 11) {
+                    if (drawInstantViewType == 11) {
                         site_name = getString("VoipChannelVoiceChat", R.string.VoipChannelVoiceChat);
                     } else if (drawInstantViewType == 25) {
                         site_name = getString("VoipGroupVoiceChat", R.string.VoipGroupVoiceChat);
@@ -8088,12 +8061,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             currentPhotoFilterThumb = "220_220_b";
 
                             StarGiftSheet.StarGiftDrawableIcon starGiftDrawableIcon = new StarGiftSheet.StarGiftDrawableIcon(this, stargift, 220, 1.0f).setRounding(dp(12)).setPatternsType(StarGiftPatterns.TYPE_LINK_PREVIEW);
-                            if (starGiftAuction != null) {
-                                starGiftDrawableIcon.setGradient(starGiftAuction.center_color, starGiftAuction.edge_color);
-                                starGiftDrawableIcon.setAuctionStateTextColor(starGiftAuction.text_color);
-                                starGiftDrawableIcon.setCountdownRemainingTime(starGiftAuction.gift.auction_start_date, starGiftAuction.end_date);
-                            }
-
                             photoImage.setImageBitmap(starGiftDrawableIcon);
                             clearBlurredImage(blurredPhotoImage);
                         } else if (currentPhotoObject != null || currentPhotoLocation != null || documentAttachType == DOCUMENT_ATTACH_TYPE_WALLPAPER || documentAttachType == DOCUMENT_ATTACH_TYPE_THEME || (drawInstantViewType == 23 || drawInstantViewType == 24 || drawInstantViewType == 28) && stickers != null && !stickers.isEmpty() || emoji_id != 0) {
@@ -12833,10 +12800,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 str = getString(R.string.OpenLink).toUpperCase();
             } else if (drawInstantViewType == 17) {
                 str = getString(R.string.ViewStory).toUpperCase();
-            } else if (drawInstantViewType == 18 || drawInstantViewType == 22) {
-                str = getString(R.string.BoostLinkButton);
-            } else if (drawInstantViewType == 20) {
-                str = getString(R.string.OpenGift);
             } else if (drawInstantViewType == 21) {
                 str = getString(R.string.AppUpdate);
             } else if (drawInstantViewType == 23) {
@@ -12844,27 +12807,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             } else if (drawInstantViewType == 24) {
                 str = getString(R.string.OpenEmojiSet);
             } else if (drawInstantViewType == 26)  {
-                if (instantViewTypeIsGiftAuction != null) {
-                    final boolean needIcon;
-                    if (instantViewTypeIsGiftAuction.auction_start_date > ConnectionsManager.getInstance(currentAccount).getCurrentTime()) {
-                        str = getString(R.string.OpenGiftAuctionView);
-                        needIcon = false;
-                    } else if (instantViewTypeIsGiftAuction.sold_out) {
-                        str = getString(R.string.OpenGiftAuctionResults);
-                        needIcon = true;
-                    } else {
-                        str = getString(R.string.OpenGiftAuctionActive);
-                        needIcon = true;
-                    }
-
-                    if (needIcon) {
-                        SpannableString ok = new SpannableString("*");
-                        ok.setSpan(new ColoredImageSpan(R.drawable.filled_gift_sell_24), 0, ok.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        str = TextUtils.concat(ok, " ", str);
-                    }
-                } else {
-                    str = getString(R.string.OpenUniqueGift);
-                }
+                str = getString(R.string.OpenUniqueGift);
             } else if (drawInstantViewType == 27)  {
                 str = getString(R.string.JoinCall).toUpperCase();
             } else if (drawInstantViewType == 28) {
@@ -14727,8 +14670,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         Theme.chat_replyNamePaint.setColor(linkLine.check(currentMessageObject, currentUser, currentChat, resourcesProvider, ReplyMessageLine.TYPE_LINK));
         linkLine.setEmojiAlpha(drawInstantViewType == 23 || drawInstantViewType == 24 || drawInstantViewType == 28 ? 0.5f : 1f);
 
-        final boolean drawPhotoImageBefore = drawInstantView && (drawInstantViewType != 26 && drawInstantViewType != 9 && drawInstantViewType != 2 && drawInstantViewType != 13 && drawInstantViewType != 11 && drawInstantViewType != 25 && drawInstantViewType != 1 && drawInstantViewType != 29 && drawInstantViewType != 18 && drawInstantViewType != 22) || drawInstantViewType == 6 && imageBackgroundColor != 0;
-        final boolean drawPhotoImageAfter = (!drawInstantView || drawInstantViewType == 9 || drawInstantViewType == 2 || drawInstantViewType == 11 || drawInstantViewType == 25 || drawInstantViewType == 13 || drawInstantViewType == 1 || drawInstantViewType == 29 || drawInstantViewType == 18 || drawInstantViewType == 22 || drawInstantViewType == INSTANT_BUTTON_TYPE_PROFILE || isSmallImage || drawInstantViewType == 26);
+        final boolean drawPhotoImageBefore = drawInstantView && (drawInstantViewType != 26 && drawInstantViewType != 9 && drawInstantViewType != 2 && drawInstantViewType != 13 && drawInstantViewType != 11 && drawInstantViewType != 25 && drawInstantViewType != 1 && drawInstantViewType != 29) || drawInstantViewType == 6 && imageBackgroundColor != 0;
+        final boolean drawPhotoImageAfter = (!drawInstantView || drawInstantViewType == 9 || drawInstantViewType == 2 || drawInstantViewType == 11 || drawInstantViewType == 25 || drawInstantViewType == 13 || drawInstantViewType == 1 || drawInstantViewType == 29 || drawInstantViewType == INSTANT_BUTTON_TYPE_PROFILE || isSmallImage || drawInstantViewType == 26);
 
         boolean restore = false;
         boolean drawInstantButtonInside = false;
@@ -28232,8 +28175,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             avatarAlpha
         );
     }
-
-    private TL_stars.StarGift instantViewTypeIsGiftAuction;
 
     
     
