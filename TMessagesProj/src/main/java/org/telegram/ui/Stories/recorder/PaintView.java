@@ -5,7 +5,6 @@ import static org.telegram.messenger.AndroidUtilities.dpf2;
 import static org.telegram.messenger.AndroidUtilities.lerp;
 import static org.telegram.messenger.LocaleController.formatPluralString;
 import static org.telegram.messenger.LocaleController.getString;
-import static org.telegram.ui.Stars.StarsController.findAttribute;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -82,7 +81,6 @@ import org.telegram.messenger.Utilities;
 import org.telegram.messenger.VideoEditedInfo;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.tgnet.tl.TL_stars;
 import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarPopupWindow;
@@ -91,7 +89,6 @@ import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.BubbleActivity;
-import org.telegram.ui.Cells.ChatActionCell;
 import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.ChatActivity;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
@@ -2517,7 +2514,6 @@ public class PaintView extends SizeNotifierFrameLayoutPhoto implements IPhotoPai
                 PointF position = entity.getPosition();
                 boolean drawThisEntity = true;
                 VideoEditedInfo.MediaEntity mediaEntity = new VideoEditedInfo.MediaEntity();
-                ImageReceiver makeVisibleAfterwards = null;
                 if (entities != null) {
                     if (entity instanceof TextPaintView) {
                         mediaEntity.type = VideoEditedInfo.MediaEntity.TYPE_TEXT;
@@ -2735,80 +2731,10 @@ public class PaintView extends SizeNotifierFrameLayoutPhoto implements IPhotoPai
                         mediaEntity.width = mediaEntity.viewWidth = messageView.getWidth();
                         mediaEntity.height = mediaEntity.viewHeight = messageView.getHeight();
                         final MessageObject message = messageView.messageObjects.size() > 0 ? messageView.messageObjects.get(0) : null;
-                        if (message != null && message.messageOwner != null && message.messageOwner.action instanceof TLRPC.TL_messageActionStarGiftUnique) {
-                            final TLRPC.TL_messageActionStarGiftUnique action = (TLRPC.TL_messageActionStarGiftUnique) message.messageOwner.action;
-                            final TL_stars.StarGift starGift = action.gift;
-                            mediaEntity.mediaArea = new TL_stories.TL_mediaAreaStarGift();
-                            ((TL_stories.TL_mediaAreaStarGift) mediaEntity.mediaArea).slug = starGift.slug;
-                            mediaEntity.mediaArea.coordinates = new TL_stories.TL_mediaAreaCoordinates();
-                            ChatActionCell cell = null;
-                            for (int j = 0; j < messageView.listView.getChildCount(); ++j) {
-                                View child = messageView.listView.getChildAt(j);
-                                if (child instanceof ChatActionCell) {
-                                    cell = (ChatActionCell) child;
-                                    break;
-                                }
-                            }
-                            if (cell != null && cell.starGiftLayout != null && cell.starGiftLayout.imageReceiver != null) {
-                                final ImageReceiver imageReceiver = cell.starGiftLayout.imageReceiver;
-                                imageReceiver.setVisible(false, false);
-                                makeVisibleAfterwards = imageReceiver;
-
-                                final TL_stars.starGiftAttributeModel model = findAttribute(starGift.attributes, TL_stars.starGiftAttributeModel.class);
-                                if (model != null) {
-                                    final float size = dp(110);
-                                    final float cx = messageView.listView.getX() + cell.getX() + cell.starGiftLayoutX + imageReceiver.getCenterX();
-                                    final float cy = messageView.listView.getY() + cell.getY() + cell.starGiftLayoutY + imageReceiver.getCenterY();
-
-                                    final VideoEditedInfo.MediaEntity stickerEntity = new VideoEditedInfo.MediaEntity();
-                                    stickerEntity.type = VideoEditedInfo.MediaEntity.TYPE_STICKER;
-                                    stickerEntity.width = size;
-                                    stickerEntity.height = size;
-                                    stickerEntity.document = model.document;
-                                    stickerEntity.parentObject = starGift;
-                                    final TLRPC.Document document = model.document;
-                                    stickerEntity.text = FileLoader.getInstance(UserConfig.selectedAccount).getPathToAttach(document, true).getAbsolutePath();
-                                    if (MessageObject.isAnimatedStickerDocument(document, true) || isVideoStickerDocument(document)) {
-                                        final boolean isAnimatedSticker = MessageObject.isAnimatedStickerDocument(document, true);
-                                        stickerEntity.subType |= isAnimatedSticker ? 1 : 4;
-                                        final long duration;
-                                        RLottieDrawable lottieDrawable = imageReceiver.getLottieAnimation();
-                                        if (lottieDrawable != null && (isAnimatedSticker || isVideoStickerDocument(document))) {
-                                            duration = lottieDrawable.getDuration();
-                                        } else {
-                                            duration = 5000;
-                                        }
-                                        if (duration != 0) {
-                                            final BigInteger x = BigInteger.valueOf(duration);
-                                            lcm = lcm.multiply(x).divide(lcm.gcd(x));
-                                        }
-                                    }
-
-                                    float scaleX = v.getScaleX();
-                                    float scaleY = v.getScaleY();
-                                    float x = v.getX();
-                                    float y = v.getY();
-                                    stickerEntity.viewWidth = (int) size;
-                                    stickerEntity.viewHeight = (int) size;
-                                    stickerEntity.width = size * scaleX / (float) entitiesView.getMeasuredWidth();
-                                    stickerEntity.height = size * scaleY / (float) entitiesView.getMeasuredHeight();
-                                    stickerEntity.x = x + v.getWidth() / 2.0f;// + v.getWidth() * (1 - scaleX) / 2;
-                                    stickerEntity.y = y + v.getHeight() / 2.0f;//v.getHeight() * (1 - scaleY) / 2;
-                                    final float dx = cx * scaleX - v.getWidth() / 2.0f * scaleX;
-                                    final float dy = cy * scaleY - v.getHeight() / 2.0f * scaleY;
-                                    final float a = (float) (v.getRotation() / 180.0f * Math.PI);
-                                    stickerEntity.x += dx * Math.cos(a) - dy * Math.sin(a);
-                                    stickerEntity.y += dx * Math.sin(a) + dy * Math.cos(a);
-                                    stickerEntity.x += -size / 2.0f * scaleX;
-                                    stickerEntity.y += -size / 2.0f * scaleY;
-                                    stickerEntity.x /= entitiesView.getMeasuredWidth();
-                                    stickerEntity.y /= entitiesView.getMeasuredHeight();
-                                    stickerEntity.rotation = (float) (-v.getRotation() * (Math.PI / 180));
-                                    stickerEntity.scale = scaleX;
-                                    entities.add(stickerEntity);
-                                }
-                            }
-                        } else if (message != null) {
+                        // LoogriGram: a reposted collectible gift became a gift media
+                        // area here, with its model laid over it as a sticker. Gifts
+                        // are not reposted any more.
+                        if (message != null) {
                             mediaEntity.mediaArea = new TL_stories.TL_inputMediaAreaChannelPost();
                             mediaEntity.mediaArea.coordinates = new TL_stories.TL_mediaAreaCoordinates();
                             ((TL_stories.TL_inputMediaAreaChannelPost) mediaEntity.mediaArea).channel = MessagesController.getInstance(currentAccount).getInputChannel(-StoryEntry.getRepostDialogId(message));
@@ -2962,10 +2888,6 @@ public class PaintView extends SizeNotifierFrameLayoutPhoto implements IPhotoPai
                             }
                         }
                         currentCanvas.restore();
-                    }
-                    if (makeVisibleAfterwards != null) {
-                        makeVisibleAfterwards.setVisible(true, false);
-                        makeVisibleAfterwards = null;
                     }
                 }
             }

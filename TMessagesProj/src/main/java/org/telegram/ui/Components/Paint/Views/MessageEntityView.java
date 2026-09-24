@@ -1042,27 +1042,9 @@ public class MessageEntityView extends EntityView {
                 top = Math.min(top, cbottom);
                 bottom = Math.max(bottom, ctop);
                 bottom = Math.max(bottom, cbottom);
-            } else if (child instanceof ChatActionCell) {
-                ChatActionCell cell = (ChatActionCell) child;
-                float cleft, ctop, cright, cbottom;
-                if (cell.starGiftLayout.has()) {
-                    cleft = container.getX() + cell.getX() + cell.getBoundsLeft();
-                    cright = container.getX() + cell.getX() + cell.getBoundsRight();
-                    ctop = container.getY() + cell.getY();
-                    cbottom = container.getY() + cell.getY() + cell.getMeasuredHeight();
-                } else {
-                    // TODO
-                    continue;
-                }
-                left = Math.min(left, cleft);
-                left = Math.min(left, cright);
-                right = Math.max(right, cleft);
-                right = Math.max(right, cright);
-                top = Math.min(top, ctop);
-                top = Math.min(top, cbottom);
-                bottom = Math.max(bottom, ctop);
-                bottom = Math.max(bottom, cbottom);
             }
+            // LoogriGram: an action cell counted here only while it drew a
+            // reposted collectible gift, and gifts are not reposted any more.
         }
         rect.set(left, top, right, bottom);
         return dp(SharedConfig.bubbleRadius);

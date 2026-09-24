@@ -24,7 +24,6 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.LayoutTransition;
 import android.animation.ValueAnimator;
-import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.graphics.BitmapShader;
@@ -114,7 +113,6 @@ import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.theme.ThemeKey;
 import org.telegram.ui.Cells.SessionCell;
-import org.telegram.ui.Cells.ShareDialogCell;
 import org.telegram.ui.ChatActivity;
 import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
@@ -162,8 +160,6 @@ import org.telegram.ui.ProfileActivity;
 import org.telegram.ui.Stories.DarkThemeResourceProvider;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 import org.telegram.ui.Stories.recorder.HintView2;
-import org.telegram.ui.Stories.recorder.StoryEntry;
-import org.telegram.ui.Stories.recorder.StoryRecorder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -879,14 +875,10 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             shareAlert.dismiss();
         }
         final String link = getLink();
+        // LoogriGram: the share sheet also offered to repost the gift to a
+        // story, which showed it as a gift message - and this build draws no
+        // gift message (LoogriGramHidden). The link is what is shared.
         shareAlert = new ShareAlert(getContext(), null, null, link, null, false, link, null, false, false, true, null, resourcesProvider) {
-            { includeStoryFromMessage = true; }
-
-            @Override
-            protected void onShareStory(View cell) {
-                repostStory(cell);
-            }
-
             @Override
             protected void onSend(LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic) {
                 super.onSend(dids, count, topic);
@@ -927,72 +919,6 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
 
         // LoogriGram: putting a gift up for sale, taking it off sale and
     // changing its price stood here. Nothing here sells a gift.
-
-        private void repostStory(View cell) {
-        Activity activity = LaunchActivity.instance;
-        if (activity == null) {
-            return;
-        }
-        StoryRecorder.SourceView sourceView = null;
-        if (cell instanceof ShareDialogCell) {
-            sourceView = StoryRecorder.SourceView.fromShareCell((ShareDialogCell) cell);
-        }
-        final ArrayList<MessageObject> messageObjects = new ArrayList<>();
-        if (messageObject != null) {
-            messageObjects.add(messageObject);
-        } else if (getGift() instanceof TL_stars.TL_starGiftUnique) {
-            final long selfId = UserConfig.getInstance(currentAccount).getClientUserId();
-            final TL_stars.TL_starGiftUnique gift = (TL_stars.TL_starGiftUnique) getGift();
-
-            final TLRPC.TL_messageService message = new TLRPC.TL_messageService();
-            message.peer_id = MessagesController.getInstance(currentAccount).getPeer(selfId);
-            message.from_id = MessagesController.getInstance(currentAccount).getPeer(selfId);
-            message.date = ConnectionsManager.getInstance(currentAccount).getCurrentTime();
-            final TLRPC.TL_messageActionStarGiftUnique action = new TLRPC.TL_messageActionStarGiftUnique();
-            action.gift = gift;
-            action.upgrade = true;
-            message.action = action;
-
-            final MessageObject msg = new MessageObject(currentAccount, message, false, false);
-            msg.setType();
-            messageObjects.add(msg);
-        } else {
-            return;
-        }
-        StoryRecorder editor = StoryRecorder.getInstance(activity, currentAccount);
-        editor.setOnPrepareCloseListener((t, close, sent, did) -> {
-            if (sent) {
-                AndroidUtilities.runOnUIThread(() -> {
-                    String chatTitle = "";
-                    if (did < 0) {
-                        TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-did);
-                        if (chat != null) {
-                            chatTitle = chat.title;
-                        }
-                    }
-                    getBulletinFactory()
-                        .createSimpleBulletin(R.raw.contact_check, AndroidUtilities.replaceTags(
-                            TextUtils.isEmpty(chatTitle) ?
-                                LocaleController.getString(R.string.GiftRepostedToProfile) :
-                                LocaleController.formatString(R.string.GiftRepostedToChannelProfile, chatTitle)
-                    )).ignoreDetach().show();
-                });
-                editor.replaceSourceView(null);
-                if (shareAlert != null) {
-                    shareAlert.dismiss();
-                    shareAlert = null;
-                }
-            } else {
-                StoryRecorder.SourceView sourceView2 = null;
-                if (cell instanceof ShareDialogCell && cell.isAttachedToWindow()) {
-                    sourceView2 = StoryRecorder.SourceView.fromShareCell((ShareDialogCell) cell);
-                }
-                editor.replaceSourceView(sourceView2);
-            }
-            AndroidUtilities.runOnUIThread(close);
-        });
-        editor.openRepost(sourceView, StoryEntry.repostMessage(messageObjects));
-    }
 
     private void showTimeoutAlertAt(Context context, boolean resell, int availableAt) {
         showTimeoutAlert(context, resell, availableAt - ConnectionsManager.getInstance(currentAccount).getCurrentTime());
