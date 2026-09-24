@@ -32,8 +32,6 @@ import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import android.text.SpannableStringBuilder;
-import android.text.Spanned;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -82,19 +80,16 @@ import org.telegram.ui.Components.CompatDrawable;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.Particles;
-import org.telegram.ui.Components.Premium.GiftPremiumBottomSheet;
 import org.telegram.ui.Components.Premium.PremiumLockIconView;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.ScaleStateListAnimator;
 import org.telegram.ui.Components.Shaker;
 import org.telegram.ui.Components.Text;
-import org.telegram.ui.Components.TypefaceSpan;
 import org.telegram.ui.Components.UItem;
 import org.telegram.ui.Components.UniversalAdapter;
 import org.telegram.ui.Components.UniversalRecyclerView;
 import org.telegram.ui.Components.blur3.utils.NinePatchBuilder;
 import org.telegram.ui.Components.StarGiftPatterns;
-import org.telegram.ui.Stars.StarsIntroActivity;
 
 import java.util.Arrays;
 
@@ -133,7 +128,6 @@ public class GiftViews {
         private final FrameLayout priceLayout;
         private final StarsBackgroundView priceBackground;
         private final TextView priceView;
-        private final TextView starsPriceView;
 
         private Runnable cancel;
 
@@ -208,13 +202,6 @@ public class GiftViews {
 
             priceBackground.setBackground(new StarsBackground(Theme.isCurrentThemeDark() ? 0x1EEBA52D : 0x40E8AB02));
 
-            starsPriceView = new TextView(context);
-            starsPriceView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 10.66f);
-            starsPriceView.setGravity(Gravity.CENTER);
-            starsPriceView.setTextColor(Theme.isCurrentThemeDark() ? 0xFFEBA52D : 0xFFD67722);
-            starsPriceView.setVisibility(View.GONE);
-            card.addView(starsPriceView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 0, 161, 0, 8));
-
             avatarDrawable = new AvatarDrawable();
             avatarView = new BackupImageView(context);
             avatarView.setRoundRadius(dp(20));
@@ -268,11 +255,7 @@ public class GiftViews {
             try {
                 final StringBuilder sb = new StringBuilder();
                 CharSequence name = null;
-                if (premiumTier != null) {
-                    if (titleView != null && titleView.getVisibility() == View.VISIBLE && !TextUtils.isEmpty(titleView.getText())) {
-                        name = titleView.getText();
-                    }
-                } else if (userGift != null && userGift.gift != null) {
+                if (userGift != null && userGift.gift != null) {
                     if (userGift.gift instanceof TL_stars.TL_starGiftUnique && !TextUtils.isEmpty(userGift.gift.title)) {
                         name = userGift.gift.title;
                     }
@@ -540,7 +523,6 @@ public class GiftViews {
             canvas.restore();
         }
 
-        private GiftPremiumBottomSheet.GiftTier premiumTier;
         private TL_stars.StarGift gift;
         private boolean priotityAuction;
         private boolean giftMine;
@@ -549,9 +531,6 @@ public class GiftViews {
         public boolean inCollection;
         public boolean inCrafting;
 
-        public GiftPremiumBottomSheet.GiftTier getPremiumTier() {
-            return premiumTier;
-        }
         public TL_stars.StarGift getGift() {
             return gift;
         }
@@ -559,73 +538,12 @@ public class GiftViews {
             return userGift;
         }
 
-        private GiftPremiumBottomSheet.GiftTier lastTier;
-
         public void setPriorityAuction() {
             priotityAuction = true;
         }
 
-        public boolean setPremiumGift(GiftPremiumBottomSheet.GiftTier tier) {
-            final int months = tier.getMonths();
-            if (lastTier != tier) {
-                cancel = StarsIntroActivity.setPremiumGiftImage(imageView, imageView.getImageReceiver(), months);
-                if (cancel != null) {
-                    cancel.run();
-                    cancel = null;
-                }
-            }
-
-            cardBackground.setBackdrop(null);
-            cardBackground.setPattern(null);
-            cardBackground.setStrokeColors(null);
-            titleView.setText(LocaleController.formatPluralString("Gift2Months", months));
-            subtitleView.setText(getString(R.string.TelegramPremiumShort));
-            titleView.setVisibility(View.VISIBLE);
-            subtitleView.setVisibility(View.VISIBLE);
-            imageView.setTranslationY(-dp(8));
-            avatarView.setVisibility(View.GONE);
-            lockView.setVisibility(View.GONE);
-            if (tier.isStarsPaymentAvailable()) {
-                starsPriceView.setTextColor(Theme.isCurrentThemeDark() ? 0xFFEBA52D : 0xFFD67722);
-                starsPriceView.setVisibility(View.VISIBLE);
-                final SpannableStringBuilder starsPrice = new SpannableStringBuilder("" + LocaleController.formatNumber(tier.getStarsPrice(), ','));
-                starsPrice.setSpan(new TypefaceSpan(AndroidUtilities.bold()), 0, starsPrice.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                final ColoredImageSpan[] span = new ColoredImageSpan[1];
-                starsPriceView.setText(StarsFormat.replaceStarsWithPlain(LocaleController.formatSpannable(R.string.PremiumOrStarsPrice, starsPrice), .48f, span));
-                span[0].spaceScaleX = .8f;
-            } else {
-                starsPriceView.setVisibility(View.GONE);
-            }
-
-            imageViewLayoutParams.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-            imageView.setLayoutParams(imageViewLayoutParams);
-
-            priceView.setPadding(dp(10), 0, dp(10), 0);
-            priceView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 12);
-            priceView.setText(tier.getFormattedPrice());
-            priceBackground.setBackground(Theme.createRoundRectDrawable(dp(13), 0x193391D4));
-            priceView.setTextColor(0xFF3391D4);
-            ((MarginLayoutParams) priceLayout.getLayoutParams()).topMargin = dp(130);
-            ((FrameLayout.LayoutParams) priceLayout.getLayoutParams()).gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-
-            lastTier = tier;
-            lastDocument = null;
-
-            this.premiumTier = tier;
-            this.gift = null;
-            this.giftMine = false;
-            this.userGift = null;
-            this.allowResaleInGifts = false;
-            this.inResalePage = false;
-            this.inCollection = false;
-            title = null;
-            subtitle = null;
-
-            setPinned(false, false);
-            updateRibbonText();
-
-            return false;
-        }
+        // LoogriGram: setPremiumGift stood here - a card for a Premium gift tier,
+        // with its price in money or Stars. Nothing lists those tiers any more.
 
         private TLRPC.Document lastDocument;
         private long lastDocumentId;
@@ -765,11 +683,7 @@ public class GiftViews {
             }
             ((MarginLayoutParams) priceLayout.getLayoutParams()).topMargin = dp(103);
             ((FrameLayout.LayoutParams) priceLayout.getLayoutParams()).gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-            starsPriceView.setVisibility(View.GONE);
 
-            lastTier = null;
-
-            this.premiumTier = null;
             this.gift = gift;
             this.giftMine = mine;
             this.userGift = null;
@@ -925,13 +839,10 @@ public class GiftViews {
                 ((FrameLayout.LayoutParams) priceLayout.getLayoutParams()).gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
                 ((MarginLayoutParams) priceLayout.getLayoutParams()).topMargin = dp(103);
             }
-            starsPriceView.setVisibility(View.GONE);
 
             lastUserGift = userGift;
-            lastTier = null;
 
             final TL_stars.SavedStarGift oldUserGift = this.userGift;
-            this.premiumTier = null;
             this.gift = null;
             this.giftMine = false;
             this.userGift = userGift;
@@ -1043,18 +954,6 @@ public class GiftViews {
                     ribbon.setStrokeColor(0);
                     ribbon.setVisibility(View.GONE);
                 }
-            } else if (premiumTier != null) {
-                if (premiumTier.getDiscount() > 0) {
-                    ribbon.setVisibility(View.VISIBLE);
-                    ribbon.setBackdrop(null);
-                    ribbon.setColors(0xFFD94FFF, 0xFF826DFF);
-                    ribbon.setStrokeColor(0);
-                    ribbon.setText(12, formatString(R.string.GiftPremiumOptionDiscount, premiumTier.getDiscount()), true);
-                } else {
-                    ribbon.setVisibility(View.GONE);
-                    ribbon.setBackdrop(null);
-                    ribbon.setStrokeColor(0);
-                }
             }
         }
 
@@ -1087,9 +986,7 @@ public class GiftViews {
             public void bindView(View view, UItem item, boolean divider, UniversalAdapter adapter, UniversalRecyclerView listView) {
                 final GiftCell cell = (GiftCell) view;
                 boolean animated = false;
-                if (item.object instanceof GiftPremiumBottomSheet.GiftTier) {
-                    animated = cell.setPremiumGift((GiftPremiumBottomSheet.GiftTier) item.object);
-                } else if (item.object instanceof TL_stars.StarGift) {
+                if (item.object instanceof TL_stars.StarGift) {
                     TL_stars.StarGift gift = (TL_stars.StarGift) item.object;
                     animated = cell.setStarsGift(gift, item.checked, item.object2 instanceof Boolean ? (Boolean) item.object2 : false, item.accent, item.red, item.locked);
                 } else if (item.object instanceof TL_stars.SavedStarGift) {
@@ -1107,12 +1004,6 @@ public class GiftViews {
             @Override
             public void attachedView(RecyclerListView listView, View view, UItem item) {
                 ((GiftCell) view).setReordering(item.reordering, false);
-            }
-
-            public static UItem asPremiumGift(GiftPremiumBottomSheet.GiftTier tier) {
-                final UItem item = UItem.ofFactory(Factory.class).setSpanCount(1);
-                item.object = tier;
-                return item;
             }
 
             public static UItem asStarGift(int tab, TL_stars.StarGift gift, boolean mine, boolean includeUpgradeInPrice, boolean allowResaleInGifts, boolean inResalePage, boolean inCrafting) {
@@ -1147,9 +1038,7 @@ public class GiftViews {
             public boolean equals(UItem a, UItem b) {
                 if (a.accent != b.accent) return false;
                 if (a.object != null || b.object != null) {
-                    if (a.object instanceof GiftPremiumBottomSheet.GiftTier) {
-                        return a.object == b.object;
-                    } else if (a.object instanceof TL_stars.StarGift && b.object instanceof TL_stars.StarGift) {
+                    if (a.object instanceof TL_stars.StarGift && b.object instanceof TL_stars.StarGift) {
                         final TL_stars.StarGift ag = (TL_stars.StarGift) a.object;
                         final TL_stars.StarGift bg = (TL_stars.StarGift) b.object;
                         return ag.id == bg.id;
