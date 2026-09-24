@@ -196,7 +196,6 @@ import org.telegram.ui.PinchToZoomHelper;
 import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.ProfileActivity;
 import org.telegram.ui.ReportBottomSheet;
-import org.telegram.ui.Stars.StarsController;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 import org.telegram.ui.Stories.recorder.CaptionContainerView;
 import org.telegram.ui.Stories.recorder.HintView2;

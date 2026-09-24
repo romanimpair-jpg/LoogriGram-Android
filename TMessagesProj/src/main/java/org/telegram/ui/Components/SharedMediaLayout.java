@@ -154,7 +154,7 @@ import org.telegram.ui.ProfileActivity;
 import org.telegram.ui.ProfileActivity2;
 import org.telegram.ui.ProfileStoriesCollectionTabs;
 import org.telegram.ui.SelectStoriesBottomSheet;
-import org.telegram.ui.Stars.StarsController;
+import org.telegram.ui.Gifts.GiftsController;
 import org.telegram.ui.Stories.StoriesController;
 import org.telegram.ui.Stories.StoriesListPlaceProvider;
 import org.telegram.ui.Stories.UserListPoller;
@@ -1905,7 +1905,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
 
                 if (tab == TAB_GIFTS) {
                     final ProfileGiftsContainer.Page page = giftsContainer.getCurrentPage();
-                    final StarsController.GiftsList list = page.list;
+                    final GiftsController.GiftsList list = page.list;
                     if (list == null) return;
                     final boolean hiddenFilters = giftsContainer.canFilterHidden();
 
@@ -1979,13 +1979,13 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                             list.invalidate(true);
                         });
                     }
-                    ProfileGiftsContainer.setGiftFilterOptionsClickListeners(unlimited, list, update, StarsController.GiftsList.INCLUDE_TYPE_UNLIMITED_FLAG);
-                    ProfileGiftsContainer.setGiftFilterOptionsClickListeners(limited, list, update, StarsController.GiftsList.INCLUDE_TYPE_LIMITED_FLAG);
-                    ProfileGiftsContainer.setGiftFilterOptionsClickListeners(upgradable, list, update, StarsController.GiftsList.INCLUDE_TYPE_UPGRADABLE_FLAG);
-                    ProfileGiftsContainer.setGiftFilterOptionsClickListeners(unique, list, update, StarsController.GiftsList.INCLUDE_TYPE_UNIQUE_FLAG);
+                    ProfileGiftsContainer.setGiftFilterOptionsClickListeners(unlimited, list, update, GiftsController.GiftsList.INCLUDE_TYPE_UNLIMITED_FLAG);
+                    ProfileGiftsContainer.setGiftFilterOptionsClickListeners(limited, list, update, GiftsController.GiftsList.INCLUDE_TYPE_LIMITED_FLAG);
+                    ProfileGiftsContainer.setGiftFilterOptionsClickListeners(upgradable, list, update, GiftsController.GiftsList.INCLUDE_TYPE_UPGRADABLE_FLAG);
+                    ProfileGiftsContainer.setGiftFilterOptionsClickListeners(unique, list, update, GiftsController.GiftsList.INCLUDE_TYPE_UNIQUE_FLAG);
                     if (hiddenFilters) {
-                        ProfileGiftsContainer.setGiftFilterOptionsClickListeners(displayed, list, update, StarsController.GiftsList.INCLUDE_VISIBILITY_DISPLAYED_FLAG);
-                        ProfileGiftsContainer.setGiftFilterOptionsClickListeners(hidden, list, update, StarsController.GiftsList.INCLUDE_VISIBILITY_HIDDEN_FLAG);
+                        ProfileGiftsContainer.setGiftFilterOptionsClickListeners(displayed, list, update, GiftsController.GiftsList.INCLUDE_VISIBILITY_DISPLAYED_FLAG);
+                        ProfileGiftsContainer.setGiftFilterOptionsClickListeners(hidden, list, update, GiftsController.GiftsList.INCLUDE_VISIBILITY_HIDDEN_FLAG);
                     }
                     o
                         .setOnTopOfScrim()

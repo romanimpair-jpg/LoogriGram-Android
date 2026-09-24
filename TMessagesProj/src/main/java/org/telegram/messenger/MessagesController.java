@@ -14,7 +14,7 @@ import static org.telegram.messenger.NotificationsController.TYPE_CHANNEL;
 import static org.telegram.messenger.NotificationsController.TYPE_PRIVATE;
 import static org.telegram.messenger.NotificationsController.TYPE_REACTIONS_MESSAGES;
 import static org.telegram.messenger.Utilities.tryParseLong;
-import static org.telegram.ui.Stars.StarsController.findAttribute;
+import static org.telegram.ui.Gifts.GiftsController.findAttribute;
 import static org.telegram.ui.Stories.HighlightMessageSheet.parseTiers;
 import static org.telegram.ui.Stories.HighlightMessageSheet.parseTiersString;
 import static org.telegram.ui.Stories.HighlightMessageSheet.tiersEqual;
@@ -108,7 +108,7 @@ import org.telegram.ui.MainTabsActivity;
 import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.ProfileActivity;
 import org.telegram.ui.SecretMediaViewer;
-import org.telegram.ui.Stars.StarsController;
+import org.telegram.ui.Gifts.GiftsController;
 import org.telegram.ui.Stories.StoriesController;
 import org.telegram.ui.ThemeActivity;
 import org.telegram.ui.TopicsFragment;
@@ -7306,7 +7306,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     fullUsers.put(user.id, userFull);
                     getTranslateController().updateDialogFull(user.id);
-                    StarsController.getInstance(currentAccount).invalidateProfileGifts(userFull);
+                    GiftsController.getInstance(currentAccount).invalidateProfileGifts(userFull);
                     loadingFullUsers.remove(user.id);
                     loadedFullUsers.put(user.id, System.currentTimeMillis());
                     String names = user.first_name + user.last_name + UserObject.getPublicUsername(user);
@@ -9953,7 +9953,7 @@ public class MessagesController extends BaseController implements NotificationCe
                 if (fullUsers.get(user.id) == null) {
                     fullUsers.put(user.id, info);
                     getTranslateController().updateDialogFull(user.id);
-                    StarsController.getInstance(currentAccount).invalidateProfileGifts(info);
+                    GiftsController.getInstance(currentAccount).invalidateProfileGifts(info);
 
                     int index = blockePeers.indexOfKey(user.id);
                     if (info.blocked) {
@@ -24059,11 +24059,11 @@ public class MessagesController extends BaseController implements NotificationCe
         getMainSettings().edit().putInt("movecaptionhint", getMainSettings().getInt("movecaptionhint", 0) + 1).apply();
     }
 
-    private final HashSet<StarsController.MessageId> reportedMessageDelivery = new HashSet<>();
-    private final HashSet<Pair<StarsController.MessageId, AtomicBoolean>> pendingReportMessageDelivery = new HashSet<>();
+    private final HashSet<MessageId> reportedMessageDelivery = new HashSet<>();
+    private final HashSet<Pair<MessageId, AtomicBoolean>> pendingReportMessageDelivery = new HashSet<>();
     private final Runnable sendReportMessageDeliver = () -> {
         final LongSparseArray<Pair<HashSet<Integer>, AtomicBoolean>> arr = new LongSparseArray<>();
-        for (Pair<StarsController.MessageId, AtomicBoolean> id : pendingReportMessageDelivery) {
+        for (Pair<MessageId, AtomicBoolean> id : pendingReportMessageDelivery) {
             Pair<HashSet<Integer>, AtomicBoolean> darr = arr.get(id.first.did);
             if (darr == null) {
                 arr.put(id.first.did, darr = new Pair<>(new HashSet<>(), id.second));
@@ -24089,7 +24089,7 @@ public class MessagesController extends BaseController implements NotificationCe
     };
 
     public void reportMessageDelivery(long dialogId, int messageId, boolean push) {
-        final StarsController.MessageId key = StarsController.MessageId.from(dialogId, messageId);
+        final MessageId key = MessageId.from(dialogId, messageId);
         if (reportedMessageDelivery.contains(key)) return;
         reportedMessageDelivery.add(key);
         pendingReportMessageDelivery.add(new Pair<>(key, new AtomicBoolean(push)));

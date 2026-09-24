@@ -89,7 +89,7 @@ import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.ProfileActivity;
 import org.telegram.ui.SelectAnimatedEmojiDialog;
-import org.telegram.ui.Stars.StarsController;
+import org.telegram.ui.Gifts.GiftsController;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 import org.telegram.ui.Stories.recorder.HintView2;
 
@@ -2163,7 +2163,7 @@ public class AIEditorAlert extends BottomSheetWithRecyclerListView implements No
                 @Override
                 protected boolean willApplyEmoji(View view, Long documentId, TLRPC.Document document, TL_stars.TL_starGiftUnique gift, Integer until) {
                     if (gift != null) {
-                        final TL_stars.SavedStarGift savedStarGift = StarsController.getInstance(currentAccount).findUserStarGift(gift.id);
+                        final TL_stars.SavedStarGift savedStarGift = GiftsController.getInstance(currentAccount).findUserStarGift(gift.id);
                         return savedStarGift == null || MessagesController.getGlobalMainSettings().getInt("statusgiftpage", 0) >= 2;
                     }
                     return true;

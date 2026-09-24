@@ -3,7 +3,7 @@ package org.telegram.ui.Stars;
 import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.AndroidUtilities.dpf2;
 import static org.telegram.messenger.AndroidUtilities.lerp;
-import static org.telegram.ui.Stars.StarsController.findAttribute;
+import static org.telegram.ui.Gifts.GiftsController.findAttribute;
 
 import android.animation.TimeInterpolator;
 import android.content.Context;
@@ -27,6 +27,7 @@ import org.telegram.messenger.Utilities;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_stars;
+import org.telegram.ui.Gifts.GiftsController;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
@@ -250,7 +251,7 @@ public class ProfileGiftsView extends View implements NotificationCenter.Notific
         }
     }
 
-    private StarsController.GiftsList list;
+    private GiftsController.GiftsList list;
 
     public final ArrayList<Gift> oldGifts = new ArrayList<>();
     public final ArrayList<Gift> gifts = new ArrayList<>();
@@ -279,7 +280,7 @@ public class ProfileGiftsView extends View implements NotificationCenter.Notific
         if (emojiStatus instanceof TLRPC.TL_emojiStatusCollectible) {
             giftIds.add(((TLRPC.TL_emojiStatusCollectible) emojiStatus).collectible_id);
         }
-        list = StarsController.getInstance(currentAccount).getProfileGiftsList(dialogId);
+        list = GiftsController.getInstance(currentAccount).getProfileGiftsList(dialogId);
         if (list != null) {
             for (int i = 0; i < list.gifts.size(); i++) {
                 final TL_stars.SavedStarGift savedGift = list.gifts.get(i);

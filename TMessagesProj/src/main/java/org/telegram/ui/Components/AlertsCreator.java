@@ -146,7 +146,6 @@ import org.telegram.ui.ProfileActivity;
 import org.telegram.ui.ProfileNotificationsActivity;
 import org.telegram.ui.SelectChatUserSheet;
 import org.telegram.ui.Stars.StarGiftSheet;
-import org.telegram.ui.Stars.StarsController;
 import org.telegram.ui.Stories.DarkThemeResourceProvider;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 import org.telegram.ui.Stories.recorder.HintView2;

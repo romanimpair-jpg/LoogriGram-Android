@@ -1,4 +1,4 @@
-package org.telegram.ui.Stars;
+package org.telegram.ui.Gifts;
 
 import static org.telegram.messenger.MediaDataController.calcHash;
 
@@ -19,7 +19,6 @@ import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.FileRefController;
-import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
@@ -36,6 +35,7 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.LaunchActivity;
+import org.telegram.ui.Stars.StarGiftSheet;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,16 +43,16 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class StarsController {
+public class GiftsController {
 
-    // LoogriGram: this was the Stars and TON wallet too, with an instance per
-    // currency. What is left is the gift catalogue and the gift lists of
-    // profiles, which receiving gifts needs. currency lives in StarsFormat.
-    private static volatile StarsController[] Instance = new StarsController[UserConfig.MAX_ACCOUNT_COUNT];
+    // LoogriGram: this was StarsController, the Stars and TON wallet too, with
+    // an instance per currency. What is left is the gift catalogue and the gift
+    // lists of profiles, which receiving gifts needs; currency lives in
+    // StarsFormat.
+    private static volatile GiftsController[] Instance = new GiftsController[UserConfig.MAX_ACCOUNT_COUNT];
     private static final Object[] lockObjects = new Object[UserConfig.MAX_ACCOUNT_COUNT];
     static {
         for (int i = 0; i < UserConfig.MAX_ACCOUNT_COUNT; i++) {
@@ -60,13 +60,13 @@ public class StarsController {
         }
     }
 
-    public static StarsController getInstance(int num) {
-        StarsController localInstance = Instance[num];
+    public static GiftsController getInstance(int num) {
+        GiftsController localInstance = Instance[num];
         if (localInstance == null) {
             synchronized (lockObjects[num]) {
                 localInstance = Instance[num];
                 if (localInstance == null) {
-                    Instance[num] = localInstance = new StarsController(num);
+                    Instance[num] = localInstance = new GiftsController(num);
                 }
             }
         }
@@ -75,7 +75,7 @@ public class StarsController {
 
     public final int currentAccount;
 
-    private StarsController(int account) {
+    private GiftsController(int account) {
         this.currentAccount = account;
     }
 
@@ -84,46 +84,9 @@ public class StarsController {
     // deep link, buying Stars, gifting them and funding a giveaway with them,
     // and the dialog for devices that cannot pay. Nothing pays or holds Stars.
 
-    // LoogriGram: what is left of upstream's star-reactions section. Nothing can
-    // send a paid reaction any more, so REACTIONS_TIMEOUT, currentPendingReactions,
-    // the PendingPaidReactions class and the six methods around it are gone.
-    // MessageId only ever borrowed this section: it is a (dialog, message) pair,
-    // and MessagesController keys its delivery reports on it.
-
-    public static class MessageId {
-        public long did;
-        public int mid;
-        private MessageId(long did, int mid) {
-            this.did = did;
-            this.mid = mid;
-        }
-        public static MessageId from(long did, int mid) {
-            return new MessageId(did, mid);
-        }
-        public static MessageId from(MessageObject msg) {
-            if (msg == null) return null;
-            if (msg.messageOwner != null && (msg.messageOwner.isThreadMessage || msg.isForwardedChannelPost()) && msg.messageOwner.fwd_from != null) {
-                return new MessageId(msg.getFromChatId(), msg.messageOwner.fwd_from.saved_from_msg_id);
-            } else {
-                return new MessageId(msg.getDialogId(), msg.getId());
-            }
-        }
-        @Override
-        public int hashCode() {
-            return Objects.hash(did, mid);
-        }
-
-        @Override
-        public boolean equals(@Nullable Object obj) {
-            if (obj instanceof MessageId) {
-                MessageId id = (MessageId) obj;
-                return id.did == did && id.mid == mid;
-            }
-            return false;
-        }
-    }
-
-
+    // LoogriGram: upstream's star-reactions section stood here - paid reactions
+    // in flight, their timeout and the six methods around them. MessageId, the
+    // (dialog, message) pair it used, is messenger.MessageId now.
 
     // ===== STAR GIFTS =====
 
@@ -817,7 +780,7 @@ public class StarsController {
 
         public void updateGiftsCollections(TL_stars.SavedStarGift gift, int collection_id, boolean included) {
             for (final TL_stars.SavedStarGift g : gifts) {
-                if (StarsController.eq(g, gift)) {
+                if (GiftsController.eq(g, gift)) {
                     if (included) {
                         if (!g.collection_id.contains(collection_id))
                             g.collection_id.add((Integer) collection_id);
@@ -831,7 +794,7 @@ public class StarsController {
         public void updateGiftsUnsaved(TL_stars.SavedStarGift gift, boolean unsaved) {
             boolean changed = false;
             for (final TL_stars.SavedStarGift g : gifts) {
-                if (StarsController.eq(g, gift) && g.unsaved != unsaved) {
+                if (GiftsController.eq(g, gift) && g.unsaved != unsaved) {
                     g.unsaved = unsaved;
                     changed = true;
                 }
@@ -1259,7 +1222,7 @@ public class StarsController {
 
         public boolean contains(final TL_stars.SavedStarGift gift) {
             for (final TL_stars.SavedStarGift g : gifts) {
-                if (StarsController.eq(g, gift)) {
+                if (GiftsController.eq(g, gift)) {
                     return true;
                 }
             }

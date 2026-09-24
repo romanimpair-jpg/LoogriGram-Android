@@ -6,7 +6,7 @@ import static org.telegram.messenger.AndroidUtilities.dpf2;
 import static org.telegram.messenger.AndroidUtilities.lerp;
 import static org.telegram.messenger.LocaleController.formatPluralStringComma;
 import static org.telegram.messenger.LocaleController.getString;
-import static org.telegram.ui.Stars.StarsController.findAttribute;
+import static org.telegram.ui.Gifts.GiftsController.findAttribute;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -116,7 +116,7 @@ import org.telegram.ui.Components.UniversalRecyclerView;
 import org.telegram.ui.Components.ViewPagerFixed;
 import org.telegram.ui.Gifts.GiftViews;
 import org.telegram.ui.Components.StarGiftPatterns;
-import org.telegram.ui.Stars.StarsController;
+import org.telegram.ui.Gifts.GiftsController;
 import org.telegram.ui.Stories.StoriesUtilities;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 
@@ -129,8 +129,8 @@ public class PeerColorActivity extends BaseFragment implements NotificationCente
     private final boolean isChannel;
     private final long dialogId;
 
-    private final StarsController.GiftsList gifts;
-    private final StarsController.GiftsList giftsWithPeerColor;
+    private final GiftsController.GiftsList gifts;
+    private final GiftsController.GiftsList giftsWithPeerColor;
 
     private FrameLayout contentView;
     private ColoredActionBar colorBar;
@@ -253,7 +253,7 @@ public class PeerColorActivity extends BaseFragment implements NotificationCente
                 protected void onLayout(boolean changed, int l, int t, int r, int b) {
                     super.onLayout(changed, l, t, r, b);
                     updateButtonY();
-                    final StarsController.GiftsList giftsList = type == PAGE_NAME ? giftsWithPeerColor : gifts;
+                    final GiftsController.GiftsList giftsList = type == PAGE_NAME ? giftsWithPeerColor : gifts;
                     if (giftsList != null && seesLoading()) {
                         giftsList.load();
                     }
@@ -574,7 +574,7 @@ public class PeerColorActivity extends BaseFragment implements NotificationCente
                 @Override
                 public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                     super.onScrolled(recyclerView, dx, dy);
-                    final StarsController.GiftsList giftsList = type == PAGE_NAME ? giftsWithPeerColor : gifts;
+                    final GiftsController.GiftsList giftsList = type == PAGE_NAME ? giftsWithPeerColor : gifts;
                     if (giftsList != null && seesLoading()) {
                         giftsList.load();
                     }
@@ -973,7 +973,7 @@ public class PeerColorActivity extends BaseFragment implements NotificationCente
                 clearRow = rowCount++;
                 shadowRow = rowCount++;
             }
-            final StarsController.GiftsList giftsList = type == PAGE_NAME ? giftsWithPeerColor : gifts;
+            final GiftsController.GiftsList giftsList = type == PAGE_NAME ? giftsWithPeerColor : gifts;
             if ((type == PAGE_PROFILE || type == PAGE_NAME) && giftsList != null) {
                 // LoogriGram: no tabs row - it offered "My Gifts" beside one tab per gift
                 // model on sale, and only the first of those is left. The plain header
@@ -1181,14 +1181,14 @@ public class PeerColorActivity extends BaseFragment implements NotificationCente
         this.dialogId = dialogId;
         this.isChannel = dialogId != 0;
         if (dialogId >= 0) {
-            StarsController.getInstance(currentAccount).loadStarGifts();
+            GiftsController.getInstance(currentAccount).loadStarGifts();
 
-            this.gifts = new StarsController.GiftsList(currentAccount, dialogId, false);
-            this.gifts.forceTypeIncludeFlag(StarsController.GiftsList.INCLUDE_TYPE_UNIQUE_FLAG, false);
+            this.gifts = new GiftsController.GiftsList(currentAccount, dialogId, false);
+            this.gifts.forceTypeIncludeFlag(GiftsController.GiftsList.INCLUDE_TYPE_UNIQUE_FLAG, false);
             this.gifts.load();
 
-            this.giftsWithPeerColor = new StarsController.GiftsList(currentAccount, dialogId, false);
-            this.giftsWithPeerColor.forceTypeIncludeFlag(StarsController.GiftsList.INCLUDE_TYPE_UNIQUE_FLAG, false);
+            this.giftsWithPeerColor = new GiftsController.GiftsList(currentAccount, dialogId, false);
+            this.giftsWithPeerColor.forceTypeIncludeFlag(GiftsController.GiftsList.INCLUDE_TYPE_UNIQUE_FLAG, false);
             this.giftsWithPeerColor.peer_color_available = true;
             this.giftsWithPeerColor.load();
         } else {

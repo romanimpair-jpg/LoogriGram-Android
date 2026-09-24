@@ -13,8 +13,8 @@ import static org.telegram.messenger.LocaleController.formatSpannable;
 import static org.telegram.messenger.LocaleController.formatString;
 import static org.telegram.messenger.LocaleController.getString;
 import static org.telegram.messenger.MessagesController.findUpdates;
-import static org.telegram.ui.Stars.StarsController.findAttribute;
-import static org.telegram.ui.Stars.StarsController.findAttributes;
+import static org.telegram.ui.Gifts.GiftsController.findAttribute;
+import static org.telegram.ui.Gifts.GiftsController.findAttributes;
 import static org.telegram.ui.Gifts.GiftViews.addAvailabilityRow;
 import static org.telegram.messenger.StarsFormat.replaceStarsWithPlain;
 import static org.telegram.ui.Gifts.GiftViews.setGiftImage;
@@ -102,6 +102,7 @@ import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_stars;
 import org.telegram.tgnet.tl.TL_update;
+import org.telegram.ui.Gifts.GiftsController;
 import org.telegram.ui.AccountFrozenAlert;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
@@ -201,7 +202,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
 
     private boolean myProfile;
     private TL_stars.SavedStarGift savedStarGift;
-    private StarsController.IGiftsList giftsList;
+    private GiftsController.IGiftsList giftsList;
 
     private MessageObject messageObject;
     private String slug;
@@ -760,10 +761,10 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         final String link = getLink();
         final TL_stars.TL_starGiftUnique giftUnique = getUniqueGift();
         ItemOptions.makeOptions(container, resourcesProvider, btn)
-            .addIf(getUniqueGift() != null && isMineWithActions(currentAccount, DialogObject.getPeerDialogId(getUniqueGift().owner_id)) && giftsList instanceof StarsController.GiftsList && savedStarGift != null && getInputStarGift() != null, (savedStarGift != null && savedStarGift.pinned_to_top) ? R.drawable.msg_unpin : R.drawable.msg_pin, getString((savedStarGift != null && savedStarGift.pinned_to_top) ? R.string.Gift2Unpin : R.string.Gift2Pin), () -> {
+            .addIf(getUniqueGift() != null && isMineWithActions(currentAccount, DialogObject.getPeerDialogId(getUniqueGift().owner_id)) && giftsList instanceof GiftsController.GiftsList && savedStarGift != null && getInputStarGift() != null, (savedStarGift != null && savedStarGift.pinned_to_top) ? R.drawable.msg_unpin : R.drawable.msg_pin, getString((savedStarGift != null && savedStarGift.pinned_to_top) ? R.string.Gift2Unpin : R.string.Gift2Pin), () -> {
                 if (savedStarGift.unsaved) {
                     savedStarGift.unsaved = false;
-                    final StarsController.GiftsCollections collections = StarsController.getInstance(currentAccount).getProfileGiftCollectionsList(dialogId, false);
+                    final GiftsController.GiftsCollections collections = GiftsController.getInstance(currentAccount).getProfileGiftCollectionsList(dialogId, false);
                     if (collections != null) {
                         collections.updateGiftsUnsaved(savedStarGift, savedStarGift.unsaved);
                     }
@@ -775,7 +776,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 }
 
                 final boolean newPinned = !savedStarGift.pinned_to_top;
-                if (((StarsController.GiftsList) giftsList).togglePinned(savedStarGift, newPinned, false)) {
+                if (((GiftsController.GiftsList) giftsList).togglePinned(savedStarGift, newPinned, false)) {
                     new ProfileGiftsContainer.UnpinSheet(getContext(), dialogId, savedStarGift, resourcesProvider, this::getBulletinFactory).show();
                 } else if (newPinned) {
                     getBulletinFactory()
@@ -2940,7 +2941,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
     private ColoredImageSpan upgradeIconSpan;
     private boolean firstSet = true;
 
-    public StarGiftSheet set(String slug, TL_stars.TL_starGiftUnique gift, StarsController.IGiftsList list) {
+    public StarGiftSheet set(String slug, TL_stars.TL_starGiftUnique gift, GiftsController.IGiftsList list) {
         this.slug = slug;
         this.slugStarGift = gift;
         this.giftsList = list;
@@ -3355,7 +3356,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         return this;
     }
 
-    public StarGiftSheet set(TL_stars.SavedStarGift savedStarGift, StarsController.IGiftsList list) {
+    public StarGiftSheet set(TL_stars.SavedStarGift savedStarGift, GiftsController.IGiftsList list) {
         if (savedStarGift == null) {
             return this;
         }
@@ -3606,7 +3607,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         return set(messageObject, null);
     }
 
-    public StarGiftSheet set(MessageObject messageObject, StarsController.IGiftsList list) {
+    public StarGiftSheet set(MessageObject messageObject, GiftsController.IGiftsList list) {
         if (messageObject == null || messageObject.messageOwner == null) {
             return this;
         }
@@ -3926,7 +3927,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         final TL_stars.InputSavedStarGift inputSavedStarGift = getInputStarGift();
         if (inputSavedStarGift == null) return;
         userStarGiftRepolling = true;
-        StarsController.getInstance(currentAccount).getUserStarGift(inputSavedStarGift, upgradedGift -> {
+        GiftsController.getInstance(currentAccount).getUserStarGift(inputSavedStarGift, upgradedGift -> {
             userStarGiftRepolling = false;
             userStarGiftRepolled = true;
             if (upgradedGift != null) {
@@ -3950,7 +3951,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
     private boolean isLearnMore;
     public void openAsLearnMore(long gift_id, String username) {
         isLearnMore = true;
-        StarsController.getInstance(currentAccount).getStarGiftPreview(gift_id, preview -> {
+        GiftsController.getInstance(currentAccount).getStarGiftPreview(gift_id, preview -> {
             if (preview == null) return;
 
             topView.setPreviewingAttributes(preview.sample_attributes);
@@ -4081,7 +4082,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         req.stargift = inputStarGift;
         boolean updatedInList = false;
         if (savedStarGift != null) {
-            final StarsController.GiftsCollections collections = StarsController.getInstance(currentAccount).getProfileGiftCollectionsList(dialogId, false);
+            final GiftsController.GiftsCollections collections = GiftsController.getInstance(currentAccount).getProfileGiftCollectionsList(dialogId, false);
             if (collections != null) {
                 collections.updateGiftsUnsaved(savedStarGift, req.unsave);
                 updatedInList = true;
@@ -4095,7 +4096,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 dismiss();
                 final long did = getDialogId();
                 if (!finalUpdatedInList) {
-                    StarsController.getInstance(currentAccount).invalidateProfileGifts(did);
+                    GiftsController.getInstance(currentAccount).invalidateProfileGifts(did);
                 }
                 if (did >= 0) {
                     BulletinFactory.of(lastFragment)
@@ -4127,7 +4128,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 }
             } else if (err != null) {
                 if (finalUpdatedInList && savedStarGift != null) {
-                    final StarsController.GiftsCollections collections = StarsController.getInstance(currentAccount).getProfileGiftCollectionsList(dialogId, false);
+                    final GiftsController.GiftsCollections collections = GiftsController.getInstance(currentAccount).getProfileGiftCollectionsList(dialogId, false);
                     if (collections != null) {
                         collections.updateGiftsUnsaved(savedStarGift, !req.unsave);
                     }
@@ -4237,7 +4238,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                     final AlertDialog progressDialog = new AlertDialog(getContext(), AlertDialog.ALERT_TYPE_SPINNER);
                     progressDialog.showDelayed(500);
 
-                    StarsController.getInstance(currentAccount).getUserStarGift(getInputStarGift(), savedGift -> {
+                    GiftsController.getInstance(currentAccount).getUserStarGift(getInputStarGift(), savedGift -> {
                         if (savedGift != null) {
                             progressDialog.dismiss();
                             userStarGiftRepolled = true;
@@ -4328,7 +4329,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             return;
         }
         if (sample_attributes == null) {
-            StarsController.getInstance(currentAccount).getStarGiftPreview(gift_id, preview -> {
+            GiftsController.getInstance(currentAccount).getStarGiftPreview(gift_id, preview -> {
                 if (preview == null) return;
                 sample_attributes = preview.sample_attributes;
                 openUpgradeAfter();
@@ -4390,7 +4391,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
 
     private int applyNewGiftFromUpdates(TL_stars.InputSavedStarGift fromGift, TLRPC.Updates updates, Runnable done) {
         if (updates == null) {
-            StarsController.getInstance(currentAccount).invalidateProfileGifts(getDialogId());
+            GiftsController.getInstance(currentAccount).invalidateProfileGifts(getDialogId());
             dismiss();
             return 0;
         }
@@ -4433,7 +4434,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 if (giftsList != null) {
                     giftsList.notifyUpdate();
                 } else {
-                    StarsController.getInstance(currentAccount).invalidateProfileGifts(dialogId);
+                    GiftsController.getInstance(currentAccount).invalidateProfileGifts(dialogId);
                 }
                 AndroidUtilities.runOnUIThread(done);
                 return 1;
@@ -4458,7 +4459,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
 //                return 2;
             } else {
                 if (giftsList == null) {
-                    StarsController.getInstance(currentAccount).invalidateProfileGifts(getDialogId());
+                    GiftsController.getInstance(currentAccount).invalidateProfileGifts(getDialogId());
                 }
                 rolling = true;
                 savedStarGift = null;
@@ -4472,7 +4473,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 return 1;
             }
         }
-        StarsController.getInstance(currentAccount).invalidateProfileGifts(getDialogId());
+        GiftsController.getInstance(currentAccount).invalidateProfileGifts(getDialogId());
         dismiss();
         return 0;
     }
@@ -5333,7 +5334,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
         if (id == NotificationCenter.starUserGiftsLoaded) {
-            StarsController.GiftsList notifiedList = (StarsController.GiftsList) args[1];
+            GiftsController.GiftsList notifiedList = (GiftsController.GiftsList) args[1];
             if (giftsList == notifiedList) {
                 updateViewPager();
             }

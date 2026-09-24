@@ -7,7 +7,7 @@ import static org.telegram.messenger.AndroidUtilities.lerp;
 import static org.telegram.messenger.LocaleController.formatPluralStringComma;
 import static org.telegram.messenger.LocaleController.formatString;
 import static org.telegram.messenger.LocaleController.getString;
-import static org.telegram.ui.Stars.StarsController.findAttribute;
+import static org.telegram.ui.Gifts.GiftsController.findAttribute;
 import static org.telegram.ui.Components.TableView.getPlatformDrawable;
 import static org.telegram.messenger.AndroidUtilities.percents;
 
@@ -95,7 +95,6 @@ import org.telegram.ui.Components.UniversalAdapter;
 import org.telegram.ui.Components.UniversalRecyclerView;
 import org.telegram.ui.Components.blur3.utils.NinePatchBuilder;
 import org.telegram.ui.Components.StarGiftPatterns;
-import org.telegram.ui.Stars.StarsController;
 
 import java.util.Arrays;
 
@@ -145,7 +144,7 @@ public class GiftViews {
         sb.setSpan(span, 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         rowTextView.setText(sb, TextView.BufferType.SPANNABLE);
         if (!gift.sold_out) {
-            StarsController.getInstance(currentAccount).getStarGift(gift.id, remoteGift -> {
+            GiftsController.getInstance(currentAccount).getStarGift(gift.id, remoteGift -> {
                 if (remoteGift == null) return;
                 if (remoteGift instanceof TL_stars.TL_starGiftUnique) {
                     rowTextView.setText(remoteGift.availability_remains <= 0 ? formatPluralStringComma("Gift2QuantityIssuedNone", remoteGift.availability_total) : formatPluralStringComma("Gift2QuantityIssued1", remoteGift.availability_issued) + formatPluralStringComma("Gift2QuantityIssued2", remoteGift.availability_total));

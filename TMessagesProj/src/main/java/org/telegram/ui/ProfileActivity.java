@@ -289,7 +289,7 @@ import org.telegram.ui.Components.chat.ViewPositionWatcher;
 import org.telegram.ui.Components.voip.VoIPHelper;
 import org.telegram.ui.Stars.ProfileGiftsView;
 import org.telegram.ui.Components.StarGiftPatterns;
-import org.telegram.ui.Stars.StarsController;
+import org.telegram.ui.Gifts.GiftsController;
 import org.telegram.ui.Stories.ProfileStoriesView;
 import org.telegram.ui.Stories.StoriesController;
 import org.telegram.ui.Stories.StoriesListPlaceProvider;
@@ -6655,7 +6655,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             @Override
             protected boolean willApplyEmoji(View view, Long documentId, TLRPC.Document document, TL_stars.TL_starGiftUnique gift, Integer until) {
                 if (gift != null) {
-                    final TL_stars.SavedStarGift savedStarGift = StarsController.getInstance(currentAccount).findUserStarGift(gift.id);
+                    final TL_stars.SavedStarGift savedStarGift = GiftsController.getInstance(currentAccount).findUserStarGift(gift.id);
                     return savedStarGift == null || MessagesController.getGlobalMainSettings().getInt("statusgiftpage", 0) >= 2;
                 }
                 return true;

@@ -2,7 +2,7 @@ package org.telegram.ui;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.AndroidUtilities.translitSafe;
-import static org.telegram.ui.Stars.StarsController.findAttribute;
+import static org.telegram.ui.Gifts.GiftsController.findAttribute;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -130,7 +130,7 @@ import org.telegram.ui.Components.RecyclerAnimationScrollHelper;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.SearchStateDrawable;
 import org.telegram.ui.Components.StickerCategoriesListView;
-import org.telegram.ui.Stars.StarsController;
+import org.telegram.ui.Gifts.GiftsController;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -3982,7 +3982,7 @@ public class SelectAnimatedEmojiDialog extends FrameLayout implements Notificati
         }
         gifts.clear();
         if (type == TYPE_EMOJI_STATUS || type == TYPE_EMOJI_STATUS_TOP || type == TYPE_EMOJI_STATUS_CHANNEL || type == TYPE_EMOJI_STATUS_CHANNEL_TOP) {
-            final StarsController.GiftsList profileGifts = StarsController.getInstance(currentAccount).getProfileGiftsList(getDialogId());
+            final GiftsController.GiftsList profileGifts = GiftsController.getInstance(currentAccount).getProfileGiftsList(getDialogId());
             profileGifts.load();
             final ArrayList<TL_stars.TL_starGiftUnique> uniqueGifts = new ArrayList<>();
             for (TL_stars.SavedStarGift gift : profileGifts.gifts) {

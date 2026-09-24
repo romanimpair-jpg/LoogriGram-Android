@@ -73,7 +73,7 @@ import org.telegram.ui.Components.ScaleStateListAnimator;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PrivacyControlActivity;
 import org.telegram.ui.ProfileActivity;
-import org.telegram.ui.Stars.StarsController;
+import org.telegram.ui.Gifts.GiftsController;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 
 import java.util.ArrayList;
@@ -555,7 +555,7 @@ public class UserSelectorBottomSheet extends BottomSheetWithRecyclerListView imp
             });
         }
         if (type == TYPE_PREMIUM || type == TYPE_STAR_GIFT) {
-            StarsController.getInstance(currentAccount).loadStarGifts();
+            GiftsController.getInstance(currentAccount).loadStarGifts();
         }
     }
 
