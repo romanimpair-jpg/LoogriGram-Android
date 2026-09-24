@@ -2377,7 +2377,6 @@ public class Theme {
     public static TextPaint chat_actionTextPaint;
     public static TextPaint chat_actionTextPaint2;
     public static TextPaint chat_actionTextPaint3;
-    public static TextPaint chat_unlockExtendedMediaTextPaint;
     public static TextPaint chat_msgBotButtonPaint;
     public static TextPaint chat_msgGameTextPaint;
     public static TextPaint[] chat_msgTextPaintEmoji;
@@ -2447,7 +2446,6 @@ public class Theme {
     public static Drawable chat_msgStickerHalfCheckDrawable;
     public static Drawable chat_msgStickerViewsDrawable;
     public static Drawable chat_msgStickerRepliesDrawable;
-    public static Drawable chat_msgUnlockDrawable;
     public static Drawable chat_msgInViewsDrawable;
     public static Drawable chat_msgInViewsSelectedDrawable;
     public static Drawable chat_msgOutViewsDrawable;
@@ -8121,8 +8119,6 @@ public class Theme {
             chat_actionTextPaint2 = new TextPaint(Paint.ANTI_ALIAS_FLAG);
             chat_actionTextPaint3 = new TextPaint(Paint.ANTI_ALIAS_FLAG);
             chat_actionTextPaint.setTypeface(AndroidUtilities.bold());
-            chat_unlockExtendedMediaTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
-            chat_unlockExtendedMediaTextPaint.setTypeface(AndroidUtilities.bold());
             chat_actionBackgroundGradientDarkenPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             chat_actionBackgroundGradientDarkenPaint.setColor(0x15000000);
             chat_timeBackgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -8190,7 +8186,6 @@ public class Theme {
             chat_msgMediaHalfCheckDrawable = resources.getDrawable(R.drawable.msg_halfcheck_s).mutate();
             chat_msgStickerHalfCheckDrawable = resources.getDrawable(R.drawable.msg_halfcheck_s).mutate();
             chat_msgClockDrawable = new MsgClockDrawable();
-            chat_msgUnlockDrawable = resources.getDrawable(R.drawable.ic_lock_header).mutate();
             chat_msgInViewsDrawable = resources.getDrawable(R.drawable.msg_views).mutate();
             chat_msgInViewsSelectedDrawable = resources.getDrawable(R.drawable.msg_views).mutate();
             chat_msgOutViewsDrawable = resources.getDrawable(R.drawable.msg_views).mutate();
@@ -8403,7 +8398,6 @@ public class Theme {
             chat_actionTextPaint.setTextSize(dp(Math.max(16, SharedConfig.fontSize) - 2));
             chat_actionTextPaint2.setTextSize(dp(Math.max(16, SharedConfig.fontSize) - 2));
             chat_actionTextPaint3.setTextSize(dp(Math.max(16, SharedConfig.fontSize) - 3));
-            chat_unlockExtendedMediaTextPaint.setTextSize(dp(Math.max(16, SharedConfig.fontSize)));
             chat_contextResult_titleTextPaint.setTextSize(dp(15));
             chat_contextResult_descriptionTextPaint.setTextSize(dp(13));
             chat_radialProgressPaint.setStrokeWidth(dp(3));
@@ -8432,7 +8426,6 @@ public class Theme {
             chat_actionTextPaint2.setColor(getColor(key_chat_serviceText));
             chat_actionTextPaint3.setColor(getColor(key_chat_serviceText));
             chat_actionTextPaint.linkColor = getColor(key_chat_serviceLink);
-            chat_unlockExtendedMediaTextPaint.setColor(getColor(key_chat_serviceText));
             chat_contextResult_titleTextPaint.setColor(getColor(key_windowBackgroundWhiteBlackText));
             chat_composeBackgroundPaint.setColor(getColor(key_chat_messagePanelBackground));
             chat_timeBackgroundPaint.setColor(getColor(key_chat_mediaTimeBackground));
@@ -8454,7 +8447,6 @@ public class Theme {
             setDrawableColorByKey(chat_msgStickerHalfCheckDrawable, key_chat_serviceText);
             setDrawableColorByKey(chat_msgStickerViewsDrawable, key_chat_serviceText);
             setDrawableColorByKey(chat_msgStickerRepliesDrawable, key_chat_serviceText);
-            setDrawableColorByKey(chat_msgUnlockDrawable, key_chat_serviceText);
             setDrawableColorByKey(chat_shareIconDrawable, key_chat_serviceIcon);
             setDrawableColorByKey(chat_replyIconDrawable, key_chat_serviceIcon);
             setDrawableColorByKey(chat_goIconDrawable, key_chat_serviceIcon);
@@ -8686,7 +8678,6 @@ public class Theme {
             chat_actionTextPaint2.setColor(0xffffffff);
             chat_actionTextPaint3.setColor(0xffffffff);
             chat_actionTextPaint.linkColor = 0xffffffff;
-            chat_unlockExtendedMediaTextPaint.setColor(0xffffffff);
             chat_botButtonPaint.setColor(0xffffffff);
             setDrawableColor(chat_commentStickerDrawable, 0xffffffff);
             setDrawableColor(chat_shareIconDrawable, 0xffffffff);
@@ -8709,7 +8700,6 @@ public class Theme {
             chat_actionTextPaint.setColor(getColor(key_chat_serviceText));
             chat_actionTextPaint2.setColor(getColor(key_chat_serviceText));
             chat_actionTextPaint.linkColor = getColor(key_chat_serviceLink);
-            chat_unlockExtendedMediaTextPaint.setColor(getColor(key_chat_serviceText));
             setDrawableColorByKey(chat_commentStickerDrawable, key_chat_serviceIcon);
             setDrawableColorByKey(chat_shareIconDrawable, key_chat_serviceIcon);
             setDrawableColorByKey(chat_replyIconDrawable, key_chat_serviceIcon);
