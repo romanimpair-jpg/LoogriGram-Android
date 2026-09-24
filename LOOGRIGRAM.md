@@ -97,13 +97,9 @@ because Android will refuse an update signed with any other.
    - **the gift upgrade page**, from the previous list and still unseen: it
      should appear *only* when the sender prepaid the upgrade, reading
      "Upgrade for Free" and then Confirm.
-4. **Ask before planning past the Premium pass.** Desktop also removed AI
-   compose, Stories, Business (the parts ours to set), suggestion popups,
-   greeting stickers, the bot verification icon, nags and help, and Premium
-   badges and emoji statuses for everyone. These notes have never listed any
-   of them, and each is large.
-5. **Then continue** - see "Remaining work": the held money messages'
-   drawing, then the Stars wallet, then the Premium pass.
+4. **Then continue** - see "Remaining work": the held money messages'
+   drawing, then the Stars wallet, then the Premium pass, then desktop
+   parity.
 
 Still unverified from earlier sessions, since a compile cannot see layout:
    - chat list: a gift or payment arriving must not move the chat to the top
@@ -786,6 +782,19 @@ In rough order of how much is left behind:
   lock on its second apply button; and the upgrade page's "tradable" and
   "wearable" rows. Desktop also stopped drawing *other people's* emoji
   statuses and badges - check what is left of that here.
+- **Desktop parity** (decided 2026-09-24: "Whatever desktop removed android
+  should remove too", so don't ask per feature). The checklist is the
+  desktop `LOOGRIGRAM.md`:
+  - its "Removed" section: AI compose, large emoji, Premium badges and emoji
+    statuses for everyone, Business (the parts ours to set), Stories,
+    suggestion popups, greeting stickers, the bot verification icon, and nags
+    and help;
+  - the reading telemetry and post view increments its Ghost mode section
+    deleted;
+  - its "Changed defaults".
+
+  Keep what desktop kept on purpose, which those sections also list. None of
+  it has been surveyed here yet.
 - **Smaller leftovers.** `ChatMessageCell.getStarsPrice` and
   `starsPriceText` (the Stars someone else paid to send a group message -
   check what desktop does); `LiveCommentsView`'s reads of
