@@ -4720,7 +4720,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
 
     @Override
     public void onBackPressed() {
-        if (!onlyWearInfo && currentPage.to > 0 && !button.isLoading() && !isLearnMore) {
+        if (currentPage.to > 0 && !button.isLoading() && !isLearnMore) {
             if (messageObject != null) {
                 set(messageObject);
             } else if (savedStarGift != null) {
