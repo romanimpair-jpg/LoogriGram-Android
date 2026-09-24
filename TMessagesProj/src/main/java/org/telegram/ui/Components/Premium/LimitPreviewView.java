@@ -1,6 +1,5 @@
 package org.telegram.ui.Components.Premium;
 
-import static android.graphics.Canvas.ALL_SAVE_FLAG;
 import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.AndroidUtilities.lerp;
 
@@ -15,8 +14,6 @@ import android.graphics.CornerPathEffect;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PathEffect;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
 import android.text.Layout;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
@@ -55,9 +52,8 @@ import java.util.ArrayList;
 
 public class LimitPreviewView extends LinearLayout {
 
-    public interface DarkGradientProvider {
-        Paint setDarkGradientLocation(float x, float y);
-    }
+    // LoogriGram: a DarkGradientProvider let a dark header paint these bars in its
+    // own gradient. Only the Stars screen had one, and it is deleted.
 
     private float percent;
     private final int premiumLimit;
@@ -100,7 +96,6 @@ public class LimitPreviewView extends LinearLayout {
     float limitIconRotation;
     public boolean isStatistic;
     public boolean invalidationEnabled = true;
-    private DarkGradientProvider darkGradientProvider;
 
     private final FrameLayout defaultLayout;
     private final FrameLayout premiumLayout;
@@ -130,7 +125,7 @@ public class LimitPreviewView extends LinearLayout {
             addView(limitIcon, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, 0, Gravity.LEFT));
         }
 
-        defaultLayout = new TextViewHolder(context, true);
+        defaultLayout = new TextViewHolder(context);
 
         defaultText = new AnimatedTextView(context);
         defaultText.setTextSize(dp(14));
@@ -153,7 +148,7 @@ public class LimitPreviewView extends LinearLayout {
             defaultLayout.addView(defaultCount, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 30, Gravity.RIGHT, 12, 0, 12, 0));
         }
 
-        premiumLayout = new TextViewHolder(context, false);
+        premiumLayout = new TextViewHolder(context);
 
         premiumText = new TextView(context);
         premiumText.setTypeface(AndroidUtilities.bold());
@@ -179,11 +174,6 @@ public class LimitPreviewView extends LinearLayout {
         limitsContainer = new FrameLayout(context) {
 
             Paint grayPaint = new Paint();
-            Paint whitePaint = new Paint();
-
-            {
-                whitePaint.setColor(Color.WHITE);
-            }
 
             @Override
             protected void dispatchDraw(Canvas canvas) {
@@ -198,18 +188,13 @@ public class LimitPreviewView extends LinearLayout {
                 }
                 AndroidUtilities.rectTmp.set(0, 0, getMeasuredWidth(), getMeasuredHeight());
 
-                if (hasDarkGradientProvider()) {
-                    Paint p = darkGradientProvider.setDarkGradientLocation((((ViewGroup) getParent()).getX() + getX()), (((ViewGroup) getParent()).getY() + getY()));
-                    canvas.drawRoundRect(AndroidUtilities.rectTmp, dp(6), dp(6), p);
-                } else {
-                    canvas.drawRoundRect(AndroidUtilities.rectTmp, dp(6), dp(6), grayPaint);
-                }
+                canvas.drawRoundRect(AndroidUtilities.rectTmp, dp(6), dp(6), grayPaint);
 
                 canvas.save();
                 if (!isBoostsStyle) {
                     canvas.clipRect(width1, 0, getMeasuredWidth(), getMeasuredHeight());
                 }
-                Paint paint = isRatingStyle ? ratingPaint : hasDarkGradientProvider() ? whitePaint : PremiumGradient.getInstance().getMainGradientPaint();
+                Paint paint = isRatingStyle ? ratingPaint : PremiumGradient.getInstance().getMainGradientPaint();
                 if (parentVideForGradient != null) {
                     View parent = parentVideForGradient;
                     if (staticGradient != null) {
@@ -268,8 +253,8 @@ public class LimitPreviewView extends LinearLayout {
                         if (percent == 0) {
                             width1 = 0;
                             if (!animateArrowFadeIn && !animateArrowFadeOut) {
-                                premiumCount.setTextColor(isRatingNegative ? Color.WHITE : hasDarkGradientProvider() ? Color.WHITE : Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
-                                defaultText.setTextColor(hasDarkGradientProvider() ? Color.WHITE : Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
+                                premiumCount.setTextColor(isRatingNegative ? Color.WHITE : Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
+                                defaultText.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
                             }
                         } else if (percent < 1f) {
                             float leftWidth = isRatingNegative ? 0: defaultLayout.getMeasuredWidth() - dp(8);
@@ -277,7 +262,7 @@ public class LimitPreviewView extends LinearLayout {
                             float availableWidth = width - leftWidth - rightWidth;
                             width1 = (int) (leftWidth + availableWidth * percent);
                             if (!animateArrowFadeIn && !animateArrowFadeOut) {
-                                premiumCount.setTextColor(isRatingNegative ? Color.WHITE : hasDarkGradientProvider() ? Color.WHITE : Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
+                                premiumCount.setTextColor(isRatingNegative ? Color.WHITE : Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
                                 defaultText.setTextColor(Color.WHITE);
                             }
                         } else {
@@ -327,14 +312,6 @@ public class LimitPreviewView extends LinearLayout {
 
     public void setHideNegativeValues(boolean hideNegativeValues) {
         this.hideNegativeValues = hideNegativeValues;
-    }
-
-    public void setDarkGradientProvider(DarkGradientProvider darkGradientProvider) {
-        this.darkGradientProvider = darkGradientProvider;
-    }
-
-    private boolean hasDarkGradientProvider() {
-        return darkGradientProvider != null;
     }
 
     public void setIconScale(float iconScale) {
@@ -920,32 +897,9 @@ public class LimitPreviewView extends LinearLayout {
 
     private class TextViewHolder extends FrameLayout {
 
-        private final Paint paint = new Paint();
-        private final boolean isLeft;
-
-        public TextViewHolder(@NonNull Context context, boolean isLeft) {
+        public TextViewHolder(@NonNull Context context) {
             super(context);
             setLayerType(LAYER_TYPE_HARDWARE, null);
-            paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
-            this.isLeft = isLeft;
-        }
-
-        @Override
-        protected boolean drawChild(Canvas canvas, View child, long drawingTime) {
-            if (child instanceof TextView) {
-                boolean result = super.drawChild(canvas, child, drawingTime);
-                boolean leftGradient = percent != 0 && percent <= 1f && isLeft;
-                boolean rightGradient = percent == 1f && !isLeft;
-                if ((leftGradient || rightGradient) && hasDarkGradientProvider()) {
-                    canvas.saveLayer(child.getLeft(), child.getTop(), child.getRight(), child.getBottom(), paint, ALL_SAVE_FLAG);
-                    Paint p = darkGradientProvider.setDarkGradientLocation((((ViewGroup) getParent()).getX() + getX()), (((ViewGroup) getParent()).getY() + getY()));
-                    canvas.drawRect(child.getLeft(), child.getTop(), child.getRight(), child.getBottom(), p);
-                    canvas.restore();
-                    invalidate();
-                }
-                return result;
-            }
-            return super.drawChild(canvas, child, drawingTime);
         }
     }
 
@@ -965,16 +919,12 @@ public class LimitPreviewView extends LinearLayout {
 
         float arrowCenter;
         boolean invalidatePath;
-        Paint dstOutPaint = new Paint();
-        Paint overlayPaint = new Paint();
 
         public CounterView(Context context) {
             super(context);
             textPaint.setTypeface(AndroidUtilities.bold());
             textPaint.setTextSize(dp(22));
             textPaint.setColor(Color.WHITE);
-            dstOutPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_OUT));
-            overlayPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.OVERLAY));
         }
 
         @Override
@@ -1026,23 +976,13 @@ public class LimitPreviewView extends LinearLayout {
                 }
                 PremiumGradient.getInstance().updateMainGradientMatrix(0, 0, LimitPreviewView.this.getMeasuredWidth(), LimitPreviewView.this.getMeasuredHeight(), getGlobalXOffset() - getX(), -getTop());
                 AndroidUtilities.rectTmp.set(0, 0, getMeasuredWidth(), h);
-                canvas.drawRoundRect(AndroidUtilities.rectTmp, h / 2f, h / 2f, isRatingStyle ? ratingPaint : hasDarkGradientProvider() ? textPaint : PremiumGradient.getInstance().getMainGradientPaint());
+                canvas.drawRoundRect(AndroidUtilities.rectTmp, h / 2f, h / 2f, isRatingStyle ? ratingPaint : PremiumGradient.getInstance().getMainGradientPaint());
                 PremiumGradient.getInstance().getMainGradientPaint().setPathEffect(pathEffect);
-                if (hasDarkGradientProvider()) {
-                    textPaint.setPathEffect(pathEffect);
-                }
-                canvas.drawPath(path, isRatingStyle ? ratingPaint : hasDarkGradientProvider() ? textPaint : PremiumGradient.getInstance().getMainGradientPaint());
+                canvas.drawPath(path, isRatingStyle ? ratingPaint : PremiumGradient.getInstance().getMainGradientPaint());
                 PremiumGradient.getInstance().getMainGradientPaint().setPathEffect(null);
-                if (hasDarkGradientProvider()) {
-                    textPaint.setPathEffect(null);
-                }
                 if (invalidationEnabled) {
                     invalidate();
                 }
-            }
-
-            if (hasDarkGradientProvider()) {
-                canvas.saveLayer(0, 0, getMeasuredWidth(), getMeasuredHeight(), dstOutPaint, ALL_SAVE_FLAG);
             }
 
             float x = (getMeasuredWidth() - textWidth) / 2f;
@@ -1088,14 +1028,6 @@ public class LimitPreviewView extends LinearLayout {
                     canvas.restore();
                 }
 
-                canvas.restore();
-            }
-
-            if (hasDarkGradientProvider()) {
-                canvas.restore();
-                canvas.saveLayer(0, 0, getMeasuredWidth(), getMeasuredHeight(), overlayPaint, ALL_SAVE_FLAG);
-                Paint p = darkGradientProvider.setDarkGradientLocation(getX(), getY());
-                canvas.drawRect(dp(12), dp(10), getMeasuredWidth() - dp(12), getMeasuredHeight() - dp(10), p);
                 canvas.restore();
             }
         }
