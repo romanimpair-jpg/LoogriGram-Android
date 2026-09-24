@@ -88,7 +88,6 @@ import org.telegram.ui.Components.ImageUpdater;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.RadialProgressView;
-import org.telegram.ui.Components.Reactions.ChatCustomReactionsEditActivity;
 import org.telegram.ui.Components.Reactions.ReactionsUtils;
 import org.telegram.ui.Components.SectionsScrollView;
 import org.telegram.ui.Components.SizeNotifierFrameLayout;
@@ -1086,15 +1085,16 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
             reactionsCell = new TextCell(context);
             reactionsCell.setBackground(Theme.getSelectorDrawable(false));
             reactionsCell.setOnClickListener(v -> {
-                if (ChatObject.isChannelAndNotMegaGroup(currentChat)) {
-                    presentFragment(new ChatCustomReactionsEditActivity(chatId, info));
-                } else {
-                    Bundle args = new Bundle();
-                    args.putLong(ChatReactionsEditActivity.KEY_CHAT_ID, chatId);
-                    ChatReactionsEditActivity reactionsEditActivity = new ChatReactionsEditActivity(args);
-                    reactionsEditActivity.setInfo(info);
-                    presentFragment(reactionsEditActivity);
-                }
+                // LoogriGram: a channel opened ChatCustomReactionsEditActivity -
+                // custom emoji reactions, each a boost level, and the switch that
+                // let subscribers pay the channel Stars for a reaction. Channels
+                // get the standard editor, as on desktop; it never sends
+                // paid_enabled, so the server keeps whatever it had.
+                Bundle args = new Bundle();
+                args.putLong(ChatReactionsEditActivity.KEY_CHAT_ID, chatId);
+                ChatReactionsEditActivity reactionsEditActivity = new ChatReactionsEditActivity(args);
+                reactionsEditActivity.setInfo(info);
+                presentFragment(reactionsEditActivity);
             });
 
             if (ChatObject.canUserDoAdminAction(currentChat, ChatObject.ACTION_MANAGE_WELCOME)) {

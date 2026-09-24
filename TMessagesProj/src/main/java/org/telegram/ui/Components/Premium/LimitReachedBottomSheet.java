@@ -72,7 +72,6 @@ import org.telegram.ui.Cells.GroupCreateUserCell;
 import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.ChatActivity;
-import org.telegram.ui.ChatEditActivity;
 import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.AvatarsImageView;
@@ -93,14 +92,12 @@ import org.telegram.ui.Components.Premium.boosts.BoostDialogs;
 import org.telegram.ui.Components.Premium.boosts.BoostPagerBottomSheet;
 import org.telegram.ui.Components.Premium.boosts.BoostRepository;
 import org.telegram.ui.Components.Premium.boosts.ReassignBoostBottomSheet;
-import org.telegram.ui.Components.Reactions.ChatCustomReactionsEditActivity;
 import org.telegram.ui.Components.RecyclerItemsEnterAnimator;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.ScaleStateListAnimator;
 import org.telegram.ui.Components.TypefaceSpan;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PremiumPreviewFragment;
-import org.telegram.ui.ProfileActivity;
 import org.telegram.ui.StatisticActivity;
 import org.telegram.ui.Stories.ChannelBoostUtilities;
 import org.telegram.ui.Stories.DarkThemeResourceProvider;
@@ -1094,27 +1091,6 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView imp
             TLRPC.Chat chat = (TLRPC.Chat) args[0];
             boolean isGiveaway = (boolean) args[1];
             BaseFragment lastFragment = getBaseFragment().getParentLayout().getLastFragment();
-            if (lastFragment instanceof ChatCustomReactionsEditActivity) {
-                List<BaseFragment> fragmentStack = getBaseFragment().getParentLayout().getFragmentStack();
-                BaseFragment chatEditFragment = fragmentStack.size() >= 2 ? fragmentStack.get(fragmentStack.size() - 2) : null;
-                BaseFragment profileFragment = fragmentStack.size() >= 3 ? fragmentStack.get(fragmentStack.size() - 3) : null;
-                BaseFragment chatFragment = fragmentStack.size() >= 4 ? fragmentStack.get(fragmentStack.size() - 4) : null;
-                if (chatEditFragment instanceof ChatEditActivity) {
-                    getBaseFragment().getParentLayout().removeFragmentFromStack(chatEditFragment);
-                }
-                dismiss();
-                if (isGiveaway) {
-                    if (profileFragment instanceof ProfileActivity) {
-                        getBaseFragment().getParentLayout().removeFragmentFromStack(profileFragment);
-                    }
-                    lastFragment.finishFragment();
-                    BoostDialogs.showBulletin(chatFragment, chat, true);
-                } else {
-                    lastFragment.finishFragment();
-                    BoostDialogs.showBulletin(profileFragment, chat, false);
-                }
-                return;
-            }
             if (lastFragment instanceof ChatActivity) {
                 if (isGiveaway) {
                     BoostDialogs.showBulletin(lastFragment, chat, true);
