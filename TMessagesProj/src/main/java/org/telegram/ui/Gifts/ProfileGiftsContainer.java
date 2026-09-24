@@ -874,19 +874,8 @@ public class ProfileGiftsContainer extends FrameLayout implements NotificationCe
                     } else {
                         link = null;
                     }
-                    if (isMineWithActions(currentAccount, DialogObject.getPeerDialogId(gift.owner_id))) {
-                        final boolean worn = StarGiftSheet.isWorn(currentAccount, gift);
-                        o.add(worn ? R.drawable.menu_takeoff : R.drawable.menu_wear, getString(worn ? R.string.Gift2Unwear : R.string.Gift2Wear), () -> {
-                            new StarGiftSheet(getContext(), currentAccount, parent.dialogId, resourcesProvider) {
-                                @Override
-                                public BulletinFactory getBulletinFactory() {
-                                    return BulletinFactory.of(parent.fragment);
-                                }
-                            }
-                                .set(savedStarGift, null)
-                                .toggleWear(false);
-                        });
-                    }
+                    // LoogriGram: "Wear" / "Take off" stood here for our own
+                    // collectibles. See StarGiftSheet: Wear is not offered.
                     o.addIf(link != null, R.drawable.msg_link2, getString(R.string.CopyLink), () -> {
                         AndroidUtilities.addToClipboard(link);
                         BulletinFactory.of(parent.fragment)
