@@ -520,24 +520,6 @@ public class ChatActivityEnterView extends FrameLayout implements
         public CharSequence getText() {
             return textView.getText();
         }
-
-
-        @Override
-        protected boolean drawChild(Canvas canvas, View child, long drawingTime) {
-            if (child instanceof SimpleTextView && isPremiumMode) {
-                SimpleTextView simpleTextView = (SimpleTextView) child;
-                canvas.save();
-                canvas.scale(0.8f, 0.8f);
-                canvas.translate(-dp(12), dp(6));
-                int oldColor = simpleTextView.getTextPaint().getColor();
-                simpleTextView.getTextPaint().setColor(Color.WHITE);
-                boolean result = super.drawChild(canvas, child, drawingTime);
-                simpleTextView.getTextPaint().setColor(oldColor);
-                canvas.restore();
-                return result;
-            }
-            return super.drawChild(canvas, child, drawingTime);
-        }
     }
 
     @SuppressWarnings("FieldCanBeLocal")
@@ -8476,7 +8458,7 @@ public class ChatActivityEnterView extends FrameLayout implements
 
     private void setSlowModeButtonVisible(boolean visible) {
         slowModeButton.setVisibility(visible ? VISIBLE : GONE);
-        int padding = visible ? dp(slowModeButton.isPremiumMode ? 26 : 16) : 0;
+        int padding = visible ? dp(16) : 0;
         if (messageEditText != null && messageEditText.getPaddingRight() != padding) {
             messageEditText.setPadding(0, dp(9), padding, dp(10));
         }
