@@ -1712,19 +1712,21 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
             }
 
             if (screenType == SCREEN_TYPE_ACCENT_COLOR) {
-                String[] texts = new String[2];
-                int[] textSizes = new int[2];
+                // LoogriGram: renamed - the background buttons' texts above are no
+                // longer inside an if of their own, so the names would clash.
+                String[] messagesTexts = new String[2];
+                int[] messagesTextSizes = new int[2];
                 messagesCheckBoxView = new WallpaperCheckBoxView[2];
-                int maxTextSize = 0;
+                int messagesMaxTextSize = 0;
 
                 messagesButtonsContainer = new FrameLayout(context);
 
-                texts[0] = LocaleController.getString(R.string.BackgroundAnimate);
-                texts[1] = LocaleController.getString(R.string.BackgroundColors);
+                messagesTexts[0] = LocaleController.getString(R.string.BackgroundAnimate);
+                messagesTexts[1] = LocaleController.getString(R.string.BackgroundColors);
 
-                for (int a = 0; a < texts.length; a++) {
-                    textSizes[a] = (int) Math.ceil(textPaint.measureText(texts[a]));
-                    maxTextSize = Math.max(maxTextSize, textSizes[a]);
+                for (int a = 0; a < messagesTexts.length; a++) {
+                    messagesTextSizes[a] = (int) Math.ceil(textPaint.measureText(messagesTexts[a]));
+                    messagesMaxTextSize = Math.max(messagesMaxTextSize, messagesTextSizes[a]);
                 }
 
                 if (accent != null) {
@@ -1798,12 +1800,12 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
                     for (int a = 0; a < 2; a++) {
                         final int num = a;
                         messagesCheckBoxView[a] = new WallpaperCheckBoxView(context, a == 0, backgroundImage, themeDelegate);
-                        messagesCheckBoxView[a].setText(texts[a], textSizes[a], maxTextSize);
+                        messagesCheckBoxView[a].setText(messagesTexts[a], messagesTextSizes[a], messagesMaxTextSize);
 
                         if (a == 0) {
                             messagesCheckBoxView[a].setChecked(accent.myMessagesAnimated, false);
                         }
-                        int width = maxTextSize + dp(14 * 2 + 28);
+                        int width = messagesMaxTextSize + dp(14 * 2 + 28);
                         FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(width, ViewGroup.LayoutParams.WRAP_CONTENT);
                         layoutParams.gravity = Gravity.CENTER;
                         if (a == 1) {
