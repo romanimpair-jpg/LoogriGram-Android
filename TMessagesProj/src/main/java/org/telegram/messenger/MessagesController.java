@@ -624,18 +624,12 @@ public class MessagesController extends BaseController implements NotificationCe
     public boolean showAnnualPerMonth = false;
     public boolean canEditFactcheck;
     public int factcheckLengthLimit;
-    public long starsRevenueWithdrawalMin;
-    public long starsPaidPostAmountMax;
     public int botPreviewMediasMax;
     public String tonProxyAddress;
     public String weatherSearchUsername;
     public boolean storyWeatherPreload;
-    public boolean starsGiftsEnabled;
     public boolean stargiftsBlocked;
-    public long starsPaidReactionAmountMax;
-    public long starsSubscriptionAmountMax;
     public float starsUsdSellRate1000;
-    public float starsUsdWithdrawRate1000;
     public int botVerificationDescriptionLengthLimit;
     public int savedDialogsPinnedLimitDefault;
     public int savedDialogsPinnedLimitPremium;
@@ -659,7 +653,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public boolean videoIgnoreAltDocuments;
     public boolean disableBotFullscreenBlur;
     public String tonBlockchainExplorerUrl;
-    public long starsPaidMessageAmountMax;
     public int stargiftsPinnedToTopLimit;
     public long freezeSinceDate;
     public long freezeUntilDate;
@@ -673,7 +666,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public String translationsAutoEnabled; // "enabled", "alternative", "system", "disabled"
     public HashSet<Long> whitelistedBots;
     public int[] starsGroupcallMessageLimits;
-    public int starsGroupcallMessageAmountMax;
     // LoogriGram: the smallest, largest and suggested TON stakes for a dice roll stood
     // here. Nothing stakes, so the server's answer has no reader.
     public int[][] stargiftsCraftAttributesPermilles;
@@ -685,7 +677,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public volatile boolean ignoreSetOnline;
     public boolean premiumLocked;
     public int transcribeButtonPressed;
-    public boolean starsLocked;
 
     // LoogriGram: the whole premium and Stars economy, off at three getters.
     // These are upstream's own "purchases are blocked here" flags, driven by a
@@ -1637,7 +1628,6 @@ public class MessagesController extends BaseController implements NotificationCe
         verifyAgeMin = mainPreferences.getInt("verifyAgeMin", 18);
         premiumBotUsername = mainPreferences.getString("premiumBotUsername", null);
         premiumLocked = mainPreferences.getBoolean("premiumLocked", false);
-        starsLocked = mainPreferences.getBoolean("starsLocked", true);
         transcribeButtonPressed = mainPreferences.getInt("transcribeButtonPressed", 0);
         forumUpgradeParticipantsMin = mainPreferences.getInt("forumUpgradeParticipantsMin", 200);
         topicsPinnedLimit = mainPreferences.getInt("topicsPinnedLimit", 3);
@@ -1675,7 +1665,6 @@ public class MessagesController extends BaseController implements NotificationCe
         videoIgnoreAltDocuments = mainPreferences.getBoolean("videoIgnoreAltDocuments", false);
         disableBotFullscreenBlur = mainPreferences.getBoolean("disableBotFullscreenBlur", false);
         tonBlockchainExplorerUrl = mainPreferences.getString("tonBlockchainExplorerUrl", "https://tonviewer.com/");
-        starsPaidMessageAmountMax = mainPreferences.getLong("starsPaidMessageAmountMax", 10_000L);
         stargiftsPinnedToTopLimit = mainPreferences.getInt("stargiftsPinnedToTopLimit", 6);
         freezeSinceDate = mainPreferences.getLong("freezeSinceDate", 0L);
         freezeUntilDate = mainPreferences.getLong("freezeUntilDate", 0L);
@@ -1687,7 +1676,6 @@ public class MessagesController extends BaseController implements NotificationCe
         translationsManualEnabled = mainPreferences.getString("translationsManualEnabled", "enabled");
         translationsAutoEnabled = mainPreferences.getString("translationsAutoEnabled", "enabled");
         whitelistedBots = mainPreferences.getStringSet("whitelistedBots", new HashSet<>()).stream().map(s -> tryParseLong(s, 0)).collect(Collectors.toCollection(HashSet::new));
-        starsGroupcallMessageAmountMax = mainPreferences.getInt("starsGroupcallMessageAmountMax", 10_000);
         starsGroupcallMessageLimits = parseTiersString(mainPreferences.getString("starsGroupcallMessageLimits", null));
         freezeAppealUrl = mainPreferences.getString("freezeAppealUrl", "t.me/spambot");
         enableGiftsInProfile = mainPreferences.getBoolean("enableGiftsInProfile", true);
@@ -1725,20 +1713,14 @@ public class MessagesController extends BaseController implements NotificationCe
         showAnnualPerMonth = mainPreferences.getBoolean("showAnnualPerMonth", false);
         canEditFactcheck = mainPreferences.getBoolean("canEditFactcheck", false);
         factcheckLengthLimit = mainPreferences.getInt("factcheckLengthLimit", 1024);
-        starsRevenueWithdrawalMin = mainPreferences.getLong("starsRevenueWithdrawalMin", 1000);
-        starsPaidPostAmountMax = mainPreferences.getLong("starsPaidPostAmountMax", 10_000);
         botPreviewMediasMax = mainPreferences.getInt("botPreviewMediasMax", 10);
         webAppAllowedProtocols = mainPreferences.getStringSet("webAppAllowedProtocols", new HashSet<>(Arrays.asList("http", "https")));
         ignoreRestrictionReasons = mainPreferences.getStringSet("ignoreRestrictionReasons", new HashSet<>(Arrays.asList()));
         tonProxyAddress = mainPreferences.getString("tonProxyAddress", "magic.org");
         weatherSearchUsername = mainPreferences.getString("weatherSearchUsername", "izweatherbot");
         storyWeatherPreload = mainPreferences.getBoolean("storyWeatherPreload", true);
-        starsGiftsEnabled = mainPreferences.getBoolean("starsGiftsEnabled", true);
         stargiftsBlocked = mainPreferences.getBoolean("stargiftsBlocked", true); // !BuildVars.DEBUG_VERSION);
-        starsPaidReactionAmountMax = mainPreferences.getLong("starsPaidReactionAmountMax", 10_000L);
-        starsSubscriptionAmountMax = mainPreferences.getLong("starsSubscriptionAmountMax", 2500L);
         starsUsdSellRate1000 = mainPreferences.getFloat("starsUsdSellRate1000", 2000);
-        starsUsdWithdrawRate1000 = mainPreferences.getFloat("starsUsdWithdrawRate1000", 1200);
         botVerificationDescriptionLengthLimit = mainPreferences.getInt("botVerificationDescriptionLengthLimit", 70);
         stargiftsCraftAttributesPermilles = Arrays.stream(mainPreferences.getString("stargiftsCraftAttributesPermilles", "90,,80,200,,70,190,460,,60,180,450,1000").split(",,"))
                 .map(r -> Arrays.stream(r.split(","))
@@ -2729,16 +2711,6 @@ public class MessagesController extends BaseController implements NotificationCe
                         if (premiumLocked != ((TLRPC.TL_jsonBool) value.value).value) {
                             premiumLocked = ((TLRPC.TL_jsonBool) value.value).value;
                             editor.putBoolean("premiumLocked", premiumLocked);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "stars_purchase_blocked": {
-                    if (value.value instanceof TLRPC.TL_jsonBool) {
-                        if (starsLocked != ((TLRPC.TL_jsonBool) value.value).value) {
-                            starsLocked = ((TLRPC.TL_jsonBool) value.value).value;
-                            editor.putBoolean("starsLocked", starsLocked);
                             changed = true;
                         }
                     }
@@ -3888,17 +3860,6 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
-                case "stars_paid_message_amount_max": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (starsPaidMessageAmountMax != (long) num.value) {
-                            starsPaidMessageAmountMax = (long) num.value;
-                            editor.putLong("starsPaidMessageAmountMax", starsPaidMessageAmountMax);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
                 case "stargifts_pinned_to_top_limit": {
                     if (value.value instanceof TLRPC.TL_jsonNumber) {
                         TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
@@ -4254,28 +4215,6 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
-                case "stars_revenue_withdrawal_min": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if ((long) num.value != starsRevenueWithdrawalMin) {
-                            starsRevenueWithdrawalMin = (long) num.value;
-                            editor.putLong("starsRevenueWithdrawalMin", starsRevenueWithdrawalMin);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "stars_paid_post_amount_max": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if ((long) num.value != starsPaidPostAmountMax) {
-                            starsPaidPostAmountMax = (long) num.value;
-                            editor.putLong("starsPaidPostAmountMax", starsPaidPostAmountMax);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
                 case "bot_preview_medias_max": {
                     if (value.value instanceof TLRPC.TL_jsonNumber) {
                         TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
@@ -4339,17 +4278,6 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
-                case "stars_gifts_enabled": {
-                    if (value.value instanceof TLRPC.TL_jsonBool) {
-                        TLRPC.TL_jsonBool bool = (TLRPC.TL_jsonBool) value.value;
-                        if (bool.value != starsGiftsEnabled) {
-                            starsGiftsEnabled = bool.value;
-                            editor.putBoolean("starsGiftsEnabled", starsGiftsEnabled);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
                 case "stargifts_blocked": {
                     if (value.value instanceof TLRPC.TL_jsonBool) {
                         TLRPC.TL_jsonBool bool = (TLRPC.TL_jsonBool) value.value;
@@ -4361,45 +4289,12 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
-                case "stars_paid_reaction_amount_max": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if ((long) num.value != starsPaidReactionAmountMax) {
-                            starsPaidReactionAmountMax = (long) num.value;
-                            editor.putLong("starsPaidReactionAmountMax", starsPaidReactionAmountMax);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "stars_subscription_amount_max": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if ((long) num.value != starsSubscriptionAmountMax) {
-                            starsSubscriptionAmountMax = (long) num.value;
-                            editor.putLong("starsSubscriptionAmountMax", starsSubscriptionAmountMax);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
                 case "stars_usd_sell_rate_x1000": {
                     if (value.value instanceof TLRPC.TL_jsonNumber) {
                         TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
                         if (Math.abs(num.value - starsUsdSellRate1000) > 0.001f) {
                             starsUsdSellRate1000 = (float) num.value;
                             editor.putFloat("starsUsdSellRate1000", starsUsdSellRate1000);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "stars_usd_withdraw_rate_x1000": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (Math.abs(num.value - starsUsdWithdrawRate1000) > 0.001f) {
-                            starsUsdWithdrawRate1000 = (float) num.value;
-                            editor.putFloat("starsUsdWithdrawRate1000", starsUsdWithdrawRate1000);
                             changed = true;
                         }
                     }
@@ -4559,16 +4454,6 @@ public class MessagesController extends BaseController implements NotificationCe
                         whitelistedBots = set;
                         editor.putStringSet("whitelistedBots", set.stream().map(id -> String.valueOf(id)).collect(Collectors.toCollection(HashSet::new)));
                         changed = true;
-                    }
-                    break;
-                }
-                case "stars_groupcall_message_amount_max": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        final TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (starsGroupcallMessageAmountMax != (int) num.value) {
-                            editor.putInt("starsGroupcallMessageAmountMax", starsGroupcallMessageAmountMax = (int) num.value);
-                            changed = true;
-                        }
                     }
                     break;
                 }
@@ -5176,7 +5061,6 @@ public class MessagesController extends BaseController implements NotificationCe
         smsjobsStickyNotificationEnabled = false;
         showAnnualPerMonth = false;
         canEditFactcheck = false;
-        starsLocked = true;
         factcheckLengthLimit = 1024;
         videoIgnoreAltDocuments = false;
         freezeSinceDate = 0L;
@@ -5186,7 +5070,6 @@ public class MessagesController extends BaseController implements NotificationCe
         verifyAgeCountry = "GB";
         ignoreRestrictionReasons = new HashSet<String>();
         mainPreferences.edit()
-            .remove("starsLocked")
             .remove("getfileExperimentalParams")
             .remove("smsjobsStickyNotificationEnabled")
             .remove("channelRevenueWithdrawalEnabled")
