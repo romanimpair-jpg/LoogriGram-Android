@@ -5614,8 +5614,9 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
     //
     // The callers all mean "check for updates now", so they keep working and
     // now drive LoogriGramUpdate, which reads this fork's own GitHub releases.
-    // force comes from a caller that asked explicitly; the startup call passes
-    // false and is rate limited to once a day inside the updater.
+    // force comes from a caller that asked explicitly. The resume calls pass
+    // false: the updater always asks on the first of a run, then at most once
+    // an hour.
     public void checkAppUpdate(boolean force, Browser.Progress progress) {
         LoogriGramUpdate.getInstance().checkForUpdate(force);
         if (progress != null) {

@@ -39,6 +39,9 @@ import java.net.URL;
  *   LOOGRIGRAM_TAG and tags the release with the same string; comparing them is
  *   the whole check. A locally built APK carries "dev", which matches no
  *   release, so it never tries to update itself.
+ * - GitHub's answer is the whole truth about what is on offer. A newer release
+ *   supersedes an update already found or downloaded, and one no longer marked
+ *   Latest stops being offered, so a bad release is fixed by the next one.
  * - Installing is a PackageInstaller session that asks for no user action.
  *   Android 12+ honours that for an app updating itself once the user has
  *   allowed it to install unknown apps - a one-time switch in settings that
@@ -109,6 +112,9 @@ public class LoogriGramUpdate {
 
     /** False until this process has asked once; that first ask is never skipped. */
     private boolean checkedThisRun;
+
+    /** A check is in flight. Not a state: a waiting download keeps its own. */
+    private boolean checking;
 
     /** Waiting on the check in flight: the Settings row that asked for it. */
     private Utilities.Callback<Integer> pendingResult;
@@ -207,7 +213,9 @@ public class LoogriGramUpdate {
             }
             return;
         }
-        if (state == STATE_DOWNLOADING || state == STATE_READY || state == STATE_INSTALLING) {
+        // only work in flight holds the check off; a download waiting to be
+        // installed does not, or a newer release could never replace it
+        if (state == STATE_DOWNLOADING || state == STATE_INSTALLING) {
             if (onResult != null) {
                 onResult.run(RESULT_FOUND);
             }
@@ -216,7 +224,7 @@ public class LoogriGramUpdate {
         if (onResult != null) {
             pendingResult = onResult;
         }
-        if (state == STATE_CHECKING) {
+        if (checking) {
             return;
         }
         final long last = getPrefs().getLong("lastCheckTime", 0);
@@ -224,7 +232,11 @@ public class LoogriGramUpdate {
             return;
         }
         checkedThisRun = true;
-        setState(STATE_CHECKING);
+        checking = true;
+        if (state != STATE_READY) {
+            // the Install tab stays up while this asks
+            setState(STATE_CHECKING);
+        }
         Utilities.globalQueue.postRunnable(this::checkInternal);
     }
 
@@ -275,6 +287,7 @@ public class LoogriGramUpdate {
         final long foundSize = size;
         final boolean ok = answered;
         AndroidUtilities.runOnUIThread(() -> {
+            checking = false;
             final Utilities.Callback<Integer> onResult = pendingResult;
             pendingResult = null;
             // only an answer restarts the clock; a failed request (no network,
@@ -282,7 +295,22 @@ public class LoogriGramUpdate {
             if (ok) {
                 getPrefs().edit().putLong("lastCheckTime", System.currentTimeMillis()).apply();
             }
-            if (foundTag != null && foundUrl != null && isNewer(foundTag)) {
+            final boolean found = foundTag != null && foundUrl != null && isNewer(foundTag);
+            // Install was tapped while this asked; or the download waiting is
+            // still the newest, or nobody answered, which says nothing about it
+            final boolean keep = state == STATE_INSTALLING
+                || state == STATE_READY && (!ok || found && foundTag.equals(availableTag));
+            if (keep) {
+                if (onResult != null) {
+                    onResult.run(RESULT_FOUND);
+                }
+                return;
+            }
+            if (state == STATE_READY) {
+                // superseded by a newer release, or no longer offered at all
+                forgetDownload();
+            }
+            if (found) {
                 availableTag = foundTag;
                 availableUrl = foundUrl;
                 availableSize = foundSize;
@@ -300,6 +328,17 @@ public class LoogriGramUpdate {
                     onResult.run(RESULT_FOUND);
                 }
             } else {
+                if (ok) {
+                    // nothing newer on offer, so the next start offers nothing
+                    availableTag = null;
+                    availableUrl = null;
+                    availableSize = 0;
+                    getPrefs().edit()
+                        .remove("availableTag")
+                        .remove("availableUrl")
+                        .remove("availableSize")
+                        .apply();
+                }
                 // a failed check keeps an update already found on offer
                 setState(!ok && availableTag != null && isNewer(availableTag) ? STATE_AVAILABLE : STATE_NONE);
                 if (onResult != null) {

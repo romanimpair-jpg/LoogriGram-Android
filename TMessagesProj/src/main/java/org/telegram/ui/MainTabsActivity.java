@@ -301,8 +301,8 @@ public class MainTabsActivity extends ViewPagerActivity implements NotificationC
         // LoogriGram: an update downloaded in an earlier run is still waiting,
         // so put the tab back and offer the install once per run - that is the
         // "it installs itself next time you open the app" half of the flow.
-        // Android still shows its own installer dialog; nothing installs
-        // silently.
+        // Nothing installs until this prompt is answered; Android adds its own
+        // dialog only until the app is allowed to install unknown apps.
         updateUpdateTab(false);
         if (!askedToInstallThisRun && LoogriGramUpdate.getInstance().getState() == LoogriGramUpdate.STATE_READY) {
             askedToInstallThisRun = true;
