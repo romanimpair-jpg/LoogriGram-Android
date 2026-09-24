@@ -81,8 +81,6 @@ import com.google.android.exoplayer2.extractor.jpeg.XmpMotionPhotoDescriptionPar
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 
 import org.telegram.messenger.audioinfo.AudioInfo;
-import org.telegram.messenger.chromecast.ChromecastFileServer;
-import org.telegram.messenger.chromecast.ChromecastMedia;
 import org.telegram.messenger.video.MediaCodecVideoConvertor;
 import org.telegram.messenger.voip.VoIPService;
 import org.telegram.tgnet.ConnectionsManager;
