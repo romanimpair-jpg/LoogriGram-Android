@@ -260,7 +260,6 @@ import org.telegram.ui.Components.Forum.ForumUtilities;
 import org.telegram.ui.Components.Premium.GiftPremiumBottomSheet;
 import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.Components.Premium.PremiumPreviewBottomSheet;
-import org.telegram.ui.Components.Premium.boosts.BoostDialogs;
 import org.telegram.ui.Components.Premium.boosts.GiftInfoBottomSheet;
 import org.telegram.ui.Components.Premium.boosts.PremiumPreviewGiftLinkBottomSheet;
 import org.telegram.ui.Components.Reactions.ChatSelectionReactionMenuOverlay;
@@ -15049,10 +15048,6 @@ public class ChatActivity extends BaseFragment implements
                     if (messageObjectsToForward.size() == 1) {
                         messageObjectToReply = messageObjectsToForward.get(0);
                     }
-                } else if (type == MessageObject.TYPE_GIVEAWAY) {
-                    text = LocaleController.getString(R.string.BoostingGiveaway);
-                } else if (type == MessageObject.TYPE_GIVEAWAY_RESULTS) {
-                    text = LocaleController.getString(R.string.BoostingGiveawayResults);
                 } else if (type == MessageObject.TYPE_GEO) {
                     text = LocaleController.formatPluralString("PreviewForwardLocation", messageObjectsToForward.size());
                 } else if (type == MessageObject.TYPE_VIDEO) {
@@ -40488,28 +40483,9 @@ public class ChatActivity extends BaseFragment implements
         @Override
         public void didPressInstantButton(ChatMessageCell cell, int type) {
             MessageObject messageObject = cell.getMessageObject();
-            if (type == 19) {
-                if (progressDialogCurrent != null) {
-                    progressDialogCurrent.cancel(true);
-                }
-                progressDialogCurrent = cell == null || cell.getMessageObject() == null ? null : new Browser.Progress() {
-                    @Override
-                    public void init() {
-                        progressDialogAtMessageId = cell.getMessageObject().getId();
-                        progressDialogAtMessageType = PROGRESS_INSTANT;
-                        progressDialogLinkSpan = null;
-                        cell.invalidate();
-                    }
-
-                    @Override
-                    public void end(boolean replaced) {
-                        if (!replaced) {
-                            AndroidUtilities.runOnUIThread(ChatActivity.this::resetProgressDialogLoading, 250);
-                        }
-                    }
-                };
-                BoostDialogs.openGiveAwayStatusDialog(messageObject, progressDialogCurrent, getContext(), getResourceProvider());
-            } else if (type == 21) {
+            // LoogriGram: type 19 was a giveaway's "Learn more", its status
+            // dialog. Giveaways are held unshown; see ChatMessageCell.
+            if (type == 21) {
                 didPressAppUpdateButtonInternal();
             } else if (type == ChatMessageCell.INSTANT_BUTTON_TYPE_ADD_OPTION) {
                 pollAddOptionModeComplete(cell);
@@ -40675,24 +40651,6 @@ public class ChatActivity extends BaseFragment implements
                     };
                     Browser.openUrl(getParentActivity(), Uri.parse(webPage.url), true, true, false, progressDialogCurrent, null, false, true, false);
                 }
-            }
-        }
-
-        @Override
-        public void didPressGiveawayChatButton(ChatMessageCell cell, int pressedPos) {
-            if (cell.getMessageObject().messageOwner.media instanceof TLRPC.TL_messageMediaGiveaway) {
-                final TLRPC.TL_messageMediaGiveaway giveaway = (TLRPC.TL_messageMediaGiveaway) cell.getMessageObject().messageOwner.media;
-                final long channelId = giveaway.channels.get(pressedPos);
-                if (dialog_id != -channelId) {
-                    presentFragment(ChatActivity.of(-channelId));
-                } else {
-                    avatarContainer.openProfile(false);
-                }
-            }
-            if (cell.getMessageObject().messageOwner.media instanceof TLRPC.TL_messageMediaGiveawayResults) {
-                TLRPC.TL_messageMediaGiveawayResults giveaway = (TLRPC.TL_messageMediaGiveawayResults) cell.getMessageObject().messageOwner.media;
-                long id = giveaway.winners.get(pressedPos);
-                presentFragment(ProfileActivity.of(id));
             }
         }
 

@@ -165,7 +165,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -8041,30 +8040,8 @@ public class AlertsCreator {
             }
         }
 
-        boolean isActiveGiveawayAndOwner = false;
-        String giveawayEndDate = null;
-        if (selectedMessage != null) {
-            isActiveGiveawayAndOwner = selectedMessage.isGiveaway() && !selectedMessage.isForwarded();
-            if (isActiveGiveawayAndOwner) {
-                TLRPC.TL_messageMediaGiveaway giveaway = (TLRPC.TL_messageMediaGiveaway) selectedMessage.messageOwner.media;
-                long untilDate = giveaway.until_date * 1000L;
-                giveawayEndDate = LocaleController.getInstance().getFormatterGiveawayMonthDayYear().format(new Date(untilDate));
-                isActiveGiveawayAndOwner = System.currentTimeMillis() < untilDate;
-            }
-        } else if (count == 1) {
-            for (int a = 1; a >= 0; a--) {
-                for (int b = 0; b < selectedMessages[a].size(); b++) {
-                    MessageObject msg = selectedMessages[a].valueAt(b);
-                    isActiveGiveawayAndOwner = msg.isGiveaway() && !msg.isForwarded();
-                    if (isActiveGiveawayAndOwner) {
-                        TLRPC.TL_messageMediaGiveaway giveaway = (TLRPC.TL_messageMediaGiveaway) msg.messageOwner.media;
-                        long untilDate = giveaway.until_date * 1000L;
-                        giveawayEndDate = LocaleController.getInstance().getFormatterGiveawayMonthDayYear().format(new Date(untilDate));
-                        isActiveGiveawayAndOwner = System.currentTimeMillis() < untilDate;
-                    }
-                }
-            }
-        }
+        // LoogriGram: deleting a running giveaway of ours asked first, with its
+        // end date. A giveaway is held unshown, so nothing selected is one.
 
         if (hasUnsafePaidSuggestedPostStars) {
             final int hours = (int) MessagesController.getInstance(currentAccount).config.starsSuggestedPostAgeMin.get(TimeUnit.HOURS);
@@ -8078,10 +8055,6 @@ public class AlertsCreator {
             builder.setTitle(getString(R.string.SuggestionTONWillBeLost));
             builder.setMessage(replaceTags(LocaleController.formatString(R.string.SuggestionTONWillBeLostInfo, hours)));
             builder.setPositiveButton(LocaleController.getString(R.string.SuggestionStarsWillBeLostDelete), deleteAction);
-        } else if (isActiveGiveawayAndOwner && !isSavedMessages) {
-            builder.setTitle(LocaleController.getString(R.string.BoostingGiveawayDeleteMsgTitle));
-            builder.setMessage(replaceTags(LocaleController.formatString(R.string.BoostingGiveawayDeleteMsgText, giveawayEndDate)));
-            builder.setNeutralButton(LocaleController.getString(R.string.Delete), deleteAction);
         } else {
             builder.setPositiveButton(LocaleController.getString(isSavedMessages ? R.string.Remove : R.string.Delete), deleteAction);
         }

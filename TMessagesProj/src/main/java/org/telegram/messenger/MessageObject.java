@@ -157,9 +157,9 @@ public class MessageObject {
     public static final int TYPE_STORY = 23;
     public static final int TYPE_STORY_MENTION = 24;
     public static final int TYPE_GIFT_PREMIUM_CHANNEL = 25;
-    public static final int TYPE_GIVEAWAY = 26;
+    // LoogriGram: 26 and 28 were TYPE_GIVEAWAY and TYPE_GIVEAWAY_RESULTS; a
+    // giveaway is held unshown, so neither was assigned any more.
     public static final int TYPE_JOINED_CHANNEL = 27; // recommendations list
-    public static final int TYPE_GIVEAWAY_RESULTS = 28;
     public static final int TYPE_PAID_MEDIA = 29; // messageMediaPaidMedia with stars
     public static final int TYPE_GIFT_STARS = 30;
     public static final int TYPE_GIFT_THEME_UPDATE = 31;
@@ -6619,10 +6619,6 @@ public class MessageObject {
             } else if (getMedia(messageOwner).ttl_seconds != 0 && (getMedia(messageOwner).photo instanceof TLRPC.TL_photoEmpty || getDocument() instanceof TLRPC.TL_documentEmpty || getMedia(messageOwner) instanceof TLRPC.TL_messageMediaDocument && getDocument() == null || forceExpired)) {
                 contentType = 1;
                 type = TYPE_DATE;
-            } else if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaGiveaway) {
-                type = TYPE_GIVEAWAY;
-            } else if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaGiveawayResults) {
-                type = TYPE_GIVEAWAY_RESULTS;
             } else if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaDice) {
                 type = TYPE_ANIMATED_STICKER;
                 if (getMedia(messageOwner).document == null) {
@@ -12360,18 +12356,6 @@ public class MessageObject {
         return type == MessageObject.TYPE_STORY_MENTION && !isExpiredStory();
     }
 
-    public boolean isGiveaway() {
-        return type == MessageObject.TYPE_GIVEAWAY;
-    }
-
-    public boolean isGiveawayOrGiveawayResults() {
-        return isGiveaway() || isGiveawayResults();
-    }
-
-    public boolean isGiveawayResults() {
-        return type == MessageObject.TYPE_GIVEAWAY_RESULTS;
-    }
-
     public boolean isAnyGift() {
         return type == MessageObject.TYPE_GIFT_STARS || type == MessageObject.TYPE_GIFT_PREMIUM || type == MessageObject.TYPE_GIFT_PREMIUM_CHANNEL;
     }
@@ -12538,7 +12522,7 @@ public class MessageObject {
         final boolean hasLinkPreview = !isRestrictedMessage && MessageObject.getMedia(messageOwner) instanceof TLRPC.TL_messageMediaWebPage && MessageObject.getMedia(messageOwner).webpage instanceof TLRPC.TL_webPage;
         final TLRPC.WebPage webpage = hasLinkPreview ? MessageObject.getMedia(messageOwner).webpage : null;
         final String webpageType = webpage != null ? webpage.type : null;
-        return hasLinkPreview && !isGiveawayOrGiveawayResults() &&
+        return hasLinkPreview &&
             webpage != null && (webpage.photo != null || isVideoDocument(webpage.document)) &&
             !(webpage != null && TextUtils.isEmpty(webpage.description) && TextUtils.isEmpty(webpage.title)) &&
             !"telegram_megagroup".equals(webpageType) &&     // drawInstantViewType = 2
