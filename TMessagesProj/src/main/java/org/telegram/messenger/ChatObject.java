@@ -2081,10 +2081,6 @@ public class ChatObject {
         return (isChannelAndNotMegaGroup(chat) || isMegagroup(chat)) && !isMonoForum(chat) && !false;
     }
 
-    public static boolean isBoosted(TLRPC.ChatFull chatFull) {
-        return chatFull != null && chatFull.boosts_applied > 0;
-    }
-
     public static boolean isForum(TLRPC.Chat chat) {
         return chat != null && chat.forum;
     }

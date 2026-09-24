@@ -140,7 +140,6 @@ import org.telegram.messenger.BotInlineKeyboard;
 import org.telegram.messenger.BotWebViewVibrationEffect;
 import org.telegram.messenger.BuildConfig;
 import org.telegram.messenger.BuildVars;
-import org.telegram.messenger.ChannelBoostsController;
 import org.telegram.messenger.ChatMessageSharedResources;
 import org.telegram.messenger.ChatMessagesMetadataController;
 import org.telegram.messenger.ChatObject;
@@ -508,9 +507,6 @@ public class ChatActivity extends BaseFragment implements
     private HintView2 factCheckHint;
     private HintView2 videoConversionTimeHint;
     private float videoConversionTimeHintY;
-
-    private TL_stories.TL_premium_boostsStatus boostsStatus;
-    private ChannelBoostsController.CanApplyBoost canApplyBoosts;
 
     private boolean showTapForForwardingOptionsHit;
     private Runnable tapForForwardingOptionsHitRunnable;
@@ -1623,7 +1619,6 @@ public class ChatActivity extends BaseFragment implements
     private final static int auto_delete_timer = 26;
     private final static int change_colors = 27;
     private final static int tag_message = 28;
-    private final static int boost_group = 29;
 
     private final static int bot_help = 30;
     private final static int bot_settings = 31;
@@ -2920,7 +2915,6 @@ public class ChatActivity extends BaseFragment implements
             .add(NotificationCenter.userInfoDidLoad)
             .add(NotificationCenter.pinnedInfoDidLoad)
             .add(NotificationCenter.topicsDidLoaded)
-            .add(NotificationCenter.chatWasBoostedByUser)
             .add(NotificationCenter.channelRightsUpdated)
             .add(NotificationCenter.audioRecordTooShort)
             .add(NotificationCenter.didUpdateReactions)
@@ -3831,14 +3825,6 @@ public class ChatActivity extends BaseFragment implements
                     } catch (Exception e) {
                         FileLog.e(e);
                     }
-                } else if (id == boost_group) {
-                    if (ChatObject.hasAdminRights(currentChat)) {
-                        BoostsActivity boostsActivity = new BoostsActivity(dialog_id);
-                        boostsActivity.setBoostsStatus(boostsStatus);
-                        presentFragment(boostsActivity);
-                    } else {
-                        getNotificationCenter().postNotificationName(NotificationCenter.openBoostForUsersDialog, dialog_id);
-                    }
                 } else if (id == report) {
                     ReportBottomSheet.openChat(ChatActivity.this);
                 } else if (id == star) {
@@ -4349,10 +4335,9 @@ public class ChatActivity extends BaseFragment implements
             if (searchItem != null) {
                 headerItem.lazilyAddSubItem(search, R.drawable.msg_search, LocaleController.getString(R.string.Search));
             }
-            if (ChatObject.isBoostSupported(currentChat) && (getUserConfig().isPremium() || ChatObject.isBoosted(chatInfo) || ChatObject.hasAdminRights(currentChat))) {
-                RLottieDrawable drawable = new RLottieDrawable(R.raw.boosts, "" + R.raw.boosts, dp(24), dp(24));
-                headerItem.lazilyAddSubItem(boost_group, drawable, LocaleController.getString(ChatObject.isChannelAndNotMegaGroup(currentChat) ? R.string.BoostingBoostChannelMenu : R.string.BoostingBoostGroupMenu));
-            }
+            // LoogriGram: "Boost channel" / "Boost group" stood here - the boost
+            // sheet for a member, the boosts screen for an admin. Boosts come
+            // from Premium, which is honoured for nobody.
             translateItem = headerItem.lazilyAddSubItem(translate, R.drawable.msg_translate, LocaleController.getString(R.string.TranslateMessage));
             updateTranslateItemVisibility();
             if (currentChat != null && !currentChat.creator && !ChatObject.hasAdminRights(currentChat)) {
@@ -22332,15 +22317,6 @@ public class ChatActivity extends BaseFragment implements
                 long prevLinkedChatId = chatInfo != null ? chatInfo.linked_chat_id : 0;
                 chatInfo = chatFull;
                 gotChatInfo();
-                if (ChatObject.isBoostSupported(currentChat) && !ChatObject.isMonoForum(currentChat) /*chatMode != MODE_SUGGESTIONS*/) {
-                    getMessagesController().getBoostsController().getBoostsStats(dialog_id, boostsStatus -> {
-                        if (boostsStatus == null) {
-                            return;
-                        }
-                        this.boostsStatus = boostsStatus;
-                        getMessagesController().getBoostsController().userCanBoostChannel(dialog_id, boostsStatus, canApplyBoost -> this.canApplyBoosts = canApplyBoost);
-                    });
-                }
                 groupCall = getMessagesController().getGroupCall(currentChat.id, true);
                 if (ChatObject.isChannel(currentChat) && currentChat.megagroup && fragmentContextView != null) {
                     fragmentContextView.checkCall(openAnimationStartTime == 0 || SystemClock.elapsedRealtime() < openAnimationStartTime + 150);
@@ -23987,11 +23963,6 @@ public class ChatActivity extends BaseFragment implements
                     getMessagesController().markReactionsAsRead(dialogId, getTopicId());
                 }
                 updateReactionsMentionButton(true);
-            }
-        } else if (id == NotificationCenter.chatWasBoostedByUser) {
-            if (dialog_id == (long) args[2]) {
-                boostsStatus = (TL_stories.TL_premium_boostsStatus) args[0];
-                canApplyBoosts = (ChannelBoostsController.CanApplyBoost) args[1];
             }
         } else if (id == NotificationCenter.topicsDidLoaded) {
             if (getMessagesController().isMonoForumWithManageRights(dialog_id)) {

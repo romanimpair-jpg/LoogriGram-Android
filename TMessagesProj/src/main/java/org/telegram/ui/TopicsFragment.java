@@ -75,7 +75,6 @@ import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_account;
-import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
 import org.telegram.ui.ActionBar.ActionBarMenuItem;
@@ -117,7 +116,6 @@ import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.ListView.AdapterWithDiffUtils;
 import org.telegram.ui.Components.NumberTextView;
 import org.telegram.ui.Components.PullForegroundDrawable;
-import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.RadialProgressView;
 import org.telegram.ui.Components.RecyclerAnimationScrollHelper;
 import org.telegram.ui.Components.RecyclerItemsEnterAnimator;
@@ -200,7 +198,6 @@ public class TopicsFragment extends BaseFragment implements NotificationCenter.N
     private static final int delete_chat_id = 11;
     private static final int hide_id = 12;
     private static final int show_id = 13;
-    private static final int boost_group_id = 14;
     private static final int report = 15;
 
     private boolean removeFragmentOnTransitionEnd;
@@ -216,11 +213,9 @@ public class TopicsFragment extends BaseFragment implements NotificationCenter.N
     private ActionBarMenuSubItem createTopicSubmenu;
     private ActionBarMenuSubItem addMemberSubMenu;
     private ActionBarMenuSubItem deleteChatSubmenu;
-    private ActionBarMenuSubItem boostGroupSubmenu;
     private ActionBarMenuSubItem reportSubmenu;
     private boolean bottomPannelVisible = true;
     private float searchAnimationProgress = 0f;
-    private TL_stories.TL_premium_boostsStatus boostsStatus;
 
     private long startArchivePullingTime;
     private boolean scrollingManually;
@@ -703,17 +698,6 @@ public class TopicsFragment extends BaseFragment implements NotificationCenter.N
                             bottomSheet.show();
                         }
                         break;
-                    case boost_group_id: {
-                        TLRPC.Chat chatLocal = getMessagesController().getChat(chatId);
-                        if (ChatObject.hasAdminRights(chatLocal)) {
-                            BoostsActivity boostsActivity = new BoostsActivity(-chatId);
-                            boostsActivity.setBoostsStatus(boostsStatus);
-                            presentFragment(boostsActivity);
-                        } else {
-                            getNotificationCenter().postNotificationName(NotificationCenter.openBoostForUsersDialog, -chatId);
-                        }
-                        break;
-                    }
                     case create_topic_id:
                         TopicCreateFragment fragment = TopicCreateFragment.create(chatId, 0);
                         presentFragment(fragment);
@@ -869,7 +853,7 @@ public class TopicsFragment extends BaseFragment implements NotificationCenter.N
         other.setContentDescription(getString(R.string.AccDescrMoreOptions));
         other.addSubItem(toggle_id, R.drawable.msg_discussion, getString(R.string.TopicViewAsMessages));
         addMemberSubMenu = other.addSubItem(add_member_id, R.drawable.msg_addcontact, getString(R.string.AddMember));
-        boostGroupSubmenu = other.addSubItem(boost_group_id, 0, new RLottieDrawable(R.raw.boosts, "" + R.raw.boosts, AndroidUtilities.dp(24), AndroidUtilities.dp(24)), getString(R.string.BoostingBoostGroupMenu), true, false);
+        // LoogriGram: "Boost group" stood here, as in the chat's own menu.
         createTopicSubmenu = other.addSubItem(create_topic_id, R.drawable.msg_topic_create, getString(R.string.CreateTopic));
         reportSubmenu = other.addSubItem(report, R.drawable.msg_report, getString(R.string.ReportChat));
         deleteChatSubmenu = other.addSubItem(delete_chat_id, R.drawable.msg_leave, getString(R.string.LeaveMegaMenu), themeDelegate);
@@ -1504,10 +1488,6 @@ public class TopicsFragment extends BaseFragment implements NotificationCenter.N
         }
         updateChatInfo();
         updateColors();
-
-        if (ChatObject.isBoostSupported(getCurrentChat())) {
-            getMessagesController().getBoostsController().getBoostsStats(-chatId, boostsStatus -> this.boostsStatus = boostsStatus);
-        }
 
         ViewCompat.setOnApplyWindowInsetsListener(fragmentView, this::onApplyWindowInsets);
         return fragmentView;
@@ -2638,7 +2618,6 @@ public class TopicsFragment extends BaseFragment implements NotificationCenter.N
 
         other.setVisibility(openedForSelect ? View.GONE : View.VISIBLE);
         addMemberSubMenu.setVisibility(ChatObject.canAddUsers(chatLocal) ? View.VISIBLE : View.GONE);
-        boostGroupSubmenu.setVisibility(ChatObject.isBoostSupported(chatLocal) && (getUserConfig().isPremium() || ChatObject.isBoosted(chatFull) || ChatObject.hasAdminRights(chatLocal)) ? View.VISIBLE : View.GONE);
         deleteChatSubmenu.setVisibility(chatLocal != null && !chatLocal.creator && !ChatObject.isNotInChat(chatLocal) ? View.VISIBLE : View.GONE);
         reportSubmenu.setVisibility(chatLocal != null && !chatLocal.creator && !ChatObject.hasAdminRights(chatLocal) ? View.VISIBLE : View.GONE);
         updateCreateTopicButton(true);
@@ -2689,7 +2668,6 @@ public class TopicsFragment extends BaseFragment implements NotificationCenter.N
     public boolean onFragmentCreate() {
         getMessagesController().loadFullChat(chatId, 0, true);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.storiesUpdated);
-        NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.chatWasBoostedByUser);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.chatInfoDidLoad);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.topicsDidLoaded);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.updateInterfaces);
@@ -2723,7 +2701,6 @@ public class TopicsFragment extends BaseFragment implements NotificationCenter.N
     public void onFragmentDestroy() {
         notificationsLocker.unlock();
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.storiesUpdated);
-        NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.chatWasBoostedByUser);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.chatInfoDidLoad);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.topicsDidLoaded);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.updateInterfaces);
@@ -2818,10 +2795,6 @@ public class TopicsFragment extends BaseFragment implements NotificationCenter.N
             }
         } else if (id == NotificationCenter.storiesUpdated) {
             updateChatInfo();
-        } else if (id == NotificationCenter.chatWasBoostedByUser) {
-            if (chatId == -(long) args[2]) {
-                boostsStatus = (TL_stories.TL_premium_boostsStatus) args[0];
-            }
         } else if (id == NotificationCenter.topicsDidLoaded) {
             Long chatId = (Long) args[0];
             if (this.chatId == chatId) {
