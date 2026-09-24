@@ -10,7 +10,6 @@ package org.telegram.ui;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.LocaleController.formatString;
-import static org.telegram.ui.Components.Premium.LimitReachedBottomSheet.TYPE_BOOSTS_FOR_USERS;
 
 import android.Manifest;
 import android.animation.Animator;
@@ -98,7 +97,6 @@ import org.telegram.messenger.BotGuardHelper;
 import org.telegram.messenger.BotWebViewVibrationEffect;
 import org.telegram.messenger.BuildConfig;
 import org.telegram.messenger.BuildVars;
-import org.telegram.messenger.ChannelBoostsController;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.ContactsLoadingObserver;
@@ -159,7 +157,6 @@ import org.telegram.ui.ActionBar.BottomSheetTabsOverlay;
 import org.telegram.ui.ActionBar.DrawerLayoutContainer;
 import org.telegram.ui.ActionBar.INavigationLayout;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.Cells.LanguageCell;
 import org.telegram.ui.Components.ActivityWindowEmptyBackgroundDrawable;
 import org.telegram.ui.Components.AlertsCreator;
@@ -188,7 +185,6 @@ import org.telegram.ui.Components.PipRoundVideoView;
 import org.telegram.ui.Components.PipVideoOverlay;
 import org.telegram.ui.Components.Premium.LimitReachedBottomSheet;
 import org.telegram.ui.Components.Premium.boosts.BoostPagerBottomSheet;
-import org.telegram.ui.Components.Premium.boosts.GiftInfoBottomSheet;
 import org.telegram.ui.Components.Premium.boosts.UserSelectorBottomSheet;
 import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.RLottieImageView;
@@ -1279,7 +1275,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         currentAccount = UserConfig.selectedAccount;
         observersGroup = NotificationCenter.getInstance(currentAccount)
             .createObserversGroup(this)
-            .add(NotificationCenter.openBoostForUsersDialog)
             .add(NotificationCenter.appDidLogout)
             .add(NotificationCenter.mainUserInfoChanged)
             .add(NotificationCenter.attachMenuBotsDidLoad)
@@ -1485,9 +1480,11 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 
     @SuppressLint("Range")
     private boolean handleIntent(Intent intent, boolean isNew, boolean restore, boolean fromPassword, Browser.Progress progress, boolean rebuildFragments, boolean openedTelegram) {
-        if (GiftInfoBottomSheet.handleIntent(intent, progress)) {
-            return true;
-        }
+        // LoogriGram: GiftInfoBottomSheet.handleIntent caught Premium gift-code
+        // links here, t.me/giftcode and tg:giftcode, and offered to redeem the
+        // code. Premium is honoured for nobody, so they are links this client
+        // cannot open - see "giftcode/" below; tg:giftcode falls through to the
+        // unsupported branch with the other tg: links it has no screen for.
         if (UserSelectorBottomSheet.handleIntent(intent, progress)) {
             return true;
         }
@@ -1952,6 +1949,8 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                                                 // it gets the answer any link this client
                                                 // cannot open gets - see tg:invoice below.
                                                 unsupportedUrl = "invoice";
+                                            } else if (path.startsWith("giftcode/")) {
+                                                unsupportedUrl = "giftcode";
                                             } else if (path.startsWith("nft/")) {
                                                 uniqueGiftSlug = path.substring(path.indexOf('/') + 1);
                                             } else if (path.startsWith("bg/")) {
@@ -4110,13 +4109,9 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                             }
                         }
 
-                        if (isBoost) {
-                            TLRPC.Chat chat = MessagesController.getInstance(intentAccount).getChat(-peerId);
-                            if (ChatObject.isBoostSupported(chat)) {
-                                processBoostDialog(peerId, dismissLoading, progress);
-                                return;
-                            }
-                        }
+                        // LoogriGram: a boost link - t.me/boost/name, t.me/name?boost -
+                        // opened the "boost this channel" sheet here. It opens the
+                        // chat it names now, like any other link to it.
 
                         if (botAppStartParam != null) {
                             TLRPC.User user = MessagesController.getInstance(intentAccount).getUser(peerId);
@@ -5074,9 +5069,9 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                     args.putByteArray("poll_option_id", pollOptionId);
                 }
                 TLRPC.Chat chatLocal = MessagesController.getInstance(currentAccount).getChat(channelId);
-                if (chatLocal != null && ChatObject.isBoostSupported(chatLocal) && isBoost) {
-                    processBoostDialog(-channelId, dismissLoading, progress);
-                } else if (chatLocal != null && chatLocal.forum) {
+                // LoogriGram: as above, a private channel's boost link opens the
+                // channel rather than the boost sheet.
+                if (chatLocal != null && chatLocal.forum) {
                     openForumFromLink(-channelId, messageId, null, taskId, pollOptionId, () -> {
                         try {
                             dismissLoading.run();
@@ -5106,9 +5101,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                                             notFound = false;
                                             MessagesController.getInstance(currentAccount).putChats(res.chats, false);
                                             TLRPC.Chat chat = res.chats.get(0);
-                                            if (chat != null && isBoost && ChatObject.isBoostSupported(chat)) {
-                                                processBoostDialog(-channelId, null, progress);
-                                            } else if (chat != null && chat.forum) {
+                                            if (chat != null && chat.forum) {
                                                 if (threadId != null) {
                                                     openForumFromLink(-channelId, messageId, null, taskId, pollOptionId, null, 0, -1);
                                                 } else {
@@ -5351,63 +5344,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             AndroidUtilities.runOnUIThread(() -> {
                 MessagesController.getInstance(currentAccount).putUser(user, true);
                 open.run(user);
-            });
-        });
-    }
-
-    private void processBoostDialog(Long peerId, Runnable dismissLoading, Browser.Progress progress) {
-        processBoostDialog(peerId, dismissLoading, progress, null);
-    }
-
-    private void processBoostDialog(Long peerId, Runnable dismissLoading, Browser.Progress progress, ChatMessageCell chatMessageCell) {
-        ChannelBoostsController boostsController = MessagesController.getInstance(currentAccount).getBoostsController();
-        if (progress != null) {
-            progress.init();
-        }
-        boostsController.getBoostsStats(peerId, boostsStatus -> {
-            if (boostsStatus == null) {
-                if (progress != null) {
-                    progress.end();
-                }
-                if (dismissLoading != null) {
-                    dismissLoading.run();
-                }
-                return;
-            }
-            boostsController.userCanBoostChannel(peerId, boostsStatus, canApplyBoost -> {
-                if (progress != null) {
-                    progress.end();
-                }
-                final BaseFragment lastFragment = getLastFragmentIncludeMainTabs();
-                if (lastFragment == null) {
-                    return;
-                }
-                Theme.ResourcesProvider resourcesProvider = lastFragment.getResourceProvider();
-                if (lastFragment.getLastStoryViewer() != null && lastFragment.getLastStoryViewer().isFullyVisible()) {
-                    resourcesProvider = lastFragment.getLastStoryViewer().getResourceProvider();
-                }
-                LimitReachedBottomSheet limitReachedBottomSheet = new LimitReachedBottomSheet(lastFragment, this, TYPE_BOOSTS_FOR_USERS, currentAccount, resourcesProvider);
-                limitReachedBottomSheet.setCanApplyBoost(canApplyBoost);
-
-                boolean isCurrentChat = false;
-                if (lastFragment instanceof ChatActivity) {
-                    isCurrentChat = ((ChatActivity) lastFragment).getDialogId() == peerId;
-                } else if (lastFragment instanceof DialogsActivity) {
-                    DialogsActivity dialogsActivity = ((DialogsActivity) lastFragment);
-                    isCurrentChat = dialogsActivity.rightSlidingDialogContainer != null && dialogsActivity.rightSlidingDialogContainer.getCurrentFragmetDialogId() == peerId;
-                }
-                limitReachedBottomSheet.setBoostsStats(boostsStatus, isCurrentChat);
-                limitReachedBottomSheet.setDialogId(peerId);
-                limitReachedBottomSheet.setChatMessageCell(chatMessageCell);
-
-                lastFragment.showDialog(limitReachedBottomSheet);
-                try {
-                    if (dismissLoading != null) {
-                        dismissLoading.run();
-                    }
-                } catch (Exception e) {
-                    FileLog.e(e);
-                }
             });
         });
     }
@@ -6791,13 +6727,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
     public void didReceivedNotification(int id, final int account, Object... args) {
         if (id == NotificationCenter.appDidLogout) {
             switchToAvailableAccountOrLogout();
-        } else if (id == NotificationCenter.openBoostForUsersDialog) {
-            long dialogId = (long) args[0];
-            ChatMessageCell chatMessageCell = null;
-            if (args.length > 1) {
-                chatMessageCell = (ChatMessageCell) args[1];
-            }
-            processBoostDialog(dialogId, null, null, chatMessageCell);
         } else if (id == NotificationCenter.closeOtherAppActivities) {
             if (args[0] != this) {
                 onFinish();
