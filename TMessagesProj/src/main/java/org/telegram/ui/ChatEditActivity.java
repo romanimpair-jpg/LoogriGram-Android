@@ -1153,12 +1153,15 @@ public class ChatEditActivity extends BaseFragment implements ImageUpdater.Image
                 logCell.setOnClickListener(v -> presentFragment(new ChannelAdminLogActivity(currentChat)));
             }
 
-            if (ChatObject.isBoostSupported(currentChat)) {
+            // LoogriGram: "Statistics and Boosts", for every channel and group -
+            // one without statistics for us opened the boosts screen. It is
+            // Statistics now, and only where there are statistics to see.
+            if (info != null && info.can_view_stats) {
                 statsAndBoosts = new TextCell(context);
-                statsAndBoosts.setTextAndIcon(getString(R.string.StatisticsAndBoosts), R.drawable.msg_stats, true);
+                statsAndBoosts.setTextAndIcon(getString(R.string.Statistics), R.drawable.msg_stats, true);
                 statsAndBoosts.setBackground(Theme.getSelectorDrawable(false));
                 statsAndBoosts.setOnClickListener(v -> {
-                    presentFragment(StatisticActivity.create(currentChat, false));
+                    presentFragment(StatisticActivity.create(currentChat));
                 });
             }
 

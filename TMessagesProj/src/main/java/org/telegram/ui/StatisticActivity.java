@@ -24,7 +24,6 @@ import android.os.Bundle;
 import android.util.SparseIntArray;
 import android.util.TypedValue;
 import android.view.Gravity;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -48,7 +47,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
-import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.LruCache;
@@ -89,29 +87,23 @@ import org.telegram.ui.Charts.data.StackLinearChartData;
 import org.telegram.ui.Charts.view_data.ChartHeaderView;
 import org.telegram.ui.Charts.view_data.LineViewData;
 import org.telegram.ui.Charts.view_data.TransitionParams;
-import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.ChatAvatarContainer;
 import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.FlatCheckBox;
 import org.telegram.ui.Components.ItemOptions;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Components.Premium.boosts.BoostDialogs;
 import org.telegram.ui.Components.RLottieImageView;
 import org.telegram.ui.Components.RadialProgressView;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.SizeNotifierFrameLayout;
-import org.telegram.ui.Components.ViewPagerFixed;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
 import org.telegram.ui.Components.blur3.DownscaleScrollableNoiseSuppressor;
 import org.telegram.ui.Components.blur3.ViewGroupPartRenderer;
 import org.telegram.ui.Components.blur3.capture.IBlur3Capture;
-import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
-import org.telegram.ui.Components.blur3.drawable.color.impl.BlurredBackgroundProviderImpl;
 import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceColor;
 import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceRenderNode;
 import org.telegram.ui.Components.chat.ViewPositionWatcher;
-import org.telegram.ui.Components.glass.GlassTabView;
 import org.telegram.ui.Stories.StoriesController;
 import org.telegram.ui.Stories.StoriesListPlaceProvider;
 
@@ -125,25 +117,20 @@ import java.util.Locale;
 public class StatisticActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
     private final int ADDITIONAL_LIST_HEIGHT_DP = Build.VERSION.SDK_INT >= 31 ? 48 : 0;
 
+    // LoogriGram: a second create() took startFromBoosts, choosing which tab
+    // opened, and a chat whose statistics we may not see got BoostsActivity
+    // instead. Of the three tabs only Statistics is left - Monetization went
+    // with being paid, Boosts with Premium - so callers offer this only where
+    // can_view_stats says there are statistics for us to see.
     public static BaseFragment create(TLRPC.Chat chat) {
-        return create(chat, true);
-    }
-
-    public static BaseFragment create(TLRPC.Chat chat, boolean startFromBoosts) {
         Bundle args = new Bundle();
         args.putLong("chat_id", chat.id);
         args.putBoolean("is_megagroup", chat.megagroup);
-        args.putBoolean("start_from_boosts", startFromBoosts);
-        TLRPC.ChatFull chatInfo = MessagesController.getInstance(UserConfig.selectedAccount).getChatFull(chat.id);
-        if (chatInfo == null || !chatInfo.can_view_stats) {
-            return new BoostsActivity(-chat.id);
-        }
         return new StatisticActivity(args);
     }
 
     private TLRPC.ChatFull chat;
     private final long chatId;
-    private boolean showTabs;
 
     //mutual
     private ChartViewData growthData;
@@ -190,24 +177,15 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
     private BaseChartView.SharedUiComponents sharedUi;
     private LinearLayout progressLayout;
     private final boolean isMegagroup;
-    private final boolean startFromBoosts;
     private long maxDateOverview;
     private long minDateOverview;
 
     private final AlertDialog[] progressDialog = new AlertDialog[1];
-    private ViewPagerFixed viewPagerFixed;
-    private ChannelBoostLayout boostLayout;
-    private final boolean onlyBoostsStat;
-
-    private MainTabsLayout tabsView;
-    private GlassTabView[] tabs;
 
     public StatisticActivity(Bundle args) {
         super(args);
         chatId = args.getLong("chat_id");
         isMegagroup = args.getBoolean("is_megagroup", false);
-        startFromBoosts = args.getBoolean("start_from_boosts", false);
-        onlyBoostsStat = args.getBoolean("only_boosts", false);
         this.chat = getMessagesController().getChatFull(chatId);
 
         iBlur3SourceColor = new BlurredBackgroundSourceColor();
@@ -252,7 +230,6 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
     public boolean onFragmentCreate() {
         getNotificationCenter().addObserver(this, NotificationCenter.messagesDidLoad);
         getNotificationCenter().addObserver(this, NotificationCenter.chatInfoDidLoad);
-        getNotificationCenter().addObserver(this, NotificationCenter.boostByChannelCreated);
         getNotificationCenter().addObserver(this, NotificationCenter.storiesListUpdated);
         StoriesController storiesController = getMessagesController().getStoriesController();
         storiesList = storiesController.getStoriesList(-chatId, StoriesController.StoriesList.TYPE_STATISTICS);
@@ -275,9 +252,6 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
     }
 
     private void loadStatistic() {
-        if (onlyBoostsStat) {
-            return;
-        }
         TLObject req;
         if (isMegagroup) {
             TL_stats.TL_getMegagroupStats getMegagroupStats = new TL_stats.TL_getMegagroupStats();
@@ -483,7 +457,6 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
 
     @Override
     public void onFragmentDestroy() {
-        getNotificationCenter().removeObserver(this, NotificationCenter.boostByChannelCreated);
         getNotificationCenter().removeObserver(this, NotificationCenter.messagesDidLoad);
         getNotificationCenter().removeObserver(this, NotificationCenter.chatInfoDidLoad);
         getNotificationCenter().removeObserver(this, NotificationCenter.storiesListUpdated);
@@ -522,32 +495,6 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
                 if (adapter != null) {
                     recyclerListView.setItemAnimator(null);
                     diffUtilsCallback.update();
-                }
-            }
-        } else if (id == NotificationCenter.boostByChannelCreated) {
-            if (getParentLayout() == null) return;
-            TLRPC.Chat chat = (TLRPC.Chat) args[0];
-            boolean isGiveaway = (boolean) args[1];
-            List<BaseFragment> fragmentStack = getParentLayout().getFragmentStack();
-            BaseFragment chatEditFragment = fragmentStack.size() >= 2 ? fragmentStack.get(fragmentStack.size() - 2) : null;
-            if (chatEditFragment instanceof ChatEditActivity) {
-                getParentLayout().removeFragmentFromStack(chatEditFragment);
-            }
-            fragmentStack = getParentLayout().getFragmentStack();
-            BaseFragment profileFragment = fragmentStack.size() >= 2 ? fragmentStack.get(fragmentStack.size() - 2) : null;
-            if (isGiveaway) {
-                BaseFragment chatFragment = fragmentStack.size() >= 3 ? fragmentStack.get(fragmentStack.size() - 3) : null;
-                if (profileFragment instanceof ProfileActivity) {
-                    getParentLayout().removeFragmentFromStack(profileFragment);
-                }
-                finishFragment();
-                if (chatFragment instanceof ChatActivity) {
-                    BoostDialogs.showBulletin(chatFragment, chat, true);
-                }
-            } else {
-                finishFragment();
-                if (profileFragment instanceof ProfileActivity) {
-                    BoostDialogs.showBulletin(profileFragment, chat, false);
                 }
             }
         } else if (id == NotificationCenter.messagesDidLoad) {
@@ -605,109 +552,10 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
     @Override
     public View createView(Context context) {
         sharedUi = new BaseChartView.SharedUiComponents();
-        TLRPC.Chat currentChat = MessagesController.getInstance(currentAccount).getChat(chatId);
-        TLRPC.ChatFull chatFull = MessagesController.getInstance(currentAccount).getChatFull(chatId);
-        final boolean hasStats = chatFull != null && chatFull.can_view_stats;
-        boolean isBoostSupported = ChatObject.isBoostSupported(currentChat);
-
-        ArrayList<GlassTabView> tabViews = new ArrayList<>(3);
-        if (hasStats) {
-            tabViews.add(GlassTabView.createMainTab(context, resourceProvider, GlassTabView.TabAnimation.POLL, R.string.Statistics));
-        }
-        tabViews.add(GlassTabView.createMainTab(context, resourceProvider, GlassTabView.TabAnimation.BOOSTS, R.string.Boosts));
-        // LoogriGram: a Monetization tab followed - the channel's ad revenue
-        // and Stars earnings, with withdrawal. Being paid is a money feature.
-
-        tabs = tabViews.toArray(new GlassTabView[0]);
-        tabsView = new MainTabsLayout(context, resourceProvider);
-        tabsView.setPadding(dp(DialogsActivity.MAIN_TABS_MARGIN + 4), dp(DialogsActivity.MAIN_TABS_MARGIN + 4), dp(DialogsActivity.MAIN_TABS_MARGIN + 4), dp(DialogsActivity.MAIN_TABS_MARGIN + 4));
-
-        for (int index = 0; index < tabs.length; index++) {
-            final GlassTabView view = tabs[index];
-            final int position = index;
-
-            tabs[index].setOnClickListener(v -> {
-                viewPagerFixed.scrollToPosition(position);
-                selectTab(position, true);
-            });
-
-            tabsView.addView(tabs[index]);
-            tabsView.setViewVisible(view, true, false);
-        }
-
-        viewPagerFixed = new ViewPagerFixed(getContext()) {
-            @Override
-            public void onTabAnimationUpdate(boolean manual) {
-                final boolean isDragByGesture = !manual;
-                final float position = viewPagerFixed.getPositionAnimated();
-                setGestureSelectedOverride(position, isDragByGesture);
-                if (isDragByGesture) {
-                    selectTab(Math.round(position), true);
-                }
-                blur3_InvalidateBlur();
-                checkUi_actionBar();
-            }
-
-            @Override
-            protected void onScrollEnd() {
-                super.onScrollEnd();
-                selectTab(viewPagerFixed.getCurrentPosition(), true);
-                setGestureSelectedOverride(0, false);
-                blur3_InvalidateBlur();
-            }
-
-            @Override
-            protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-                super.onLayout(changed, left, top, right, bottom);
-                checkUi_actionBar();
-            }
-        };
-
+        // LoogriGram: a pager with a tab bar held Statistics, Boosts and
+        // Monetization here. Monetization went with being paid and Boosts with
+        // Premium, and a pager of one page is just the page.
         FrameLayout statisticLayout = new FrameLayout(context);
-        if (isBoostSupported) {
-            boostLayout = new ChannelBoostLayout(StatisticActivity.this, -chatId, getResourceProvider());
-        }
-        viewPagerFixed.setAdapter(new ViewPagerFixed.Adapter() {
-            @Override
-            public int getItemCount() {
-                if (onlyBoostsStat) return 1;
-                return (
-                    (hasStats ? 1 : 0) +
-                    (isBoostSupported ? 1 : 0)
-                );
-            }
-
-            @Override
-            public View createView(int viewType) {
-                if (onlyBoostsStat) {
-                    return boostLayout;
-                }
-                if (hasStats) {
-                    if (viewType == 0) return statisticLayout;
-                    viewType--;
-                }
-                if (isBoostSupported) {
-                    if (viewType == 0) return boostLayout;
-                    viewType--;
-                }
-                return statisticLayout;
-            }
-
-            @Override
-            public int getItemViewType(int position) {
-                return position;
-            }
-
-            @Override
-            public void bindView(View view, int position, int viewType) {
-
-            }
-        });
-        showTabs = isBoostSupported && !onlyBoostsStat;
-        if (showTabs && startFromBoosts) {
-            viewPagerFixed.setPosition(hasStats ? 1 : 0);
-        }
-        selectTab(viewPagerFixed.getCurrentPosition(), false);
 
 
         SizeNotifierFrameLayout contentLayout = new SizeNotifierFrameLayout(getContext()) {
@@ -761,17 +609,8 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
 
         contentLayout.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundGray));
         iBlur3FactoryLiquidGlass.setSourceRootView(new ViewPositionWatcher(contentLayout), contentLayout);
-        contentLayout.addView(viewPagerFixed, LayoutHelper.createFrameMatchParent());
+        contentLayout.addView(statisticLayout, LayoutHelper.createFrameMatchParent());
         contentLayout.addView(actionBar);
-        if (showTabs) {
-            contentLayout.addView(tabsView, LayoutHelper.createFrame(328 + DialogsActivity.MAIN_TABS_MARGIN * 2, DialogsActivity.MAIN_TABS_HEIGHT_WITH_MARGINS, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL));
-            Bulletin.addDelegate(this, new Bulletin.Delegate() {
-                @Override
-                public int getBottomOffset(int tag) {
-                    return dp(64);
-                }
-            });
-        }
         fragmentView = contentLayout;
         recyclerListView = new RecyclerListView(context) {
             int lastH;
@@ -790,53 +629,16 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
 
 
         listBlur3Capture = new ViewGroupPartRenderer(recyclerListView, contentLayout, recyclerListView::drawChild);
-        if (boostLayout != null) {
-            boostLayout.iBlur3Capture = new ViewGroupPartRenderer(boostLayout.listView, contentLayout, boostLayout.listView::drawChild);
-            boostLayout.listView.addOnScrollListener(new RecyclerView.OnScrollListener() {
-                @Override
-                public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && scrollableViewNoiseSuppressor != null) {
-                        scrollableViewNoiseSuppressor.onScrolled(dx, dy);
-                        blur3_InvalidateBlur();
-                    }
-                }
-            });
-        }
 
+        // LoogriGram: this captured each page of the pager in turn - the list
+        // and the boosts page - measuring where each sat and then ignoring it.
         iBlur3Capture = new IBlur3Capture() {
-            final RectF fragmentPosition = new RectF();
-
             @Override
             public void capture(Canvas canvas, RectF position) {
-                final int width = fragmentView.getMeasuredWidth();
-                final int height = fragmentView.getMeasuredHeight();
                 canvas.drawColor(getThemedColor(Theme.key_windowBackgroundWhite));
-                for (int a = 0; a < 2; a++) {
-                    IBlur3Capture cap = null;
-                    View view = null;
-                    if (a == 0) {
-                        cap = listBlur3Capture;
-                        view = recyclerListView;
-                    } else if (boostLayout != null) {
-                        cap = boostLayout.iBlur3Capture;
-                        view = boostLayout;
-                    }
-                    if (cap == null || view == null) {
-                        continue;
-                    }
-
-                    if (!ViewPositionWatcher.computeRectInParent(view, contentLayout, fragmentPosition)) {
-                    //    continue;
-                    }
-                    if (fragmentPosition.right <= 0 || fragmentPosition.left >= fragmentView.getMeasuredWidth()) {
-                    //    continue;
-                    }
-
-                    canvas.save();
-                    //canvas.translate(fragmentPosition.left, fragmentPosition.top);
-                    cap.capture(canvas, position);
-                    canvas.restore();
-                }
+                canvas.save();
+                listBlur3Capture.capture(canvas, position);
+                canvas.restore();
             }
         };
 
@@ -1013,13 +815,9 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
             recyclerListView.setVisibility(View.VISIBLE);
         }
 
-        if (tabViews != null) {
-            BlurredBackgroundDrawable tabsViewBackground = iBlur3FactoryLiquidGlass.create(tabsView, BlurredBackgroundProviderImpl.mainTabs(resourceProvider));
-            tabsViewBackground.setRadius(dp(DialogsActivity.MAIN_TABS_HEIGHT / 2f));
-            tabsViewBackground.setPadding(dp(DialogsActivity.MAIN_TABS_MARGIN - 0.334f));
-            tabsView.setBackground(tabsViewBackground);
-        }
-
+        // LoogriGram: the pager set this each time it laid out or changed tab;
+        // each call adds a scroll listener, and one list needs one.
+        actionBar.setAdaptiveBackground(recyclerListView);
         checkUi_listPaddings();
 
         diffUtilsCallback = new DiffUtilsCallback(adapter, layoutManager);
@@ -3516,14 +3314,6 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
     }
 
     @Override
-    public boolean isSwipeBackEnabled(MotionEvent event) {
-        if (viewPagerFixed != null && (viewPagerFixed.currentPosition != 0 || viewPagerFixed.currentProgress != 1f)) {
-            return false;
-        }
-        return super.isSwipeBackEnabled(event);
-    }
-
-    @Override
     public boolean isSupportEdgeToEdge() {
         return true;
     }
@@ -3536,43 +3326,12 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
         final int navbar = AndroidUtilities.navigationBarHeight;
         final int statusbar = AndroidUtilities.statusBarHeight;
 
-        if (tabsView != null) {
-            tabsView.setTranslationY(-navbar);
-        }
-
         final int pt = ActionBar.getCurrentActionBarHeight() + statusbar;
-        final int pb = (showTabs ? dp(DialogsActivity.MAIN_TABS_HEIGHT_WITH_MARGINS) : 0) + navbar;
+        final int pb = navbar;
 
         if (recyclerListView != null) {
             recyclerListView.setPadding(0, pt, 0, pb);
         }
-        if (boostLayout != null) {
-            boostLayout.listView.setPadding(0, pt, 0, pb);
-        }
-    }
-
-    private void checkUi_actionBar() {
-        final View currentPage = viewPagerFixed.getCurrentView();
-        if (currentPage == boostLayout) {
-            actionBar.setAdaptiveBackground(boostLayout.listView);
-        } else {
-            actionBar.setAdaptiveBackground(recyclerListView);
-        }
-    }
-
-    public void selectTab(int position, boolean animated) {
-        for (int a = 0; a < tabs.length; a++) {
-            GlassTabView tab = tabs[a];
-            tab.setSelected(a == position, animated);
-        }
-    }
-
-    public void setGestureSelectedOverride(float animatedPosition, boolean allow) {
-        for (int index = 0; index < tabs.length; index++) {
-            final float visibility = Math.max(0, 1f - Math.abs(index - animatedPosition));
-            tabs[index].setGestureSelectedOverride(visibility, allow);
-        }
-        tabsView.invalidate();
     }
 
 

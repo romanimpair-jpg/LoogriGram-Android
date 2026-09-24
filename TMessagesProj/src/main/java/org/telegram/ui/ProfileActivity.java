@@ -2739,7 +2739,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     openAddMember();
                 } else if (id == statistics) {
                     TLRPC.Chat chat = getMessagesController().getChat(chatId);
-                    presentFragment(StatisticActivity.create(chat, false));
+                    presentFragment(StatisticActivity.create(chat));
                 } else if (id == view_discussion) {
                     openDiscussion();
                 } else if (id == channel_stories) {
@@ -12070,8 +12070,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         }
                     }
                     // LoogriGram: being allowed to see the channel's revenue
-                    // also offered Statistics, for its Monetization tab.
-                    if ((chatInfo.can_view_stats || getMessagesController().getStoriesController().canPostStories(getDialogId())) && topicId == 0) {
+                    // also offered Statistics, for its Monetization tab, and
+                    // being allowed to post stories, for its Boosts tab.
+                    if (chatInfo.can_view_stats && topicId == 0) {
                         otherItem.addSubItem(statistics, R.drawable.msg_stats, LocaleController.getString(R.string.Statistics));
                     }
                     ChatObject.Call call = getMessagesController().getGroupCall(chatId, false);
