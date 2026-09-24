@@ -257,11 +257,8 @@ import org.telegram.ui.Components.*;
 import org.telegram.ui.Components.FloatingDebug.FloatingDebugController;
 import org.telegram.ui.Components.FloatingDebug.FloatingDebugProvider;
 import org.telegram.ui.Components.Forum.ForumUtilities;
-import org.telegram.ui.Components.Premium.GiftPremiumBottomSheet;
 import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.Components.Premium.PremiumPreviewBottomSheet;
-import org.telegram.ui.Components.Premium.boosts.GiftInfoBottomSheet;
-import org.telegram.ui.Components.Premium.boosts.PremiumPreviewGiftLinkBottomSheet;
 import org.telegram.ui.Components.Reactions.ChatSelectionReactionMenuOverlay;
 import org.telegram.ui.Components.Reactions.ReactionsEffectOverlay;
 import org.telegram.ui.Components.Reactions.ReactionsLayoutInBubble;
@@ -36020,18 +36017,6 @@ public class ChatActivity extends BaseFragment implements
                 ((ChatActionCell) view).setInvalidateColors(true);
                 ((ChatActionCell) view).setDelegate(new ChatActionCell.ChatActionCellDelegate() {
                     @Override
-                    public void didOpenPremiumGift(ChatActionCell cell, TLRPC.TL_premiumGiftOption giftOption, String slug, boolean animateConfetti) {
-                        if (slug != null) {
-                            initGiftProgressDialog(cell);
-                            PremiumPreviewGiftLinkBottomSheet.show(slug, progressDialogCurrent);
-                        } else {
-                            showDialog(new PremiumPreviewBottomSheet(ChatActivity.this, currentAccount, getCurrentUser(), new GiftPremiumBottomSheet.GiftTier(giftOption, null), null, themeDelegate)
-                                .setAnimateConfetti(animateConfetti)
-                                .setOutboundGift(cell.getMessageObject().isOut()));
-                        }
-                    }
-
-                    @Override
                     public void didPressReaction(ChatActionCell cell, TLRPC.ReactionCount reaction, boolean longpress, float x, float y) {
                         ChatActivity.this.didPressReaction(cell, reaction, longpress, x, y);
                     }
@@ -36067,39 +36052,6 @@ public class ChatActivity extends BaseFragment implements
                         if (anchorScroll && position >= 0) {
                             chatLayoutManager.scrollToPositionWithOffset(position, top);
                         }
-                    }
-
-                    @Override
-                    public void didOpenPremiumGiftChannel(ChatActionCell cell, String slug, boolean animateConfetti) {
-                        initGiftProgressDialog(cell);
-                        GiftInfoBottomSheet.show(getBaseFragment(), slug, progressDialogCurrent);
-                    }
-
-                    private void initGiftProgressDialog(ChatActionCell cell) {
-                        if (progressDialogCurrent != null) {
-                            progressDialogCurrent.cancel(true);
-                        }
-                        progressDialogCurrent = cell == null || cell.getMessageObject() == null ? null : new Browser.Progress() {
-                            @Override
-                            public void init() {
-                                progressDialogAtMessageId = cell.getMessageObject().getId();
-                                progressDialogAtMessageType = PROGRESS_GIFT;
-                                progressDialogLinkSpan = null;
-                                cell.getMessageObject().flickerLoading = true;
-                                cell.invalidate();
-                            }
-
-                            @Override
-                            public void end(boolean replaced) {
-                                if (!replaced) {
-                                    AndroidUtilities.runOnUIThread(() -> {
-                                        ChatActivity.this.resetProgressDialogLoading();
-                                        cell.getMessageObject().flickerLoading = false;
-                                        cell.invalidate();
-                                    }, 250);
-                                }
-                            }
-                        };
                     }
 
                     @Override
