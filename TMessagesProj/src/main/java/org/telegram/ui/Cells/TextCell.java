@@ -43,7 +43,6 @@ import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.RLottieImageView;
 import org.telegram.ui.Components.Switch;
 import org.telegram.ui.FilterCreateActivity;
-import org.telegram.ui.PeerColorActivity;
 import org.telegram.ui.SettingsActivity;
 import org.telegram.ui.Stories.recorder.HintView2;
 
@@ -346,15 +345,6 @@ public class TextCell extends FrameLayout {
         setWillNotDraw(!needDivider);
         if (emojiDrawable != null) {
             emojiDrawable.set((Drawable) null, false);
-        }
-    }
-
-    public void setLockLevel(boolean plus, int level) {
-        if (level <= 0) {
-            textView.setRightDrawable(null);
-        } else {
-            textView.setRightDrawable(new PeerColorActivity.LevelLock(getContext(), plus, level, resourcesProvider));
-            textView.setDrawablePadding(dp(6));
         }
     }
 

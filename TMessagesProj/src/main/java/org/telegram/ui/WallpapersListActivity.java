@@ -1856,7 +1856,6 @@ public class WallpapersListActivity extends BaseFragment implements Notification
                         textCell.setText(LocaleController.getString(R.string.ResetChatBackgrounds), false);
                     } else if (position == galleryRow) {
                         textCell.setTextAndIcon("Choose from gallery", R.drawable.msg_background, false);
-                        textCell.setLockLevel(false, 10);
                     }
                     break;
                 }

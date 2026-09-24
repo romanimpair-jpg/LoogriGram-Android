@@ -104,7 +104,6 @@ import org.telegram.ui.Components.FilledTabsView;
 import org.telegram.ui.Components.FlickerLoadingView;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
-import org.telegram.ui.Components.Premium.PremiumGradient;
 import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.ScaleStateListAnimator;
@@ -1745,88 +1744,15 @@ public class PeerColorActivity extends BaseFragment implements NotificationCente
         }
     }
 
-    public static class LevelLock extends Drawable {
-
-        private final Theme.ResourcesProvider resourcesProvider;
-        private final Text text;
-        private final float lockScale = .875f;
-        private final Drawable lock;
-        private final PremiumGradient.PremiumGradientTools gradientTools;
-
-        public LevelLock(Context context, int lvl, Theme.ResourcesProvider resourcesProvider) {
-            this(context, false, lvl, resourcesProvider);
-        }
-
-        public LevelLock(Context context, boolean plus, int lvl, Theme.ResourcesProvider resourcesProvider) {
-            this.resourcesProvider = resourcesProvider;
-            text = new Text(LocaleController.formatPluralString(plus ? "BoostLevelPlus" : "BoostLevel", lvl), 12, AndroidUtilities.bold());
-            lock = context.getResources().getDrawable(R.drawable.mini_switch_lock).mutate();
-            lock.setColorFilter(new PorterDuffColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN));
-            gradientTools = new PremiumGradient.PremiumGradientTools(Theme.key_premiumGradient1, Theme.key_premiumGradient2, -1, -1, -1, resourcesProvider);
-        }
-
-        @Override
-        public void draw(@NonNull Canvas canvas) {
-            int left = getBounds().left;
-            int cy = getBounds().centerY();
-
-            AndroidUtilities.rectTmp.set(left, cy - getIntrinsicHeight() / 2f, left + getIntrinsicWidth(), cy + getIntrinsicHeight() / 2f);
-            gradientTools.gradientMatrix(AndroidUtilities.rectTmp);
-            canvas.drawRoundRect(AndroidUtilities.rectTmp, dp(10), dp(10), gradientTools.paint);
-
-            lock.setBounds(
-                left + dp(3.33f),
-                (int) (cy - lock.getIntrinsicHeight() * lockScale / 2f),
-                (int) (left + dp(3.33f) + lock.getIntrinsicWidth() * lockScale),
-                (int) (cy + lock.getIntrinsicHeight() * lockScale / 2f)
-            );
-            lock.draw(canvas);
-
-            text.draw(canvas, left + dp(3.66f) + lock.getIntrinsicWidth() * lockScale, cy, Color.WHITE, 1f);
-        }
-
-        @Override
-        public void setAlpha(int alpha) {}
-        @Override
-        public void setColorFilter(@Nullable ColorFilter colorFilter) {}
-
-        @Override
-        public int getOpacity() {
-            return PixelFormat.TRANSPARENT;
-        }
-
-        @Override
-        public int getIntrinsicWidth() {
-            return (int) (dp(3.66f + 6) + lock.getIntrinsicWidth() * lockScale + text.getWidth());
-        }
-
-        @Override
-        public int getIntrinsicHeight() {
-            return dp(18.33f);
-        }
-    }
-
-    public static CharSequence withLevelLock(CharSequence text, int lvl) {
-        if (lvl <= 0) return text;
-        final Context context = ApplicationLoader.applicationContext;
-        SpannableStringBuilder ssb = new SpannableStringBuilder(text);
-        ssb.append("  L");
-        LevelLock drawable = new LevelLock(context, lvl, null);
-        ColoredImageSpan span = new ColoredImageSpan(drawable);
-        span.setTranslateY(dp(1));
-        ssb.setSpan(span, ssb.length() - 1, ssb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        return ssb;
-    }
+    // LoogriGram: LevelLock, the "Level N" padlock badge, and withLevelLock
+    // stood here. Boost levels are honoured for nobody.
 
     public static class ChangeNameColorCell extends View {
         private final int currentAccount;
-        private final boolean isChannelOrGroup;
-        private final boolean isGroup;
         private final Theme.ResourcesProvider resourcesProvider;
 
         private final Drawable drawable;
         private final Text buttonText;
-        private LevelLock lock;
 
         private final Paint userTextBackgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private Text userText;
@@ -1836,120 +1762,32 @@ public class PeerColorActivity extends BaseFragment implements NotificationCente
         private PeerColorDrawable color1Drawable;
         private PeerColorDrawable color2Drawable;
 
-        public ChangeNameColorCell(int currentAccount, long dialogId, Context context, Theme.ResourcesProvider resourcesProvider) {
+        // LoogriGram: a channel's or group's settings built this too, with the
+        // boost level its colours were locked behind (LevelLock, and a
+        // "boostingappearance" hint shown three times), and set(TLRPC.Chat)
+        // showed that chat's colours. Only our own name's row is left.
+        public ChangeNameColorCell(int currentAccount, Context context, Theme.ResourcesProvider resourcesProvider) {
             super(context);
-            MessagesController mc = MessagesController.getInstance(currentAccount);
-            TLRPC.Chat chat = mc.getChat(-dialogId);
 
             this.currentAccount = currentAccount;
-            this.isChannelOrGroup = dialogId < 0;
-            this.isGroup = isChannelOrGroup && !ChatObject.isChannelAndNotMegaGroup(chat);
             this.resourcesProvider = resourcesProvider;
 
             drawable = context.getResources().getDrawable(R.drawable.menu_edit_appearance).mutate();
             drawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText4, resourcesProvider), PorterDuff.Mode.SRC_IN));
-            CharSequence button = getString(isChannelOrGroup ? (isGroup ? R.string.ChangeGroupAppearance : R.string.ChangeChannelNameColor2) : R.string.ChangeUserNameColor);
-            if (isChannelOrGroup && !isGroup && MessagesController.getInstance(currentAccount).getMainSettings().getInt("boostingappearance", 0) < 3) {
-                int minlvl = Integer.MAX_VALUE, maxlvl = 0;
-                if (mc.peerColors != null) {
-                    minlvl = Math.min(minlvl, mc.peerColors.maxLevel());
-                    maxlvl = Math.max(maxlvl, mc.peerColors.maxLevel());
-                    minlvl = Math.min(minlvl, mc.peerColors.minLevel());
-                    maxlvl = Math.max(maxlvl, mc.peerColors.minLevel());
-                }
-                minlvl = Math.min(minlvl, mc.channelBgIconLevelMin);
-                maxlvl = Math.min(maxlvl, mc.channelBgIconLevelMin);
-                if (mc.profilePeerColors != null) {
-                    minlvl = Math.min(minlvl, mc.profilePeerColors.maxLevel());
-                    maxlvl = Math.max(maxlvl, mc.profilePeerColors.maxLevel());
-                    minlvl = Math.min(minlvl, mc.profilePeerColors.minLevel());
-                    maxlvl = Math.max(maxlvl, mc.profilePeerColors.minLevel());
-                }
-                minlvl = Math.min(minlvl, mc.channelProfileIconLevelMin);
-                maxlvl = Math.max(maxlvl, mc.channelProfileIconLevelMin);
-                minlvl = Math.min(minlvl, mc.channelEmojiStatusLevelMin);
-                maxlvl = Math.max(maxlvl, mc.channelEmojiStatusLevelMin);
-                minlvl = Math.min(minlvl, mc.channelWallpaperLevelMin);
-                maxlvl = Math.max(maxlvl, mc.channelWallpaperLevelMin);
-                minlvl = Math.min(minlvl, mc.channelCustomWallpaperLevelMin);
-                maxlvl = Math.max(maxlvl, mc.channelCustomWallpaperLevelMin);
-                int currentLevel = chat == null ? 0 : chat.level;
-                if (currentLevel < maxlvl) {
-                    lock = new LevelLock(context, true, Math.max(currentLevel, minlvl), resourcesProvider);
-                }
-            }
+            CharSequence button = getString(R.string.ChangeUserNameColor);
             setContentDescription(button);
             buttonText = new Text(button, 16);
             updateColors();
         }
 
         public void updateColors() {
-            drawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(isChannelOrGroup ? Theme.key_windowBackgroundWhiteGrayIcon : Theme.key_windowBackgroundWhiteBlueText4, resourcesProvider), PorterDuff.Mode.SRC_IN));
-            buttonText.setColor(Theme.getColor(isChannelOrGroup ? Theme.key_windowBackgroundWhiteBlackText : Theme.key_windowBackgroundWhiteBlueText4, resourcesProvider));
+            drawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText4, resourcesProvider), PorterDuff.Mode.SRC_IN));
+            buttonText.setColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText4, resourcesProvider));
 
             if (userText != null && userTextBackgroundPaint != null && userTextColorKey != -1) {
                 final int color = Theme.getColor(userTextColorKey, resourcesProvider);
                 userText.setColor(color);
                 userTextBackgroundPaint.setColor(Theme.multAlpha(color, .10f));
-            }
-        }
-
-        public void set(TLRPC.Chat chat, boolean divider) {
-            if (chat == null) {
-                return;
-            }
-            needDivider = divider;
-            CharSequence text = chat.title;
-            text = Emoji.replaceEmoji(text, Theme.chat_msgTextPaint.getFontMetricsInt(), false);
-            userText = new Text(text, 13, AndroidUtilities.bold());
-
-            if (color1Drawable != null) {
-                color1Drawable.setView(null);
-            }
-            if (chat.emoji_status instanceof TLRPC.TL_emojiStatusCollectible) {
-                color1Drawable = PeerColorDrawable.from((TLRPC.TL_emojiStatusCollectible) chat.emoji_status);
-            } else {
-                color1Drawable = ChatObject.getProfileColorId(chat) >= 0 ? PeerColorDrawable.fromProfile(currentAccount, ChatObject.getProfileColorId(chat)).setRadius(dp(11)) : null;
-            }
-            if (color1Drawable != null) {
-                color1Drawable.setView(this);
-            }
-            final int color;
-            if (chat.color instanceof TLRPC.TL_peerColorCollectible) {
-                final TLRPC.TL_peerColorCollectible p = (TLRPC.TL_peerColorCollectible) chat.color;
-                final boolean dark = resourcesProvider != null ? resourcesProvider.isDark() : Theme.isCurrentThemeDark();
-                final int accent_color = dark && (p.flags & 1) != 0 ? p.dark_accent_color : p.accent_color;
-                final ArrayList<Integer> colors = dark && p.dark_colors != null ? p.dark_colors : p.colors;
-
-                final int color1 = colors.get(0) | 0xFF000000;
-                final int color2 = colors.size() >= 2 ? colors.get(1) | 0xFF000000 : color1;
-                final int color3 = colors.size() >= 3 ? colors.get(2) | 0xFF000000 : color1;
-
-                userText.setColor(accent_color);
-                userTextBackgroundPaint.setColor(Theme.multAlpha(accent_color, .10f));
-                color2Drawable = new PeerColorDrawable(color1, color2, color3, p.gift_emoji_id).setRadius(dp(11));
-                color2Drawable.setView(this);
-            } else {
-                int colorId = ChatObject.getColorId(chat);
-                if (colorId < 7) {
-                    color = Theme.getColor(userTextColorKey = Theme.keys_avatar_nameInMessage[colorId], resourcesProvider);
-                } else {
-                    MessagesController.PeerColors peerColors = MessagesController.getInstance(UserConfig.selectedAccount).peerColors;
-                    MessagesController.PeerColor peerColor = peerColors == null ? null : peerColors.getColor(colorId);
-                    if (peerColor != null) {
-                        userTextColorKey = -1;
-                        color = peerColor.getColor1();
-                    } else {
-                        color = Theme.getColor(userTextColorKey = Theme.keys_avatar_nameInMessage[0], resourcesProvider);
-                    }
-                }
-
-                userText.setColor(color);
-                userTextBackgroundPaint.setColor(Theme.multAlpha(color, .10f));
-                color2Drawable = PeerColorDrawable.from(currentAccount, colorId).setRadius(dp(11));
-                if (color2Drawable != null) {
-                    color2Drawable.setView(this);
-                }
             }
         }
 
@@ -2027,21 +1865,11 @@ public class PeerColorActivity extends BaseFragment implements NotificationCente
         protected void dispatchDraw(Canvas canvas) {
             DrawableUtils.setBounds(drawable, rtl(dp(28)), getMeasuredHeight() / 2f, Gravity.CENTER);
             drawable.draw(canvas);
-            buttonText.ellipsize(getMeasuredWidth() - dp(64 + 7 + 100) - (lock != null ? lock.getIntrinsicWidth() + dp(8) : 0));
+            buttonText.ellipsize(getMeasuredWidth() - dp(64 + 7 + 100));
             float textX = LocaleController.isRTL ? getMeasuredWidth() - buttonText.getWidth() - dp(58) : dp(58);
             buttonText.draw(canvas, textX, getMeasuredHeight() / 2f);
-            if (lock != null) {
-                int x = (int) (textX + buttonText.getWidth() + dp(6));
-                lock.setBounds(x, 0, x, getHeight());
-                lock.draw(canvas);
-            }
 
-            if (isGroup && color2Drawable != null) {
-                int x = LocaleController.isRTL ? dp(24 + 16 + 18) : getMeasuredWidth() - dp(24);
-                color2Drawable.setBounds(x - dp(11), (getMeasuredHeight() - dp(11)) / 2, x, (getMeasuredHeight() + dp(11)) / 2);
-                color2Drawable.stroke(dpf2(3), Theme.getColor(Theme.key_windowBackgroundWhite, resourcesProvider));
-                color2Drawable.draw(canvas);
-            } else if (color1Drawable != null && color2Drawable != null) {
+            if (color1Drawable != null && color2Drawable != null) {
 
                 int x = LocaleController.isRTL ? dp(24 + 16 + 18) : getMeasuredWidth() - dp(24);
                 color2Drawable.setBounds(x - dp(11), (getMeasuredHeight() - dp(11)) / 2, x, (getMeasuredHeight() + dp(11)) / 2);
@@ -2053,8 +1881,8 @@ public class PeerColorActivity extends BaseFragment implements NotificationCente
                 color1Drawable.stroke(dpf2(3), Theme.getColor(Theme.key_windowBackgroundWhite, resourcesProvider));
                 color1Drawable.draw(canvas);
 
-            } else if (userText != null && !isGroup) {
-                final int maxWidth = (int) (getMeasuredWidth() - dp(64 + 7 + 15 + 9 + 9 + 12) - Math.min(buttonText.getWidth() + (lock == null ? 0 : lock.getIntrinsicWidth() + dp(6 + 6)), getMeasuredWidth() - dp(64 + 100)));
+            } else if (userText != null) {
+                final int maxWidth = (int) (getMeasuredWidth() - dp(64 + 7 + 15 + 9 + 9 + 12) - Math.min(buttonText.getWidth(), getMeasuredWidth() - dp(64 + 100)));
                 final int w = (int) Math.min(userText.getWidth(), maxWidth);
 
                 AndroidUtilities.rectTmp.set(

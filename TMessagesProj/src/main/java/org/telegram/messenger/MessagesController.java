@@ -196,11 +196,6 @@ public class MessagesController extends BaseController implements NotificationCe
     private boolean hasArchivedChats;
     private boolean hasStories;
     public long storiesChangelogUserId = 777000;
-    public long giveawayAddPeersMax = 10;
-    public long giveawayPeriodMax = 7;
-    public long giveawayCountriesMax = 10;
-    public long giveawayBoostsPerPremium = 4;
-    public long boostsPerSentGift = 3;
 
     public static TLRPC.Peer getPeerFromInputPeer(TLRPC.InputPeer peer) {
         if (peer.chat_id != 0) {
@@ -563,7 +558,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public boolean storiesExportNopublicLink;
     public int authorizationAutoconfirmPeriod;
     public int quoteLengthMax;
-    public boolean giveawayGiftsPurchaseAvailable;
     public PeerColors peerColors;
     public PeerColors profilePeerColors;
     public int transcribeAudioTrialWeeklyNumber;
@@ -572,9 +566,7 @@ public class MessagesController extends BaseController implements NotificationCe
     public int transcribeAudioTrialCurrentNumber;
     public int recommendedChannelsLimitDefault;
     public int recommendedChannelsLimitPremium;
-    public int boostsChannelLevelMax;
     public int channelRestrictSponsoredLevelMin;
-    public int channelAutotranslationLevelMin;
     public Set<String> webAppAllowedProtocols;
     public Set<String> ignoreRestrictionReasons;
     public int channelsLimitDefault;
@@ -616,16 +608,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public int storiesSentMonthlyLimitPremium;
     public int storiesSuggestedReactionsLimitDefault;
     public int storiesSuggestedReactionsLimitPremium;
-    public int channelBgIconLevelMin;
-    public int channelProfileIconLevelMin;
-    public int channelEmojiStatusLevelMin;
-    public int channelWallpaperLevelMin;
-    public int channelCustomWallpaperLevelMin;
-    public int groupProfileBgIconLevelMin;
-    public int groupEmojiStatusLevelMin;
-    public int groupEmojiStickersLevelMin;
-    public int groupWallpaperLevelMin;
-    public int groupCustomWallpaperLevelMin;
     public int groupTranscribeLevelMin;
     public int quickRepliesLimit;
     public float uploadPremiumSpeedupUpload;
@@ -1674,11 +1656,6 @@ public class MessagesController extends BaseController implements NotificationCe
         largeQueueMaxActiveOperations = mainPreferences.getInt("largeQueueMaxActiveOperations", 2);
         stealthModeFuture = mainPreferences.getInt("stories_stealth_future_period", 25 * 60);
         storiesChangelogUserId = mainPreferences.getLong("stories_changelog_user_id", 777000);
-        giveawayAddPeersMax = mainPreferences.getLong("giveaway_add_peers_max", 10);
-        giveawayCountriesMax = mainPreferences.getLong("giveaway_countries_max", 10);
-        giveawayBoostsPerPremium = mainPreferences.getLong("giveaway_boosts_per_premium", 4);
-        boostsPerSentGift = mainPreferences.getLong("boosts_per_sent_gift", 3);
-        giveawayPeriodMax = mainPreferences.getLong("giveaway_period_max", 7);
         stealthModePast = mainPreferences.getInt("stories_stealth_past_period", 5 * 60);
         stealthModeCooldown = mainPreferences.getInt("stories_stealth_cooldown_period", 60 * 60);
         boolean isTest = ConnectionsManager.native_isTestBackend(currentAccount) != 0;
@@ -1691,18 +1668,8 @@ public class MessagesController extends BaseController implements NotificationCe
         storiesSentWeeklyLimitPremium = mainPreferences.getInt("storiesSentWeeklyLimitPremium", 70);
         storiesSentMonthlyLimitDefault = mainPreferences.getInt("storiesSentMonthlyLimitDefault", 30);
         storiesSentMonthlyLimitPremium = mainPreferences.getInt("storiesSentMonthlyLimitPremium", 300);
-        channelBgIconLevelMin = mainPreferences.getInt("channelBgIconLevelMin", 1);
-        channelProfileIconLevelMin = mainPreferences.getInt("channelProfileIconLevelMin", 1);
-        channelEmojiStatusLevelMin = mainPreferences.getInt("channelEmojiStatusLevelMin", 1);
-        groupProfileBgIconLevelMin = mainPreferences.getInt("groupProfileBgIconLevelMin", 1);
-        groupEmojiStatusLevelMin = mainPreferences.getInt("groupEmojiStatusLevelMin", 1);
-        groupEmojiStickersLevelMin = mainPreferences.getInt("groupEmojiStickersLevelMin", 1);
-        groupWallpaperLevelMin = mainPreferences.getInt("groupWallpaperLevelMin", 1);
-        groupCustomWallpaperLevelMin = mainPreferences.getInt("groupCustomWallpaperLevelMin", 1);
         groupTranscribeLevelMin = mainPreferences.getInt("groupTranscribeLevelMin", 1);
         quickRepliesLimit = mainPreferences.getInt("quickRepliesLimit", 10);
-        channelWallpaperLevelMin = mainPreferences.getInt("channelWallpaperLevelMin", 1);
-        channelCustomWallpaperLevelMin = mainPreferences.getInt("channelCustomWallpaperLevelMin", 1);
         chatlistInvitesLimitPremium = mainPreferences.getInt("chatlistInvitesLimitPremium",  isTest ? 5 : 20);
         chatlistJoinedLimitDefault = mainPreferences.getInt("chatlistJoinedLimitDefault", 2);
         chatlistJoinedLimitPremium = mainPreferences.getInt("chatlistJoinedLimitPremium",  isTest ? 5 : 20);
@@ -1732,7 +1699,6 @@ public class MessagesController extends BaseController implements NotificationCe
         storiesExportNopublicLink = mainPreferences.getBoolean("storiesExportNopublicLink", false);
         authorizationAutoconfirmPeriod = mainPreferences.getInt("authorization_autoconfirm_period", 604800);
         quoteLengthMax = mainPreferences.getInt("quoteLengthMax", 1024);
-        giveawayGiftsPurchaseAvailable = mainPreferences.getBoolean("giveawayGiftsPurchaseAvailable", false);
         peerColors = PeerColors.fromString(PeerColors.TYPE_NAME, mainPreferences.getString("peerColors", ""));
         profilePeerColors = PeerColors.fromString(PeerColors.TYPE_PROFILE, mainPreferences.getString("profilePeerColors", ""));
         transcribeAudioTrialWeeklyNumber = mainPreferences.getInt("transcribeAudioTrialWeeklyNumber", BuildVars.DEBUG_PRIVATE_VERSION ? 2 : 0);
@@ -1741,9 +1707,7 @@ public class MessagesController extends BaseController implements NotificationCe
         transcribeAudioTrialCooldownUntil = mainPreferences.getInt("transcribeAudioTrialCooldownUntil", 0);
         recommendedChannelsLimitDefault = mainPreferences.getInt("recommendedChannelsLimitDefault", 10);
         recommendedChannelsLimitPremium = mainPreferences.getInt("recommendedChannelsLimitPremium", 100);
-        boostsChannelLevelMax = mainPreferences.getInt("boostsChannelLevelMax", 100);
         channelRestrictSponsoredLevelMin = mainPreferences.getInt("channelRestrictSponsoredLevelMin", 30);
-        channelAutotranslationLevelMin = mainPreferences.getInt("channelAutotranslationLevelMin", 3);
         savedDialogsPinnedLimitDefault = mainPreferences.getInt("savedDialogsPinnedLimitDefault", 4);
         savedDialogsPinnedLimitPremium = mainPreferences.getInt("savedDialogsPinnedLimitPremium", 6);
         storyQualityFull = mainPreferences.getBoolean("storyQualityFull", true);
@@ -2650,61 +2614,6 @@ public class MessagesController extends BaseController implements NotificationCe
         for (int a = 0, N = object.value.size(); a < N; a++) {
             TLRPC.TL_jsonObjectValue value = object.value.get(a);
             switch (value.key) {
-                case "boosts_per_sent_gift": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        long val = (long) ((TLRPC.TL_jsonNumber) value.value).value;
-                        if (val != boostsPerSentGift) {
-                            boostsPerSentGift = val;
-                            editor.putLong("boosts_per_sent_gift", boostsPerSentGift);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "giveaway_boosts_per_premium": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        long val = (long) ((TLRPC.TL_jsonNumber) value.value).value;
-                        if (val != giveawayBoostsPerPremium) {
-                            giveawayBoostsPerPremium = val;
-                            editor.putLong("giveaway_boosts_per_premium", giveawayBoostsPerPremium);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "giveaway_period_max": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        long val = (long) ((TLRPC.TL_jsonNumber) value.value).value;
-                        if (val != giveawayPeriodMax) {
-                            giveawayPeriodMax = val;
-                            editor.putLong("giveaway_period_max", giveawayPeriodMax);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "giveaway_add_peers_max": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        long val = (long) ((TLRPC.TL_jsonNumber) value.value).value;
-                        if (val != giveawayAddPeersMax) {
-                            giveawayAddPeersMax = val;
-                            editor.putLong("giveaway_add_peers_max", giveawayAddPeersMax);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "giveaway_countries_max": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        long val = (long) ((TLRPC.TL_jsonNumber) value.value).value;
-                        if (val != giveawayCountriesMax) {
-                            giveawayCountriesMax = val;
-                            editor.putLong("giveaway_countries_max", giveawayCountriesMax);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
                 case "stories_changelog_user_id": {
                     if (value.value instanceof TLRPC.TL_jsonNumber) {
                         storiesChangelogUserId = (long) ((TLRPC.TL_jsonNumber) value.value).value;
@@ -4091,16 +4000,6 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
-                case "giveaway_gifts_purchase_available": {
-                    if (value.value instanceof TLRPC.TL_jsonBool) {
-                        if (giveawayGiftsPurchaseAvailable != ((TLRPC.TL_jsonBool) value.value).value) {
-                            giveawayGiftsPurchaseAvailable = ((TLRPC.TL_jsonBool) value.value).value;
-                            editor.putBoolean("giveawayGiftsPurchaseAvailable", giveawayGiftsPurchaseAvailable);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
                 case "transcribe_audio_trial_weekly_number": {
                     if (value.value instanceof TLRPC.TL_jsonNumber) {
                         TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
@@ -4148,78 +4047,12 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
-                case "boosts_channel_level_max": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (boostsChannelLevelMax != num.value) {
-                            boostsChannelLevelMax = (int) num.value;
-                            editor.putInt("boostsChannelLevelMax", boostsChannelLevelMax);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
                 case "channel_restrict_sponsored_level_min": {
                     if (value.value instanceof TLRPC.TL_jsonNumber) {
                         TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
                         if (channelRestrictSponsoredLevelMin != num.value) {
                             channelRestrictSponsoredLevelMin = (int) num.value;
                             editor.putInt("channelRestrictSponsoredLevelMin", channelRestrictSponsoredLevelMin);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "channel_autotranslation_level_min": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (channelAutotranslationLevelMin != num.value) {
-                            channelAutotranslationLevelMin = (int) num.value;
-                            editor.putInt("channelAutotranslationLevelMin", channelAutotranslationLevelMin);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "channel_bg_icon_level_min": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != channelBgIconLevelMin) {
-                            channelBgIconLevelMin = (int) num.value;
-                            editor.putInt("channelBgIconLevelMin", channelBgIconLevelMin);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "channel_profile_bg_icon_level_min": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != channelProfileIconLevelMin) {
-                            channelProfileIconLevelMin = (int) num.value;
-                            editor.putInt("channelProfileIconLevelMin", channelProfileIconLevelMin);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "channel_emoji_status_level_min": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != channelEmojiStatusLevelMin) {
-                            channelEmojiStatusLevelMin = (int) num.value;
-                            editor.putInt("channelEmojiStatusLevelMin", channelEmojiStatusLevelMin);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "group_custom_wallpaper_level_min": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != groupCustomWallpaperLevelMin) {
-                            groupCustomWallpaperLevelMin = (int) num.value;
-                            editor.putInt("groupCustomWallpaperLevelMin", groupCustomWallpaperLevelMin);
                             changed = true;
                         }
                     }
@@ -4242,72 +4075,6 @@ public class MessagesController extends BaseController implements NotificationCe
                         if (num.value != quickRepliesLimit) {
                             quickRepliesLimit = (int) num.value;
                             editor.putInt("quickRepliesLimit", quickRepliesLimit);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "group_wallpaper_level_min": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != groupWallpaperLevelMin) {
-                            groupWallpaperLevelMin = (int) num.value;
-                            editor.putInt("groupWallpaperLevelMin", groupWallpaperLevelMin);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "group_emoji_status_level_min": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != groupEmojiStatusLevelMin) {
-                            groupEmojiStatusLevelMin = (int) num.value;
-                            editor.putInt("groupEmojiStatusLevelMin", groupEmojiStatusLevelMin);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "group_emoji_stickers_level_min": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != groupEmojiStickersLevelMin) {
-                            groupEmojiStickersLevelMin = (int) num.value;
-                            editor.putInt("groupEmojiStickersLevelMin", groupEmojiStickersLevelMin);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "group_profile_bg_icon_level_min": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != groupProfileBgIconLevelMin) {
-                            groupProfileBgIconLevelMin = (int) num.value;
-                            editor.putInt("groupProfileBgIconLevelMin", groupProfileBgIconLevelMin);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "channel_wallpaper_level_min": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != channelWallpaperLevelMin) {
-                            channelWallpaperLevelMin = (int) num.value;
-                            editor.putInt("channelWallpaperLevelMin", channelWallpaperLevelMin);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "channel_custom_wallpaper_level_min": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != channelCustomWallpaperLevelMin) {
-                            channelCustomWallpaperLevelMin = (int) num.value;
-                            editor.putInt("channelCustomWallpaperLevelMin", channelCustomWallpaperLevelMin);
                             changed = true;
                         }
                     }
