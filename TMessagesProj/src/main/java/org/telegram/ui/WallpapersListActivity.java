@@ -277,13 +277,6 @@ public class WallpapersListActivity extends BaseFragment implements Notification
     public final static int TYPE_CHANNEL_PATTERNS = 2;
     public final static int TYPE_CHANNEL_CUSTOM = 3;
 
-    public static class EmojiWallpaper {
-        public final String emoticon;
-        public EmojiWallpaper(String emoticon) {
-            this.emoticon = emoticon;
-        }
-    }
-
     public static class ColorWallpaper {
 
         public String slug;
