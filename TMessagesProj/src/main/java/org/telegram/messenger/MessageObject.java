@@ -197,7 +197,6 @@ public class MessageObject {
     public MessageObject replyMessageObject;
     public int type = 1000;
     public long reactionsLastCheckTime;
-    public long extendedMediaLastCheckTime;
     public String customName;
     public boolean reactionsChanged;
     public boolean isReactionPush;
@@ -2028,7 +2027,7 @@ public class MessageObject {
     }
 
     public void createStrippedThumb() {
-        if (photoThumbs == null || !canCreateStripedThubms() && !hasExtendedMediaPreview() || strippedThumb != null) {
+        if (photoThumbs == null || !canCreateStripedThubms() || strippedThumb != null) {
             return;
         }
         try {
@@ -4498,7 +4497,7 @@ public class MessageObject {
         final BotInlineKeyboard.Source inlineKeyboard = inlineKeyboardSource;
 
 
-        if (inlineKeyboard != null && !hasExtendedMedia() || messageOwner.reactions != null && !messageOwner.reactions.results.isEmpty()) {
+        if (inlineKeyboard != null || messageOwner.reactions != null && !messageOwner.reactions.results.isEmpty()) {
             Theme.createCommonMessageResources();
             if (botButtonsLayout == null) {
                 botButtonsLayout = new StringBuilder();
@@ -4507,7 +4506,7 @@ public class MessageObject {
             }
         }
 
-        if (inlineKeyboard != null && !hasExtendedMedia()) {
+        if (inlineKeyboard != null) {
             for (int a = 0; a < inlineKeyboard.getRowsCount(); a++) {
                 int maxButtonSize = 0;
                 int size = inlineKeyboard.getColumnsCount(a);
@@ -6524,36 +6523,10 @@ public class MessageObject {
         return null;
     }
 
-    public boolean hasRevealedExtendedMedia() {
-        return (
-            messageOwner.media != null &&
-            !(messageOwner.media instanceof TLRPC.TL_messageMediaPaidMedia) &&
-            !messageOwner.media.extended_media.isEmpty() &&
-            messageOwner.media.extended_media.get(0) instanceof TLRPC.TL_messageExtendedMedia
-        );
-    }
-
-    public boolean hasExtendedMedia() {
-        return messageOwner.media != null && !(messageOwner.media instanceof TLRPC.TL_messageMediaPaidMedia) && !messageOwner.media.extended_media.isEmpty();
-    }
-
-    public boolean hasPaidMediaPreview() {
-        return (
-            messageOwner.media != null &&
-            messageOwner.media instanceof TLRPC.TL_messageMediaPaidMedia &&
-            !messageOwner.media.extended_media.isEmpty() &&
-            messageOwner.media.extended_media.get(0) instanceof TLRPC.TL_messageExtendedMediaPreview
-        );
-    }
-
-    public boolean hasExtendedMediaPreview() {
-        return (
-            messageOwner.media != null &&
-            !(messageOwner.media instanceof TLRPC.TL_messageMediaPaidMedia) &&
-            !messageOwner.media.extended_media.isEmpty() &&
-            messageOwner.media.extended_media.get(0) instanceof TLRPC.TL_messageExtendedMediaPreview
-        );
-    }
+    // LoogriGram: hasRevealedExtendedMedia, hasExtendedMedia, hasPaidMediaPreview
+    // and hasExtendedMediaPreview stood here. Only an invoice or paid media
+    // carries extended_media, both are held unshown (LoogriGramHidden), so
+    // for every message that is shown all four were false.
 
     private boolean hasNonEmojiEntities() {
         if (messageOwner == null || messageOwner.entities == null)
@@ -6932,19 +6905,7 @@ public class MessageObject {
     }
 
     public void generateThumbs(boolean update) {
-        if (hasExtendedMediaPreview()) {
-            TLRPC.TL_messageExtendedMediaPreview preview = (TLRPC.TL_messageExtendedMediaPreview) messageOwner.media.extended_media.get(0);
-            if (!update) {
-                photoThumbs = new ArrayList<>(Collections.singletonList(preview.thumb));
-            } else {
-                updatePhotoSizeLocations(photoThumbs, Collections.singletonList(preview.thumb));
-            }
-            photoThumbsObject = messageOwner;
-
-            if (strippedThumb == null) {
-                createStrippedThumb();
-            }
-        } else if (messageOwner instanceof TLRPC.TL_messageService) {
+        if (messageOwner instanceof TLRPC.TL_messageService) {
             if (messageOwner.action instanceof TLRPC.TL_messageActionChatEditPhoto) {
                 TLRPC.Photo photo = messageOwner.action.photo;
                 if (!update) {
@@ -7536,8 +7497,6 @@ public class MessageObject {
                 text = "";
                 entities = new ArrayList<>();
             }
-        } else if (hasExtendedMedia()) {
-            text = messageOwner.message = messageOwner.media.description;
         }
         if (messageOwner.translatedSummaryText != null && summarized && translated) {
             captionSummarized = true;
@@ -8327,11 +8286,11 @@ public class MessageObject {
             if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaEmpty || getMedia(messageOwner) == null || getMedia(messageOwner) instanceof TLRPC.TL_messageMediaWebPage && !(getMedia(messageOwner).webpage instanceof TLRPC.TL_webPage)) {
                 return false;
             }
-            if (user != null && user.bot && !hasExtendedMedia()) {
+            if (user != null && user.bot) {
                 return true;
             }
             if (!isOut()) {
-                if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaGame || getMedia(messageOwner) instanceof TLRPC.TL_messageMediaInvoice && !hasExtendedMedia() || getMedia(messageOwner) instanceof TLRPC.TL_messageMediaWebPage) {
+                if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaGame || getMedia(messageOwner) instanceof TLRPC.TL_messageMediaWebPage) {
                     return true;
                 }
                 TLRPC.Chat chat = messageOwner.peer_id != null && messageOwner.peer_id.channel_id != 0 ? getChat(null, null, messageOwner.peer_id.channel_id) : null;
@@ -9916,9 +9875,7 @@ public class MessageObject {
         if (isRepostPreview) {
             return false;
         }
-        if (hasExtendedMediaPreview()) {
-            return true;
-        } else if (messageOwner instanceof TLRPC.TL_message_secret) {
+        if (messageOwner instanceof TLRPC.TL_message_secret) {
             int ttl = Math.max(messageOwner.ttl, getMedia(messageOwner).ttl_seconds);
             return ttl > 0 && ((getMedia(messageOwner) instanceof TLRPC.TL_messageMediaPhoto || isVideo() || isGif()) && ttl <= 60 || isRoundVideo());
         } else if (messageOwner instanceof TLRPC.TL_message) {

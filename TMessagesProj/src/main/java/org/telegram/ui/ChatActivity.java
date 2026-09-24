@@ -44455,7 +44455,7 @@ public class ChatActivity extends BaseFragment implements
                         icons.add(R.drawable.msg_gif);
                     }
                 } else if (type == 4) {
-                    if (!noforwards && !selectedObject.hasRevealedExtendedMedia()) {
+                    if (!noforwards) {
                         if (selectedObject.isVideo()) {
                             if (!selectedObject.needDrawBluredPreview()) {
                                 items.add(LocaleController.getString(R.string.SaveToGallery));
@@ -44516,7 +44516,7 @@ public class ChatActivity extends BaseFragment implements
                         options.add(OPTION_SHARE);
                         icons.add(R.drawable.msg_shareout);
                     }
-                } else if (type == 6 && !noforwards && !selectedObject.hasRevealedExtendedMedia()) {
+                } else if (type == 6 && !noforwards) {
                     if (!selectedObject.needDrawBluredPreview() && !selectedObject.isVoiceOnce() && !selectedObject.isRoundOnce()) {
                         items.add(LocaleController.getString(R.string.SaveToGallery));
                         options.add(OPTION_SAVE_TO_GALLERY2);
@@ -44588,7 +44588,7 @@ public class ChatActivity extends BaseFragment implements
 
                 final boolean canForward = !isQuickRepliesOrWelcomeMessagesMode()
                     && chatMode != MODE_SCHEDULED
-                    && (!selectedObject.needDrawBluredPreview() || selectedObject.hasExtendedMediaPreview())
+                    && !selectedObject.needDrawBluredPreview()
                     && !selectedObject.isLiveLocation()
                     && selectedObject.type != MessageObject.TYPE_PHONE_CALL
                     && !noforwards && selectedObject.type != MessageObject.TYPE_SHARING_OFFER
@@ -44678,7 +44678,7 @@ public class ChatActivity extends BaseFragment implements
                     options.add(OPTION_VIEW_IN_TOPIC);
                     icons.add(R.drawable.msg_viewintopic);
                 }
-                if (type == 4 && !noforwards && !selectedObject.hasRevealedExtendedMedia() && !selectedObject.needDrawBluredPreview()) {
+                if (type == 4 && !noforwards && !selectedObject.needDrawBluredPreview()) {
                     if (selectedObject.isVideo()) {
                         items.add(LocaleController.getString(R.string.SaveToGallery));
                         options.add(OPTION_SAVE_TO_GALLERY);

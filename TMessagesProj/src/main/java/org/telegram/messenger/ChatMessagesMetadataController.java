@@ -12,7 +12,6 @@ public class ChatMessagesMetadataController {
 
     final ChatActivity chatActivity;
     private final ArrayList<MessageObject> reactionsToCheck = new ArrayList<>(10);
-    private final ArrayList<MessageObject> extendedMediaToCheck = new ArrayList<>(10);
     private final ArrayList<MessageObject> storiesToCheck = new ArrayList<>(10);
 
     ArrayList<Integer> reactionsRequests = new ArrayList<>();
@@ -35,17 +34,12 @@ public class ChatMessagesMetadataController {
                 to = messages.size();
             }
             reactionsToCheck.clear();
-            extendedMediaToCheck.clear();
             storiesToCheck.clear();
             for (int i = from; i < to; i++) {
                 MessageObject messageObject = messages.get(i);
                 if (chatActivity.getThreadMessage() != messageObject && messageObject.getId() > 0 && (messageObject.messageOwner.action == null || messageObject.canSetReaction()) && (currentTime - messageObject.reactionsLastCheckTime) > 15000L) {
                     messageObject.reactionsLastCheckTime = currentTime;
                     reactionsToCheck.add(messageObject);
-                }
-                if (chatActivity.getThreadMessage() != messageObject && messageObject.getId() > 0 && (messageObject.hasExtendedMediaPreview() || messageObject.hasPaidMediaPreview()) && (currentTime - messageObject.extendedMediaLastCheckTime) > 30000L) {
-                    messageObject.extendedMediaLastCheckTime = currentTime;
-                    extendedMediaToCheck.add(messageObject);
                 }
                 if (messageObject.type == MessageObject.TYPE_STORY || messageObject.type == MessageObject.TYPE_STORY_MENTION || messageObject.messageOwner.replyStory != null) {
                     TL_stories.StoryItem storyItem = messageObject.type == MessageObject.TYPE_STORY || messageObject.type == MessageObject.TYPE_STORY_MENTION ? messageObject.messageOwner.media.storyItem : messageObject.messageOwner.replyStory;
@@ -59,7 +53,6 @@ public class ChatMessagesMetadataController {
                 }
             }
             loadReactionsForMessages(chatActivity.getDialogId(), reactionsToCheck);
-            loadExtendedMediaForMessages(chatActivity.getDialogId(), extendedMediaToCheck);
             loadStoriesForMessages(chatActivity.getDialogId(), storiesToCheck);
         }
     }
@@ -146,27 +139,6 @@ public class ChatMessagesMetadataController {
         reactionsRequests.add(reqId);
         if (reactionsRequests.size() > 5) {
             chatActivity.getConnectionsManager().cancelRequest(reactionsRequests.remove(0), true);
-        }
-    }
-
-    public void loadExtendedMediaForMessages(long dialogId, ArrayList<MessageObject> visibleObjects) {
-        if (visibleObjects.isEmpty()) {
-            return;
-        }
-        TLRPC.TL_messages_getExtendedMedia req = new TLRPC.TL_messages_getExtendedMedia();
-        req.peer = chatActivity.getMessagesController().getInputPeer(dialogId);
-        for (int i = 0; i < visibleObjects.size(); i++) {
-            MessageObject messageObject = visibleObjects.get(i);
-            req.id.add(messageObject.getId());
-        }
-        int reqId = chatActivity.getConnectionsManager().sendRequest(req, (response, error) -> {
-            if (error == null) {
-                chatActivity.getMessagesController().processUpdates((TLRPC.Updates) response, false);
-            }
-        });
-        extendedMediaRequests.add(reqId);
-        if (extendedMediaRequests.size() > 10) {
-            chatActivity.getConnectionsManager().cancelRequest(extendedMediaRequests.remove(0), false);
         }
     }
 
