@@ -1042,7 +1042,7 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             status.collectible_id = gift.id;
             MessagesController.getInstance(currentAccount).updateEmojiStatus(getDialogId(), status, gift);
         }
-        topView.buttons[1].set(worn ? R.drawable.filled_crown_off : R.drawable.filled_crown_on, getString(worn ? R.string.Gift2ActionWearOff : R.string.Gift2ActionWear), true);
+        topView.buttons[0].set(worn ? R.drawable.filled_crown_off : R.drawable.filled_crown_on, getString(worn ? R.string.Gift2ActionWearOff : R.string.Gift2ActionWear), true);
         if (onlyWearInfo) {
             dismiss();
             return;
@@ -2002,24 +2002,17 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
                 setPattern(page, findAttribute(gift.attributes, TL_stars.starGiftAttributePattern.class), false);
                 subtitleView[page].setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
                 buttonsLayout.setVisibility(withButtons ? View.VISIBLE : View.GONE);
+                // LoogriGram: the row is Wear and Share now, buttons 0 and 1. The
+                // Transfer button that was 0 got its label here - padlocked for a
+                // host who does not own the gift.
                 if (withButtons) {
-                    buttons[1].set(worn ? R.drawable.filled_crown_off : R.drawable.filled_crown_on, getString(worn ? R.string.Gift2ActionWearOff : R.string.Gift2ActionWear), false);
+                    buttons[0].set(worn ? R.drawable.filled_crown_off : R.drawable.filled_crown_on, getString(worn ? R.string.Gift2ActionWearOff : R.string.Gift2ActionWear), false);
                 }
-                if (isOwner) {
-                    buttons[0].setAlpha(1.0f);
-                    buttons[0].set(R.drawable.filled_gift_transfer, getString(R.string.Gift2ActionTransfer), false);
-                } else {
-                    buttons[0].setAlpha(0.5f);
-                    SpannableStringBuilder sb = new SpannableStringBuilder("L ");
-                    sb.setSpan(new ColoredImageSpan(R.drawable.msg_mini_lock2), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    sb.append(getString(R.string.Gift2ActionTransfer));
-                    buttons[0].set(R.drawable.filled_gift_transfer, sb, false);
-                }
-                buttons[1].setAlpha(isOwner || isHost ? 1.0f : 0.5f);
+                buttons[0].setAlpha(isOwner || isHost ? 1.0f : 0.5f);
                 // LoogriGram: the owner had Sell / Unlist here. Sharing is what
                 // everyone gets now.
-                buttons[2].set(R.drawable.filled_share, getString(R.string.Gift2ActionShare), false);
-                buttons[2].setOnClickListener(onShareClick);
+                buttons[1].set(R.drawable.filled_share, getString(R.string.Gift2ActionShare), false);
+                buttons[1].setOnClickListener(onShareClick);
                 hasRibbon = gift.crafted;
                 ribbon.drawable.setBackdrop(backdrop[page], false, true);
             } else {
