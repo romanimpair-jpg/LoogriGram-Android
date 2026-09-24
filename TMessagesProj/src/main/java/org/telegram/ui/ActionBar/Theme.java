@@ -2393,7 +2393,6 @@ public class Theme {
     public static TextPaint chat_locationAddressPaint;
     public static TextPaint chat_durationPaint;
     public static TextPaint chat_gamePaint;
-    public static TextPaint chat_shipmentPaint;
     public static TextPaint chat_instantViewPaint;
     public static TextPaint chat_audioTimePaint;
     public static TextPaint chat_audioTitlePaint;
@@ -8090,7 +8089,6 @@ public class Theme {
             chat_durationPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
             chat_gamePaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
             chat_gamePaint.setTypeface(AndroidUtilities.bold());
-            chat_shipmentPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
             chat_timePaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
             chat_adminPaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
             chat_ephemeralPaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
@@ -8399,7 +8397,6 @@ public class Theme {
             float timeDp = 2 * (SharedConfig.fontSize - 16) / 3f + 12;
             chat_timePaint.setTextSize(dp(12));
             chat_gamePaint.setTextSize(dp(13));
-            chat_shipmentPaint.setTextSize(dp(13));
             chat_instantViewPaint.setTextSize(dp(13));
             chat_instantViewRectPaint.setStrokeWidth(dp(1));
             chat_pollTimerPaint.setStrokeWidth(dp(1.1f));
