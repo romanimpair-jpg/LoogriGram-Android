@@ -1349,7 +1349,13 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
     }
 
     public void showDownloads() {
-        setPosition((expandedPublicPosts ? 1 : 0) + 5);
+        // LoogriGram: found by type; the fixed index assumed a Posts tab.
+        for (int i = 0; i < viewPagerAdapter.items.size(); i++) {
+            if (viewPagerAdapter.items.get(i).type == ViewPagerAdapter.DOWNLOADS_TYPE) {
+                setPosition(i);
+                return;
+            }
+        }
     }
 
     public int getPositionForType(int initialSearchType) {
@@ -1430,7 +1436,11 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
             }
             items.add(new Item(CHANNELS_TYPE));
             items.add(new Item(BOTS_TYPE));
-            items.add(new Item(POSTS_TYPE));
+            // LoogriGram: searching every public post is Premium's. Without it the
+            // Posts tab held only an offer of Premium, so it is left out.
+            if (UserConfig.getInstance(currentAccount).isPremium()) {
+                items.add(new Item(POSTS_TYPE));
+            }
             if (!showOnlyDialogsAdapter) {
                 Item item = new Item(FILTER_TYPE);
                 item.filterIndex = 0;

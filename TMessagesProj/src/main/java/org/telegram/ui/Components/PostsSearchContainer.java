@@ -27,7 +27,6 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
-import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.AdjustPanLayoutHelper;
@@ -37,7 +36,6 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.DialogCell;
 import org.telegram.ui.ChatActivity;
 import org.telegram.ui.Components.Premium.PremiumPreviewBottomSheet;
-import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -474,22 +472,7 @@ public class PostsSearchContainer extends FrameLayout {
     private void updateEmptyView() {
         AndroidUtilities.cancelRunOnUIThread(updateEmptyViewRunnable);
         final int now = ConnectionsManager.getInstance(currentAccount).getCurrentTime();
-        if (!UserConfig.getInstance(currentAccount).isPremium()) {
-            emptyImageView.setVisibility(View.GONE);
-            emptyTitleView.setText(getString(R.string.SearchPostsTitle));
-            emptyTextView.setText(getString(R.string.SearchPostsText));
-
-            emptyButton.setVisibility(View.VISIBLE);
-            emptyButton.setText(getString(R.string.SearchPostsButtonPremium), true);
-            emptyButton.setSubText(null, true);
-            emptyButton.setOnClickListener(v -> {
-                fragment.presentFragment(
-                    new PremiumPreviewFragment("search")
-                );
-            });
-            emptyUnderButtonTextView.setVisibility(View.VISIBLE);
-            emptyUnderButtonTextView.setText(getString(R.string.SearchPostsPremium));
-        } else if (!TextUtils.isEmpty(lastQuery) && messages.isEmpty() && endReached) {
+        if (!TextUtils.isEmpty(lastQuery) && messages.isEmpty() && endReached) {
             if (emptyImageView.getImageReceiver().getImageDrawable() == null) {
                 emptyImageView.setImageDrawable(new RLottieDrawable(R.raw.utyan_empty, "utyan_empty", dp(130), dp(130)));
             }
