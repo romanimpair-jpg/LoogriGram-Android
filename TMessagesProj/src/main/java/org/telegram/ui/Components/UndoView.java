@@ -184,7 +184,6 @@ public class UndoView extends FrameLayout {
     public final static int ACTION_PREVIEW_MEDIA_DESELECTED = 82;
     public static int ACTION_RINGTONE_ADDED = 83;
     public final static int ACTION_HINT_SWIPE_TO_REPLY = 85;
-    public final static int ACTION_PREMIUM_ALL_FOLDER = 86;
 
     public final static int ACTION_PROXY_ADDED = 87;
     public final static int ACTION_SHARED_FOLDER_DELETED = 88;
@@ -1486,7 +1485,7 @@ public class UndoView extends FrameLayout {
             }
             width -= AndroidUtilities.dp(16);
             measureChildWithMargins(infoTextView, MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY), 0, MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED), 0);
-            undoViewHeight = infoTextView.getMeasuredHeight() + AndroidUtilities.dp(currentAction == ACTION_DICE_INFO || currentAction == ACTION_DICE_NO_SEND_INFO || currentAction == ACTION_TEXT_INFO || currentAction == ACTION_PREMIUM_ALL_FOLDER ? 14 : 28);
+            undoViewHeight = infoTextView.getMeasuredHeight() + AndroidUtilities.dp(currentAction == ACTION_DICE_INFO || currentAction == ACTION_DICE_NO_SEND_INFO || currentAction == ACTION_TEXT_INFO ? 14 : 28);
             if (currentAction == ACTION_TEXT_INFO) {
                 undoViewHeight = Math.max(undoViewHeight, AndroidUtilities.dp(52));
             } else if (currentAction == ACTION_PROXIMITY_REMOVED) {

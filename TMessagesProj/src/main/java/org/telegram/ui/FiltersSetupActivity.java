@@ -13,7 +13,6 @@ import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
-import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -53,8 +52,6 @@ import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
-import org.telegram.ui.Components.Bulletin;
-import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.FolderBottomSheet;
@@ -1154,7 +1151,7 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
 
         @Override
         public int getMovementFlags(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
-            if (viewHolder.getItemViewType() != VIEW_TYPE_FILTER) {
+            if (viewHolder.getItemViewType() != VIEW_TYPE_FILTER || isDefaultPinned(viewHolder.getAdapterPosition())) {
                 return makeMovementFlags(0, 0);
             }
             return makeMovementFlags(ItemTouchHelper.UP | ItemTouchHelper.DOWN, 0);
@@ -1162,11 +1159,18 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
 
         @Override
         public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder source, RecyclerView.ViewHolder target) {
-            if (source.getItemViewType() != target.getItemViewType()) {
+            if (source.getItemViewType() != target.getItemViewType() || isDefaultPinned(source.getAdapterPosition()) || isDefaultPinned(target.getAdapterPosition())) {
                 return false;
             }
             adapter.swapElements(source.getAdapterPosition(), target.getAdapterPosition());
             return true;
+        }
+
+        // LoogriGram: without Premium the first folder cannot be dragged or
+        // displaced, as the chat list's folder tabs already had it. Upstream
+        // let All Chats be dragged here, put it back and offered Premium.
+        private boolean isDefaultPinned(int position) {
+            return position == filtersStartPosition && !UserConfig.getInstance(UserConfig.selectedAccount).isPremium();
         }
 
         @Override
@@ -1183,7 +1187,6 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
                 if (filters.get(i).isDefault() && i != 0) {
                     adapter.moveElementToStart(i);
                     listView.scrollToPosition(0);
-                    onDefaultTabMoved();
                     break;
                 }
             }
@@ -1215,15 +1218,6 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
             viewHolder.itemView.setPressed(false);
             viewHolder.itemView.setTag(R.id.dragging, null);
         }
-    }
-
-    protected void onDefaultTabMoved() {
-        try {
-            fragmentView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_PRESS, HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING);
-        } catch (Exception ignore) {}
-        BulletinFactory.of(this).createSimpleBulletin(R.raw.filter_reorder, AndroidUtilities.replaceTags(LocaleController.formatString("LimitReachedReorderFolder", R.string.LimitReachedReorderFolder, LocaleController.getString(R.string.FilterAllChats))), LocaleController.getString(R.string.PremiumMore), Bulletin.DURATION_PROLONG, () -> {
-            showDialog(new PremiumFeatureBottomSheet(FiltersSetupActivity.this, PremiumPreviewFragment.PREMIUM_FEATURE_ADVANCED_CHAT_MANAGEMENT, true));
-        }).show();
     }
 
     @Override

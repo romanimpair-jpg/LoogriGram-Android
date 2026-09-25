@@ -1,7 +1,6 @@
 package org.telegram.ui.Components;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
@@ -10,7 +9,6 @@ import android.graphics.PorterDuffColorFilter;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 
-import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.ImageLocation;
@@ -23,9 +21,6 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.Components.Premium.LimitReachedBottomSheet;
-import org.telegram.ui.LaunchActivity;
-import org.telegram.ui.PremiumPreviewFragment;
 
 import java.util.ArrayList;
 
@@ -196,35 +191,17 @@ public class StickerSetBulletinLayout extends Bulletin.TwoLineLayout {
                 subtitleTextView.setVisibility(ViewPagerFixed.GONE);
                 break;
             case TYPE_REPLACED_TO_FAVORITES:
-                if (!UserConfig.getInstance(UserConfig.selectedAccount).isPremium() && !MessagesController.getInstance(UserConfig.selectedAccount).premiumFeaturesBlocked()) {
-                    titleTextView.setText(LocaleController.formatString("LimitReachedFavoriteStickers", R.string.LimitReachedFavoriteStickers, MessagesController.getInstance(UserConfig.selectedAccount).stickersFavedLimitDefault));
-                    CharSequence str = AndroidUtilities.premiumText(LocaleController.formatString("LimitReachedFavoriteStickersSubtitle", R.string.LimitReachedFavoriteStickersSubtitle, MessagesController.getInstance(UserConfig.selectedAccount).stickersFavedLimitPremium), () -> {
-                        Activity activity = AndroidUtilities.findActivity(context);
-                        if (activity instanceof LaunchActivity) {
-                            ((LaunchActivity) activity).presentFragment(new PremiumPreviewFragment(LimitReachedBottomSheet.limitTypeToServerString(LimitReachedBottomSheet.TYPE_STICKERS)));
-                        }
-                    });
-                    subtitleTextView.setText(str);
-                } else {
-                    titleTextView.setText(LocaleController.formatString("LimitReachedFavoriteStickers", R.string.LimitReachedFavoriteStickers, MessagesController.getInstance(UserConfig.selectedAccount).stickersFavedLimitPremium));
-                    subtitleTextView.setText(LocaleController.formatString("LimitReachedFavoriteStickersSubtitlePremium", R.string.LimitReachedFavoriteStickersSubtitlePremium));
-                }
+                // LoogriGram: both bulletins say what was replaced and never offer
+                // Premium's higher limit. Upstream's branch for where Premium is
+                // not sold quoted the Premium limit to everyone; this quotes the
+                // one that applies, as the GIF one already did.
+                titleTextView.setText(LocaleController.formatString("LimitReachedFavoriteStickers", R.string.LimitReachedFavoriteStickers, UserConfig.getInstance(UserConfig.selectedAccount).isPremium() ? MessagesController.getInstance(UserConfig.selectedAccount).stickersFavedLimitPremium : MessagesController.getInstance(UserConfig.selectedAccount).stickersFavedLimitDefault));
+                subtitleTextView.setText(LocaleController.formatString("LimitReachedFavoriteStickersSubtitlePremium", R.string.LimitReachedFavoriteStickersSubtitlePremium));
                 break;
             case TYPE_REPLACED_TO_FAVORITES_GIFS:
                 final boolean isPremium = UserConfig.getInstance(UserConfig.selectedAccount).isPremium();
-                if (!MessagesController.getInstance(UserConfig.selectedAccount).premiumFeaturesBlocked() && !isPremium) {
-                    titleTextView.setText(LocaleController.formatString(R.string.LimitReachedFavoriteGifs, MessagesController.getInstance(UserConfig.selectedAccount).savedGifsLimitDefault));
-                    CharSequence str = AndroidUtilities.premiumText(LocaleController.formatString(R.string.LimitReachedFavoriteGifsSubtitle, MessagesController.getInstance(UserConfig.selectedAccount).savedGifsLimitPremium), () -> {
-                        Activity activity = AndroidUtilities.findActivity(context);
-                        if (activity instanceof LaunchActivity) {
-                            ((LaunchActivity) activity).presentFragment(new PremiumPreviewFragment(LimitReachedBottomSheet.limitTypeToServerString(LimitReachedBottomSheet.TYPE_GIFS)));
-                        }
-                    });
-                    subtitleTextView.setText(str);
-                } else {
-                    titleTextView.setText(LocaleController.formatString(R.string.LimitReachedFavoriteGifs, isPremium ? MessagesController.getInstance(UserConfig.selectedAccount).savedGifsLimitPremium : MessagesController.getInstance(UserConfig.selectedAccount).savedGifsLimitDefault));
-                    subtitleTextView.setText(LocaleController.getString(R.string.LimitReachedFavoriteGifsSubtitlePremium));
-                }
+                titleTextView.setText(LocaleController.formatString(R.string.LimitReachedFavoriteGifs, isPremium ? MessagesController.getInstance(UserConfig.selectedAccount).savedGifsLimitPremium : MessagesController.getInstance(UserConfig.selectedAccount).savedGifsLimitDefault));
+                subtitleTextView.setText(LocaleController.getString(R.string.LimitReachedFavoriteGifsSubtitlePremium));
                 break;
             case TYPE_REMOVED_FROM_RECENT:
                 titleTextView.setText(LocaleController.getString(R.string.RemovedFromRecent));
