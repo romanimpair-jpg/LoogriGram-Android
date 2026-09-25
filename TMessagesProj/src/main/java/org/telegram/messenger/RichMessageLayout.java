@@ -2971,16 +2971,9 @@ public class RichMessageLayout {
                     return true;
                 }
                 if (pressedEmoji != null) {
-                    final AnimatedEmojiSpan e = pressedEmoji;
                     pressedEmoji = null;
-                    final ChatMessageCell cell = root.getCell();
-                    final ChatMessageCell.ChatMessageCellDelegate dele = root.getDelegate();
-                    if (cell != null && dele != null) {
-                        if (view != null) {
-                            view.playSoundEffect(SoundEffectConstants.CLICK);
-                        }
-                        dele.didPressAnimatedEmoji(cell, e);
-                    }
+                    // LoogriGram: a custom emoji opened its pack here, custom emoji
+                    // being Premium's; upstream did nothing where it isn't sold.
                     return true;
                 }
                 return false;

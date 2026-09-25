@@ -1206,7 +1206,6 @@ public class ChatActivity extends BaseFragment implements
     public final static int OPTION_VIEW_IN_TOPIC = 32;
     public final static int OPTION_SEND_NOW = 100;
     public final static int OPTION_EDIT_SCHEDULE_TIME = 102;
-    public final static int OPTION_SPEED_PROMO = 103;
     public final static int OPTION_OPEN_PROFILE = 104;
     public final static int OPTION_FACT_CHECK = 106;
     public final static int OPTION_EDIT_TODO = 109;
@@ -28639,10 +28638,11 @@ public class ChatActivity extends BaseFragment implements
         }
 
         boolean showRestartTopic = !isInPreviewMode() && forumTopic != null && forumTopic.closed && !forumTopic.hidden && ChatObject.canManageTopic(currentAccount, currentChat, forumTopic);
+        // LoogriGram: the translate bar only where translation is on. Upstream
+        // also showed it everywhere else, now and then, as a Premium teaser.
         boolean showTranslate = (
-            getUserConfig().isPremium() || currentChat != null && currentChat.autotranslation ?
-                getMessagesController().getTranslateController().isDialogTranslatable(getDialogId()) && !getMessagesController().getTranslateController().isTranslateDialogHidden(getDialogId()) :
-                !getMessagesController().premiumFeaturesBlocked() && preferences.getInt("dialog_show_translate_count" + did, 5) <= 0
+            (getUserConfig().isPremium() || currentChat != null && currentChat.autotranslation) &&
+                getMessagesController().getTranslateController().isDialogTranslatable(getDialogId()) && !getMessagesController().getTranslateController().isTranslateDialogHidden(getDialogId())
         ) || DEBUG_TOP_PANELS;
         boolean showAddProfilePicture = UserObject.isBot(currentUser) && currentUser.bot_can_edit && currentUser.photo == null;
         boolean showBizBot = currentEncryptedChat == null && getUserConfig().isPremium() && preferences.getLong("dialog_botid" + did, 0) != 0 || DEBUG_TOP_PANELS;
@@ -30231,28 +30231,6 @@ public class ChatActivity extends BaseFragment implements
                 icons.add(R.drawable.msg_user_search);
             }
 
-            if (!getUserConfig().isPremium() && !getMessagesController().premiumFeaturesBlocked() && message.getDocument() != null && message.getDocument().size >= 150 * 1024 * 1024 && FileLoader.getInstance(currentAccount).isLoadingFile(FileLoader.getAttachFileName(message.getDocument())) && chatMode != MODE_SAVED) {
-                items.add(LocaleController.getString(R.string.PremiumSpeedPromo));
-                options.add(OPTION_SPEED_PROMO);
-                icons.add(R.drawable.msg_speed);
-
-                if (SharedConfig.getDevicePerformanceClass() != SharedConfig.PERFORMANCE_CLASS_LOW) {
-                    TLRPC.TL_help_premiumPromo premiumPromo = MediaDataController.getInstance(currentAccount).getPremiumPromo();
-                    String typeString = PremiumPreviewFragment.featureTypeToServerString(PremiumPreviewFragment.PREMIUM_FEATURE_DOWNLOAD_SPEED);
-                    if (premiumPromo != null) {
-                        int index = -1;
-                        for (int i = 0; i < premiumPromo.video_sections.size(); i++) {
-                            if (premiumPromo.video_sections.get(i).equals(typeString)) {
-                                index = i;
-                                break;
-                            }
-                        }
-                        if (index != -1) {
-                            FileLoader.getInstance(currentAccount).loadFile(premiumPromo.videos.get(index), premiumPromo, FileLoader.PRIORITY_HIGH, 0);
-                        }
-                    }
-                }
-            }
             if (message.messageOwner.action instanceof TLRPC.TL_messageActionSetMessagesTTL && single && (dialog_id >= 0 || (currentChat != null && ChatObject.canUserDoAdminAction(currentChat, ChatObject.ACTION_DELETE_MESSAGES)))) {
                 AutoDeletePopupWrapper autoDeletePopupWrapper = new AutoDeletePopupWrapper(contentView.getContext(), null, new AutoDeletePopupWrapper.Callback() {
                     @Override
@@ -31264,7 +31242,7 @@ public class ChatActivity extends BaseFragment implements
                         sheet.show();
                     }));
                 }
-                if (isReactionsAvailable && (!tags || !getMessagesController().premiumFeaturesBlocked())) {
+                if (isReactionsAvailable && !tags) {
                     int pad = 22;
                     int sPad = 24;
                     reactionsLayout.setPadding(dp(4) + (LocaleController.isRTL ? 0 : sPad), dp(4), dp(4) + (LocaleController.isRTL ? sPad : 0), dp(pad));
@@ -31371,60 +31349,6 @@ public class ChatActivity extends BaseFragment implements
                     fl.addView(tv, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 11, 11, 11, 11));
                     scrimPopupContainerLayout.addView(fl, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT, isReactionsAvailable ? 16 : 0, -8, isReactionsAvailable ? 36 : 0, 0));
                     scrimPopupContainerLayout.applyViewBottom(fl);
-                }
-
-
-                if (message.contentType == 0) {
-                    AnimatedEmojiSpan[] animatedEmojiSpans1 = message.messageText instanceof Spanned ? ((Spanned) message.messageText).getSpans(0, message.messageText.length(), AnimatedEmojiSpan.class) : null;
-                    CharSequence caption = getMessageCaption(selectedObject, selectedObjectGroup);
-                    AnimatedEmojiSpan[] animatedEmojiSpans2 = caption instanceof Spanned ? ((Spanned) caption).getSpans(0, caption.length(), AnimatedEmojiSpan.class) : null;
-                    int animatedEmojiCount = (animatedEmojiSpans1 == null ? 0 : animatedEmojiSpans1.length) + (animatedEmojiSpans2 == null ? 0 : animatedEmojiSpans2.length);
-                    if (animatedEmojiCount > 0) {
-                        ArrayList<TLRPC.InputStickerSet> stickerSets = new ArrayList<>();
-                        int firstCount = (animatedEmojiSpans1 == null ? 0 : animatedEmojiSpans1.length);
-                        for (int i = 0; i < animatedEmojiCount; ++i) {
-                            AnimatedEmojiSpan span = i < firstCount ? animatedEmojiSpans1[i] : animatedEmojiSpans2[i - firstCount];
-                            if (span == null || span.standard) {
-                                continue;
-                            }
-                            TLRPC.Document document = span.document == null ? AnimatedEmojiDrawable.findDocument(currentAccount, span.documentId) : span.document;
-                            TLRPC.InputStickerSet stickerSet = MessageObject.getInputStickerSet(document);
-                            if (stickerSet == null) {
-                                continue;
-                            }
-                            boolean found = false;
-                            for (int j = 0; j < stickerSets.size(); ++j) {
-                                if (stickerSets.get(j).id == stickerSet.id) {
-                                    found = true;
-                                    break;
-                                }
-                            }
-                            if (!found) {
-                                stickerSets.add(stickerSet);
-                            }
-                        }
-
-                        if (stickerSets.size() > 0 && !getMessagesController().premiumFeaturesBlocked()) {
-                            popupLayout.addView(new ActionBarPopupWindow.GapView(contentView.getContext(), themeDelegate), LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 8));
-
-                            View button = new MessageContainsEmojiButton(currentAccount, contentView.getContext(), themeDelegate, stickerSets, MessageContainsEmojiButton.EMOJI_TYPE);
-                            button.setOnClickListener(e -> {
-                                final EmojiPacksAlert alert = new EmojiPacksAlert(ChatActivity.this, getParentActivity(), themeDelegate, stickerSets) {
-                                    @Override
-                                    public void dismiss() {
-                                        super.dismiss();
-                                        dimBehindView(false);
-                                    }
-                                };
-                                alert.setCalcMandatoryInsets(isKeyboardVisible());
-                                alert.setDimBehind(false);
-                                closeMenu(false);
-                                showDialog(alert);
-                            });
-                            popupLayout.addView(button, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
-                            popupLayout.precalculateHeight();
-                        }
-                    }
                 }
             }
 
@@ -33266,10 +33190,6 @@ public class ChatActivity extends BaseFragment implements
                     .setOnPreDismissListener(di -> dimBehindView(false))
                     .setDimBehind(false);
                 preserveDim = true;
-                break;
-            }
-            case OPTION_SPEED_PROMO: {
-                showDialog(new PremiumFeatureBottomSheet(ChatActivity.this, PremiumPreviewFragment.PREMIUM_FEATURE_DOWNLOAD_SPEED, true));
                 break;
             }
             case OPTION_OPEN_PROFILE: {
@@ -39447,53 +39367,6 @@ public class ChatActivity extends BaseFragment implements
                 cell.requestLayout();
                 chatAdapter.updateRowWithMessageObject(msg, false, false);
             }
-        }
-
-        @Override
-        public boolean didPressAnimatedEmoji(ChatMessageCell cell, AnimatedEmojiSpan span) {
-            if (getMessagesController().premiumFeaturesBlocked() || span == null || span.standard) {
-                return false;
-            }
-            final long documentId = span.getDocumentId();
-            final TLRPC.Document document = span.document == null ? AnimatedEmojiDrawable.findDocument(currentAccount, documentId) : span.document;
-            if (document == null) return false;
-            final TLRPC.InputStickerSet inputStickerSet = MessageObject.getInputStickerSet(document);
-            if (inputStickerSet == null) return false;
-            final TLRPC.TL_messages_stickerSet cachedSet = MediaDataController.getInstance(UserConfig.selectedAccount).getStickerSet(inputStickerSet, true);
-//            if (cachedSet == null || cachedSet.set == null) {
-//                final boolean[] cancelled = new boolean[1];
-//                final AlertDialog progressDialog = new AlertDialog(getContext(), AlertDialog.ALERT_TYPE_SPINNER);
-//                progressDialog.showDelayed(200);
-//                progressDialog.setCanCancel(true);
-//                progressDialog.setOnCancelListener(d -> cancelled[0] = true);
-//                MediaDataController.getInstance(UserConfig.selectedAccount).getStickerSet(inputStickerSet, null, false, set -> {
-//                    if (cancelled[0]) return;
-//                    ArrayList<TLRPC.InputStickerSet> inputSets = new ArrayList<>(1);
-//                    inputSets.add(inputStickerSet);
-//                    EmojiPacksAlert alert = new EmojiPacksAlert(ChatActivity.this, getParentActivity(), themeDelegate, inputSets);
-//                    alert.setCalcMandatoryInsets(isKeyboardVisible());
-//                    showDialog(alert);
-//                });
-//            } else {
-            final ArrayList<TLRPC.InputStickerSet> inputSets = new ArrayList<>(1);
-            inputSets.add(inputStickerSet);
-            final EmojiPacksAlert alert = new EmojiPacksAlert(ChatActivity.this, getParentActivity(), themeDelegate, inputSets);
-            alert.setPreviewEmoji(document);
-            alert.setCalcMandatoryInsets(isKeyboardVisible());
-            showDialog(alert);
-//            }
-//            Bulletin bulletin = BulletinFactory.of(ChatActivity.this).createContainsEmojiBulletin(document, BulletinFactory.CONTAINS_EMOJI_IN_MESSAGE, set -> {
-//                ArrayList<TLRPC.InputStickerSet> inputSets = new ArrayList<>(1);
-//                inputSets.add(set);
-//                EmojiPacksAlert alert = new EmojiPacksAlert(ChatActivity.this, getParentActivity(), themeDelegate, inputSets);
-//                alert.setCalcMandatoryInsets(isKeyboardVisible());
-//                showDialog(alert);
-//            });
-//            if (bulletin != null) {
-//                bulletin.show();
-//                return true;
-//            }
-            return true;
         }
 
         @Override

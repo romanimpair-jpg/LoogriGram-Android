@@ -791,10 +791,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             return true;
         }
 
-        default boolean didPressAnimatedEmoji(ChatMessageCell cell, AnimatedEmojiSpan span) {
-            return false;
-        }
-
         default void didPressTopicButton(ChatMessageCell cell) {}
 
         default boolean shouldShowTopicButton(ChatMessageCell cell) {
@@ -2407,11 +2403,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                                 return true;
                             } else {
                                 if (link[0] instanceof AnimatedEmojiSpan && pressedEmoji == link[0]) {
-                                    if (delegate.didPressAnimatedEmoji(this, pressedEmoji)) {
-                                        resetPressedLink(1);
-                                        pressedEmoji = null;
-                                        return true;
-                                    }
                                     resetPressedLink(1);
                                     pressedEmoji = null;
                                 } else if (pressedLink != null && link[0] == pressedLink.getSpan()) {
@@ -2631,11 +2622,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                                 return true;
                             } else {
                                 if (link[0] instanceof AnimatedEmojiSpan && pressedEmoji == link[0]) {
-                                    if (delegate.didPressAnimatedEmoji(this, pressedEmoji)) {
-                                        resetPressedLink(1);
-                                        pressedEmoji = null;
-                                        return true;
-                                    }
                                     resetPressedLink(1);
                                     pressedEmoji = null;
                                 } else if (pressedLink != null && link[0] == pressedLink.getSpan()) {
@@ -2836,11 +2822,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                                 return true;
                             } else {
                                 if (link[0] instanceof AnimatedEmojiSpan && pressedEmoji == link[0]) {
-                                    if (delegate.didPressAnimatedEmoji(this, pressedEmoji)) {
-                                        resetPressedLink(1);
-                                        pressedEmoji = null;
-                                        return true;
-                                    }
                                     resetPressedLink(1);
                                     pressedEmoji = null;
                                 } else if (pressedLink != null && link[0] == pressedLink.getSpan()) {
@@ -3126,9 +3107,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         } else if (pressedLink.getSpan() instanceof ClickableSpan) {
                             ((ClickableSpan) pressedLink.getSpan()).onClick(this);
                         }
-                        resetPressedLink(2);
-                    } else if (pressedEmoji != null && delegate.didPressAnimatedEmoji(this, pressedEmoji)) {
-                        pressedEmoji = null;
                         resetPressedLink(2);
                     } else {
                         if (documentAttachType == DOCUMENT_ATTACH_TYPE_GIF && drawImageButton) {
