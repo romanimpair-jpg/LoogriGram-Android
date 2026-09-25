@@ -240,7 +240,6 @@ public class NotificationCenter {
     public static final int groupPackUpdated = totalEvents++;
     public static final int timezonesUpdated = totalEvents++;
     public static final int customStickerCreated = totalEvents++;
-    public static final int premiumFloodWaitReceived = totalEvents++;
     public static final int availableEffectsUpdate = totalEvents++;
     public static final int starBalanceUpdated = totalEvents++;
     public static final int starSubscriptionsLoaded = totalEvents++;

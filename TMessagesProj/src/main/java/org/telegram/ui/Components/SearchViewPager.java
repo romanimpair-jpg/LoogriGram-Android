@@ -12,8 +12,6 @@ import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.RectF;
-import android.graphics.drawable.AnimatedVectorDrawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
@@ -62,13 +60,11 @@ import org.telegram.ui.Cells.SharedDocumentCell;
 import org.telegram.ui.Cells.SharedLinkCell;
 import org.telegram.ui.Cells.SharedPhotoVideoCell;
 import org.telegram.ui.ChatActivity;
-import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
 import org.telegram.ui.Components.blur3.capture.IBlur3Capture;
 import org.telegram.ui.Components.blur3.utils.Blur3Utils;
 import org.telegram.ui.DialogsActivity;
 import org.telegram.ui.FilteredSearchView;
-import org.telegram.ui.PremiumPreviewFragment;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -124,9 +120,7 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
     public final static int gotoItemId = 200;
     public final static int forwardItemId = 201;
     public final static int deleteItemId = 202;
-    public final static int speedItemId = 203;
 
-    private ActionBarMenuItem speedItem;
     private ActionBarMenuItem gotoItem;
     private ActionBarMenuItem forwardItem;
     private ActionBarMenuItem deleteItem;
@@ -574,10 +568,6 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
         return actionMode;
     }
 
-    public ActionBarMenuItem getSpeedItem() {
-        return speedItem;
-    }
-
     public void onTextChanged(String text) {
         View view = getCurrentView();
         boolean reset = false;
@@ -814,8 +804,6 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
             actionMode.addView(selectedMessagesCountTextView, LayoutHelper.createLinear(0, LayoutHelper.MATCH_PARENT, 1.0f, parent.hasMainTabs ? 18 : 72, 0, 0, 0));
             selectedMessagesCountTextView.setOnTouchListener((v, event) -> true);
 
-            speedItem = actionMode.addItemWithWidth(speedItemId, R.drawable.avd_speed, AndroidUtilities.dp(54), getString(R.string.AccDescrPremiumSpeed));
-            speedItem.getIconView().setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarActionModeDefaultIcon), PorterDuff.Mode.SRC_IN));
             gotoItem = actionMode.addItemWithWidth(gotoItemId, R.drawable.msg_message, AndroidUtilities.dp(54), getString(R.string.AccDescrGoToMessage));
             forwardItem = actionMode.addItemWithWidth(forwardItemId, R.drawable.msg_forward, AndroidUtilities.dp(54), getString(R.string.Forward));
             deleteItem = actionMode.addItemWithWidth(deleteItemId, R.drawable.msg_delete, AndroidUtilities.dp(54), getString(R.string.Delete));
@@ -835,7 +823,6 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
             AndroidUtilities.hideKeyboard(parent.getParentActivity().getCurrentFocus());
             parent.getActionBar().showActionMode();
             selectedMessagesCountTextView.setNumber(selectedFiles.size(), false);
-            speedItem.setVisibility(isSpeedItemVisible() ? View.VISIBLE : View.GONE);
             gotoItem.setVisibility(View.VISIBLE);
             forwardItem.setVisibility(View.VISIBLE);
             deleteItem.setVisibility(View.VISIBLE);
@@ -861,18 +848,6 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
                 }
             }
         }
-    }
-
-    private boolean isSpeedItemVisible() {
-        if (UserConfig.getInstance(currentAccount).isPremium() || MessagesController.getInstance(currentAccount).premiumFeaturesBlocked()) {
-            return false;
-        }
-        for (MessageObject obj : selectedFiles.values()) {
-            if (obj.getDocument() != null && obj.getDocument().size >= 150 * 1024 * 1024) {
-                return true;
-            }
-        }
-        return false;
     }
 
     public void onActionBarItemClick(int id) {
@@ -903,12 +878,6 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
                 button.setTextColor(Theme.getColor(Theme.key_text_RedBold));
             }
 
-        } else if (id == speedItemId) {
-            if (!isSpeedItemVisible()) {
-                return;
-            }
-
-            parent.showDialog(new PremiumFeatureBottomSheet(parent, PremiumPreviewFragment.PREMIUM_FEATURE_DOWNLOAD_SPEED, true));
         } else if (id == gotoItemId) {
             if (selectedFiles.size() != 1) {
                 return;
@@ -1021,27 +990,6 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
             selectedMessagesCountTextView.setNumber(selectedFiles.size(), true);
             if (gotoItem != null) {
                 gotoItem.setVisibility(selectedFiles.size() == 1 ? View.VISIBLE : View.GONE);
-            }
-            if (speedItem != null) {
-                boolean visible = isSpeedItemVisible();
-                int v = visible ? View.VISIBLE : View.GONE;
-                if (speedItem.getVisibility() != v) {
-                    speedItem.setVisibility(v);
-
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        AnimatedVectorDrawable drawable = (AnimatedVectorDrawable) speedItem.getIconView().getDrawable();
-                        drawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_actionBarActionModeDefaultIcon), PorterDuff.Mode.SRC_IN));
-                        if (visible) {
-                            drawable.start();
-                        } else {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                                drawable.reset();
-                            } else {
-                                drawable.setVisible(false, true);
-                            }
-                        }
-                    }
-                }
             }
             if (deleteItem != null) {
                 boolean canShowDelete = true;

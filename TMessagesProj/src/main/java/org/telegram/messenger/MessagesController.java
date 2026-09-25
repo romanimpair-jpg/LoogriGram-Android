@@ -609,9 +609,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public int storiesSuggestedReactionsLimitPremium;
     public int groupTranscribeLevelMin;
     public int quickRepliesLimit;
-    public float uploadPremiumSpeedupUpload;
-    public float uploadPremiumSpeedupDownload;
-    public int uploadPremiumSpeedupNotifyPeriod;
     public int introTitleLengthLimit;
     public int introDescriptionLengthLimit;
     public int businessChatLinksLimit;
@@ -1695,9 +1692,6 @@ public class MessagesController extends BaseController implements NotificationCe
         storyQualityFull = mainPreferences.getBoolean("storyQualityFull", true);
         savedViewAsChats = mainPreferences.getBoolean("savedViewAsChats", false);
         folderTags = mainPreferences.getBoolean("folderTags", false);
-        uploadPremiumSpeedupUpload = mainPreferences.getFloat("uploadPremiumSpeedupUpload", 10.0f);
-        uploadPremiumSpeedupDownload = mainPreferences.getFloat("uploadPremiumSpeedupDownload", 10.0f);
-        uploadPremiumSpeedupNotifyPeriod = mainPreferences.getInt("uploadPremiumSpeedupNotifyPeriod2", 3600);
         introTitleLengthLimit = mainPreferences.getInt("introTitleLengthLimit", 32);
         introDescriptionLengthLimit = mainPreferences.getInt("introDescriptionLengthLimit", 72);
         businessChatLinksLimit = mainPreferences.getInt("businessChatLinksLimit", 100);
@@ -4042,39 +4036,6 @@ public class MessagesController extends BaseController implements NotificationCe
                         if (num.value != savedDialogsPinnedLimitPremium) {
                             savedDialogsPinnedLimitPremium = (int) num.value;
                             editor.putInt("savedDialogsPinnedLimitPremium", savedDialogsPinnedLimitPremium);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "upload_premium_speedup_upload": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (Math.abs(num.value - uploadPremiumSpeedupUpload) >= 0.01f) {
-                            uploadPremiumSpeedupUpload = (float) num.value;
-                            editor.putFloat("uploadPremiumSpeedupUpload", uploadPremiumSpeedupUpload);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "upload_premium_speedup_download": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (Math.abs(num.value - uploadPremiumSpeedupDownload) >= 0.01f) {
-                            uploadPremiumSpeedupDownload = (float) num.value;
-                            editor.putFloat("uploadPremiumSpeedupDownload", uploadPremiumSpeedupDownload);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "upload_premium_speedup_notify_period": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != uploadPremiumSpeedupNotifyPeriod) {
-                            uploadPremiumSpeedupNotifyPeriod = (int) num.value;
-                            editor.putInt("uploadPremiumSpeedupNotifyPeriod2", uploadPremiumSpeedupNotifyPeriod);
                             changed = true;
                         }
                     }

@@ -27989,14 +27989,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         return null;
     }
 
-    public boolean checkLoadCaughtPremiumFloodWait() {
-        return FileLoader.getInstance(currentAccount).checkLoadCaughtPremiumFloodWait(getFilename());
-    }
-
-    public boolean checkUploadCaughtPremiumFloodWait() {
-        return FileLoader.getInstance(currentAccount).checkUploadCaughtPremiumFloodWait(getFilename());
-    }
-
     public TLRPC.TL_availableEffect getEffect() {
         if (currentPosition != null && !currentPosition.last) {
             return null;

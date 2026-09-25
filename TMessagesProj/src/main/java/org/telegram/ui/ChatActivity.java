@@ -2871,7 +2871,6 @@ public class ChatActivity extends BaseFragment implements
         }
         observersGroup
             .add(NotificationCenter.updatedChatRanks)
-            .add(NotificationCenter.premiumFloodWaitReceived)
             .add(NotificationCenter.messagesDidLoad)
             .add(NotificationCenter.loadingMessagesFailed)
             .add(NotificationCenter.didUpdateConnectionState)
@@ -15708,8 +15707,6 @@ public class ChatActivity extends BaseFragment implements
         float clipTopFinal = clipTop - chatListViewPaddingVisibleOffset;
         float clipBottomFinal = chatListView.getMeasuredHeight() - blurredViewBottomOffset;
 
-        boolean checkPremiumFloodWait = !UserConfig.getInstance(currentAccount).isPremium();
-
         for (int a = 0; a < count; a++) {
             View view = chatListView.getChildAt(a);
             MessageObject messageObject = null;
@@ -15757,15 +15754,6 @@ public class ChatActivity extends BaseFragment implements
             }
             if (messageCell != null) {
                 messageCell.setVisibleOnScreen(true, clipTopFinal - top, bottom - clipBottomFinal);
-                if (checkPremiumFloodWait) {
-                    if (messageCell.checkLoadCaughtPremiumFloodWait()) {
-                        showPremiumFloodWaitBulletin(false);
-                        checkPremiumFloodWait = false;
-                    } else if (messageCell.checkUploadCaughtPremiumFloodWait()) {
-                        showPremiumFloodWaitBulletin(true);
-                        checkPremiumFloodWait = false;
-                    }
-                }
             }
 
             int viewTop = top >= 0 ? 0 : -top;
@@ -24142,8 +24130,6 @@ public class ChatActivity extends BaseFragment implements
                     updateTitle(true);
                 }
             }
-        } else if (id == NotificationCenter.premiumFloodWaitReceived) {
-            invalidateMessagesVisiblePart();
         } else if (id == NotificationCenter.updatedChatRanks) {
             final long chatId = (long) args[0];
             final long userId = (long) args[1];
@@ -43059,35 +43045,6 @@ public class ChatActivity extends BaseFragment implements
         if (messages.isEmpty() == (getMessagesController().isUserContactBlocked(getDialogId()) != null))
             return;
         getMessagesController().invalidateUserPremiumBlocked(getDialogId(), classGuid);
-    }
-
-    public void showPremiumFloodWaitBulletin(final boolean isUpload) {
-        final long now = System.currentTimeMillis();
-        if (now - ConnectionsManager.lastPremiumFloodWaitShown < 1000L * MessagesController.getInstance(currentAccount).uploadPremiumSpeedupNotifyPeriod) {
-            return;
-        }
-        ConnectionsManager.lastPremiumFloodWaitShown = now;
-        if (UserConfig.getInstance(currentAccount).isPremium() || MessagesController.getInstance(currentAccount).premiumFeaturesBlocked()) {
-            return;
-        }
-
-        final float n;
-        if (isUpload) {
-            n = MessagesController.getInstance(currentAccount).uploadPremiumSpeedupUpload;
-        } else {
-            n = MessagesController.getInstance(currentAccount).uploadPremiumSpeedupDownload;
-        }
-        SpannableString boldN = new SpannableString(Double.toString(Math.round(n * 10) / 10.0).replaceAll("\\.0$", ""));
-        boldN.setSpan(new TypefaceSpan(AndroidUtilities.bold()), 0, boldN.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-
-        if (hasStoryViewer()) return;
-        BulletinFactory.of(this).createSimpleBulletin(
-            R.raw.speed_limit,
-            LocaleController.getString(isUpload ? R.string.UploadSpeedLimited : R.string.DownloadSpeedLimited),
-            AndroidUtilities.replaceCharSequence("%d", AndroidUtilities.premiumText(LocaleController.getString(isUpload ? R.string.UploadSpeedLimitedMessage : R.string.DownloadSpeedLimitedMessage), () -> {
-                presentFragment(new PremiumPreviewFragment(isUpload ? "upload_speed" : "download_speed"));
-            }), boldN)
-        ).setDuration(8000).show(true);
     }
 
     public void didLongPressLink(ChatMessageCell cell, MessageObject messageObject, CharacterStyle span, String str) {

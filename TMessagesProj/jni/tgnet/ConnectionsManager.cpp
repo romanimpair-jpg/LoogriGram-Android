@@ -1408,9 +1408,6 @@ void ConnectionsManager::processServerResponse(TLObject *message, int64_t messag
                                 request->startTime = 0;
                                 request->startTimeMillis = 0;
                                 request->minStartTime = (int32_t) (getCurrentTimeMonotonicMillis() / 1000 + waitTime);
-                                if (isPremiumFloodWait && delegate != nullptr) {
-                                    delegate->onPremiumFloodWait(instanceNum, request->requestToken, (request->connectionType & ConnectionTypeUpload) != 0);
-                                }
                             } else if (failServerErrors && error->error_code == 400) {
                                 static std::string waitFailed = "MSG_WAIT_FAILED";
                                 static std::string bindFailed = "ENCRYPTED_MESSAGE_INVALID";

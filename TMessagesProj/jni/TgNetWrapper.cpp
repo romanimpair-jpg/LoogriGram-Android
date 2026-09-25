@@ -36,7 +36,6 @@ jmethodID jclass_ConnectionsManager_onRequestNewServerIpAndPort;
 jmethodID jclass_ConnectionsManager_onProxyError;
 jmethodID jclass_ConnectionsManager_getHostByName;
 jmethodID jclass_ConnectionsManager_getInitFlags;
-jmethodID jclass_ConnectionsManager_onPremiumFloodWait;
 jmethodID jclass_ConnectionsManager_onIntegrityCheckClassic;
 jmethodID jclass_ConnectionsManager_onCaptchaCheck;
 
@@ -393,10 +392,6 @@ class Delegate : public ConnectiosManagerDelegate {
         return (int32_t) jniEnv[instanceNum]->CallStaticIntMethod(jclass_ConnectionsManager, jclass_ConnectionsManager_getInitFlags);
     }
 
-    void onPremiumFloodWait(int32_t instanceNum, int32_t requestToken, bool isUpload) {
-        jniEnv[instanceNum]->CallStaticVoidMethod(jclass_ConnectionsManager, jclass_ConnectionsManager_onPremiumFloodWait, instanceNum, requestToken, isUpload);
-    }
-
     void onIntegrityCheckClassic(int32_t instanceNum, int32_t requestToken, std::string project, std::string nonce) {
         jstring projectStr = jniEnv[instanceNum]->NewStringUTF(project.c_str());
         jstring nonceStr = jniEnv[instanceNum]->NewStringUTF(nonce.c_str());
@@ -678,10 +673,6 @@ extern "C" int registerNativeTgNetFunctions(JavaVM *vm, JNIEnv *env) {
     }
     jclass_ConnectionsManager_getInitFlags = env->GetStaticMethodID(jclass_ConnectionsManager, "getInitFlags", "()I");
     if (jclass_ConnectionsManager_getInitFlags == 0) {
-        return JNI_FALSE;
-    }
-    jclass_ConnectionsManager_onPremiumFloodWait = env->GetStaticMethodID(jclass_ConnectionsManager, "onPremiumFloodWait", "(IIZ)V");
-    if (jclass_ConnectionsManager_onPremiumFloodWait == 0) {
         return JNI_FALSE;
     }
     jclass_ConnectionsManager_onIntegrityCheckClassic = env->GetStaticMethodID(jclass_ConnectionsManager, "onIntegrityCheckClassic", "(IILjava/lang/String;Ljava/lang/String;)V");

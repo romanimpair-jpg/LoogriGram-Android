@@ -24,10 +24,7 @@ import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.BaseController;
 import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.EmuDetector;
-import org.telegram.messenger.FileLoadOperation;
-import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
-import org.telegram.messenger.FileUploadOperation;
 import org.telegram.messenger.KeepAliveJob;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
@@ -1453,36 +1450,6 @@ public class ConnectionsManager extends BaseController {
                 }
             });
         }
-    }
-
-    public static long lastPremiumFloodWaitShown = 0;
-    @Keep
-    public static void onPremiumFloodWait(final int currentAccount, final int requestToken, boolean isUpload) {
-        AndroidUtilities.runOnUIThread(() -> {
-            if (UserConfig.selectedAccount != currentAccount) {
-                return;
-            }
-            AndroidUtilities.runOnUIThread(() -> {
-                boolean updated = false;
-                if (isUpload) {
-                    FileUploadOperation operation = FileLoader.getInstance(currentAccount).findUploadOperationByRequestToken(requestToken);
-                    if (operation != null) {
-                        updated = !operation.caughtPremiumFloodWait;
-                        operation.caughtPremiumFloodWait = true;
-                    }
-                } else {
-                    FileLoadOperation operation = FileLoader.getInstance(currentAccount).findLoadOperationByRequestToken(requestToken);
-                    if (operation != null) {
-                        updated = !operation.caughtPremiumFloodWait;
-                        operation.caughtPremiumFloodWait = true;
-                    }
-                }
-                final boolean finalUpdated = updated;
-                if (finalUpdated) {
-                    NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.premiumFloodWaitReceived);
-                }
-            });
-        });
     }
 
     @Keep

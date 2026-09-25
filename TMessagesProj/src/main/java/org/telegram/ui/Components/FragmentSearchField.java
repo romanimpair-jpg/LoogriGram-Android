@@ -62,7 +62,6 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
 
     private final ImageView searchIcon;
     private final ImageView closeIcon;
-    private final LinearLayout additionalIconsLayout;
     private boolean closeButtonForcedVisible;
     public final EditTextBoldCursor editText;
     private BlurredBackgroundDrawable blurredBackgroundDrawable;
@@ -131,10 +130,6 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
         searchIcon.setImageResource(R.drawable.outline_search_1_24);
         addView(searchIcon, LayoutHelper.createFrame(24, 24, Gravity.CENTER_VERTICAL | (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT), 12, 0, 12, 0));
 
-        additionalIconsLayout = new LinearLayout(context);
-        additionalIconsLayout.setOrientation(LinearLayout.HORIZONTAL);
-        addView(additionalIconsLayout, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, Gravity.CENTER_VERTICAL | (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT), 32, 0, 32, 0));
-
         closeIcon = new ImageView(context);
         closeIcon.setScaleType(ImageView.ScaleType.CENTER);
         closeIcon.setImageResource(R.drawable.miniplayer_close);
@@ -172,10 +167,6 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
         setWillNotDraw(false);
         checkUi_editTextPaddings();
         updateColors();
-    }
-
-    public void addAdditionalIcon(View icon) {
-        additionalIconsLayout.addView(icon);
     }
 
     private Drawable bg;
@@ -239,7 +230,7 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
     private void checkUi_editTextPaddings() {
         final int filtersWidth = (int) animatorSearchFiltersWidth.getFactor() + dp(6); //searchFilterLayout.getWidth();
         final int pStart = Math.max(filtersWidth, dp(48));
-        final int pEnd = dp(48) + additionalIconsLayout.getMeasuredWidth();
+        final int pEnd = dp(48);
 
         final int pLeft = LocaleController.isRTL ? pEnd : pStart;
         final int pRight = LocaleController.isRTL ? pStart : pEnd;
@@ -281,17 +272,6 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
         editText.setCursorColor(getThemedColor(Theme.key_groupcreate_cursor));
         if (blurredBackgroundDrawable != null) {
             blurredBackgroundDrawable.updateColors();
-        }
-
-        for (int i = 0, N = additionalIconsLayout.getChildCount(); i < N; i++) {
-            final View view = additionalIconsLayout.getChildAt(i);
-            if (view instanceof ActionBarMenuItem) {
-                final ActionBarMenuItem item = (ActionBarMenuItem) view;
-                if (item.getIconView() != null) {
-                    item.getIconView().setColorFilter(getThemedColor(Theme.key_windowBackgroundWhiteBlackText, 0.6f), PorterDuff.Mode.MULTIPLY);
-                }
-                view.setBackground(Theme.createSelectorDrawable(getThemedColor(Theme.key_listSelector), 1, dp(17)));
-            }
         }
 
         for (int i = 0, N = searchFilterLayout.getChildCount(); i < N; i++) {
