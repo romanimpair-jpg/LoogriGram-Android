@@ -72,9 +72,7 @@ public class UserCell extends FrameLayout implements NotificationCenter.Notifica
     private ImageView checkBox3;
     private TextView adminTextView;
     private TextView addButton;
-    private Drawable premiumDrawable;
     private final AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable botVerification;
-    private final AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable emojiStatus;
     private ImageView closeView;
     protected Theme.ResourcesProvider resourcesProvider;
 
@@ -191,7 +189,6 @@ public class UserCell extends FrameLayout implements NotificationCenter.Notifica
         addView(nameTextView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 20, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, LocaleController.isRTL ? 28 + (checkbox == 2 ? 18 : 0) + additionalPadding : (64 + padding), 10, LocaleController.isRTL ? (64 + padding) : 28 + (checkbox == 2 ? 18 : 0) + additionalPadding, 0));
 
         botVerification = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(nameTextView, dp(20));
-        emojiStatus = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(nameTextView, dp(20));
 
         statusTextView = new SimpleTextView(context);
         statusTextView.setTextSize(15);
@@ -671,32 +668,9 @@ public class UserCell extends FrameLayout implements NotificationCenter.Notifica
             botVerification.setColor(Theme.getColor(Theme.key_chats_verifiedBackground, resourcesProvider));
             nameTextView.setLeftDrawable(botVerification);
         }
-        if (currentUser != null && MessagesController.getInstance(currentAccount).isPremiumUser(currentUser) && !MessagesController.getInstance(currentAccount).premiumFeaturesBlocked()) {
-            if (DialogObject.getEmojiStatusDocumentId(currentUser.emoji_status) != 0) {
-                emojiStatus.set(DialogObject.getEmojiStatusDocumentId(currentUser.emoji_status), false);
-                emojiStatus.setColor(Theme.getColor(Theme.key_chats_verifiedBackground, resourcesProvider));
-                nameTextView.setRightDrawable(emojiStatus);
-            } else {
-                if (premiumDrawable == null) {
-                    premiumDrawable = getContext().getResources().getDrawable(R.drawable.msg_premium_liststar).mutate();
-                    premiumDrawable = new AnimatedEmojiDrawable.WrapSizeDrawable(premiumDrawable, dp(14), dp(14)) {
-                        @Override
-                        public void draw(@NonNull Canvas canvas) {
-                            canvas.save();
-                            canvas.translate(0, dp(1));
-                            super.draw(canvas);
-                            canvas.restore();
-                        }
-                    };
-                    premiumDrawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_chats_verifiedBackground, resourcesProvider), PorterDuff.Mode.MULTIPLY));
-                }
-                nameTextView.setRightDrawable(premiumDrawable);
-            }
-            nameTextView.setRightDrawableTopPadding(-dp(0.5f));
-        } else {
-            nameTextView.setRightDrawable(null);
-            nameTextView.setRightDrawableTopPadding(0);
-        }
+        // LoogriGram: no Premium star or emoji status after anyone's name.
+        nameTextView.setRightDrawable(null);
+        nameTextView.setRightDrawableTopPadding(0);
         if (currentStatus != null) {
             statusTextView.setTextColor(statusColor);
             CharSequence status = currentStatus;
@@ -823,7 +797,6 @@ public class UserCell extends FrameLayout implements NotificationCenter.Notifica
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.emojiLoaded);
-        emojiStatus.attach();
         botVerification.attach();
     }
 
@@ -831,7 +804,6 @@ public class UserCell extends FrameLayout implements NotificationCenter.Notifica
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.emojiLoaded);
-        emojiStatus.detach();
         botVerification.detach();
         storyParams.onDetachFromWindow();
     }
