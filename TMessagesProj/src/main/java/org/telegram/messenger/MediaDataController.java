@@ -87,7 +87,6 @@ import org.telegram.ui.Components.TextStyleSpan;
 import org.telegram.ui.Components.URLSpanReplacement;
 import org.telegram.ui.Components.URLSpanUserMention;
 import org.telegram.ui.LaunchActivity;
-import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.messenger.utils.tlutils.AmountUtils;
 import org.telegram.ui.Stories.StoriesStorage;
 
@@ -450,39 +449,6 @@ public class MediaDataController extends BaseController {
 
     public TLRPC.TL_help_premiumPromo getPremiumPromo() {
         return premiumPromo;
-    }
-
-    public Integer getPremiumHintAnnualDiscount(boolean checkTransaction) {
-        if (checkTransaction && (!BillingController.getInstance().isReady() || BillingController.getInstance().getLastPremiumTransaction() == null) || premiumPromo == null) {
-            return null;
-        }
-
-        boolean found = false;
-        int discount = 0;
-        double currentPrice = 0;
-        for (TLRPC.TL_premiumSubscriptionOption option : premiumPromo.period_options) {
-            if (checkTransaction ? option.current && Objects.equals(option.transaction.replaceAll(PremiumPreviewFragment.TRANSACTION_PATTERN, "$1"), BillingController.getInstance().getLastPremiumTransaction()) : option.months == 1) {
-                found = true;
-
-                // LoogriGram: the price comes from the server's subscription
-                // option, never from Play product details.
-                currentPrice = (double) option.amount / option.months;
-            }
-        }
-        for (TLRPC.TL_premiumSubscriptionOption option : premiumPromo.period_options) {
-            if (found && option.months == 12) {
-                double amount;
-                // LoogriGram: see above.
-                amount = (double) option.amount / option.months;
-
-                discount = (int) ((1.0 - amount / currentPrice) * 100);
-            }
-        }
-        if (!found || discount <= 0) {
-            return null;
-        }
-
-        return discount;
     }
 
     public TLRPC.TL_attachMenuBots getAttachMenuBots() {

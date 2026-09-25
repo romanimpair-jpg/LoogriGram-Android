@@ -739,7 +739,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     private int debugLastUpdateAction = -1;
     private boolean slowedReloadAfterDialogClick;
 
-    private boolean isPremiumHintUpgrade;
 
     private Long statusDrawableGiftId;
     private AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable statusDrawable;
@@ -5724,32 +5723,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         }
     }
 
-    public boolean isPremiumRestoreHintVisible() {
-        if (!MessagesController.getInstance(currentAccount).premiumFeaturesBlocked() && folderId == 0 && communityId == 0) {
-            return MessagesController.getInstance(currentAccount).pendingSuggestions.contains("PREMIUM_RESTORE") && !getUserConfig().isPremium() && MediaDataController.getInstance(currentAccount).getPremiumHintAnnualDiscount(false) != null;
-        }
-        return false;
-    }
-
-    public boolean isPremiumChristmasHintVisible() {
-        if (!MessagesController.getInstance(currentAccount).premiumFeaturesBlocked() && folderId == 0 && communityId == 0) {
-            return MessagesController.getInstance(currentAccount).pendingSuggestions.contains("PREMIUM_CHRISTMAS");
-        }
-        return false;
-    }
-
-    public boolean isPremiumHintVisible() {
-        if (!MessagesController.getInstance(currentAccount).premiumFeaturesBlocked() && folderId == 0 && communityId == 0) {
-            if (MessagesController.getInstance(currentAccount).pendingSuggestions.contains("PREMIUM_UPGRADE") && getUserConfig().isPremium() || MessagesController.getInstance(currentAccount).pendingSuggestions.contains("PREMIUM_ANNUAL") && !getUserConfig().isPremium()) {
-                if (UserConfig.getInstance(currentAccount).isPremium() ? !BuildVars.useInvoiceBilling() && MediaDataController.getInstance(currentAccount).getPremiumHintAnnualDiscount(true) != null : MediaDataController.getInstance(currentAccount).getPremiumHintAnnualDiscount(false) != null) {
-                    isPremiumHintUpgrade = MessagesController.getInstance(currentAccount).pendingSuggestions.contains("PREMIUM_UPGRADE");
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
     private boolean isCacheHintVisible() {
         if (cacheSize == null || deviceSize == null) {
             return false;
@@ -6019,45 +5992,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     .setDuration(Bulletin.DURATION_PROLONG)
                     .show();
             });
-        // LoogriGram: two hints stood here - "it is their birthday, send a
-        // gift" and the Premium-gifting promotion. Both opened the gift
-        // picker, and premiumPurchaseBlocked already kept the first hidden.
-        } else if (isPremiumRestoreHintVisible()) {
-            dialogsHintCellVisible = true;
-            dialogsHintCell.setOnClickListener(v -> {
-                presentFragment(new PremiumPreviewFragment("dialogs_hint").setSelectAnnualByDefault());
-                AndroidUtilities.runOnUIThread(() -> {
-                    MessagesController.getInstance(currentAccount).removeSuggestion(0, "PREMIUM_RESTORE");
-                    updateDialogsHint();
-                }, 250);
-            });
-            dialogsHintCell.setText(
-                    AndroidUtilities.replaceSingleTag(
-                            LocaleController.formatString(R.string.RestorePremiumHintTitle, MediaDataController.getInstance(currentAccount).getPremiumHintAnnualDiscount(false)),
-                            Theme.key_windowBackgroundWhiteValueText,
-                            AndroidUtilities.REPLACING_TAG_TYPE_LINKBOLD,
-                            null
-                    ),
-                    LocaleController.getString(R.string.RestorePremiumHintMessage)
-            );
-        } else if (isPremiumHintVisible()) {
-            dialogsHintCellVisible = true;
-            dialogsHintCell.setOnClickListener(v -> {
-                presentFragment(new PremiumPreviewFragment("dialogs_hint").setSelectAnnualByDefault());
-                AndroidUtilities.runOnUIThread(() -> {
-                    MessagesController.getInstance(currentAccount).removeSuggestion(0, isPremiumHintUpgrade ? "PREMIUM_UPGRADE" : "PREMIUM_ANNUAL");
-                    updateDialogsHint();
-                }, 250);
-            });
-            dialogsHintCell.setText(
-                    AndroidUtilities.replaceSingleTag(
-                            LocaleController.formatString(isPremiumHintUpgrade ? R.string.SaveOnAnnualPremiumTitle : R.string.UpgradePremiumTitle, MediaDataController.getInstance(currentAccount).getPremiumHintAnnualDiscount(false)),
-                            Theme.key_windowBackgroundWhiteValueText,
-                            AndroidUtilities.REPLACING_TAG_TYPE_LINKBOLD,
-                            null
-                    ),
-                    LocaleController.getString(isPremiumHintUpgrade ? R.string.UpgradePremiumMessage : R.string.SaveOnAnnualPremiumMessage)
-            );
+        // LoogriGram: four hints stood here - "it is their birthday, send a
+        // gift" and the Premium-gifting promotion, both opening the gift
+        // picker, then "restore Premium at a discount" and "upgrade to the
+        // annual plan". The getters had already kept all four hidden.
         } else if (isCacheHintVisible()) {
             dialogsHintCellVisible = true;
             dialogsHintCell.setOnClickListener(v -> {
