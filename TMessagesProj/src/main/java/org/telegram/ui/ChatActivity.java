@@ -30528,20 +30528,6 @@ public class ChatActivity extends BaseFragment implements
                                 }
                                 ReactedUsersListView v = new ReactedUsersListView(container.getContext(), themeDelegate, currentAccount, message, reactionCount, false, true)
                                         .setSeenUsers(reactedView.getSeenUsers())
-                                        .setOnCustomEmojiSelectedListener((reactedUsersListView1, customEmojiStickerSets) -> {
-                                            if (getParentActivity() == null || getContext() == null) return;
-                                            final EmojiPacksAlert alert = new EmojiPacksAlert(ChatActivity.this, getParentActivity(), themeDelegate, customEmojiStickerSets) {
-                                                @Override
-                                                public void dismiss() {
-                                                    super.dismiss();
-                                                    dimBehindView(false);
-                                                }
-                                            };
-                                            alert.setCalcMandatoryInsets(isKeyboardVisible());
-                                            alert.setDimBehind(false);
-                                            closeMenu(false);
-                                            showDialog(alert);
-                                        })
                                         .setOnProfileSelectedListener((view, userId, messagePeerReaction) -> {
                                             Bundle args = new Bundle();
                                             if (userId > 0) {
@@ -30618,20 +30604,6 @@ public class ChatActivity extends BaseFragment implements
 
                         reactedUsersListView = new ReactedUsersListView(contentView.getContext(), themeDelegate, currentAccount, primaryMessage, null, false, true)
                                 .setSeenUsers(reactedView.getSeenUsers())
-                                .setOnCustomEmojiSelectedListener((reactedUsersListView1, customEmojiStickerSets) -> {
-                                    if (getParentActivity() == null || getContext() == null) return;
-                                    final EmojiPacksAlert alert = new EmojiPacksAlert(ChatActivity.this, getParentActivity(), themeDelegate, customEmojiStickerSets) {
-                                        @Override
-                                        public void dismiss() {
-                                            super.dismiss();
-                                            dimBehindView(false);
-                                        }
-                                    };
-                                    alert.setCalcMandatoryInsets(isKeyboardVisible());
-                                    alert.setDimBehind(false);
-                                    closeMenu(false);
-                                    showDialog(alert);
-                                })
                                 .setOnProfileSelectedListener((view, userId, messagePeerReaction) -> {
                                     Bundle args = new Bundle();
                                     if (userId > 0) {
@@ -43828,20 +43800,6 @@ public class ChatActivity extends BaseFragment implements
                 final LinearLayout linearLayout = new LinearLayout(getContext());
                 linearLayout.setOrientation(LinearLayout.VERTICAL);
                 linearLayout.addView(new ReactedUsersListView(getParentActivity(), themeDelegate, currentAccount, messageObject, reaction, false, false)
-                    .setOnCustomEmojiSelectedListener((reactedUsersListView1, customEmojiStickerSets) -> {
-                        if (getParentActivity() == null || getContext() == null) return;
-                        EmojiPacksAlert alert = new EmojiPacksAlert(ChatActivity.this, getParentActivity(), themeDelegate, customEmojiStickerSets) {
-                            @Override
-                            public void dismiss() {
-                                super.dismiss();
-                                dimBehindView(false);
-                            }
-                        };
-                        alert.setCalcMandatoryInsets(isKeyboardVisible());
-                        alert.setDimBehind(false);
-                        closeMenu(false);
-                        showDialog(alert);
-                    })
                     .setOnProfileSelectedListener((view1, userId, messagePeerReaction) -> {
                         Bundle args = new Bundle();
                         if (userId > 0) {

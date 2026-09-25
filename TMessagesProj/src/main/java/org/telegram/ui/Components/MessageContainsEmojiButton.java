@@ -54,7 +54,6 @@ public class MessageContainsEmojiButton extends FrameLayout implements Notificat
     private StaticLayout secondPartTextLayout;
 
     public final static int EMOJI_TYPE = 0;
-    public final static int REACTIONS_TYPE = 1;
     public final static int EMOJI_STICKER_TYPE = 2;
     public final static int SINGLE_REACTION_TYPE = 3;
     public final static int STICKERS_BOT_TYPE = 4;

@@ -44,7 +44,6 @@ public class FlickerLoadingView extends View implements Theme.Colorable {
     public final static int STICKERS_TYPE = 19;
     public final static int LIMIT_REACHED_GROUPS = 21;
     public final static int LIMIT_REACHED_LINKS = 22;
-    public final static int REACTED_TYPE_WITH_EMOJI_HINT = 23;
     public static final int TOPIC_CELL_TYPE = 24;
     public static final int DIALOG_CACHE_CONTROL = 25;
     public static final int CHECKBOX_TYPE = 26;
@@ -684,7 +683,7 @@ public class FlickerLoadingView extends View implements Theme.Colorable {
                     break;
                 }
             }
-        } else if (getViewType() == REACTED_TYPE || getViewType() == REACTED_TYPE_WITH_EMOJI_HINT) {
+        } else if (getViewType() == REACTED_TYPE) {
             int k = 0;
             while (h <= getMeasuredHeight()) {
                 int r = dp(18);
@@ -982,7 +981,6 @@ public class FlickerLoadingView extends View implements Theme.Colorable {
                 return dp(103);
             case MEMBER_REQUESTS_TYPE:
                 return dp(107);
-            case REACTED_TYPE_WITH_EMOJI_HINT:
             case REACTED_TYPE:
                 return dp(ReactedUsersListView.ITEM_HEIGHT_DP);
             case LIMIT_REACHED_GROUPS:
