@@ -916,9 +916,6 @@ public class MessagesController extends BaseController implements NotificationCe
 
 
     public ArrayList<TLRPC.TL_messages_stickerSet> filterPremiumStickers(ArrayList<TLRPC.TL_messages_stickerSet> stickerSets) {
-        if (!premiumFeaturesBlocked()) {
-            return stickerSets;
-        }
         for (int i = 0; i < stickerSets.size(); i++) {
             TLRPC.TL_messages_stickerSet newSet = MessagesController.getInstance(currentAccount).filterPremiumStickers(stickerSets.get(i));
             if (newSet == null) {
@@ -932,7 +929,7 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public TLRPC.TL_messages_stickerSet filterPremiumStickers(TLRPC.TL_messages_stickerSet stickerSet) {
-        if (!premiumFeaturesBlocked() || stickerSet == null) {
+        if (stickerSet == null) {
             return stickerSet;
         }
         try {

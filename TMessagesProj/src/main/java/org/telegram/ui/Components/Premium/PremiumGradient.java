@@ -19,9 +19,7 @@ import android.graphics.drawable.Drawable;
 import androidx.core.content.ContextCompat;
 
 import org.telegram.messenger.ApplicationLoader;
-import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
-import org.telegram.messenger.UserConfig;
 import org.telegram.ui.ActionBar.Theme;
 
 public class PremiumGradient {
@@ -29,7 +27,6 @@ public class PremiumGradient {
     private final PremiumGradientTools mainGradient = new PremiumGradientTools(Theme.key_premiumGradient1, Theme.key_premiumGradient2, Theme.key_premiumGradient3, Theme.key_premiumGradient4);
     private final PremiumGradientTools goldGradient = new PremiumGradientTools(Theme.key_starsGradient1, Theme.key_starsGradient2, -1);
 //    private final GradientTools grayGradient = new GradientTools(Theme.key_windowBackgroundWhiteGrayText7, Theme.key_windowBackgroundWhiteGrayText7, Theme.key_windowBackgroundWhiteGrayText7);
-    private final Paint mainGradientPaint = mainGradient.paint;
     Paint lockedPremiumPaint;
 
     private final static int size = 100;
@@ -138,16 +135,9 @@ public class PremiumGradient {
         }
     }
 
+    // LoogriGram: the Premium gradient is the plain button colour, for everyone.
     public Paint getMainGradientPaint() {
-        if (MessagesController.getInstance(UserConfig.selectedAccount).premiumFeaturesBlocked()) {
-            if (lockedPremiumPaint == null) {
-                lockedPremiumPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            }
-            lockedPremiumPaint.setColor(Theme.getColor(Theme.key_featuredStickers_addButton));
-            return lockedPremiumPaint;
-        } else {
-            return mainGradientPaint;
-        }
+        return getPremiumLocakedPaint();
     }
 
     //help with update colors and position

@@ -6176,18 +6176,17 @@ public class EmojiView extends FrameLayout implements
                     }
                 }
             }
-            if (MessagesController.getInstance(currentAccount).premiumFeaturesBlocked()) {
-                for (int a = 0; a < favouriteStickers.size(); a++) {
-                    if (MessageObject.isPremiumSticker(favouriteStickers.get(a))) {
-                        favouriteStickers.remove(a);
-                        a--;
-                    }
+            // LoogriGram: premium stickers are never offered, favourite or recent.
+            for (int a = 0; a < favouriteStickers.size(); a++) {
+                if (MessageObject.isPremiumSticker(favouriteStickers.get(a))) {
+                    favouriteStickers.remove(a);
+                    a--;
                 }
-                for (int a = 0; a < recentStickers.size(); a++) {
-                    if (MessageObject.isPremiumSticker(recentStickers.get(a))) {
-                        recentStickers.remove(a);
-                        a--;
-                    }
+            }
+            for (int a = 0; a < recentStickers.size(); a++) {
+                if (MessageObject.isPremiumSticker(recentStickers.get(a))) {
+                    recentStickers.remove(a);
+                    a--;
                 }
             }
             if (previousCount != recentStickers.size() || previousCount2 != favouriteStickers.size()) {

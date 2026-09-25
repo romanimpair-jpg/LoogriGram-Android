@@ -39,7 +39,6 @@ import org.telegram.ui.Components.Reactions.AnimatedEmojiEffect;
 import org.telegram.ui.Components.Reactions.ReactionsLayoutInBubble;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.StickerSetBulletinLayout;
-import org.telegram.ui.Components.StickersAlert;
 import org.telegram.ui.Stories.StoryReactionWidgetView;
 
 import java.util.ArrayList;
@@ -569,26 +568,8 @@ public class EmojiAnimationsOverlay implements NotificationCenter.NotificationCe
                     }
                 }
                 if (sendTap && isPremiumSticker && sameAnimationsCountMessageId > 0) {
-                    if (Bulletin.getVisibleBulletin() != null && Bulletin.getVisibleBulletin().hash == messageObject.getId()) {
-                        return false;
-                    }
-                    TLRPC.InputStickerSet inputStickerSet = messageObject.getInputStickerSet();
-                    TLRPC.TL_messages_stickerSet stickerSet = null;
-                    if (inputStickerSet.short_name != null) {
-                        stickerSet = MediaDataController.getInstance(currentAccount).getStickerSetByName(inputStickerSet.short_name);
-                    }
-                    if (stickerSet == null) {
-                        stickerSet = MediaDataController.getInstance(currentAccount).getStickerSetById(inputStickerSet.id);
-                    }
-                    if (stickerSet == null) {
-                        TLRPC.TL_messages_getStickerSet req = new TLRPC.TL_messages_getStickerSet();
-                        req.stickerset = inputStickerSet;
-                        ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                            showStickerSetBulletin((TLRPC.TL_messages_stickerSet) response, messageObject);
-                        }));
-                    } else {
-                        showStickerSetBulletin(stickerSet, messageObject);
-                    }
+                    // LoogriGram: this fetched the sticker's set to show a Premium
+                    // sticker bulletin, which is never shown here.
                     return false;
                 }
                 if (sameAnimationsCountMessageId >= 4) {
@@ -767,30 +748,6 @@ public class EmojiAnimationsOverlay implements NotificationCenter.NotificationCe
             w = (int) (Math.min(AndroidUtilities.displaySize.x, AndroidUtilities.displaySize.y) * 0.5f);
         }
         return (int) (2f * w / AndroidUtilities.density);
-    }
-
-    private void showStickerSetBulletin(TLRPC.TL_messages_stickerSet stickerSet, MessageObject messageObject) {
-        if (chatActivity == null) {
-            return;
-        }
-        if (MessagesController.getInstance(currentAccount).premiumFeaturesBlocked() || chatActivity.getParentActivity() == null) {
-            return;
-        }
-        StickerSetBulletinLayout layout = new StickerSetBulletinLayout(contentLayout.getContext(), null, StickerSetBulletinLayout.TYPE_EMPTY, messageObject.getDocument(), chatActivity.getResourceProvider());
-        layout.titleTextView.setText(stickerSet.set.title);
-        layout.subtitleTextView.setText(LocaleController.getString(R.string.PremiumStickerTooltip));
-
-        Bulletin.UndoButton viewButton = new Bulletin.UndoButton(chatActivity.getParentActivity(), true, chatActivity.getResourceProvider());
-        layout.setButton(viewButton);
-        viewButton.setUndoAction(() -> {
-            StickersAlert alert = new StickersAlert(chatActivity.getParentActivity(), chatActivity, messageObject.getInputStickerSet(), null, chatActivity.chatActivityEnterView, chatActivity.getResourceProvider(), false);
-            alert.setCalcMandatoryInsets(chatActivity.isKeyboardVisible());
-            chatActivity.showDialog(alert);
-        });
-        viewButton.setText(LocaleController.getString(R.string.ViewAction));
-        Bulletin bulletin = Bulletin.make(chatActivity, layout, Bulletin.DURATION_LONG);
-        bulletin.hash = messageObject.getId();
-        bulletin.show();
     }
 
     public static String unwrapEmoji(String emoji) {
