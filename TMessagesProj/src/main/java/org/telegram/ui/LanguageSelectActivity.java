@@ -53,7 +53,6 @@ import org.telegram.ui.Cells.TextSettingsCell;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.EmptyTextProgressView;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.TranslateAlert2;
 
@@ -218,19 +217,10 @@ public class LanguageSelectActivity extends BaseFragment implements Notification
                         getMessagesController().getTranslateController().setContextTranslateEnabled(value);
                         ((TextCheckCell) view).setChecked(value);
                         NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.updateSearchSettings);
-                    } else if (position == autoTranslationPosition) {
-                        boolean value = !getChatValue();
-                        if (value && !getUserConfig().isPremium()) {
-                            showDialog(new PremiumFeatureBottomSheet(LanguageSelectActivity.this, PremiumPreviewFragment.PREMIUM_FEATURE_TRANSLATIONS, false));
-                            return;
-                        }
-                        getMessagesController().getTranslateController().setChatTranslateEnabled(value);
-                        NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.updateSearchSettings);
-                        ((TextCheckCell) view).setChecked(value);
                     }
                     final boolean currentFullValue = getContextValue() || getChatValue();
                     if (currentFullValue != prevFullValue) {
-                        int start = autoTranslationPosition >= 0 ? autoTranslationPosition : manualTranslationPosition;
+                        int start = manualTranslationPosition;
                         TextCheckCell last = null;
                         for (int i = 0; i < listView.getChildCount(); ++i) {
                             View child = listView.getChildAt(i);
@@ -297,7 +287,7 @@ public class LanguageSelectActivity extends BaseFragment implements Notification
                 }
                 boolean search = listView.getAdapter() == searchListViewAdapter;
                 if (!search) {
-                    position -= languagesStartsPosition; // (7 - (!(getChatValue() || getContextValue()) ? 1 : 0) - (getMessagesController().premiumFeaturesBlocked() ? 1 : 0));
+                    position -= languagesStartsPosition;
                 }
                 LocaleController.LocaleInfo localeInfo;
                 if (search) {
@@ -363,7 +353,7 @@ public class LanguageSelectActivity extends BaseFragment implements Notification
                 }
                 boolean search = listView.getAdapter() == searchListViewAdapter;
                 if (!search) {
-                    position -= languagesStartsPosition; // (7 - (!(getChatValue() || getContextValue()) ? 1 : 0) - (getMessagesController().premiumFeaturesBlocked() ? 1 : 0));
+                    position -= languagesStartsPosition;
                 }
                 LocaleController.LocaleInfo localeInfo;
                 if (search) {
@@ -575,7 +565,6 @@ public class LanguageSelectActivity extends BaseFragment implements Notification
     @Keep
     private int manualTranslationPosition = -1;
     @Keep
-    private int autoTranslationPosition = -1;
     @Keep
     private int doNotTranslatePosition = -1;
     private int infoPosition1;
@@ -610,9 +599,6 @@ public class LanguageSelectActivity extends BaseFragment implements Notification
                 if (getMessagesController().isTranslationsManualEnabled() || getMessagesController().isTranslationsAutoEnabled()) {
                     count++;
                     if (getMessagesController().isTranslationsManualEnabled()) {
-                        count++;
-                    }
-                    if (getMessagesController().isTranslationsAutoEnabled() && !getMessagesController().premiumFeaturesBlocked()) {
                         count++;
                     }
                     if (getChatValue() || getContextValue()) {
@@ -678,7 +664,7 @@ public class LanguageSelectActivity extends BaseFragment implements Notification
             switch (holder.getItemViewType()) {
                 case VIEW_TYPE_LANGUAGE: {
                     if (!search) {
-                        position -= languagesStartsPosition; // (7 - (!(getChatValue() || getContextValue()) ? 1 : 0) - (getMessagesController().premiumFeaturesBlocked() ? 1 : 0));
+                        position -= languagesStartsPosition;
                     }
                     TextRadioCell textSettingsCell = (TextRadioCell) holder.itemView;
                     textSettingsCell.updateRTL();
@@ -779,9 +765,6 @@ public class LanguageSelectActivity extends BaseFragment implements Notification
                     if (position == manualTranslationPosition) {
                         cell.setTextAndCheck(LocaleController.getString(R.string.ShowTranslateButton), getContextValue(), true);
                         cell.setCheckBoxIcon(0);
-                    } else if (position == autoTranslationPosition) {
-                        cell.setTextAndCheck(LocaleController.getString(R.string.ShowTranslateChatButton), getChatValue(), getContextValue() || getChatValue());
-                        cell.setCheckBoxIcon(!getUserConfig().isPremium() ? R.drawable.permission_locked : 0);
                     }
                     break;
                 }
@@ -823,14 +806,8 @@ public class LanguageSelectActivity extends BaseFragment implements Notification
                     } else {
                         manualTranslationPosition = -1;
                     }
-                    if (getMessagesController().isTranslationsAutoEnabled() && !getMessagesController().premiumFeaturesBlocked()) {
-                        if (i-- == 0) {
-                            autoTranslationPosition = position;
-                            return VIEW_TYPE_SWITCH;
-                        }
-                    } else {
-                        autoTranslationPosition = -1;
-                    }
+                    // LoogriGram: no "Translate Entire Chats" switch - a Premium
+                    // feature, padlocked for everyone else.
                     if (getChatValue() || getContextValue()) {
                         doNotTranslatePosition = position;
                         if (i-- == 0) return VIEW_TYPE_SETTINGS;

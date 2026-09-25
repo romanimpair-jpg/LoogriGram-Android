@@ -14,21 +14,13 @@ import static org.telegram.messenger.LocaleController.getString;
 
 import android.content.Context;
 import android.content.DialogInterface;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffColorFilter;
-import android.graphics.drawable.Drawable;
 import android.os.Build;
-import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
-import android.text.Spanned;
 import android.text.TextUtils;
-import android.text.style.DynamicDrawableSpan;
-import android.text.style.ImageSpan;
 import android.view.HapticFeedbackConstants;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -65,11 +57,9 @@ import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.TextSettingsCell;
 import org.telegram.ui.Components.AlertsCreator;
-import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Components.Premium.PremiumGradient;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.TextStyleSpan;
 import org.telegram.ui.bots.BotBiometry;
@@ -109,10 +99,6 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
     private int forwardsRow;
     @Keep
     private int callsRow;
-    @Keep
-    private int voicesRow;
-    @Keep
-    private int noncontactsRow;
     @Keep
     private int emailLoginRow;
     private int privacyShadowRow;
@@ -171,7 +157,6 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
     private boolean currentSuggest;
     private boolean newSuggest;
     private boolean archiveChats;
-    private boolean noncontactsValue;
 
     private boolean[] clear = new boolean[2];
     private SessionsActivity devicesActivityPreload;
@@ -187,7 +172,6 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
         TLRPC.GlobalPrivacySettings privacySettings = getContactsController().getGlobalPrivacySettings();
         if (privacySettings != null) {
             archiveChats = privacySettings.archive_and_mute_new_noncontact_peers;
-            noncontactsValue = privacySettings.new_noncontact_peers_require_premium;
         }
 
         updateRows();
@@ -416,10 +400,6 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                 presentFragment(new PrivacyControlActivity(ContactsController.PRIVACY_RULES_TYPE_GIFTS));
             } else if (position == forwardsRow) {
                 presentFragment(new PrivacyControlActivity(ContactsController.PRIVACY_RULES_TYPE_FORWARDS));
-            } else if (position == voicesRow) {
-                presentFragment(new PrivacyControlActivity(ContactsController.PRIVACY_RULES_TYPE_VOICE_MESSAGES));
-            } else if (position == noncontactsRow) {
-                presentFragment(new PrivacyControlActivity(ContactsController.PRIVACY_RULES_TYPE_MESSAGES));
             } else if (position == emailLoginRow) {
                 if (currentPassword == null || currentPassword.login_email_pattern == null) {
                     return;
@@ -653,7 +633,6 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
             TLRPC.GlobalPrivacySettings privacySettings = getContactsController().getGlobalPrivacySettings();
             if (privacySettings != null) {
                 archiveChats = privacySettings.archive_and_mute_new_noncontact_peers;
-                noncontactsValue = privacySettings.new_noncontact_peers_require_premium;
             }
             if (listAdapter != null) {
                 listAdapter.notifyDataSetChanged();
@@ -716,13 +695,9 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
         forwardsRow = rowCount++;
         callsRow = rowCount++;
         groupsDetailRow = -1;
-        if (!getMessagesController().premiumFeaturesBlocked() || getUserConfig().isPremium()) {
-            voicesRow = rowCount++;
-            noncontactsRow = rowCount++;
-        } else {
-            voicesRow = -1;
-            noncontactsRow = -1;
-        }
+        // LoogriGram: no voice-message or "who can message me" rows. Both are
+        // Premium's to set, so upstream showed them only to a Premium account,
+        // and Premium is honoured for nobody here, ours included.
         birthdayRow = rowCount++;
         giftsRow = rowCount++;
         bioRow = rowCount++;
@@ -1007,8 +982,6 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                     position == giftsRow && !getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_GIFTS) ||
                     position == forwardsRow && !getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_FORWARDS) ||
                     position == phoneNumberRow && !getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_PHONE) ||
-                    position == voicesRow && !getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_VOICE_MESSAGES) ||
-                    position == noncontactsRow ||
                     position == deleteAccountRow && !getContactsController().getLoadingDeleteInfo() ||
                     position == newChatsRow && !getContactsController().getLoadingGlobalSettings() ||
                     position == emailLoginRow || position == paymentsClearRow || position == secretMapRow ||
@@ -1141,22 +1114,6 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                             value = formatRulesString(getAccountInstance(), ContactsController.PRIVACY_RULES_TYPE_FORWARDS);
                         }
                         textCell.setTextAndValue(getString("PrivacyForwards", R.string.PrivacyForwards), value, true);
-                    } else if (position == voicesRow) {
-                        if (getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_VOICE_MESSAGES)) {
-                            showLoading = true;
-                            loadingLen = 30;
-                        } else if (!getUserConfig().isPremium()) {
-                            value = getString(R.string.P2PEverybody);
-                        } else {
-                            value = formatRulesString(getAccountInstance(), ContactsController.PRIVACY_RULES_TYPE_VOICE_MESSAGES);
-                        }
-                        textCell.setTextAndValue(addPremiumStar(getString(R.string.PrivacyVoiceMessages)), value, noncontactsRow != -1);
-                        ImageView imageView = textCell.getValueImageView();
-                        imageView.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_windowBackgroundWhiteGrayIcon), PorterDuff.Mode.MULTIPLY));
-                    } else if (position == noncontactsRow) {
-                        // LoogriGram: no "Contacts and fee" value - a price is never set here.
-                        value = getString(noncontactsValue ? R.string.ContactsAndPremium : R.string.P2PEverybody);
-                        textCell.setTextAndValue(getMessagesController().newNoncontactPeersRequirePremiumWithoutOwnpremium ? getString(R.string.PrivacyMessages) : addPremiumStar(getString(R.string.PrivacyMessages)), value, musicRow != -1);
                     } else if (position == passportRow) {
                         textCell.setText(getString("TelegramPassport", R.string.TelegramPassport), true);
                     } else if (position == deleteAccountRow) {
@@ -1381,20 +1338,6 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
             }
             return 0;
         }
-    }
-
-    private SpannableString premiumStar;
-    private CharSequence addPremiumStar(String text) {
-//        if (getUserConfig().isPremium()) {
-//            return text;
-//        }
-        if (premiumStar == null) {
-            premiumStar = new SpannableString("★");
-            Drawable drawable = new AnimatedEmojiDrawable.WrapSizeDrawable(PremiumGradient.getInstance().premiumStarMenuDrawable, dp(18), dp(18));
-            drawable.setBounds(0, 0, dp(18), dp(18));
-            premiumStar.setSpan(new ImageSpan(drawable, DynamicDrawableSpan.ALIGN_CENTER), 0, premiumStar.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
-        }
-        return new SpannableStringBuilder(text).append("  ").append(premiumStar);
     }
 
     @Override

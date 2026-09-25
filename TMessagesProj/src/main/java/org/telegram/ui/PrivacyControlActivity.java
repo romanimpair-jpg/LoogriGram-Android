@@ -153,8 +153,6 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
     @Keep
     private int readRow;
     private int readDetailRow;
-    private int readPremiumRow;
-    private int readPremiumDetailRow;
     @Keep
     private int showGiftIconRow;
     private int showGiftIconInfoRow;
@@ -733,8 +731,6 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
                 selectedReadValue = !selectedReadValue;
                 updateDoneButton();
                 ((TextCheckCell) view).setChecked(selectedReadValue);
-            } else if (position == readPremiumRow) {
-                presentFragment(new PremiumPreviewFragment("lastseen"));
             } else if (position == showGiftIconRow) {
                 selectedGiftIconValue = !selectedGiftIconValue;
                 updateDoneButton();
@@ -1348,8 +1344,6 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
         nobodyRow = -1;
         shareSectionRow = -1;
         shareDetailRow = -1;
-        readPremiumRow = -1;
-        readPremiumDetailRow = -1;
         showGiftIconRow = -1;
         showGiftIconInfoRow = -1;
         giftTypesHeaderRow = -1;
@@ -1427,10 +1421,6 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
             if (rulesType == PRIVACY_RULES_TYPE_LASTSEEN && (currentType != TYPE_EVERYBODY || currentMinus != null && !currentMinus.isEmpty())) {
                 readRow = rowCount++;
                 readDetailRow = rowCount++;
-            }
-            if (rulesType == PRIVACY_RULES_TYPE_LASTSEEN && !getMessagesController().premiumFeaturesBlocked()) {
-                readPremiumRow = rowCount++;
-                readPremiumDetailRow = rowCount++;
             }
         }
 
@@ -1589,7 +1579,7 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             int position = holder.getAdapterPosition();
             return position == p2pRow && !ContactsController.getInstance(currentAccount).getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_P2P) ||
-                    position == currentPhotoForRestRow || position == photoForRestDescriptionRow || position == photoForRestRow || position == readRow || position == showGiftIconRow || position == readPremiumRow ||
+                    position == currentPhotoForRestRow || position == photoForRestDescriptionRow || position == photoForRestRow || position == readRow || position == showGiftIconRow ||
                     position == giftTypeUniqueRow || position == giftTypeChannelsRow || position == giftTypePremiumRow || position == giftTypeLimitedRow || position == giftTypeUnlimitedRow ||
                     (rulesType != PRIVACY_RULES_TYPE_GIFTS || !areAllStarGiftsDisabled()) && (position == nobodyRow || position == myContactsRow || position == everybodyRow || position == neverShareRow || position == alwaysShareRow);
         }
@@ -1760,9 +1750,6 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
                             value = PrivacySettingsActivity.formatRulesString(getAccountInstance(), ContactsController.PRIVACY_RULES_TYPE_P2P);
                         }
                         textCell.setTextAndValue(LocaleController.getString(R.string.PrivacyP2P2), value, false);
-                    } else if (position == readPremiumRow) {
-                        textCell.setText(LocaleController.getString(getUserConfig().isPremium() ? R.string.PrivacyLastSeenPremiumForPremium : R.string.PrivacyLastSeenPremium), false);
-                        textCell.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteBlueText));
                     }
                     break;
                 case 1:
@@ -1909,8 +1896,6 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
                         privacyCell.setText(LocaleController.getString(R.string.PhotoForRestDescription));
                     } else if (position == readDetailRow) {
                         privacyCell.setText(LocaleController.getString(R.string.HideReadTimeInfo));
-                    } else if (position == readPremiumDetailRow) {
-                        privacyCell.setText(LocaleController.getString(getUserConfig().isPremium() ? R.string.PrivacyLastSeenPremiumInfoForPremium : R.string.PrivacyLastSeenPremiumInfo));
                     } else if (position == showGiftIconInfoRow) {
                         final SpannableString giftIcon = new SpannableString("g");
                         final ColoredImageSpan span = new ColoredImageSpan(R.drawable.msg_input_gift);
@@ -2033,9 +2018,9 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
 
         @Override
         public int getItemViewType(int position) {
-            if (position == alwaysShareRow || position == neverShareRow || position == p2pRow || position == readPremiumRow) {
+            if (position == alwaysShareRow || position == neverShareRow || position == p2pRow) {
                 return 0;
-            } else if (position == shareDetailRow || position == detailRow || position == p2pDetailRow || position == photoForRestDescriptionRow || position == readDetailRow || position == readPremiumDetailRow || position == setBirthdayRow || position == showGiftIconInfoRow || position == giftTypesInfoRow) {
+            } else if (position == shareDetailRow || position == detailRow || position == p2pDetailRow || position == photoForRestDescriptionRow || position == readDetailRow || position == setBirthdayRow || position == showGiftIconInfoRow || position == giftTypesInfoRow) {
                 return 1;
             } else if (position == sectionRow || position == shareSectionRow || position == p2pSectionRow || position == phoneSectionRow || position == giftTypesHeaderRow) {
                 return 2;
@@ -2110,8 +2095,6 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
             put(++pointer, p2pDetailRow, sparseIntArray);
             put(++pointer, readRow, sparseIntArray);
             put(++pointer, readDetailRow, sparseIntArray);
-            put(++pointer, readPremiumRow, sparseIntArray);
-            put(++pointer, readPremiumDetailRow, sparseIntArray);
             put(++pointer, showGiftIconRow, sparseIntArray);
             put(++pointer, showGiftIconInfoRow, sparseIntArray);
             put(++pointer, giftTypesHeaderRow, sparseIntArray);
