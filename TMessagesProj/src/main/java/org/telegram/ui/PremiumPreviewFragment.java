@@ -43,7 +43,6 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.graphics.ColorUtils;
@@ -71,7 +70,6 @@ import org.telegram.messenger.Utilities;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.tgnet.tl.TL_account;
 import org.telegram.tgnet.tl.TL_stars;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.BackDrawable;
@@ -93,12 +91,10 @@ import org.telegram.ui.Business.QuickRepliesController;
 import org.telegram.ui.Business.TimezonesController;
 import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.ShadowSectionCell;
-import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.Bulletin;
-import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.FillLastLinearLayoutManager;
 import org.telegram.ui.Components.LayoutHelper;
@@ -167,10 +163,6 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
     int statusRow;
     int privacyRow;
     int lastPaddingRow;
-    int showAdsHeaderRow;
-    @Keep
-    int showAdsRow;
-    int showAdsInfoRow;
     Drawable shadowDrawable;
     private FrameLayout buttonContainer;
     private FrameLayout buttonContainerInternal;
@@ -840,27 +832,6 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
             if (!getUserConfig().isClientActivated()) {
                 return;
             }
-            if (position == showAdsRow) {
-                TLRPC.UserFull userFull = getMessagesController().getUserFull(getUserConfig().getClientUserId());
-                if (userFull == null) return;
-
-                TextCell cell = (TextCell) view;
-                cell.setChecked(!cell.isChecked());
-                userFull.sponsored_enabled = cell.isChecked();
-
-                TL_account.toggleSponsoredMessages req = new TL_account.toggleSponsoredMessages();
-                req.enabled = userFull.sponsored_enabled;
-                getConnectionsManager().sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
-                    if (err != null) {
-                        BulletinFactory.showError(err);
-                    } else if (!(res instanceof TLRPC.TL_boolTrue)) {
-                        BulletinFactory.of(PremiumPreviewFragment.this).createErrorBulletin(getString(R.string.UnknownError)).show();
-                    }
-                }));
-
-                getMessagesStorage().updateUserInfo(userFull, false);
-                return;
-            }
             if (view instanceof PremiumFeatureCell) {
                 PremiumFeatureCell cell = (PremiumFeatureCell) view;
 
@@ -1298,9 +1269,6 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
         moreHeaderRow = -1;
         moreFeaturesStartRow = -1;
         moreFeaturesEndRow = -1;
-        showAdsHeaderRow = -1;
-        showAdsRow = -1;
-        showAdsInfoRow = -1;
 
         paddingRow = rowCount++;
         featuresStartRow = rowCount;
@@ -1315,12 +1283,6 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
         }
         statusRow = rowCount++;
         lastPaddingRow = rowCount++;
-
-        if (type == FEATURES_BUSINESS && getUserConfig().isPremium()) {
-            showAdsHeaderRow = rowCount++;
-            showAdsRow = rowCount++;
-            showAdsInfoRow = rowCount++;
-        }
 
         AndroidUtilities.updateViewVisibilityAnimated(buttonContainer, !getUserConfig().isPremium() || currentSubscriptionTier != null && currentSubscriptionTier.getMonths() < subscriptionTiers.get(selectedTierIndex).getMonths() && !forcePremium, 1f, false);
 
@@ -1388,8 +1350,7 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
             TYPE_HELP_US = 4,
             TYPE_SHADOW = 5,
             TYPE_BOTTOM_PADDING = 6,
-            TYPE_HEADER = 7,
-            TYPE_CHECK = 8;
+            TYPE_HEADER = 7;
 
         @NonNull
         @Override
@@ -1462,9 +1423,6 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
                 case TYPE_HEADER:
                     view = new HeaderCell(context);
                     break;
-                case TYPE_CHECK:
-                    view = new TextCell(context, 23, false, true, resourceProvider);
-                    break;
             }
             view.setLayoutParams(new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
             return new RecyclerListView.Holder(view);
@@ -1480,7 +1438,7 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
                 TextInfoPrivacyCell privacyCell = (TextInfoPrivacyCell) holder.itemView;
                 privacyCell.setText("");
                 privacyCell.setFixedSize(12);
-            } else if (position == statusRow || position == privacyRow || position == showAdsInfoRow) {
+            } else if (position == statusRow || position == privacyRow) {
                 TextInfoPrivacyCell privacyCell = (TextInfoPrivacyCell) holder.itemView;
                 if (!whiteBackground) {
                     privacyCell.setTextColor(Theme.multAlpha(0xFFFFFFFF, 0.75f));
@@ -1489,11 +1447,7 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
                 }
                 privacyCell.setFixedSize(0);
 
-                if (position == showAdsInfoRow) {
-                    privacyCell.setText(AndroidUtilities.replaceArrows(AndroidUtilities.replaceSingleTag(getString(R.string.ShowAdsInfo), () -> {
-                        showDialog(new RevenueSharingAdsInfoBottomSheet(getContext(), false, getResourceProvider(), null));
-                    }), true));
-                } else if (position == statusRow && type == FEATURES_BUSINESS) {
+                if (position == statusRow && type == FEATURES_BUSINESS) {
                     privacyCell.setText(getString(R.string.PremiumPreviewMoreBusinessFeaturesInfo));
                 } else if (position == statusRow) {
                     TLRPC.TL_help_premiumPromo premiumPromo = getMediaDataController().getPremiumPromo();
@@ -1554,11 +1508,6 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
                 }
             } else if (position == moreHeaderRow) {
                 ((HeaderCell) holder.itemView).setText(getString(R.string.PremiumPreviewMoreBusinessFeatures));
-            } else if (position == showAdsHeaderRow) {
-                ((HeaderCell) holder.itemView).setText(getString(R.string.ShowAdsTitle));
-            } else if (position == showAdsRow) {
-                TLRPC.UserFull userFull = getMessagesController().getUserFull(getUserConfig().getClientUserId());
-                ((TextCell) holder.itemView).setTextAndCheck(getString(R.string.ShowAds), userFull == null || userFull.sponsored_enabled, false);
             }
         }
 
@@ -1575,21 +1524,19 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
                 return TYPE_FEATURE;
             } else if (position == helpUsRow) {
                 return TYPE_HELP_US;
-            } else if (position == sectionRow || position == statusRow || position == privacyRow || position == showAdsInfoRow) {
+            } else if (position == sectionRow || position == statusRow || position == privacyRow) {
                 return TYPE_SHADOW;
             } else if (position == lastPaddingRow) {
                 return TYPE_BOTTOM_PADDING;
-            } else if (position == moreHeaderRow || position == showAdsHeaderRow) {
+            } else if (position == moreHeaderRow) {
                 return TYPE_HEADER;
-            } else if (position == showAdsRow) {
-                return TYPE_CHECK;
             }
             return TYPE_PADDING;
         }
 
         @Override
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
-            return holder.getItemViewType() == TYPE_FEATURE || holder.getItemViewType() == TYPE_CHECK;
+            return holder.getItemViewType() == TYPE_FEATURE;
         }
     }
 
