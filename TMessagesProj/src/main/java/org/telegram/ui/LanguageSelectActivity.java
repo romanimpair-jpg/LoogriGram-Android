@@ -565,7 +565,6 @@ public class LanguageSelectActivity extends BaseFragment implements Notification
     @Keep
     private int manualTranslationPosition = -1;
     @Keep
-    @Keep
     private int doNotTranslatePosition = -1;
     private int infoPosition1;
     private int languagesStartsPosition;
