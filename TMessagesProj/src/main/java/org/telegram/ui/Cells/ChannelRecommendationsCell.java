@@ -145,14 +145,18 @@ public class ChannelRecommendationsCell {
         loading = chats.isEmpty() || !UserConfig.getInstance(currentAccount).isPremium() && chats.size() == 1;
         if (!loading) {
             int count = chats.size();
-            if (!UserConfig.getInstance(currentAccount).isPremium() && rec.more > 0) {
-                count = Math.min(count - 1, MessagesController.getInstance(currentAccount).recommendedChannelsLimitDefault);
+            final boolean premium = UserConfig.getInstance(currentAccount).isPremium();
+            if (!premium && rec.more > 0) {
+                count = Math.min(count, MessagesController.getInstance(currentAccount).recommendedChannelsLimitDefault);
             }
             count = Math.min(count, 10);
             for (int i = 0; i < count; ++i) {
                 channels.add(new ChannelBlock(currentAccount, cell, chats.get(i)));
             }
-            if (count < chats.size()) {
+            // LoogriGram: the tile after the last channel opens the rest of them.
+            // Without Premium it was a padlocked "Unlock Similar" selling Premium
+            // in place of the last channel, so it is left out.
+            if (premium && count < chats.size()) {
                 TLObject[] _chats = new TLObject[3];
                 _chats[0] = count >= 0 && count < chats.size() ? chats.get(count) : null;
                 _chats[1] = count >= 0 && count + 1 < chats.size() ? chats.get(count + 1) : null;
@@ -484,12 +488,11 @@ public class ChannelRecommendationsCell {
             }
 
             nameTextPaint.setTextSize(dp(11));
-            final boolean isPremium = UserConfig.getInstance(cell.currentAccount).isPremium();
-            name = LocaleController.getString(isPremium ? R.string.MoreSimilar : R.string.UnlockSimilar);
+            name = LocaleController.getString(R.string.MoreSimilar);
 
             subscribersStrokePaint.setStyle(Paint.Style.STROKE);
             isLock = true;
-            subscribersDrawable = isPremium ? null : cell.getContext().getResources().getDrawable(R.drawable.mini_switch_lock).mutate();
+            subscribersDrawable = null;
             if (getSubscribersCount(chat) == null) {
                 subscribersText = null;
             } else {

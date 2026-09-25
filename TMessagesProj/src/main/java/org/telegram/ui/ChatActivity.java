@@ -10,7 +10,6 @@ package org.telegram.ui;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.AndroidUtilities.lerp;
-import static org.telegram.messenger.LocaleController.formatPluralStringComma;
 import static org.telegram.messenger.LocaleController.formatString;
 import static org.telegram.messenger.LocaleController.getString;
 
@@ -9669,12 +9668,7 @@ public class ChatActivity extends BaseFragment implements
         translateButton = new TranslateButton(getContext(), this, themeDelegate) {
             @Override
             protected void onButtonClick() {
-                if (getUserConfig().isPremium() || currentChat != null && currentChat.autotranslation) {
-                    getMessagesController().getTranslateController().toggleTranslatingDialog(getDialogId());
-                } else {
-                    MessagesController.getNotificationsSettings(currentAccount).edit().putInt("dialog_show_translate_count" + getDialogId(), 14).commit();
-                    showDialog(new PremiumFeatureBottomSheet(ChatActivity.this, PremiumPreviewFragment.PREMIUM_FEATURE_TRANSLATIONS, false));
-                }
+                getMessagesController().getTranslateController().toggleTranslatingDialog(getDialogId());
                 updateTopPanel(true);
             }
 
@@ -39284,19 +39278,11 @@ public class ChatActivity extends BaseFragment implements
 
         @Override
         public void didPressMoreChannelRecommendations(ChatMessageCell cell) {
-            if (getUserConfig().isPremium()) {
-                Bundle args = new Bundle();
-                args.putLong("dialog_id", dialog_id);
-                args.putInt("start_from", SharedMediaLayout.TAB_RECOMMENDED_CHANNELS);
-                presentFragment(new MediaActivity(args, avatarContainer.getSharedMediaPreloader()));
-            } else {
-                BulletinFactory.of(ChatActivity.this).createSimpleBulletin(
-                    R.raw.star_premium_2,
-                    AndroidUtilities.replaceSingleTag(formatPluralStringComma("UnlockSimilarChannelsPremium", getMessagesController().recommendedChannelsLimitPremium), () -> {
-                        presentFragment(new PremiumPreviewFragment("similar_channels"));
-                    })
-                ).show();
-            }
+            // LoogriGram: only drawn for Premium now; see ChannelRecommendationsCell.
+            Bundle args = new Bundle();
+            args.putLong("dialog_id", dialog_id);
+            args.putInt("start_from", SharedMediaLayout.TAB_RECOMMENDED_CHANNELS);
+            presentFragment(new MediaActivity(args, avatarContainer.getSharedMediaPreloader()));
         }
 
         @Override
