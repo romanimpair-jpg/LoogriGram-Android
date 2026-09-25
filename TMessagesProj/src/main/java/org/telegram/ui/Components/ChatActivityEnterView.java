@@ -9316,10 +9316,7 @@ public class ChatActivityEnterView extends FrameLayout implements
             getParent().requestDisallowInterceptTouchEvent(true);
         }
         if (ev.getAction() == MotionEvent.ACTION_DOWN) {
-            final View child = AndroidUtilities.findChildViewUnder(this, ev.getX(), ev.getY());
-            if (child != aiHint) {
-                hideHints();
-            }
+            hideHints();
         }
         return super.onInterceptTouchEvent(ev);
     }
