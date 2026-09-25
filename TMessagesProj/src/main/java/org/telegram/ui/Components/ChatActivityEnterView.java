@@ -172,7 +172,6 @@ import org.telegram.ui.ActionBar.ActionBarPopupWindow;
 import org.telegram.ui.ActionBar.AdjustPanLayoutHelper;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
-import org.telegram.ui.ActionBar.BottomSheet;
 import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.BasePermissionsActivity;
@@ -7109,20 +7108,14 @@ public class ChatActivityEnterView extends FrameLayout implements
                             }
                         }
 
+                        // LoogriGram: the refusal came with a bulletin selling
+                        // Premium, its "more" opening the subscription sheet. The
+                        // text is still refused - the server would refuse it -
+                        // but quietly, as on desktop (boxes/send_files_box.cpp).
+                        // The emoji panel and the pack sheet no longer insert
+                        // such an emoji, so only pasted text or a draft
+                        // reaches this.
                         if (emoji == null || !MessageObject.isFreeEmoji(emoji)) {
-                            BulletinFactory.of(parentFragment)
-                                .createEmojiBulletin(
-                                    emoji,
-                                    AndroidUtilities.replaceTags(getString("UnlockPremiumEmojiHint", R.string.UnlockPremiumEmojiHint)),
-                                    getString("PremiumMore", R.string.PremiumMore),
-                                    () -> {
-                                        if (parentFragment != null) {
-                                            new PremiumFeatureBottomSheet(parentFragment, PremiumPreviewFragment.PREMIUM_FEATURE_ANIMATED_EMOJI, false).show();
-                                        } else if (parentFragment.getContext() instanceof LaunchActivity) {
-                                            ((LaunchActivity) parentFragment.getContext()).presentFragment(new PremiumPreviewFragment(null));
-                                        }
-                                    }
-                                ).show();
                             return true;
                         }
                     }
@@ -11353,20 +11346,6 @@ public class ChatActivityEnterView extends FrameLayout implements
                         innerTextChange = 0;
                     }
                 });
-            }
-
-            @Override
-            public void onAnimatedEmojiUnlockClick() {
-                BaseFragment fragment = parentFragment;
-                if (fragment == null) {
-                    fragment = getLastFragment();
-                }
-                BottomSheet alert = new PremiumFeatureBottomSheet(fragment, PremiumPreviewFragment.PREMIUM_FEATURE_ANIMATED_EMOJI, false);
-                if (fragment != null) {
-                    fragment.showDialog(alert);
-                } else {
-                    alert.show();
-                }
             }
 
             @Override

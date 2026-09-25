@@ -83,7 +83,6 @@ import org.telegram.ui.Components.EmojiPacksAlert;
 import org.telegram.ui.Components.ItemOptions;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.NumberTextView;
-import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.ReorderingBulletinLayout;
 import org.telegram.ui.Components.ReorderingHintDrawable;
@@ -689,8 +688,6 @@ public class StickersActivity extends BaseFragment implements NotificationCenter
             MediaDataController.getInstance(currentAccount).toggleStickerSet(getParentActivity(), covered == null ? set : covered, 2, this, false, false);
         } else if (cell.removeButtonView == view) {
             MediaDataController.getInstance(currentAccount).toggleStickerSet(getParentActivity(), set, 0, this, false, true);
-        } else if (cell.premiumButtonView == view) {
-            showDialog(new PremiumFeatureBottomSheet(this, PremiumPreviewFragment.PREMIUM_FEATURE_ANIMATED_EMOJI, false));
         }
     }
 

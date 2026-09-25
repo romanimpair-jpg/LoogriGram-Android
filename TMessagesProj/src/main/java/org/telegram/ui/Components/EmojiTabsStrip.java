@@ -433,18 +433,6 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
         return true;
     }
 
-    private boolean isFreeEmojiPack(TLRPC.StickerSet set, ArrayList<TLRPC.Document> documents) {
-        if (set == null || documents == null) {
-            return false;
-        }
-        for (int i = 0; i < documents.size(); ++i) {
-            if (!MessageObject.isFreeEmoji(documents.get(i))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     private TLRPC.Document getThumbDocument(TLRPC.StickerSet set, ArrayList<TLRPC.Document> documents) {
         if (set == null) {
             return null;
@@ -502,10 +490,6 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
 
     }
 
-    protected boolean allowEmojisForNonPremium() {
-        return false;
-    }
-
     boolean first = true;
     private ValueAnimator appearAnimation;
     private int appearCount;
@@ -530,7 +514,6 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
         }
         appearCount = emojiPacks.size();
         final boolean includeFeatured = doIncludeFeatured();
-        final boolean isPremium = UserConfig.getInstance(UserConfig.selectedAccount).isPremium() || allowEmojisForNonPremium();
 
         ArrayList<EmojiTabButton> attachedEmojiPacks = new ArrayList<>();
 
@@ -559,10 +542,9 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
                     currentPackButton.setLock(null, false);
                 }
             } else {
-                final boolean free = newPack.free;
                 if (newPack.thumbDocumentId != null) {
                     if (currentPackButton == null) {
-                        currentPackButton = new EmojiTabButton(getContext(), newPack.thumbDocumentId, free, false, false);
+                        currentPackButton = new EmojiTabButton(getContext(), newPack.thumbDocumentId, false, false);
                         onTabCreate(currentPackButton);
                         contentView.addView(currentPackButton, packsIndexStart + i);
                     } else {
@@ -571,7 +553,7 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
                 } else {
                     TLRPC.Document thumbDocument = getThumbDocument(newPack.set, newPack.documents);
                     if (currentPackButton == null) {
-                        currentPackButton = new EmojiTabButton(getContext(), thumbDocument, free, false, false);
+                        currentPackButton = new EmojiTabButton(getContext(), thumbDocument, false, false);
                         onTabCreate(currentPackButton);
                         contentView.addView(currentPackButton, packsIndexStart + i);
                     } else {
@@ -583,12 +565,13 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
                 }
                 currentPackButton.id = newPack.forGroup ? (long) "forGroup".hashCode() : null;
                 currentPackButton.updateSelect(selected == i, false);
-                if (currentType == SelectAnimatedEmojiDialog.TYPE_AVATAR_CONSTRUCTOR) {
-                    currentPackButton.setLock(!isPremium && !free ? true : null, false);
-                } else if (currentType == SelectAnimatedEmojiDialog.TYPE_CHAT_REACTIONS || currentType == SelectAnimatedEmojiDialog.TYPE_SET_REPLY_ICON || currentType == SelectAnimatedEmojiDialog.TYPE_SET_REPLY_ICON_BOTTOM) {
+                // LoogriGram: without Premium, the tab of a pack holding premium
+                // emoji wore a padlock - in the avatar constructor every tab did,
+                // though its emoji are free to use there. Such packs are left out
+                // of the pickers now (EmojiView, SelectAnimatedEmojiDialog), and
+                // no tab is padlocked.
+                if (currentType == SelectAnimatedEmojiDialog.TYPE_AVATAR_CONSTRUCTOR || currentType == SelectAnimatedEmojiDialog.TYPE_CHAT_REACTIONS || currentType == SelectAnimatedEmojiDialog.TYPE_SET_REPLY_ICON || currentType == SelectAnimatedEmojiDialog.TYPE_SET_REPLY_ICON_BOTTOM) {
                     currentPackButton.setLock(null, false);
-                } else if (!isPremium && !free) {
-                    currentPackButton.setLock(true, false);
                 } else if (!this.isInstalled(newPack)) {
                     currentPackButton.setLock(false, false);
                 } else {
@@ -882,7 +865,7 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
             addView(imageView);
         }
 
-        public EmojiTabButton(Context context, TLRPC.Document emojiDocument, boolean free, boolean roundSelector, boolean forceSelector) {
+        public EmojiTabButton(Context context, TLRPC.Document emojiDocument, boolean roundSelector, boolean forceSelector) {
             super(context);
             this.newly = true;
             this.round = roundSelector;
@@ -943,7 +926,7 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
             updateColor();
         }
 
-        public EmojiTabButton(Context context, long emojiDocumentId, boolean free, boolean roundSelector, boolean forceSelector) {
+        public EmojiTabButton(Context context, long emojiDocumentId, boolean roundSelector, boolean forceSelector) {
             super(context);
             this.newly = true;
             this.round = roundSelector;
@@ -1167,14 +1150,13 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
             if (lock == null) {
                 updateLock(false, animated);
             } else {
+                // LoogriGram: true drew the padlock of a premium pack here; no
+                // tab passes it any more (see updateEmojiPacks). false is the
+                // badge of a pack not added yet.
                 updateLock(true, animated);
-                if (lock) {
-                    lockView.setImageResource(R.drawable.msg_mini_lockedemoji);
-                } else {
-                    Drawable addIcon = getResources().getDrawable(R.drawable.msg_mini_addemoji).mutate();
-                    addIcon.setColorFilter(new PorterDuffColorFilter(Color.WHITE, PorterDuff.Mode.MULTIPLY));
-                    lockView.setImageDrawable(addIcon);
-                }
+                Drawable addIcon = getResources().getDrawable(R.drawable.msg_mini_addemoji).mutate();
+                addIcon.setColorFilter(new PorterDuffColorFilter(Color.WHITE, PorterDuff.Mode.MULTIPLY));
+                lockView.setImageDrawable(addIcon);
             }
         }
 

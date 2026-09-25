@@ -47,14 +47,12 @@ import org.telegram.ui.Cells.TextCheckCell2;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.BackupImageView;
-import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.EditTextBoldCursor;
 import org.telegram.ui.Components.Forum.ForumBubbleDrawable;
 import org.telegram.ui.Components.Forum.ForumUtilities;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.LetterDrawable;
-import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.Components.ReplaceableIconDrawable;
 import org.telegram.ui.Components.SizeNotifierFrameLayout;
 
@@ -551,19 +549,11 @@ public class TopicCreateFragment extends BaseFragment {
             return;
         }
 
+        // LoogriGram: without Premium, an icon from outside the default topic
+        // icons was refused with a bulletin selling Premium, its "more" opening
+        // the subscription sheet. It is still refused, but quietly, as on
+        // desktop (boxes/peers/edit_forum_topic_box.cpp).
         if (!free && docId != 0 && !getUserConfig().isPremium()) {
-            TLRPC.Document emoji = AnimatedEmojiDrawable.findDocument(currentAccount, documentId);
-            if (emoji != null) {
-                BulletinFactory.of(this)
-                        .createEmojiBulletin(
-                                emoji,
-                                AndroidUtilities.replaceTags(LocaleController.getString(R.string.UnlockPremiumEmojiHint)),
-                                LocaleController.getString(R.string.PremiumMore),
-                                () -> {
-                                    new PremiumFeatureBottomSheet(this, PremiumPreviewFragment.PREMIUM_FEATURE_ANIMATED_EMOJI, false).show();
-                                }
-                        ).show();
-            }
             return;
         }
 

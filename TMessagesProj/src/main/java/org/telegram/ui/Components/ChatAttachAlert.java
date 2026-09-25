@@ -3028,11 +3028,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             }
 
             @Override
-            protected void closeParent() {
-                ChatAttachAlert.super.dismiss();
-            }
-
-            @Override
             protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
                 super.onLayout(changed, left, top, right, bottom);
                 updateCommentTextViewPosition();

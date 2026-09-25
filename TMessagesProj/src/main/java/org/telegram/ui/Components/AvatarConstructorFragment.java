@@ -457,26 +457,12 @@ public class AvatarConstructorFragment extends BaseFragment {
             }
 
             protected void onEmojiSelected(View view, Long documentId, TLRPC.Document document, TL_stars.TL_starGiftUnique gift, Integer until) {
-//                final TLRPC.TL_inputStickerSetShortName inputStickerSet = new TLRPC.TL_inputStickerSetShortName();
-//                inputStickerSet.short_name = avatarsPack;
-//                final TLRPC.TL_messages_stickerSet set = MediaDataController.getInstance(currentAccount).getStickerSet(inputStickerSet, false);
-//                boolean isFree = false;
-//                if (set != null && set.documents != null) {
-//                    for (TLRPC.Document d : set.documents) {
-//                        if (d.id == (document != null ? document.id : (documentId != null ? documentId : 0))) {
-//                            isFree = true;
-//                            break;
-//                        }
-//                    }
-//                }
-                boolean isFree = false;
-                final TLRPC.TL_emojiList emojiList = forUser ? MediaDataController.getInstance(currentAccount).profileAvatarConstructorDefault : MediaDataController.getInstance(currentAccount).groupAvatarConstructorDefault;
-                if (emojiList != null) {
-                    final long did = document != null ? document.id : (documentId != null ? documentId : 0);
-                    isFree = emojiList.document_id.contains(did);
-                }
+                // LoogriGram: whether the emoji was one of the constructor's free
+                // defaults was worked out here, for PreviewView.freeEmoji. Its one
+                // reader, in the Premium lock on the finished avatar, never locked
+                // on it and went on 2026-09-24; every emoji here is free to use.
                 final long docId = documentId == null ? 0 : documentId;
-                setPreview(isFree, docId, document);
+                setPreview(docId, document);
             }
         };
         selectAnimatedEmojiDialog.forUser = !forGroup;
@@ -526,10 +512,9 @@ public class AvatarConstructorFragment extends BaseFragment {
         return fragmentView;
     }
 
-    private void setPreview(boolean free, long docId, TLRPC.Document document) {
+    private void setPreview(long docId, TLRPC.Document document) {
         previewView.documentId = docId;
         previewView.document = document;
-        previewView.freeEmoji = free;
         if (docId == 0) {
             previewView.backupImageView.setAnimatedEmojiDrawable(null);
             SvgHelper.SvgDrawable svgThumb = DocumentObject.getSvgThumb(document, Theme.key_windowBackgroundWhiteGrayIcon, 0.2f);
@@ -737,7 +722,7 @@ public class AvatarConstructorFragment extends BaseFragment {
 
 
         if (emojiMarkup instanceof TLRPC.TL_videoSizeEmojiMarkup) {
-            setPreview(false, ((TLRPC.TL_videoSizeEmojiMarkup) emojiMarkup).emoji_id, null);
+            setPreview(((TLRPC.TL_videoSizeEmojiMarkup) emojiMarkup).emoji_id, null);
         } else {
             TLRPC.TL_videoSizeStickerMarkup stickerMarkup = new TLRPC.TL_videoSizeStickerMarkup();
             TLRPC.TL_messages_stickerSet set = MediaDataController.getInstance(currentAccount).getStickerSet(stickerMarkup.stickerset, false);
@@ -749,7 +734,7 @@ public class AvatarConstructorFragment extends BaseFragment {
                     }
                 }
             }
-            setPreview(false, 0, document);
+            setPreview(0, document);
         }
         backgroundSelectView.selectGradient(gradient);
         selectAnimatedEmojiDialog.setForUser(forUser = true);
@@ -757,7 +742,6 @@ public class AvatarConstructorFragment extends BaseFragment {
 
     public class PreviewView extends FrameLayout {
 
-        public boolean freeEmoji;
         public long documentId;
         public TLRPC.Document document;
         BackupImageView backupImageView;
