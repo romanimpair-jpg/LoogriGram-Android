@@ -1268,7 +1268,11 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
             MessagesController messagesController = MessagesController.getInstance(currentAccount);
             TLRPC.messages_AvailableEffects effects = messagesController.getAvailableEffects();
             if (effects != null) {
+                // LoogriGram: effects that need Premium are not offered without it;
+                // upstream offered them padlocked.
+                final boolean premium = UserConfig.getInstance(currentAccount).isPremium();
                 for (int i = 0; i < effects.effects.size(); i++) {
+                    if (!premium && effects.effects.get(i).premium_required) continue;
                     ReactionsLayoutInBubble.VisibleReaction visibleReaction = ReactionsLayoutInBubble.VisibleReaction.fromTL(effects.effects.get(i));
                     if (!hashSet.contains(visibleReaction)) {
                         hashSet.add(visibleReaction);

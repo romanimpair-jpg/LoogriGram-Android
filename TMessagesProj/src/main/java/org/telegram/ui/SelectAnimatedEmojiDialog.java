@@ -1864,6 +1864,8 @@ public class SelectAnimatedEmojiDialog extends FrameLayout implements Notificati
                                 try {
                                     for (int j = 0; j < effects.effects.size(); ++j) {
                                         TLRPC.TL_availableEffect effect = effects.effects.get(j);
+                                        // LoogriGram: as in ReactionsContainerLayout, no Premium effects without Premium.
+                                        if (effect.premium_required && !UserConfig.getInstance(currentAccount).isPremium()) continue;
                                         if (query.contains(effect.emoticon)) {
                                             final boolean sticker = effect.effect_animation_id == 0;
                                             (sticker ? reactionsStickers : reactions).add(ReactionsLayoutInBubble.VisibleReaction.fromTL(effect));
@@ -1890,6 +1892,7 @@ public class SelectAnimatedEmojiDialog extends FrameLayout implements Notificati
                                                     String emoji = Emoji.fixEmoji(result.get(i).emoji);
                                                     for (int j = 0; j < effects.effects.size(); ++j) {
                                                         TLRPC.TL_availableEffect effect = effects.effects.get(j);
+                                                        if (effect.premium_required && !UserConfig.getInstance(currentAccount).isPremium()) continue;
                                                         if (!effectIds.contains(effect.id) && (effect.emoticon.contains(emoji) || emoji.contains(effect.emoticon))) {
                                                             final boolean sticker = effect.effect_animation_id == 0;
                                                             (sticker ? reactionsStickers : reactions).add(ReactionsLayoutInBubble.VisibleReaction.fromTL(effect));

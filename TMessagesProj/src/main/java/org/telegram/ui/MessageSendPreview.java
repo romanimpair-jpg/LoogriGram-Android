@@ -62,7 +62,6 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.AnimatedFloat;
-import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.ChatActivityEnterView;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.EditTextCaption;
@@ -1307,12 +1306,10 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
             public void onReactionClicked(View view, ReactionsLayoutInBubble.VisibleReaction visibleReaction, boolean longpress, boolean addToRecent) {
                 if (visibleReaction == null || effectSelector == null)
                     return;
-                final boolean premiumLocked = !UserConfig.getInstance(currentAccount).isPremium() && visibleReaction.premium;
                 if (mainMessageCell != null) {
                     MessageObject messageObject = mainMessageCell.getMessageObject();
                     if (messageObject == null)
                         return;
-                    final long prevEffect = messageObject.messageOwner.effect;
                     boolean clear = false;
                     if (visibleReaction.effectId == messageObject.messageOwner.effect) {
                         messageObject.messageOwner.flags2 &=~ 4;
@@ -1322,23 +1319,15 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
                         messageObject.messageOwner.flags2 |= 4;
                         messageObject.messageOwner.effect = visibleReaction.effectId;
                     }
-                    if (!premiumLocked) {
-                        mainMessageCell.setMessageObject(messageObject, getValidGroupedMessage(messageObject), messageObjects.size() > 1, false, false);
-                        effectSelector.setSelectedReactionAnimated(clear ? null : visibleReaction);
-                        if (effectSelector.getReactionsWindow() != null && effectSelector.getReactionsWindow().getSelectAnimatedEmojiDialog() != null) {
-                            effectSelector.getReactionsWindow().getSelectAnimatedEmojiDialog().setSelectedReaction(clear ? null : visibleReaction);
-                            effectSelector.getReactionsWindow().containerView.invalidate();
-                        }
+                    mainMessageCell.setMessageObject(messageObject, getValidGroupedMessage(messageObject), messageObjects.size() > 1, false, false);
+                    effectSelector.setSelectedReactionAnimated(clear ? null : visibleReaction);
+                    if (effectSelector.getReactionsWindow() != null && effectSelector.getReactionsWindow().getSelectAnimatedEmojiDialog() != null) {
+                        effectSelector.getReactionsWindow().getSelectAnimatedEmojiDialog().setSelectedReaction(clear ? null : visibleReaction);
+                        effectSelector.getReactionsWindow().containerView.invalidate();
                     }
                     effectOverlay.clear();
                     if (!clear) {
                         effectOverlay.showAnimationForCell(mainMessageCell, 0, false, false);
-                    }
-                    if (premiumLocked) {
-                        messageObject.messageOwner.effect = prevEffect;
-                        if (prevEffect == 0) {
-                            messageObject.messageOwner.flags2 &=~ 4;
-                        }
                     }
                     if (sendButton != null) {
                         sendButton.setEffect(messageObject.messageOwner.effect);
@@ -1356,20 +1345,18 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
                         sendButton.setEffect(effectId);
                     }
                     onEffectChange(effectId);
-                    if (!premiumLocked) {
-                        TLRPC.TL_availableEffect effect = effectId == 0 ? null : MessagesController.getInstance(currentAccount).getEffect(effectId);
-                        if (effectDrawable != null) {
-                            if (effectId == 0 || effect == null) {
-                                effectDrawable.set((Drawable) null, true);
-                            } else {
-                                effectDrawable.set(Emoji.getEmojiDrawable(effect.emoticon), true);
-                            }
+                    TLRPC.TL_availableEffect effect = effectId == 0 ? null : MessagesController.getInstance(currentAccount).getEffect(effectId);
+                    if (effectDrawable != null) {
+                        if (effectId == 0 || effect == null) {
+                            effectDrawable.set((Drawable) null, true);
+                        } else {
+                            effectDrawable.set(Emoji.getEmojiDrawable(effect.emoticon), true);
                         }
-                        effectSelector.setSelectedReactionAnimated(clear ? null : visibleReaction);
-                        if (effectSelector.getReactionsWindow() != null && effectSelector.getReactionsWindow().getSelectAnimatedEmojiDialog() != null) {
-                            effectSelector.getReactionsWindow().getSelectAnimatedEmojiDialog().setSelectedReaction(clear ? null : visibleReaction);
-                            effectSelector.getReactionsWindow().containerView.invalidate();
-                        }
+                    }
+                    effectSelector.setSelectedReactionAnimated(clear ? null : visibleReaction);
+                    if (effectSelector.getReactionsWindow() != null && effectSelector.getReactionsWindow().getSelectAnimatedEmojiDialog() != null) {
+                        effectSelector.getReactionsWindow().getSelectAnimatedEmojiDialog().setSelectedReaction(clear ? null : visibleReaction);
+                        effectSelector.getReactionsWindow().containerView.invalidate();
                     }
                     effectOverlay.clear();
                     if (!clear) {
@@ -1382,16 +1369,8 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
                         effectOverlay.createDrawingObject(null, 0, null, messageObject, 0, false, false, 0, 0, true);
                     }
                 }
-                if (premiumLocked && fragment != null) {
-                    BulletinFactory.of(containerView, resourcesProvider)
-                        .createSimpleBulletin(R.raw.star_premium_2, AndroidUtilities.premiumText(LocaleController.getString(R.string.AnimatedEffectPremium), () -> {
-                            BaseFragment.BottomSheetParams params = new BaseFragment.BottomSheetParams();
-                            params.transitionFromLeft = true;
-                            params.allowNestedScroll = false;
-                            fragment.showAsSheet(new PremiumPreviewFragment("effect"), params);
-                        }))
-                        .show();
-                }
+                // LoogriGram: a Premium effect is no longer offered without Premium
+                // (ReactionsContainerLayout), so none is refused here with a bulletin.
                 effectsView.invalidate();
             }
         });
