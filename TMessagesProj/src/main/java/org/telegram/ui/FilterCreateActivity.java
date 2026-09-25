@@ -93,7 +93,6 @@ import org.telegram.ui.Components.ItemOptions;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.ListView.AdapterWithDiffUtils;
 import org.telegram.ui.Components.Premium.LimitReachedBottomSheet;
-import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.Components.QRCodeBottomSheet;
 import org.telegram.ui.Components.RLottieImageView;
 import org.telegram.ui.Components.RecyclerListView;
@@ -357,7 +356,10 @@ public class FilterCreateActivity extends BaseFragment {
             items.add(ItemInner.asShadow(LocaleController.getString(R.string.FilterExcludeInfo)));
         }
 
-        if (getMessagesController().folderTags || !getUserConfig().isPremium()) {
+        // LoogriGram: a folder's tag colour is Premium's, so the section shows only
+        // for a Premium account with tags on. Upstream also drew it for everyone
+        // else, the colours padlocked, offering Premium on a tap.
+        if (getMessagesController().folderTags && getUserConfig().isPremium()) {
             items.add(new ItemInner(VIEW_TYPE_HEADER_COLOR_PREVIEW, false));
             items.add(new ItemInner(VIEW_TYPE_COLOR, false));
             items.add(ItemInner.asShadow(LocaleController.getString(R.string.FolderTagColorInfo)));
@@ -1685,22 +1687,17 @@ public class FilterCreateActivity extends BaseFragment {
                 case VIEW_TYPE_HEADER_COLOR_PREVIEW: {
                     folderTagsHeader = (HeaderCellColorPreview) holder.itemView;
                     folderTagsHeader.setPreviewText(AnimatedEmojiSpan.cloneSpans(newFilterName, -1, folderTagsHeader.getPreviewTextPaint().getFontMetricsInt(), .5f), false);
-                    folderTagsHeader.setPreviewColor(!getUserConfig().isPremium() ? -1 : newFilterColor, false);
+                    folderTagsHeader.setPreviewColor(newFilterColor, false);
                     folderTagsHeader.setText(LocaleController.getString(R.string.FolderTagColor));
                     break;
                 }
                 case VIEW_TYPE_COLOR: {
                     PeerColorActivity.PeerColorGrid cell = (PeerColorActivity.PeerColorGrid) holder.itemView;
-                    cell.setCloseAsLock(!getUserConfig().isPremium());
-                    cell.setSelected(!getUserConfig().isPremium() ? -1 : newFilterColor, false);
+                    cell.setSelected(newFilterColor, false);
                     cell.setOnColorClick(color -> {
-                        if (!getUserConfig().isPremium()) {
-                            showDialog(new PremiumFeatureBottomSheet(FilterCreateActivity.this, PremiumPreviewFragment.PREMIUM_FEATURE_FOLDER_TAGS, true));
-                            return;
-                        }
                         cell.setSelected(newFilterColor = color, true);
                         if (folderTagsHeader != null) {
-                            folderTagsHeader.setPreviewColor(!getUserConfig().isPremium() ? -1 : newFilterColor, true);
+                            folderTagsHeader.setPreviewColor(newFilterColor, true);
                         }
                         checkDoneButton(true);
                     });

@@ -1926,7 +1926,6 @@ public class PeerColorActivity extends BaseFragment implements NotificationCente
 
             private Path closePath;
             private Paint closePaint;
-            private Drawable lockDrawable;
 
             private final ButtonBounce bounce = new ButtonBounce(PeerColorGrid.this);
 
@@ -2039,37 +2038,23 @@ public class PeerColorActivity extends BaseFragment implements NotificationCente
                 }
 
                 if (hasClose) {
-                    if (lock) {
-                        if (lockDrawable == null) {
-                            lockDrawable = getContext().getResources().getDrawable(R.drawable.msg_mini_lock3);
-                            lockDrawable.setColorFilter(new PorterDuffColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN));
-                        }
-                        lockDrawable.setBounds(
-                            (int) (bounds.centerX() - lockDrawable.getIntrinsicWidth() / 2f * 1.2f),
-                            (int) (bounds.centerY() - lockDrawable.getIntrinsicHeight() / 2f * 1.2f),
-                            (int) (bounds.centerX() + lockDrawable.getIntrinsicWidth() / 2f * 1.2f),
-                            (int) (bounds.centerY() + lockDrawable.getIntrinsicHeight() / 2f * 1.2f)
-                        );
-                        lockDrawable.draw(canvas);
-                    } else {
-                        if (closePath == null) {
-                            closePath = new Path();
-                        }
-                        if (closePaint == null) {
-                            closePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-                            closePaint.setColor(0xffffffff);
-                            closePaint.setStyle(Paint.Style.STROKE);
-                            closePaint.setStrokeCap(Paint.Cap.ROUND);
-                        }
-                        closePaint.setStrokeWidth(dp(2));
-                        closePath.rewind();
-                        final float r = lerp(dp(5), dp(4), selectT);
-                        closePath.moveTo(bounds.centerX() - r, bounds.centerY() - r);
-                        closePath.lineTo(bounds.centerX() + r, bounds.centerY() + r);
-                        closePath.moveTo(bounds.centerX() + r, bounds.centerY() - r);
-                        closePath.lineTo(bounds.centerX() - r, bounds.centerY() + r);
-                        canvas.drawPath(closePath, closePaint);
+                    if (closePath == null) {
+                        closePath = new Path();
                     }
+                    if (closePaint == null) {
+                        closePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                        closePaint.setColor(0xffffffff);
+                        closePaint.setStyle(Paint.Style.STROKE);
+                        closePaint.setStrokeCap(Paint.Cap.ROUND);
+                    }
+                    closePaint.setStrokeWidth(dp(2));
+                    closePath.rewind();
+                    final float r = lerp(dp(5), dp(4), selectT);
+                    closePath.moveTo(bounds.centerX() - r, bounds.centerY() - r);
+                    closePath.lineTo(bounds.centerX() + r, bounds.centerY() + r);
+                    closePath.moveTo(bounds.centerX() + r, bounds.centerY() - r);
+                    closePath.lineTo(bounds.centerX() - r, bounds.centerY() + r);
+                    canvas.drawPath(closePath, closePaint);
                 }
 
                 canvas.restore();
@@ -2087,7 +2072,6 @@ public class PeerColorActivity extends BaseFragment implements NotificationCente
 
         private final int type;
         private final int currentAccount;
-        private boolean lock;
 
         private ColorButton[] buttons;
 
@@ -2096,10 +2080,6 @@ public class PeerColorActivity extends BaseFragment implements NotificationCente
             this.type = type;
             this.currentAccount = currentAccount;
             this.resourcesProvider = resourcesProvider;
-        }
-
-        public void setCloseAsLock(boolean lock) {
-            this.lock = lock;
         }
 
         public void updateColors() {

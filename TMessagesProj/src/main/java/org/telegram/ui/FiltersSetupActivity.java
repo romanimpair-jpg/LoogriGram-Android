@@ -60,7 +60,6 @@ import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.ListView.AdapterWithDiffUtils;
 import org.telegram.ui.Components.LoadingDrawable;
 import org.telegram.ui.Components.Premium.LimitReachedBottomSheet;
-import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.Components.ProgressButton;
 import org.telegram.ui.Components.RLottieImageView;
 import org.telegram.ui.Components.RecyclerListView;
@@ -593,12 +592,16 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
             items.add(ItemInner.asButton(LocaleController.getString(R.string.CreateNewFilter)));
         }
         items.add(ItemInner.asShadow(null));
-        folderTagsPosition = items.size();
-        showTagsRow = items.size();
-        items.add(ItemInner.asCheck(LocaleController.getString(R.string.FolderShowTags)));
-        items.add(ItemInner.asShadow(!getUserConfig().isPremium() ? AndroidUtilities.replaceSingleTag(LocaleController.getString(R.string.FolderShowTagsInfoPremium), Theme.key_windowBackgroundWhiteBlueHeader, AndroidUtilities.REPLACING_TAG_TYPE_LINKBOLD, () -> {
-            presentFragment(new PremiumPreviewFragment("settings"));
-        }) : LocaleController.getString(R.string.FolderShowTagsInfo)));
+        // LoogriGram: folder tags are Premium's, so their switch is drawn only
+        // for a Premium account. Upstream drew it for everyone, offering Premium
+        // on a tap and in the text under it.
+        folderTagsPosition = -1;
+        if (getUserConfig().isPremium()) {
+            folderTagsPosition = items.size();
+            showTagsRow = items.size();
+            items.add(ItemInner.asCheck(LocaleController.getString(R.string.FolderShowTags)));
+            items.add(ItemInner.asShadow(LocaleController.getString(R.string.FolderShowTagsInfo)));
+        }
 
         if (adapter != null) {
             if (animated) {
@@ -685,10 +688,6 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
                 return;
             }
             if (item.viewType == VIEW_TYPE_CHECK) {
-                if (!getUserConfig().isPremium()) {
-                    showDialog(new PremiumFeatureBottomSheet(this, PremiumPreviewFragment.PREMIUM_FEATURE_FOLDER_TAGS, true));
-                    return;
-                }
                 TLRPC.TL_messages_toggleDialogFilterTags req = new TLRPC.TL_messages_toggleDialogFilterTags();
                 req.enabled = !getMessagesController().folderTags;
                 getMessagesController().setFolderTags(req.enabled);
@@ -716,7 +715,7 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
             }
         });
 
-        if (highlightTags) {
+        if (highlightTags && getUserConfig().isPremium()) {
             updateRows(false);
             highlightTags = false;
             listView.scrollToPosition(adapter.getItemCount() - 1);
