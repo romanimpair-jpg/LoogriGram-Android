@@ -2008,15 +2008,6 @@ public class ChatActivity extends BaseFragment implements
             if (chatActivityEnterView != null && chatActivityEnterView.getEmojiView() != null) {
                 chatActivityEnterView.getEmojiView().onMessageSend();
             }
-
-            if (!getMessagesController().premiumFeaturesBlocked() && getMessagesController().transcribeAudioTrialWeeklyNumber <= 0 && !getMessagesController().didPressTranscribeButtonEnough() && !getUserConfig().isPremium() && !TextUtils.isEmpty(message) && messages != null) {
-                for (int i = 1; i < Math.min(5, messages.size()); ++i) {
-                    MessageObject msg = messages.get(i);
-                    if (msg != null && !msg.isOutOwner() && (msg.isVoice() || msg.isRoundVideo()) && msg.isContentUnread()) {
-                        TranscribeButton.showOffTranscribe(msg);
-                    }
-                }
-            }
         }
 
         @Override
@@ -26742,14 +26733,6 @@ public class ChatActivity extends BaseFragment implements
     @Override
     public void onBecomeFullyHidden() {
         hideTagSelector();
-        if (!getMessagesController().premiumFeaturesBlocked() && getMessagesController().transcribeAudioTrialWeeklyNumber <= 0 && !getMessagesController().didPressTranscribeButtonEnough() && !getUserConfig().isPremium() && messages != null) {
-            for (int i = 0; i < messages.size(); ++i) {
-                MessageObject msg = messages.get(i);
-                if (msg != null && !msg.isOutOwner() && (msg.isVoice() || msg.isRoundVideo()) && !msg.isUnread() && (msg.isContentUnread() || ChatObject.isChannelAndNotMegaGroup(currentChat))) {
-                    TranscribeButton.showOffTranscribe(msg, false);
-                }
-            }
-        }
         isFullyVisible = false;
         hideUndoViews();
         TranscribeButton.resetVideoTranscriptionsOpen();
@@ -38893,26 +38876,12 @@ public class ChatActivity extends BaseFragment implements
             }
         }
 
+        // LoogriGram: only the free trial's own news is told here. Upstream
+        // also offered Premium - a hint where there is no trial at all, and a
+        // "subscribe" ending on the used-up message.
         @Override
-        public void needShowPremiumFeatures(String source) {
-            presentFragment(new PremiumPreviewFragment(source));
-        }
-
-        @Override
-        public void needShowPremiumBulletin(int type) {
-            if (type == 0) {
-                checkTopUndoView();
-                if (topUndoView == null) {
-                    return;
-                }
-                topUndoView.showWithAction(0, UndoView.ACTION_PREMIUM_TRANSCRIPTION, null, () -> {
-                    new PremiumFeatureBottomSheet(ChatActivity.this, PremiumPreviewFragment.PREMIUM_FEATURE_VOICE_TO_TEXT, true).show();
-                    getMessagesController().pressTranscribeButton();
-                });
-                try {
-                    topUndoView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
-                } catch (Exception ignored) {}
-            } else if (type == 1) {
+        public void needShowTranscribeTrialBulletin(int type) {
+            if (type == 1) {
                 String until = LocaleController.formatDateTime(getMessagesController().transcribeAudioTrialCooldownUntil, true);
                 CharSequence text = getMessagesController().transcribeAudioTrialCooldownUntil > 0 ?
                     AndroidUtilities.replaceTags(LocaleController.formatPluralString("TranscriptionTrialLeftUntil", TranscribeButton.getTranscribeTrialCount(currentAccount), until)) :
@@ -38922,26 +38891,12 @@ public class ChatActivity extends BaseFragment implements
                     fragmentView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
                 } catch (Exception ignored) {}
             } else if (type == 2 || type == 3) {
-                String until = LocaleController.formatDateTime(getMessagesController().transcribeAudioTrialCooldownUntil, true);
-                BulletinFactory.of(ChatActivity.this).createSimpleBulletin(
-                    R.raw.transcribe,
-                    new SpannableStringBuilder().append(
-                        AndroidUtilities.replaceTags(LocaleController.formatPluralString("TranscriptionTrialEnd", getMessagesController().transcribeAudioTrialWeeklyNumber))
-                    ).append(" ").append(
-                        type == 2 ?
-                        AndroidUtilities.replaceSingleTag(LocaleController.getString(R.string.TranscriptionTrialEndBuy), () -> {
-                            new PremiumFeatureBottomSheet(ChatActivity.this, PremiumPreviewFragment.PREMIUM_FEATURE_VOICE_TO_TEXT, true).show();
-                            getMessagesController().pressTranscribeButton();
-                        }) :
-                        getMessagesController().transcribeAudioTrialCooldownUntil <= 0 ? "" :
-                        AndroidUtilities.replaceSingleTag(LocaleController.formatString(R.string.TranscriptionTrialEndWaitOrBuy, until), () -> {
-                            new PremiumFeatureBottomSheet(ChatActivity.this, PremiumPreviewFragment.PREMIUM_FEATURE_VOICE_TO_TEXT, true).show();
-                            getMessagesController().pressTranscribeButton();
-                        })
-                    ),
-                    6,
-                    7000
-                ).show(true);
+                final SpannableStringBuilder text = new SpannableStringBuilder(AndroidUtilities.replaceTags(LocaleController.formatPluralString("TranscriptionTrialEnd", getMessagesController().transcribeAudioTrialWeeklyNumber)));
+                if (getMessagesController().transcribeAudioTrialCooldownUntil > 0) {
+                    final String until = LocaleController.formatDateTime(getMessagesController().transcribeAudioTrialCooldownUntil, true);
+                    text.append(" ").append(LocaleController.formatString(R.string.LoogriGramTranscribeTrialsOver, until));
+                }
+                BulletinFactory.of(ChatActivity.this).createSimpleBulletin(R.raw.transcribe, text, 6, 7000).show(true);
                 BotWebViewVibrationEffect.APP_ERROR.vibrate();
             }
         }

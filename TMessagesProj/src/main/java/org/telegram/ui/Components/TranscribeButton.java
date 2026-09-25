@@ -232,12 +232,10 @@ public class TranscribeButton {
                 if (canTranscribeTrial(parent.getMessageObject()) || parent.getMessageObject() != null && parent.getMessageObject().messageOwner != null && !TextUtils.isEmpty(parent.getMessageObject().messageOwner.voiceTranscription)) {
                     transcribePressed(parent.getMessageObject(), toOpen, parent.getDelegate());
                 } else {
-                    if (parent.getDelegate() != null) {
-                        if (MessagesController.getInstance(parent.currentAccount).transcribeAudioTrialWeeklyNumber > 0) {
-                            parent.getDelegate().needShowPremiumBulletin(3);
-                        } else {
-                            parent.getDelegate().needShowPremiumBulletin(0);
-                        }
+                    // LoogriGram: with no trial at all there is nothing to say;
+                    // upstream offered Premium here.
+                    if (parent.getDelegate() != null && MessagesController.getInstance(parent.currentAccount).transcribeAudioTrialWeeklyNumber > 0) {
+                        parent.getDelegate().needShowTranscribeTrialBulletin(3);
                     }
                 }
             } else {
@@ -720,7 +718,7 @@ public class TranscribeButton {
                             MessagesController.getInstance(account).updateTranscribeAudioTrialCooldownUntil(r.trial_remains_until_date);
                             AndroidUtilities.runOnUIThread(() -> {
                                 if (delegate != null) {
-                                    delegate.needShowPremiumBulletin(r.trial_remains_num > 0 ? 1 : 2);
+                                    delegate.needShowTranscribeTrialBulletin(r.trial_remains_num > 0 ? 1 : 2);
                                 }
                             });
                         }
@@ -739,7 +737,7 @@ public class TranscribeButton {
                                         transcribeOperationsByDialogPosition.remove((Integer) reqInfoHash(messageObject));
                                     }
                                     if (delegate != null) {
-                                        delegate.needShowPremiumBulletin(3);
+                                        delegate.needShowTranscribeTrialBulletin(3);
                                     }
                                     NotificationCenter.getInstance(account).postNotificationName(NotificationCenter.voiceTranscriptionUpdate, messageObject);
                                     NotificationCenter.getInstance(account).postNotificationName(NotificationCenter.updateTranscriptionLock);
@@ -803,24 +801,6 @@ public class TranscribeButton {
             return true;
         } catch (Exception ignore) {}
         return false;
-    }
-
-    public static void showOffTranscribe(MessageObject messageObject) {
-        showOffTranscribe(messageObject, true);
-    }
-
-    public static void showOffTranscribe(MessageObject messageObject, boolean notify) {
-        if (messageObject == null || messageObject.messageOwner == null) {
-            return;
-        }
-        final MessageObject finalMessageObject = messageObject;
-        messageObject.messageOwner.voiceTranscriptionForce = true;
-        MessagesStorage.getInstance(messageObject.currentAccount).updateMessageVoiceTranscriptionOpen(messageObject.getDialogId(), messageObject.getId(), messageObject.messageOwner);
-        if (notify) {
-            AndroidUtilities.runOnUIThread(() -> {
-                NotificationCenter.getInstance(finalMessageObject.currentAccount).postNotificationName(NotificationCenter.voiceTranscriptionUpdate, finalMessageObject);
-            });
-        }
     }
 
     public static boolean canTranscribeTrial(MessageObject messageObject) {

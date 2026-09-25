@@ -706,10 +706,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         default void didPressHint(ChatMessageCell cell, int type) {
         }
 
-        default void needShowPremiumFeatures(String source) {
-        }
-
-        default void needShowPremiumBulletin(int type) {
+        default void needShowTranscribeTrialBulletin(int type) {
         }
 
         default boolean isAdmin(long uid) {
@@ -11963,13 +11960,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     ) ||
                     TranscribeButton.canTranscribeTrial(currentMessageObject) || true
                 )
-                ||
-                MessagesController.getInstance(currentAccount).transcribeAudioTrialWeeklyNumber <= 0 &&
-                !MessagesController.getInstance(currentAccount).premiumFeaturesBlocked() &&
-                !MessagesController.getInstance(currentAccount).didPressTranscribeButtonEnough() && !currentMessageObject.isOutOwner() && (
-                    currentMessageObject.messageOwner != null && currentMessageObject.messageOwner.voiceTranscriptionForce ||
-                    currentMessageObject.getDuration() >= 60
-                )
+                // LoogriGram: no transcribe button once there are no free trials;
+                // upstream showed one there to offer Premium.
             ) && (
                 currentMessageObject.isVoice() && useSeekBarWaveform ||
                 currentMessageObject.isRoundVideo()

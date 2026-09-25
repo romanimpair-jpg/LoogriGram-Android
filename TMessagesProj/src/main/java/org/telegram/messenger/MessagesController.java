@@ -673,7 +673,6 @@ public class MessagesController extends BaseController implements NotificationCe
 
     public volatile boolean ignoreSetOnline;
     public boolean premiumLocked;
-    public int transcribeButtonPressed;
 
     // LoogriGram: the whole premium and Stars economy, off at three getters.
     // These are upstream's own "purchases are blocked here" flags, driven by a
@@ -885,19 +884,6 @@ public class MessagesController extends BaseController implements NotificationCe
 
     public boolean isPremiumUser(TLRPC.User currentUser) {
         return currentUser != null && currentUser.premium && !isSupportUser(currentUser);
-    }
-
-    public boolean didPressTranscribeButtonEnough() {
-        return transcribeButtonPressed >= 2;
-    }
-
-    public void pressTranscribeButton() {
-        if (transcribeButtonPressed < 2) {
-            transcribeButtonPressed++;
-            if (mainPreferences != null) {
-                mainPreferences.edit().putInt("transcribeButtonPressed", transcribeButtonPressed).apply();
-            }
-        }
     }
 
     public void putLastGiftAuctionUpdate() {
@@ -1622,7 +1608,6 @@ public class MessagesController extends BaseController implements NotificationCe
         verifyAgeMin = mainPreferences.getInt("verifyAgeMin", 18);
         premiumBotUsername = mainPreferences.getString("premiumBotUsername", null);
         premiumLocked = mainPreferences.getBoolean("premiumLocked", false);
-        transcribeButtonPressed = mainPreferences.getInt("transcribeButtonPressed", 0);
         forumUpgradeParticipantsMin = mainPreferences.getInt("forumUpgradeParticipantsMin", 200);
         topicsPinnedLimit = mainPreferences.getInt("topicsPinnedLimit", 3);
         telegramAntispamUserId = mainPreferences.getLong("telegramAntispamUserId", -1);
