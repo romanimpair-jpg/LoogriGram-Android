@@ -48,7 +48,6 @@ import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.os.SystemClock;
 import android.text.SpannableStringBuilder;
-import android.text.Spanned;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.util.SparseIntArray;
@@ -125,7 +124,6 @@ import org.telegram.ui.Components.BackgroundGradientDrawable;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.CircularProgressDrawable;
 import org.telegram.ui.Components.ColorPicker;
-import org.telegram.ui.Components.ColoredImageSpan;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.Easings;
 import org.telegram.ui.Components.FragmentFloatingButton;
@@ -133,7 +131,6 @@ import org.telegram.ui.Components.GestureDetector2;
 import org.telegram.ui.Components.HintView;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.MotionBackgroundDrawable;
-import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.ScaleStateListAnimator;
@@ -1437,15 +1434,14 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
                 updateApplyButton1();
                 applyButton1.setOnClickListener(view -> applyWallpaperBackground(false));
 
-                if (dialogId > 0 && !self && serverWallpaper == null) {
+                // LoogriGram: setting a wallpaper for both sides is Premium's, so the
+                // second button is drawn only for a Premium account. Upstream drew it
+                // padlocked for everyone else and offered Premium on a tap.
+                if (dialogId > 0 && !self && serverWallpaper == null && getUserConfig().isPremium()) {
                     applyButton2 = new BlurButton(context);
                     ScaleStateListAnimator.apply(applyButton2, 0.033f, 1.2f);
                     TLRPC.User user = getMessagesController().getUser(dialogId);
                     SpannableStringBuilder text = new SpannableStringBuilder("");
-                    if (!getUserConfig().isPremium()) {
-                        text.append("l ");
-                        text.setSpan(new ColoredImageSpan(R.drawable.msg_mini_lock3), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    }
                     text.append(LocaleController.formatString(R.string.ApplyWallpaperForMeAndPeer, UserObject.getUserName(user)));
                     applyButton2.setText(text);
                     try {
@@ -2388,11 +2384,6 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
         // and handed an emoji wallpaper back unapplied. Only the deleted
         // channel and group Appearance screens opened it that way, so the
         // chat branches and the channel preview message are gone throughout.
-        if (!getUserConfig().isPremium() && forBoth) {
-            showDialog(new PremiumFeatureBottomSheet(this, PremiumPreviewFragment.PREMIUM_FEATURE_WALLPAPER, true));
-            return;
-        }
-
         boolean done;
         boolean sameFile = false;
         Theme.ThemeInfo theme = Theme.getActiveTheme();
