@@ -32,7 +32,6 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.PorterDuff;
-import android.graphics.PorterDuffColorFilter;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.Region;
@@ -74,9 +73,7 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.view.menu.MenuItemImpl;
 
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.BotWebViewVibrationEffect;
 import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
@@ -119,9 +116,12 @@ public final class FloatingToolbar {
     public static final int STYLE_THEME = 1;
     public static final int STYLE_BLACK = 2;
 
-    private Runnable premiumLockClickListener;
-    public void setOnPremiumLockClick(Runnable listener) {
-        premiumLockClickListener = listener;
+    // LoogriGram: where a caption allows no formatting (a story's, unless the
+    // server enables it for everyone) the formatting options are left out.
+    // Upstream drew them padlocked, as a Premium feature.
+    private boolean formattingHidden;
+    public void setFormattingHidden(boolean hidden) {
+        formattingHidden = hidden;
     }
 
     public interface StyleDelegate {
@@ -281,7 +281,7 @@ public final class FloatingToolbar {
                             (menuItem.getItemId() == TRANSLATE || menuItem.getItemId() == TRANSLATE2)
                         ) &&
                         (
-                            menuItem.getItemId() != R.id.menu_regular || premiumLockClickListener == null
+                            menuItem.getItemId() != R.id.menu_regular || !formattingHidden
                         )
                     ) {
                         menuItems.add(menuItem);
@@ -313,7 +313,7 @@ public final class FloatingToolbar {
         R.id.menu_quote,
         R.id.menu_date
     );
-    public static final List<Integer> premiumOptions = Arrays.asList(
+    public static final List<Integer> formattingOptions = Arrays.asList(
         R.id.menu_bold,
         R.id.menu_italic,
         R.id.menu_strike,
@@ -1010,10 +1010,8 @@ public final class FloatingToolbar {
             while (it.hasNext()) {
                 final MenuItem menuItem = it.next();
                 boolean isLastItem = !it.hasNext();
-                if (menuItem != null && premiumLockClickListener != null) {
-                    if (premiumOptions.contains(menuItem.getItemId())) {
-                        continue;
-                    }
+                if (menuItem != null && formattingHidden && formattingOptions.contains(menuItem.getItemId())) {
+                    continue;
                 }
                 /*if (!isFirstItem && menuItem.requiresOverflow()) {
                     break;
@@ -1056,26 +1054,10 @@ public final class FloatingToolbar {
         private void layoutOverflowPanelItems(List<MenuItem> menuItems) {
             ArrayAdapter<MenuItem> overflowPanelAdapter = (ArrayAdapter<MenuItem>) mOverflowPanel.getAdapter();
             overflowPanelAdapter.clear();
-            if (premiumLockClickListener != null) {
-                Collections.sort(menuItems, (a, b) -> {
-                    final int aPremium = premiumOptions.contains(a.getItemId()) ? 1 : 0;
-                    final int bPremium = premiumOptions.contains(b.getItemId()) ? 1 : 0;
-                    return aPremium - bPremium;
-                });
-            }
             final int size = menuItems.size();
-            final boolean premiumLocked = MessagesController.getInstance(UserConfig.selectedAccount).premiumFeaturesBlocked();
             for (int i = 0; i < size; i++) {
                 final MenuItem menuItem = menuItems.get(i);
-                final boolean show;
-                if (premiumLockClickListener == null) {
-                    show = true;
-                } else if (premiumOptions.contains(menuItem.getItemId())) {
-                    show = !premiumLocked;
-                } else {
-                    show = true;
-                }
-                if (show) {
+                if (!formattingHidden || !formattingOptions.contains(menuItem.getItemId())) {
                     overflowPanelAdapter.add(menuItem);
                 }
             }
@@ -1188,8 +1170,6 @@ public final class FloatingToolbar {
             };
         }
 
-        private int shiftDp = -4;
-
         private OverflowPanel createOverflowPanel() {
             final OverflowPanel overflowPanel = new OverflowPanel(this);
             overflowPanel.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
@@ -1207,11 +1187,7 @@ public final class FloatingToolbar {
             overflowPanel.setAdapter(adapter);
             overflowPanel.setOnItemClickListener((parent, view, position, id) -> {
                 MenuItem menuItem = (MenuItem) overflowPanel.getAdapter().getItem(position);
-                if (premiumLockClickListener != null && premiumOptions.contains(menuItem.getItemId())) {
-                    AndroidUtilities.shakeViewSpring(view, shiftDp = -shiftDp);
-                    BotWebViewVibrationEffect.APP_ERROR.vibrate();
-                    premiumLockClickListener.run();
-                } else if (mOnMenuItemClickListener != null) {
+                if (mOnMenuItemClickListener != null) {
                     mOnMenuItemClickListener.onMenuItemClick(menuItem);
                 }
             });
@@ -1387,7 +1363,7 @@ public final class FloatingToolbar {
 
             public View getView(MenuItem menuItem, int minimumWidth, View convertView) {
                 if (convertView != null) {
-                    updateMenuItemButton(convertView, menuItem, mIconTextSpacing, premiumLockClickListener != null);
+                    updateMenuItemButton(convertView, menuItem, mIconTextSpacing);
                 } else {
                     convertView = createMenuButton(menuItem);
                 }
@@ -1396,7 +1372,7 @@ public final class FloatingToolbar {
             }
 
             public int calculateWidth(MenuItem menuItem) {
-                updateMenuItemButton(mCalculator, menuItem, mIconTextSpacing, premiumLockClickListener != null);
+                updateMenuItemButton(mCalculator, menuItem, mIconTextSpacing);
                 mCalculator.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
                 return mCalculator.getMeasuredWidth();
             }
@@ -1449,20 +1425,13 @@ public final class FloatingToolbar {
 
         menuItemButton.addView(new Space(context), new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1, 1));
 
-        ImageView lockView = new ImageView(context);
-        lockView.setImageResource(R.drawable.msg_mini_lock3);
-        lockView.setScaleType(ImageView.ScaleType.CENTER);
-        lockView.setColorFilter(new PorterDuffColorFilter(Theme.multAlpha(color, .4f), PorterDuff.Mode.SRC_IN));
-        lockView.setVisibility(View.GONE);
-        menuItemButton.addView(lockView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, 0, 0, 12, 0, 0, 0));
-
         if (menuItem != null) {
-            updateMenuItemButton(menuItemButton, menuItem, iconTextSpacing, premiumLockClickListener != null);
+            updateMenuItemButton(menuItemButton, menuItem, iconTextSpacing);
         }
         return menuItemButton;
     }
 
-    private static void updateMenuItemButton(View menuItemButton, MenuItem menuItem, int iconTextSpacing, boolean containsPremium) {
+    private static void updateMenuItemButton(View menuItemButton, MenuItem menuItem, int iconTextSpacing) {
         ViewGroup viewGroup = (ViewGroup) menuItemButton;
         final TextView buttonText = (TextView) viewGroup.getChildAt(0);
         buttonText.setEllipsize(null);
@@ -1473,9 +1442,6 @@ public final class FloatingToolbar {
             buttonText.setText(menuItem.getTitle());
         }
         buttonText.setPaddingRelative(0, 0, 0, 0);
-
-        final boolean premium = containsPremium && premiumOptions.contains(menuItem.getItemId());
-        viewGroup.getChildAt(2).setVisibility(premium ? View.VISIBLE : View.GONE);
         /*final CharSequence contentDescription = menuItem.getContentDescription(); TODO
         if (TextUtils.isEmpty(contentDescription)) {
             menuItemButton.setContentDescription(menuItem.getTitle());

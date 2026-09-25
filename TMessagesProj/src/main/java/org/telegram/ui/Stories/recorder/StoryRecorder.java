@@ -5109,9 +5109,7 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
                 }
             }
             previewAlreadySet = false;
-            captionEdit.editText.getEditText().setOnPremiumMenuLockClickListener(MessagesController.getInstance(currentAccount).storyEntitiesAllowed() ? null : () -> {
-                BulletinFactory.of(windowView, resourcesProvider).createSimpleBulletin(R.raw.voip_invite, premiumText(getString(R.string.StoryPremiumFormatting))).show(true);
-            });
+            captionEdit.editText.getEditText().setFormattingHidden(!MessagesController.getInstance(currentAccount).storyEntitiesAllowed());
             storiesSelector.setVisibility(entries == null ? View.GONE : View.VISIBLE);
             if (entries != null) {
                 storiesSelector.set(entries, selectedEntriesOrder, selectedEntries);

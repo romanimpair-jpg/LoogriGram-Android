@@ -8,11 +8,8 @@ import android.view.MenuItem;
 import android.view.SubMenu;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.MessagesController;
-import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.ui.ActionBar.FloatingToolbar;
 
@@ -20,23 +17,21 @@ public class MenuToItemOptions implements Menu {
 
     private final ItemOptions itemOptions;
     private final Utilities.Callback<Integer> onMenuClicked;
-    private final Runnable premiumLock;
+    private final boolean formattingHidden;
 
-    public MenuToItemOptions(@NonNull ItemOptions itemOptions, @NonNull Utilities.Callback<Integer> onMenuClicked, @Nullable Runnable premiumLock) {
+    public MenuToItemOptions(@NonNull ItemOptions itemOptions, @NonNull Utilities.Callback<Integer> onMenuClicked, boolean formattingHidden) {
         this.itemOptions = itemOptions;
         this.onMenuClicked = onMenuClicked;
-        this.premiumLock = premiumLock;
+        this.formattingHidden = formattingHidden;
     }
 
     @Override
     public MenuItem add(int groupId, int itemId, int order, CharSequence title) {
-        if (premiumLock != null && FloatingToolbar.premiumOptions.contains(itemId) && MessagesController.getInstance(UserConfig.selectedAccount).premiumFeaturesBlocked()) {
+        // LoogriGram: hidden formatting is left out, never listed padlocked.
+        if (formattingHidden && FloatingToolbar.formattingOptions.contains(itemId)) {
             return null;
         }
         itemOptions.add(title, () -> onMenuClicked.run(itemId));
-        if (premiumLock != null && FloatingToolbar.premiumOptions.contains(itemId)) {
-            itemOptions.putPremiumLock(premiumLock);
-        }
         return null;
     }
 

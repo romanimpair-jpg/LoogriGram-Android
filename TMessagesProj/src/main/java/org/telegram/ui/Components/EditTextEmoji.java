@@ -335,7 +335,7 @@ public class EditTextEmoji extends FrameLayout implements NotificationCenter.Not
                     editText.hideActionMode();
                     ItemOptions itemOptions = ItemOptions.makeOptions(parent, resourcesProvider, emojiButton, false, false, true);
                     itemOptions.setMaxHeight(dp(280));
-                    editText.extendActionMode(null, new MenuToItemOptions(itemOptions, editText::performMenuAction, editText.getOnPremiumMenuLockClickListener()));
+                    editText.extendActionMode(null, new MenuToItemOptions(itemOptions, editText::performMenuAction, editText.isFormattingHidden()));
                     itemOptions.forceTop(true);
                     itemOptions.show();
                 } else {

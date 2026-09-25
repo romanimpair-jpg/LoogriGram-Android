@@ -23071,31 +23071,18 @@ public class MessagesController extends BaseController implements NotificationCe
         }
     }
 
+    // LoogriGram: "premium" answers false, for our captions and other people's
+    // alike - Premium is honoured for nobody - so a story caption is formatted
+    // only where the server allows it for everyone.
     public boolean storyEntitiesAllowed() {
-        switch (storiesEntities) {
-            case "premium":
-                return getUserConfig().isPremium();
-            case "enabled":
-                return true;
-            default:
-            case "disabled":
-                return false;
-        }
+        return "enabled".equals(storiesEntities);
     }
 
     public boolean storyEntitiesAllowed(TLRPC.User user) {
         if (user != null && user.id == storiesChangelogUserId) {
             return true;
         }
-        switch (storiesEntities) {
-            case "premium":
-                return user != null && user.premium;
-            case "enabled":
-                return true;
-            default:
-            case "disabled":
-                return false;
-        }
+        return storyEntitiesAllowed();
     }
 
     public static class ChannelRecommendations {

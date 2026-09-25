@@ -1190,7 +1190,7 @@ public class EditTextBoldCursor extends EditTextEffects {
             }
             cleanupFloatingActionModeViews();
             floatingToolbar = new FloatingToolbar(getContext(), windowView != null ? windowView : attachedToWindow, getActionModeStyle(), getResourcesProvider(), blurredBackgroundDrawableViewFactory);
-            floatingToolbar.setOnPremiumLockClick(onPremiumMenuLockClickListener);
+            floatingToolbar.setFormattingHidden(formattingHidden);
             floatingToolbar.setQuoteShowVisible(this::shouldShowQuoteButton);
             floatingActionMode = new FloatingActionMode(getContext(), new ActionModeCallback2Wrapper(callback), this, floatingToolbar);
             floatingToolbarPreDrawListener = () -> {
@@ -1356,13 +1356,13 @@ public class EditTextBoldCursor extends EditTextEffects {
         super.setTextSelectHandle(mTextSelectHandle);
     }
 
-    private Runnable onPremiumMenuLockClickListener;
-    public void setOnPremiumMenuLockClickListener(Runnable listener) {
-        onPremiumMenuLockClickListener = listener;
+    private boolean formattingHidden;
+    public void setFormattingHidden(boolean hidden) {
+        formattingHidden = hidden;
     }
 
-    public Runnable getOnPremiumMenuLockClickListener() {
-        return onPremiumMenuLockClickListener;
+    public boolean isFormattingHidden() {
+        return formattingHidden;
     }
 
     public boolean ellipsizeByGradient;
