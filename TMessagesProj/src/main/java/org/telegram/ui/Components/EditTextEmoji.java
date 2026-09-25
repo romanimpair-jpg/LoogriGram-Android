@@ -13,6 +13,7 @@ import android.graphics.drawable.Drawable;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.InputType;
+import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.util.TypedValue;
@@ -143,6 +144,11 @@ public class EditTextEmoji extends FrameLayout implements NotificationCenter.Not
         sizeNotifierLayout.addDelegate(this);
 
         editText = new EditTextCaption(context, resourcesProvider) {
+            @Override
+            protected void stripPastedPremiumEmoji(Spannable pasted) {
+                EditTextEmoji.this.stripPastedPremiumEmoji(pasted);
+            }
+
             @Override
             public boolean onTouchEvent(MotionEvent event) {
                 if (isPopupShowing() && event.getAction() == MotionEvent.ACTION_DOWN) {
@@ -753,6 +759,10 @@ public class EditTextEmoji extends FrameLayout implements NotificationCenter.Not
         if (delegate != null) {
             delegate.onWindowSizeChanged(size);
         }
+    }
+
+    // LoogriGram: see EditTextCaption.stripPastedPremiumEmoji.
+    protected void stripPastedPremiumEmoji(Spannable pasted) {
     }
 
     protected void drawEmojiBackground(Canvas canvas, View view) {

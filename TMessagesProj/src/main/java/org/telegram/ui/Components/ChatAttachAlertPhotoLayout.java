@@ -526,9 +526,7 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
             if (selectedPhotos.isEmpty() && photoEntry != null) {
                 addToSelectedPhotos(photoEntry, -1);
             }
-            if (parentAlert.checkCaption(parentAlert.getCommentView().getText())) {
-                return;
-            }
+            parentAlert.stripCaption(parentAlert.getCommentView().getText());
             parentAlert.applyCaption();
             if (PhotoViewer.getInstance().hasCaptionForAllMedia) {
                 HashMap<Object, Object> selectedPhotos = getSelectedPhotos();
@@ -539,12 +537,12 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
                         if (o instanceof MediaController.PhotoEntry) {
                             MediaController.PhotoEntry photoEntry1 = (MediaController.PhotoEntry) o;
                             if (a == 0) {
-                                CharSequence[] caption = new CharSequence[]{PhotoViewer.getInstance().captionForAllMedia};
+                                // LoogriGram: stripped before its entities are read,
+                                // where upstream refused it after; see
+                                // ChatAttachAlert.stripCaption.
+                                CharSequence[] caption = new CharSequence[]{parentAlert.stripCaption(PhotoViewer.getInstance().captionForAllMedia)};
                                 photoEntry1.entities = MediaDataController.getInstance(UserConfig.selectedAccount).getEntities(caption, false);
                                 photoEntry1.caption = caption[0];
-                                if (parentAlert.checkCaption(photoEntry1.caption)) {
-                                    return;
-                                }
                             } else {
                                 photoEntry1.caption = null;
                             }

@@ -5396,6 +5396,11 @@ public class ChatActivityEnterView extends FrameLayout implements
                 return super.onTextContextMenuItem(id);
             }
 
+            @Override
+            protected void stripPastedPremiumEmoji(Spannable pasted) {
+                stripPremiumAnimatedEmoji(ChatActivityEnterView.this.currentAccount, dialog_id, pasted);
+            }
+
             float touchX, touchY;
             boolean clickMaybe;
             @Override
@@ -6978,9 +6983,10 @@ public class ChatActivityEnterView extends FrameLayout implements
                     }
                 }
             }
-            if (checkPremiumAnimatedEmoji(currentAccount, dialog_id, parentFragment, null, message)) {
-                return;
-            }
+            // LoogriGram: this refused the text outright; see
+            // stripPremiumAnimatedEmoji. getTextToUse hands formatted text over
+            // as a fresh SpannableStringBuilder, so it is stripped in place.
+            stripPremiumAnimatedEmoji(currentAccount, dialog_id, message);
             if (processSendingText(message, notify, scheduleDate, scheduleRepeatPeriod)) {
                 if (delegate.hasForwardingMessages() || (scheduleDate != 0 && !isInScheduleMode()) || isInScheduleMode()) {
                     if (messageEditText != null) {
@@ -7024,105 +7030,129 @@ public class ChatActivityEnterView extends FrameLayout implements
         return false;
     }
 
-    public static boolean checkPremiumAnimatedEmoji(int currentAccount, long dialogId, BaseFragment parentFragment, FrameLayout container, CharSequence message) {
-        if (message == null || parentFragment == null) {
+    // LoogriGram: upstream refused to send text holding a custom emoji the chat
+    // does not take without Premium, with a bulletin selling Premium. Such an
+    // emoji now loses its custom-emoji span and stays in the text as the plain
+    // emoji under it, as desktop keeps pasted text (chat_helpers/message_field.cpp,
+    // FieldTagMimeProcessor: "Only the emoji a peer allows without premium are
+    // kept, which is what those accounts get."). Pasting into a message field
+    // strips this way, and the send paths strip again for text that got in
+    // otherwise - a draft from another device - so Send always sends. A
+    // Spannable is stripped in place; other formatted text comes back as a
+    // stripped copy. A Premium account and Saved Messages keep everything.
+    public static CharSequence stripPremiumAnimatedEmoji(int currentAccount, long dialogId, CharSequence text) {
+        if (!(text instanceof Spanned) || UserConfig.getInstance(currentAccount).isPremium() || UserConfig.getInstance(currentAccount).getClientUserId() == dialogId) {
+            return text;
+        }
+        AnimatedEmojiSpan[] animatedEmojis = ((Spanned) text).getSpans(0, text.length(), AnimatedEmojiSpan.class);
+        Spannable result = null;
+        for (int i = 0; animatedEmojis != null && i < animatedEmojis.length; ++i) {
+            if (animatedEmojis[i] != null && isAnimatedEmojiRefused(currentAccount, dialogId, animatedEmojis[i])) {
+                if (result == null) {
+                    result = text instanceof Spannable ? (Spannable) text : new SpannableStringBuilder(text);
+                }
+                result.removeSpan(animatedEmojis[i]);
+            }
+        }
+        return result == null ? text : result;
+    }
+
+    // Whether the text holds a custom emoji the chat does not take without
+    // Premium. Only the pack sheet asks now, to not insert such an emoji.
+    public static boolean checkPremiumAnimatedEmoji(int currentAccount, long dialogId, CharSequence message) {
+        if (!(message instanceof Spanned) || UserConfig.getInstance(currentAccount).isPremium() || UserConfig.getInstance(currentAccount).getClientUserId() == dialogId) {
             return false;
         }
-        final boolean isPremium = UserConfig.getInstance(currentAccount).isPremium();
-        if (!isPremium && UserConfig.getInstance(currentAccount).getClientUserId() != dialogId && message instanceof Spanned) {
-            AnimatedEmojiSpan[] animatedEmojis = ((Spanned) message).getSpans(0, message.length(), AnimatedEmojiSpan.class);
-            if (animatedEmojis != null) {
-                for (int i = 0; i < animatedEmojis.length; ++i) {
-                    if (animatedEmojis[i] != null) {
-                        TLRPC.Document emoji = animatedEmojis[i].document;
-                        if (emoji == null) {
-                            emoji = AnimatedEmojiDrawable.findDocument(currentAccount, animatedEmojis[i].getDocumentId());
-                        }
-                        long documentId = animatedEmojis[i].getDocumentId();
-                        if (emoji == null) {
-                            ArrayList<TLRPC.TL_messages_stickerSet> sets1 = MediaDataController.getInstance(currentAccount).getStickerSets(MediaDataController.TYPE_EMOJIPACKS);
-                            for (TLRPC.TL_messages_stickerSet set : sets1) {
-                                if (set != null && set.documents != null && !set.documents.isEmpty()) {
-                                    for (TLRPC.Document document : set.documents) {
-                                        if (document.id == documentId) {
-                                            emoji = document;
-                                            break;
-                                        }
-                                    }
-                                }
-                                if (emoji != null) {
-                                    break;
-                                }
-                            }
-                        }
-                        if (emoji == null) {
-                            ArrayList<TLRPC.StickerSetCovered> sets2 = MediaDataController.getInstance(currentAccount).getFeaturedEmojiSets();
-                            for (TLRPC.StickerSetCovered set : sets2) {
-                                if (set != null && set.covers != null && !set.covers.isEmpty()) {
-                                    for (TLRPC.Document document : set.covers) {
-                                        if (document.id == documentId) {
-                                            emoji = document;
-                                            break;
-                                        }
-                                    }
-                                }
-                                if (emoji != null) {
-                                    break;
-                                }
-                                ArrayList<TLRPC.Document> documents = null;
-                                if (set instanceof TLRPC.TL_stickerSetFullCovered) {
-                                    documents = ((TLRPC.TL_stickerSetFullCovered) set).documents;
-                                } else if (set instanceof TLRPC.TL_stickerSetNoCovered && set.set != null) {
-                                    TLRPC.TL_inputStickerSetID inputStickerSetID = new TLRPC.TL_inputStickerSetID();
-                                    inputStickerSetID.id = set.set.id;
-                                    TLRPC.TL_messages_stickerSet fullSet = MediaDataController.getInstance(currentAccount).getStickerSet(inputStickerSetID, true);
-                                    if (fullSet != null && fullSet.documents != null) {
-                                        documents = fullSet.documents;
-                                    }
-                                }
-                                if (documents != null && !documents.isEmpty()) {
-                                    for (TLRPC.Document document : documents) {
-                                        if (document.id == documentId) {
-                                            emoji = document;
-                                            break;
-                                        }
-                                    }
-                                }
-                                if (emoji != null) {
-                                    break;
-                                }
-                            }
-                        }
+        AnimatedEmojiSpan[] animatedEmojis = ((Spanned) message).getSpans(0, message.length(), AnimatedEmojiSpan.class);
+        for (int i = 0; animatedEmojis != null && i < animatedEmojis.length; ++i) {
+            if (animatedEmojis[i] != null && isAnimatedEmojiRefused(currentAccount, dialogId, animatedEmojis[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-                        if (emoji != null) {
-                            TLRPC.ChatFull chatFull = MessagesController.getInstance(currentAccount).getChatFull(-dialogId);
-                            if (chatFull != null && chatFull.emojiset != null) {
-                                TLRPC.TL_messages_stickerSet stickerSet = MediaDataController.getInstance(currentAccount).getGroupStickerSetById(chatFull.emojiset);
-                                if (stickerSet != null) {
-                                    for (TLRPC.Document document : stickerSet.documents) {
-                                        if (document.id == documentId) {
-                                            return false;
-                                        }
-                                    }
-                                }
-                            }
+    // LoogriGram: upstream's per-emoji test, pulled out of checkPremiumAnimatedEmoji
+    // so pasted and sent text can be stripped by it too; the callers have ruled
+    // out a Premium account and Saved Messages. An emoji of the group's own
+    // emoji pack is taken, as is any free one; one whose document cannot be
+    // found counts as refused, as upstream counted it. Upstream also let a
+    // group-pack emoji pass the whole message; each emoji answers for itself now.
+    private static boolean isAnimatedEmojiRefused(int currentAccount, long dialogId, AnimatedEmojiSpan span) {
+        TLRPC.Document emoji = span.document;
+        if (emoji == null) {
+            emoji = AnimatedEmojiDrawable.findDocument(currentAccount, span.getDocumentId());
+        }
+        long documentId = span.getDocumentId();
+        if (emoji == null) {
+            ArrayList<TLRPC.TL_messages_stickerSet> sets1 = MediaDataController.getInstance(currentAccount).getStickerSets(MediaDataController.TYPE_EMOJIPACKS);
+            for (TLRPC.TL_messages_stickerSet set : sets1) {
+                if (set != null && set.documents != null && !set.documents.isEmpty()) {
+                    for (TLRPC.Document document : set.documents) {
+                        if (document.id == documentId) {
+                            emoji = document;
+                            break;
                         }
+                    }
+                }
+                if (emoji != null) {
+                    break;
+                }
+            }
+        }
+        if (emoji == null) {
+            ArrayList<TLRPC.StickerSetCovered> sets2 = MediaDataController.getInstance(currentAccount).getFeaturedEmojiSets();
+            for (TLRPC.StickerSetCovered set : sets2) {
+                if (set != null && set.covers != null && !set.covers.isEmpty()) {
+                    for (TLRPC.Document document : set.covers) {
+                        if (document.id == documentId) {
+                            emoji = document;
+                            break;
+                        }
+                    }
+                }
+                if (emoji != null) {
+                    break;
+                }
+                ArrayList<TLRPC.Document> documents = null;
+                if (set instanceof TLRPC.TL_stickerSetFullCovered) {
+                    documents = ((TLRPC.TL_stickerSetFullCovered) set).documents;
+                } else if (set instanceof TLRPC.TL_stickerSetNoCovered && set.set != null) {
+                    TLRPC.TL_inputStickerSetID inputStickerSetID = new TLRPC.TL_inputStickerSetID();
+                    inputStickerSetID.id = set.set.id;
+                    TLRPC.TL_messages_stickerSet fullSet = MediaDataController.getInstance(currentAccount).getStickerSet(inputStickerSetID, true);
+                    if (fullSet != null && fullSet.documents != null) {
+                        documents = fullSet.documents;
+                    }
+                }
+                if (documents != null && !documents.isEmpty()) {
+                    for (TLRPC.Document document : documents) {
+                        if (document.id == documentId) {
+                            emoji = document;
+                            break;
+                        }
+                    }
+                }
+                if (emoji != null) {
+                    break;
+                }
+            }
+        }
 
-                        // LoogriGram: the refusal came with a bulletin selling
-                        // Premium, its "more" opening the subscription sheet. The
-                        // text is still refused - the server would refuse it -
-                        // but quietly, as on desktop (boxes/send_files_box.cpp).
-                        // The emoji panel and the pack sheet no longer insert
-                        // such an emoji, so only pasted text or a draft
-                        // reaches this.
-                        if (emoji == null || !MessageObject.isFreeEmoji(emoji)) {
-                            return true;
+        if (emoji != null) {
+            TLRPC.ChatFull chatFull = MessagesController.getInstance(currentAccount).getChatFull(-dialogId);
+            if (chatFull != null && chatFull.emojiset != null) {
+                TLRPC.TL_messages_stickerSet stickerSet = MediaDataController.getInstance(currentAccount).getGroupStickerSetById(chatFull.emojiset);
+                if (stickerSet != null) {
+                    for (TLRPC.Document document : stickerSet.documents) {
+                        if (document.id == documentId) {
+                            return false;
                         }
                     }
                 }
             }
         }
-        return false;
+        return emoji == null || !MessageObject.isFreeEmoji(emoji);
     }
 
     private static class BusinessLinkPresetMessage {
@@ -10209,6 +10239,8 @@ public class ChatActivityEnterView extends FrameLayout implements
             }
 
             final SpannableStringBuilder pasted = new SpannableStringBuilder(RichMessageConvert.rowsToCharSequence(rows));
+            // LoogriGram: see stripPremiumAnimatedEmoji.
+            stripPremiumAnimatedEmoji(currentAccount, dialog_id, pasted);
             Emoji.replaceEmoji(pasted, messageEditText.getPaint().getFontMetricsInt(), false, null);
             final AnimatedEmojiSpan[] emoji = pasted.getSpans(0, pasted.length(), AnimatedEmojiSpan.class);
             if (emoji != null) {

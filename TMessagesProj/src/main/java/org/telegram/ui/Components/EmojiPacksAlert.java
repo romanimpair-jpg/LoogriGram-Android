@@ -373,7 +373,7 @@ public class EmojiPacksAlert extends BottomSheet implements NotificationCenter.N
                         // to be refused with the subscription pitch at send. As on
                         // desktop (boxes/send_files_box.cpp), one the chat does not
                         // take without Premium is simply not inserted.
-                        if (ChatActivityEnterView.checkPremiumAnimatedEmoji(currentAccount, ((ChatActivity) fragment).getDialogId(), fragment, null, text)) {
+                        if (ChatActivityEnterView.checkPremiumAnimatedEmoji(currentAccount, ((ChatActivity) fragment).getDialogId(), text)) {
                             return;
                         }
                         ((Editable) ((ChatActivity) fragment).getChatActivityEnterView().messageEditText.getText()).append(text);

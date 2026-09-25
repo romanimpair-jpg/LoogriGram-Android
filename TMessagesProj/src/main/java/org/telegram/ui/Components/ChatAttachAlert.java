@@ -537,13 +537,16 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         }
     }
 
-    public boolean checkCaption(CharSequence text) {
+    // LoogriGram: this was checkCaption, refusing to send a caption holding a
+    // custom emoji the chat does not take without Premium. Such an emoji now
+    // stays as its plain emoji instead, so Send always sends - see
+    // ChatActivityEnterView.stripPremiumAnimatedEmoji, after desktop's
+    // chat_helpers/message_field.cpp.
+    public CharSequence stripCaption(CharSequence text) {
         if (baseFragment instanceof ChatActivity) {
-            long dialogId = ((ChatActivity) baseFragment).getDialogId();
-            return ChatActivityEnterView.checkPremiumAnimatedEmoji(currentAccount, dialogId, baseFragment, sizeNotifierFrameLayout, text);
-        } else {
-            return false;
+            return ChatActivityEnterView.stripPremiumAnimatedEmoji(currentAccount, ((ChatActivity) baseFragment).getDialogId(), text);
         }
+        return text;
     }
 
     public void avatarFor(ImageUpdater.AvatarFor avatarFor) {
@@ -2957,6 +2960,11 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
 
         commentTextView = new EditTextEmoji(context, sizeNotifierFrameLayout, null, EditTextEmoji.STYLE_DIALOG, true, resourcesProvider) {
 
+            @Override
+            protected void stripPastedPremiumEmoji(Spannable pasted) {
+                ChatAttachAlert.this.stripCaption(pasted);
+            }
+
             private boolean shouldAnimateEditTextWithBounds;
             private int messageEditTextPredrawHeigth;
             private int messageEditTextPredrawScrollY;
@@ -4154,9 +4162,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 MessagesController.getNotificationsSettings(currentAccount).edit().putBoolean("silent_" + chatActivity.getDialogId(), !notify).commit();
             }
         }
-        if (checkCaption(getCommentView().getText())) {
-            return true;
-        }
+        stripCaption(getCommentView().getText());
         applyCaption();
 
         if (animatorEphemeralMessageVisibility.getValue()) {

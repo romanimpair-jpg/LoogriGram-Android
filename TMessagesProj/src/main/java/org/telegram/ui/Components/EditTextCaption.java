@@ -23,6 +23,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.Layout;
+import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.StaticLayout;
@@ -963,6 +964,14 @@ public class EditTextCaption extends EditTextBoldCursor implements FloatingToolb
         return Theme.getColor(key, resourcesProvider);
     }
 
+    // LoogriGram: a field whose text goes to a chat overrides this to drop,
+    // from pasted formatted text, the custom emoji that chat does not take
+    // without Premium (ChatActivityEnterView.stripPremiumAnimatedEmoji, after
+    // desktop's chat_helpers/message_field.cpp). Other fields keep what was
+    // pasted, as upstream.
+    protected void stripPastedPremiumEmoji(Spannable pasted) {
+    }
+
     @Override
     public boolean onTextContextMenuItem(int id) {
         if (id == android.R.id.paste) {
@@ -972,6 +981,7 @@ public class EditTextCaption extends EditTextBoldCursor implements FloatingToolb
                 try {
                     String html = clipData.getItemAt(0).getHtmlText();
                     SpannableStringBuilder pasted = new SpannableStringBuilder(CopyUtilities.fromHTML(html));
+                    stripPastedPremiumEmoji(pasted);
                     Emoji.replaceEmoji(pasted, getPaint().getFontMetricsInt(), false, null);
                     AnimatedEmojiSpan[] spans = pasted.getSpans(0, pasted.length(), AnimatedEmojiSpan.class);
                     if (spans != null) {
