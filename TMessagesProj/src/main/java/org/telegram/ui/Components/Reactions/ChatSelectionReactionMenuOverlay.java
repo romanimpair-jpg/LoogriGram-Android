@@ -68,9 +68,9 @@ public class ChatSelectionReactionMenuOverlay extends FrameLayout {
 
     private void checkCreateReactionsLayout() {
         if (reactionsContainerLayout == null) {
-            final boolean tags = parentFragment.getUserConfig().getClientUserId() == parentFragment.getDialogId();
-
-            reactionsContainerLayout = new ReactionsContainerLayout(tags ? ReactionsContainerLayout.TYPE_TAGS : ReactionsContainerLayout.TYPE_DEFAULT, parentFragment, getContext(), parentFragment.getCurrentAccount(), parentFragment.getResourceProvider()) {
+            // LoogriGram: a tags row was chosen here for Saved Messages, where
+            // ChatActivity does not create this overlay at all.
+            reactionsContainerLayout = new ReactionsContainerLayout(ReactionsContainerLayout.TYPE_DEFAULT, parentFragment, getContext(), parentFragment.getCurrentAccount(), parentFragment.getResourceProvider()) {
                 float enabledAlpha = 1f;
                 long lastUpdate;
 

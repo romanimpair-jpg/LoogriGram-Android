@@ -5274,9 +5274,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         hasOnlySlefStories = false;
         hasStories = false;
 
-        if (onlySelect && initialDialogsType == DIALOGS_TYPE_FORWARD) {
-            MessagesController.getInstance(currentAccount).getSavedReactionTags(0);
-        }
+        // LoogriGram: the forward picker preloaded the Saved Messages tags here,
+        // for the tag row of the forwarded-to-Saved-Messages bulletin, now gone.
 
         //if (!onlySelect || initialDialogsType == DIALOGS_TYPE_FORWARD) {
             final FrameLayout.LayoutParams layoutParams = LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT);

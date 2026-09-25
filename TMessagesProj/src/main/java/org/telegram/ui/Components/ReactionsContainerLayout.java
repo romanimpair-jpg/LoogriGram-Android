@@ -26,7 +26,6 @@ import android.text.Layout;
 import android.text.StaticLayout;
 import android.text.TextUtils;
 import android.util.Log;
-import android.util.LongSparseArray;
 import android.util.Property;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -107,7 +106,8 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
     public final static int TYPE_DEFAULT = 0;
     public final static int TYPE_STORY = 1;
     public static final int TYPE_STORY_LIKES = 2;
-    public static final int TYPE_TAGS = 3;
+    // LoogriGram: 3 was TYPE_TAGS, the row of Saved Messages tags, which only
+    // Premium can set.
     public static final int TYPE_STICKER_SET_EMOJI = 4;
     public final static int TYPE_MESSAGE_EFFECTS = 5;
 
@@ -448,9 +448,6 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
         if (type == TYPE_STICKER_SET_EMOJI) {
             return SelectAnimatedEmojiDialog.TYPE_STICKER_SET_EMOJI;
         }
-        if (type == TYPE_TAGS) {
-            return SelectAnimatedEmojiDialog.TYPE_TAGS;
-        }
         if (type == TYPE_MESSAGE_EFFECTS) {
             return SelectAnimatedEmojiDialog.TYPE_EFFECTS;
         }
@@ -509,16 +506,11 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
                 delegate.onEmojiWindowDismissed();
             }
         });
-        onShownCustomEmojiReactionDialog();
         //animatePullingBack();
     }
 
     public View getWindowView() {
         return reactionsWindow == null ? null : reactionsWindow.windowView;
-    }
-
-    protected void onShownCustomEmojiReactionDialog() {
-
     }
 
     public void invalidateLoopViews() {
@@ -1079,10 +1071,7 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
                 return;
             }
         }
-        if (type == TYPE_TAGS) {
-            allReactionsAvailable = UserConfig.getInstance(currentAccount).isPremium();
-            fillRecentReactionsList(visibleReactions);
-        } else if (type == TYPE_MESSAGE_EFFECTS) {
+        if (type == TYPE_MESSAGE_EFFECTS) {
             allReactionsAvailable = true;
             fillRecentReactionsList(visibleReactions);
         } else if (hitLimit) {
@@ -1124,9 +1113,6 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
         }
         filterReactions(visibleReactions);
         showExpandableReactions = !hitLimit && (!allReactionsAvailable && visibleReactions.size() > 16 || allReactionsAvailable && !UserConfig.getInstance(currentAccount).isPremium());
-        if (type == TYPE_TAGS && !UserConfig.getInstance(currentAccount).isPremium()) {
-            showExpandableReactions = false;
-        }
         if (type == TYPE_STICKER_SET_EMOJI) {
             showExpandableReactions = true;
         }
@@ -1181,10 +1167,6 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
         listAdapter.notifyDataSetChanged();
     }
 
-    public HashSet<ReactionsLayoutInBubble.VisibleReaction> getSelectedReactions() {
-        return selectedReactions;
-    }
-
     public String getSelectedEmoji() {
         if (selectedReactions.isEmpty()) {
             return "";
@@ -1204,47 +1186,6 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
             result = "👍";
         }
         return result;
-    }
-
-    public static HashSet<ReactionsLayoutInBubble.VisibleReaction> getInclusiveReactions(ArrayList<MessageObject> messages) {
-        LongSparseArray<ReactionsLayoutInBubble.VisibleReaction> arr = new LongSparseArray<>();
-        HashSet<Long> messageReactions = new HashSet<>();
-        boolean firstMessage = true;
-        for (int k = 0; k < messages.size(); ++k) {
-            MessageObject message = messages.get(k);
-            messageReactions.clear();
-            if (message != null && message.messageOwner.reactions != null && message.messageOwner.reactions.results != null) {
-                for (int i = 0; i < message.messageOwner.reactions.results.size(); i++) {
-                    if (message.messageOwner.reactions.results.get(i).chosen) {
-                        ReactionsLayoutInBubble.VisibleReaction reaction = ReactionsLayoutInBubble.VisibleReaction.fromTL(message.messageOwner.reactions.results.get(i).reaction);
-                        if (firstMessage || arr.indexOfKey(reaction.hash) >= 0) {
-                            messageReactions.add(reaction.hash);
-                            arr.put(reaction.hash, reaction);
-                        }
-                    }
-                }
-            }
-            firstMessage = false;
-            for (int j = 0; j < arr.size(); ++j) {
-                if (!messageReactions.contains(arr.keyAt(j))) {
-                    arr.removeAt(j);
-                    j--;
-                }
-            }
-        }
-        HashSet<ReactionsLayoutInBubble.VisibleReaction> selectedReactions = new HashSet<>();
-        for (int j = 0; j < arr.size(); ++j) {
-            if (arr.valueAt(j) != null) {
-                selectedReactions.add(arr.valueAt(j));
-            }
-        }
-        return selectedReactions;
-    }
-
-    public void setSelectedReactionsInclusive(ArrayList<MessageObject> messages) {
-        selectedReactions.clear();
-        selectedReactions.addAll(getInclusiveReactions(messages));
-        updateSelected(true);
     }
 
     public void setSelectedReactionInclusive(ReactionsLayoutInBubble.VisibleReaction visibleReaction) {
@@ -1314,26 +1255,11 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
             return;
         }
         if (!allReactionsAvailable || type == TYPE_STICKER_SET_EMOJI) {
-            if (type == TYPE_TAGS) {
-                ArrayList<TLRPC.Reaction> topReactions = MediaDataController.getInstance(currentAccount).getSavedReactions();
-                for (int i = 0; i < topReactions.size(); i++) {
-                    ReactionsLayoutInBubble.VisibleReaction visibleReaction = ReactionsLayoutInBubble.VisibleReaction.fromTL(topReactions.get(i));
-                    if (!hashSet.contains(visibleReaction)) {
-                        hashSet.add(visibleReaction);
-                        visibleReactions.add(visibleReaction);
-                        added++;
-                    }
-                    if (added == 16) {
-                        break;
-                    }
-                }
-            } else {
-                //fill default reactions
-                List<TLRPC.TL_availableReaction> enabledReactions = MediaDataController.getInstance(currentAccount).getEnabledReactionsList();
-                for (int i = 0; i < enabledReactions.size(); i++) {
-                    ReactionsLayoutInBubble.VisibleReaction visibleReaction = ReactionsLayoutInBubble.VisibleReaction.fromEmojicon(enabledReactions.get(i));
-                    visibleReactions.add(visibleReaction);
-                }
+            //fill default reactions
+            List<TLRPC.TL_availableReaction> enabledReactions = MediaDataController.getInstance(currentAccount).getEnabledReactionsList();
+            for (int i = 0; i < enabledReactions.size(); i++) {
+                ReactionsLayoutInBubble.VisibleReaction visibleReaction = ReactionsLayoutInBubble.VisibleReaction.fromEmojicon(enabledReactions.get(i));
+                visibleReactions.add(visibleReaction);
             }
             return;
         }
@@ -1354,64 +1280,35 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
             return;
         }
 
-        ArrayList<TLRPC.Reaction> topReactions;
-        if (type == TYPE_TAGS) {
-            topReactions = MediaDataController.getInstance(currentAccount).getSavedReactions();
-        } else {
-            topReactions = MediaDataController.getInstance(currentAccount).getTopReactions();
+        ArrayList<TLRPC.Reaction> topReactions = MediaDataController.getInstance(currentAccount).getTopReactions();
+        for (int i = 0; i < topReactions.size(); i++) {
+            ReactionsLayoutInBubble.VisibleReaction visibleReaction = ReactionsLayoutInBubble.VisibleReaction.fromTL(topReactions.get(i));
+            if (!hashSet.contains(visibleReaction) && (UserConfig.getInstance(currentAccount).isPremium() || visibleReaction.documentId == 0)) {
+                hashSet.add(visibleReaction);
+                visibleReactions.add(visibleReaction);
+                added++;
+            }
+            //            if (added == 16) {
+            //                break;
+            //            }
         }
-        if (type == TYPE_TAGS) {
-            TLRPC.TL_messages_savedReactionsTags savedTags = MessagesController.getInstance(currentAccount).getSavedReactionTags(0);
-            if (savedTags != null) {
-                for (int i = 0; i < savedTags.tags.size(); i++) {
-                    ReactionsLayoutInBubble.VisibleReaction visibleReaction = ReactionsLayoutInBubble.VisibleReaction.fromTL(savedTags.tags.get(i).reaction);
-                    if (!hashSet.contains(visibleReaction)) {
-                        hashSet.add(visibleReaction);
-                        visibleReactions.add(visibleReaction);
-                        added++;
-                    }
-                }
-            }
-            for (int i = 0; i < topReactions.size(); i++) {
-                ReactionsLayoutInBubble.VisibleReaction visibleReaction = ReactionsLayoutInBubble.VisibleReaction.fromTL(topReactions.get(i));
-                if (!hashSet.contains(visibleReaction)) {
-                    hashSet.add(visibleReaction);
-                    visibleReactions.add(visibleReaction);
-                    added++;
-                }
-            }
-        } else {
-            for (int i = 0; i < topReactions.size(); i++) {
-                ReactionsLayoutInBubble.VisibleReaction visibleReaction = ReactionsLayoutInBubble.VisibleReaction.fromTL(topReactions.get(i));
-                if (!hashSet.contains(visibleReaction) && (type == TYPE_TAGS || UserConfig.getInstance(currentAccount).isPremium() || visibleReaction.documentId == 0)) {
-                    hashSet.add(visibleReaction);
-                    visibleReactions.add(visibleReaction);
-                    added++;
-                }
-                //            if (added == 16) {
-                //                break;
-                //            }
+
+        ArrayList<TLRPC.Reaction> recentReactions = MediaDataController.getInstance(currentAccount).getRecentReactions();
+        for (int i = 0; i < recentReactions.size(); i++) {
+            ReactionsLayoutInBubble.VisibleReaction visibleReaction = ReactionsLayoutInBubble.VisibleReaction.fromTL(recentReactions.get(i));
+            if (!hashSet.contains(visibleReaction)) {
+                hashSet.add(visibleReaction);
+                visibleReactions.add(visibleReaction);
             }
         }
 
-        if (type != TYPE_TAGS || UserConfig.getInstance(currentAccount).isPremium()) {
-            ArrayList<TLRPC.Reaction> recentReactions = MediaDataController.getInstance(currentAccount).getRecentReactions();
-            for (int i = 0; i < recentReactions.size(); i++) {
-                ReactionsLayoutInBubble.VisibleReaction visibleReaction = ReactionsLayoutInBubble.VisibleReaction.fromTL(recentReactions.get(i));
-                if (!hashSet.contains(visibleReaction)) {
-                    hashSet.add(visibleReaction);
-                    visibleReactions.add(visibleReaction);
-                }
-            }
-
-            //fill default reactions
-            List<TLRPC.TL_availableReaction> enabledReactions = MediaDataController.getInstance(currentAccount).getEnabledReactionsList();
-            for (int i = 0; i < enabledReactions.size(); i++) {
-                ReactionsLayoutInBubble.VisibleReaction visibleReaction = ReactionsLayoutInBubble.VisibleReaction.fromEmojicon(enabledReactions.get(i));
-                if (!hashSet.contains(visibleReaction)) {
-                    hashSet.add(visibleReaction);
-                    visibleReactions.add(visibleReaction);
-                }
+        //fill default reactions
+        List<TLRPC.TL_availableReaction> enabledReactions = MediaDataController.getInstance(currentAccount).getEnabledReactionsList();
+        for (int i = 0; i < enabledReactions.size(); i++) {
+            ReactionsLayoutInBubble.VisibleReaction visibleReaction = ReactionsLayoutInBubble.VisibleReaction.fromEmojicon(enabledReactions.get(i));
+            if (!hashSet.contains(visibleReaction)) {
+                hashSet.add(visibleReaction);
+                visibleReactions.add(visibleReaction);
             }
         }
     }
@@ -1967,7 +1864,7 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
             }
 
             final boolean userIsPremium = UserConfig.getInstance(currentAccount).isPremium();
-            isLocked = type == TYPE_TAGS && !userIsPremium || type == TYPE_MESSAGE_EFFECTS && react.premium && !userIsPremium;
+            isLocked = type == TYPE_MESSAGE_EFFECTS && react.premium && !userIsPremium;
             if (isLocked && lockIconView == null) {
                 lockIconView = new PremiumLockIconView(getContext(), PremiumLockIconView.TYPE_STICKERS_PREMIUM_LOCKED);
                 lockIconView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
@@ -2197,7 +2094,7 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
                 pressed = true;
                 pressedX = event.getX();
                 pressedY = event.getY();
-                if (sideScale == 1f && !isLocked && type != TYPE_TAGS && type != TYPE_STICKER_SET_EMOJI && type != TYPE_MESSAGE_EFFECTS && (delegate == null || delegate.allowLongPress())) {
+                if (sideScale == 1f && !isLocked && type != TYPE_STICKER_SET_EMOJI && type != TYPE_MESSAGE_EFFECTS && (delegate == null || delegate.allowLongPress())) {
                     AndroidUtilities.runOnUIThread(longPressRunnable, ViewConfiguration.getLongPressTimeout());
                 }
             }

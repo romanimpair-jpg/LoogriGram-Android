@@ -79,7 +79,6 @@ import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.ChatThemeBottomSheet;
 import org.telegram.ui.Components.FormattedDateSpan;
 import org.telegram.ui.Components.QuoteSpan;
-import org.telegram.ui.Components.Reactions.ReactionsLayoutInBubble;
 import org.telegram.ui.Components.StickerSetBulletinLayout;
 import org.telegram.ui.Components.StickersAlert;
 import org.telegram.ui.Components.StickersArchiveAlert;
@@ -3597,65 +3596,18 @@ public class MediaDataController extends BaseController {
     private long lastMergeDialogId;
     private long lastReplyMessageId;
     private long lastDialogId;
-    private ReactionsLayoutInBubble.VisibleReaction lastReaction;
     private int lastReqId;
     private int lastGuid;
     private TLRPC.User lastSearchUser;
     private TLRPC.Chat lastSearchChat;
-    private int messagesLocalSearchCount;
     private int[] messagesSearchCount = new int[]{0, 0};
     private boolean[] messagesSearchEndReached = new boolean[]{false, false};
     public ArrayList<MessageObject> searchResultMessages = new ArrayList<>();
     public ArrayList<MessageObject> searchServerResultMessages = new ArrayList<>();
-    public ArrayList<MessageObject> searchLocalResultMessages = new ArrayList<>();
     private SparseArray<MessageObject>[] searchServerResultMessagesMap = new SparseArray[]{new SparseArray<>(), new SparseArray<>()};
-    private ArrayList<MessageObject> deletedFromResultMessages = new ArrayList<>();
     private String lastSearchQuery;
     private int lastReturnedNum;
     private boolean loadingMoreSearchMessages;
-    private boolean loadingSearchLocal;
-    private boolean loadedPredirectedSearchLocal;
-
-    public void removeMessageFromResults(int id) {
-        for (int i = 0; i < searchResultMessages.size(); ++i) {
-            MessageObject m = searchResultMessages.get(i);
-            if (id == m.getId()) {
-                deletedFromResultMessages.add(searchResultMessages.remove(i));
-                i--;
-            }
-        }
-        for (int i = 0; i < searchServerResultMessages.size(); ++i) {
-            MessageObject m = searchServerResultMessages.get(i);
-            if (id == m.getId()) {
-                searchServerResultMessages.remove(i);
-                i--;
-            }
-        }
-        for (int i = 0; i < searchLocalResultMessages.size(); ++i) {
-            MessageObject m = searchLocalResultMessages.get(i);
-            if (id == m.getId()) {
-                searchLocalResultMessages.remove(i);
-                i--;
-            }
-        }
-    }
-
-    public boolean processDeletedMessage(int id, long[] topic_id) {
-        boolean updated = false;
-        MessageObject messageObject = null;
-        for (int i = 0; i < deletedFromResultMessages.size(); ++i) {
-            if (deletedFromResultMessages.get(i).getId() == id) {
-                messageObject = deletedFromResultMessages.get(i);
-                break;
-            }
-        }
-        if (messageObject != null && messageObject.getDialogId() == getUserConfig().getClientUserId()) {
-            updated = getMessagesController().processDeletedReactionTags(messageObject.messageOwner);
-            topic_id[0] = MessageObject.getSavedDialogId(getUserConfig().getClientUserId(), messageObject.messageOwner);
-        }
-        deletedFromResultMessages.remove(messageObject);
-        return updated;
-    }
 
     private void updateSearchResults() {
         ArrayList<MessageObject> previousSearchResultMessages = new ArrayList<>(searchResultMessages);
@@ -3681,26 +3633,9 @@ public class MediaDataController extends BaseController {
                 messageIds.add(m.getId());
             }
         }
-        for (int i = 0; i < searchLocalResultMessages.size(); ++i) {
-            MessageObject m = searchLocalResultMessages.get(i);
-            if (!messageIds.contains(m.getId())) {
-                MessageObject prev = null;
-                for (int j = 0; j < previousSearchResultMessages.size(); ++j) {
-                    if (previousSearchResultMessages.get(j).getId() == m.getId()) {
-                        prev = previousSearchResultMessages.get(j);
-                        break;
-                    }
-                }
-                if (prev != null) {
-                    m.copyStableParams(prev);
-                    m.mediaExists = prev.mediaExists;
-                    m.attachPathExists = prev.attachPathExists;
-                }
-                m.isSavedFiltered = true;
-                searchResultMessages.add(m);
-                messageIds.add(m.getId());
-            }
-        }
+        // LoogriGram: tagged Saved Messages found in the local tag index were
+        // merged in here, and a message could be taken back out of the results
+        // when its tag was removed. Tags are Premium's.
     }
 
     public int getMask() {
@@ -3721,15 +3656,16 @@ public class MediaDataController extends BaseController {
     public void clearFoundMessageObjects() {
         searchResultMessages.clear();
         searchServerResultMessages.clear();
-        searchLocalResultMessages.clear();
     }
 
     public boolean isMessageFound(int messageId, boolean mergeDialog) {
         return searchServerResultMessagesMap[mergeDialog ? 1 : 0].indexOfKey(messageId) >= 0;
     }
 
-    public void searchMessagesInChat(String query, long dialogId, long mergeDialogId, int guid, int direction, long replyMessageId, TLRPC.User user, TLRPC.Chat chat, ReactionsLayoutInBubble.VisibleReaction reaction) {
-        searchMessagesInChat(query, dialogId, mergeDialogId, guid, direction, replyMessageId, false, user, chat, true, reaction);
+    // LoogriGram: both forms also took the Saved Messages tag to filter by,
+    // answered first from a local index of tagged messages. Tags are Premium's.
+    public void searchMessagesInChat(String query, long dialogId, long mergeDialogId, int guid, int direction, long replyMessageId, TLRPC.User user, TLRPC.Chat chat) {
+        searchMessagesInChat(query, dialogId, mergeDialogId, guid, direction, replyMessageId, false, user, chat, true);
     }
 
     public void jumpToSearchedMessage(int guid, int index) {
@@ -3746,9 +3682,6 @@ public class MediaDataController extends BaseController {
     }
 
     public int getSearchCount() {
-        if (searchServerResultMessages.isEmpty()) {
-            return Math.max(Math.max(messagesSearchCount[0] + messagesSearchCount[1], messagesLocalSearchCount), searchServerResultMessages.size());
-        }
         return Math.max(messagesSearchCount[0] + messagesSearchCount[1], searchServerResultMessages.size());
     }
 
@@ -3760,7 +3693,7 @@ public class MediaDataController extends BaseController {
     }
 
     public boolean searchEndReached() {
-        return messagesSearchEndReached[0] && lastMergeDialogId == 0 && messagesSearchEndReached[1] || (loadingSearchLocal || loadedPredirectedSearchLocal);
+        return messagesSearchEndReached[0] && lastMergeDialogId == 0 && messagesSearchEndReached[1];
     }
 
     public void loadMoreSearchMessages(boolean fromList) {
@@ -3770,7 +3703,7 @@ public class MediaDataController extends BaseController {
         int temp = lastReturnedNum;
         lastReturnedNum = searchResultMessages.size();
         loadingMoreSearchMessages = true;
-        searchMessagesInChat(null, lastDialogId, lastMergeDialogId, lastGuid, 1, lastReplyMessageId, false, lastSearchUser, lastSearchChat, false, lastReaction);
+        searchMessagesInChat(null, lastDialogId, lastMergeDialogId, lastGuid, 1, lastReplyMessageId, false, lastSearchUser, lastSearchChat, false);
         lastReturnedNum = temp;
     }
 
@@ -3778,7 +3711,7 @@ public class MediaDataController extends BaseController {
         return reqId != 0;
     }
 
-    public void searchMessagesInChat(String query, long dialogId, long mergeDialogId, int guid, int direction, long replyMessageId, boolean internal, TLRPC.User user, TLRPC.Chat chat, boolean jumpToMessage, ReactionsLayoutInBubble.VisibleReaction reaction) {
+    public void searchMessagesInChat(String query, long dialogId, long mergeDialogId, int guid, int direction, long replyMessageId, boolean internal, TLRPC.User user, TLRPC.Chat chat, boolean jumpToMessage) {
         int max_id = 0;
         long queryWithDialog = dialogId;
         boolean firstQuery = !internal;
@@ -3844,7 +3777,6 @@ public class MediaDataController extends BaseController {
             messagesSearchEndReached[0] = messagesSearchEndReached[1] = false;
             messagesSearchCount[0] = messagesSearchCount[1] = 0;
             searchResultMessages.clear();
-            searchLocalResultMessages.clear();
             searchServerResultMessagesMap[0].clear();
             searchServerResultMessagesMap[1].clear();
             getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsLoading, guid);
@@ -3880,10 +3812,6 @@ public class MediaDataController extends BaseController {
                         req.flags |= 2;
                     }
                 }
-                if (reaction != null) {
-                    req.saved_reaction.add(reaction.toTLReaction());
-                    req.flags |= 8;
-                }
                 req.filter = new TLRPC.TL_inputMessagesFilterEmpty();
                 mergeReqId = getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
                     if (lastMergeDialogId == mergeDialogId) {
@@ -3892,11 +3820,11 @@ public class MediaDataController extends BaseController {
                             TLRPC.messages_Messages res = (TLRPC.messages_Messages) response;
                             messagesSearchEndReached[1] = res.messages.isEmpty();
                             messagesSearchCount[1] = res instanceof TLRPC.TL_messages_messagesSlice ? res.count : res.messages.size();
-                            searchMessagesInChat(req.q, dialogId, mergeDialogId, guid, direction, replyMessageId, true, user, chat, jumpToMessage, reaction);
+                            searchMessagesInChat(req.q, dialogId, mergeDialogId, guid, direction, replyMessageId, true, user, chat, jumpToMessage);
                         } else {
                             messagesSearchEndReached[1] = true;
                             messagesSearchCount[1] = 0;
-                            searchMessagesInChat(req.q, dialogId, mergeDialogId, guid, direction, replyMessageId, true, user, chat, jumpToMessage, reaction);
+                            searchMessagesInChat(req.q, dialogId, mergeDialogId, guid, direction, replyMessageId, true, user, chat, jumpToMessage);
                         }
                     }
                 }), ConnectionsManager.RequestFlagFailOnServerErrors);
@@ -3918,7 +3846,6 @@ public class MediaDataController extends BaseController {
         lastSearchUser = user;
         lastSearchChat = chat;
         lastReplyMessageId = replyMessageId;
-        lastReaction = reaction;
         req.limit = 21;
         req.q = query != null ? query : "";
         req.offset_id = max_id;
@@ -3929,33 +3856,8 @@ public class MediaDataController extends BaseController {
             req.from_id = MessagesController.getInputPeer(chat);
             req.flags |= 1;
         }
-        loadingSearchLocal = false;
-        loadedPredirectedSearchLocal = false;
         int currentReqId = ++lastReqId;
         final boolean isSaved = dialogId == getUserConfig().getClientUserId();
-        if (isSaved && reaction != null && firstQuery) {
-            lastReturnedNum = 0;
-            searchServerResultMessages.clear();
-            searchServerResultMessagesMap[0].clear();
-            searchServerResultMessagesMap[1].clear();
-
-            final int predictedCount = getMessagesController().getSavedTagCount(lastReplyMessageId, reaction);
-            messagesLocalSearchCount = TextUtils.isEmpty(req.q) ? predictedCount : 0;
-            loadingSearchLocal = true;
-            loadedPredirectedSearchLocal = false;
-            getMessagesStorage().searchSavedByTag(reaction.toTLReaction(), lastReplyMessageId, query, 300, searchLocalResultMessages == null ? 0 : searchLocalResultMessages.size(), (messages, users, chats, emojis) -> {
-                if (currentReqId == lastReqId) {
-                    loadedPredirectedSearchLocal = messages.size() == predictedCount;
-                    loadingSearchLocal = false;
-                    getMessagesController().putUsers(users, true);
-                    getMessagesController().putChats(chats, true);
-                    AnimatedEmojiDrawable.getDocumentFetcher(currentAccount).processDocuments(emojis);
-                    searchLocalResultMessages = messages;
-                    updateSearchResults();
-                    getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, 0, getMask(), dialogId, lastReturnedNum, getSearchCount(), true);
-                }
-            }, true);
-        }
         if (lastReplyMessageId != 0) {
             if (queryWithDialog == getUserConfig().getClientUserId() || getMessagesStorage().isMonoForum(queryWithDialog)) {
                 req.saved_peer_id = getMessagesController().getInputPeer(lastReplyMessageId);
@@ -3964,10 +3866,6 @@ public class MediaDataController extends BaseController {
                 req.top_msg_id = (int) lastReplyMessageId;
                 req.flags |= 2;
             }
-        }
-        if (reaction != null) {
-            req.saved_reaction.add(reaction.toTLReaction());
-            req.flags |= 8;
         }
         req.filter = new TLRPC.TL_inputMessagesFilterEmpty();
         lastSearchQuery = query;
@@ -4041,7 +3939,7 @@ public class MediaDataController extends BaseController {
                                 }
                             }
                             if (queryWithDialogFinal == dialogId && messagesSearchEndReached[0] && mergeDialogId != 0 && !messagesSearchEndReached[1]) {
-                                searchMessagesInChat(lastSearchQuery, dialogId, mergeDialogId, guid, 0, replyMessageId, true, user, chat, jumpToMessage, lastReaction);
+                                searchMessagesInChat(lastSearchQuery, dialogId, mergeDialogId, guid, 0, replyMessageId, true, user, chat, jumpToMessage);
                             }
                         };
                         if (isSaved) {
@@ -4055,15 +3953,14 @@ public class MediaDataController extends BaseController {
         }, ConnectionsManager.RequestFlagFailOnServerErrors);
     }
 
-    public void portSavedSearchResults(int guid, ReactionsLayoutInBubble.VisibleReaction reaction, String query, ArrayList<MessageObject> local, ArrayList<MessageObject> loaded, int num, int count, boolean reached) {
-        lastReaction = reaction;
+    // LoogriGram: this also took the Saved Messages tag the search was filtered
+    // by, and the tagged messages found locally. Tags are Premium's.
+    public void portSavedSearchResults(int guid, String query, ArrayList<MessageObject> loaded, int num, int count, boolean reached) {
         lastSearchQuery = query;
         messagesSearchEndReached[0] = reached;
         messagesSearchEndReached[1] = true;
         searchServerResultMessages.clear();
         searchServerResultMessages.addAll(loaded);
-        searchLocalResultMessages.clear();
-        searchLocalResultMessages.addAll(local);
         updateSearchResults();
         messagesSearchCount[0] = count;
         messagesSearchCount[1] = 0;
@@ -4089,14 +3986,16 @@ public class MediaDataController extends BaseController {
     public final static int MEDIA_TYPES_COUNT = 9;
 
 
-    public void loadMedia(long dialogId, int count, int max_id, int min_id, int type, long topicId, int fromCache, int classGuid, int requestIndex, ReactionsLayoutInBubble.VisibleReaction tag, String query) {
+    public void loadMedia(long dialogId, int count, int max_id, int min_id, int type, long topicId, int fromCache, int classGuid, int requestIndex, String query) {
         boolean isChannel = DialogObject.isChatDialog(dialogId) && ChatObject.isChannel(-dialogId, currentAccount);
 
         if (BuildVars.LOGS_ENABLED) {
             FileLog.d("load media did " + dialogId + " count = " + count + " max_id " + max_id + " type = " + type + " cache = " + fromCache + " classGuid = " + classGuid);
         }
         if (fromCache != 0 && TextUtils.isEmpty(query) || DialogObject.isEncryptedDialog(dialogId)) {
-            loadMediaDatabase(dialogId, count, max_id, min_id, type, topicId, tag, classGuid, isChannel, fromCache, requestIndex);
+            // LoogriGram: loadMedia also took a Saved Messages tag to filter by,
+            // passed on to this and to the server search. Tags are Premium's.
+            loadMediaDatabase(dialogId, count, max_id, min_id, type, topicId, classGuid, isChannel, fromCache, requestIndex);
         } else {
             TLRPC.TL_messages_search req = new TLRPC.TL_messages_search();
             req.limit = count;
@@ -4105,10 +4004,6 @@ public class MediaDataController extends BaseController {
                 req.add_offset = -count;
             } else {
                 req.offset_id = max_id;
-            }
-            if (tag != null) {
-                req.flags |= 8;
-                req.saved_reaction.add(tag.toTLReaction());
             }
 
             if (type == MEDIA_PHOTOVIDEO) {
@@ -4424,7 +4319,7 @@ public class MediaDataController extends BaseController {
             if (fromCache == 2) {
                 return;
             }
-            loadMedia(dialogId, count, max_id, min_id, type, topicId, 0, classGuid, requestIndex, null, null);
+            loadMedia(dialogId, count, max_id, min_id, type, topicId, 0, classGuid, requestIndex, null);
         } else {
             if (fromCache == 0) {
                 ImageLoader.saveMessagesThumbs(res.messages);
@@ -4550,7 +4445,7 @@ public class MediaDataController extends BaseController {
         });
     }
 
-    private void loadMediaDatabase(long uid, int count, int max_id, int min_id, int type, long topicId, ReactionsLayoutInBubble.VisibleReaction tag, int classGuid, boolean isChannel, int fromCache, int requestIndex) {
+    private void loadMediaDatabase(long uid, int count, int max_id, int min_id, int type, long topicId, int classGuid, boolean isChannel, int fromCache, int requestIndex) {
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
@@ -4609,20 +4504,6 @@ public class MediaDataController extends BaseController {
                             cursor.dispose();
                         }
 
-                        String beforeWhere = "";
-                        String afterWhere = "";
-
-                        if (tag != null) {
-                            long taghash = 0;
-                            if (!TextUtils.isEmpty(tag.emojicon)) {
-                                taghash = tag.emojicon.hashCode();
-                            } else {
-                                taghash = tag.documentId;
-                            }
-                            beforeWhere = "INNER JOIN tag_message_id t ON m.mid = t.mid";
-                            afterWhere = "t.tag = " + taghash + " AND";
-                        }
-
                         int holeMessageId = 0;
                         if (max_id != 0) {
                             int startHole = 0;
@@ -4639,17 +4520,17 @@ public class MediaDataController extends BaseController {
 
                             if (topicId != 0) {
                                 if (holeMessageId > 1) {
-                                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid FROM media_topics m %s WHERE %s m.uid = %d AND m.topic_id = %d AND m.mid > 0 AND m.mid < %d AND m.mid >= %d AND m.type = %d ORDER BY m.date DESC, m.mid DESC LIMIT %d", beforeWhere, afterWhere, uid, topicId, max_id, holeMessageId, type, countToLoad));
+                                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid FROM media_topics m WHERE m.uid = %d AND m.topic_id = %d AND m.mid > 0 AND m.mid < %d AND m.mid >= %d AND m.type = %d ORDER BY m.date DESC, m.mid DESC LIMIT %d", uid, topicId, max_id, holeMessageId, type, countToLoad));
                                     isEnd = false;
                                 } else {
-                                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid FROM media_topics m %s WHERE %s m.uid = %d AND m.topic_id = %d AND m.mid > 0 AND m.mid < %d AND m.type = %d ORDER BY m.date DESC, m.mid DESC LIMIT %d", beforeWhere, afterWhere, uid, topicId, max_id, type, countToLoad));
+                                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid FROM media_topics m WHERE m.uid = %d AND m.topic_id = %d AND m.mid > 0 AND m.mid < %d AND m.type = %d ORDER BY m.date DESC, m.mid DESC LIMIT %d", uid, topicId, max_id, type, countToLoad));
                                 }
                             } else {
                                 if (holeMessageId > 1) {
-                                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid FROM media_v4 m %s WHERE %s m.uid = %d AND m.mid > 0 AND m.mid < %d AND m.mid >= %d AND m.type = %d ORDER BY m.date DESC, m.mid DESC LIMIT %d", beforeWhere, afterWhere, uid, max_id, holeMessageId, type, countToLoad));
+                                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid FROM media_v4 m WHERE m.uid = %d AND m.mid > 0 AND m.mid < %d AND m.mid >= %d AND m.type = %d ORDER BY m.date DESC, m.mid DESC LIMIT %d", uid, max_id, holeMessageId, type, countToLoad));
                                     isEnd = false;
                                 } else {
-                                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid FROM media_v4 m %s WHERE %s m.uid = %d AND m.mid > 0 AND m.mid < %d AND m.type = %d ORDER BY m.date DESC, m.mid DESC LIMIT %d", beforeWhere, afterWhere, uid, max_id, type, countToLoad));
+                                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid FROM media_v4 m WHERE m.uid = %d AND m.mid > 0 AND m.mid < %d AND m.type = %d ORDER BY m.date DESC, m.mid DESC LIMIT %d", uid, max_id, type, countToLoad));
                                 }
                             }
                         } else if (min_id != 0) {
@@ -4667,17 +4548,17 @@ public class MediaDataController extends BaseController {
                             reverseMessages = true;
                             if (topicId != 0) {
                                 if (startHole > 1) {
-                                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid FROM media_topics m %s WHERE %s m.uid = %d AND m.topic_id = %d AND m.mid > 0 AND m.mid >= %d AND m.mid <= %d AND m.type = %d ORDER BY m.date ASC, m.mid ASC LIMIT %d", beforeWhere, afterWhere, uid, topicId, min_id, startHole, type, countToLoad));
+                                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid FROM media_topics m WHERE m.uid = %d AND m.topic_id = %d AND m.mid > 0 AND m.mid >= %d AND m.mid <= %d AND m.type = %d ORDER BY m.date ASC, m.mid ASC LIMIT %d", uid, topicId, min_id, startHole, type, countToLoad));
                                 } else {
                                     isEnd = true;
-                                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid FROM media_topics m %s WHERE %s m.uid = %d AND m.topic_id = %d AND m.mid > 0 AND m.mid >= %d AND m.type = %d ORDER BY m.date ASC, m.mid ASC LIMIT %d", beforeWhere, afterWhere, uid, topicId, min_id, type, countToLoad));
+                                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid FROM media_topics m WHERE m.uid = %d AND m.topic_id = %d AND m.mid > 0 AND m.mid >= %d AND m.type = %d ORDER BY m.date ASC, m.mid ASC LIMIT %d", uid, topicId, min_id, type, countToLoad));
                                 }
                             } else {
                                 if (startHole > 1) {
-                                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid FROM media_v4 m %s WHERE %s m.uid = %d AND m.mid > 0 AND m.mid >= %d AND m.mid <= %d AND m.type = %d ORDER BY m.date ASC, m.mid ASC LIMIT %d", beforeWhere, afterWhere, uid, min_id, startHole, type, countToLoad));
+                                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid FROM media_v4 m WHERE m.uid = %d AND m.mid > 0 AND m.mid >= %d AND m.mid <= %d AND m.type = %d ORDER BY m.date ASC, m.mid ASC LIMIT %d", uid, min_id, startHole, type, countToLoad));
                                 } else {
                                     isEnd = true;
-                                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid FROM media_v4 m %s WHERE %s m.uid = %d AND m.mid > 0 AND m.mid >= %d AND m.type = %d ORDER BY m.date ASC, m.mid ASC LIMIT %d", beforeWhere, afterWhere, uid, min_id, type, countToLoad));
+                                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid FROM media_v4 m WHERE m.uid = %d AND m.mid > 0 AND m.mid >= %d AND m.type = %d ORDER BY m.date ASC, m.mid ASC LIMIT %d", uid, min_id, type, countToLoad));
                                 }
                             }
                         } else {
@@ -4692,15 +4573,15 @@ public class MediaDataController extends BaseController {
                             cursor.dispose();
                             if (topicId != 0) {
                                 if (holeMessageId > 1) {
-                                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid FROM media_topics m %s WHERE %s m.uid = %d AND m.topic_id = %d AND m.mid >= %d AND m.type = %d ORDER BY m.date DESC, m.mid DESC LIMIT %d", beforeWhere, afterWhere, uid, topicId, holeMessageId, type, countToLoad));
+                                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid FROM media_topics m WHERE m.uid = %d AND m.topic_id = %d AND m.mid >= %d AND m.type = %d ORDER BY m.date DESC, m.mid DESC LIMIT %d", uid, topicId, holeMessageId, type, countToLoad));
                                 } else {
-                                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid FROM media_topics m %s WHERE %s m.uid = %d AND m.topic_id = %d AND m.mid > 0 AND m.type = %d ORDER BY m.date DESC, m.mid DESC LIMIT %d", beforeWhere, afterWhere, uid, topicId, type, countToLoad));
+                                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid FROM media_topics m WHERE m.uid = %d AND m.topic_id = %d AND m.mid > 0 AND m.type = %d ORDER BY m.date DESC, m.mid DESC LIMIT %d", uid, topicId, type, countToLoad));
                                 }
                             } else {
                                 if (holeMessageId > 1) {
-                                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid FROM media_v4 m %s WHERE %s m.uid = %d AND m.mid >= %d AND m.type = %d ORDER BY m.date DESC, m.mid DESC LIMIT %d", beforeWhere, afterWhere, uid, holeMessageId, type, countToLoad));
+                                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid FROM media_v4 m WHERE m.uid = %d AND m.mid >= %d AND m.type = %d ORDER BY m.date DESC, m.mid DESC LIMIT %d", uid, holeMessageId, type, countToLoad));
                                 } else {
-                                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid FROM media_v4 m %s WHERE %s m.uid = %d AND m.mid > 0 AND m.type = %d ORDER BY m.date DESC, m.mid DESC LIMIT %d", beforeWhere, afterWhere, uid, type, countToLoad));
+                                    cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid FROM media_v4 m WHERE m.uid = %d AND m.mid > 0 AND m.type = %d ORDER BY m.date DESC, m.mid DESC LIMIT %d", uid, type, countToLoad));
                                 }
                             }
                         }
@@ -4726,7 +4607,6 @@ public class MediaDataController extends BaseController {
                     }
 
 
-                    HashSet<Long> groupsToLoad = tag != null ? new HashSet<>() : null;
                     while (cursor.next()) {
                         NativeByteBuffer data = cursor.byteBufferValue(0);
                         if (data != null) {
@@ -4738,9 +4618,6 @@ public class MediaDataController extends BaseController {
                             if (DialogObject.isEncryptedDialog(uid)) {
                                 message.random_id = cursor.longValue(2);
                             }
-                            if (message.grouped_id != 0 && groupsToLoad != null) {
-                                groupsToLoad.add(message.grouped_id);
-                            }
                             if (reverseMessages) {
                                 res.messages.add(0, message);
                             } else {
@@ -4751,38 +4628,6 @@ public class MediaDataController extends BaseController {
                         }
                     }
                     cursor.dispose();
-
-                    if (tag != null && !groupsToLoad.isEmpty()) {
-                        for (long grouped_id : groupsToLoad) {
-                            int index = -1;
-                            for (int i = 0; i < res.messages.size(); ++i) {
-                                if (res.messages.get(i).grouped_id == grouped_id) {
-                                    index = i;
-                                    break;
-                                }
-                            }
-                            if (index < 0) continue;
-                            cursor = database.queryFinalized("SELECT data, mid FROM messages_v2 WHERE uid = ? AND group_id = ? ORDER BY mid DESC", uid, grouped_id);
-                            ArrayList<TLRPC.Message> groupMessages = new ArrayList<>();
-                            while (cursor.next()) {
-                                int id = cursor.intValue(1);
-                                NativeByteBuffer data = cursor.byteBufferValue(0);
-                                if (data == null) continue;
-                                TLRPC.Message message = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
-                                message.readAttachPath(data, selfId);
-                                data.reuse();
-                                message.id = id;
-                                message.dialog_id = uid;
-                                groupMessages.add(message);
-                                MessagesStorage.addUsersAndChatsFromMessage(message, usersToLoad, chatsToLoad, null);
-                            }
-                            if (reverseMessages)
-                                Collections.reverse(groupMessages);
-                            res.messages.remove(index);
-                            res.messages.addAll(index, groupMessages);
-                            cursor.dispose();
-                        }
-                    }
 
                     if (!usersToLoad.isEmpty()) {
                         getMessagesStorage().getUsersInternal(usersToLoad, res.users);
@@ -9486,9 +9331,7 @@ public class MediaDataController extends BaseController {
 
     ArrayList<TLRPC.Reaction> recentReactions = new ArrayList<>();
     ArrayList<TLRPC.Reaction> topReactions = new ArrayList<>();
-    ArrayList<TLRPC.Reaction> savedReactions = new ArrayList<>();
     boolean loadingRecentReactions, loadedRecentReactions;
-    boolean loadingSavedReactions, loadedSavedReactions;
 
     public ArrayList<TLRPC.Reaction> getRecentReactions() {
         return recentReactions;
@@ -9575,45 +9418,6 @@ public class MediaDataController extends BaseController {
                 if (loaded[0]) {
                     loadingRecentReactions = false;
                 }
-            }));
-        }
-    }
-
-    public ArrayList<TLRPC.Reaction> getSavedReactions() {
-        return savedReactions;
-    }
-    public void loadSavedReactions(boolean force) {
-        if (loadingSavedReactions || loadedSavedReactions && !force) {
-            return;
-        }
-        SharedPreferences savedReactionsPref = ApplicationLoader.applicationContext.getSharedPreferences("saved_reactions_" + currentAccount, Context.MODE_PRIVATE);
-
-        savedReactions.clear();
-        savedReactions.addAll(loadReactionsFromPref(savedReactionsPref));
-        loadingSavedReactions = true;
-        loadedSavedReactions = true;
-
-        boolean loadFromServer = true;
-        if (loadFromServer) {
-            TLRPC.TL_messages_getDefaultTagReactions recentReactionsRequest = new TLRPC.TL_messages_getDefaultTagReactions();
-            recentReactionsRequest.hash = savedReactionsPref.getLong("hash", 0);
-            ConnectionsManager.getInstance(currentAccount).sendRequest(recentReactionsRequest, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                if (error == null) {
-                    if (response instanceof TLRPC.TL_messages_reactions) {
-                        TLRPC.TL_messages_reactions reactions = (TLRPC.TL_messages_reactions) response;
-                        savedReactions.clear();
-                        savedReactions.addAll(reactions.reactions);
-
-                        saveReactionsToPref(savedReactionsPref, reactions.hash, reactions.reactions);
-
-                        getNotificationCenter().postNotificationName(NotificationCenter.savedReactionTagsUpdate, 0L);
-                    }
-                    if (response instanceof TLRPC.TL_messages_reactionsNotModified) {
-
-                    }
-                }
-
-                loadingSavedReactions = false;
             }));
         }
     }

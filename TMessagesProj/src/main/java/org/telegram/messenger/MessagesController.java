@@ -19697,10 +19697,10 @@ public class MessagesController extends BaseController implements NotificationCe
                         getMediaDataController().reorderStickers(type, ((TL_update.TL_updateStickerSetsOrder) baseUpdate).order, false);
                     } else if (baseUpdate instanceof TL_update.TL_updateRecentReactions) {
                         getMediaDataController().loadRecentAndTopReactions(true);
-                    } else if (baseUpdate instanceof TL_update.TL_updateRecentReactions) {
-                        getMediaDataController().loadSavedReactions(true);
                     } else if (baseUpdate instanceof TL_update.TL_updateSavedReactionTags) {
-                        getSavedReactionTags(0, true);
+                        // LoogriGram: only the tags' names are kept (see
+                        // loadSavedReactionTags); this reloads them.
+                        loadSavedReactionTags(true);
                     } else if (baseUpdate instanceof TL_update.TL_updateFavedStickers) {
                         getMediaDataController().loadRecents(MediaDataController.TYPE_FAVE, false, false, true);
                     } else if (baseUpdate instanceof TL_update.TL_updateContactsReset) {
@@ -23112,262 +23112,37 @@ public class MessagesController extends BaseController implements NotificationCe
         return rec;
     }
 
-    private HashSet<Long> loadingReactionTags;
-    private LongSparseArray<TLRPC.TL_messages_savedReactionsTags> reactionTags;
-
-    public boolean processDeletedReactionTags(TLRPC.Message message) {
-        if (message == null || DialogObject.getPeerDialogId(message.peer_id) != getUserConfig().getClientUserId() || message.reactions == null || !message.reactions.reactions_as_tags || message.reactions.results == null) {
-            return false;
-        }
-        long topic_id = MessageObject.getSavedDialogId(getUserConfig().getClientUserId(), message);
-        boolean changed = false;
-        for (int i = 0; i < message.reactions.results.size(); ++i) {
-            if (updateSavedReactionTags(topic_id, ReactionsLayoutInBubble.VisibleReaction.fromTL(message.reactions.results.get(i).reaction), false, false)) {
-                changed = true;
-            }
-        }
-        return changed;
-    }
-
-    public boolean updateSavedReactionTags(long topic_id, ReactionsLayoutInBubble.VisibleReaction reaction, boolean add, boolean update) {
-        if (reactionTags == null) {
-            return false;
-        }
-        boolean gchanged = false;
-        for (int a = 0; a < 2; ++a) {
-            long topicId = a == 0 ? 0 : topic_id;
-            if (a == 1 && topicId == 0) continue;
-            TLRPC.TL_messages_savedReactionsTags tags = reactionTags.get(topicId);
-            if (tags == null) {
-                if (topicId != 0) {
-                    reactionTags.put(topicId, tags = new TLRPC.TL_messages_savedReactionsTags());
-                } else {
-                    continue;
-                }
-            }
-            boolean changed = false;
-            boolean found = false;
-            for (int i = 0; i < tags.tags.size(); ++i) {
-                TLRPC.TL_savedReactionTag tag = tags.tags.get(i);
-                if (reaction.isSame(tag.reaction)) {
-                    found = true;
-                    int wasCount = tag.count;
-                    tag.count = Math.max(0, tag.count + (add ? +1 : -1));
-                    if (tag.count <= 0) {
-                        tags.tags.remove(i);
-                        i--;
-
-                        changed = true;
-                        gchanged = true;
-                    } else if (tag.count != wasCount) {
-                        changed = true;
-                        gchanged = true;
-                    }
-                }
-            }
-            if (!found && add) {
-                TLRPC.TL_savedReactionTag tag = new TLRPC.TL_savedReactionTag();
-                tag.reaction = reaction.toTLReaction();
-                tag.count = 1;
-                tags.tags.add(tag);
-                changed = true;
-                gchanged = true;
-            }
-            if (update && changed) {
-                updateSavedReactionTags(topicId);
-            }
-        }
-        return gchanged;
-    }
-
-    public void updateSavedReactionTags(HashSet<Long> topic_ids) {
-        updateSavedReactionTags(0);
-        for (long topic_id : topic_ids) {
-            updateSavedReactionTags(topic_id);
-        }
-    }
-
-    public void updateSavedReactionTags(long topic_id) {
-        if (reactionTags == null) return;
-        TLRPC.TL_messages_savedReactionsTags tags = reactionTags.get(topic_id);
-        if (tags == null) {
-            if (topic_id != 0) {
-                reactionTags.put(topic_id, tags = new TLRPC.TL_messages_savedReactionsTags());
-            } else {
-                return;
-            }
-        }
-        Collections.sort(tags.tags, (a, b) -> {
-            if (a.count == b.count) {
-                return Long.compareUnsigned(getTagLongId(b.reaction), getTagLongId(a.reaction));
-            }
-            return b.count - a.count;
-        });
-        long hash = 0;
-        for (int i = 0; i < tags.tags.size(); ++i) {
-            TLRPC.TL_savedReactionTag tag = tags.tags.get(i);
-            if (tag.count <= 0) continue;
-            if (tag.reaction instanceof TLRPC.TL_reactionEmoji) {
-                String md5 = Utilities.MD5(((TLRPC.TL_reactionEmoji) tag.reaction).emoticon);
-                hash = MediaDataController.calcHash(hash, Long.parseUnsignedLong(md5.substring(0, 16), 16));
-            } else if (tag.reaction instanceof TLRPC.TL_reactionCustomEmoji) {
-                hash = MediaDataController.calcHash(hash, ((TLRPC.TL_reactionCustomEmoji) tag.reaction).document_id);
-            }
-            if (topic_id == 0 && (tag.flags & 1) != 0 && tag.title != null) {
-                hash = MediaDataController.calcHash(hash, Long.parseUnsignedLong(Utilities.MD5(tag.title).substring(0, 16), 16));
-            }
-            hash = MediaDataController.calcHash(hash, tag.count);
-        }
-        tags.hash = hash;
-        saveSavedReactionsTags(topic_id, tags);
-        getNotificationCenter().postNotificationName(NotificationCenter.savedReactionTagsUpdate, topic_id);
-    }
-
-    public String getSavedTagName(ReactionsLayoutInBubble.VisibleReaction reaction) {
-        if (reactionTags == null) {
-            return null;
-        }
-        TLRPC.TL_messages_savedReactionsTags tags = reactionTags.get(0);
-        if (tags == null) return null;
-        for (int i = 0; i < tags.tags.size(); ++i) {
-            if (reaction.isSame(tags.tags.get(i).reaction)) {
-                return tags.tags.get(i).title;
-            }
-        }
-        return null;
-    }
-
-    public int getSavedTagCount(long topic_id, ReactionsLayoutInBubble.VisibleReaction reaction) {
-        if (reactionTags == null) {
-            return 0;
-        }
-        TLRPC.TL_messages_savedReactionsTags tags = reactionTags.get(topic_id);
-        if (tags == null) return 0;
-        for (int i = 0; i < tags.tags.size(); ++i) {
-            if (reaction.isSame(tags.tags.get(i).reaction)) {
-                return tags.tags.get(i).count;
-            }
-        }
-        return 0;
-    }
+    // LoogriGram: Saved Messages tags are Premium's and are not set, renamed or
+    // filtered by any more. What stays is the list of their names, which a
+    // message bubble still draws on a tag set elsewhere. Gone: the per-chat tag
+    // lists, the counts kept in step with every reaction change and deletion,
+    // and renaming.
+    private boolean savedReactionTagsRequested;
+    private TLRPC.TL_messages_savedReactionsTags savedReactionTags;
 
     public String getSavedTagName(TLRPC.Reaction reaction) {
-        if (reactionTags == null) {
+        if (savedReactionTags == null) {
             return null;
         }
-        TLRPC.TL_messages_savedReactionsTags tags = reactionTags.get(0);
-        if (tags == null) return null;
-        for (int i = 0; i < tags.tags.size(); ++i) {
-            if (ReactionsLayoutInBubble.reactionsEqual(reaction, tags.tags.get(i).reaction)) {
-                return tags.tags.get(i).title;
+        for (int i = 0; i < savedReactionTags.tags.size(); ++i) {
+            if (ReactionsLayoutInBubble.reactionsEqual(reaction, savedReactionTags.tags.get(i).reaction)) {
+                return savedReactionTags.tags.get(i).title;
             }
         }
         return null;
     }
 
-    public void renameSavedReactionTag(ReactionsLayoutInBubble.VisibleReaction reaction, String name) {
-        if (reactionTags == null) {
+    public void loadSavedReactionTags(boolean force) {
+        if (savedReactionTagsRequested && !force) {
             return;
         }
-        TLRPC.TL_messages_savedReactionsTags tags = reactionTags.get(0);
-        if (tags == null) {
-            reactionTags.put(0, tags = new TLRPC.TL_messages_savedReactionsTags());
-        }
-        boolean found = false;
-        boolean changed = false;
-        for (int i = 0; i < tags.tags.size(); ++i) {
-            TLRPC.TL_savedReactionTag tag = tags.tags.get(i);
-            if (reaction.isSame(tag.reaction)) {
-                found = true;
-                if (TextUtils.isEmpty(name)) {
-                    changed = tag.title != null;
-                    tag.flags &=~ 1;
-                    tag.title = null;
-                } else {
-                    changed = !TextUtils.equals(tag.title, name);
-                    tag.flags |= 1;
-                    tag.title = name;
-                }
-                break;
-            }
-        }
-        if (!found) {
-            TLRPC.TL_savedReactionTag tag = new TLRPC.TL_savedReactionTag();
-            tag.reaction = reaction.toTLReaction();
-            if (!TextUtils.isEmpty(name)) {
-                tag.title = name;
-            }
-            tag.count = 1;
-            tags.tags.add(tag);
-            changed = true;
-        }
-        if (changed) {
-            TLRPC.TL_messages_updateSavedReactionTag req = new TLRPC.TL_messages_updateSavedReactionTag();
-            req.reaction = reaction.toTLReaction();
-            if (!TextUtils.isEmpty(name)) {
-                req.flags |= 1;
-                req.title = name;
-            }
-            getConnectionsManager().sendRequest(req, null);
-
-            Collections.sort(tags.tags, (a, b) -> {
-                if (a.count == b.count) {
-                    return Long.compareUnsigned(getTagLongId(b.reaction), getTagLongId(a.reaction));
-                }
-                return b.count - a.count;
-            });
-            long hash = 0;
-            for (int i = 0; i < tags.tags.size(); ++i) {
-                TLRPC.TL_savedReactionTag tag = tags.tags.get(i);
-                if (tag.count <= 0) continue;
-                if (tag.reaction instanceof TLRPC.TL_reactionEmoji) {
-                    String md5 = Utilities.MD5(((TLRPC.TL_reactionEmoji) tag.reaction).emoticon);
-                    hash = MediaDataController.calcHash(hash, Long.parseUnsignedLong(md5.substring(0, 16), 16));
-                } else if (tag.reaction instanceof TLRPC.TL_reactionCustomEmoji) {
-                    hash = MediaDataController.calcHash(hash, ((TLRPC.TL_reactionCustomEmoji) tag.reaction).document_id);
-                }
-                if ((tag.flags & 1) != 0 && tag.title != null) {
-                    hash = MediaDataController.calcHash(hash, Long.parseUnsignedLong(Utilities.MD5(tag.title).substring(0, 16), 16));
-                }
-                hash = MediaDataController.calcHash(hash, tag.count);
-            }
-            tags.hash = hash;
-            saveSavedReactionsTags(0, tags);
-            getNotificationCenter().postNotificationName(NotificationCenter.savedReactionTagsUpdate, 0L);
-        }
-    }
-
-    private long getTagLongId(TLRPC.Reaction reaction) {
-        if (reaction == null) return 0;
-        if (reaction.tag_long_id != 0) return reaction.tag_long_id;
-        if (reaction instanceof TLRPC.TL_reactionEmoji) {
-            String md5 = Utilities.MD5(((TLRPC.TL_reactionEmoji) reaction).emoticon);
-            return reaction.tag_long_id = Long.parseUnsignedLong(md5.substring(0, 16), 16);
-        } else if (reaction instanceof TLRPC.TL_reactionCustomEmoji) {
-            return reaction.tag_long_id = ((TLRPC.TL_reactionCustomEmoji) reaction).document_id;
-        }
-        return 0;
-    }
-
-    public TLRPC.TL_messages_savedReactionsTags getSavedReactionTags(long topic_id) {
-        return getSavedReactionTags(topic_id, false);
-    }
-
-    public TLRPC.TL_messages_savedReactionsTags getSavedReactionTags(long topic_id, boolean force) {
-        if (loadingReactionTags != null && loadingReactionTags.contains(topic_id) && !force) {
-            if (reactionTags == null) return null;
-            return reactionTags.get(topic_id);
-        }
-        if (loadingReactionTags == null) {
-            loadingReactionTags = new HashSet<>();
-        }
-        loadingReactionTags.add(topic_id);
+        savedReactionTagsRequested = true;
         getMessagesStorage().getStorageQueue().postRunnable(() -> {
             TLRPC.messages_SavedReactionTags result = null;
             SQLiteDatabase database = getMessagesStorage().getDatabase();
             SQLiteCursor cursor = null;
             try {
-                cursor = database.queryFinalized("SELECT data FROM saved_reaction_tags WHERE topic_id = ?", topic_id);
+                cursor = database.queryFinalized("SELECT data FROM saved_reaction_tags WHERE topic_id = 0");
                 if (cursor.next()) {
                     NativeByteBuffer data = cursor.byteBufferValue(0);
                     if (data != null) {
@@ -23385,49 +23160,41 @@ public class MessagesController extends BaseController implements NotificationCe
 
             final TLRPC.messages_SavedReactionTags finalResult = result;
             AndroidUtilities.runOnUIThread(() -> {
-                if (reactionTags == null) reactionTags = new LongSparseArray<>();
                 if (finalResult instanceof TLRPC.TL_messages_savedReactionsTags) {
-                    reactionTags.put(topic_id, (TLRPC.TL_messages_savedReactionsTags) finalResult);
-                    getNotificationCenter().postNotificationName(NotificationCenter.savedReactionTagsUpdate, topic_id);
+                    savedReactionTags = (TLRPC.TL_messages_savedReactionsTags) finalResult;
+                    getNotificationCenter().postNotificationName(NotificationCenter.savedReactionTagsUpdate);
                 }
 
                 TLRPC.TL_messages_getSavedReactionTags req = new TLRPC.TL_messages_getSavedReactionTags();
                 if (finalResult instanceof TLRPC.TL_messages_savedReactionsTags) {
                     req.hash = finalResult.hash;
                 }
-                if (topic_id != 0) {
-                    req.flags |= 1;
-                    req.peer = getInputPeer(topic_id);
-                }
                 getConnectionsManager().sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
                     if (res instanceof TLRPC.TL_messages_savedReactionsTags) {
-                        TLRPC.TL_messages_savedReactionsTags tags = (TLRPC.TL_messages_savedReactionsTags) res;
-                        reactionTags.put(topic_id, tags);
-                        getNotificationCenter().postNotificationName(NotificationCenter.savedReactionTagsUpdate, topic_id);
-                        saveSavedReactionsTags(topic_id, tags);
+                        savedReactionTags = (TLRPC.TL_messages_savedReactionsTags) res;
+                        getNotificationCenter().postNotificationName(NotificationCenter.savedReactionTagsUpdate);
+                        saveSavedReactionTags(savedReactionTags);
                     } else if (res instanceof TLRPC.TL_messages_savedReactionsTagsNotModified && finalResult == null && req.hash == 0) {
-                        TLRPC.TL_messages_savedReactionsTags emptyTags = new TLRPC.TL_messages_savedReactionsTags();
-                        reactionTags.put(topic_id, emptyTags);
-                        getNotificationCenter().postNotificationName(NotificationCenter.savedReactionTagsUpdate, topic_id);
-                        saveSavedReactionsTags(topic_id, emptyTags);
+                        savedReactionTags = new TLRPC.TL_messages_savedReactionsTags();
+                        getNotificationCenter().postNotificationName(NotificationCenter.savedReactionTagsUpdate);
+                        saveSavedReactionTags(savedReactionTags);
                     }
                 }));
             });
         });
-        return null;
     }
 
-    private void saveSavedReactionsTags(long topic_id, TLRPC.TL_messages_savedReactionsTags res) {
+    private void saveSavedReactionTags(TLRPC.TL_messages_savedReactionsTags res) {
         getMessagesStorage().getStorageQueue().postRunnable(() -> {
             SQLiteDatabase database2 = getMessagesStorage().getDatabase();
             SQLitePreparedStatement state = null;
             try {
-                database2.executeFast("DELETE FROM saved_reaction_tags WHERE topic_id = " + topic_id).stepThis().dispose();
+                database2.executeFast("DELETE FROM saved_reaction_tags WHERE topic_id = 0").stepThis().dispose();
                 state = database2.executeFast("REPLACE INTO saved_reaction_tags VALUES(?, ?)");
                 state.requery();
                 NativeByteBuffer buffer = new NativeByteBuffer(res.getObjectSize());
                 res.serializeToStream(buffer);
-                state.bindLong(1, topic_id);
+                state.bindLong(1, 0);
                 state.bindByteBuffer(2, buffer);
                 state.step();
             } catch (Exception e) {

@@ -27918,14 +27918,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         return photoImage.draw(canvas);
     }
 
-    public boolean areTags() {
-        MessageObject msg = getPrimaryMessageObject();
-        if (msg == null) return false;
-        if (msg.messageOwner == null) return false;
-        if (msg.messageOwner.reactions == null) return false;
-        return msg.messageOwner.reactions.reactions_as_tags;
-    }
-
     public String getFilename() {
         if (currentMessageObject == null)
             return null;

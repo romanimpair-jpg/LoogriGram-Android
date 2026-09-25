@@ -739,9 +739,10 @@ public class PollItemMenu extends Dialog {
             });
         }
 
-        if (isReactionsAvailable) {
-            final boolean tags = chatActivity.getUserConfig().getClientUserId() == chatActivity.getDialogId();
-            ReactionsContainerLayout reactionsLayout = new ReactionsContainerLayout(tags ? ReactionsContainerLayout.TYPE_TAGS : ReactionsContainerLayout.TYPE_DEFAULT, chatActivity, getContext(), chatActivity.getCurrentAccount(), resourcesProvider);
+        // LoogriGram: in Saved Messages this row offered tags, which only Premium
+        // can set. That chat gets no row, as in the message menu.
+        if (isReactionsAvailable && chatActivity.getUserConfig().getClientUserId() != chatActivity.getDialogId()) {
+            ReactionsContainerLayout reactionsLayout = new ReactionsContainerLayout(ReactionsContainerLayout.TYPE_DEFAULT, chatActivity, getContext(), chatActivity.getCurrentAccount(), resourcesProvider);
             reactionsLayout.forceAttachToParent = true;
             int pad = 22;
             int sPad = 24;

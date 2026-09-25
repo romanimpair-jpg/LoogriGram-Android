@@ -1124,7 +1124,7 @@ public class AddressBarList extends FrameLayout {
             for (int i = 0; i < links.size(); ++i) {
                 min_id = Math.min(min_id, links.get(i).getId());
             }
-            MediaDataController.getInstance(currentAccount).loadMedia(selfId, links.isEmpty() ? 30 : 50, min_id == Integer.MAX_VALUE ? 0 : min_id, 0, MediaDataController.MEDIA_URL, 0, 1, guid, 0, null, query);
+            MediaDataController.getInstance(currentAccount).loadMedia(selfId, links.isEmpty() ? 30 : 50, min_id == Integer.MAX_VALUE ? 0 : min_id, 0, MediaDataController.MEDIA_URL, 0, 1, guid, 0, query);
         }
 
         @Override

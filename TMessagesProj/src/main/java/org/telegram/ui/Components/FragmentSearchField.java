@@ -475,12 +475,7 @@ public class FragmentSearchField extends FrameLayout implements FactorAnimator.T
 
         for (int i = 0; i < localFilters.size(); i++) {
             FiltersView.MediaFilterData filter = localFilters.get(i);
-            ActionBarMenuItem.SearchFilterView searchFilterView;
-            if (filter.reaction != null) {
-                searchFilterView = new ActionBarMenuItem.ReactionFilterView(getContext(), resourcesProvider, false);
-            } else {
-                searchFilterView = new ActionBarMenuItem.SearchFilterView(getContext(), resourcesProvider, false);
-            }
+            ActionBarMenuItem.SearchFilterView searchFilterView = new ActionBarMenuItem.SearchFilterView(getContext(), resourcesProvider, false);
 
             searchFilterView.setGlass();
             searchFilterView.setData(filter);

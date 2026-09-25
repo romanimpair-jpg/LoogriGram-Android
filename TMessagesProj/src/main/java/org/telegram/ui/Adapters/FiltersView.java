@@ -37,7 +37,6 @@ import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Components.Reactions.ReactionsLayoutInBubble;
 import org.telegram.ui.Components.RecyclerListView;
 
 import java.text.SimpleDateFormat;
@@ -785,8 +784,6 @@ public class FiltersView extends RecyclerListView {
 
     public static class MediaFilterData {
 
-        public ReactionsLayoutInBubble.VisibleReaction reaction;
-
         public int iconResFilled;
         public int titleResId;
         private String title;
@@ -796,10 +793,8 @@ public class FiltersView extends RecyclerListView {
         public DateData dateData;
         public boolean removable = true;
 
-        public MediaFilterData(ReactionsLayoutInBubble.VisibleReaction reaction) {
-            this.reaction = reaction;
-        }
-
+        // LoogriGram: a constructor made a Saved Messages tag into a search filter
+        // here, drawn by ActionBarMenuItem.ReactionFilterView. Tags are Premium's.
         public MediaFilterData(int iconResFilled, String title, TLRPC.MessagesFilter filter, int filterType) {
             this.iconResFilled = iconResFilled;
             this.title = title;

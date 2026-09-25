@@ -187,7 +187,6 @@ import org.telegram.ui.Components.Premium.LimitReachedBottomSheet;
 import org.telegram.ui.Components.Premium.boosts.UserSelectorBottomSheet;
 import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.RLottieImageView;
-import org.telegram.ui.Components.SearchTagsList;
 import org.telegram.ui.Components.ShareTopView;
 import org.telegram.ui.Components.SizeNotifierFrameLayout;
 import org.telegram.ui.Components.StickerSetBulletinLayout;
@@ -7857,9 +7856,9 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             if (invoked) bottomSheetTabsOverlay.onBackPressed();
             return false;
         }
-        if (!SearchTagsList.onBackPressedRenameTagAlert(invoked)) {
-            return false;
-        } else if (ContentPreviewViewer.hasInstance() && ContentPreviewViewer.getInstance().isVisible()) {
+        // LoogriGram: the Saved Messages rename-tag dialog took the back press
+        // first here. Tags are Premium's and are not renamed any more.
+        if (ContentPreviewViewer.hasInstance() && ContentPreviewViewer.getInstance().isVisible()) {
             if (invoked) ContentPreviewViewer.getInstance().closeWithMenu();
             return false;
         } else if (SecretMediaViewer.hasInstance() && SecretMediaViewer.getInstance().isVisible()) {

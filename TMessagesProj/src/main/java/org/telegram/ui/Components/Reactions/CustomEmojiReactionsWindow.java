@@ -5,7 +5,6 @@ import static org.telegram.ui.Components.ReactionsContainerLayout.TYPE_MESSAGE_E
 import static org.telegram.ui.Components.ReactionsContainerLayout.TYPE_STICKER_SET_EMOJI;
 import static org.telegram.ui.Components.ReactionsContainerLayout.TYPE_STORY;
 import static org.telegram.ui.Components.ReactionsContainerLayout.TYPE_STORY_LIKES;
-import static org.telegram.ui.Components.ReactionsContainerLayout.TYPE_TAGS;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -351,7 +350,7 @@ public class CustomEmojiReactionsWindow {
     private WindowManager.LayoutParams createLayoutParams(boolean focusable) {
         WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
         lp.width = lp.height = WindowManager.LayoutParams.MATCH_PARENT;
-        lp.type = (type == ReactionsContainerLayout.TYPE_DEFAULT || type == ReactionsContainerLayout.TYPE_TAGS) ? WindowManager.LayoutParams.TYPE_APPLICATION_PANEL : WindowManager.LayoutParams.LAST_APPLICATION_WINDOW;
+        lp.type = type == ReactionsContainerLayout.TYPE_DEFAULT ? WindowManager.LayoutParams.TYPE_APPLICATION_PANEL : WindowManager.LayoutParams.LAST_APPLICATION_WINDOW;
         lp.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE;
         if (focusable) {
             lp.flags = WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN | WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR;
@@ -888,7 +887,7 @@ public class CustomEmojiReactionsWindow {
             }
             if (reactionsContainerLayout.hintView != null) {
                 canvas.save();
-                canvas.translate(drawingRect.left, drawingRect.top + reactionsContainerLayout.hintView.getY() - (type == TYPE_TAGS || type == TYPE_STICKER_SET_EMOJI || type == TYPE_MESSAGE_EFFECTS ? reactionsContainerLayout.rect.top : 0));
+                canvas.translate(drawingRect.left, drawingRect.top + reactionsContainerLayout.hintView.getY() - (type == TYPE_STICKER_SET_EMOJI || type == TYPE_MESSAGE_EFFECTS ? reactionsContainerLayout.rect.top : 0));
                 canvas.saveLayerAlpha( 0, 0, reactionsContainerLayout.hintView.getMeasuredWidth(), reactionsContainerLayout.hintView.getMeasuredHeight(), (int) (255 * reactionsContainerLayout.hintView.getAlpha() * (1f - enterTransitionProgress)), Canvas.ALL_SAVE_FLAG);
                 reactionsContainerLayout.hintView.draw(canvas);
                 canvas.restore();

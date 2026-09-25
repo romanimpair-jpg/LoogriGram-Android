@@ -2553,7 +2553,8 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                                         a1--;
                                     }
                                 }
-                                getNotificationCenter().postNotificationNameOnUIThread(NotificationCenter.savedMessagesForwarded, newMessagesByIds);
+                                // LoogriGram: the new ids were posted here for the tag row of the
+                                // forwarded-to-Saved-Messages bulletin, which is gone.
                                 Integer value = getMessagesController().dialogs_read_outbox_max.get(peer);
                                 if (value == null) {
                                     value = getMessagesStorage().getDialogReadMax(true, peer);
