@@ -8,7 +8,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.text.Layout;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -33,7 +32,6 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.UserConfig;
-import org.telegram.messenger.UserObject;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_account;
@@ -45,7 +43,6 @@ import org.telegram.ui.Cells.GroupCreateUserCell;
 import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Components.AlertsCreator;
-import org.telegram.ui.Components.AvatarsImageView;
 import org.telegram.ui.Components.BottomSheetWithRecyclerListView;
 import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.BulletinFactory;
@@ -54,7 +51,6 @@ import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerItemsEnterAnimator;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.ScaleStateListAnimator;
-import org.telegram.ui.PremiumPreviewFragment;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -125,7 +121,6 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView {
 
     final int type;
     ArrayList<TLRPC.Chat> chats = new ArrayList<>();
-    boolean premiumButtonSetSubscribe;
 
     int rowCount;
     int headerRow = -1;
@@ -149,7 +144,6 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView {
 
     PremiumButtonView premiumButtonView;
     public Runnable onSuccessRunnable;
-    public Runnable onShowPremiumScreenRunnable;
     private boolean loading = false;
     RecyclerItemsEnterAnimator enterAnimator;
     BaseFragment parentFragment;
@@ -248,31 +242,12 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView {
             if (type == TYPE_ADD_MEMBERS_RESTRICTED || type == TYPE_CALL_RESTRICTED) {
                 return;
             }
-            if (UserConfig.getInstance(currentAccount).isPremium() || MessagesController.getInstance(currentAccount).premiumFeaturesBlocked() || isVeryLargeFile) {
-                dismiss();
-                return;
-            }
-            if (parentFragment == null) {
-                return;
-            }
-            if (parentFragment.getVisibleDialog() != null) {
-                parentFragment.getVisibleDialog().dismiss();
-            }
-            parentFragment.presentFragment(new PremiumPreviewFragment(limitTypeToServerString(type)));
-            if (onShowPremiumScreenRunnable != null) {
-                onShowPremiumScreenRunnable.run();
-            }
+            // LoogriGram: the button closes the sheet. Upstream's "Increase
+            // Limit" opened Premium, except where the getter said it could
+            // not be sold - the branch this was.
             dismiss();
         });
         premiumButtonView.overlayTextView.setOnClickListener(v -> {
-            if (premiumButtonSetSubscribe) {
-                if (parentFragment == null) return;
-                BaseFragment.BottomSheetParams params = new BaseFragment.BottomSheetParams();
-                params.transitionFromLeft = true;
-                params.allowNestedScroll = false;
-                parentFragment.showAsSheet(new PremiumPreviewFragment("invite_privacy"), params);
-                return;
-            }
             if (type == TYPE_ADD_MEMBERS_RESTRICTED || type == TYPE_CALL_RESTRICTED) {
                 if (selectedChats.isEmpty()) {
                     dismiss();
@@ -348,29 +323,8 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView {
     }
 
     public void updatePremiumButtonText() {
-        if (premiumButtonSetSubscribe) {
-            premiumButtonView.setOverlayText(getString(R.string.InvitePremiumBlockedSubscribe), false, false);
-        } else if (UserConfig.getInstance(currentAccount).isPremium() || MessagesController.getInstance(currentAccount).premiumFeaturesBlocked() || isVeryLargeFile) {
-            premiumButtonView.buttonTextView.setText(getString(R.string.OK));
-            premiumButtonView.hideIcon();
-        } else {
-            premiumButtonView.buttonTextView.setText(getString(R.string.IncreaseLimit));
-            if (limitParams != null) {
-                if (limitParams.defaultLimit + 1 == limitParams.premiumLimit) {
-                    premiumButtonView.setIcon(R.raw.addone_icon);
-                } else if (
-                        limitParams.defaultLimit != 0 && limitParams.premiumLimit != 0 &&
-                                limitParams.premiumLimit / (float) limitParams.defaultLimit >= 1.6f &&
-                                limitParams.premiumLimit / (float) limitParams.defaultLimit <= 2.5f
-                ) {
-                    premiumButtonView.setIcon(R.raw.double_icon);
-                } else {
-                    premiumButtonView.hideIcon();
-                }
-            } else {
-                premiumButtonView.hideIcon();
-            }
-        }
+        premiumButtonView.buttonTextView.setText(getString(R.string.OK));
+        premiumButtonView.hideIcon();
     }
 
     private void leaveFromSelectedGroups() {
@@ -405,9 +359,7 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView {
     }
 
     private void updateButton() {
-        if (premiumButtonSetSubscribe) {
-            premiumButtonView.setOverlayText(getString(R.string.InvitePremiumBlockedSubscribe), false, false);
-        } else if (type == TYPE_ADD_MEMBERS_RESTRICTED || type == TYPE_CALL_RESTRICTED) {
+        if (type == TYPE_ADD_MEMBERS_RESTRICTED || type == TYPE_CALL_RESTRICTED) {
             premiumButtonView.checkCounterView();
             if (!canSendLink) {
                 premiumButtonView.setOverlayText(getString(R.string.Close), true, true);
@@ -645,21 +597,6 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView {
         }
         updateRows();
         updateButton();
-
-        if (
-            ((type == TYPE_ADD_MEMBERS_RESTRICTED || type == TYPE_CALL_RESTRICTED) && !MessagesController.getInstance(currentAccount).premiumFeaturesBlocked() && (premiumInviteBlockedUsers != null && !premiumInviteBlockedUsers.isEmpty() || premiumMessagingBlockedUsers != null && premiumMessagingBlockedUsers.size() >= restrictedUsers.size())) &&
-            premiumInviteBlockedUsers != null && premiumMessagingBlockedUsers != null && (premiumInviteBlockedUsers.size() == 1 && premiumMessagingBlockedUsers.size() == 1 || premiumMessagingBlockedUsers.size() >= premiumInviteBlockedUsers.size())
-        ) {
-            if (LimitReachedBottomSheet.this.premiumButtonView != null && LimitReachedBottomSheet.this.premiumButtonView.getParent() != null) {
-                ((ViewGroup) LimitReachedBottomSheet.this.premiumButtonView.getParent()).removeView(LimitReachedBottomSheet.this.premiumButtonView);
-            }
-            if (divider != null && divider.getParent() != null) {
-                ((ViewGroup) divider.getParent()).removeView(divider);
-            }
-            if (recyclerListView != null) {
-                recyclerListView.setPadding(0, 0, 0, 0);
-            }
-        }
     }
 
     private class HeaderView extends LinearLayout {
@@ -676,10 +613,7 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView {
             limitParams = getLimitParams(type, currentAccount);
             int icon = limitParams.icon;
             String descriptionStr;
-            MessagesController messagesController = MessagesController.getInstance(currentAccount);
-            boolean premiumLocked = messagesController.premiumFeaturesBlocked();
             if (type == TYPE_ADD_MEMBERS_RESTRICTED) {
-                premiumLocked = true;
                 if (!canSendLink) {
                     if (ChatObject.isChannelAndNotMegaGroup(fromChat)) {
                         if (restrictedUsers.size() == 1) {
@@ -716,11 +650,8 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView {
                     descriptionStr = LocaleController.formatPluralString("InviteCallRestrictedUsers", restrictedUsers.size(), restrictedUsers.size());
                 }
             } else {
-                if (premiumLocked) {
-                    descriptionStr = limitParams.descriptionStrLocked;
-                } else {
-                    descriptionStr = (UserConfig.getInstance(currentAccount).isPremium() || isVeryLargeFile) ? limitParams.descriptionStrPremium : limitParams.descriptionStr;
-                }
+                // LoogriGram: the limit, explained, without Premium's higher one.
+                descriptionStr = limitParams.descriptionStrLocked;
             }
             int defaultLimit = limitParams.defaultLimit;
             int premiumLimit = limitParams.premiumLimit;
@@ -764,152 +695,12 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView {
 
             percent = defaultLimit / (float) premiumLimit;
 
-            if ((type == TYPE_ADD_MEMBERS_RESTRICTED || type == TYPE_CALL_RESTRICTED) && !MessagesController.getInstance(currentAccount).premiumFeaturesBlocked() && (premiumInviteBlockedUsers != null && !premiumInviteBlockedUsers.isEmpty() || premiumMessagingBlockedUsers != null && premiumMessagingBlockedUsers.size() >= restrictedUsers.size())) {
-                ArrayList<Long> userIds = premiumInviteBlockedUsers.isEmpty() ? premiumMessagingBlockedUsers : premiumInviteBlockedUsers;
-
-                AvatarsImageView avatarsImageView = new AvatarsImageView(context, false);
-                avatarsImageView.avatarsDrawable.strokeWidth = dp(3.33f);
-                avatarsImageView.setSize(dp(72));
-                avatarsImageView.setStepFactor(0.4f);
-                final int count = Math.min(userIds.size(), 3);
-                avatarsImageView.setCount(count);
-                for (int i = 0; i < count; ++i) {
-                    long userId = userIds.get(i);
-                    TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(userId);
-                    avatarsImageView.setObject(i, currentAccount, user);
-                }
-                avatarsImageView.commitTransition(false);
-                addView(avatarsImageView, LayoutHelper.createLinear(72 + (count - 1) * 30, 72, Gravity.CENTER_HORIZONTAL, 0, 16, 0, 13));
-
-                TextView title = new TextView(context);
-                title.setGravity(Gravity.CENTER);
-                title.setTypeface(AndroidUtilities.bold());
-                title.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
-                title.setTextColor(Theme.getColor(Theme.key_dialogTextBlack, resourcesProvider));
-                title.setText(getString(R.string.InvitePremiumBlockedTitle));
-                addView(title, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 32, 0, 32, 9));
-
-                TextView description = new TextView(context);
-                description.setGravity(Gravity.CENTER);
-                description.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
-                description.setTextColor(Theme.getColor(Theme.key_dialogTextBlack, resourcesProvider));
-                addView(description, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 32, 0, 32, 19));
-
-                final boolean calls = type == TYPE_CALL_RESTRICTED;
-                final boolean andMessaging = premiumMessagingBlockedUsers != null && premiumMessagingBlockedUsers.size() >= premiumInviteBlockedUsers.size();
-//                final boolean onlyMessaging = premiumInviteBlockedUsers != null && premiumInviteBlockedUsers.isEmpty();
-                String string;
-                if (userIds.size() == 1) {
-                    string = LocaleController.formatString(
-                        calls ? R.string.InviteCallMessagePremiumBlockedOne : andMessaging ? R.string.InviteMessagePremiumBlockedOne : R.string.InvitePremiumBlockedOne,
-                        UserObject.getForcedFirstName(MessagesController.getInstance(currentAccount).getUser(userIds.get(0)))
-                    );
-                } else if (userIds.size() == 2) {
-                    string = LocaleController.formatString(
-                        calls ? R.string.InviteCallMessagePremiumBlockedTwo : andMessaging ? R.string.InviteMessagePremiumBlockedTwo : R.string.InvitePremiumBlockedTwo,
-                        UserObject.getForcedFirstName(MessagesController.getInstance(currentAccount).getUser(userIds.get(0))),
-                        UserObject.getForcedFirstName(MessagesController.getInstance(currentAccount).getUser(userIds.get(1)))
-                    );
-                } else if (userIds.size() == 3) {
-                    string = LocaleController.formatString(
-                        calls ? R.string.InviteCallMessagePremiumBlockedThree : andMessaging ? R.string.InviteMessagePremiumBlockedThree : R.string.InvitePremiumBlockedThree,
-                        UserObject.getForcedFirstName(MessagesController.getInstance(currentAccount).getUser(userIds.get(0))),
-                        UserObject.getForcedFirstName(MessagesController.getInstance(currentAccount).getUser(userIds.get(1))),
-                        UserObject.getForcedFirstName(MessagesController.getInstance(currentAccount).getUser(userIds.get(2)))
-                    );
-                } else {
-                    string = LocaleController.formatPluralString(
-                        calls ? "InviteCallMessagePremiumBlockedMany" : andMessaging ? "InviteMessagePremiumBlockedMany" : "InvitePremiumBlockedMany",
-                            userIds.size() - 2,
-                        UserObject.getForcedFirstName(MessagesController.getInstance(currentAccount).getUser(userIds.get(0))),
-                        UserObject.getForcedFirstName(MessagesController.getInstance(currentAccount).getUser(userIds.get(1)))
-                    );
-                    avatarsImageView.setPlus(userIds.size() - 2, getThemedColor(Theme.key_dialogBackground));
-                }
-                description.setText(AndroidUtilities.replaceTags(string));
-
-                final int blockedInviting = premiumInviteBlockedUsers == null ? 0 : premiumInviteBlockedUsers.size();
-                final int blockedMessaging = premiumMessagingBlockedUsers == null ? 0 : premiumMessagingBlockedUsers.size();
-
-                if ((blockedInviting - blockedMessaging) > 0 && !(blockedInviting == 1 && blockedMessaging == 1) && canSendLink) {
-                    PremiumButtonView premiumButtonView = new PremiumButtonView(context, false, resourcesProvider);
-                    ScaleStateListAnimator.apply(premiumButtonView, .02f, 1.2f);
-                    premiumButtonView.setButton(getString(R.string.InvitePremiumBlockedSubscribe), v -> {
-                        if (parentFragment == null) return;
-                        BaseFragment.BottomSheetParams params = new BaseFragment.BottomSheetParams();
-                        params.transitionFromLeft = true;
-                        params.allowNestedScroll = false;
-                        parentFragment.showAsSheet(new PremiumPreviewFragment("invite_privacy"), params);
-                    });
-                    addView(premiumButtonView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48, 4 + backgroundPaddingLeft / AndroidUtilities.density, 0, 4 + backgroundPaddingLeft / AndroidUtilities.density, 18));
-
-                    TextView or = new TextView(context) {
-                        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-                        @Override
-                        protected void dispatchDraw(Canvas canvas) {
-                            paint.setColor(Theme.multAlpha(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText2, resourcesProvider), .8f));
-                            paint.setStyle(Paint.Style.STROKE);
-                            paint.setStrokeWidth(1);
-                            final float cy = getHeight() / 2f;
-                            int textWidth = 0;
-                            final Layout layout = getLayout();
-                            for (int i = 0; i < layout.getLineCount(); ++i) {
-                                textWidth = Math.max(textWidth, (int) layout.getLineWidth(i));
-                            }
-                            canvas.drawLine(0, cy, getWidth() / 2f - textWidth / 2f - dp(8), cy, paint);
-                            canvas.drawLine(getWidth() / 2f + textWidth / 2f + dp(8), cy, getWidth(), cy, paint);
-                            super.dispatchDraw(canvas);
-                        }
-                    };
-                    or.setGravity(Gravity.CENTER);
-                    or.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText2, resourcesProvider));
-                    or.setText(" " + getString(R.string.InvitePremiumBlockedOr) + " ");
-                    or.setTextSize(14);
-                    addView(or, LayoutHelper.createLinear(190, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 12, 0, 12, 20));
-
-                    title = new TextView(context);
-                    title.setGravity(Gravity.CENTER);
-                    title.setTypeface(AndroidUtilities.bold());
-                    title.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
-                    title.setTextColor(Theme.getColor(Theme.key_dialogTextBlack, resourcesProvider));
-                    title.setText(getString(R.string.InviteBlockedTitle));
-                    addView(title, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 32, 0, 32, 9));
-
-                    description = new TextView(context);
-                    description.setGravity(Gravity.CENTER);
-                    description.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
-                    description.setTextColor(Theme.getColor(Theme.key_dialogTextBlack, resourcesProvider));
-                    if (premiumInviteBlockedUsers.size() <= 1) {
-                        description.setText(getString(R.string.InviteBlockedOneMessage));
-                    } else {
-                        description.setText(getString(R.string.InviteBlockedManyMessage));
-                    }
-                    addView(description, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 32, 0, 32, 19));
-                } else {
-                    ((MarginLayoutParams) description.getLayoutParams()).bottomMargin = dp(8);
-                    premiumButtonSetSubscribe = true;
-                }
-
-                updatePremiumButtonText();
-                return;
-            } else if (type != TYPE_CALL_RESTRICTED) {
+            if (type != TYPE_CALL_RESTRICTED) {
                 limitPreviewView = new LimitPreviewView(context, icon, currentValue, premiumLimit, percent, resourcesProvider);
                 limitPreviewView.setBagePosition(position);
                 limitPreviewView.setType(type);
                 limitPreviewView.defaultCount.setVisibility(View.GONE);
-                if (premiumLocked) {
-                    limitPreviewView.setPremiumLocked();
-                } else {
-                    if (UserConfig.getInstance(currentAccount).isPremium() || isVeryLargeFile) {
-                        limitPreviewView.premiumCount.setVisibility(View.GONE);
-                        if (type == TYPE_LARGE_FILE) {
-                            limitPreviewView.defaultCount.setText("2 GB");
-                        } else {
-                            limitPreviewView.defaultCount.setText(Integer.toString(defaultLimit));
-                        }
-                        limitPreviewView.defaultCount.setVisibility(View.VISIBLE);
-                    }
-                }
+                limitPreviewView.setPremiumLocked();
 
                 if (type == TYPE_PUBLIC_LINKS || type == TYPE_TO0_MANY_COMMUNITIES) {
                     limitPreviewView.setDelayedAnimation();
@@ -939,7 +730,7 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView {
             title.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
             title.setGravity(Gravity.CENTER);
 
-            addView(title, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 0, premiumLocked ? 8 : 22, 0, 10));
+            addView(title, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 0, 8, 0, 10));
             description = new TextView(context);
             description.setText(AndroidUtilities.replaceTags(descriptionStr));
             description.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
@@ -1110,20 +901,15 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView {
             if (loading) {
                 loadingRow = rowCount++;
             } else if (!(type == TYPE_ADD_MEMBERS_RESTRICTED && !canSendLink)) {
-                if (
-                    !(type == TYPE_ADD_MEMBERS_RESTRICTED && !MessagesController.getInstance(currentAccount).premiumFeaturesBlocked() && (premiumInviteBlockedUsers != null && !premiumInviteBlockedUsers.isEmpty() || premiumMessagingBlockedUsers != null && premiumMessagingBlockedUsers.size() >= restrictedUsers.size())) ||
-                    !(premiumInviteBlockedUsers != null && premiumInviteBlockedUsers.size() == 1 && premiumMessagingBlockedUsers != null && premiumMessagingBlockedUsers.size() == 1 && canSendLink)
-                ) {
-                    chatStartRow = rowCount;
-                    if (type == TYPE_ADD_MEMBERS_RESTRICTED || type == TYPE_CALL_RESTRICTED) {
-                        rowCount += restrictedUsers.size();
-                    } else if (type == TYPE_TO0_MANY_COMMUNITIES) {
-                        rowCount += inactiveChats.size();
-                    } else {
-                        rowCount += chats.size();
-                    }
-                    chatEndRow = rowCount;
+                chatStartRow = rowCount;
+                if (type == TYPE_ADD_MEMBERS_RESTRICTED || type == TYPE_CALL_RESTRICTED) {
+                    rowCount += restrictedUsers.size();
+                } else if (type == TYPE_TO0_MANY_COMMUNITIES) {
+                    rowCount += inactiveChats.size();
+                } else {
+                    rowCount += chats.size();
                 }
+                chatEndRow = rowCount;
                 if (chatEndRow - chatStartRow > 1) {
                     emptyViewDividerRow = rowCount++;
                 }
