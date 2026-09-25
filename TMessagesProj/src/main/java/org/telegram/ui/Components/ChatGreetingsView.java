@@ -11,7 +11,6 @@ import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
@@ -38,13 +37,8 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.SvgHelper;
 import org.telegram.messenger.UserObject;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.BottomSheet;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.Components.Premium.PremiumButtonView;
-import org.telegram.ui.Components.Premium.StarParticlesView;
-import org.telegram.ui.LaunchActivity;
-import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.Stories.recorder.HintView2;
 
 import java.util.Locale;
@@ -117,23 +111,22 @@ public class ChatGreetingsView extends LinearLayout {
 
     private RLottieImageView premiumIconView;
     private TextView premiumTextView;
-    private TextView premiumButtonView;
 
     private boolean premiumLock;
-    private boolean isSuggest;
 
     public void resetPremiumLock() {
-        setPremiumLock(false, null, null, null);
+        setPremiumLock(false, null);
     }
-    public void setPremiumLock(boolean lock, CharSequence text, CharSequence buttonText, View.OnClickListener onButtonClick) {
-        setPremiumLock(lock, false, text, buttonText, onButtonClick);
+    public void setPremiumLock(boolean lock, CharSequence text) {
+        setPremiumLock(lock, false, text);
     }
 
-
-    public void setPremiumLock(boolean lock, boolean isSuggestion, CharSequence text, CharSequence buttonText, View.OnClickListener onButtonClick) {
+    // LoogriGram: the lock explains itself and offers nothing. Upstream had a
+    // button under it - "Unlock" with Premium, or a suggestion's - that the
+    // getter already kept out of the layout.
+    public void setPremiumLock(boolean lock, boolean isSuggestion, CharSequence text) {
         if (premiumLock == lock) return;
         premiumLock = lock;
-        isSuggest = isSuggestion;
         if (premiumLock) {
             if (premiumIconView == null) {
                 premiumIconView = new RLottieImageView(getContext());
@@ -162,62 +155,6 @@ public class ChatGreetingsView extends LinearLayout {
             premiumTextView.setMaxWidth(HintView2.cutInFancyHalf(premiumTextView.getText(), premiumTextView.getPaint()));
             premiumTextView.setTextColor(getThemedColor(Theme.key_chat_serviceText));
             premiumTextView.setLineSpacing(dp(2f), 1f);
-            if (premiumButtonView == null) {
-                premiumButtonView = new TextView(getContext()) {
-                    StarParticlesView.Drawable starParticlesDrawable;
-
-                    @Override
-                    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
-                        super.onLayout(changed, left, top, right, bottom);
-                        starParticlesDrawable = new StarParticlesView.Drawable(10);
-                        starParticlesDrawable.type = 100;
-                        starParticlesDrawable.isCircle = false;
-                        starParticlesDrawable.roundEffect = true;
-                        starParticlesDrawable.useRotate = false;
-                        starParticlesDrawable.useBlur = true;
-                        starParticlesDrawable.checkBounds = true;
-                        starParticlesDrawable.size1 = 1;
-                        starParticlesDrawable.k1 = starParticlesDrawable.k2 = starParticlesDrawable.k3 = 0.98f;
-                        starParticlesDrawable.paused = false;
-                        starParticlesDrawable.speedScale = 0f;
-                        starParticlesDrawable.minLifeTime = 750;
-                        starParticlesDrawable.randLifeTime = 750;
-                        starParticlesDrawable.init();
-
-                        AndroidUtilities.rectTmp.set(0, 0, getWidth(), getHeight());
-                        starParticlesDrawable.rect.set(AndroidUtilities.rectTmp);
-                        starParticlesDrawable.rect2.set(AndroidUtilities.rectTmp);
-                        starParticlesDrawable.resetPositions();
-
-                        clipPath.reset();
-                        clipPath.addRoundRect(AndroidUtilities.rectTmp, getHeight() / 2f, getHeight() / 2f, Path.Direction.CW);
-                    }
-
-                    private final Path clipPath = new Path();
-                    @Override
-                    protected void onDraw(Canvas canvas) {
-                        if (starParticlesDrawable != null) {
-                            canvas.save();
-                            canvas.clipPath(clipPath);
-                            starParticlesDrawable.onDraw(canvas);
-                            canvas.restore();
-                            invalidate();
-                        }
-                        super.onDraw(canvas);
-                    }
-                };
-                premiumButtonView.setTextAlignment(TEXT_ALIGNMENT_CENTER);
-                premiumButtonView.setGravity(Gravity.CENTER);
-                premiumButtonView.setTypeface(AndroidUtilities.bold());
-                premiumButtonView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
-                premiumButtonView.setPadding(dp(13), dp(5), dp(13), dp(8));
-                premiumButtonView.setBackground(Theme.createSimpleSelectorRoundRectDrawable(dp(15), 0x1e000000, 0x33000000));
-
-                ScaleStateListAnimator.apply(premiumButtonView);
-            }
-            premiumButtonView.setText(buttonText);
-            premiumButtonView.setTextColor(getThemedColor(Theme.key_chat_serviceText));
-            premiumButtonView.setOnClickListener(onButtonClick);
         }
         updateLayout();
     }
@@ -226,13 +163,7 @@ public class ChatGreetingsView extends LinearLayout {
         removeAllViews();
         if (premiumLock) {
             addView(premiumIconView, LayoutHelper.createLinear(78, 78, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 20, 9, 20, 9));
-            final boolean premiumLocked = MessagesController.getInstance(currentAccount).premiumFeaturesBlocked();
-            addView(premiumTextView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 20, 0, 20, premiumLocked ? 13 : 9));
-            if (!premiumLocked) {
-                if (premiumButtonView != null && !TextUtils.isEmpty(premiumButtonView.getText()) || !isSuggest) {
-                    addView(premiumButtonView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, 30, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 20, 2, 20, 13));
-                }
-            }
+            addView(premiumTextView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 20, 0, 20, 13));
         } else {
             addView(titleView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 20, 6, 20, 6));
             addView(descriptionView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 20, 6, 20, 6));
@@ -538,14 +469,12 @@ public class ChatGreetingsView extends LinearLayout {
         imageView.setBackground(Theme.createCircleDrawable(dp(80), Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider)));
         layout.addView(imageView, LayoutHelper.createLinear(80, 80, Gravity.CENTER_HORIZONTAL, 0, 16, 0, 16));
 
-        final boolean premiumLocked = MessagesController.getInstance(currentAccount).premiumFeaturesBlocked();
-
         TextView headerView = new TextView(context);
         headerView.setTypeface(AndroidUtilities.bold());
         headerView.setGravity(Gravity.CENTER);
         headerView.setTextColor(Theme.getColor(Theme.key_dialogTextBlack, resourcesProvider));
         headerView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
-        headerView.setText(LocaleController.getString(premiumLocked ? R.string.PremiumMessageHeaderLocked : R.string.PremiumMessageHeader));
+        headerView.setText(LocaleController.getString(R.string.PremiumMessageHeaderLocked));
         layout.addView(headerView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 12, 0, 12, 0));
 
         TextView descriptionView = new TextView(context);
@@ -557,21 +486,8 @@ public class ChatGreetingsView extends LinearLayout {
             TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(dialogId);
             username = UserObject.getFirstName(user);
         }
-        descriptionView.setText(AndroidUtilities.replaceTags(formatString(premiumLocked ? R.string.PremiumMessageTextLocked : R.string.PremiumMessageText, username, username)));
+        descriptionView.setText(AndroidUtilities.replaceTags(formatString(R.string.PremiumMessageTextLocked, username, username)));
         layout.addView(descriptionView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 12, 9, 12, 19));
-
-        if (!premiumLocked) {
-            PremiumButtonView button2 = new PremiumButtonView(context, true, resourcesProvider);
-            button2.setOnClickListener(v2 -> {
-                BaseFragment lastFragment = LaunchActivity.getLastFragment();
-                if (lastFragment != null) {
-                    lastFragment.presentFragment(new PremiumPreviewFragment("contact"));
-                    sheet.dismiss();
-                }
-            });
-            button2.setOverlayText(LocaleController.getString(R.string.PremiumMessageButton), false, false);
-            layout.addView(button2, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48, Gravity.CENTER_HORIZONTAL, 0, 0, 0, 4));
-        }
 
         sheet.setCustomView(layout);
         sheet.show();

@@ -30798,23 +30798,17 @@ public class ChatActivity extends BaseFragment implements
                     popupLayout.addView(messageSeenLayout, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 44));
                     addGap = true;
                 } else if (showPrivateMessageSeen) {
-                    MessagePrivateSeenView messagePrivateSeenView = new MessagePrivateSeenView(getContext(), MessagePrivateSeenView.TYPE_SEEN, message, () -> {
-                        closeMenu(true);
-                    }, themeDelegate);
+                    MessagePrivateSeenView messagePrivateSeenView = new MessagePrivateSeenView(getContext(), MessagePrivateSeenView.TYPE_SEEN, message, themeDelegate);
                     popupLayout.addView(messagePrivateSeenView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 36));
                     addGap = true;
                 }
                 if (showPrivateMessageEdit) {
-                    MessagePrivateSeenView messagePrivateSeenView = new MessagePrivateSeenView(getContext(), MessagePrivateSeenView.TYPE_EDIT, message, () -> {
-                        closeMenu(true);
-                    }, themeDelegate);
+                    MessagePrivateSeenView messagePrivateSeenView = new MessagePrivateSeenView(getContext(), MessagePrivateSeenView.TYPE_EDIT, message, themeDelegate);
                     popupLayout.addView(messagePrivateSeenView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 36));
                     addGap = true;
                 }
                 if (showPrivateMessageFwdOriginal) {
-                    MessagePrivateSeenView messagePrivateSeenView = new MessagePrivateSeenView(getContext(), MessagePrivateSeenView.TYPE_FORWARD, message, () -> {
-                        closeMenu(true);
-                    }, themeDelegate);
+                    MessagePrivateSeenView messagePrivateSeenView = new MessagePrivateSeenView(getContext(), MessagePrivateSeenView.TYPE_FORWARD, message, themeDelegate);
                     popupLayout.addView(messagePrivateSeenView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 36));
                     addGap = true;
                 }
@@ -31775,18 +31769,13 @@ public class ChatActivity extends BaseFragment implements
             if (mfChat != null && currentChat != null && !ChatObject.canManageMonoForum(currentAccount, currentChat) && currentChat.send_paid_messages_stars <= 0) {
                 final CharSequence title = AndroidUtilities.replaceTags(StarsFormat.replaceStars(
                     formatString(R.string.SuggestionUnlockedStars, DialogObject.getShortName(-mfChat.id)), 1.0f));
-                greetingsViewContainer.setPremiumLock(true, true, title, null, null);
+                greetingsViewContainer.setPremiumLock(true, true, title);
             } else {
                 greetingsViewContainer.resetPremiumLock();
             }
         } else if (getDialogId() != getUserConfig().getClientUserId()) {
             if (userInfo != null && userInfo.contact_require_premium) {
-                greetingsViewContainer.setPremiumLock(!getUserConfig().isPremium(), AndroidUtilities.replaceTags(formatString(getMessagesController().premiumFeaturesBlocked() ? R.string.MessageLockedPremiumLocked : R.string.MessageLockedPremium, DialogObject.getShortName(dialog_id))), LocaleController.getString(R.string.MessagePremiumUnlock), v -> {
-                    BaseFragment fragment = LaunchActivity.getLastFragment();
-                    if (fragment != null) {
-                        fragment.presentFragment(new PremiumPreviewFragment("contact"));
-                    }
-                });
+                greetingsViewContainer.setPremiumLock(!getUserConfig().isPremium(), AndroidUtilities.replaceTags(formatString(R.string.MessageLockedPremiumLocked, DialogObject.getShortName(dialog_id))));
             } else {
                 // LoogriGram: no "charges N Stars per message" and Unlock
                 // button for a user who charges - the compose field already

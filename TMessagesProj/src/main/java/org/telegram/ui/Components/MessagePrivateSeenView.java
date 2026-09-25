@@ -3,13 +3,10 @@ package org.telegram.ui.Components;
 import static org.telegram.messenger.AndroidUtilities.dp;
 
 import android.content.Context;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
-import android.text.Layout;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.util.TypedValue;
@@ -34,13 +31,8 @@ import org.telegram.messenger.UserObject;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_account;
-import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.BottomSheet;
-import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.Components.Premium.PremiumButtonView;
-import org.telegram.ui.LaunchActivity;
-import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 
 import java.util.Date;
@@ -65,17 +57,15 @@ public class MessagePrivateSeenView extends FrameLayout {
     private final int sent_date;
     private final int edit_date;
     private final int fwd_date;
-    private final Runnable dismiss;
 
     private final int messageDiff;
 
-    public MessagePrivateSeenView(Context context, int type, @NonNull MessageObject messageObject, Runnable dismiss, Theme.ResourcesProvider resourcesProvider) {
+    public MessagePrivateSeenView(Context context, int type, @NonNull MessageObject messageObject, Theme.ResourcesProvider resourcesProvider) {
         super(context);
         this.type = type;
 
         currentAccount = messageObject.currentAccount;
         this.resourcesProvider = resourcesProvider;
-        this.dismiss = dismiss;
         messageDiff = ConnectionsManager.getInstance(currentAccount).getCurrentTime() - messageObject.messageOwner.date;
 
         dialogId = messageObject.getDialogId();
@@ -178,7 +168,7 @@ public class MessagePrivateSeenView extends FrameLayout {
 
             if (isPremiumLocked) {
                 setBackground(Theme.createRadSelectorDrawable(Theme.getColor(Theme.key_listSelector, resourcesProvider), 6, 0));
-                setOnClickListener(v -> showSheet(getContext(), currentAccount, dialogId, false, dismiss, this::request, resourcesProvider));
+                setOnClickListener(v -> showSheet(getContext(), currentAccount, dialogId, false, this::request, resourcesProvider));
             } else {
                 setBackground(null);
                 setOnClickListener(null);
@@ -188,11 +178,12 @@ public class MessagePrivateSeenView extends FrameLayout {
 
     public boolean isPremiumLocked = false;
 
-    public static void showSheet(Context context, int currentAccount, long dialogId, boolean lastSeen, Runnable dismiss, Runnable updated, Theme.ResourcesProvider resourcesProvider) {
+    // LoogriGram: offers only the free half - showing ours to see theirs.
+    // Upstream's second half, "or subscribe to Premium", was already switched
+    // off by the getter, which also chose the texts that say nothing of it.
+    public static void showSheet(Context context, int currentAccount, long dialogId, boolean lastSeen, Runnable updated, Theme.ResourcesProvider resourcesProvider) {
         BottomSheet sheet = new BottomSheet(context, false, resourcesProvider);
         sheet.fixNavigationBar(Theme.getColor(Theme.key_dialogBackground, resourcesProvider));
-
-        final boolean premiumLocked = MessagesController.getInstance(currentAccount).premiumFeaturesBlocked();
 
         LinearLayout layout = new LinearLayout(context);
         layout.setOrientation(LinearLayout.VERTICAL);
@@ -223,7 +214,7 @@ public class MessagePrivateSeenView extends FrameLayout {
             TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(dialogId);
             username = UserObject.getFirstName(user);
         }
-        descriptionView.setText(AndroidUtilities.replaceTags(LocaleController.formatString(lastSeen ? (premiumLocked ? R.string.PremiumLastSeenText1Locked : R.string.PremiumLastSeenText1) : (premiumLocked ? R.string.PremiumReadText1Locked : R.string.PremiumReadText1), username)));
+        descriptionView.setText(AndroidUtilities.replaceTags(LocaleController.formatString(lastSeen ? R.string.PremiumLastSeenText1Locked : R.string.PremiumReadText1Locked, username)));
         layout.addView(descriptionView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 32, 9, 32, 19));
 
         ButtonWithCounterView button1 = new ButtonWithCounterView(context, resourcesProvider).setRound();
@@ -272,59 +263,6 @@ public class MessagePrivateSeenView extends FrameLayout {
                 }));
             }
         });
-
-        if (!premiumLocked) {
-            SimpleTextView or = new SimpleTextView(context) {
-                private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-
-                @Override
-                protected void dispatchDraw(Canvas canvas) {
-                    paint.setColor(Theme.getColor(Theme.key_dialogGrayLine, resourcesProvider));
-                    paint.setStyle(Paint.Style.STROKE);
-                    paint.setStrokeWidth(1);
-                    final float cy = getHeight() / 2f;
-                    canvas.drawLine(0, cy, getWidth() / 2f - getTextWidth() / 2f - dp(8), cy, paint);
-                    canvas.drawLine(getWidth() / 2f + getTextWidth() / 2f + dp(8), cy, getWidth(), cy, paint);
-
-                    super.dispatchDraw(canvas);
-                }
-            };
-            or.setGravity(Gravity.CENTER);
-            or.setAlignment(Layout.Alignment.ALIGN_CENTER);
-            or.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText2, resourcesProvider));
-            or.setText(" " + LocaleController.getString(R.string.PremiumOr) + " ");
-            or.setTextSize(14);
-            layout.addView(or, LayoutHelper.createLinear(270, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 12, 17, 12, 17));
-
-            TextView headerView2 = new TextView(context);
-            headerView2.setTypeface(AndroidUtilities.bold());
-            headerView2.setGravity(Gravity.CENTER);
-            headerView2.setTextColor(Theme.getColor(Theme.key_dialogTextBlack, resourcesProvider));
-            headerView2.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20);
-            headerView2.setText(LocaleController.getString(lastSeen ? R.string.PremiumLastSeenHeader2 : R.string.PremiumReadHeader2));
-            layout.addView(headerView2, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 12, 0, 12, 0));
-
-            TextView descriptionView2 = new TextView(context);
-            descriptionView2.setGravity(Gravity.CENTER);
-            descriptionView2.setTextColor(Theme.getColor(Theme.key_dialogTextBlack, resourcesProvider));
-            descriptionView2.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
-            descriptionView2.setText(AndroidUtilities.replaceTags(LocaleController.formatString(lastSeen ? R.string.PremiumLastSeenText2 : R.string.PremiumReadText2, username)));
-            layout.addView(descriptionView2, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 32, 9, 32, 19));
-
-            PremiumButtonView button2 = new PremiumButtonView(context, true, resourcesProvider);
-            button2.setOnClickListener(v2 -> {
-                BaseFragment lastFragment = LaunchActivity.getLastFragment();
-                if (lastFragment != null) {
-                    lastFragment.presentFragment(new PremiumPreviewFragment(lastSeen ? "lastseen" : "readtime"));
-                    sheet.dismiss();
-                    if (dismiss != null) {
-                        dismiss.run();
-                    }
-                }
-            });
-            button2.setOverlayText(LocaleController.getString(lastSeen ? R.string.PremiumLastSeenButton2 : R.string.PremiumReadButton2), false, false);
-            layout.addView(button2, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48, Gravity.CENTER_HORIZONTAL, 0, 0, 0, 4));
-        }
 
         sheet.setCustomView(layout);
         sheet.show();
