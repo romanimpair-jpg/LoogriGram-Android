@@ -6904,20 +6904,15 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
             if (messageIdChanged || messageObject.reactionsChanged || wasPlayingRound != isPlayingRound) {
                 messageObject.reactionsChanged = false;
-                boolean isTag = messageObject.messageOwner != null && messageObject.messageOwner.reactions != null && messageObject.messageOwner.reactions.reactions_as_tags;
                 if (messageObject.shouldDrawReactions() && !messageObject.isExpiredStory() && (currentPosition == null || ((currentPosition.flags & MessageObject.POSITION_FLAG_BOTTOM) != 0))) {
                     boolean isSmall = !messageObject.shouldDrawReactionsInLayout();
                     if (currentPosition != null) {
-                        MessageObject primaryMessage = groupedMessages.findPrimaryMessageObject();
-                        if (!isTag && primaryMessage.messageOwner != null) {
-                            isTag = primaryMessage.messageOwner.reactions != null && primaryMessage.messageOwner.reactions.reactions_as_tags;
-                        }
-                        reactionsLayoutInBubble.setMessage(groupedMessages.findPrimaryMessageObject(), !messageObject.shouldDrawReactionsInLayout(), isTag, resourcesProvider);
+                        reactionsLayoutInBubble.setMessage(groupedMessages.findPrimaryMessageObject(), !messageObject.shouldDrawReactionsInLayout(), resourcesProvider);
                     } else {
-                        reactionsLayoutInBubble.setMessage(messageObject, isSmall, isTag, resourcesProvider);
+                        reactionsLayoutInBubble.setMessage(messageObject, isSmall, resourcesProvider);
                     }
                 } else {
-                    reactionsLayoutInBubble.setMessage(null, false, false, resourcesProvider);
+                    reactionsLayoutInBubble.setMessage(null, false, resourcesProvider);
                 }
             }
 

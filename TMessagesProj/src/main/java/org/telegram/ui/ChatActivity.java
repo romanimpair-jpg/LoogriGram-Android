@@ -2884,7 +2884,6 @@ public class ChatActivity extends BaseFragment implements
             .add(NotificationCenter.channelRightsUpdated)
             .add(NotificationCenter.audioRecordTooShort)
             .add(NotificationCenter.didUpdateReactions)
-            .add(NotificationCenter.savedReactionTagsUpdate)
             .add(NotificationCenter.updateAllMessages)
             .add(NotificationCenter.didUpdateExtendedMedia)
             .add(NotificationCenter.videoLoadingStateChanged)
@@ -8667,11 +8666,8 @@ public class ChatActivity extends BaseFragment implements
         }
 
         // LoogriGram: the strip of Saved Messages tags to filter the chat by was
-        // built here. Tags are Premium's. Building it also loaded the tags' names,
-        // which a bubble still draws on a tag set elsewhere, so that load stays.
-        if (getDialogId() == getUserConfig().getClientUserId()) {
-            getMessagesController().loadSavedReactionTags(false);
-        }
+        // built here, loading the tags' names on the way. Tags are not drawn at
+        // all now, as on desktop.
 
         checkUi_topPanelLayoutWidth();
         topPanelLayout.setBlurredBackground(glassBackgroundDrawableFactory.create(topPanelLayout)
@@ -22060,26 +22056,6 @@ public class ChatActivity extends BaseFragment implements
                     updateMessageAnimated(messageObject, true);
                 }
             });
-        } else if (id == NotificationCenter.savedReactionTagsUpdate) {
-            // LoogriGram: only the tags' names are loaded now, for all of Saved
-            // Messages at once, so this no longer says which chat they are for.
-            if (dialog_id != getUserConfig().getClientUserId()) {
-                return;
-            }
-            doOnIdle(() -> {
-                AndroidUtilities.forEachViews(chatListView, view -> {
-                    if (view instanceof ChatMessageCell) {
-                        MessageObject message = ((ChatMessageCell) view).getMessageObject();
-                        if (message != null) {
-                            message.forceUpdate = true;
-                            message.reactionsChanged = true;
-                        }
-                    }
-                });
-                if (chatAdapter != null) {
-                    chatAdapter.notifyDataSetChanged(true);
-                }
-            });
         } else if (id == NotificationCenter.updateAllMessages) {
             long dialogId = (long) args[0];
             if (dialog_id != dialogId) return;
@@ -30299,8 +30275,9 @@ public class ChatActivity extends BaseFragment implements
                 scrimPopupContainerLayout.addView(optionsView);
             } else {
                 // LoogriGram: in Saved Messages this row offered tags instead of
-                // reactions, with a Premium hint and sheet. Tags are Premium's, so
-                // that chat gets no row.
+                // reactions, with a Premium hint and sheet. That chat takes no
+                // reactions at all, as on desktop; canSetReaction says so too, but a
+                // forwarded channel post can skip it, hence the check here.
                 final boolean savedMessages = getUserConfig().getClientUserId() == getDialogId();
                 reactionsLayout = new ReactionsContainerLayout(ReactionsContainerLayout.TYPE_DEFAULT, ChatActivity.this, contentView.getContext(), currentAccount, getResourceProvider());
                 reactionsLayout.setBackgroundFactory(scrimBlur3Factory, BlurredBackgroundProviderImpl.messageMenuReactionsBackground(resourceProvider));
@@ -30890,9 +30867,9 @@ public class ChatActivity extends BaseFragment implements
         // the star is no longer offered among the reactions.
 
         // LoogriGram: in Saved Messages a reaction is a tag, which only Premium can
-        // set; without Premium this opened the Premium sheet. No tag is set now,
-        // with or without it.
-        if (getDialogId() == getUserConfig().getClientUserId() && primaryMessage.messageOwner != null && (primaryMessage.messageOwner.reactions == null || (primaryMessage.messageOwner.reactions.reactions_as_tags || primaryMessage.messageOwner.reactions.results.isEmpty()))) {
+        // set; without Premium this opened the Premium sheet. Saved Messages takes
+        // no reactions at all, as on desktop (see MessageObject.canSetReaction).
+        if (getDialogId() == getUserConfig().getClientUserId()) {
             return;
         }
 
@@ -42499,10 +42476,9 @@ public class ChatActivity extends BaseFragment implements
             return;
         }
         if (messageObject == null) return;
-        // LoogriGram: a Saved Messages tag, drawn like a reaction, opened a menu to
-        // rename, filter by or remove it, a tap filtered the chat by it, and without
-        // Premium either one opened the Premium sheet. Tags are only drawn now.
-        if (messageObject.areTags()) return;
+        // LoogriGram: a Saved Messages tag opened a menu here to rename, filter by or
+        // remove it. Tags are not drawn at all now (ReactionsLayoutInBubble), so none
+        // is ever pressed.
         if (longpress) {
             cell.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
             FrameLayout scrimPopupContainerLayout = new FrameLayout(getParentActivity()) {

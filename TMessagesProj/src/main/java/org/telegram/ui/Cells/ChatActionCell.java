@@ -484,12 +484,11 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
         }
         if (messageIdChanged || messageObject.reactionsChanged) {
             messageObject.reactionsChanged = false;
-            final boolean isTag = messageObject.messageOwner != null && messageObject.messageOwner.reactions != null && messageObject.messageOwner.reactions.reactions_as_tags;
             if (messageObject.shouldDrawReactions()) {
                 final boolean isSmall = !messageObject.shouldDrawReactionsInLayout();
-                reactionsLayoutInBubble.setMessage(messageObject, isSmall, isTag, themeDelegate);
+                reactionsLayoutInBubble.setMessage(messageObject, isSmall, themeDelegate);
             } else {
-                reactionsLayoutInBubble.setMessage(null, false, false, themeDelegate);
+                reactionsLayoutInBubble.setMessage(null, false, themeDelegate);
             }
         }
         imageReceiver.setAutoRepeatCount(0);

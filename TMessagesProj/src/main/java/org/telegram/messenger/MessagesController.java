@@ -19698,9 +19698,8 @@ public class MessagesController extends BaseController implements NotificationCe
                     } else if (baseUpdate instanceof TL_update.TL_updateRecentReactions) {
                         getMediaDataController().loadRecentAndTopReactions(true);
                     } else if (baseUpdate instanceof TL_update.TL_updateSavedReactionTags) {
-                        // LoogriGram: only the tags' names are kept (see
-                        // loadSavedReactionTags); this reloads them.
-                        loadSavedReactionTags(true);
+                        // LoogriGram: accepted and ignored. No list of Saved Messages
+                        // tags is kept, as on desktop, so there is nothing to reload.
                     } else if (baseUpdate instanceof TL_update.TL_updateFavedStickers) {
                         getMediaDataController().loadRecents(MediaDataController.TYPE_FAVE, false, false, true);
                     } else if (baseUpdate instanceof TL_update.TL_updateContactsReset) {
@@ -23112,102 +23111,9 @@ public class MessagesController extends BaseController implements NotificationCe
         return rec;
     }
 
-    // LoogriGram: Saved Messages tags are Premium's and are not set, renamed or
-    // filtered by any more. What stays is the list of their names, which a
-    // message bubble still draws on a tag set elsewhere. Gone: the per-chat tag
-    // lists, the counts kept in step with every reaction change and deletion,
-    // and renaming.
-    private boolean savedReactionTagsRequested;
-    private TLRPC.TL_messages_savedReactionsTags savedReactionTags;
-
-    public String getSavedTagName(TLRPC.Reaction reaction) {
-        if (savedReactionTags == null) {
-            return null;
-        }
-        for (int i = 0; i < savedReactionTags.tags.size(); ++i) {
-            if (ReactionsLayoutInBubble.reactionsEqual(reaction, savedReactionTags.tags.get(i).reaction)) {
-                return savedReactionTags.tags.get(i).title;
-            }
-        }
-        return null;
-    }
-
-    public void loadSavedReactionTags(boolean force) {
-        if (savedReactionTagsRequested && !force) {
-            return;
-        }
-        savedReactionTagsRequested = true;
-        getMessagesStorage().getStorageQueue().postRunnable(() -> {
-            TLRPC.messages_SavedReactionTags result = null;
-            SQLiteDatabase database = getMessagesStorage().getDatabase();
-            SQLiteCursor cursor = null;
-            try {
-                cursor = database.queryFinalized("SELECT data FROM saved_reaction_tags WHERE topic_id = 0");
-                if (cursor.next()) {
-                    NativeByteBuffer data = cursor.byteBufferValue(0);
-                    if (data != null) {
-                        result = TLRPC.messages_SavedReactionTags.TLdeserialize(data, data.readInt32(true), true);
-                    }
-                }
-            } catch (Exception e) {
-                FileLog.e(e);
-            } finally {
-                if (cursor != null) {
-                    cursor.dispose();
-                    cursor = null;
-                }
-            }
-
-            final TLRPC.messages_SavedReactionTags finalResult = result;
-            AndroidUtilities.runOnUIThread(() -> {
-                if (finalResult instanceof TLRPC.TL_messages_savedReactionsTags) {
-                    savedReactionTags = (TLRPC.TL_messages_savedReactionsTags) finalResult;
-                    getNotificationCenter().postNotificationName(NotificationCenter.savedReactionTagsUpdate);
-                }
-
-                TLRPC.TL_messages_getSavedReactionTags req = new TLRPC.TL_messages_getSavedReactionTags();
-                if (finalResult instanceof TLRPC.TL_messages_savedReactionsTags) {
-                    req.hash = finalResult.hash;
-                }
-                getConnectionsManager().sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
-                    if (res instanceof TLRPC.TL_messages_savedReactionsTags) {
-                        savedReactionTags = (TLRPC.TL_messages_savedReactionsTags) res;
-                        getNotificationCenter().postNotificationName(NotificationCenter.savedReactionTagsUpdate);
-                        saveSavedReactionTags(savedReactionTags);
-                    } else if (res instanceof TLRPC.TL_messages_savedReactionsTagsNotModified && finalResult == null && req.hash == 0) {
-                        savedReactionTags = new TLRPC.TL_messages_savedReactionsTags();
-                        getNotificationCenter().postNotificationName(NotificationCenter.savedReactionTagsUpdate);
-                        saveSavedReactionTags(savedReactionTags);
-                    }
-                }));
-            });
-        });
-    }
-
-    private void saveSavedReactionTags(TLRPC.TL_messages_savedReactionsTags res) {
-        getMessagesStorage().getStorageQueue().postRunnable(() -> {
-            SQLiteDatabase database2 = getMessagesStorage().getDatabase();
-            SQLitePreparedStatement state = null;
-            try {
-                database2.executeFast("DELETE FROM saved_reaction_tags WHERE topic_id = 0").stepThis().dispose();
-                state = database2.executeFast("REPLACE INTO saved_reaction_tags VALUES(?, ?)");
-                state.requery();
-                NativeByteBuffer buffer = new NativeByteBuffer(res.getObjectSize());
-                res.serializeToStream(buffer);
-                state.bindLong(1, 0);
-                state.bindByteBuffer(2, buffer);
-                state.step();
-            } catch (Exception e) {
-                FileLog.e(e);
-            } finally {
-                if (state != null) {
-                    state.dispose();
-                    state = null;
-                }
-            }
-        });
-    }
-
+    // LoogriGram: the Saved Messages tag list - names, counts, per-chat lists -
+    // was loaded, cached and kept in step here. Saved Messages takes no
+    // reactions and shows no tags, as on desktop, so no list is kept.
     private boolean loadingPeerColors, loadingProfilePeerColors;
     public void checkPeerColors(boolean force) {
         if (getUserConfig().getCurrentUser() == null) {

@@ -3958,19 +3958,10 @@ public class MessageObject {
         message.flags |= 1048576;
     }
 
+    // LoogriGram: Saved Messages tags count as no reactions, as on desktop
+    // (history_item.cpp): they are not drawn, so nothing is laid out for them.
     public boolean hasReactions() {
-        return messageOwner.reactions != null && !messageOwner.reactions.results.isEmpty();
-    }
-
-    public boolean hasReaction(ReactionsLayoutInBubble.VisibleReaction reaction) {
-        if (!hasReactions() || reaction == null) return false;
-        for (int i = 0; i < messageOwner.reactions.results.size(); ++i) {
-            TLRPC.ReactionCount rc = messageOwner.reactions.results.get(i);
-            if (reaction.isSame(rc.reaction)) {
-                return true;
-            }
-        }
-        return false;
+        return messageOwner.reactions != null && !messageOwner.reactions.reactions_as_tags && !messageOwner.reactions.results.isEmpty();
     }
 
     public boolean hasChosenReaction(ReactionsLayoutInBubble.VisibleReaction reaction) {
@@ -10014,6 +10005,13 @@ public class MessageObject {
     }
 
     public boolean canSetReaction() {
+        // LoogriGram: a reaction in Saved Messages is a tag, and tags need Premium -
+        // the server refuses them. So Saved Messages takes no reactions at all, as
+        // desktop decided (history_item.cpp, canReact). This closes double-tap and
+        // the reaction rows of the menus there.
+        if (getDialogId() == UserConfig.getInstance(currentAccount).getClientUserId()) {
+            return false;
+        }
         if (isEphemeral()) {
             return false;
         }
@@ -12815,12 +12813,6 @@ public class MessageObject {
         highestQuality = VideoPlayer.getQualityForPlayer(videoQualities);
         thumbQuality = VideoPlayer.getQualityForThumb(videoQualities);
         cachedQuality = VideoPlayer.getCachedQuality(videoQualities);
-    }
-
-    public boolean areTags() {
-        if (messageOwner == null) return false;
-        if (messageOwner.reactions == null) return false;
-        return messageOwner.reactions.reactions_as_tags;
     }
 
     public boolean openedInViewer;

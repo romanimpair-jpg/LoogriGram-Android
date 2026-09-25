@@ -699,7 +699,8 @@ public class TodoItemMenu extends Dialog {
         }
 
         // LoogriGram: in Saved Messages this row offered tags, which only Premium
-        // can set. That chat gets no row, as in the message menu.
+        // can set. That chat takes no reactions at all, as on desktop; see the
+        // message menu for why canSetReaction alone is not enough here.
         if (isReactionsAvailable && chatActivity.getUserConfig().getClientUserId() != chatActivity.getDialogId()) {
             ReactionsContainerLayout reactionsLayout = new ReactionsContainerLayout(ReactionsContainerLayout.TYPE_DEFAULT, chatActivity, getContext(), chatActivity.getCurrentAccount(), resourcesProvider);
             reactionsLayout.forceAttachToParent = true;

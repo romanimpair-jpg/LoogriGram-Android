@@ -230,7 +230,6 @@ public class NotificationCenter {
     public static final int dialogPhotosUpdate = totalEvents++;
     public static final int channelRecommendationsLoaded = totalEvents++;
     public static final int savedMessagesDialogsUpdate = totalEvents++;
-    public static final int savedReactionTagsUpdate = totalEvents++;
     public static final int userIsPremiumBlockedUpadted = totalEvents++;
     public static final int storyAlbumsCollectionsUpdate = totalEvents++;
     public static final int emojiKeywordsLoaded = totalEvents++;
