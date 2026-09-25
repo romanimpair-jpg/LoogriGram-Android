@@ -136,7 +136,6 @@ import org.telegram.ui.BasePermissionsActivity;
 import org.telegram.ui.Business.ChatAttachAlertQuickRepliesLayout;
 import org.telegram.ui.Business.QuickRepliesController;
 import org.telegram.ui.ChatActivity;
-import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
 import org.telegram.ui.Components.blur3.BlurredBackgroundWithFadeDrawable;
 import org.telegram.ui.Components.blur3.DownscaleScrollableNoiseSuppressor;
@@ -161,7 +160,6 @@ import org.telegram.ui.PassportActivity;
 import org.telegram.ui.PhotoPickerActivity;
 import org.telegram.ui.PhotoPickerSearchActivity;
 import org.telegram.ui.PhotoViewer;
-import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.Stars.MessageSuggestionOfferSheet;
 import org.telegram.ui.Stories.recorder.HintView2;
 import org.telegram.ui.Stories.recorder.StoryEntry;
@@ -4255,10 +4253,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             currentAttachLayout.scrollToTop();
             return;
         }
-        if (layout == todoLayout && !UserConfig.getInstance(currentAccount).isPremium()) {
-            new PremiumFeatureBottomSheet(baseFragment, PremiumPreviewFragment.PREMIUM_FEATURE_TODO, false).show();
-            return;
-        }
 
         animatorToggleCaptionSupported.setValue(newId == LAYOUT_TYPE_PHOTO, animated);
         animatorCurrentVisibleLayout.replace(newId, animated);
@@ -6115,7 +6109,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     } else if (position == todoButton) {
                         attachButton.setTextAndIcon(12, getString(R.string.Todo), GlassTabView.TabAnimation.CHECKLIST);
                         attachButton.setTag(12);
-                        needPremium = true;
                     } else if (position == stickerButton) {
                         attachButton.setTextAndIcon(LAYOUT_TYPE_STICKERS, getString(R.string.ChatSticker), GlassTabView.TabAnimation.STICKER);
                         attachButton.setTag(LAYOUT_TYPE_STICKERS);
@@ -6262,7 +6255,9 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 if (pollsEnabled) {
                     pollButton = buttonsCount++;
                 }
-                if (todoEnabled) {
+                // LoogriGram: creating a to-do list is Premium's, so its button is
+                // drawn only for a Premium account; upstream drew it badged for all.
+                if (todoEnabled && UserConfig.getInstance(currentAccount).isPremium()) {
                     todoButton = buttonsCount++;
                 }
                 // LoogriGram: no Contact button - see openContactsLayout.

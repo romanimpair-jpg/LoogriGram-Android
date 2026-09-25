@@ -32042,9 +32042,7 @@ public class ChatActivity extends BaseFragment implements
             }
             case OPTION_EDIT_TODO:
             case OPTION_ADD_TO_TODO: {
-                if (!getUserConfig().isPremium()) {
-                    showDialog(new PremiumFeatureBottomSheet(ChatActivity.this, PremiumPreviewFragment.PREMIUM_FEATURE_TODO, false));
-                } else {
+                if (getUserConfig().isPremium()) {
                     final MessageObject object = selectedObject;
                     final boolean adding = option == OPTION_ADD_TO_TODO;
                     final int oldAnswersCount;
@@ -38188,11 +38186,8 @@ public class ChatActivity extends BaseFragment implements
                     .show(true);
                 return false;
             } else if (!getUserConfig().isPremium()) {
-                BulletinFactory.of(ChatActivity.this)
-                    .createSimpleBulletin(R.raw.star_premium_2, AndroidUtilities.premiumText(getString(R.string.TodoPremiumRequired), () -> {
-                        showDialog(new PremiumFeatureBottomSheet(ChatActivity.this, PremiumPreviewFragment.PREMIUM_FEATURE_TODO, false));
-                    }))
-                    .show(true);
+                // LoogriGram: checking off a task is Premium's; refused without
+                // the bulletin that offered it.
                 return false;
             } else {
                 long send_as = ChatObject.getSendAsPeerId(currentChat, chatInfo, true);
@@ -43021,12 +43016,14 @@ public class ChatActivity extends BaseFragment implements
                                     icons.add(R.drawable.msg_pollstop);
                                 }
                             } else if (media instanceof TLRPC.TL_messageMediaToDo) {
-                                if (message.canEditMessage(currentChat)) {
+                                // LoogriGram: editing or adding to a to-do list is Premium's,
+                                // so neither is listed without it.
+                                if (getUserConfig().isPremium() && message.canEditMessage(currentChat)) {
                                     items.add(getString(R.string.EditToDo));
                                     options.add(OPTION_EDIT_TODO);
                                     icons.add(R.drawable.msg_edit);
                                 }
-                                if (message.canAppendToTodo()) {
+                                if (getUserConfig().isPremium() && message.canAppendToTodo()) {
                                     items.add(getString(R.string.AddTasks));
                                     options.add(OPTION_ADD_TO_TODO);
                                     icons.add(R.drawable.msg_addbot);
