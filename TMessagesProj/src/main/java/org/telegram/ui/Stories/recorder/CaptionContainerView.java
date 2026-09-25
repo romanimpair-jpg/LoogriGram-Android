@@ -369,7 +369,9 @@ public class CaptionContainerView extends FrameLayout {
                 limitTextView.cancelAnimation();
                 limitTextView.setText(limitText);
                 limitTextView.setTextColor(codePointCount >= limit ? 0xffEC7777 : 0xffffffff);
-                if (codePointCount > limit && !UserConfig.getInstance(currentAccount).isPremium() && codePointCount < getCaptionPremiumLimit() && codePointCount > lastLength && (captionLimitToast() || MessagesController.getInstance(currentAccount).premiumFeaturesBlocked())) {
+                // LoogriGram: typing past the limit shakes the counter for everyone;
+                // upstream offered Premium's longer limit here instead.
+                if (codePointCount > limit && codePointCount > lastLength) {
                     AndroidUtilities.shakeViewSpring(limitTextView, shiftDp = -shiftDp);
                     BotWebViewVibrationEffect.APP_ERROR.vibrate();
                 }
@@ -845,10 +847,6 @@ public class CaptionContainerView extends FrameLayout {
 
     protected void onCaptionLimitUpdate(boolean overLimit) {
 
-    }
-
-    protected boolean captionLimitToast() {
-        return false;
     }
 
     protected void drawBlurBitmap(Bitmap bitmap, float amount) {

@@ -266,7 +266,6 @@ public class PhotoViewerCaptionEnterView extends FrameLayout implements Notifica
         });
         messageEditText.addTextChangedListener(new TextWatcher() {
             boolean processChange = false;
-            boolean heightShouldBeChanged;
 
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i2, int i3) {
@@ -275,13 +274,10 @@ public class PhotoViewerCaptionEnterView extends FrameLayout implements Notifica
             @Override
             public void onTextChanged(CharSequence charSequence, int start, int before, int count) {
                 if (lineCount != messageEditText.getLineCount()) {
-                    heightShouldBeChanged = (messageEditText.getLineCount() >= 4) != (lineCount >= 4);
                     if (!isInitLineCount && messageEditText.getMeasuredWidth() > 0) {
                         onLineCountChanged(lineCount, messageEditText.getLineCount());
                     }
                     lineCount = messageEditText.getLineCount();
-                } else {
-                    heightShouldBeChanged = false;
                 }
 
                 if (innerTextChange) {
@@ -361,15 +357,6 @@ public class PhotoViewerCaptionEnterView extends FrameLayout implements Notifica
                     });
                     sendButtonColorAnimator.setDuration(150).start();
                 }
-
-                if (photoViewer.getParentAlert() != null && !photoViewer.getParentAlert().captionLimitBulletinShown && !MessagesController.getInstance(currentAccount).premiumFeaturesBlocked() && !UserConfig.getInstance(currentAccount).isPremium() && codePointCount > MessagesController.getInstance(currentAccount).captionLengthLimitDefault && codePointCount < MessagesController.getInstance(currentAccount).captionLengthLimitPremium) {
-                    photoViewer.getParentAlert().captionLimitBulletinShown = true;
-                    if (heightShouldBeChanged) {
-                        AndroidUtilities.runOnUIThread(()->photoViewer.showCaptionLimitBulletin(parent), 300);
-                    } else {
-                        photoViewer.showCaptionLimitBulletin(parent);
-                    }
-                }
             }
         });
 
@@ -388,10 +375,6 @@ public class PhotoViewerCaptionEnterView extends FrameLayout implements Notifica
                 try {
                     captionLimitView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
                 } catch (Exception ignored) {}
-
-                if (!MessagesController.getInstance(currentAccount).premiumFeaturesBlocked() && MessagesController.getInstance(currentAccount).captionLengthLimitPremium > codePointCount) {
-                    photoViewer.showCaptionLimitBulletin(parent);
-                }
                 return;
             }
             delegate.onCaptionEnter();

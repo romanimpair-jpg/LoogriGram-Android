@@ -56,8 +56,6 @@ import android.text.Spanned;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.style.CharacterStyle;
-import android.text.style.ClickableSpan;
-import android.text.style.ForegroundColorSpan;
 import android.text.style.ImageSpan;
 import android.text.style.URLSpan;
 import android.util.Pair;
@@ -2370,45 +2368,6 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
             }
 
             @Override
-            protected boolean captionLimitToast() {
-                if (MessagesController.getInstance(currentAccount).premiumFeaturesBlocked()) {
-                    return false;
-                }
-                Bulletin visibleBulletin = Bulletin.getVisibleBulletin();
-                if (visibleBulletin != null && visibleBulletin.tag == 2) {
-                    return false;
-                }
-                final int symbols = MessagesController.getInstance(currentAccount).storyCaptionLengthLimitPremium;
-                final int times = Math.round((float) symbols / MessagesController.getInstance(currentAccount).storyCaptionLengthLimitDefault);
-                SpannableStringBuilder text = AndroidUtilities.replaceTags(formatPluralString("CaptionPremiumSubtitle", times, "" + symbols));
-                int startIndex = text.toString().indexOf("__");
-                if (startIndex >= 0) {
-                    text.replace(startIndex, startIndex + 2, "");
-                    int endIndex = text.toString().indexOf("__");
-                    if (endIndex >= 0) {
-                        text.replace(endIndex, endIndex + 2, "");
-                        text.setSpan(new ForegroundColorSpan(Theme.getColor(Theme.key_chat_messageLinkIn, resourcesProvider)), startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        text.setSpan(new ClickableSpan() {
-                            @Override
-                            public void updateDrawState(@NonNull TextPaint ds) {
-                                ds.setUnderlineText(false);
-                            }
-
-                            @Override
-                            public void onClick(@NonNull View widget) {
-                                openPremium();
-                            }
-                        }, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    }
-                }
-                Bulletin bulletin = BulletinFactory.of(captionContainer, resourcesProvider).createSimpleBulletin(R.raw.caption_limit, getString(R.string.CaptionPremiumTitle), text);
-                bulletin.tag = 2;
-                bulletin.setDuration(5000);
-                bulletin.show(false);
-                return true;
-            }
-
-            @Override
             protected void onCaptionLimitUpdate(boolean overLimit) {
                 previewButtons.setShareEnabled(!videoError && !overLimit && (!MessagesController.getInstance(currentAccount).getStoriesController().hasStoryLimit(getCount()) || (outputEntry != null && outputEntry.isEdit)));
             }
@@ -3182,7 +3141,6 @@ public class StoryRecorder implements NotificationCenter.NotificationCenterDeleg
         if (captionEdit != null && captionEdit.isCaptionOverLimit()) {
             BotWebViewVibrationEffect.APP_ERROR.vibrate();
             AndroidUtilities.shakeViewSpring(captionEdit.limitTextView, shiftDp = -shiftDp);
-            captionEdit.captionLimitToast();
             return;
         }
         if (outputEntry == null || !outputEntry.isEdit && outputEntry.botId == 0) {

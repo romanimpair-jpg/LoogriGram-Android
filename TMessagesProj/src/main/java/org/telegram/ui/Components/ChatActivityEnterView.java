@@ -461,7 +461,6 @@ public class ChatActivityEnterView extends FrameLayout implements
     public BotCommandsMenuContainer botCommandsMenuContainer;
     private BotCommandsMenuView.BotCommandsAdapter botCommandsAdapter;
 
-    private boolean captionLimitBulletinShown;
 
     // Send as... stuff
     @Nullable
@@ -5661,7 +5660,6 @@ public class ChatActivityEnterView extends FrameLayout implements
             private boolean nextChangeIsSend;
             private CharSequence prevText;
             private boolean ignorePrevTextChange;
-            boolean heightShouldBeChanged;
 
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i2, int i3) {
@@ -5694,15 +5692,12 @@ public class ChatActivityEnterView extends FrameLayout implements
                     setEmojiButtonImage(false, true);
                 }
                 if (lineCount != messageEditText.getLineCount()) {
-                    heightShouldBeChanged = (messageEditText.getLineCount() >= 4) != (lineCount >= 4);
                     if (!isInitLineCount && messageEditText.getMeasuredWidth() > 0) {
                         onLineCountChanged(lineCount, messageEditText.getLineCount());
                     }
                     lineCount = messageEditText.getLineCount();
                     showAiButton(lineCount > 2 && charSequence != null && !TextUtils.isEmpty(charSequence.toString().trim()));
                     showRichButton(lineCount > 2 && charSequence != null && !TextUtils.isEmpty(charSequence.toString().trim()));
-                } else {
-                    heightShouldBeChanged = false;
                 }
 
                 if (innerTextChange == 1) {
@@ -5803,15 +5798,6 @@ public class ChatActivityEnterView extends FrameLayout implements
                     botCommandsMenuContainer.dismiss();
                 }
                 checkBotMenu();
-
-                if (editingCaption && !captionLimitBulletinShown && !MessagesController.getInstance(currentAccount).premiumFeaturesBlocked() && !UserConfig.getInstance(currentAccount).isPremium() && codePointCount > MessagesController.getInstance(currentAccount).captionLengthLimitDefault && codePointCount < MessagesController.getInstance(currentAccount).captionLengthLimitPremium) {
-                    captionLimitBulletinShown = true;
-                    if (heightShouldBeChanged) {
-                        AndroidUtilities.runOnUIThread(() -> showCaptionLimitBulletin(), 300);
-                    } else {
-                        showCaptionLimitBulletin();
-                    }
-                }
 
                 showAiButton(lineCount > 2 && editable != null && !TextUtils.isEmpty(editable.toString().trim()));
                 checkIsEphemeralMessage(true);
@@ -7273,17 +7259,6 @@ public class ChatActivityEnterView extends FrameLayout implements
         return false;
     }
 
-    private void showCaptionLimitBulletin() {
-        if (parentFragment == null || !ChatObject.isChannelAndNotMegaGroup(parentFragment.getCurrentChat())) {
-            return;
-        }
-        BulletinFactory.of(parentFragment).createCaptionLimitBulletin(MessagesController.getInstance(currentAccount).captionLengthLimitPremium, () -> {
-            if (parentFragment != null) {
-                parentFragment.presentFragment(new PremiumPreviewFragment("caption_limit"));
-            }
-        }).show();
-    }
-
     private static class BusinessLinkPresetMessage {
         public String text;
         public ArrayList<TLRPC.MessageEntity> entities;
@@ -7359,10 +7334,6 @@ public class ChatActivityEnterView extends FrameLayout implements
                 try {
                     captionLimitView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
                 } catch (Exception ignored) {}
-            }
-
-            if (!MessagesController.getInstance(currentAccount).premiumFeaturesBlocked() && MessagesController.getInstance(currentAccount).captionLengthLimitPremium > codePointCount) {
-                showCaptionLimitBulletin();
             }
             return;
         }

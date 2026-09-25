@@ -1101,7 +1101,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     private final boolean forceDarkTheme;
     private final boolean showingFromDialog;
 
-    protected boolean captionLimitBulletinShown = false;
 
     private abstract static class AttachButtonBase extends FrameLayout {
         protected GlassTabView glassTabView;
@@ -3338,11 +3337,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     writeButton.invalidate();
                 }
 
-                if (!captionLimitBulletinShown && !MessagesController.getInstance(currentAccount).premiumFeaturesBlocked() && !UserConfig.getInstance(currentAccount).isPremium() && codepointCount > MessagesController.getInstance(currentAccount).captionLengthLimitDefault && codepointCount < MessagesController.getInstance(currentAccount).captionLengthLimitPremium) {
-                    captionLimitBulletinShown = true;
-                    showCaptionLimitBulletin(parentFragment);
-                }
-
                 if (captionAbove) {
                     showAiButton(topCommentTextView.getEditText().getLineCount() > 2 && !TextUtils.isEmpty(topCommentTextView.getText().toString().trim()));
                 }
@@ -3520,9 +3514,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     try {
                         writeButton.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
                     } catch (Exception ignored) {}
-                    if (!MessagesController.getInstance(currentAccount).premiumFeaturesBlocked() && MessagesController.getInstance(currentAccount).captionLengthLimitPremium > codepointCount) {
-                        showCaptionLimitBulletin(parentFragment);
-                    }
                     if (messageSendPreview != null) {
                         messageSendPreview.dismiss(false);
                         messageSendPreview = null;
@@ -4073,10 +4064,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             try {
                 writeButton.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
             } catch (Exception ignored) {}
-
-            if (!MessagesController.getInstance(currentAccount).premiumFeaturesBlocked() && MessagesController.getInstance(currentAccount).captionLengthLimitPremium > codepointCount) {
-                showCaptionLimitBulletin(baseFragment);
-            }
             return;
         }
         if (editingMessageObject == null && baseFragment instanceof ChatActivity && ((ChatActivity) baseFragment).isInScheduleMode()) {
@@ -4125,19 +4112,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
 
     public int getCommentTextViewTop() {
         return commentTextViewLocation[1];
-    }
-
-    private void showCaptionLimitBulletin(BaseFragment parentFragment) {
-        if (!(parentFragment instanceof ChatActivity) || !ChatObject.isChannelAndNotMegaGroup(((ChatActivity) parentFragment).getCurrentChat())) {
-            return;
-        }
-
-        BulletinFactory.of(sizeNotifierFrameLayout, resourcesProvider).createCaptionLimitBulletin(MessagesController.getInstance(currentAccount).captionLengthLimitPremium, () -> {
-            dismiss(true);
-            if (parentFragment != null) {
-                parentFragment.presentFragment(new PremiumPreviewFragment("caption_limit"));
-            }
-        }).show();
     }
 
     @Override
@@ -6621,7 +6595,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         if (baseFragment != null) {
             AndroidUtilities.setLightStatusBar(this, baseFragment.isLightStatusBar());
         }
-        captionLimitBulletinShown = false;
         super.dismiss();
         allowPassConfirmationAlert = false;
     }

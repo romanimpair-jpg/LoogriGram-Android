@@ -6779,14 +6779,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             }
 
             @Override
-            protected boolean captionLimitToast() {
-                if (limitBulletin != null && Bulletin.getVisibleBulletin() == limitBulletin) {
-                    return false;
-                }
-                return showCaptionLimitBulletin(containerView);
-            }
-
-            @Override
             protected void setupMentionContainer() {
                 mentionContainer.getAdapter().setAllowStickers(false);
                 mentionContainer.getAdapter().setAllowBots(false);
@@ -6918,14 +6910,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 }
                 drawCaptionBlur(canvas, blur, Theme.multAlpha(text ? 0xFF787878 : 0xFF262626, alpha), Theme.multAlpha(thisView ? (text ? 0 : 0x33000000) : 0x44000000, alpha), false, !text, !text && thisView);
                 canvas.restore();
-            }
-
-            @Override
-            protected boolean captionLimitToast() {
-                if (limitBulletin != null && Bulletin.getVisibleBulletin() == limitBulletin) {
-                    return false;
-                }
-                return showCaptionLimitBulletin(containerView);
             }
 
             @Override
@@ -7318,9 +7302,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             if (captionEdit.isCaptionOverLimit()) {
                 AndroidUtilities.shakeViewSpring(captionEdit.limitTextView, shiftDp = -shiftDp);
                 BotWebViewVibrationEffect.APP_ERROR.vibrate();
-                if (!MessagesController.getInstance(currentAccount).premiumFeaturesBlocked() && MessagesController.getInstance(currentAccount).captionLengthLimitPremium > captionEdit.getCodePointCount()) {
-                    showCaptionLimitBulletin(containerView);
-                }
                 return;
             }
             if (parentChatActivity != null && parentChatActivity.isInScheduleMode() && !parentChatActivity.isEditingMessageMedia()) {
@@ -7829,25 +7810,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 v.invalidate();
             }
         }
-    }
-
-    private Bulletin limitBulletin;
-    public boolean showCaptionLimitBulletin(FrameLayout view) {
-        if (!(parentFragment instanceof ChatActivity) || !ChatObject.isChannelAndNotMegaGroup(((ChatActivity) parentFragment).getCurrentChat())) {
-            return false;
-        }
-        limitBulletin = BulletinFactory.of(view, resourcesProvider).createCaptionLimitBulletin(MessagesController.getInstance(currentAccount).captionLengthLimitPremium, ()->{
-            closePhoto(false, false);
-            if (parentAlert != null) {
-                parentAlert.dismiss(true);
-            }
-            if (parentFragment != null) {
-                parentFragment.presentFragment(new PremiumPreviewFragment("caption_limit"));
-            }
-        }).setOnHideListener(() -> {
-            limitBulletin = null;
-        }).show();
-        return true;
     }
 
     public ChatAttachAlert getParentAlert() {
