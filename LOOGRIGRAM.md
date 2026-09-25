@@ -18,8 +18,9 @@ depends on.
 |---|---|
 | Fork, CI, degoogling | Done. No Google bytecode in the APK, verified in the dex. The last Google-shaped code went on 2026-09-23/24: the Play install referrer and the four Chromecast stubs |
 | Installed on the phone | **Yes.** `gf20af361`, installed 2026-09-22 over `adb` (`adb install -r` succeeded, so the key matched); launches clean. Not rechecked since: the phone was not on USB on 2026-09-24. `gaf5d70a5` built green on 2026-09-22 but was never installed |
-| Latest release | `g1ec92ae0` (2026-09-23) until the full build below lands. **Do not install it**: it crashes opening any collectible gift (trap 0e, fixed in `ad610a75`). A buggy Latest is superseded by the next build, never deleted - the user's rule |
-| Pending build | Full build of `f2478ebb` dispatched 2026-09-25 ([run 36054333640](https://github.com/romanimpair-jpg/LoogriGram-Android/actions/runs/36054333640)); its result was not read here - the user reports builds. If green it is `gf2478ebb` and supersedes `g1ec92ae0`. Everything after it (the wallet and the rename) is compile-only |
+| Latest release | `gf2478ebb` (2026-09-25, green), until the full build below lands. Never installed. It superseded the crashing `g1ec92ae0` (trap 0e) - a buggy Latest is superseded by the next build, never deleted, the user's rule |
+| Pending build | Full build of `b81ce49d` dispatched 2026-09-26 ([run 36198351640](https://github.com/romanimpair-jpg/LoogriGram-Android/actions/runs/36198351640)); its result was not read here - the user reports builds. If green it is `gb81ce49d`. **It is the first full build carrying `14fae893`, which changed C++** (the native flood-wait report) - no compile ever saw that |
+| Premium pass | Well along (2026-09-25/26, 31 commits): the getters' non-Stories sites are gone, and 48 Premium-screen entry points remain of ~100. See "Remaining work" |
 | App name | Done — launcher, in-app strings, and the two wordmark screens |
 | Phone contacts | **Never touched.** Permissions, account and sync adapter all gone |
 | Updater | Ours, from this repo's releases. Checks on every cold start, then hourly; manual row in Settings (2026-09-21). Since `ec7c9d55` (2026-09-24) a download waiting to be installed no longer blocks the check: a newer release replaces it and one no longer Latest is dropped - the installed `gf20af361` does not have that yet. **Nobody has seen the automatic check find a release** |
@@ -61,17 +62,44 @@ The installed APK: ~44.5 MB, `lib/arm64-v8a/libtmessages.49.so` only, signed
 fingerprint is how to confirm a later build carries the same key - and it must,
 because Android will refuse an update signed with any other.
 
-### Start here next session (written 2026-09-25)
+### Start here next session (written 2026-09-26)
 
-1. **Ask the user how full build `f2478ebb` went** (run 36054333640). If it
-   failed, fix from `--log-failed`. If green, `gf2478ebb` supersedes the
-   crashing `g1ec92ae0`; don't install `g1ec92ae0`.
-2. **The commits after it are compile-only**: `9f187fe3`..`b5cf00ef`
-   (the market value row, the Premium tier, the wallet, LimitPreviewView,
-   Stars settings, the GiftsController rename); all six compile, the last
-   in run 36068062946. The next full build needs the user's go, as always.
+1. **Ask the user how full build `b81ce49d` went** (run 36198351640). If
+   it failed, fix from `--log-failed` - suspect the C++ of `14fae893`
+   first (ConnectionsManager.cpp, Defines.h, TgNetWrapper.cpp), the only
+   native change since `gf2478ebb`. A failure in "Install Android SDK
+   components" with "Error on ZipFile unknown archive" is a corrupt NDK
+   download: just redispatch. Every commit up to `b81ce49d` compiles.
+2. **Install it** (phone on USB; `adb` at
+   `C:\Users\Loogris\platform-tools\adb.exe`). Nothing since `gf20af361`
+   has been on the phone, so everything below is unseen.
 3. **After installing, look first where a mistake would be silent** - a
-   compile draws nothing:
+   compile draws nothing. From 2026-09-25/26:
+   - **Saved Messages**: no tags anywhere, no reactions (double-tap, the
+     menu's row); search there works as plain search; forwarding to it
+     shows the ordinary "Forwarded to Saved Messages" bulletin;
+   - **the emoji panel and pack sheets**: no padlocked packs, a mixed
+     pack shows its free half, Premium packs add without "Unlock"; paste
+     text holding a custom emoji into a chat and send it - it must go out,
+     the Premium ones as plain emoji;
+   - **global search**: no Posts tab; the chat list's downloads shortcut
+     must still open the Downloads tab (`80072e50` replaced a fixed index
+     with a lookup by type);
+   - **Settings**: Folders won't drag All Chats and shows no tags switch;
+     Privacy has no voice-messages or "who can message me" rows;
+     Language has no "Translate Entire Chats"; Archive's non-contacts
+     switch only shows where the server allows it;
+   - **compose**: no AI button anywhere (chat field, attach captions,
+     photo caption); hints still hide on a touch (`77f0cb10`); the attach
+     menu has no Checklist button; a long press on Send offers no
+     padlocked effects;
+   - **a voice message past the free trials**: the bulletin reads "...
+     Wait until <date> to use it again." (`LoogriGramTranscribeTrialsOver`);
+   - **a group that lets members send as a channel**: the popup lists only
+     free identities and still scrolls to the current one;
+   - **a channel's similar-channels strip**: no "Unlock Similar" tile.
+
+   From 2026-09-24/25, also still unseen:
    - **the chat list**: tapping a chat must open *that* chat. `61055a34`
      changed `DialogsAdapter`'s position offsets when it took out the
      "Recently viewed" section, and an off-by-one there shows nothing else;
@@ -109,8 +137,10 @@ because Android will refuse an update signed with any other.
      pages; a collectible's (`telegram_nft`) preview and button remain;
    - **limit sheets** (LimitPreviewView lost its dark-gradient paths): the
      bars and counters look as before.
-4. **Then continue** - see "Remaining work": the Premium pass (started:
-   the getter sites), then desktop parity.
+4. **Then continue** - see "Remaining work": the rest of the Premium
+   pass, then desktop parity. **When a decision is needed, first check
+   what the desktop fork decided** (its `LOOGRIGRAM.md` and `LoogriGram:`
+   comments) and copy it - the user's rule, 2026-09-25.
 
 Still unverified from earlier sessions, since a compile cannot see layout:
    - chat list: a gift or payment arriving must not move the chat to the top
@@ -306,6 +336,25 @@ Each of these was hit here. Do not relearn them.
    PowerShell tool refuses `git rm "$dir/$file"` in a loop as "removal on
    /" - run `git rm` from a Python script. And measure the numbers in a
    commit message (`--numstat -w`, file counts) before writing them.
+
+0i. **What the checkers still miss, seen 2026-09-25/26.** Two compiles
+   failed, each on one line. Deleting a field left its `@Keep` stacked on
+   the next field's own - "Keep is not a repeatable annotation type"
+   (`e16abbc3`); `android-edit-tools/check_annotations.py` catches that
+   now. And a removed field was still read once, in a touch handler far
+   from the rest (`77f0cb10`) - trap 12 again: check_swallowed sees
+   methods only, so grep every removed field. Three smaller lessons: a
+   substring anchor matches its deeper-indented twin too (`"\n" + indent`
+   makes it unique); a fixed index into a list you just shortened breaks
+   silently (`showDownloads`, `80072e50`); and `ed.unwrap`'s clash check
+   is file-wide, so read the enclosing method before passing
+   `allow_names`. `dropimports.py` (local, beside `ed.py`) removes what
+   `new_unused_imports.py` reports.
+
+   Large removals went well delegated to a subagent (Saved Messages tags,
+   3,800 lines; custom emoji, 1,350) with a brief carrying these rules,
+   the checkers and the desktop decision to copy - then reviewed here:
+   re-run the checkers, read the risky joins, compile.
 
 1. **A dependency you remove may be supplying something unrelated.** Dropping
    `androidx.mediarouter` with Chromecast took `androidx.media` with it, which
@@ -790,35 +839,45 @@ In rough order of how much is left behind:
   is a second, smaller case of the same thing - it is a (dialog, message) pair
   that merely lives in the class, and `MessagesController` keys its delivery
   reports on it.
-- **Premium economy - next.** The three forced getters (`premiumFeaturesBlocked`,
-  `premiumPurchaseBlocked`, `starsPurchaseAvailable`: 79 uses in 35 files on
-  2026-09-25) still leave every branch behind them in place. Work them file
-  by file: substitute the constant, delete the branch, then whatever it
-  alone called (most sites cascade - caption-limit bulletins, the
-  transcription and translation trials, speed promos, premium restore and
-  Christmas hints, stealth mode, story quality, the Premium privacy rows).
-  A first batch was scripted but not applied (MessagesController's two
-  `filterPremiumStickers` early returns, EmojiAnimationsOverlay's
-  premium-sticker bulletin and its set fetch, PremiumGradient,
-  AppIconsSelectorCell, FloatingToolbar, UserCell's star/status). Note
-  `PremiumPreviewFragment.onFragmentCreate` returns false under the getter,
-  so that screen never opens - but it is referenced ~290 times from 70
-  files, mostly for its feature constants, so it wants the constants moved
-  out before it goes. Settings and the
-  own-profile menu lost their rows on 2026-09-21, and 2026-09-22 turned the
-  gift entry points into real deletions. Known pieces left:
-  `PremiumPreviewFragment` (2,416 lines; its `if (false)` blocks, the "no
-  ads" row, and `RevenueSharingAdsInfoBottomSheet` with
-  `channelRestrictSponsoredLevelMin`); `PremiumPreviewBottomSheet`, which
-  still uses the boosts package's `TextInfoCell`; `GiftPremiumBottomSheet`
-  and the tier cells; the emoji-status picker in `DialogsActivity` and
-  `ProfileActivity`; `UserSelectorBottomSheet`'s Premium, Stars and gift
-  modes, with the `t.me/premium_multigift` link and
-  `BoostRepository.loadGiftOptions`; transcription's Premium lock (the
-  boosted-group case stays, see "Boosts"); `ThemePreviewActivity`'s Premium
-  lock on its second apply button; and the upgrade page's "tradable" and
-  "wearable" rows. Desktop also stopped drawing *other people's* emoji
-  statuses and badges - check what is left of that here.
+- **Premium economy - well along, continue here.** Where it stands on
+  2026-09-26:
+  - **The three forced getters** (`premiumFeaturesBlocked`,
+    `premiumPurchaseBlocked`, `starsPurchaseAvailable`) have 15 uses left,
+    none a live feature outside Stories: Stories (PeerStoriesView 4,
+    StoryRecorder 1, SelfStoryViewsPage 1, DialogsActivity's stealth-mode
+    item 1), PremiumPreviewFragment 1, AppIconsSelectorCell 1, two
+    commented-out mentions in ProfileActivity's name-row emoji status,
+    BillingController's comment, and the definitions. They go once
+    Stories and the Premium screens do.
+  - **48 Premium-screen entry points remain** (`new PremiumPreviewFragment(`,
+    `PremiumFeatureBottomSheet`, `PremiumPreviewBottomSheet`,
+    `GiftPremiumBottomSheet`), down from ~100: 15 in Stories, 5 in the
+    article editor and AIEditorAlert, 3 inside the Premium sheets
+    themselves; the rest are Business (quick replies, greetings -
+    ChatActivity, ChatAttachAlertQuickRepliesLayout), emoji statuses
+    (ChatActivity's status taps, ProfileActivity, SetupEmojiStatusSheet,
+    BotWebViewContainer), PrivacyControlActivity (4: the non-contacts
+    info link, the gift-limit bulletin), ProfileActivity (sharing-disable,
+    stories), PeerColorActivity:1511 (name colour - tangled with the
+    collectible colours kept earlier; read before cutting),
+    ReactionsDoubleTapManageActivity, TranslateAlert3,
+    RevenueSharingAdsInfoBottomSheet, MessagePreviewView:1062 (forwarding
+    articles), BulletinFactory:948 (voice), SharedMediaLayout,
+    RichMessageLayout and AppIconsSelectorCell with
+    PremiumAppIconsPreviewView (the three Premium launcher icons and their
+    aliases and artwork go together).
+  - **Then delete the Premium screens** - `PremiumPreviewFragment`
+    (2,416 lines), `PremiumFeatureBottomSheet`, `PremiumPreviewBottomSheet`,
+    `GiftPremiumBottomSheet`, the `ui/Components/Premium` preview views -
+    after moving out what ordinary code still uses: the feature constants
+    (`PREMIUM_FEATURE_*`, mostly arguments to the sheets, so few survive
+    the entry points), `PremiumGradient`, `PremiumLockIconView`,
+    `StarParticlesView`, `LimitReachedBottomSheet`.
+  - **Policy still differing from desktop**: desktop treats our account
+    as never Premium everywhere (`premium()` gone). Android still keeps
+    `UserConfig.isPremium()` branches and only removes what sells Premium
+    to an account without it. Converging means taking the non-Premium
+    path at every `isPremium()` site - a large, mechanical pass for later.
 - **Desktop parity** (decided 2026-09-24: "Whatever desktop removed android
   should remove too", so don't ask per feature). The checklist is the
   desktop `LOOGRIGRAM.md`:
@@ -830,8 +889,13 @@ In rough order of how much is left behind:
     deleted;
   - its "Changed defaults".
 
-  Keep what desktop kept on purpose, which those sections also list. None of
-  it has been surveyed here yet.
+  Keep what desktop kept on purpose, which those sections also list.
+  Started 2026-09-26: AI compose's buttons and `addstyle/` link are gone
+  (`962d6d07`). Its second half is the article editor - `ui/iv`, ~27,000
+  lines, which shares classes with the rendering of received rich
+  messages, so split display from editor first (as GiftViews was split
+  from GiftSheet) - and with it AIEditorAlert, AiButtonDrawable and
+  AiTonesController, whose last users it is.
 - **Smaller leftovers.** `ChatMessageCell.getStarsPrice` and
   `starsPriceText` (the Stars someone else paid to send a group message -
   check what desktop does); `LiveCommentsView`'s reads of
@@ -939,6 +1003,25 @@ In rough order of how much is left behind:
   nine dead Stars settings; and StarsController renamed GiftsController,
   with MessageId in messenger. Full build `f2478ebb` covers the first
   eight; every commit compiles (last: `b5cf00ef`, run 36068062946).
+
+- **Done on 2026-09-25/26, for the record** (31 commits,
+  `cf3005e1..b81ce49d`, about 7,860 lines net; full build `b81ce49d`
+  pending): the Premium pass through every getter site outside Stories -
+  the caption-limit promo (which still showed in a channel's photo
+  viewer), story-caption formatting's padlock, the download-speed promo
+  with its native report, transcription's upsell (the free trial stays,
+  with desktop's wording), reaction padlocks, the limit sheets' way past
+  the limit, the chat list's Premium hints, the Premium-only Settings
+  rows, the profile's Premium bits. Then live offers no getter guarded:
+  dragging All Chats, the archive switch, more accounts, the schedule
+  Repeat row, the bot limit, the summary limit, Unlock Similar, the
+  Posts tab. Then whole features: Saved Messages tags (deleted with
+  their drawing and Saved Messages' reactions, as desktop), to-do lists,
+  the wallpaper "for both" button, folder tags, send-as identities,
+  message effects, the avatar constructor, two Premium links, and custom
+  emoji and Premium stickers (packs left out, nothing padlocked, a pasted
+  Premium emoji becomes a plain one - all as desktop). AI compose's first
+  half. Two one-line compile fixes (trap 0i).
 
 ### Then
 
