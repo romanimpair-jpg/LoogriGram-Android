@@ -1,7 +1,6 @@
 package org.telegram.ui.Components;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
-import static org.telegram.messenger.AndroidUtilities.replaceSingleLink;
 import static org.telegram.messenger.AndroidUtilities.replaceSingleLinkBold;
 import static org.telegram.messenger.LocaleController.formatPluralStringComma;
 import static org.telegram.messenger.LocaleController.formatString;
@@ -43,7 +42,6 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.EditTextCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.LaunchActivity;
-import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 
 import java.util.ArrayList;
@@ -302,20 +300,9 @@ public class CreateBotAlert {
                                 getString(R.string.CreateManagedBotLimitTitle),
                                 highlightBotFather(
                                     context,
-                                    replaceSingleLink(
-                                        premium ?
-                                            formatString(R.string.CreateManagedBotLimitText, m.config.botsCreateLimitPremium.get()) :
-                                            formatString(R.string.CreateManagedBotLimitTextPremium, m.config.botsCreateLimitPremium.get(), m.config.botsCreateLimitDefault.get()),
-                                        Theme.getColor(Theme.key_undo_cancelColor, resourcesProvider),
-                                        () -> {
-                                            sheet.dismiss();
-
-                                            BaseFragment lastFragment = LaunchActivity.getSafeLastFragment();
-                                            if (lastFragment != null) {
-                                                lastFragment.presentFragment(new PremiumPreviewFragment("create_bot"));
-                                            }
-                                        }
-                                    ),
+                                    // LoogriGram: the limit that applies; the text for an
+                                    // account without Premium offered Premium's higher one.
+                                    formatString(R.string.CreateManagedBotLimitText, premium ? m.config.botsCreateLimitPremium.get() : m.config.botsCreateLimitDefault.get()),
                                     () -> {
                                         sheet.dismiss();
                                         Browser.openUrl(context, "https://t.me/BotFather?start=deletebot");

@@ -31,12 +31,8 @@ import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.Vector;
 import org.telegram.tgnet.tl.TL_iv;
 import org.telegram.tgnet.tl.TL_stories;
-import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.Components.Bulletin;
-import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.TranslateAlert2;
-import org.telegram.ui.LaunchActivity;
-import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.RestrictedLanguagesSelectActivity;
 
 import java.util.ArrayList;
@@ -989,17 +985,8 @@ public class TranslateController extends BaseController {
                 loadingSummarizations.remove(id);
                 callback.run(res);
             } else if (err != null) {
-                if ("SUMMARY_FLOOD_PREMIUM".equalsIgnoreCase(err.text)) {
-                    final BaseFragment lastFragment = LaunchActivity.getSafeLastFragment();
-                    if (lastFragment != null) {
-                        BulletinFactory.of(lastFragment)
-                            .createSimpleBulletin(R.raw.star_premium_2, getString(R.string.SummaryLimit), getString(R.string.SummaryLimitUpgrade), () -> {
-                                lastFragment.presentFragment(new PremiumPreviewFragment("summarize_limit"));
-                            })
-                            .setDuration(Bulletin.DURATION_PROLONG)
-                            .show(true);
-                    }
-                }
+                // LoogriGram: SUMMARY_FLOOD_PREMIUM got a bulletin whose whole text
+                // was "unlimited in Telegram Premium", with an Upgrade button.
                 loadingSummarizations.remove(id);
                 callback.run(null);
             }

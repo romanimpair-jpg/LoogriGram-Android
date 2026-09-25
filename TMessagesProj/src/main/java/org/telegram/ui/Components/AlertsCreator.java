@@ -140,7 +140,6 @@ import org.telegram.ui.NotificationsCustomSettingsActivity;
 import org.telegram.ui.NotificationsSettingsActivity;
 import org.telegram.ui.PhotoViewer;
 import org.telegram.ui.PremiumFeatureCell;
-import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.PrivacyControlActivity;
 import org.telegram.ui.ProfileActivity;
 import org.telegram.ui.ProfileNotificationsActivity;
@@ -4241,8 +4240,6 @@ public class AlertsCreator {
         container.setOrientation(LinearLayout.VERTICAL);
         frameLayout.addView(container, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
 
-        FrameLayout bulletinContainer = new FrameLayout(context);
-        frameLayout.addView(bulletinContainer, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 100, Gravity.FILL_HORIZONTAL | Gravity.BOTTOM, 0, 0, 0, 120));
 
         FrameLayout titleLayout = new FrameLayout(context);
         container.addView(titleLayout, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.TOP, 22, 0, 0, 4));
@@ -4436,7 +4433,10 @@ public class AlertsCreator {
         final FrameLayout repeatContainer;
         final TextView repeatTextView;
         final Runnable updateRepeatText;
-        if ((dialogId == selfUserId || true) && !doNotShowReminder) {
+        // LoogriGram: repeating a scheduled message is Premium's, so the repeat
+        // row is drawn only for a Premium account. Upstream drew it for everyone
+        // and offered Premium on a tap.
+        if (!doNotShowReminder && UserConfig.getInstance(UserConfig.selectedAccount).isPremium()) {
             repeatContainer = new FrameLayout(context);
 
             final int textColor = datePickerColors != null ? datePickerColors.textColor : Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider);
@@ -4521,20 +4521,6 @@ public class AlertsCreator {
 
         if (repeatTextView != null) {
             repeatTextView.setOnClickListener(v -> {
-                if (!UserConfig.getInstance(UserConfig.selectedAccount).isPremium()) {
-                    BulletinFactory.of(bulletinContainer, resourcesProvider)
-                        .createSimpleBulletin(R.raw.star_premium_2, AndroidUtilities.premiumText(LocaleController.getString(R.string.MessageScheduledRepeatPremium), () -> {
-                            final BaseFragment lastFragment = LaunchActivity.getSafeLastFragment();
-                            if (lastFragment == null) return;
-                            BaseFragment.BottomSheetParams params = new BaseFragment.BottomSheetParams();
-                            params.transitionFromLeft = true;
-                            params.allowNestedScroll = false;
-                            lastFragment.showAsSheet(new PremiumPreviewFragment("schedule_repeat"), params);
-                        }))
-                        .show();
-                    return;
-                }
-
                 final ItemOptions o = ItemOptions.makeOptions(bottomSheet.container, resourcesProvider, repeatContainer);
                 for (int i = 0; i < repeatValues.length; ++i) {
                     final int value = repeatValues[i];

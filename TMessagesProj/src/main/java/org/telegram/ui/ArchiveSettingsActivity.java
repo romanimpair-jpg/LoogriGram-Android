@@ -1,6 +1,5 @@
 package org.telegram.ui;
 
-import static org.telegram.messenger.AndroidUtilities.dp;
 
 import android.content.Context;
 import android.text.TextUtils;
@@ -26,7 +25,6 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
-import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.ListView.AdapterWithDiffUtils;
@@ -44,6 +42,10 @@ public class ArchiveSettingsActivity extends BaseFragment implements Notificatio
     private TLRPC.GlobalPrivacySettings settings;
     
     private int shiftDp = -3;
+
+    private boolean canArchiveNonContacts() {
+        return getUserConfig().isPremium() || getMessagesController().autoarchiveAvailable;
+    }
 
     @Override
     public View createView(Context context) {
@@ -96,16 +98,7 @@ public class ArchiveSettingsActivity extends BaseFragment implements Notificatio
                 ((TextCheckCell) view).setChecked(settings.keep_archived_folders);
                 changed = true;
             } else if (item.id == 7) {
-                if (!getUserConfig().isPremium() && !getMessagesController().autoarchiveAvailable && !settings.archive_and_mute_new_noncontact_peers) {
-                    final Bulletin.SimpleLayout layout = new Bulletin.SimpleLayout(getContext(), getResourceProvider());
-                    layout.textView.setText(AndroidUtilities.replaceSingleTag(LocaleController.getString(R.string.UnlockPremium), Theme.key_undo_cancelColor, 0, () -> {
-                        presentFragment(new PremiumPreviewFragment("settings"));
-                    }));
-                    layout.textView.setSingleLine(false);
-                    layout.textView.setPadding(0, dp(4), 0, dp(4));
-                    layout.imageView.setImageResource(R.drawable.msg_settings_premium);
-                    Bulletin.make(this, layout, 3500).show();
-
+                if (!canArchiveNonContacts()) {
                     AndroidUtilities.shakeViewSpring(view, shiftDp = -shiftDp);
                     BotWebViewVibrationEffect.APP_ERROR.vibrate();
                     return;
@@ -144,9 +137,14 @@ public class ArchiveSettingsActivity extends BaseFragment implements Notificatio
             items.add(new ItemInner(VIEW_TYPE_SHADOW, 5, LocaleController.getString("ArchiveSettingUnmutedChatsInfo")));
         }
 
-        items.add(new ItemInner(VIEW_TYPE_HEADER, 6, LocaleController.getString("NewChatsFromNonContacts")));
-        items.add(new ItemInner(VIEW_TYPE_CHECK, 7, LocaleController.getString("NewChatsFromNonContactsCheck")));
-        items.add(new ItemInner(VIEW_TYPE_SHADOW, 8, LocaleController.getString("ArchiveAndMuteInfo")));
+        // LoogriGram: where archiving new non-contacts needs Premium, the switch
+        // shows only while it is on, to turn it off. Upstream drew it padlocked
+        // and offered Premium on a tap.
+        if (canArchiveNonContacts() || settings != null && settings.archive_and_mute_new_noncontact_peers) {
+            items.add(new ItemInner(VIEW_TYPE_HEADER, 6, LocaleController.getString("NewChatsFromNonContacts")));
+            items.add(new ItemInner(VIEW_TYPE_CHECK, 7, LocaleController.getString("NewChatsFromNonContactsCheck")));
+            items.add(new ItemInner(VIEW_TYPE_SHADOW, 8, LocaleController.getString("ArchiveAndMuteInfo")));
+        }
 
         if (adapter == null) {
             return;
@@ -224,7 +222,7 @@ public class ArchiveSettingsActivity extends BaseFragment implements Notificatio
                     cell.setCheckBoxIcon(0);
                 } else if (item.id == 7) {
                     checked = settings.archive_and_mute_new_noncontact_peers;
-                    cell.setCheckBoxIcon(getUserConfig().isPremium() || getMessagesController().autoarchiveAvailable ? 0 : R.drawable.permission_locked);
+                    cell.setCheckBoxIcon(0);
                 } else {
                     return;
                 }

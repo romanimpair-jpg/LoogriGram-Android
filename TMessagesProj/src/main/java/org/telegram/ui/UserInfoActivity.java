@@ -432,15 +432,10 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
                 items.add(SettingsActivity.AccountCell.Factory.of(i, accountNumbers.get(i)));
             }
             if (!UserConfig.hasPremiumOnAccounts()) {
+                // LoogriGram: how many more accounts fit, without the sentence
+                // after it that sold Premium for more.
                 final int moreAccounts = Math.max(0, UserConfig.getMaxAccountCount() - UserConfig.getActivatedAccountsCount());
-                items.add(UItem.asShadow(
-                    TextUtils.concat(
-                        moreAccounts > 0 ? LocaleController.formatPluralStringComma("AddAccountInfo1", moreAccounts) + " " : "",
-                        replaceSingleTag(LocaleController.formatPluralStringComma("AddAccountInfo2", UserConfig.getMaxAccountCount()), () -> {
-                            presentFragment(new PremiumPreviewFragment("add_account"));
-                        })
-                    )
-                ));
+                items.add(UItem.asShadow(moreAccounts > 0 ? LocaleController.formatPluralStringComma("AddAccountInfo1", moreAccounts) : null));
             } else {
                 items.add(UItem.asShadow(null));
             }
