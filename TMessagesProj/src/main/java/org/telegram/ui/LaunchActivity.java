@@ -42,11 +42,8 @@ import android.os.SystemClock;
 import android.provider.ContactsContract;
 import android.provider.MediaStore;
 import android.provider.Settings;
-import android.text.Spannable;
 import android.text.SpannableStringBuilder;
-import android.text.TextPaint;
 import android.text.TextUtils;
-import android.text.style.ClickableSpan;
 import android.util.Base64;
 import android.util.SparseIntArray;
 import android.view.ActionMode;
@@ -2224,15 +2221,9 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                                 }
                                 case "tg": {
                                     String url = data.toString();
-                                    if (url.startsWith("tg:premium_offer") || url.startsWith("tg://premium_offer")) {
-                                        String finalUrl = url;
-                                        AndroidUtilities.runOnUIThread(() -> {
-                                        if (!actionBarLayout.getFragmentStack().isEmpty()) {
-                                            BaseFragment fragment = actionBarLayout.getFragmentStack().get(0);
-                                            Uri uri = Uri.parse(finalUrl);
-                                            fragment.presentFragment(new PremiumPreviewFragment(uri.getQueryParameter("ref")));
-                                        }});
-                                    } else if (url.startsWith("tg:resolve") || url.startsWith("tg://resolve")) {
+                                    // LoogriGram: tg://premium_offer, which opened the Premium
+                                    // screen, stood first here; it is an unknown link now.
+                                    if (url.startsWith("tg:resolve") || url.startsWith("tg://resolve")) {
                                         url = url.replace("tg:resolve", "tg://telegram.org").replace("tg://resolve", "tg://telegram.org");
                                         data = Uri.parse(url);
                                         username = data.getQueryParameter("domain");
@@ -6785,19 +6776,8 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                     String msg = (String) args[1];
                     int start = msg.indexOf('*'), end = msg.indexOf('*', start + 1);
                     if (start != -1 && end != -1 && start != end) {
+                        // LoogriGram: the starred words stay, no longer a link to Premium.
                         span.replace(start, end + 1, msg.substring(start + 1, end));
-                        span.setSpan(new ClickableSpan() {
-                            @Override
-                            public void onClick(@NonNull View widget) {
-                                getActionBarLayout().presentFragment(new PremiumPreviewFragment("gift"));
-                            }
-
-                            @Override
-                            public void updateDrawState(@NonNull TextPaint ds) {
-                                super.updateDrawState(ds);
-                                ds.setUnderlineText(false);
-                            }
-                        }, start, end - 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
                     }
                 }
                 builder.setMessage(span);
