@@ -34,7 +34,6 @@ import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.ThemePreviewMessagesCell;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.Components.Reactions.ReactionsLayoutInBubble;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.SimpleThemeDescription;
@@ -131,7 +130,7 @@ public class ReactionsDoubleTapManageActivity extends BaseFragment implements No
                         break;
                     default:
                     case 1: {
-                        view = new AvailableReactionCell(context, true, true);
+                        view = new AvailableReactionCell(context, true);
                     }
                     break;
                 }
@@ -144,7 +143,7 @@ public class ReactionsDoubleTapManageActivity extends BaseFragment implements No
                     case 1:
                         AvailableReactionCell reactionCell = (AvailableReactionCell) holder.itemView;
                         TLRPC.TL_availableReaction react = getAvailableReactions().get(position - reactionsStartRow);
-                        reactionCell.bind(react, react.reaction.contains(MediaDataController.getInstance(currentAccount).getDoubleTapReaction()), currentAccount);
+                        reactionCell.bind(react, react.reaction.contains(MediaDataController.getInstance(currentAccount).getDoubleTapReaction()));
                         break;
                 }
             }
@@ -174,10 +173,6 @@ public class ReactionsDoubleTapManageActivity extends BaseFragment implements No
         listView.setOnItemClickListener((view, position) -> {
             if (view instanceof AvailableReactionCell) {
                 AvailableReactionCell cell = (AvailableReactionCell) view;
-                if (cell.locked && !getUserConfig().isPremium()) {
-                    showDialog(new PremiumFeatureBottomSheet(this, PremiumPreviewFragment.PREMIUM_FEATURE_REACTIONS, true));
-                    return;
-                }
                 MediaDataController.getInstance(currentAccount).setDoubleTapReaction(cell.react.reaction);
                 listView.getAdapter().notifyItemRangeChanged(0, listView.getAdapter().getItemCount());
             } else if (view instanceof SetDefaultReactionCell) {
@@ -359,8 +354,20 @@ public class ReactionsDoubleTapManageActivity extends BaseFragment implements No
         getNotificationCenter().removeObserver(this, NotificationCenter.currentUserPremiumStatusChanged);
     }
 
+    // LoogriGram: an account without Premium is not offered Premium's
+    // reactions at all, rather than offered them padlocked.
     private List<TLRPC.TL_availableReaction> getAvailableReactions() {
-        return getMediaDataController().getReactionsList();
+        final List<TLRPC.TL_availableReaction> all = getMediaDataController().getReactionsList();
+        if (getUserConfig().isPremium()) {
+            return all;
+        }
+        final ArrayList<TLRPC.TL_availableReaction> free = new ArrayList<>(all.size());
+        for (int i = 0; i < all.size(); ++i) {
+            if (!all.get(i).premium) {
+                free.add(all.get(i));
+            }
+        }
+        return free;
     }
 
     @Override

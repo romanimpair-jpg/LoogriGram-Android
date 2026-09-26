@@ -168,7 +168,7 @@ public class ChatReactionsEditActivity extends BaseFragment implements Notificat
                 switch (viewType) {
                     default:
                     case TYPE_REACTION: {
-                        return new RecyclerListView.Holder(new AvailableReactionCell(context, false, false));
+                        return new RecyclerListView.Holder(new AvailableReactionCell(context, false));
                     }
                     case TYPE_INFO: {
                         TextInfoPrivacyCell infoCell = new TextInfoPrivacyCell(context);
@@ -217,7 +217,7 @@ public class ChatReactionsEditActivity extends BaseFragment implements Notificat
                     case TYPE_REACTION:
                         AvailableReactionCell reactionCell = (AvailableReactionCell) holder.itemView;
                         TLRPC.TL_availableReaction react = availableReactions.get(position - (isChannel ? 2 : 3));
-                        reactionCell.bind(react, chatReactions.contains(react.reaction), currentAccount);
+                        reactionCell.bind(react, chatReactions.contains(react.reaction));
                         break;
                 }
             }

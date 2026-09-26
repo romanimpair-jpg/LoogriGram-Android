@@ -2,16 +2,12 @@ package org.telegram.ui.Cells;
 
 import android.content.Context;
 import android.graphics.Canvas;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffColorFilter;
-import android.graphics.drawable.Drawable;
 import android.view.Gravity;
 import android.view.View;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DocumentObject;
@@ -19,9 +15,7 @@ import org.telegram.messenger.Emoji;
 import org.telegram.messenger.ImageLocation;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.NotificationCenter;
-import org.telegram.messenger.R;
 import org.telegram.messenger.SvgHelper;
-import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
@@ -38,12 +32,9 @@ public class AvailableReactionCell extends FrameLayout {
     private CheckBox2 checkBox;
     private View overlaySelectorView;
     public TLRPC.TL_availableReaction react;
-    private boolean canLock;
-    public boolean locked;
 
-    public AvailableReactionCell(@NonNull Context context, boolean checkbox, boolean canLock) {
+    public AvailableReactionCell(@NonNull Context context, boolean checkbox) {
         super(context);
-        this.canLock = canLock;
 
         textView = new SimpleTextView(context);
         NotificationCenter.listenEmojiLoading(textView);
@@ -87,7 +78,7 @@ public class AvailableReactionCell extends FrameLayout {
      * @param react Reaction to bind
      * @param checked If view should be checked
      */
-    public void bind(TLRPC.TL_availableReaction react, boolean checked, int currentAccount) {
+    public void bind(TLRPC.TL_availableReaction react, boolean checked) {
         boolean animated = false;
         if (react != null && this.react != null && react.reaction.equals(this.react.reaction)) {
             animated = true;
@@ -96,16 +87,6 @@ public class AvailableReactionCell extends FrameLayout {
         textView.setText(Emoji.replaceEmoji(react.title, textView.getPaint().getFontMetricsInt(), false));
         SvgHelper.SvgDrawable svgThumb = DocumentObject.getSvgThumb(react.static_icon, Theme.key_windowBackgroundGray, 1.0f);
         imageView.setImage(ImageLocation.getForDocument(react.activate_animation), ReactionsUtils.ACTIVATE_ANIMATION_FILTER, "tgs", svgThumb, react);
-
-        locked = canLock && react.premium && !UserConfig.getInstance(currentAccount).isPremium();
-        if (locked) {
-            Drawable drawable = ContextCompat.getDrawable(getContext(), R.drawable.other_lockedfolders2);
-            drawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_stickers_menu), PorterDuff.Mode.MULTIPLY));
-            textView.setRightDrawable(drawable);
-
-        } else {
-            textView.setRightDrawable(null);
-        }
 
         setChecked(checked, animated);
     }
