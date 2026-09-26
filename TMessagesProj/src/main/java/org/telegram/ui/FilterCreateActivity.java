@@ -1557,7 +1557,7 @@ public class FilterCreateActivity extends BaseFragment {
                     view = new HeaderCellColorPreview(mContext);
                     break;
                 case VIEW_TYPE_COLOR:
-                    view = new PeerColorGrid(getContext(), PeerColorGrid.TYPE_FOLDER_TAG, currentAccount, resourceProvider);
+                    view = new PeerColorGrid(getContext(), resourceProvider);
                     break;
                 case VIEW_TYPE_SHADOW_TEXT:
                 default:

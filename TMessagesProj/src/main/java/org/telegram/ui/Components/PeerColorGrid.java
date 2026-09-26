@@ -12,18 +12,17 @@ import android.graphics.RectF;
 import android.view.MotionEvent;
 import android.view.View;
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.Utilities;
 import org.telegram.ui.ActionBar.Theme;
 
 // LoogriGram: moved out of PeerColorActivity, which is deleted with our own
-// name and profile colour. FilterCreateActivity picks a folder colour with it.
+// name and profile colour, and cut down to what FilterCreateActivity uses it
+// for: picking a folder's tag colour. Its name- and profile-colour modes went
+// with the screen.
 public class PeerColorGrid extends View {
     private final Theme.ResourcesProvider resourcesProvider;
     private final Paint backgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     { backgroundPaint.setStyle(Paint.Style.STROKE); }
-
-    public static final int TYPE_FOLDER_TAG = 2;
 
     public class ColorButton {
         private final Paint paint1 = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -55,30 +54,6 @@ public class PeerColorGrid extends View {
 
         public void setClose(boolean close) {
             hasClose = close;
-        }
-
-        public void set(MessagesController.PeerColor color) {
-            if (color == null) {
-                return;
-            }
-            final boolean dark = resourcesProvider == null ? Theme.isCurrentThemeDark() : resourcesProvider.isDark();
-            if (type == PAGE_NAME) {
-                if (dark && color.hasColor2() && !color.hasColor3()) {
-                    paint1.setColor(color.getColor(1, resourcesProvider));
-                    paint2.setColor(color.getColor(0, resourcesProvider));
-                } else {
-                    paint1.setColor(color.getColor(0, resourcesProvider));
-                    paint2.setColor(color.getColor(1, resourcesProvider));
-                }
-                paint3.setColor(color.getColor(2, resourcesProvider));
-                hasColor2 = color.hasColor2(dark);
-                hasColor3 = color.hasColor3(dark);
-            } else {
-                paint1.setColor(color.getColor(0, resourcesProvider));
-                paint2.setColor(color.hasColor6(dark) ? color.getColor(1, resourcesProvider) : color.getColor(0, resourcesProvider));
-                hasColor2 = color.hasColor6(dark);
-                hasColor3 = false;
-            }
         }
 
         private boolean selected;
@@ -180,39 +155,25 @@ public class PeerColorGrid extends View {
         }
     }
 
-    private final int type;
-    private final int currentAccount;
-
     private ColorButton[] buttons;
 
-    public PeerColorGrid(Context context, int type, int currentAccount, Theme.ResourcesProvider resourcesProvider) {
+    public PeerColorGrid(Context context, Theme.ResourcesProvider resourcesProvider) {
         super(context);
-        this.type = type;
-        this.currentAccount = currentAccount;
         this.resourcesProvider = resourcesProvider;
     }
 
     public void updateColors() {
         if (buttons == null) return;
-        final MessagesController mc = MessagesController.getInstance(currentAccount);
-        final MessagesController.PeerColors peerColors = type == PAGE_NAME ? mc.peerColors : mc.profilePeerColors;
         for (int i = 0; i < buttons.length; ++i) {
-            if (type == TYPE_FOLDER_TAG) {
-                buttons[i].id = order[i];
-                buttons[i].setClose(buttons[i].id < 0);
-                buttons[i].set(Theme.getColor(order[i] < 0 ? Theme.key_avatar_backgroundGray : Theme.keys_avatar_nameInMessage[order[i] % Theme.keys_avatar_nameInMessage.length], resourcesProvider));
-            } else if (i < 7 && type == PAGE_NAME) {
-                buttons[i].id = order[i];
-                buttons[i].set(Theme.getColor(Theme.keys_avatar_nameInMessage[order[i]], resourcesProvider));
-            } else {
-                final int id = i;
-                if (peerColors != null && id >= 0 && id < peerColors.colors.size()) {
-                    buttons[i].id = peerColors.colors.get(id).id;
-                    buttons[i].set(peerColors.colors.get(id));
-                }
-            }
+            setFolderColor(buttons[i], i);
         }
         invalidate();
+    }
+
+    private void setFolderColor(ColorButton button, int i) {
+        button.id = order[i];
+        button.setClose(button.id < 0);
+        button.set(Theme.getColor(order[i] < 0 ? Theme.key_avatar_backgroundGray : Theme.keys_avatar_nameInMessage[order[i] % Theme.keys_avatar_nameInMessage.length], resourcesProvider));
     }
     final int[] order = new int[] { 5, 3, 1, 0, 2, 4, 6, -1 };
 
@@ -220,20 +181,8 @@ public class PeerColorGrid extends View {
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         final int width = MeasureSpec.getSize(widthMeasureSpec);
 
-        final MessagesController mc = MessagesController.getInstance(currentAccount);
-        final MessagesController.PeerColors peerColors = type == PAGE_NAME ? mc.peerColors : mc.profilePeerColors;
-        int colorsCount = peerColors == null ? 0 : peerColors.colors.size();
-        if (type == TYPE_FOLDER_TAG) {
-            colorsCount = 8;
-        }
-        final int columns;
-        if (type == TYPE_FOLDER_TAG) {
-            columns = 8;
-        } else if (type == PAGE_NAME) {
-            columns = 7;
-        } else {
-            columns = 8;
-        }
+        final int colorsCount = order.length;
+        final int columns = 8;
 
         final float iconSize = Math.min(dp(38 + 16), width / (columns + (columns + 1) * .28947f));
         final float horizontalSeparator = Math.min(iconSize * .28947f, dp(8));
@@ -248,14 +197,7 @@ public class PeerColorGrid extends View {
             buttons = new ColorButton[colorsCount];
             for (int i = 0; i < colorsCount; ++i) {
                 buttons[i] = new ColorButton();
-                if (type == TYPE_FOLDER_TAG) {
-                    buttons[i].id = order[i];
-                    buttons[i].setClose(buttons[i].id < 0);
-                    buttons[i].set(Theme.getColor(order[i] < 0 ? Theme.key_avatar_backgroundGray : Theme.keys_avatar_nameInMessage[order[i] % Theme.keys_avatar_nameInMessage.length], resourcesProvider));
-                } else if (peerColors != null && i >= 0 && i < peerColors.colors.size()) {
-                    buttons[i].id = peerColors.colors.get(i).id;
-                    buttons[i].set(peerColors.colors.get(i));
-                }
+                setFolderColor(buttons[i], i);
             }
         }
         final float itemsWidth = iconSize * columns + horizontalSeparator * (columns + 1);
