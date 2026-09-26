@@ -78,11 +78,9 @@ import org.telegram.ui.ActionBar.EdgeToEdgeSupportMode;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Business.AwayMessagesActivity;
-import org.telegram.ui.Business.BusinessChatbotController;
 import org.telegram.ui.Business.BusinessIntroActivity;
 import org.telegram.ui.Business.BusinessLinksActivity;
 import org.telegram.ui.Business.BusinessLinksController;
-import org.telegram.ui.Business.ChatbotsActivity;
 import org.telegram.ui.Business.GreetMessagesActivity;
 import org.telegram.ui.Business.LocationActivity;
 import org.telegram.ui.Business.OpeningHoursActivity;
@@ -552,7 +550,6 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
                 TLRPC.InputStickerSet inputStickerSet = new TLRPC.TL_inputStickerSetShortName();
                 inputStickerSet.short_name = "RestrictedEmoji";
                 MediaDataController.getInstance(currentAccount).getStickerSet(inputStickerSet, false);
-                BusinessChatbotController.getInstance(currentAccount).load(null);
                 if (getMessagesController().suggestedFilters.isEmpty()) {
                     getMessagesController().loadSuggestedFilters();
                 }
@@ -844,8 +841,6 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
                         presentFragment(new AwayMessagesActivity());
                     } else if (cell.data.type == PREMIUM_FEATURE_BUSINESS_OPENING_HOURS) {
                         presentFragment(new OpeningHoursActivity());
-                    } else if (cell.data.type == PREMIUM_FEATURE_BUSINESS_CHATBOTS) {
-                        presentFragment(new ChatbotsActivity());
                     } else if (cell.data.type == PREMIUM_FEATURE_BUSINESS_QUICK_REPLIES) {
                         presentFragment(new QuickRepliesActivity());
                     } else if (cell.data.type == PREMIUM_FEATURE_STORIES) {
@@ -1014,7 +1009,6 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
             premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_BUSINESS_QUICK_REPLIES, R.drawable.filled_open_message, getString(R.string.PremiumBusinessQuickReplies), getString(R.string.PremiumBusinessQuickRepliesDescription)));
             premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_BUSINESS_GREETING_MESSAGES, R.drawable.premium_status, getString(R.string.PremiumBusinessGreetingMessages), getString(R.string.PremiumBusinessGreetingMessagesDescription)));
             premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_BUSINESS_AWAY_MESSAGES, R.drawable.filled_premium_away, getString(R.string.PremiumBusinessAwayMessages), getString(R.string.PremiumBusinessAwayMessagesDescription)));
-            premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_BUSINESS_CHATBOTS, R.drawable.filled_premium_bots, getString(R.string.PremiumBusinessChatbots2), getString(R.string.PremiumBusinessChatbotsDescription)));
             premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_BUSINESS_CHAT_LINKS, R.drawable.filled_premium_chatlink, getString(R.string.PremiumBusinessChatLinks), getString(R.string.PremiumBusinessChatLinksDescription)));
             premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_BUSINESS_INTRO, R.drawable.filled_premium_intro, getString(R.string.PremiumBusinessIntro), getString(R.string.PremiumBusinessIntroDescription)));
         } else {

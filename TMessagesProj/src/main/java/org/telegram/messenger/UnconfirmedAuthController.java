@@ -12,7 +12,6 @@ import org.telegram.tgnet.TLParseException;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_account;
 import org.telegram.tgnet.tl.TL_update;
-import org.telegram.ui.Business.BusinessChatbotController;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -389,7 +388,6 @@ public class UnconfirmedAuthController {
                         if (res instanceof TLRPC.Updates) {
                             MessagesController.getInstance(currentAccount).processUpdates((TLRPC.Updates) res, false);
                         }
-                        BusinessChatbotController.getInstance(currentAccount).invalidate(true);
                         if (whenDone != null) {
                             whenDone.run(res instanceof TLRPC.Updates && err == null || debug);
                             debug = false;

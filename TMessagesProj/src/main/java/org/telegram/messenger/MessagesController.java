@@ -7446,13 +7446,9 @@ public class MessagesController extends BaseController implements NotificationCe
             return;
         }
         final SharedPreferences.Editor editor = notificationsPreferences.edit();
-        if (settings.business_bot_id != 0) {
-            editor.putLong("dialog_botid" + dialogId, settings.business_bot_id);
-            editor.putString("dialog_boturl" + dialogId, settings.business_bot_manage_url);
-            editor.putInt("dialog_botflags" + dialogId, (settings.business_bot_paused ? 1 : 0) + (settings.business_bot_can_reply ? 2 : 0));
-        } else {
-            editor.remove("dialog_botid" + dialogId).remove("dialog_boturl" + dialogId).remove("dialog_botflags" + dialogId);
-        }
+        // LoogriGram: the business_bot_* fields were kept here (and faked for
+        // Saved Messages) for the bar shown in a chat our own Business bot
+        // works in. That bar is gone with Business.
         if (notificationsPreferences.getInt("dialog_bar_vis3" + dialogId, 0) == 3) {
             editor.apply();
             getNotificationCenter().postNotificationName(NotificationCenter.peerSettingsDidLoad, dialogId);
@@ -7480,10 +7476,6 @@ public class MessagesController extends BaseController implements NotificationCe
             } else {
                 editor.remove("dialog_bar_distance" + dialogId);
             }
-        }
-        if (dialogId == getUserConfig().getClientUserId()) {
-            settings.business_bot_id = UserObject.REPLY_BOT;
-            settings.business_bot_manage_url = "https://telegram.org/";
         }
         editor.apply();
         userPeerSettings.put(dialogId, settings);
