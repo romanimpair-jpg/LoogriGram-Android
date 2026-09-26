@@ -65,6 +65,10 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
+import org.telegram.messenger.DocumentObject;
+import org.telegram.messenger.FileLoader;
+import org.telegram.messenger.ImageLocation;
+import org.telegram.messenger.SvgHelper;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_stars;
@@ -112,7 +116,6 @@ import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
 import org.telegram.ui.Components.blur3.drawable.color.BlurredBackgroundColorProviderThemed;
 import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceColor;
 import org.telegram.ui.LaunchActivity;
-import org.telegram.ui.PeerColorActivity;
 import org.telegram.ui.ProfileActivity;
 import org.telegram.ui.Stars.StarGiftSheet;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
@@ -1806,6 +1809,122 @@ public class ProfileGiftsContainer extends FrameLayout implements NotificationCe
         checkboxLayout.setBackground(Theme.createRadSelectorDrawable(Theme.getColor(Theme.key_listSelector, resourcesProvider), 24, 24));
     }
 
+    // LoogriGram: moved out of PeerColorActivity, deleted with our own name and
+    // profile colour; the unpin sheet below is its only user.
+    public static class UnpinGiftCell extends FrameLayout {
+
+        public long id;
+        public TL_stars.starGiftAttributeBackdrop backdrop;
+        public TL_stars.starGiftAttributePattern pattern;
+
+        public final FrameLayout card;
+        public final GiftViews.CardBackground cardBackground;
+        public final BackupImageView imageView;
+
+        @Nullable
+        private final GiftViews.Ribbon ribbon;
+
+        public UnpinGiftCell(Context context, boolean withRibbon, Theme.ResourcesProvider resourcesProvider) {
+            super(context);
+
+            card = new FrameLayout(context);
+            card.setBackground(cardBackground = new GiftViews.CardBackground(card, resourcesProvider, false));
+            addView(card, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.FILL));
+            ScaleStateListAnimator.apply(card, 0.025f, 1.25f);
+
+            imageView = new BackupImageView(context);
+            card.addView(imageView, LayoutHelper.createFrame(80, 80, Gravity.CENTER, 0, 12, 0, 12));
+
+            if (withRibbon) {
+                ribbon = new GiftViews.Ribbon(context);
+                addView(ribbon, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.RIGHT | Gravity.TOP, 0, 2, 1, 0));
+            } else {
+                ribbon = null;
+            }
+        }
+
+        public void set(int index, TL_stars.SavedStarGift g) {
+            id = g.gift.id;
+            final boolean center = index % 3 == 1;
+            setPadding(center ? dp(4) : 0, 0, center ? dp(4) : 0, 0);
+
+            setSticker(g.gift.getDocument(), g.gift);
+
+            backdrop = GiftsController.findAttribute(g.gift.attributes, TL_stars.starGiftAttributeBackdrop.class);
+            pattern = GiftsController.findAttribute(g.gift.attributes, TL_stars.starGiftAttributePattern.class);
+
+            cardBackground.setBackdrop(backdrop);
+            cardBackground.setPattern(pattern);
+
+            if (ribbon != null) {
+                ribbon.setBackdrop(backdrop);
+                ribbon.setText(9, "#" + LocaleController.formatNumber(g.gift.num, ','), false);
+            }
+        }
+
+        public long getGiftId() {
+            return id;
+        }
+
+        public void setSelected(boolean selected, boolean animated) {
+            cardBackground.setSelected(selected, animated);
+            final float s = selected ? 0.9f : 1.0f;
+            if (animated) {
+                imageView.animate().scaleX(s).scaleY(s).start();
+            } else {
+                imageView.animate().cancel();
+                imageView.setScaleX(s);
+                imageView.setScaleY(s);
+            }
+        }
+
+        private TLRPC.Document lastDocument;
+        private long lastDocumentId;
+        private void setSticker(TLRPC.Document document, Object parentObject) {
+            if (document == null) {
+                imageView.clearImage();
+                lastDocument = null;
+                lastDocumentId = 0;
+                return;
+            }
+
+            if (lastDocument == document) return;
+            lastDocument = document;
+            lastDocumentId = document.id;
+
+            final TLRPC.PhotoSize photoSize = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, dp(100));
+            final SvgHelper.SvgDrawable svgThumb = DocumentObject.getSvgThumb(document, Theme.key_windowBackgroundGray, 0.3f);
+
+            imageView.setImage(
+                ImageLocation.getForDocument(document), "100_100",
+                ImageLocation.getForDocument(photoSize, document), "100_100",
+                svgThumb,
+                parentObject
+            );
+        }
+
+        public static class Factory extends UItem.UItemFactory<UnpinGiftCell> {
+            static { setup(new Factory()); }
+
+            @Override
+            public UnpinGiftCell createView(Context context, RecyclerListView listView, int currentAccount, int classGuid, Theme.ResourcesProvider resourcesProvider) {
+                return new UnpinGiftCell(context, true, resourcesProvider);
+            }
+
+            @Override
+            public void bindView(View view, UItem item, boolean divider, UniversalAdapter adapter, UniversalRecyclerView listView) {
+                ((UnpinGiftCell) view).set(-1, (TL_stars.SavedStarGift) item.object);
+                ((UnpinGiftCell) view).setSelected(item.checked, false);
+            }
+
+            public static UItem asGiftCell(TL_stars.SavedStarGift gift) {
+                UItem item = UItem.ofFactory(Factory.class);
+                item.object = gift;
+                return item;
+            }
+        }
+    }
+
     public static class UnpinSheet extends BottomSheet {
         long selectedGift = 0;
         public UnpinSheet(Context context, long dialogId, TL_stars.SavedStarGift newPinned, Theme.ResourcesProvider resourcesProvider, Utilities.Callback0Return<BulletinFactory> whenDone) {
@@ -1829,7 +1948,7 @@ public class ProfileGiftsContainer extends FrameLayout implements NotificationCe
             final UniversalRecyclerView listView = new UniversalRecyclerView(context, currentAccount, 0, (items, adapter) -> {
                 for (TL_stars.SavedStarGift g : giftsList.gifts) {
                     if (g.pinned_to_top) {
-                        items.add(PeerColorActivity.GiftCell.Factory.asGiftCell(g).setChecked(selectedGift == g.gift.id).setSpanCount(1));
+                        items.add(UnpinGiftCell.Factory.asGiftCell(g).setChecked(selectedGift == g.gift.id).setSpanCount(1));
                     }
                 }
             }, (item, view, position, x, y) -> {
@@ -1844,8 +1963,8 @@ public class ProfileGiftsContainer extends FrameLayout implements NotificationCe
                     final ViewGroup p = (ViewGroup) view.getParent();
                     for (int i = 0; i < p.getChildCount(); ++i) {
                         final View child = p.getChildAt(i);
-                        if (child instanceof PeerColorActivity.GiftCell) {
-                            ((PeerColorActivity.GiftCell) child).setSelected(selectedGift == ((PeerColorActivity.GiftCell) child).getGiftId(), true);
+                        if (child instanceof UnpinGiftCell) {
+                            ((UnpinGiftCell) child).setSelected(selectedGift == ((UnpinGiftCell) child).getGiftId(), true);
                         }
                     }
                 }

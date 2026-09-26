@@ -101,8 +101,8 @@ import java.util.Arrays;
 // LoogriGram: these were nested inside GiftSheet, which sold gifts and is
 // deleted. They are display only and are used well outside gifting: a gift
 // someone was given draws its card and ribbon in ChatActionCell, ItemOptions
-// scrims a gift cell, and PeerColorActivity picks a collectible for your
-// profile from them. Moved here unchanged.
+// scrims a gift cell, and the profile's unpin sheet draws its gifts with them
+// (ProfileGiftsContainer.UnpinGiftCell). Moved here unchanged.
 public class GiftViews {
 
     // LoogriGram: setGiftImage and addAvailabilityRow were StarsIntroActivity's,

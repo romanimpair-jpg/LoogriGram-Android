@@ -168,8 +168,6 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
     private int bluetoothScoRow;
     private int enableAnimationsRow;
     private int settings2Row;
-    @Keep
-    private int changeUserColor;
 
     private int contactsReimportRow;
     private int contactsSortRow;
@@ -581,7 +579,6 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
 
         textSizeRow = -1;
         backgroundRow = -1;
-        changeUserColor = -1;
         settingsRow = -1;
         directShareRow = -1;
         sensitiveContentRow = -1;
@@ -657,7 +654,6 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
             textSizeHeaderRow = rowCount++;
             textSizeRow = rowCount++;
             backgroundRow = rowCount++;
-            changeUserColor = rowCount++;
             newThemeInfoRow = rowCount++;
             themeHeaderRow = rowCount++;
 
@@ -1116,8 +1112,6 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                 }
             } else if (position == backgroundRow) {
                 presentFragment(new WallpapersListActivity(WallpapersListActivity.TYPE_ALL));
-            } else if (position == changeUserColor) {
-                presentFragment(new PeerColorActivity(0).setOnApplied(this));
             } else if (position == sendByEnterRow) {
                 SharedPreferences preferences = MessagesController.getGlobalMainSettings();
                 boolean send = preferences.getBoolean("send_by_enter", false);
@@ -2064,7 +2058,6 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
         private final static int TYPE_DEFAULT_THEMES_PREVIEW = 17;
         private final static int TYPE_SAVE_TO_GALLERY = 19;
         private final static int TYPE_APP_ICON = 20;
-        private final static int TYPE_CHOOSE_COLOR = 21;
 
         private Context mContext;
         private boolean first = true;
@@ -2083,7 +2076,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
             int type = holder.getItemViewType();
             return type == 0 || type == TYPE_TEXT_SETTING || type == TYPE_THEME_TYPE || type == TYPE_TEXT_CHECK ||
                     type == TYPE_NIGHT_THEME || type == TYPE_THEME_LIST || type == TYPE_THEME_ACCENT_LIST ||
-                    type == TYPE_TEXT_PREFERENCE || type == 18 || type == TYPE_APP_ICON || type == TYPE_CHOOSE_COLOR;
+                    type == TYPE_TEXT_PREFERENCE || type == 18 || type == TYPE_APP_ICON;
         }
 
         private void showOptionsForTheme(Theme.ThemeInfo themeInfo) {
@@ -2461,9 +2454,6 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                 case TYPE_APP_ICON:
                     view = new AppIconsSelectorCell(mContext, ThemeActivity.this, currentAccount);
                     break;
-                case TYPE_CHOOSE_COLOR:
-                    view = new PeerColorActivity.ChangeNameColorCell(currentAccount, mContext, getResourceProvider());
-                    break;
             }
             return new RecyclerListView.Holder(view);
         }
@@ -2672,7 +2662,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                     if (position == backgroundRow) {
                         cell.setSubtitle(null);
                         cell.setColors(Theme.key_windowBackgroundWhiteBlueText4, Theme.key_windowBackgroundWhiteBlueText4);
-                        cell.setTextAndIcon(getString(R.string.ChangeChatBackground), R.drawable.msg_background, changeUserColor >= 0);
+                        cell.setTextAndIcon(getString(R.string.ChangeChatBackground), R.drawable.msg_background, false);
                     } else if (position == editThemeRow) {
                         cell.setSubtitle(null);
                         cell.setColors(Theme.key_windowBackgroundWhiteBlueText4, Theme.key_windowBackgroundWhiteBlueText4);
@@ -2712,10 +2702,6 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                     }
 
                     break;
-                }
-                case TYPE_CHOOSE_COLOR: {
-                    PeerColorActivity.ChangeNameColorCell cell = (PeerColorActivity.ChangeNameColorCell) holder.itemView;
-                    cell.set(getUserConfig().getCurrentUser());
                 }
             }
         }
@@ -2781,8 +2767,6 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                 return TYPE_SAVE_TO_GALLERY;
             } else if (position == appIconSelectorRow) {
                 return TYPE_APP_ICON;
-            } else if (position == changeUserColor) {
-                return TYPE_CHOOSE_COLOR;
             }
             return TYPE_TEXT_SETTING;
         }
@@ -2798,7 +2782,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
     public ArrayList<ThemeDescription> getThemeDescriptions() {
         ArrayList<ThemeDescription> themeDescriptions = new ArrayList<>();
 
-        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_CELLBACKGROUNDCOLOR, new Class[]{TextSettingsCell.class, TextCheckCell.class, HeaderCell.class, BrightnessControlCell.class, ThemeTypeCell.class, TextSizeCell.class, BubbleRadiusCell.class, ChatListCell.class, NotificationsCheckCell.class, ThemesHorizontalListCell.class, TintRecyclerListView.class, TextCell.class, PeerColorActivity.ChangeNameColorCell.class, SwipeGestureSettingsView.class, DefaultThemesPreviewCell.class, AppIconsSelectorCell.class}, null, null, null, Theme.key_windowBackgroundWhite));
+        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_CELLBACKGROUNDCOLOR, new Class[]{TextSettingsCell.class, TextCheckCell.class, HeaderCell.class, BrightnessControlCell.class, ThemeTypeCell.class, TextSizeCell.class, BubbleRadiusCell.class, ChatListCell.class, NotificationsCheckCell.class, ThemesHorizontalListCell.class, TintRecyclerListView.class, TextCell.class, SwipeGestureSettingsView.class, DefaultThemesPreviewCell.class, AppIconsSelectorCell.class}, null, null, null, Theme.key_windowBackgroundWhite));
         themeDescriptions.add(new ThemeDescription(fragmentView, ThemeDescription.FLAG_BACKGROUND, null, null, null, null, Theme.key_windowBackgroundGray));
 
 //        themeDescriptions.add(new ThemeDescription(actionBar, ThemeDescription.FLAG_BACKGROUND, null, null, null, null, Theme.key_actionBarDefault));
@@ -2889,32 +2873,24 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                 View ch = listView.getChildAt(i);
                 if (ch instanceof AppIconsSelectorCell) {
                     ((AppIconsSelectorCell) ch).getAdapter().notifyDataSetChanged();
-                } else if (ch instanceof PeerColorActivity.ChangeNameColorCell) {
-                    ((PeerColorActivity.ChangeNameColorCell) ch).updateColors();
                 }
             }
             for (int i = 0; i < listView.getCachedChildCount(); i++) {
                 View ch = listView.getCachedChildAt(i);
                 if (ch instanceof AppIconsSelectorCell) {
                     ((AppIconsSelectorCell) ch).getAdapter().notifyDataSetChanged();
-                } else if (ch instanceof PeerColorActivity.ChangeNameColorCell) {
-                    ((PeerColorActivity.ChangeNameColorCell) ch).updateColors();
                 }
             }
             for (int i = 0; i < listView.getHiddenChildCount(); i++) {
                 View ch = listView.getHiddenChildAt(i);
                 if (ch instanceof AppIconsSelectorCell) {
                     ((AppIconsSelectorCell) ch).getAdapter().notifyDataSetChanged();
-                } else if (ch instanceof PeerColorActivity.ChangeNameColorCell) {
-                    ((PeerColorActivity.ChangeNameColorCell) ch).updateColors();
                 }
             }
             for (int i = 0; i < listView.getAttachedScrapChildCount(); i++) {
                 View ch = listView.getAttachedScrapChildAt(i);
                 if (ch instanceof AppIconsSelectorCell) {
                     ((AppIconsSelectorCell) ch).getAdapter().notifyDataSetChanged();
-                } else if (ch instanceof PeerColorActivity.ChangeNameColorCell) {
-                    ((PeerColorActivity.ChangeNameColorCell) ch).updateColors();
                 }
             }
         }, Theme.key_windowBackgroundWhiteHintText, Theme.key_windowBackgroundWhiteBlackText, Theme.key_windowBackgroundWhiteValueText));

@@ -434,7 +434,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private ActionBarMenuItem editItem;
     private ActionBarMenuItem otherItem;
     private ActionBarMenuItem searchItem;
-    private ActionBarMenuSubItem editColorItem;
     private ActionBarMenuSubItem linkItem;
     private ActionBarMenuSubItem setUsernameItem;
     private ImageView ttlIconView;
@@ -575,7 +574,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private final static int delete_avatar = 35;
     private final static int add_photo = 36;
     private final static int channel_stories = 39;
-    private final static int edit_color = 40;
     private final static int edit_profile = 41;
     private final static int copy_link_profile = 42;
     private final static int set_username = 43;
@@ -1237,8 +1235,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     emojiColor = peerColor.patternColor;
                     btnColor = Theme.multAlpha(peerColor.patternColor, .45f);
                 } else {
-                    emojiColor = PeerColorActivity.adaptProfileEmojiColor(color1);
-                    btnColor = Theme.multAlpha(PeerColorActivity.adaptProfileEmojiColor(color1), .15f);
+                    emojiColor = adaptProfileEmojiColor(color1);
+                    btnColor = Theme.multAlpha(adaptProfileEmojiColor(color1), .15f);
                 }
             } else {
                 actionBarBackgroundColor = currentColor;
@@ -1250,8 +1248,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     emojiColor = Theme.multAlpha(Theme.adaptHSV(getThemedColor(Theme.key_actionBarDefault), +0.02f, +0.25f), .5f);
                     btnColor = Theme.multAlpha(Theme.adaptHSV(getThemedColor(Theme.key_actionBarDefault), +0.02f, +0.25f), .35f);
                 } else {
-                    emojiColor = PeerColorActivity.adaptProfileEmojiColor(getThemedColor(Theme.key_actionBarDefault));
-                    btnColor = Theme.multAlpha(PeerColorActivity.adaptProfileEmojiColor(getThemedColor(Theme.key_actionBarDefault)), .15f);
+                    emojiColor = adaptProfileEmojiColor(getThemedColor(Theme.key_actionBarDefault));
+                    btnColor = Theme.multAlpha(adaptProfileEmojiColor(getThemedColor(Theme.key_actionBarDefault)), .15f);
                 }
             }
             if (!animated) {
@@ -2215,7 +2213,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         getNotificationCenter().addObserver(this, NotificationCenter.storiesUpdated);
         getNotificationCenter().addObserver(this, NotificationCenter.storiesReadUpdated);
         getNotificationCenter().addObserver(this, NotificationCenter.userIsPremiumBlockedUpadted);
-        getNotificationCenter().addObserver(this, NotificationCenter.currentUserPremiumStatusChanged);
         getNotificationCenter().addObserver(this, NotificationCenter.starBalanceUpdated);
         getNotificationCenter().addObserver(this, NotificationCenter.botStarsUpdated);
         getNotificationCenter().addObserver(this, NotificationCenter.botStarsTransactionsLoaded);
@@ -2356,7 +2353,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         getNotificationCenter().removeObserver(this, NotificationCenter.storiesUpdated);
         getNotificationCenter().removeObserver(this, NotificationCenter.storiesReadUpdated);
         getNotificationCenter().removeObserver(this, NotificationCenter.userIsPremiumBlockedUpadted);
-        getNotificationCenter().removeObserver(this, NotificationCenter.currentUserPremiumStatusChanged);
         getNotificationCenter().removeObserver(this, NotificationCenter.starBalanceUpdated);
         getNotificationCenter().removeObserver(this, NotificationCenter.botStarsUpdated);
         getNotificationCenter().removeObserver(this, NotificationCenter.botStarsTransactionsLoaded);
@@ -2780,12 +2776,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     }
                 } else if (id == edit_info) {
                     presentFragment(new UserInfoActivity());
-                } else if (id == edit_color) {
-//                    if (!getUserConfig().isPremium()) {
-//                        showDialog(new PremiumFeatureBottomSheet(ProfileActivity.this, PremiumPreviewFragment.PREMIUM_FEATURE_NAME_COLOR, true));
-//                        return;
-//                    }
-                    presentFragment(new PeerColorActivity(0).startOnProfile().setOnApplied(ProfileActivity.this));
                 } else if (id == copy_link_profile) {
                     TLRPC.User user = getMessagesController().getUser(userId);
                     AndroidUtilities.addToClipboard(getMessagesController().linkPrefix + "/" + UserObject.getPublicUsername(user));
@@ -9229,9 +9219,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             if (otherItem != null) {
                 otherItem.setSubItemShown(start_secret_chat, DialogObject.isEmpty(getMessagesController().isUserContactBlocked(userId)));
             }
-            updateEditColorIcon();
-        } else if (id == NotificationCenter.currentUserPremiumStatusChanged) {
-            updateEditColorIcon();
         } else if (id == NotificationCenter.starBalanceUpdated) {
             updateListAnimated(false);
         } else if (id == NotificationCenter.botStarsUpdated) {
@@ -11906,8 +11893,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         otherItem.addSubItem(add_photo, R.drawable.msg_addphoto, LocaleController.getString(R.string.AddPhoto));
                     }
                 }
-                editColorItem = otherItem.addSubItem(edit_color, R.drawable.menu_profile_colors, LocaleController.getString(R.string.ProfileColorEdit));
-                updateEditColorIcon();
+                // LoogriGram: "Edit Colors" sat here. Our own name and profile
+                // colour are Premium's to set; desktop deleted them, and so did
+                // this, with PeerColorActivity.
                 if (myProfile) {
                     setUsernameItem = otherItem.addSubItem(set_username, R.drawable.menu_username_change, getString(R.string.ProfileUsernameEdit));
                     linkItem = otherItem.addSubItem(copy_link_profile, R.drawable.msg_link2, getString(R.string.ProfileCopyLink));
@@ -16163,22 +16151,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         linkItem.setVisibility(UserObject.getPublicUsername(user) != null ? View.VISIBLE : View.GONE);
     }
 
-    private void updateEditColorIcon() {
-        if (getContext() == null || editColorItem == null) return;
-        if (getUserConfig().isPremium()) {
-            editColorItem.setIcon(R.drawable.menu_profile_colors);
-        } else {
-            Drawable icon = ContextCompat.getDrawable(getContext(), R.drawable.menu_profile_colors_locked);
-            icon.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_actionBarDefaultSubmenuItemIcon), PorterDuff.Mode.SRC_IN));
-            Drawable lockIcon = ContextCompat.getDrawable(getContext(), R.drawable.msg_gallery_locked2);
-            lockIcon.setColorFilter(new PorterDuffColorFilter(ColorUtils.blendARGB(Color.WHITE, Color.BLACK, 0.5f), PorterDuff.Mode.MULTIPLY));
-            CombinedDrawable combinedDrawable = new CombinedDrawable(icon, lockIcon, dp(1), -dp(1)) {
-                @Override
-                public void setColorFilter(ColorFilter colorFilter) {
-                }
-            };
-            editColorItem.setIcon(combinedDrawable);
-        }
+    // LoogriGram: from the deleted PeerColorActivity.
+    private static int adaptProfileEmojiColor(int color) {
+        final boolean isDark = AndroidUtilities.computePerceivedBrightness(color) < .2f;
+        return Theme.adaptHSV(color, +.5f, isDark ? +.28f : -.28f);
     }
 
     public boolean hasPrivacyCommand() {

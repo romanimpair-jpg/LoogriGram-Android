@@ -104,6 +104,7 @@ import org.telegram.ui.Components.spoilers.SpoilersTextView;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import org.telegram.ui.Components.PeerColorGrid;
 
 public class FilterCreateActivity extends BaseFragment {
 
@@ -1556,7 +1557,7 @@ public class FilterCreateActivity extends BaseFragment {
                     view = new HeaderCellColorPreview(mContext);
                     break;
                 case VIEW_TYPE_COLOR:
-                    view = new PeerColorActivity.PeerColorGrid(getContext(), PeerColorActivity.PeerColorGrid.TYPE_FOLDER_TAG, currentAccount, resourceProvider);
+                    view = new PeerColorGrid(getContext(), PeerColorGrid.TYPE_FOLDER_TAG, currentAccount, resourceProvider);
                     break;
                 case VIEW_TYPE_SHADOW_TEXT:
                 default:
@@ -1692,7 +1693,7 @@ public class FilterCreateActivity extends BaseFragment {
                     break;
                 }
                 case VIEW_TYPE_COLOR: {
-                    PeerColorActivity.PeerColorGrid cell = (PeerColorActivity.PeerColorGrid) holder.itemView;
+                    PeerColorGrid cell = (PeerColorGrid) holder.itemView;
                     cell.setSelected(newFilterColor, false);
                     cell.setOnColorClick(color -> {
                         cell.setSelected(newFilterColor = color, true);

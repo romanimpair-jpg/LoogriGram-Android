@@ -94,7 +94,6 @@ import org.telegram.ui.Components.WebPlayerView;
 import org.telegram.ui.Components.poll.PollAttachedMediaPack;
 import org.telegram.ui.Components.spoilers.SpoilerEffect;
 import org.telegram.ui.LaunchActivity;
-import org.telegram.ui.PeerColorActivity;
 import org.telegram.ui.PhotoViewer;
 import org.telegram.ui.Stories.StoriesController;
 import org.telegram.ui.community.CommunityUtils;
@@ -121,6 +120,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import me.vkryl.core.BitwiseUtils;
+import org.telegram.ui.Components.PeerColorSpan;
 
 public class MessageObject {
     private static final int MESSAGE_ID_RESERVED_BITS_MASK = 0x70000000;
@@ -3292,7 +3292,7 @@ public class MessageObject {
             SpannableStringBuilder prev = new SpannableStringBuilder();
             if ((action.prev_value.flags & 1) != 0) {
                 prev.append("c");
-                prev.setSpan(new PeerColorActivity.PeerColorSpan(false, currentAccount, action.prev_value.color).setSize(dp(18)), prev.length() - 1, prev.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                prev.setSpan(new PeerColorSpan(false, currentAccount, action.prev_value.color).setSize(dp(18)), prev.length() - 1, prev.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
             if ((action.prev_value.flags & 2) != 0) {
                 if (prev.length() > 0)
@@ -3307,7 +3307,7 @@ public class MessageObject {
             SpannableStringBuilder next = new SpannableStringBuilder();
             if ((action.new_value.flags & 1) != 0) {
                 next.append("c");
-                next.setSpan(new PeerColorActivity.PeerColorSpan(false, currentAccount, action.new_value.color).setSize(dp(18)), next.length() - 1, next.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                next.setSpan(new PeerColorSpan(false, currentAccount, action.new_value.color).setSize(dp(18)), next.length() - 1, next.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
             if ((action.new_value.flags & 2) != 0) {
                 if (next.length() > 0)
@@ -3331,7 +3331,7 @@ public class MessageObject {
             SpannableStringBuilder prev = new SpannableStringBuilder();
             if ((action.prev_value.flags & 1) != 0) {
                 prev.append("c");
-                prev.setSpan(new PeerColorActivity.PeerColorSpan(true, currentAccount, action.prev_value.color).setSize(dp(18)), prev.length() - 1, prev.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                prev.setSpan(new PeerColorSpan(true, currentAccount, action.prev_value.color).setSize(dp(18)), prev.length() - 1, prev.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
             if ((action.prev_value.flags & 2) != 0) {
                 if (prev.length() > 0)
@@ -3346,7 +3346,7 @@ public class MessageObject {
             SpannableStringBuilder next = new SpannableStringBuilder();
             if ((action.new_value.flags & 1) != 0) {
                 next.append("c");
-                next.setSpan(new PeerColorActivity.PeerColorSpan(true, currentAccount, action.new_value.color).setSize(dp(18)), next.length() - 1, next.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                next.setSpan(new PeerColorSpan(true, currentAccount, action.new_value.color).setSize(dp(18)), next.length() - 1, next.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
             if ((action.new_value.flags & 2) != 0) {
                 if (next.length() > 0)

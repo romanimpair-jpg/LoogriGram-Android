@@ -1035,12 +1035,8 @@ public class LinkManager {
                     scrollTo("uploadImageRow");
                 return true;
             }
-            if (!TextUtils.isEmpty(third) && ("your-color".equalsIgnoreCase(second) || "color".equalsIgnoreCase(second))) {
-                final PeerColorActivity f = new PeerColorActivity(0);
-                // TODO
-                presentFragment(f);
-                return true;
-            }
+            // LoogriGram: your-color and color opened PeerColorActivity, deleted
+            // with our own name and profile colour; they open Appearance now.
             if (!TextUtils.isEmpty(third) && "stickers-and-emoji".equalsIgnoreCase(second)) {
                 if (!TextUtils.isEmpty(fourth) && "archived".equalsIgnoreCase(third)) {
                     presentFragment(new ArchivedStickersActivity(MediaDataController.TYPE_IMAGE));
@@ -1083,9 +1079,6 @@ public class LinkManager {
             presentFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC));
             if ("wallpaper".equalsIgnoreCase(second) || "wallpapers".equalsIgnoreCase(second)) {
                 scrollTo("backgroundRow");
-            }
-            if ("your-color".equalsIgnoreCase(second) || "color".equalsIgnoreCase(second)) {
-                scrollTo("changeUserColor");
             }
 //            if ("night-mode".equalsIgnoreCase(second) || "dark-mode".equalsIgnoreCase(second) || "dark".equalsIgnoreCase(second) || "night".equalsIgnoreCase(second))
 //                scrollTo("nightmode?") // TODO
