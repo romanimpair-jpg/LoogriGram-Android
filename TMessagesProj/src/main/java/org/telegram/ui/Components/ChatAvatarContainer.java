@@ -35,12 +35,9 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.ChatObject;
-import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.Emoji;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.ImageLoader;
@@ -122,8 +119,6 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
     public boolean allowShorterStatus = false;
     public boolean premiumIconHiddable = false;
 
-    private final AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable emojiStatusDrawable;
-    private final AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable botVerificationDrawable;
 
     protected boolean useAnimatedSubtitle() {
         return false;
@@ -375,8 +370,6 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
             }
         }
 
-        emojiStatusDrawable = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(titleTextView, dp(24));
-        botVerificationDrawable = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(titleTextView, dp(17));
     }
 
     public ButtonBounce bounce = new ButtonBounce(this);
@@ -922,21 +915,13 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
         checkActionBar(true);
     }
 
-    public AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable getBotVerificationDrawable(long icon, boolean animated) {
-        if (icon == 0) {
-            return null;
-        }
-        botVerificationDrawable.set(icon, animated);
-        botVerificationDrawable.setColor(getThemedColor(Theme.key_profile_verifiedBackground));
-        botVerificationDrawable.offset(0, dp(1));
-        return botVerificationDrawable;
-    }
-
     public void setTitle(CharSequence value) {
-        setTitle(value, false, false, false, false, null, false);
+        setTitle(value, false, false, false, false);
     }
 
-    public void setTitle(CharSequence value, boolean scam, boolean fake, boolean verified, boolean premium, TLRPC.EmojiStatus emojiStatus, boolean animated) {
+    // LoogriGram: no emoji status or Premium star after the title, and no bot
+    // verification icon before it, as on desktop.
+    public void setTitle(CharSequence value, boolean scam, boolean fake, boolean verified, boolean animated) {
         if (value != null) {
             value = Emoji.replaceEmoji(value, titleTextView.getPaint().getFontMetricsInt(), false);
         }
@@ -966,32 +951,11 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
             rightDrawableIsScamOrVerified = false;
             rightDrawable2ContentDescription = null;
         }
-        if (premium || DialogObject.getEmojiStatusDocumentId(emojiStatus) != 0) {
-            if (titleTextView.getRightDrawable() instanceof AnimatedEmojiDrawable.WrapSizeDrawable &&
-                ((AnimatedEmojiDrawable.WrapSizeDrawable) titleTextView.getRightDrawable()).getDrawable() instanceof AnimatedEmojiDrawable) {
-                ((AnimatedEmojiDrawable) ((AnimatedEmojiDrawable.WrapSizeDrawable) titleTextView.getRightDrawable()).getDrawable()).removeView(titleTextView);
-            }
-            if (DialogObject.getEmojiStatusDocumentId(emojiStatus) != 0) {
-                emojiStatusDrawable.set(DialogObject.getEmojiStatusDocumentId(emojiStatus), animated);
-            } else if (premium) {
-                emojiStatusDefaultDrawable = ContextCompat.getDrawable(ApplicationLoader.applicationContext, R.drawable.msg_premium_liststar).mutate();
-                emojiStatusDefaultDrawable.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_profile_verifiedBackground), PorterDuff.Mode.MULTIPLY));
-                emojiStatusDrawable.set(emojiStatusDefaultDrawable, animated);
-            } else {
-                emojiStatusDrawable.set((Drawable) null, animated);
-            }
-            emojiStatusDrawable.setColor(getThemedColor(Theme.key_profile_verifiedBackground));
-            titleTextView.setRightDrawable(emojiStatusDrawable);
-            rightDrawableIsScamOrVerified = false;
-            rightDrawableContentDescription = getString(R.string.AccDescrPremium);
-        } else {
-            titleTextView.setRightDrawable(null);
-            rightDrawableContentDescription = null;
-        }
+        titleTextView.setRightDrawable(null);
+        rightDrawableContentDescription = null;
         checkActionBar(animated);
     }
 
-    private Drawable emojiStatusDefaultDrawable;
     private Drawable verifiedBackground;
     private Drawable verifiedCheck;
 
@@ -1532,12 +1496,6 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
             currentConnectionState = ConnectionsManager.getInstance(currentAccount).getConnectionState();
             updateCurrentConnectionState();
         }
-        if (emojiStatusDrawable != null) {
-            emojiStatusDrawable.attach();
-        }
-        if (botVerificationDrawable != null) {
-            botVerificationDrawable.attach();
-        }
     }
 
     @Override
@@ -1549,12 +1507,6 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
             if (parentFragment.getChatMode() == ChatActivity.MODE_SAVED) {
                 NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.savedMessagesDialogsUpdate);
             }
-        }
-        if (emojiStatusDrawable != null) {
-            emojiStatusDrawable.detach();
-        }
-        if (botVerificationDrawable != null) {
-            botVerificationDrawable.detach();
         }
     }
 
@@ -1680,15 +1632,6 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
     public void updateColors() {
         if (currentTypingDrawable != null) {
             currentTypingDrawable.setColor(getThemedColor(Theme.key_chat_status));
-        }
-        if (emojiStatusDefaultDrawable != null) {
-            emojiStatusDefaultDrawable.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_profile_verifiedBackground), PorterDuff.Mode.MULTIPLY));
-        }
-        if (botVerificationDrawable != null) {
-            botVerificationDrawable.setColor(getThemedColor(Theme.key_profile_verifiedBackground));
-        }
-        if (emojiStatusDrawable != null) {
-            emojiStatusDrawable.setColor(getThemedColor(Theme.key_profile_verifiedBackground));
         }
         if (verifiedBackground != null) {
             verifiedBackground.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_profile_verifiedBackground), PorterDuff.Mode.MULTIPLY));

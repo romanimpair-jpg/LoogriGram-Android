@@ -72,7 +72,6 @@ import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.style.CharacterStyle;
-import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.ImageSpan;
 import android.text.style.URLSpan;
@@ -146,7 +145,6 @@ import org.telegram.messenger.ChatThemeController;
 import org.telegram.messenger.CodeHighlighting;
 import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.DialogObject;
-import org.telegram.messenger.DocumentObject;
 import org.telegram.messenger.DownloadController;
 import org.telegram.messenger.Emoji;
 import org.telegram.messenger.EmojiData;
@@ -155,7 +153,6 @@ import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.FlagSecureReason;
 import org.telegram.messenger.HashtagSearchController;
-import org.telegram.messenger.ImageLoader;
 import org.telegram.messenger.ImageLocation;
 import org.telegram.messenger.ImageReceiver;
 import org.telegram.messenger.LanguageDetector;
@@ -176,7 +173,6 @@ import org.telegram.messenger.SecretChatHelper;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.StarsFormat;
-import org.telegram.messenger.SvgHelper;
 import org.telegram.messenger.Timer;
 import org.telegram.messenger.TranslateController;
 import org.telegram.messenger.UserConfig;
@@ -257,7 +253,6 @@ import org.telegram.ui.Components.FloatingDebug.FloatingDebugController;
 import org.telegram.ui.Components.FloatingDebug.FloatingDebugProvider;
 import org.telegram.ui.Components.Forum.ForumUtilities;
 import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
-import org.telegram.ui.Components.Premium.PremiumPreviewBottomSheet;
 import org.telegram.ui.Components.Reactions.ChatSelectionReactionMenuOverlay;
 import org.telegram.ui.Components.Reactions.ReactionsEffectOverlay;
 import org.telegram.ui.Components.Reactions.ReactionsLayoutInBubble;
@@ -521,7 +516,6 @@ public class ChatActivity extends BaseFragment implements
     @Nullable
     private BusinessBotButton bizBotButton;
     @Nullable
-    private LinkSpanDrawable.LinksTextView emojiStatusSpamHint;
     @Nullable
     private ImageView closeReportSpam;
     private TextView chatWithAdminTextView;
@@ -6982,7 +6976,6 @@ public class ChatActivity extends BaseFragment implements
         topUndoView = null;
         topChatPanelView = null;
         reportSpamButton = null;
-        emojiStatusSpamHint = null;
         addToContactsButton = null;
         restartTopicButton = null;
         closeReportSpam = null;
@@ -9037,16 +9030,6 @@ public class ChatActivity extends BaseFragment implements
             }
         }, themeDelegate));
 
-        emojiStatusSpamHint = new LinkSpanDrawable.LinksTextView(getContext(), themeDelegate);
-        emojiStatusSpamHint.setTextColor(getThemedColor(Theme.key_chat_topPanelMessage));
-        emojiStatusSpamHint.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13.3f);
-        emojiStatusSpamHint.setDisablePaddingsOffset(true);
-        emojiStatusSpamHint.setLinkTextColor(getThemedColor(Theme.key_telegram_color_text));
-        emojiStatusSpamHint.setGravity(Gravity.CENTER);
-        emojiStatusSpamHint.setPadding(0, dp(9), 0, dp(9));
-        topPanelLayout.addView(emojiStatusSpamHint, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 25, 0, 25, 0));
-        topPanelLayout.setPriority(emojiStatusSpamHint, 8);
-        topPanelLayout.setDebugName(emojiStatusSpamHint, "emoji status spam hint");
 
         addToContactsButton = new TextView(getContext());
         addToContactsButton.setTextColor(getThemedColor(Theme.key_chat_addContact));
@@ -9141,7 +9124,6 @@ public class ChatActivity extends BaseFragment implements
             if (currentEncryptedChat != null) {
                 did = currentUser.id;
             }
-            shownBotVerification = false;
             getMessagesController().hidePeerSettingsBar(did, currentUser, currentChat);
             updateTopPanel(true);
             updateInfoTopView(true);
@@ -18411,20 +18393,20 @@ public class ChatActivity extends BaseFragment implements
                     if (currentChat.linked_monoforum_id != 0) {
                         TLRPC.Chat chat = getMessagesController().getChat(currentChat.linked_monoforum_id);
                         if (chat == null) chat = currentChat;
-                        avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(chat.title)), chat.scam, chat.fake, chat.verified, false, chat.emoji_status, animated);
+                        avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(chat.title)), chat.scam, chat.fake, chat.verified, animated);
                     } else {
-                        avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(currentChat.title)), currentChat.scam, currentChat.fake, currentChat.verified, false, currentChat.emoji_status, animated);
+                        avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(currentChat.title)), currentChat.scam, currentChat.fake, currentChat.verified, animated);
                     }
                 } else if (threadMessageId > 0) {
                     final TLRPC.User user = getMessagesController().getUser(threadMessageId);
-                    avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(UserObject.getUserName(user))), user.scam, user.fake, user.verified, user.premium, user.emoji_status, animated);
+                    avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(UserObject.getUserName(user))), user.scam, user.fake, user.verified, animated);
                 } else {
                     TLRPC.Chat chat = getMessagesController().getChat(-threadMessageId);
                     if (chat == null) chat = currentChat;
-                    avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(chat.title)), chat.scam, chat.fake, chat.verified, false, chat.emoji_status, animated);
+                    avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(chat.title)), chat.scam, chat.fake, chat.verified, animated);
                 }
             } else {
-                avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(currentChat.title)), currentChat.scam, currentChat.fake, currentChat.verified, false, currentChat.emoji_status, animated);
+                avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(currentChat.title)), currentChat.scam, currentChat.fake, currentChat.verified, animated);
             }
         } else if (chatMode == MODE_WELCOME_MESSAGES) {
             avatarContainer.setTitle(getString(R.string.WelcomeMessage));
@@ -18489,18 +18471,18 @@ public class ChatActivity extends BaseFragment implements
         } else if (chatMode == MODE_PINNED) {
             avatarContainer.setTitle(LocaleController.formatPluralString("PinnedMessagesCount", getPinnedMessagesCount()));
         } else if (currentChat != null) {
-            avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(currentChat.title)), currentChat.scam, currentChat.fake, currentChat.verified, false, currentChat.emoji_status, animated);
+            avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(currentChat.title)), currentChat.scam, currentChat.fake, currentChat.verified, animated);
         } else if (currentUser != null) {
             if (currentUser.self) {
                 avatarContainer.setTitle(LocaleController.getString(R.string.SavedMessages));
             } else if (!MessagesController.isSupportUser(currentUser) && getContactsController().contactsDict.get(currentUser.id) == null && (getContactsController().contactsDict.size() != 0 || !getContactsController().isLoadingContacts())) {
                 if (!TextUtils.isEmpty(currentUser.phone)) {
-                    avatarContainer.setTitle(PhoneFormat.getInstance().format("+" + currentUser.phone), currentUser.scam, currentUser.fake, currentUser.verified, getMessagesController().isPremiumUser(currentUser), currentUser.emoji_status, animated);
+                    avatarContainer.setTitle(PhoneFormat.getInstance().format("+" + currentUser.phone), currentUser.scam, currentUser.fake, currentUser.verified, animated);
                 } else {
-                    avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(UserObject.getUserName(currentUser))), currentUser.scam, currentUser.fake, currentUser.verified, getMessagesController().isPremiumUser(currentUser), currentUser.emoji_status, animated);
+                    avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(UserObject.getUserName(currentUser))), currentUser.scam, currentUser.fake, currentUser.verified, animated);
                 }
             } else {
-                avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(UserObject.getUserName(currentUser))), currentUser.scam, currentUser.fake, currentUser.verified, getMessagesController().isPremiumUser(currentUser), !MessagesController.isSupportUser(currentUser) ? currentUser.emoji_status : null, animated);
+                avatarContainer.setTitle(AndroidUtilities.removeRTL(AndroidUtilities.removeDiacritics(UserObject.getUserName(currentUser))), currentUser.scam, currentUser.fake, currentUser.verified, animated);
             }
         }
         setParentActivityTitle(avatarContainer.getTitleTextView().getText());
@@ -18587,10 +18569,6 @@ public class ChatActivity extends BaseFragment implements
         Drawable leftIcon = null;
         if (currentEncryptedChat != null) {
             leftIcon = getThemedDrawable(Theme.key_drawable_lockIconDrawable);
-        } else if (currentChat != null) {
-            leftIcon = avatarContainer.getBotVerificationDrawable(DialogObject.getBotVerificationIcon(currentChat), false);
-        } else if (currentUser != null && !UserObject.isUserSelf(currentUser)) {
-            leftIcon = avatarContainer.getBotVerificationDrawable(DialogObject.getBotVerificationIcon(currentUser), false);
         }
         avatarContainer.setTitleIcons(leftIcon, rightIcon);
         if (!forceToggleMuted && muteItem != null) {
@@ -27639,7 +27617,6 @@ public class ChatActivity extends BaseFragment implements
     }
 
     private boolean shownRestartTopic, shownTranslateTopic;
-    private boolean shownBotVerification;
     public static final boolean DEBUG_TOP_PANELS = false;
     public void updateTopPanel(boolean animated) {
         if (chatMode != 0 && chatMode != MODE_SUGGESTIONS || topPanelLayout == null) {
@@ -27668,21 +27645,9 @@ public class ChatActivity extends BaseFragment implements
         boolean chatWithAdminChannel = preferences.getBoolean("dialog_bar_chat_with_channel" + did, false);
         int chatWithAdminDate = preferences.getInt("dialog_bar_chat_with_date" + did, 0);
         boolean showAddMembersToGroup = preferences.getBoolean("dialog_bar_invite" + did, false);
-        TLRPC.EmojiStatus showEmojiStatusReport = currentUser != null && (showReport || showBlock) ? DialogObject.filterEmojiStatus(currentUser.emoji_status) : null;
-        TL_bots.botVerification showBotVerificationReport = (show && (showReport || showBlock) || shownBotVerification || preferences.getBoolean("dialog_bar_botver" + did, true)) ? (userInfo != null && !UserObject.isUserSelf(currentUser) && userInfo.bot_verification != null ? userInfo.bot_verification : chatInfo != null && chatInfo.bot_verification != null ? chatInfo.bot_verification : null) : null;
         // LoogriGram: no "pays you N Stars per message" bar with its "Remove
         // fee" link, and no fee items in a channel's direct messages menu -
         // nothing here ever sets a price, so there is nothing to waive.
-        if (showBotVerificationReport != null) {
-            if (!shownBotVerification) {
-                preferences.edit().putBoolean("dialog_bar_botver" + did, false).apply();
-            }
-            shownBotVerification = true;
-            if (!show) {
-                showReport = showGeo = showShare = showBlock = showAdd = showArchive = showAddMembersToGroup = false;
-            }
-            show = true;
-        }
         if (UserObject.isBotForum(currentUser)) {
             show = showReport = showGeo = showShare = showBlock = showAdd = showArchive = showAddMembersToGroup = false;
         }
@@ -27699,7 +27664,7 @@ public class ChatActivity extends BaseFragment implements
         if (showRestartTopic) {
             shownRestartTopic = true;
         }
-        if (showTranslate || showBizBot || showEmojiStatusReport != null) {
+        if (showTranslate || showBizBot) {
             shownTranslateTopic = true;
         }
         boolean showRestartTopic1 = (showRestartTopic || shownRestartTopic) && !(showReport || showBlock || showGeo);
@@ -27731,8 +27696,6 @@ public class ChatActivity extends BaseFragment implements
         }
         if ((shownTranslateTopic || shownRestartTopic) && !show) {
             showReport = showGeo = showShare = showBlock = showAdd = showArchive = showAddMembersToGroup = false;
-            showEmojiStatusReport = null;
-            showBotVerificationReport = null;
             show = true;
         }
         if (reportSpamButton != null) {
@@ -27905,123 +27868,10 @@ public class ChatActivity extends BaseFragment implements
             show = false;
         }
 
-        if (showEmojiStatusReport != null && show) {
-            createTopPanel();
-            if (topChatPanelView == null) {
-                return;
-            }
-            emojiStatusSpamHint.resetEmojiColor();
-            if ((restartTopicButton == null || restartTopicButton.getVisibility() != View.VISIBLE) &&
-                (reportSpamButton == null || reportSpamButton.getVisibility() != View.VISIBLE) &&
-                (addToContactsButton == null || addToContactsButton.getVisibility() != View.VISIBLE) &&
-                (user == null || TextUtils.isEmpty(chatWithAdmin))
-            ) {
-                closeReportSpam.setVisibility(View.GONE);
-            }
-            topPanelLayout.setViewVisible(emojiStatusSpamHint, true, animated);
-            emojiStatusSpamHint.setTextColor(getThemedColor(Theme.key_chat_topPanelMessage));
-            emojiStatusSpamHint.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13.3f);
-            emojiStatusSpamHint.setLineSpacing(dp(1), 1);
-            SpannableStringBuilder totalText = new SpannableStringBuilder();
-            if (showEmojiStatusReport != null && show) {
-                final TLRPC.EmojiStatus status = showEmojiStatusReport;
-                final Runnable openStatus = () -> {
-                    PremiumPreviewBottomSheet sheet = new PremiumPreviewBottomSheet(this, currentAccount, user, getResourceProvider());
-
-                    long document_id;
-                    if (status instanceof TLRPC.TL_emojiStatus) {
-                        TLRPC.TL_emojiStatus s = (TLRPC.TL_emojiStatus) status;
-                        document_id = s.document_id;
-                    } else if (status instanceof TLRPC.TL_emojiStatusCollectible) {
-                        TLRPC.TL_emojiStatusCollectible s = (TLRPC.TL_emojiStatusCollectible) status;
-                        document_id = s.document_id;
-                        sheet.emojiStatusCollectible = s;
-                    } else return;
-
-                    BackupImageView icon = new BackupImageView(getContext());
-                    AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable drawable = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(icon, dp(160), AnimatedEmojiDrawable.CACHE_TYPE_ALERT_PREVIEW_LARGE);
-                    icon.setImageDrawable(drawable);
-                    icon.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
-                        @Override
-                        public void onViewAttachedToWindow(@NonNull View v) {
-                            drawable.attach();
-                        }
-                        @Override
-                        public void onViewDetachedFromWindow(@NonNull View v) {
-                            drawable.detach();
-                        }
-                    });
-                    drawable.set(document_id, false);
-
-                    sheet.isEmojiStatus = true;
-                    sheet.overrideTitleIcon = icon;
-                    showDialog(sheet);
-                };
-                SpannableStringBuilder text = new SpannableStringBuilder(AndroidUtilities.replaceSingleTag(LocaleController.getString(R.string.ReportSpamUserEmojiStatusHint2), openStatus));
-                SpannableString emoji = new SpannableString("x");
-                Long docid = null;
-                if (DialogObject.getEmojiStatusDocumentId(currentUser.emoji_status) != 0) {
-                    docid = DialogObject.getEmojiStatusDocumentId(currentUser.emoji_status);
-                }
-                if (docid != null) {
-                    AnimatedEmojiSpan span = new AnimatedEmojiSpan(docid, emojiStatusSpamHint.getPaint().getFontMetricsInt());
-                    span.full = false;
-                    emoji.setSpan(span, 0, emoji.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                }
-                SpannableString link = new SpannableString(LocaleController.getString(R.string.TelegramPremium));
-                link.setSpan(new ClickableSpan() {
-                    @Override
-                    public void onClick(@NonNull View view) {
-                        openStatus.run();
-                    }
-
-                    @Override
-                    public void updateDrawState(@NonNull TextPaint ds) {
-                        super.updateDrawState(ds);
-                        ds.setUnderlineText(false);
-                    }
-                }, 0, link.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                int i = text.toString().indexOf("%1$s");
-                if (i >= 0) {
-                    text.replace(i, i + 4, emoji);
-                }
-                i = text.toString().indexOf("%2$s");
-                if (i >= 0) {
-                    text.replace(i, i + 4, link);
-                }
-                totalText.append(AndroidUtilities.replaceArrows(text, true, dp(8f / 3f), dp(1.66f), 1.0f));
-            }
-            ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) emojiStatusSpamHint.getLayoutParams();
-            lp.leftMargin = dp(25 + (isSideMenued() ? 32 : 0));
-            lp.rightMargin = dp(25 + (isSideMenued() ? 32 : 0));
-            emojiStatusSpamHint.setText(totalText);
-        } else if (showBotVerificationReport != null) {
-            createTopPanel();
-            if (topChatPanelView == null) {
-                return;
-            }
-            if ((restartTopicButton == null || restartTopicButton.getVisibility() != View.VISIBLE) &&
-                (reportSpamButton == null || reportSpamButton.getVisibility() != View.VISIBLE) &&
-                (addToContactsButton == null || addToContactsButton.getVisibility() != View.VISIBLE) &&
-                (user == null || TextUtils.isEmpty(chatWithAdmin))
-            ) {
-                closeReportSpam.setVisibility(View.GONE);
-            }
-            topPanelLayout.setViewVisible(emojiStatusSpamHint, true, animated);
-            emojiStatusSpamHint.setTextColor(getThemedColor(Theme.key_chat_topPanelMessage));
-            emojiStatusSpamHint.setEmojiColor(getThemedColor(Theme.key_chat_topPanelMessage));
-            emojiStatusSpamHint.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13.3f);
-            SpannableStringBuilder text = new SpannableStringBuilder("x");
-            text.setSpan(new AnimatedEmojiSpan(showBotVerificationReport.icon, emojiStatusSpamHint.getPaint().getFontMetricsInt()), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            text.append(" ");
-            text.append(showBotVerificationReport.description);
-            ViewGroup.MarginLayoutParams lp = (ViewGroup.MarginLayoutParams) emojiStatusSpamHint.getLayoutParams();
-            lp.leftMargin = dp(25 + (isSideMenued() ? 32 : 0));
-            lp.rightMargin = dp(25 + (isSideMenued() ? 32 : 0));
-            emojiStatusSpamHint.setText(text);
-        } else {
-            topPanelLayout.setViewVisible(emojiStatusSpamHint, false, animated);
-        }
+        // LoogriGram: under the report bar sat either a stranger's emoji status,
+        // "only available with Telegram Premium", linking to Premium's sheet, or
+        // a bot's verification of the chat with its note. Neither is shown, as
+        // on desktop.
         if (showTranslate || showBizBot) {
             createTopPanel();
             if (topChatPanelView == null) {
@@ -37216,70 +37066,6 @@ public class ChatActivity extends BaseFragment implements
             getMessagesStorage().updateMessageCustomParams(msg.getDialogId(), msg.messageOwner);
             getMessagesController().getTranslateController().checkTranslation(msg, true);
             forceUpdate(cell, true, true);
-        }
-
-        @Override
-        public void didPressUserStatus(ChatMessageCell cell, TLRPC.User user, TLRPC.Document document, String giftSlug) {
-            if (cell == null) {
-                return;
-            }
-            if (!TextUtils.isEmpty(giftSlug)) {
-                Browser.openUrl(getContext(), "https://" + getMessagesController().linkPrefix + "/nft/" + giftSlug);
-                return;
-            }
-            PremiumPreviewBottomSheet premiumPreviewBottomSheet = new PremiumPreviewBottomSheet(ChatActivity.this, currentAccount, user, themeDelegate);
-            int[] coords = new int[2];
-            cell.getLocationOnScreen(coords);
-            premiumPreviewBottomSheet.startEnterFromX = cell.getNameStatusX();
-            premiumPreviewBottomSheet.startEnterFromY = cell.getNameStatusY();
-            premiumPreviewBottomSheet.startEnterFromScale = cell.getScaleX();
-            premiumPreviewBottomSheet.startEnterFromX1 = cell.getLeft();
-            premiumPreviewBottomSheet.startEnterFromY1 = cell.getTop();
-            premiumPreviewBottomSheet.startEnterFromView = cell;
-            int colorId = UserObject.getColorId(user);
-            if (colorId < 7) {
-                premiumPreviewBottomSheet.accentColor = getThemedColor(Theme.keys_avatar_nameInMessage[colorId]);
-            } else {
-                final MessagesController.PeerColors peerColors = MessagesController.getInstance(currentAccount).peerColors;
-                final MessagesController.PeerColor peerColor = peerColors != null ? peerColors.getColor(colorId) : null;
-                premiumPreviewBottomSheet.accentColor = peerColor != null ? peerColor.getColor1() : null;
-            }
-            if (cell.currentNameStatusDrawable != null && cell.currentNameStatusDrawable.getDrawable() instanceof AnimatedEmojiDrawable) {
-                premiumPreviewBottomSheet.startEnterFromScale *= 0.95f;
-                if (document != null) {
-                    BackupImageView icon = new BackupImageView(getContext());
-                    String filter = "160_160";
-                    ImageLocation mediaLocation;
-                    String mediaFilter;
-                    SvgHelper.SvgDrawable thumbDrawable = DocumentObject.getSvgThumb(document.thumbs, Theme.key_windowBackgroundWhiteGrayIcon, 0.2f);
-                    TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 90);
-                    if ("video/webm".equals(document.mime_type)) {
-                        mediaLocation = ImageLocation.getForDocument(document);
-                        mediaFilter = filter + "_" + ImageLoader.AUTOPLAY_FILTER;
-                        if (thumbDrawable != null) {
-                            thumbDrawable.overrideWidthAndHeight(512, 512);
-                        }
-                    } else {
-                        if (thumbDrawable != null && MessageObject.isAnimatedStickerDocument(document, false)) {
-                            thumbDrawable.overrideWidthAndHeight(512, 512);
-                        }
-                        mediaLocation = ImageLocation.getForDocument(document);
-                        mediaFilter = filter;
-                    }
-                    icon.setLayerNum(7);
-                    icon.setRoundRadius(AndroidUtilities.dp(4));
-                    icon.setImage(mediaLocation, mediaFilter, ImageLocation.getForDocument(thumb, document), "140_140", thumbDrawable, document);
-                    if (MessageObject.isTextColorEmoji(document)) {
-                        icon.setColorFilter(new PorterDuffColorFilter(premiumPreviewBottomSheet.accentColor != null ? premiumPreviewBottomSheet.accentColor : getThemedColor(Theme.key_windowBackgroundWhiteBlueIcon), PorterDuff.Mode.SRC_IN));
-                        premiumPreviewBottomSheet.statusStickerSet = MessageObject.getInputStickerSet(document);
-                    } else {
-                        premiumPreviewBottomSheet.statusStickerSet = MessageObject.getInputStickerSet(document);
-                    }
-                    premiumPreviewBottomSheet.overrideTitleIcon = icon;
-                    premiumPreviewBottomSheet.isEmojiStatus = true;
-                }
-            }
-            showDialog(premiumPreviewBottomSheet);
         }
 
         @Override

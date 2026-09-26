@@ -96,7 +96,6 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.math.MathUtils;
 
@@ -104,7 +103,6 @@ import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.AppGlobalConfig;
-import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.BotForumHelper;
 import org.telegram.messenger.BotInlineKeyboard;
 import org.telegram.messenger.ChatMessageSharedResources;
@@ -537,10 +535,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
 
         default void didToggleRichMessageCheckbox(ChatMessageCell cell, boolean checked, Runnable revertOnError) {
-        }
-
-        default void didPressUserStatus(ChatMessageCell cell, TLRPC.User user, TLRPC.Document document, String giftSlug) {
-
         }
 
         default void didPressUserAvatar(ChatMessageCell cell, TLRPC.User user, float touchX, float touchY, boolean asForward) {
@@ -1204,9 +1198,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private Drawable nameLayoutSelector;
     private boolean nameLayoutPressed;
 
-    private int nameStatusSelectorColor;
-    private Drawable nameStatusSelector;
-    private boolean nameStatusPressed;
 
     private RoundVideoPlayingDrawable roundVideoPlayingDrawable;
 
@@ -1690,11 +1681,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private TLRPC.Chat currentChat;
     private TLRPC.FileLocation currentPhoto;
     private String currentNameString;
-    private Object currentNameStatus;
-    private long currentNameBotVerificationId;
-    private String nameStatusSlug;
-    public AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable currentNameStatusDrawable;
-    public AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable currentNameEmojiStatusDrawable;
+    // LoogriGram: no emoji status or Premium star after an author's name and no
+    // bot verification icon before it, as on desktop.
 
     private TLRPC.User currentForwardUser;
     private TLRPC.User currentViaBotUser;
@@ -2131,37 +2119,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             nameLayoutPressed = false;
         }
         return nameLayoutPressed;
-    }
-
-    private boolean checkNameStatusMotionEvent(MotionEvent event) {
-        if (!drawNameLayout || nameLayout == null || nameLayoutSelector == null || currentUser == null && currentChat == null || currentNameStatus == null || currentNameStatusDrawable == null) {
-            nameStatusPressed = false;
-            return false;
-        }
-        final boolean pressed = nameStatusSelector.getBounds().contains((int) getEventX(event), (int) getEventY(event));
-        if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            nameStatusPressed = pressed;
-            if (nameStatusPressed) {
-                nameStatusSelector.setHotspot((int) getEventX(event), (int) getEventY(event));
-                nameStatusSelector.setState(pressedState);
-            }
-        } else if (event.getAction() == MotionEvent.ACTION_UP || event.getAction() == MotionEvent.ACTION_CANCEL) {
-            if (event.getAction() == MotionEvent.ACTION_UP && nameStatusPressed) {
-                if (delegate != null) {
-                    if (currentUser != null) {
-                        TLRPC.Document document = null;
-                        if (currentNameStatusDrawable.getDrawable() instanceof AnimatedEmojiDrawable) {
-                            document = ((AnimatedEmojiDrawable) currentNameStatusDrawable.getDrawable()).getDocument();
-                        }
-                        delegate.didPressUserStatus(this, currentUser, document, nameStatusSlug);
-                        invalidateOutbounds();
-                    }
-                }
-            }
-            nameStatusSelector.setState(StateSet.NOTHING);
-            nameStatusPressed = false;
-        }
-        return nameStatusPressed;
     }
 
     private final Runnable scheduleUpdateRelativeDatesRunnable = this::scheduleUpdateRelativeDates;
@@ -4765,9 +4722,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             result = checkNameMotionEvent(event);
         }
         if (!result) {
-            result = checkNameStatusMotionEvent(event);
-        }
-        if (!result) {
             result = checkPinchToZoom(event);
         }
         if (!result) {
@@ -4869,9 +4823,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
             if (linkPreviewSelector != null) {
                 linkPreviewSelector.setState(StateSet.NOTHING);
-            }
-            if (nameStatusSelector != null) {
-                nameStatusSelector.setState(StateSet.NOTHING);
             }
             if (nameLayoutSelector != null) {
                 nameLayoutSelector.setState(StateSet.NOTHING);
@@ -6177,12 +6128,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         if (flagSecure != null) {
             flagSecure.detach();
         }
-        if (currentNameStatusDrawable != null) {
-            currentNameStatusDrawable.detach();
-        }
-        if (currentNameEmojiStatusDrawable != null) {
-            currentNameEmojiStatusDrawable.detach();
-        }
 
         if (mediaSpoilerEffect2 != null) {
             mediaSpoilerEffect2.detach(this);
@@ -6290,12 +6235,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
         updateFlagSecure();
 
-        if (currentNameStatusDrawable != null) {
-            currentNameStatusDrawable.attach();
-        }
-        if (currentNameEmojiStatusDrawable != null) {
-            currentNameEmojiStatusDrawable.attach();
-        }
         if (mediaSpoilerEffect2 != null) {
             if (mediaSpoilerEffect2.destroyed) {
                 mediaSpoilerEffect2 = makeSpoilerEffect();
@@ -10565,9 +10504,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
             seekBarWaveform.setProgress(0);
 
-            if (currentNameStatusDrawable != null) {
-                currentNameStatusDrawable.play();
-            }
             if (replyLine != null) {
                 replyLine.resetAnimation();
             }
@@ -11444,9 +11380,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
         if (summaryReplySelector != null) {
             summaryReplySelector.setState(StateSet.NOTHING);
-        }
-        if (nameStatusSelector != null) {
-            nameStatusSelector.setState(StateSet.NOTHING);
         }
         if (nameLayoutSelector != null) {
             nameLayoutSelector.setState(StateSet.NOTHING);
@@ -17883,15 +17816,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 nameWidth -= adminWidth;
             }
 
-            currentNameStatus = null;
-            nameStatusSlug = null;
-            currentNameBotVerificationId = 0;
             if (messageObject.customName != null) {
                 currentNameString = messageObject.customName;
             } else if (needAuthorName) {
                 currentNameString = getAuthorName();
-                currentNameStatus = getAuthorStatus();
-                currentNameBotVerificationId = getAuthorBotVerificationId();
             } else {
                 currentNameString = "";
             }
@@ -17900,12 +17828,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             try {
                 nameStringFinal = Emoji.replaceEmoji(nameStringFinal, Theme.chat_namePaint.getFontMetricsInt(), false);
             } catch (Exception ignore) {}
-            if (currentNameStatus != null && !viaBot) {
-                nameWidth -= dp(4 + 12 + 4);
-            }
-            if (currentNameBotVerificationId != 0) {
-                nameWidth -= dp(4 + 12 + 4);
-            }
             if (adminString != null) {
                 nameWidth -= dp(8);
             }
@@ -17950,10 +17872,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     SpannableStringBuilder stringBuilder = new SpannableStringBuilder();
                     stringBuilder.append(nameStringFinal).append(" ").append(viaBotString).append(" ").append(viaUsername);
                     stringBuilder.setSpan(viaSpan1 = new TypefaceSpan(Typeface.DEFAULT, 0, color), nameStringFinal.length() + 1, nameStringFinal.length() + 1 + viaBotString.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    if (currentNameStatus != null) {
-                        viaNameWidth += dp(4 + 20 + 4);
-                        stringBuilder.setSpan(new DialogCell.FixedWidthSpan(dp(4 + 20 + 4)), nameStringFinal.length(), nameStringFinal.length() + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    }
                     stringBuilder.setSpan(viaSpan2 = new TypefaceSpan(AndroidUtilities.bold(), 0, color), nameStringFinal.length() + 2 + viaBotString.length(), stringBuilder.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                     nameStringFinal = stringBuilder;
                 } else {
@@ -17984,12 +17902,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 if (drawTopic && topicButton != null) {
                     nameWidth += topicButton.width + dp(8);
                 }
-                if (currentNameStatus != null && !viaBot) {
-                    nameWidth += dp(4 + 12 + 4);
-                }
-                if (currentNameBotVerificationId != 0) {
-                    nameWidth += dp(4 + 12 + 4);
-                }
                 nameWidth -= additionalWidth;
                 if (adminString != null) {
                     adminLayout = new StaticLayout(adminString, Theme.chat_adminPaint, adminWidth + dp(2), Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
@@ -18009,34 +17921,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 }
             } catch (Exception e) {
                 FileLog.e(e);
-            }
-            if (currentNameStatusDrawable == null && currentNameStatus != null) {
-                currentNameStatusDrawable = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(this, true, dp(20));
-                if (attachedToWindow) {
-                    currentNameStatusDrawable.attach();
-                }
-            }
-            if (currentNameStatusDrawable != null) {
-                if (currentNameStatus == null) {
-                    currentNameStatusDrawable.set((Drawable) null, false);
-                } else if (currentNameStatus instanceof Long) {
-                    currentNameStatusDrawable.set((long) currentNameStatus, false);
-                } else if (currentNameStatus instanceof Drawable) {
-                    currentNameStatusDrawable.set((Drawable) currentNameStatus, false);
-                }
-            }
-            if (currentNameEmojiStatusDrawable == null && currentNameBotVerificationId != 0) {
-                currentNameEmojiStatusDrawable = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(this, true, dp(18));
-                if (attachedToWindow) {
-                    currentNameEmojiStatusDrawable.attach();
-                }
-            }
-            if (currentNameEmojiStatusDrawable != null) {
-                if (currentNameBotVerificationId == 0) {
-                    currentNameEmojiStatusDrawable.set((Drawable) null, false);
-                } else {
-                    currentNameEmojiStatusDrawable.set(currentNameBotVerificationId, false);
-                }
             }
             if (currentNameString.length() == 0) {
                 currentNameString = null;
@@ -18758,58 +18642,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             return currentChat.title;
         }
         return "DELETED";
-    }
-
-    private Object getAuthorStatus() {
-        if (currentUser != null) {
-            Long emojiStatusId = UserObject.getEmojiStatusDocumentId(currentUser);
-            if (emojiStatusId != null) {
-                if (currentUser.emoji_status instanceof TLRPC.TL_emojiStatusCollectible) {
-                    nameStatusSlug = ((TLRPC.TL_emojiStatusCollectible) currentUser.emoji_status).slug;
-                }
-                return emojiStatusId;
-            } else if (currentUser.premium) {
-                return ContextCompat.getDrawable(ApplicationLoader.applicationContext, R.drawable.msg_premium_liststar).mutate();
-            }
-        } else if (currentChat != null) {
-            if (currentMessageObject != null && (currentMessageObject.getDialogId() != UserObject.REPLY_BOT) && currentChat.signature_profiles) {
-                long did = DialogObject.getPeerDialogId(currentMessageObject.messageOwner.from_id);
-                if (did >= 0) {
-                    TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(did);
-                    if (user != null && user.emoji_status instanceof TLRPC.TL_emojiStatusCollectible) {
-                        nameStatusSlug = ((TLRPC.TL_emojiStatusCollectible) user.emoji_status).slug;
-                    }
-                    return UserObject.getEmojiStatusDocumentId(user);
-                } else {
-                    TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-did);
-                    if (chat != null) {
-                        if (chat.emoji_status instanceof TLRPC.TL_emojiStatusCollectible) {
-                            nameStatusSlug = ((TLRPC.TL_emojiStatusCollectible) chat.emoji_status).slug;
-                        }
-                        return DialogObject.getEmojiStatusDocumentId(chat.emoji_status);
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    private long getAuthorBotVerificationId() {
-        if (currentUser != null) {
-            return DialogObject.getBotVerificationIcon(currentUser);
-        } else if (currentChat != null) {
-            if (currentMessageObject != null && (currentMessageObject.getDialogId() != UserObject.REPLY_BOT) && currentChat.signature_profiles) {
-                long did = DialogObject.getPeerDialogId(currentMessageObject.messageOwner.from_id);
-                if (did >= 0) {
-                    TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(did);
-                    if (user != null) return DialogObject.getBotVerificationIcon(user);
-                } else {
-                    TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-did);
-                    if (chat != null) return DialogObject.getBotVerificationIcon(chat);
-                }
-            }
-        }
-        return 0;
     }
 
     private String getForwardedMessageText(MessageObject messageObject) {
@@ -19997,9 +19829,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             (!transitionParams.transitionBotButtons.isEmpty() && transitionParams.animateBotButtonsChanged) ||
             !botButtons.isEmpty() ||
             drawSideButton != 0 ||
-            drawNameLayout && nameLayout != null && currentNameEmojiStatusDrawable != null && !currentNameEmojiStatusDrawable.isEmpty() ||
             animatedEmojiStack != null && !animatedEmojiStack.holders.isEmpty() ||
-            currentNameStatusDrawable != null && !currentNameStatusDrawable.isEmpty() ||
             currentMessagesGroup == null &&
                 (transitionParams.animateReplaceCaptionLayout && transitionParams.animateChangeProgress != 1f || transitionParams.animateChangeProgress != 1.0f && transitionParams.animateMessageText) &&
                 transitionParams.animateOutAnimateEmoji != null && !transitionParams.animateOutAnimateEmoji.holders.isEmpty() ||
@@ -20150,7 +19980,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         // the 60fps frame callback its particles needed, so the callback, the runnable
         // behind it and the detach that cancelled it are all gone.
 
-        if ((currentNameStatusDrawable != null || currentNameEmojiStatusDrawable != null || topicButton != null && (drawTopic || transitionParams.animateDrawTopic)) && drawNameLayout && nameLayout != null && (currentPosition == null || currentPosition.minX == 0 && currentPosition.minY == 0) && !(currentMessageObject.deleted && !drawingToBitmap && currentMessagesGroup != null && currentMessagesGroup.messages.size() >= 1)) {
+        if ((topicButton != null && (drawTopic || transitionParams.animateDrawTopic)) && drawNameLayout && nameLayout != null && (currentPosition == null || currentPosition.minX == 0 && currentPosition.minY == 0) && !(currentMessageObject.deleted && !drawingToBitmap && currentMessagesGroup != null && currentMessagesGroup.messages.size() >= 1)) {
             int color;
             float nameX, nameY;
             if (currentMessageObject.shouldDrawWithoutBackground()) {
@@ -20160,9 +19990,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 } else {
                     nameX = backgroundDrawableLeft + transitionParams.deltaLeft + backgroundDrawableRight + dp(22);
                 }
-                if (currentNameBotVerificationId != 0) {
-                    nameX += dp(20);
-                }
                 nameY = layoutHeight - dp(38);
                 nameX -= nameOffsetX;
             } else {
@@ -20170,9 +19997,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     nameX = backgroundDrawableLeft + transitionParams.deltaLeft + dp(isSideMenuEnabled && currentPosition != null && !currentMessageObject.isOutOwner() && currentMessagesGroup != null && !currentMessagesGroup.isDocuments ? -4 : 11) + getExtraTextX();
                 } else {
                     nameX = backgroundDrawableLeft + transitionParams.deltaLeft + dp(!mediaBackground && drawPinnedBottom ? 11 : 17) + getExtraTextX();
-                }
-                if (currentNameBotVerificationId != 0) {
-                    nameX += dp(20);
                 }
                 if (currentMessageObject.isOutOwner() && ChatObject.isChannel(currentChat)) {
                     if (currentBackgroundDrawable != null && currentBackgroundDrawable.hasGradient()) {
@@ -20236,26 +20060,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 ny += dp(5) * avatarAlpha;
             } else {
                 ny -= dp(2.33f) * avatarAlpha;
-            }
-            if (currentNameEmojiStatusDrawable != null) {
-                currentNameEmojiStatusDrawable.setBounds(
-                    (int) (Math.abs(nx) - dp(20)),
-                    (int) (ny + nameLayout.getHeight() / 2 - dp(9)),
-                    (int) (Math.abs(nx) - dp(2)),
-                    (int) (ny + nameLayout.getHeight() / 2 + dp(9))
-                );
-                currentNameEmojiStatusDrawable.setColor(ColorUtils.setAlphaComponent(color, 115));
-                currentNameEmojiStatusDrawable.draw(canvas);
-            }
-            if (currentNameStatusDrawable != null) {
-                currentNameStatusDrawable.setBounds(
-                    (int) (Math.abs(nx) + (viaNameWidth > 0 ? viaNameWidth - dp(4 + 28) : nameLayoutWidth) + dp(2)),
-                    (int) (ny + nameLayout.getHeight() / 2 - dp(10)),
-                    (int) (Math.abs(nx) + (viaNameWidth > 0 ? viaNameWidth - dp(4 + 28) : nameLayoutWidth) + dp(22)),
-                    (int) (ny + nameLayout.getHeight() / 2 + dp(10))
-                );
-                currentNameStatusDrawable.setColor(ColorUtils.setAlphaComponent(color, 115));
-                currentNameStatusDrawable.draw(canvas);
             }
 
             float end;
@@ -20875,9 +20679,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 } else {
                     nameX = backgroundDrawableLeft + transitionParams.deltaLeft + backgroundDrawableRight + dp(22);
                 }
-                if (currentNameBotVerificationId != 0) {
-                    nameX += dp(20);
-                }
                 nameY = layoutHeight - dp(38);
                 float alphaProgress = currentMessageObject.isOut() && (checkBoxVisible || checkBoxAnimationInProgress) ? (1.0f - checkBoxAnimationProgress) : 1.0f;
 
@@ -20910,9 +20711,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     nameX = backgroundDrawableLeft + transitionParams.deltaLeft + dp(isSideMenuEnabled && currentPosition != null && !currentMessageObject.isOutOwner() && currentMessagesGroup != null && !currentMessagesGroup.isDocuments ? -4 : 11) - nameOffsetX + getExtraTextX();
                 } else {
                     nameX = backgroundDrawableLeft + transitionParams.deltaLeft + dp(!mediaBackground && drawPinnedBottom ? 11 : 17) - nameOffsetX + getExtraTextX();
-                }
-                if (currentNameBotVerificationId != 0) {
-                    nameX += dp(20);
                 }
                 if (currentMessageObject.isOutOwner() && ChatObject.isChannel(currentChat)) {
                     if (currentBackgroundDrawable != null && currentBackgroundDrawable.hasGradient()) {
@@ -20981,9 +20779,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
             if (avatarAlpha > 0.0f) {
                 float avatarX = nx;
-                if (currentNameBotVerificationId != 0) {
-                    avatarX -= dp(20);
-                }
                 final float wasX = avatarImage.getImageX();
                 final float wasY = avatarImage.getImageY();
                 final float wasWidth = avatarImage.getImageWidth();
@@ -21021,27 +20816,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             );
             nameLayoutSelector.setAlpha((int) (0xFF * nameAlpha));
             nameLayoutSelector.draw(canvas);
-
-            if (currentNameStatus != null) {
-                if (nameStatusSelector == null) {
-                    nameStatusSelector = Theme.createRadSelectorDrawable(nameStatusSelectorColor = selectorColor, 6, 6);
-                    nameStatusSelector.setCallback(this);
-                } else if (nameStatusSelectorColor != selectorColor) {
-                    Theme.setSelectorDrawableColor(nameStatusSelector, nameStatusSelectorColor = selectorColor, true);
-                }
-                boolean isStarDrawable = currentNameStatus instanceof Drawable;
-                //star has smaller size than other emoji
-                float starVerticalOffset = isStarDrawable ? 1.5f : 0f;
-                float starHorizontalOffset = isStarDrawable ? -5 : 0;
-                nameStatusSelector.setBounds(
-                    (int) (nx + nameOffsetX + (viaNameWidth > 0 ? viaNameWidth - dp(4 + 28) : nameLayoutWidth)),
-                    (int) (ny - dp(1.33f + 2 - starVerticalOffset)),
-                    (int) (nx + nameOffsetX + (viaNameWidth > 0 ? viaNameWidth - dp(4 + 28) : nameLayoutWidth) + dp(4 + 12 + 4 + 4 + starHorizontalOffset)),
-                    (int) (ny + nameLayout.getHeight() + dp(1.33f + 2 - starVerticalOffset))
-                );
-                nameStatusSelector.setAlpha((int) (0xFF * nameAlpha));
-                nameStatusSelector.draw(canvas);
-            }
 
             canvas.translate(nx, ny);
             oldAlpha = Theme.chat_namePaint.getAlpha();
@@ -21113,9 +20887,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 ax = lerp(ax, nx, avatarAlpha);
                 ax2 = lerp(ax2, nx + lineWidth + (adminLayoutIsAdmin ? dp(6) : 0), avatarAlpha);
                 ay += dp(14) * avatarAlpha;
-                if (currentNameBotVerificationId != 0) {
-                    ax -= dp(20) * avatarAlpha;
-                }
 
                 adminLayoutRect.set(ax - dp(6), ay - dp(1), ax2, ay + dp(15));
                 adminLayoutRect.inset(dp(-4), dp(-4));

@@ -122,7 +122,6 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
     private boolean[] isOnline;
 
     private boolean drawCheck;
-    private boolean drawPremium;
 
     private boolean showPremiumBlocked;
     private final AnimatedFloat premiumBlockedT = new AnimatedFloat(this, 0, 350, CubicBezierInterpolator.EASE_OUT_QUINT);
@@ -131,7 +130,6 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
 
     private int statusLeft;
     private StaticLayout statusLayout;
-    private AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable botVerificationDrawable;
     private AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable statusDrawable;
     public StoriesUtilities.AvatarStoryParams avatarStoryParams = new StoriesUtilities.AvatarStoryParams(false);
 
@@ -157,9 +155,6 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
         checkBox.setDrawUnchecked(false);
         checkBox.setDrawBackgroundAsArc(3);
         addView(checkBox);
-
-        botVerificationDrawable = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(this, dp(20));
-        botVerificationDrawable.setCallback(this);
 
         statusDrawable = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(this, dp(20));
         statusDrawable.setCallback(this);
@@ -187,7 +182,7 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
 
     @Override
     protected boolean verifyDrawable(@NonNull Drawable who) {
-        return statusDrawable == who || botVerificationDrawable == who || super.verifyDrawable(who);
+        return statusDrawable == who || super.verifyDrawable(who);
     }
 
     private boolean allowEmojiStatus = true;
@@ -313,7 +308,6 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
             NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.userIsPremiumBlockedUpadted);
         }
         statusDrawable.detach();
-        botVerificationDrawable.detach();
     }
 
     @Override
@@ -325,7 +319,6 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
             NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.userIsPremiumBlockedUpadted);
         }
         statusDrawable.attach();
-        botVerificationDrawable.attach();
     }
 
     @Override
@@ -392,7 +385,6 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
 
         drawNameLock = false;
         drawCheck = false;
-        drawPremium = false;
 
         if (encryptedChat != null) {
             drawNameLock = true;
@@ -430,7 +422,6 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
             }
             nameLockTop = dp(21);
             drawCheck = user.verified;
-            drawPremium = !savedMessages && MessagesController.getInstance(currentAccount).isPremiumUser(user);
             updateStatus(drawCheck, user, null, false);
         }
         if (!LocaleController.isRTL) {
@@ -526,13 +517,6 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
             countLayout = null;
         }
 
-        if (!botVerificationDrawable.isEmpty()) {
-            if (LocaleController.isRTL) {
-                nameWidth -= botVerificationDrawable.getIntrinsicWidth();
-            } else {
-                nameLeft += botVerificationDrawable.getIntrinsicWidth();
-            }
-        }
         if (!statusDrawable.isEmpty()) {
             if (LocaleController.isRTL) {
                 // nameLeft += statusDrawable.getIntrinsicWidth();
@@ -698,36 +682,17 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
         }
     }
 
+    // LoogriGram: the verified check only - no emoji status, no Premium star and
+    // no bot verification icon, as on desktop.
     public void updateStatus(boolean verified, TLRPC.User user, TLRPC.Chat chat, boolean animated) {
         statusDrawable.center = LocaleController.isRTL;
         if (allowEmojiStatus && verified) {
             statusDrawable.set(new CombinedDrawable(Theme.dialogs_verifiedDrawable, Theme.dialogs_verifiedCheckDrawable, 0, 0), animated);
             statusDrawable.setColor(null);
-        } else if (allowEmojiStatus && user != null && !savedMessages && DialogObject.getEmojiStatusDocumentId(user.emoji_status) != 0) {
-            statusDrawable.set(DialogObject.getEmojiStatusDocumentId(user.emoji_status), animated);
-            statusDrawable.setColor(Theme.getColor(Theme.key_chats_verifiedBackground, resourcesProvider));
-        } else if (allowEmojiStatus && chat != null && !savedMessages && DialogObject.getEmojiStatusDocumentId(chat.emoji_status) != 0) {
-            statusDrawable.set(DialogObject.getEmojiStatusDocumentId(chat.emoji_status), animated);
-            statusDrawable.setColor(Theme.getColor(Theme.key_chats_verifiedBackground, resourcesProvider));
-        } else if (allowEmojiStatus && user != null && !savedMessages && MessagesController.getInstance(currentAccount).isPremiumUser(user)) {
-            statusDrawable.set(PremiumGradient.getInstance().premiumStarDrawableMini, animated);
-            statusDrawable.setColor(Theme.getColor(Theme.key_chats_verifiedBackground, resourcesProvider));
         } else {
             statusDrawable.set((Drawable) null, animated);
             statusDrawable.setColor(Theme.getColor(Theme.key_chats_verifiedBackground, resourcesProvider));
         }
-        long botVerificationIcon = 0;
-        if (user != null) {
-            botVerificationIcon = DialogObject.getBotVerificationIcon(user);
-        } else if (chat != null) {
-            botVerificationIcon = DialogObject.getBotVerificationIcon(chat);
-        }
-        if (botVerificationIcon == 0 || savedMessages) {
-            botVerificationDrawable.set((Drawable) null, animated);
-        } else {
-            botVerificationDrawable.set(botVerificationIcon, animated);
-        }
-        botVerificationDrawable.setColor(Theme.getColor(Theme.key_chats_verifiedBackground, resourcesProvider));
     }
 
     private boolean rectangularAvatar;
@@ -872,20 +837,6 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
         }
 
         if (nameLayout != null) {
-            int x;
-            if (LocaleController.isRTL) {
-                x = (int) (nameLeft + nameLayout.getLineRight(0) + dp(6));
-            } else {
-                if (nameLayout.getLineLeft(0) == 0) {
-                    x = nameLeft - dp(3) - botVerificationDrawable.getIntrinsicWidth();
-                } else {
-                    float w = nameLayout.getLineWidth(0);
-                    x = (int) (nameLeft + nameWidth - Math.ceil(w) - dp(3) - botVerificationDrawable.getIntrinsicWidth());
-                }
-            }
-            setDrawableBounds(botVerificationDrawable, x, nameTop + (nameLayout.getHeight() - botVerificationDrawable.getIntrinsicHeight()) / 2f);
-            botVerificationDrawable.draw(canvas);
-
             canvas.save();
             canvas.translate(nameLeft, nameTop);
             nameLayout.draw(canvas);

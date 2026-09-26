@@ -16,7 +16,6 @@ import android.graphics.Canvas;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.Typeface;
-import android.graphics.drawable.Drawable;
 import android.icu.number.Scale;
 import android.text.TextUtils;
 import android.util.TypedValue;
@@ -46,7 +45,6 @@ import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.ChatSearchTabs;
@@ -72,7 +70,6 @@ public class UserCell extends FrameLayout implements NotificationCenter.Notifica
     private ImageView checkBox3;
     private TextView adminTextView;
     private TextView addButton;
-    private final AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable botVerification;
     private ImageView closeView;
     protected Theme.ResourcesProvider resourcesProvider;
 
@@ -187,8 +184,6 @@ public class UserCell extends FrameLayout implements NotificationCenter.Notifica
         nameTextView.setTextSize(16);
         nameTextView.setGravity((LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP);
         addView(nameTextView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 20, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, LocaleController.isRTL ? 28 + (checkbox == 2 ? 18 : 0) + additionalPadding : (64 + padding), 10, LocaleController.isRTL ? (64 + padding) : 28 + (checkbox == 2 ? 18 : 0) + additionalPadding, 0));
-
-        botVerification = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(nameTextView, dp(20));
 
         statusTextView = new SimpleTextView(context);
         statusTextView.setTextSize(15);
@@ -654,21 +649,9 @@ public class UserCell extends FrameLayout implements NotificationCenter.Notifica
             }
             nameTextView.setText(name);
         }
-        long botVerificationIcon = 0;
-        if (currentUser != null) {
-            botVerificationIcon = DialogObject.getBotVerificationIcon(currentUser);
-        } else if (currentChat != null) {
-            botVerificationIcon = DialogObject.getBotVerificationIcon(currentChat);
-        }
-        if (botVerificationIcon == 0) {
-            botVerification.set((Drawable) null, false);
-            nameTextView.setLeftDrawable(null);
-        } else {
-            botVerification.set(botVerificationIcon, false);
-            botVerification.setColor(Theme.getColor(Theme.key_chats_verifiedBackground, resourcesProvider));
-            nameTextView.setLeftDrawable(botVerification);
-        }
-        // LoogriGram: no Premium star or emoji status after anyone's name.
+        // LoogriGram: no Premium star or emoji status after anyone's name, and no
+        // bot verification icon before it, as on desktop.
+        nameTextView.setLeftDrawable(null);
         nameTextView.setRightDrawable(null);
         nameTextView.setRightDrawableTopPadding(0);
         if (currentStatus != null) {
@@ -797,14 +780,12 @@ public class UserCell extends FrameLayout implements NotificationCenter.Notifica
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.emojiLoaded);
-        botVerification.attach();
     }
 
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.emojiLoaded);
-        botVerification.detach();
         storyParams.onDetachFromWindow();
     }
 

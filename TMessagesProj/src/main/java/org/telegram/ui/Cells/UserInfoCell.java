@@ -14,7 +14,6 @@ import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.text.Layout;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextPaint;
@@ -37,11 +36,9 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserObject;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.tgnet.tl.TL_bots;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ChatActivity;
-import org.telegram.ui.Components.AnimatedEmojiSpan;
 import org.telegram.ui.Components.AvatarsDrawable;
 import org.telegram.ui.Components.ButtonBounce;
 import org.telegram.ui.Components.ColoredImageSpan;
@@ -200,29 +197,16 @@ public class UserInfoCell extends View implements NotificationCenter.Notificatio
 
         rowsWidth = rowsKeysWidth + dp(7.66f) + rowsValuesWidth;
         if (user != null && !user.verified && !UserObject.isService(user.id)) {
-            if (user.bot_verification_icon != 0) {
-                if (userFull != null && userFull.bot_verification != null) {
-                    final TL_bots.botVerification verification = userFull.bot_verification;
-                    final SpannableStringBuilder sb = new SpannableStringBuilder("i  ");
-                    footer = new Text(sb, 12);
-                    sb.setSpan(new AnimatedEmojiSpan(verification.icon, footer.getFontMetricsInt()), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    sb.append(verification.description);
-                    footer = new Text(sb, 12).align(Layout.Alignment.ALIGN_CENTER).multiline(5).setMaxWidth(Math.min(AndroidUtilities.displaySize.x, AndroidUtilities.displaySize.y) * .5f).supportAnimatedEmojis(this);
-                    height += dp(12) + footer.getHeight() + dp(15.33f);
-                } else {
-                    footer = null;
-                    height += dp(14);
-                }
-            } else {
-                final SpannableStringBuilder sb = new SpannableStringBuilder("i  ");
-                final ColoredImageSpan span = new ColoredImageSpan(R.drawable.filled_info);
-                span.setScale(0.55f, -0.55f);
-                span.translate(dp(1), dp(-1));
-                sb.setSpan(span, 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                sb.append(getString(R.string.ContactInfoNotVerified));
-                footer = new Text(sb, 12);
-                height += dp(12) + footer.getHeight() + dp(15.33f);
-            }
+            // LoogriGram: a bot's verification of someone - the icon a third party
+            // paid for, and its note here - is not shown, as on desktop.
+            final SpannableStringBuilder sb = new SpannableStringBuilder("i  ");
+            final ColoredImageSpan span = new ColoredImageSpan(R.drawable.filled_info);
+            span.setScale(0.55f, -0.55f);
+            span.translate(dp(1), dp(-1));
+            sb.setSpan(span, 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            sb.append(getString(R.string.ContactInfoNotVerified));
+            footer = new Text(sb, 12);
+            height += dp(12) + footer.getHeight() + dp(15.33f);
         } else {
             footer = null;
             height += dp(14);
