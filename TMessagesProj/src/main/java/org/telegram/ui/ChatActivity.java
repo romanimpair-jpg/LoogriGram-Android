@@ -25619,7 +25619,7 @@ public class ChatActivity extends BaseFragment implements
             showScheduledOrNoSoundHint();
 
             if (!backward && firstOpen) {
-                if (chatActivityEnterView != null && (threadMessageObject != null && threadMessageObject.getRepliesCount() == 0 && ChatObject.canSendMessages(currentChat) && !isTopic || chatMode == MODE_EDIT_BUSINESS_LINK)) {
+                if (chatActivityEnterView != null && threadMessageObject != null && threadMessageObject.getRepliesCount() == 0 && ChatObject.canSendMessages(currentChat) && !isTopic) {
                     chatActivityEnterView.setFieldFocused();
                     chatActivityEnterView.openKeyboard();
                 }
