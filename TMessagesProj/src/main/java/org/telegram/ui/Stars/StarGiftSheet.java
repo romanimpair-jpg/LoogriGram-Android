@@ -873,9 +873,8 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
         }
         final String link = getLink();
         // LoogriGram: the share sheet also offered to repost the gift to a
-        // story, which showed it as a gift message - and this build draws no
-        // gift message (LoogriGramHidden). The link is what is shared.
-        shareAlert = new ShareAlert(getContext(), null, null, link, null, false, link, null, false, false, true, null, resourcesProvider) {
+        // story. Stories are not posted here; the link is what is shared.
+        shareAlert = new ShareAlert(getContext(), null, null, link, null, false, link, null, false, false, null, resourcesProvider) {
             @Override
             protected void onSend(LongSparseArray<TLRPC.Dialog> dids, int count, TLRPC.TL_forumTopic topic) {
                 super.onSend(dids, count, topic);

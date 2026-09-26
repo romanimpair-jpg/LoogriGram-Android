@@ -163,8 +163,6 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
     public boolean drawAvatar = true;
     public boolean drawMonoforumAvatar = false;
     private boolean drawCommunityAvatar;
-    private boolean isShareToStoryCell;
-    public ShareDialogCell.RepostStoryDrawable repostStoryDrawable;
     public int avatarStart = 11;
     public int messagePaddingStart = 72;
     public int heightDefault = 70;
@@ -320,11 +318,6 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
 
     public void setIsTransitionSupport(boolean isTransitionSupport) {
         this.isTransitionSupport = isTransitionSupport;
-    }
-
-    public void setIsShareToStoryCell() {
-        repostStoryDrawable = new ShareDialogCell.RepostStoryDrawable(getContext(), this, R.drawable.forward_to_stories, resourcesProvider);
-        isShareToStoryCell = true;
     }
 
     public float collapseOffset = 0;
@@ -1281,12 +1274,6 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             msgText = sp;
         }
         lastMessageString = msgText;
-
-        if (isShareToStoryCell) {
-            drawPinBackground = true;
-            showChecks = false;
-            drawTime = false;
-        }
 
         if (customDialog != null) {
             if (customDialog.type == 2) {
@@ -3091,11 +3078,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             hasUnmutedTopics = false;
             hasUnmutedCommunityDialogs = false;
             avatarDrawable.setInfo(customDialog.id, customDialog.name, null);
-            if (isShareToStoryCell) {
-                avatarImage.setImage(null, "50_50", repostStoryDrawable, null, 0);
-            } else {
-                avatarImage.setImage(null, "50_50", avatarDrawable, null, 0);
-            }
+            avatarImage.setImage(null, "50_50", avatarDrawable, null, 0);
 
             for (int i = 0; i < thumbImage.length; ++i) {
                 thumbImage[i].setImageBitmap((BitmapDrawable) null);
@@ -4497,16 +4480,11 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                     avatarImage.getCenterX(), avatarImage.getCenterY(), dp(48));
                 avatarImage.draw(canvas);
             } else {
-                storyParams.drawHiddenStoriesAsSegments = isShareToStoryCell || currentDialogFolderId != 0;
-                int s = storyParams.forceState;
-                if (isShareToStoryCell) {
-                    storyParams.forceState = StoriesUtilities.STATE_HAS_UNREAD;
-                }
+                storyParams.drawHiddenStoriesAsSegments = currentDialogFolderId != 0;
                 StoriesUtilities.drawAvatarWithStory(currentDialogId, canvas, avatarImage, storyParams);
                 if (storyParams.drawnLive) {
                     checkTtl();
                 }
-                storyParams.forceState = s;
             }
 
             if (!insideCommunityList && (chat != null && chat.linked_community_id != 0 || user != null && user.linked_community_id != 0) && !drawCommunityAvatar && isDialogCell && !isDialogFolder()) {
@@ -5852,7 +5830,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
-        if (rightFragmentOpenedProgress == 0 && !isTopic && !isShareToStoryCell && storyParams.checkOnTouchEvent(ev, this)) {
+        if (rightFragmentOpenedProgress == 0 && !isTopic && storyParams.checkOnTouchEvent(ev, this)) {
             return true;
         }
         return super.onInterceptTouchEvent(ev);
@@ -5860,7 +5838,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
-        if (!isTopic && !isShareToStoryCell && ev.getAction() == MotionEvent.ACTION_UP || ev.getAction() == MotionEvent.ACTION_CANCEL) {
+        if (!isTopic && ev.getAction() == MotionEvent.ACTION_UP || ev.getAction() == MotionEvent.ACTION_CANCEL) {
             storyParams.checkOnTouchEvent(ev, this);
         }
         return super.dispatchTouchEvent(ev);
@@ -5868,7 +5846,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (rightFragmentOpenedProgress == 0 && !isTopic && !isShareToStoryCell && storyParams.checkOnTouchEvent(event, this)) {
+        if (rightFragmentOpenedProgress == 0 && !isTopic && storyParams.checkOnTouchEvent(event, this)) {
             return true;
         }
         if (delegate == null || delegate.canClickButtonInside()) {

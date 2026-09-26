@@ -7437,12 +7437,13 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 if (isAlbum) {
                     emptyView.button.setVisibility(View.VISIBLE);
                     emptyView.button.setText(getString(R.string.StoriesAlbumAddToAlbum), false);
-                } else if (isSelf()) {
-                    emptyView.button.setVisibility(View.GONE);
                 } else {
-                    emptyView.setStickerType(StickerEmptyView.STICKER_TYPE_ALBUM);
-                    emptyView.button.setVisibility(!isSearchingStories() ? View.VISIBLE : View.GONE);
-                    emptyView.button.setText(addPostText(), false);
+                    // LoogriGram: an empty stories tab, and the archive below,
+                    // offered "Add story", which opened the story camera.
+                    if (!isSelf()) {
+                        emptyView.setStickerType(StickerEmptyView.STICKER_TYPE_ALBUM);
+                    }
+                    emptyView.button.setVisibility(View.GONE);
                 }
 
                 if (isAlbum) {
@@ -7453,30 +7454,17 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     emptyView.subtitle.setText(isStoriesView() ? getString(R.string.NoStoriesSubtitle2) : "");
                 }
 
-                emptyView.button.setOnClickListener(v -> {
-                    if (isAlbum) {
-                        openAddStoriesToAlbumSheet(profileActivity, dialog_id, albumId);
-                    } else {
-                        profileActivity.getMessagesController().getMainSettings().edit().putBoolean("story_keep", true).apply();
-                        StoryRecorder.getInstance(profileActivity.getParentActivity(), profileActivity.getCurrentAccount()).open(null);
-                    }
-                });
+                emptyView.button.setOnClickListener(v -> openAddStoriesToAlbumSheet(profileActivity, dialog_id, albumId));
             } else if (mediaPages[a].selectedType == TAB_ARCHIVED_STORIES) {
                 if (isSelf()) {
                     mediaPages[a].emptyView.stickerView.setVisibility(View.GONE);
-                    mediaPages[a].emptyView.button.setVisibility(View.GONE);
                 } else {
                     mediaPages[a].emptyView.stickerView.setVisibility(View.VISIBLE);
                     mediaPages[a].emptyView.setStickerType(StickerEmptyView.STICKER_TYPE_ALBUM);
-                    mediaPages[a].emptyView.button.setVisibility(View.VISIBLE);
-                    mediaPages[a].emptyView.button.setText(addPostText(), false);
                 }
+                mediaPages[a].emptyView.button.setVisibility(View.GONE);
                 mediaPages[a].emptyView.title.setText(getString(R.string.NoArchivedStoriesTitle));
                 mediaPages[a].emptyView.subtitle.setText(isStoriesView() ? getString(R.string.NoArchivedStoriesSubtitle) : "");
-                mediaPages[a].emptyView.button.setOnClickListener(v -> {
-                    profileActivity.getMessagesController().getMainSettings().edit().putBoolean("story_keep", true).apply();
-                    StoryRecorder.getInstance(profileActivity.getParentActivity(), profileActivity.getCurrentAccount()).open(null);
-                });
             } else {
                 mediaPages[a].emptyView.stickerView.setVisibility(View.VISIBLE);
                 mediaPages[a].emptyView.setStickerType(StickerEmptyView.STICKER_TYPE_SEARCH);
@@ -11422,13 +11410,19 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         float visA = 1 - mediaPages[0].emptyView.getVisibilityFactor();
         float visB = 1 - mediaPages[1].emptyView.getVisibilityFactor();
 
+        // LoogriGram: the stories tab kept its button showing, as "Add story".
+        // It is now only there to archive a selection.
         StoriesAdapter a = storyAlbums_getStoriesAdapterByTabType(mediaPages[0].selectedType);
-        if (typeA == TAB_STORIES || a != null && a.storiesList != null && a.storiesList.getCount() > 0) {
+        if (typeA == TAB_STORIES) {
+            visA = isActionModeShown() ? 1 : 0;
+        } else if (a != null && a.storiesList != null && a.storiesList.getCount() > 0) {
             visA = 1;
         }
 
         StoriesAdapter b = storyAlbums_getStoriesAdapterByTabType(typeB);
-        if (typeB == TAB_STORIES || b != null && b.storiesList != null && b.storiesList.getCount() > 0) {
+        if (typeB == TAB_STORIES) {
+            visB = isActionModeShown() ? 1 : 0;
+        } else if (b != null && b.storiesList != null && b.storiesList.getCount() > 0) {
             visB = 1;
         }
 
@@ -11604,21 +11598,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 optionsSearchImageView.getAnimatedDrawable().setCurrentFrame(optionsSearchImageView.getAnimatedDrawable().getCustomEndFrame());
             }
         }
-    }
-
-    private SpannableStringBuilder addPostButton;
-    private CharSequence addPostText() {
-        if (addPostButton == null) {
-            addPostButton = new SpannableStringBuilder();
-            if (isBot()) {
-                addPostButton.append(getString(R.string.ProfileBotPreviewEmptyButton));
-            } else {
-                addPostButton.append("c");
-                addPostButton.setSpan(new ColoredImageSpan(R.drawable.filled_premium_camera), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                addPostButton.append("  ").append(getString(R.string.StoriesAddPost));
-            }
-        }
-        return addPostButton;
     }
 
     public boolean canEditStories() {

@@ -6616,9 +6616,6 @@
     <string name="ArchiveStories_other">Archive Stories</string>
     <string name="HideStoriesFromAlbum_one">Remove Story from Album</string>
     <string name="HideStoriesFromAlbum_other">Remove Stories from Album</string>
-    <string name="EditStory">Edit Story</string>
-    <string name="EditBotPreview">Edit Preview</string>
-    <string name="WhoCanSee">Who can see</string>
     <string name="VideoConvertFail">Failed to process video file.</string>
     <string name="PreparingVideo">Preparing video…</string>
     <string name="PreparingSticker">Preparing sticker…</string>
@@ -6626,7 +6623,6 @@
     <string name="NoHashtagStoriesTitle">No stories found</string>
     <string name="NoPublicStoriesTitle2">No posts yet…</string>
     <string name="NoStoriesSubtitle2">Publish photos and videos to display on your profile page</string>
-    <string name="StoriesAddPost">Add a post</string>
     <string name="NoArchivedStoriesTitle">No stories yet…</string>
     <string name="NoArchivedStoriesSubtitle">Upload a new story to view it here.</string>
     <string name="StorySave">Save to profile</string>
@@ -6643,10 +6639,6 @@
     <string name="StorySharedToEveryone">This story is shown to everyone.</string>
     <string name="StorySharedToCloseFriends">This story is shown to your close friends.</string>
     <string name="StorySharedToAllContacts">This story is shown to all your contacts.</string>
-    <string name="StorySharedToAllContactsExcluded_one">This story is shown to your contacts (excluding %d).</string>
-    <string name="StorySharedToAllContactsExcluded_other">This story is shown to your contacts (excluding %d).</string>
-    <string name="StorySharedToContacts_one">This story is shown to %d contact.</string>
-    <string name="StorySharedToContacts_other">This story is shown to %d contacts.</string>
     <string name="StoryPinnedToProfile">This story is pinned to your profile.</string>
     <string name="StoryPinnedToPosts">Story saved to the channel’s profile</string>
     <string name="StoryArchivedFromProfile">This story is hidden from your profile.</string>
@@ -6670,7 +6662,6 @@
     <string name="StoriesMovedToContacts">Stories of **%s** were moved to **Archive**.</string>
     <string name="StoriesMovedToDialogs">Stories of **%s** were moved to **Chats**.</string>
     <string name="StoryShared">Story shared</string>
-    <string name="AddStory">Add Story</string>
     <string name="StoryDrafts_one">%d Draft</string>
     <string name="StoryDrafts_other">%d Drafts</string>
     <string name="StorySoundMuted">Sound is now muted.</string>
@@ -6761,7 +6752,6 @@
     <string name="StoryChannelDisableKeep">The story will disappear after it expires.</string>
     <string name="StoryRestrictions">Privacy Restrictions</string>
     <string name="StoryRestrictionsInfo">The privacy settings of your story will prevent some users you tagged (%s) from viewing it.</string>
-    <string name="StoryCameraHint">Tap on %s to post a story for your contacts.</string>
     <string name="StoryCameraHint2">Take photos or videos to share with all your contacts or close friends at once.</string>
     <string name="StoryCameraDualHint">Turn on both cameras at once</string>
     <string name="StoryCollageRemoveGrid">Tap to remove grid</string>
@@ -7527,8 +7517,6 @@
     <string name="ApplyWallpaper">Set Background</string>
     <string name="RemoveWallpaperTitle">Remove wallpaper</string>
     <string name="RemoveWallpaperMessage">Are you sure you want to reset wallpaper back?</string>
-    <string name="FwdMyStory">Repost\nStory</string>
-    <string name="RepostToStory">Repost\nto Story</string>
     <string name="StoryRemoveRoundTitle">Remove Video</string>
     <string name="StoryRemoveRoundMessage">Are you sure you want to remove your video message?</string>
     <string name="TranscriptionTrialLeft_one">You have **%1$d** free voice transcription left.</string>
@@ -7601,8 +7589,6 @@
     <string name="ChannelWallpaper2Info">Set a wallpaper that will be visible for everyone reading your channel.</string>
     <string name="GroupWallpaper2Info">Set a wallpaper that will be visible for everyone reading your group.</string>
     <string name="ReadMore">Read More</string>
-    <string name="RepostedToProfile">Message reposted to your profile.</string>
-    <string name="RepostedToChannelProfile">Message reposted to **%s**.</string>
     <string name="GiftRepostedToProfile">Gift is reposted to your profile.</string>
     <string name="GiftRepostedToChannelProfile">Gift is reposted to **%s**.</string>
     <string name="StorySetWallpaper">Select Wallpaper</string>
@@ -8522,7 +8508,6 @@
     <string name="BrowserExternalRestricted">LoogriGram will now open links from this website in the external browser. You can change this in **Settings.**</string>
     <string name="StoryEditCover">Edit Cover</string>
     <string name="StoryEditCoverInfo">Choose a frame from the story to show in your Profile.</string>
-    <string name="StoryEditCoverMenu">Edit Cover</string>
     <string name="StoryCoverSave">Save Cover</string>
     <string name="ProfileUnofficialSecurityRisk">%s uses an unofficial Telegram client — messages to this user may be less secure.</string>
     <string name="WebBookmarks">Bookmarks</string>
@@ -9882,8 +9867,6 @@
     <string name="AgeVerificationFailedText">Sorry, you can\'t view 18+ content.</string>
     <string name="AgeVerificationPassedTitle">Age Check Passed</string>
     <string name="AgeVerificationNeedCameraPermission">Telegram needs access to your camera so that you can confirm your age.</string>
-    <string name="StoriesForwardTitle">Your Stories</string>
-    <string name="StoriesForwardText">Forward to stories</string>
     <string name="Gift2CollectionEmptyTitle">Organize Your Gifts</string>
     <string name="Gift2CollectionEmptyText">Add some of your gifts to this collection.</string>
     <string name="Gift2CollectionEmptyButton">Add to Collection</string>
@@ -10013,7 +9996,6 @@
     <string name="ProfileActionsLeave">Leave</string>
     <string name="ProfileActionsVoiceChat">Voice Chat</string>
     <string name="ProfileActionsLiveStream">Live Stream</string>
-    <string name="ProfileActionsAddStory">Add Story</string>
     <string name="ProfileActionsStop">Stop</string>
     <string name="ProfileActionsEditPhoto">Set Profile</string>
     <string name="ProfileActionsEditPhoto2">Set Photo</string>
@@ -11073,6 +11055,10 @@
          offered beside the switch. See PostSuggestionsEditActivity. -->
     <string name="LoogriGramDirectMessagesHint">Allow users to send messages to your channel.</string>
     <string name="LoogriGramDirectMessagesOn">On</string>
+    <!-- LoogriGram: a mini app asked to share media to our story. Stories are
+         not posted here; the desktop fork answers the same way. See
+         BotWebViewContainer's web_app_share_to_story. -->
+    <string name="LoogriGramNoShareToStory">Sharing to Stories is not supported in LoogriGram.</string>
     <!-- LoogriGram: the updater. See LoogriGramUpdate and the update tab in
          MainTabsActivity. The tag is this build's short commit sha. -->
     <string name="LoogriGramUpdateTab">Update?</string>

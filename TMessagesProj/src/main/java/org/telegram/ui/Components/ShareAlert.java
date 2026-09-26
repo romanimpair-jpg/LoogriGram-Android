@@ -176,8 +176,6 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
     private SwitchView switchView;
     private int containerViewTop = -1;
     private boolean fullyShown = false;
-    private boolean includeStory;
-    public boolean includeStoryFromMessage;
 
     public int timestamp;
     public FrameLayout timestampFrameLayout;
@@ -376,14 +374,14 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
     }
 
     public ShareAlert(final Context context, ArrayList<MessageObject> messages, final String text, boolean channel, final String copyLink, boolean fullScreen, Theme.ResourcesProvider resourcesProvider) {
-        this(context, null, messages, text, null, channel, copyLink, null, fullScreen, false, false, null, resourcesProvider);
+        this(context, null, messages, text, null, channel, copyLink, null, fullScreen, false, null, resourcesProvider);
     }
 
     public ShareAlert(final Context context, ChatActivity fragment, ArrayList<MessageObject> messages, final String text, final String text2, boolean channel, final String copyLink, final String copyLink2, boolean fullScreen, boolean forCall) {
-        this(context, fragment, messages, text, text2, channel, copyLink, copyLink2, fullScreen, forCall, false, null, null);
+        this(context, fragment, messages, text, text2, channel, copyLink, copyLink2, fullScreen, forCall, null, null);
     }
 
-    public ShareAlert(final Context context, ChatActivity fragment, ArrayList<MessageObject> messages, final String text, final String text2, boolean channel, final String copyLink, final String copyLink2, boolean fullScreen, boolean forCall, boolean includeStory, Integer video_timestamp, Theme.ResourcesProvider theme) {
+    public ShareAlert(final Context context, ChatActivity fragment, ArrayList<MessageObject> messages, final String text, final String text2, boolean channel, final String copyLink, final String copyLink2, boolean fullScreen, boolean forCall, Integer video_timestamp, Theme.ResourcesProvider theme) {
         super(context, true, theme);
         AndroidUtilities.enableEdgeToEdge(getWindow());
 
@@ -440,7 +438,6 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
 
 
         this.resourcesProvider = theme;
-        this.includeStory = includeStory;
 
         parentActivity = AndroidUtilities.findActivity(context);
 
@@ -1900,10 +1897,6 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
         return WindowInsetsCompat.CONSUMED;
     }
 
-    protected void onShareStory(View cell) {
-
-    }
-    
     private void showPremiumBlockedToast(View view, long dialogId) {
         AndroidUtilities.shakeViewSpring(view, shiftDp = -shiftDp);
         BotWebViewVibrationEffect.APP_ERROR.vibrate();
@@ -1914,10 +1907,6 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
 
     private int shiftDp = 4;
     private void selectDialog(View cell, TLRPC.Dialog dialog) {
-        if (dialog instanceof ShareDialogsAdapter.MyStoryDialog) {
-            onShareStory(cell);
-            return;
-        }
         if (dialog != null && (cell instanceof ShareDialogCell && ((ShareDialogCell) cell).isBlocked() || cell instanceof ProfileSearchCell && ((ProfileSearchCell) cell).isBlocked())) {
             showPremiumBlockedToast(cell, dialog.id);
             return;
@@ -2780,10 +2769,6 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
 
     private class ShareDialogsAdapter extends RecyclerListView.SelectionAdapter {
 
-        private class MyStoryDialog extends TLRPC.Dialog {
-            { id = Long.MAX_VALUE; }
-        }
-
         private Context context;
         private int currentCount;
         private ArrayList<TLRPC.Dialog> dialogs = new ArrayList<>();
@@ -2798,11 +2783,6 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
             dialogs.clear();
             dialogsMap.clear();
             long selfUserId = UserConfig.getInstance(currentAccount).clientUserId;
-            if (includeStory) {
-                MyStoryDialog d = new MyStoryDialog();
-                dialogs.add(d);
-                dialogsMap.put(d.id, d);
-            }
             if (!MessagesController.getInstance(currentAccount).dialogsForward.isEmpty()) {
                 TLRPC.Dialog dialog = MessagesController.getInstance(currentAccount).dialogsForward.get(0);
                 dialogs.add(dialog);
@@ -2887,15 +2867,7 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
             View view;
             switch (viewType) {
                 case 0: {
-                    view = new ShareDialogCell(context, ShareDialogCell.TYPE_SHARE, resourcesProvider) {
-                        @Override
-                        protected String repostToCustomName() {
-                            if (includeStoryFromMessage) {
-                                return LocaleController.getString(R.string.RepostToStory);
-                            }
-                            return super.repostToCustomName();
-                        }
-                    };
+                    view = new ShareDialogCell(context, ShareDialogCell.TYPE_SHARE, resourcesProvider);
                     view.setLayoutParams(new RecyclerView.LayoutParams(RecyclerView.LayoutParams.MATCH_PARENT, dp(100)));
                     break;
                 }

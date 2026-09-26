@@ -22,13 +22,9 @@ import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
-import android.text.Layout;
-import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
-import android.text.Spanned;
 import android.text.TextUtils;
-import android.text.style.ClickableSpan;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
@@ -51,7 +47,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.BotWebViewVibrationEffect;
 import org.telegram.messenger.BuildConfig;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.Emoji;
@@ -82,14 +77,9 @@ import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.EllipsizeSpanAnimator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.ListView.AdapterWithDiffUtils;
-import org.telegram.ui.Components.Premium.LimitReachedBottomSheet;
 import org.telegram.ui.Components.RadialProgress;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.SeekBarView;
-import org.telegram.ui.Components.TypefaceSpan;
-import org.telegram.ui.PremiumPreviewFragment;
-import org.telegram.ui.Stories.recorder.HintView2;
-import org.telegram.ui.Stories.recorder.StoryRecorder;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -134,7 +124,6 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
     Paint backgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     CanvasButton miniItemsClickArea = new CanvasButton(this);
 
-    private HintView2 premiumHint;
 
     public static final float COLLAPSED_SIZE = 26.33f;
 
@@ -292,9 +281,6 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
                 super.onScrolled(recyclerView, dx, dy);
                 invalidate();
                 checkLoadMore();
-                if (premiumHint != null) {
-                    premiumHint.hide();
-                }
             }
         });
         itemAnimator = new DefaultItemAnimator();
@@ -378,14 +364,6 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
                 }
             }
 
-            @Override
-            public void onScrolled(int dx, int dy) {
-                super.onScrolled(dx, dy);
-                if (premiumHint != null) {
-                    premiumHint.hide();
-                }
-            }
-
 
             @Override
             public boolean dispatchTouchEvent(MotionEvent ev) {
@@ -456,14 +434,8 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
         try {
             performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP);
         } catch (Exception ignored) {}
-        if (cell.isSelf && !storiesController.hasSelfStories()) {
-            if (!MessagesController.getInstance(currentAccount).storiesEnabled()) {
-                showPremiumHint();
-            } else {
-                openStoryRecorder();
-            }
-            return;
-        }
+        // LoogriGram: our own cell, with no stories of ours, opened the story
+        // camera here. Stories are not posted here, so it opens nothing.
         if (!storiesController.hasStories(cell.dialogId) && !storiesController.hasUploadingStories(cell.dialogId)) {
             return;
         }
@@ -895,14 +867,6 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
             }
         }
 
-        if (premiumHint != null) {
-            float x = AndroidUtilities.lerp(37 - 8, 68 + 14 - 8, CubicBezierInterpolator.EASE_OUT.getInterpolation(collapsedProgress));
-            if (recyclerListView.getChildCount() > 0) {
-                x += recyclerListView.getChildAt(0).getLeft();
-            }
-            premiumHint.setJoint(0, x);
-        }
-
         float progress = Math.min(collapsedProgress, collapsedProgress2);
 
         final float clipRightPadding = actionBar.menu.getVisibleItemsMeasuredWidthWithAlpha() * progress - dp(6);
@@ -1204,49 +1168,6 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
 
     public void onUserLongPressed(View view, long dialogId) {
 
-    }
-
-    public void openStoryRecorder() {
-        openStoryRecorder(0);
-    }
-
-    public void openStoryRecorder(long dialogId) {
-        if (dialogId == 0) {
-            final StoriesController.StoryLimit storyLimit = MessagesController.getInstance(currentAccount).getStoriesController().checkStoryLimit();
-            if (storyLimit != null && storyLimit.active(currentAccount)) {
-                fragment.showDialog(new LimitReachedBottomSheet(fragment, getContext(), storyLimit.getLimitReachedType(), currentAccount, null));
-                return;
-            }
-        }
-
-        StoryCell cell = null;
-        for (int i = 0 ; i < recyclerListView.getChildCount(); i++) {
-            StoryCell storyCell = (StoryCell) recyclerListView.getChildAt(i);
-            if (dialogId == 0 ? storyCell.isSelf : storyCell.dialogId == dialogId) {
-                cell = storyCell;
-                break;
-            }
-        }
-        if (cell == null) {
-            return;
-        }
-        final StoryCell finalCell = cell;
-        if (dialogId != 0) {
-            final Theme.ResourcesProvider resourcesProvider = fragment != null ? fragment.getResourceProvider() : null;
-            AlertDialog progressDialog = new AlertDialog(getContext(), AlertDialog.ALERT_TYPE_SPINNER, resourcesProvider);
-            progressDialog.showDelayed(500);
-            MessagesController.getInstance(currentAccount).getStoriesController().canSendStoryFor(dialogId, canSend -> {
-                progressDialog.dismiss();
-                if (canSend) {
-                    StoryRecorder.getInstance(fragment.getParentActivity(), currentAccount)
-                        .selectedPeerId(dialogId)
-                        .canChangePeer(false)
-                        .open(StoryRecorder.SourceView.fromStoryCell(finalCell));
-                }
-            }, true, resourcesProvider);
-        } else {
-            StoryRecorder.getInstance(fragment.getParentActivity(), currentAccount).open(StoryRecorder.SourceView.fromStoryCell(cell));
-        }
     }
 
     EllipsizeSpanAnimator ellipsizeSpanAnimator = new EllipsizeSpanAnimator(this);
@@ -2070,58 +1991,6 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
         }
 //        NotificationsController.getInstance(currentAccount).processIgnoreStories();
         checkedStoryNotificationDeletion = System.currentTimeMillis() + 1000L * 60;
-    }
-
-    @Override
-    public void setTranslationY(float translationY) {
-        super.setTranslationY(translationY);
-        if (premiumHint != null) {
-            premiumHint.setTranslationY(translationY);
-        }
-    }
-
-    public HintView2 getPremiumHint() {
-        return premiumHint;
-    }
-
-    private HintView2 makePremiumHint() {
-        if (premiumHint != null) {
-            return premiumHint;
-        }
-        premiumHint = new HintView2(getContext(), HintView2.DIRECTION_TOP)
-            .setBgColor(getThemedColor(Theme.key_undo_background))
-            .setMultilineText(true)
-            .setTextAlign(Layout.Alignment.ALIGN_CENTER)
-            .setJoint(0, 37 - 8);
-        Spannable text = AndroidUtilities.replaceSingleTag(LocaleController.getString("StoriesPremiumHint2").replace('\n', ' '), Theme.key_undo_cancelColor, 0, () -> {
-            if (premiumHint != null) {
-                premiumHint.hide();
-            }
-            fragment.presentFragment(new PremiumPreviewFragment("stories"));
-        });
-        ClickableSpan[] spans = text.getSpans(0, text.length(), ClickableSpan.class);
-        if (spans != null && spans.length >= 1) {
-            int start = text.getSpanStart(spans[0]);
-            int end = text.getSpanEnd(spans[0]);
-            text.setSpan(new TypefaceSpan(AndroidUtilities.bold()), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        }
-        premiumHint.setMaxWidthPx(HintView2.cutInFancyHalf(text, premiumHint.getTextPaint()));
-        premiumHint.setText(text);
-        premiumHint.setPadding(dp(8), dp(24), dp(8), 0);
-        if (getParent() instanceof FrameLayout) {
-            ((FrameLayout) getParent()).addView(premiumHint, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 150, Gravity.LEFT | Gravity.TOP));
-        }
-        return premiumHint;
-    }
-
-    public void showPremiumHint() {
-        makePremiumHint();
-        if (premiumHint != null) {
-            if (premiumHint.shown()) {
-                BotWebViewVibrationEffect.APP_ERROR.vibrate();
-            }
-            premiumHint.show();
-        }
     }
 
     @Override

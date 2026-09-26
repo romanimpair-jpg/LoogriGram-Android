@@ -40,7 +40,6 @@ import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.CreateBotAlert;
 import org.telegram.ui.Components.SharedMediaLayout;
 import org.telegram.ui.Components.voip.VoIPHelper;
-import org.telegram.ui.Stories.recorder.StoryRecorder;
 import org.telegram.ui.web.WebBrowserSettings;
 
 import java.util.ArrayList;
@@ -206,17 +205,9 @@ public class LinkManager {
             return true;
         }
 
-        if ("post".equalsIgnoreCase(first)) {
-            int mode = StoryRecorder.MODE_PHOTO;
-            if ("video".equalsIgnoreCase(second))
-                mode = StoryRecorder.MODE_VIDEO;
-            if ("live".equalsIgnoreCase(second))
-                mode = StoryRecorder.MODE_LIVE;
-            StoryRecorder.getInstance(activity, currentAccount)
-                .setMode(mode)
-                .open(null);
-            return true;
-        }
+        // LoogriGram: post, post/video and post/live opened the story camera.
+        // Stories are not posted here; those links fall through to
+        // LaunchActivity, which answers them as links this client cannot open.
 
         if ("contacts".equalsIgnoreCase(first)) {
             if ("new".equalsIgnoreCase(second)) {

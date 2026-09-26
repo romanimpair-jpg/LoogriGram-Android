@@ -105,7 +105,7 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
             VIEW_TYPE_STORIES = 18,
             VIEW_TYPE_ARCHIVE_FULLSCREEN = 19,
             VIEW_TYPE_GRAY_SECTION = 20,
-            VIEW_TYPE_FORWARD_TO_STORIES_CELL = 21,
+            // LoogriGram: 21 was the forward picker's "My Story" row.
             VIEW_TYPE_HEADER_3 = 22,
             VIEW_TYPE_DIALOG_COMMUNITY = 23;
 
@@ -117,7 +117,6 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
     private int prevContactsCount;
     private int prevDialogsCount;
     private int dialogsType;
-    private boolean allowForwardAsStories;
     private int folderId;
     private long openedDialogId;
     private int currentCount;
@@ -180,9 +179,6 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
         if (hasChatlistHint) {
             position--;
         }
-        if (allowForwardAsStories && dialogsType == DialogsActivity.DIALOGS_TYPE_FORWARD) {
-            position -= 1;
-        }
         if (dialogsType == DialogsActivity.DIALOGS_TYPE_IMPORT_HISTORY_GROUPS || dialogsType == DialogsActivity.DIALOGS_TYPE_IMPORT_HISTORY) {
             position -= 2;
         } else if (dialogsType == DialogsActivity.DIALOGS_TYPE_IMPORT_HISTORY_USERS) {
@@ -198,14 +194,6 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
     public void setDialogsType(int type) {
         dialogsType = type;
         notifyDataSetChanged();
-    }
-
-    public void setAllowForwardAsStories(boolean allowForwardAsStories) {
-        this.allowForwardAsStories = allowForwardAsStories;
-    }
-
-    public boolean isAllowForwardAsStories() {
-        return allowForwardAsStories;
     }
 
     public int getDialogsType() {
@@ -630,7 +618,6 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                 }
                 view = dialogCell2;
                 break;
-            case VIEW_TYPE_FORWARD_TO_STORIES_CELL:
             case VIEW_TYPE_DIALOG:
                 if (dialogsType == DialogsActivity.DIALOGS_TYPE_ADD_USERS_TO ||
                     dialogsType == DialogsActivity.DIALOGS_TYPE_BOT_REQUEST_PEER) {
@@ -644,9 +631,6 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                     dialogCell.setPreloader(preloader);
                     dialogCell.setDialogCellDelegate(this);
                     dialogCell.setIsTransitionSupport(isTransitionSupport);
-                    if (viewType == VIEW_TYPE_FORWARD_TO_STORIES_CELL) {
-                        dialogCell.setIsShareToStoryCell();
-                    }
                     if (communityId != 0) {
                         dialogCell.insideCommunityList = true;
                     }
@@ -845,21 +829,6 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int i) {
         switch (holder.getItemViewType()) {
-            case VIEW_TYPE_FORWARD_TO_STORIES_CELL: {
-                TLRPC.Dialog nextDialog = (TLRPC.Dialog) getItem(i + 1);
-
-                DialogCell cell = (DialogCell) holder.itemView;
-                DialogCell.CustomDialog customDialog = new DialogCell.CustomDialog();
-                customDialog.name = getString(R.string.StoriesForwardTitle);
-                customDialog.message = getString(R.string.StoriesForwardText);
-
-                cell.useSeparator = false; // nextDialog != null;
-                cell.fullSeparator = false; // nextDialog != null && !nextDialog.pinned;
-
-                cell.setDialog(customDialog);
-                cell.checkHeight();
-                break;
-            }
             case VIEW_TYPE_DIALOG_COMMUNITY: {
                 Object item = getItem(i);
                 DialogCell cell = (DialogCell) holder.itemView;
@@ -1085,7 +1054,9 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
                 }
                 TextView textView = cell.getTextView();
                 textView.setCompoundDrawablePadding(AndroidUtilities.dp(4));
-                textView.setCompoundDrawablesWithIntrinsicBounds(null, null, parentFragment != null && parentFragment.storiesEnabled ? null : arrowDrawable, null);
+                // LoogriGram: the arrow was left out while a story camera button
+                // sat above the pencil; that button is gone.
+                textView.setCompoundDrawablesWithIntrinsicBounds(null, null, arrowDrawable, null);
                 textView.getLayoutParams().width = LayoutHelper.WRAP_CONTENT;
                 break;
             }
@@ -1707,10 +1678,6 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
 
         if ((requestPeerType instanceof TLRPC.TL_requestPeerTypeBroadcast || requestPeerType instanceof TLRPC.TL_requestPeerTypeChat) && dialogsCount > 0) {
             itemInternals.add(new ItemInternal(VIEW_TYPE_TEXT));
-        }
-
-        if (allowForwardAsStories && dialogsType == DialogsActivity.DIALOGS_TYPE_FORWARD) {
-            itemInternals.add(new ItemInternal(VIEW_TYPE_FORWARD_TO_STORIES_CELL));
         }
 
         if (!stopUpdate) {

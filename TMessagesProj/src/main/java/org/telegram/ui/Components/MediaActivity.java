@@ -126,7 +126,6 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
         initialTab = getArguments().getInt("start_from", defaultTab);
         getNotificationCenter().addObserver(this, NotificationCenter.userInfoDidLoad);
         getNotificationCenter().addObserver(this, NotificationCenter.currentUserPremiumStatusChanged);
-        getNotificationCenter().addObserver(this, NotificationCenter.storiesEnabledUpdate);
         if (DialogObject.isUserDialog(dialogId) && topicId == 0) {
             TLRPC.User user = getMessagesController().getUser(dialogId);
             if (UserObject.isUserSelf(user)) {
@@ -146,7 +145,6 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
         super.onFragmentDestroy();
         getNotificationCenter().removeObserver(this, NotificationCenter.userInfoDidLoad);
         getNotificationCenter().removeObserver(this, NotificationCenter.currentUserPremiumStatusChanged);
-        getNotificationCenter().removeObserver(this, NotificationCenter.storiesEnabledUpdate);
         if (applyBulletin != null) {
             Runnable runnable = applyBulletin;
             applyBulletin = null;
@@ -164,7 +162,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
                     sharedMediaLayout.setUserInfo(currentUserInfo);
                 }
             }
-        } else if (id == NotificationCenter.currentUserPremiumStatusChanged || id == NotificationCenter.storiesEnabledUpdate) {
+        } else if (id == NotificationCenter.currentUserPremiumStatusChanged) {
 
         }
     }

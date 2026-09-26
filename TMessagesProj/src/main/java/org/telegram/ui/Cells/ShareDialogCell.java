@@ -13,13 +13,8 @@ import static org.telegram.messenger.AndroidUtilities.dp;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.ColorFilter;
-import android.graphics.LinearGradient;
-import android.graphics.Paint;
-import android.graphics.PixelFormat;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
-import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
 import android.os.SystemClock;
 import android.text.Layout;
@@ -31,9 +26,6 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
-import androidx.annotation.DrawableRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.dynamicanimation.animation.FloatValueHolder;
 import androidx.dynamicanimation.animation.SpringAnimation;
 import androidx.dynamicanimation.animation.SpringForce;
@@ -62,7 +54,6 @@ import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.Forum.ForumUtilities;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.Premium.PremiumGradient;
-import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.Text;
 
 public class ShareDialogCell extends FrameLayout implements NotificationCenter.NotificationCenterDelegate {
@@ -72,7 +63,6 @@ public class ShareDialogCell extends FrameLayout implements NotificationCenter.N
     private final SimpleTextView topicTextView;
     private final CheckBox2 checkBox;
     private final AvatarDrawable avatarDrawable;
-    private RepostStoryDrawable repostStoryDrawable;
     private TLRPC.User user;
     private final int currentType;
 
@@ -190,19 +180,10 @@ public class ShareDialogCell extends FrameLayout implements NotificationCenter.N
         super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(dp(currentType == TYPE_CREATE ? 95 : 103), MeasureSpec.EXACTLY));
     }
 
-    protected String repostToCustomName() {
-        return LocaleController.getString(R.string.FwdMyStory);
-    }
-
     public void setDialog(long uid, boolean checked, CharSequence name) {
         avatarDrawable.setScaleSize(1f);
-        if (uid == Long.MAX_VALUE) {
-            nameTextView.setText(repostToCustomName());
-            if (repostStoryDrawable == null) {
-                repostStoryDrawable = new RepostStoryDrawable(getContext(), imageView, true, resourcesProvider);
-            }
-            imageView.setImage(null, null, repostStoryDrawable, null);
-        } else if (DialogObject.isUserDialog(uid)) {
+        // LoogriGram: Long.MAX_VALUE was the share sheet's "My Story" cell.
+        if (DialogObject.isUserDialog(uid)) {
             user = MessagesController.getInstance(currentAccount).getUser(uid);
             final TL_account.RequirementToContact r = MessagesController.getInstance(currentAccount).isUserContactBlocked(uid);
             premiumBlocked = DialogObject.isPremiumBlocked(r);
@@ -426,93 +407,6 @@ public class ShareDialogCell extends FrameLayout implements NotificationCenter.N
         super.onInitializeAccessibilityNodeInfo(info);
         if (checkBox.isChecked()) {
             info.setSelected(true);
-        }
-    }
-
-    public static class RepostStoryDrawable extends Drawable {
-
-        private final LinearGradient gradient;
-        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-
-        private final RLottieDrawable lottieDrawable;
-        private final Drawable drawable;
-
-        public RepostStoryDrawable(Context context, View parentView, boolean animate, Theme.ResourcesProvider resourcesProvider) {
-            this(context, parentView, animate, R.drawable.large_repost_story, resourcesProvider);
-        }
-
-        public RepostStoryDrawable(Context context, View parentView, @DrawableRes int drawableRes, Theme.ResourcesProvider resourcesProvider) {
-            this(context, parentView, false, drawableRes, resourcesProvider);
-        }
-
-        public RepostStoryDrawable(Context context, View parentView, boolean animate, @DrawableRes int drawableRes, Theme.ResourcesProvider resourcesProvider) {
-            gradient = new LinearGradient(0, 0, dp(56), dp(56), new int[] {
-                Theme.getColor(Theme.key_stories_circle1, resourcesProvider),
-                Theme.getColor(Theme.key_stories_circle2, resourcesProvider)
-            }, new float[] { 0, 1 }, Shader.TileMode.CLAMP);
-            paint.setShader(gradient);
-
-            if (animate) {
-                lottieDrawable = new RLottieDrawable(R.raw.story_repost, "story_repost", dp(42), dp(42), true, null);
-                lottieDrawable.setMasterParent(parentView);
-                AndroidUtilities.runOnUIThread(lottieDrawable::start, 450);
-                drawable = null;
-            } else {
-                lottieDrawable = null;
-                drawable = context.getResources().getDrawable(drawableRes).mutate();
-                drawable.setColorFilter(new PorterDuffColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN));
-            }
-        }
-
-        int alpha = 0xFF;
-        @Override
-        public void draw(@NonNull Canvas canvas) {
-            canvas.save();
-            canvas.translate(getBounds().left, getBounds().top);
-            AndroidUtilities.rectTmp.set(0, 0, getBounds().width(), getBounds().height());
-            paint.setAlpha(alpha);
-            float r2 = Math.min(getBounds().width(), getBounds().height()) / 2f * ((float) alpha / 0xFF);
-            canvas.drawRoundRect(AndroidUtilities.rectTmp, r2, r2, paint);
-            canvas.restore();
-
-            final int r = dp(lottieDrawable != null ? 20 : 15);
-            AndroidUtilities.rectTmp2.set(
-                getBounds().centerX() - r,
-                getBounds().centerY() - r,
-                getBounds().centerX() + r,
-                getBounds().centerY() + r
-            );
-            Drawable drawable = lottieDrawable == null ? this.drawable : lottieDrawable;
-            if (drawable != null) {
-                drawable.setBounds(AndroidUtilities.rectTmp2);
-                drawable.setAlpha(alpha);
-                drawable.draw(canvas);
-            }
-        }
-
-        @Override
-        public void setAlpha(int alpha) {
-            this.alpha = alpha;
-        }
-
-        @Override
-        public void setColorFilter(@Nullable ColorFilter colorFilter) {
-
-        }
-
-        @Override
-        public int getIntrinsicWidth() {
-            return dp(56);
-        }
-
-        @Override
-        public int getIntrinsicHeight() {
-            return dp(56);
-        }
-
-        @Override
-        public int getOpacity() {
-            return PixelFormat.TRANSPARENT;
         }
     }
 }

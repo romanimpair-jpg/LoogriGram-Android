@@ -237,7 +237,6 @@ import org.telegram.ui.Cells.DialogCell;
 import org.telegram.ui.Cells.IMessageCell;
 import org.telegram.ui.Cells.MentionCell;
 import org.telegram.ui.Cells.ProfileChannelCell;
-import org.telegram.ui.Cells.ShareDialogCell;
 import org.telegram.ui.Cells.StickerCell;
 import org.telegram.ui.Cells.TextSelectionHelper;
 import org.telegram.ui.Cells.UserInfoCell;
@@ -288,8 +287,6 @@ import org.telegram.ui.Stories.StoriesUtilities;
 import org.telegram.ui.Stories.PublicStoriesList;
 import org.telegram.ui.Stories.recorder.HintView2;
 import org.telegram.ui.Stories.recorder.PreviewView;
-import org.telegram.ui.Stories.recorder.StoryEntry;
-import org.telegram.ui.Stories.recorder.StoryRecorder;
 import org.telegram.ui.bots.BotCommandsMenuContainer;
 import org.telegram.ui.bots.BotCommandsMenuView;
 import org.telegram.ui.bots.BotWebViewSheet;
@@ -36428,9 +36425,9 @@ public class ChatActivity extends BaseFragment implements
                     arrayList = new ArrayList<>();
                     arrayList.add(messageObject);
                 }
-                final boolean includeStory = getMessagesController().storiesEnabled() && StoryEntry.canRepostMessage(messageObject);
-                showDialog(new ShareAlert(getContext(), ChatActivity.this, arrayList, null, null, ChatObject.isChannel(currentChat), null, null, false, false, includeStory, null, themeDelegate) {
-                    { includeStoryFromMessage = includeStory; }
+                // LoogriGram: the share sheet also offered "Repost to Story",
+                // which opened the story editor on this message.
+                showDialog(new ShareAlert(getContext(), ChatActivity.this, arrayList, null, null, ChatObject.isChannel(currentChat), null, null, false, false, null, themeDelegate) {
                     @Override
                     public void dismissInternal() {
                         AndroidUtilities.requestAdjustResize(getParentActivity(), classGuid);
@@ -36438,50 +36435,6 @@ public class ChatActivity extends BaseFragment implements
                         if (chatActivityEnterView.getVisibility() == View.VISIBLE) {
                             fragmentView.requestLayout();
                         }
-                    }
-
-                    @Override
-                    protected void onShareStory(View cell) {
-                        StoryRecorder.SourceView sourceView = null;
-                        if (cell instanceof ShareDialogCell) {
-                            sourceView = StoryRecorder.SourceView.fromShareCell((ShareDialogCell) cell);
-                        }
-                        final ArrayList<MessageObject> messageObjects = new ArrayList<>();
-                        MessageObject.GroupedMessages groupedMessages = messageObject.getGroupId() != 0 ? groupedMessagesMap.get(messageObject.getGroupId()) : null;
-                        if (groupedMessages != null) {
-                            messageObjects.addAll(groupedMessages.messages);
-                        } else {
-                            messageObjects.add(messageObject);
-                        }
-                        StoryRecorder editor = StoryRecorder.getInstance(getParentActivity(), currentAccount);
-                        editor.setOnPrepareCloseListener((t, close, sent, did) -> {
-                            if (sent) {
-                                AndroidUtilities.runOnUIThread(() -> {
-                                    String chatTitle = "";
-                                    if (did < 0) {
-                                        TLRPC.Chat chat = getMessagesController().getChat(-did);
-                                        if (chat != null) {
-                                            chatTitle = chat.title;
-                                        }
-                                    }
-                                    BulletinFactory.of(ChatActivity.this).createSimpleBulletin(R.raw.contact_check, AndroidUtilities.replaceTags(
-                                        TextUtils.isEmpty(chatTitle) ?
-                                            LocaleController.getString(R.string.RepostedToProfile) :
-                                            LocaleController.formatString(R.string.RepostedToChannelProfile, chatTitle)
-                                    )).show();
-                                });
-                                dismiss();
-                                editor.replaceSourceView(null);
-                            } else {
-                                StoryRecorder.SourceView sourceView2 = null;
-                                if (cell instanceof ShareDialogCell && cell.isAttachedToWindow()) {
-                                    sourceView2 = StoryRecorder.SourceView.fromShareCell((ShareDialogCell) cell);
-                                }
-                                editor.replaceSourceView(sourceView2);
-                            }
-                            AndroidUtilities.runOnUIThread(close);
-                        });
-                        editor.openRepost(sourceView, StoryEntry.repostMessage(messageObjects));
                     }
 
                     @Override

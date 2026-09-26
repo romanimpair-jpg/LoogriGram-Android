@@ -246,7 +246,6 @@ import org.telegram.ui.Components.ProfileActionsView;
 import org.telegram.ui.Components.ProfileGalleryBlurView;
 import org.telegram.ui.Components.Paint.PersistColorPalette;
 import org.telegram.ui.Components.Premium.LimitPreviewView;
-import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.Components.ProfileGalleryView;
 import org.telegram.ui.Components.ProfileGooeyView;
 import org.telegram.ui.Components.ProfileMusicView;
@@ -286,7 +285,6 @@ import org.telegram.ui.Stories.StoriesListPlaceProvider;
 import org.telegram.ui.Stories.StoryViewer;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 import org.telegram.ui.Stories.recorder.DualCameraView;
-import org.telegram.ui.Stories.recorder.StoryRecorder;
 import org.telegram.ui.bots.BotBiometry;
 import org.telegram.ui.bots.BotDownloads;
 import org.telegram.ui.bots.BotLocation;
@@ -826,7 +824,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private ImageReceiver fallbackImage;
     private FrameLayout bottomButtonsContainer;
     private FrameLayout[] bottomButtonContainer;
-    private SpannableStringBuilder bottomButtonPostText;
     private SpannableStringBuilder bottomButtonPostTextAlbum;
     private ButtonWithCounterView[] bottomButton;
     private Runnable applyBulletin;
@@ -2151,7 +2148,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             getNotificationCenter().addObserver(this, NotificationCenter.chatOnlineCountDidLoad);
             getNotificationCenter().addObserver(this, NotificationCenter.groupCallUpdated);
             getNotificationCenter().addObserver(this, NotificationCenter.channelRightsUpdated);
-            NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.uploadStoryEnd);
             sortedUsers = new ArrayList<>();
             updateOnlineCount(true);
             if (chatInfo == null) {
@@ -2363,7 +2359,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.reloadInterface);
             getMessagesController().cancelLoadFullUser(userId);
         } else if (chatId != 0) {
-            NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.uploadStoryEnd);
             getNotificationCenter().removeObserver(this, NotificationCenter.chatInfoDidLoad);
             getNotificationCenter().removeObserver(this, NotificationCenter.chatOnlineCountDidLoad);
             getNotificationCenter().removeObserver(this, NotificationCenter.groupCallUpdated);
@@ -3426,13 +3421,13 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 bottomButton[a].setUseWrapContent(true);
                 bottomButton[a].setPadding(dp(16), 0, dp(16), 0);
                 if (a == 0) {
-                    bottomButtonPostText = new SpannableStringBuilder("c");
-                    bottomButtonPostText.setSpan(new ColoredImageSpan(R.drawable.filled_premium_camera), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    bottomButtonPostText.append("  ").append(getString(R.string.StoriesAddPost));
+                    // LoogriGram: outside a selection the stories tab's button
+                    // was "Add story", which opened the story camera. It is now
+                    // there only to archive a selection; an album's still adds.
                     bottomButtonPostTextAlbum = new SpannableStringBuilder("c");
                     bottomButtonPostTextAlbum.setSpan(new ColoredImageSpan(R.drawable.filled_add_album), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                     bottomButtonPostTextAlbum.append("  ").append(getString(R.string.StoriesAlbumBottomButtonAddStories));
-                    bottomButton[a].setText(bottomButtonPostText, false);
+                    bottomButton[a].setText(formatPluralString("ArchiveStories", 0), false);
                 } else {
                     bottomButton[a].setText(getString(R.string.StorySave), false);
                 }
@@ -3442,33 +3437,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         if (SharedMediaLayout.isStoryAlbumPageType(sharedMediaLayout.getClosestTab())) {
                             int albumId = sharedMediaLayout.storyAlbums_getAlbumIdByTabType(sharedMediaLayout.getClosestTab());
                             sharedMediaLayout.openAddStoriesToAlbumSheet(this, getDialogId(), albumId);
-                        } else {
-                            if (!getMessagesController().storiesEnabled()) {
-                                showDialog(new PremiumFeatureBottomSheet(this, PremiumPreviewFragment.PREMIUM_FEATURE_STORIES, true));
-                                return;
-                            }
-                            getMessagesController().getMainSettings().edit().putBoolean("story_keep", true).apply();
-                            StoryRecorder.getInstance(getParentActivity(), getCurrentAccount())
-                                    .closeToWhenSent(new StoryRecorder.ClosingViewProvider() {
-                                        @Override
-                                        public void preLayout(long dialogId, Runnable runnable) {
-                                            avatarImage.setHasStories(needInsetForStories());
-                                            if (dialogId == getDialogId()) {
-                                                collapseAvatarInstant();
-                                            }
-                                            AndroidUtilities.runOnUIThread(runnable, 30);
-                                        }
-
-                                        @Override
-                                        public StoryRecorder.SourceView getView(long dialogId) {
-                                            if (dialogId != getDialogId()) {
-                                                return null;
-                                            }
-                                            updateAvatarRoundRadius();
-                                            return StoryRecorder.SourceView.fromAvatarImage(avatarImage, ChatObject.isForum(currentChat));
-                                        }
-                                    })
-                                    .open(null);
                         }
                     } else {
                         if (SharedMediaLayout.isStoryAlbumPageType(sharedMediaLayout.getClosestTab())) {
@@ -3571,9 +3539,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 button2.addView(bottomButton[a], LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, Gravity.CENTER));
                 bottomButtonContainer[a].addView(button2, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 60, Gravity.CENTER_HORIZONTAL));
                 bottomButtonsContainer.addView(bottomButtonContainer[a], LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.BOTTOM | Gravity.FILL_HORIZONTAL));
-                if (a == 1 || !getMessagesController().storiesEnabled()) {
-                    bottomButtonContainer[a].setTranslationY(dp(72));
-                }
+                bottomButtonContainer[a].setTranslationY(dp(72));
             }
         }
 
@@ -3663,7 +3629,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     if (a < 0 || a > 1) return;
                     bottomButtonContainer[a]
                             .animate()
-                            .translationY(show || a == 0 && MessagesController.getInstance(currentAccount).storiesEnabled() ? 0 : dp(72))
+                            .translationY(show ? 0 : dp(72))
                             .setDuration(320)
                             .setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT)
                             .setUpdateListener(anm -> updateBottomButtonY())
@@ -3831,19 +3797,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         break;
                     case ProfileActionsView.KEY_VIDEO:
                         onCallClicked(true);
-                        break;
-                    case ProfileActionsView.KEY_STORY:
-                        getMessagesController().getMainSettings().edit().putBoolean("story_keep", true).apply();
-                        final AlertDialog progressDialog = new AlertDialog(getContext(), AlertDialog.ALERT_TYPE_SPINNER, resourcesProvider);
-                        progressDialog.showDelayed(200);
-                        MessagesController.getInstance(currentAccount).getStoriesController().canSendStoryFor(getDialogId(), aBoolean -> {
-                            progressDialog.dismiss();
-                            if (aBoolean) {
-                                StoryRecorder.getInstance(getParentActivity(), getCurrentAccount())
-                                    .selectedPeerId(getDialogId())
-                                    .open(null);
-                            }
-                        }, true, resourcesProvider);
                         break;
                     case ProfileActionsView.KEY_STOP:
                         onBlockContactClicked(true);
@@ -5886,15 +5839,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
     }
 
-    private void checkCanSendStoryForPosting() {
-        TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(chatId);
-        if (!ChatObject.isBoostSupported(chat)) {
-            return;
-        }
-        StoriesController storiesController = getMessagesController().getStoriesController();
-        storiesController.canSendStoryFor(getDialogId(), canSend -> {}, false, resourcesProvider);
-    }
-
     private void updateAvatarRoundRadius() {
         avatarImage.setRoundRadiusForExpand((int) AndroidUtilities.lerp(getSmallAvatarRoundRadius(), 0f, currentExpandAnimatorValue));
     }
@@ -6015,19 +5959,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             startActivityForResult(Intent.createChooser(intent, LocaleController.getString(R.string.BotShare)), 500);
         } catch (Exception e) {
             FileLog.e(e);
-        }
-    }
-
-    private void collapseAvatarInstant() {
-        if (allowPullingDown && currentExpandAnimatorValue > 0) {
-            layoutManager.scrollToPositionWithOffset(0, getHeaderExtraHeight() - listView.getPaddingTop());
-            listView.post(() -> {
-                needLayout(true);
-                if (expandAnimator.isRunning()) {
-                    expandAnimator.cancel();
-                }
-                setAvatarExpandProgress(1f);
-            });
         }
     }
 
@@ -8698,9 +8629,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     @SuppressWarnings("unchecked")
     @Override
     public void didReceivedNotification(int id, int account, final Object... args) {
-        if (id == NotificationCenter.uploadStoryEnd) {
-            checkCanSendStoryForPosting();
-        } else if (id == NotificationCenter.updateInterfaces) {
+        if (id == NotificationCenter.updateInterfaces) {
             int mask = (Integer) args[0];
             boolean infoChanged = (mask & MessagesController.UPDATE_MASK_AVATAR) != 0 || (mask & MessagesController.UPDATE_MASK_NAME) != 0 || (mask & MessagesController.UPDATE_MASK_STATUS) != 0;
             if (userId != 0) {
@@ -11414,7 +11343,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         boolean streamAction = false;
         boolean voiceChatAction = false;
         boolean leaveAction = false;
-        boolean addStoryAction = false;
 
         if (userId != 0) {
             TLRPC.User user = getMessagesController().getUser(userId);
@@ -11555,10 +11483,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     callItemVisible = call != null;
                     voiceChatAction = call != null || voiceChatAction;
                 }
-                if (getMessagesController().getStoriesController().canPostStories(chat)) {
-                    otherItem.addSubItem(channel_stories, R.drawable.msg_archive, LocaleController.getString(R.string.OpenChannelArchiveStories));
-                    addStoryAction = true;
-                } else if (getMessagesController().getStoriesController().canEditStories(chat)) {
+                // LoogriGram: an admin who could post stories also got a Story
+                // action button, which opened the story camera.
+                if (getMessagesController().getStoriesController().canPostStories(chat) || getMessagesController().getStoriesController().canEditStories(chat)) {
                     otherItem.addSubItem(channel_stories, R.drawable.msg_archive, LocaleController.getString(R.string.OpenChannelArchiveStories));
                 }
                 if (chat.megagroup) {
@@ -11673,7 +11600,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             actionsView.set(ProfileActionsView.KEY_VIDEO, videoCallItemVisible);
             actionsView.set(ProfileActionsView.KEY_DISCUSS, discussAction);
             actionsView.set(ProfileActionsView.KEY_LEAVE, leaveAction);
-            actionsView.set(ProfileActionsView.KEY_STORY, addStoryAction);
             actionsView.set(ProfileActionsView.KEY_VOICE_CHAT, voiceChatAction);
             actionsView.set(ProfileActionsView.KEY_STREAM, streamAction);
 
@@ -15640,11 +15566,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 bottomButton[0].setText(bottomButtonPostTextAlbum, animated);
             }
         } else {
-            if (count > 0 || !MessagesController.getInstance(currentAccount).storiesEnabled()) {
-                bottomButton[0].setText(formatPluralString("ArchiveStories", count), animated);
-            } else {
-                bottomButton[0].setText(bottomButtonPostText, animated);
-            }
+            bottomButton[0].setText(formatPluralString("ArchiveStories", count), animated);
         }
     }
 

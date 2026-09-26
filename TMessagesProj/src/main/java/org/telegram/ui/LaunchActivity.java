@@ -40,7 +40,6 @@ import android.os.StatFs;
 import android.os.StrictMode;
 import android.os.SystemClock;
 import android.provider.ContactsContract;
-import android.provider.MediaStore;
 import android.provider.Settings;
 import android.text.SpannableStringBuilder;
 import android.text.TextUtils;
@@ -203,8 +202,6 @@ import org.telegram.ui.Components.SuperRipple;
 import org.telegram.ui.Stories.StoriesController;
 import org.telegram.ui.Stories.StoriesListPlaceProvider;
 import org.telegram.ui.Stories.StoryViewer;
-import org.telegram.ui.Stories.recorder.StoryEntry;
-import org.telegram.ui.Stories.recorder.StoryRecorder;
 import org.telegram.ui.Stories.LiveStoryPipOverlay;
 import org.telegram.ui.bots.BotWebViewAttachedSheet;
 import org.telegram.ui.bots.BotWebViewSheet;
@@ -213,7 +210,6 @@ import org.webrtc.voiceengine.WebRtcAudioTrack;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -1405,7 +1401,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         } else if (ArticleViewer.hasInstance() && ArticleViewer.getInstance().isVisible()) {
             ArticleViewer.getInstance().close(false, true);
         }
-        StoryRecorder.destroyInstance();
         MessageObject messageObject = MediaController.getInstance().getPlayingMessageObject();
         if (messageObject != null && messageObject.isRoundVideo()) {
             MediaController.getInstance().cleanupPlayer(true, true);
@@ -1490,7 +1485,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             if (PhotoViewer.hasInstance() && PhotoViewer.getInstance().isVisible()) {
                 PhotoViewer.getInstance().closePhoto(false, true);
             }
-            StoryRecorder.destroyInstance();
 //            dismissAllWeb();
         }
         if (webviewShareAPIDoneListener != null) {
@@ -3312,7 +3306,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         } else if (ArticleViewer.hasInstance() && ArticleViewer.getInstance().isVisible()) {
             ArticleViewer.getInstance().close(false, true);
         }
-        StoryRecorder.destroyInstance();
         if (GroupCallActivity.groupCallInstance != null) {
             GroupCallActivity.groupCallInstance.dismiss();
         }
@@ -3599,7 +3592,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                     } else if (ArticleViewer.hasInstance() && ArticleViewer.getInstance().isVisible()) {
                         ArticleViewer.getInstance().close(false, true);
                     }
-                    StoryRecorder.destroyInstance();
                     if (GroupCallActivity.groupCallInstance != null) {
                         GroupCallActivity.groupCallInstance.dismiss();
                     }
@@ -4170,7 +4162,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                             } else if (ArticleViewer.hasInstance() && ArticleViewer.getInstance().isVisible()) {
                                 ArticleViewer.getInstance().close(false, true);
                             }
-                            StoryRecorder.destroyInstance();
                             if (GroupCallActivity.groupCallInstance != null) {
                                 GroupCallActivity.groupCallInstance.dismiss();
                             }
@@ -5690,74 +5681,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
     }
 
     @Override
-    public boolean canSelectStories() {
-        return photoPathsArray != null && photoPathsArray.size() == 1 || videoPath != null;
-    }
-
-    @Override
-    public boolean didSelectStories(DialogsActivity dialogsFragment) {
-        StoryEntry entry = null;
-        if (photoPathsArray != null && !photoPathsArray.isEmpty()) {
-            entry = StoryEntry.fromMedia(photoPathsArray);
-        } else if (videoPath != null) {
-            MediaController.PhotoEntry pEntry = new MediaController.PhotoEntry(0, 0, 0, videoPath, 0, true, 0, 0, 0);
-            try {
-                final Bitmap bitmap = SendMessagesHelper.createVideoThumbnail(videoPath, MediaStore.Video.Thumbnails.MINI_KIND);
-                final String fileName = Integer.MIN_VALUE + "_" + SharedConfig.getLastLocalId() + ".jpg";
-                File cacheFile = new File(FileLoader.getDirectory(FileLoader.MEDIA_DIR_CACHE), fileName);
-                FileOutputStream stream = null;
-                try {
-                    stream = new FileOutputStream(cacheFile);
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 87, stream);
-                    pEntry.thumbPath = cacheFile.getAbsolutePath();
-                } catch (Throwable e) {
-                    cacheFile = null;
-                    FileLog.e(e);
-                } finally {
-                    if (stream != null) {
-                        try {
-                            stream.close();
-                        } catch (Throwable ignore) {
-                        }
-                    }
-                }
-            } catch (Throwable t) {}
-            entry = StoryEntry.fromPhotoEntry(pEntry);
-        }
-
-        if (entry == null) {
-            return false;
-        }
-
-        final StoriesController.StoryLimit storyLimit = MessagesController.getInstance(currentAccount).getStoriesController().checkStoryLimit();
-        if (dialogsFragment != null && storyLimit != null && storyLimit.active(currentAccount, 1)) {
-            dialogsFragment.showDialog(new LimitReachedBottomSheet(dialogsFragment, this, storyLimit.getLimitReachedType(), currentAccount, null));
-            return false;
-        }
-
-        entry.isShare = true;
-        entry.fileDeletable = false;
-
-        StoryRecorder editor = StoryRecorder.getInstance(this, currentAccount);
-        editor.openEdit(null, entry, 0, true);
-
-        if (dialogsFragment != null) {
-            dialogsFragment.finishFragment();
-        }
-
-        photoPathsArray = null;
-        videoPath = null;
-        voicePath = null;
-        sendingText = null;
-        documentsPathsArray = null;
-        documentsOriginalPathsArray = null;
-        contactsToSend = null;
-        contactsToSendUri = null;
-        exportingChatUri = null;
-        return true;
-    }
-
-    @Override
     public boolean didSelectDialogs(DialogsActivity dialogsFragment, ArrayList<MessagesStorage.TopicKey> dids, CharSequence message, boolean param, boolean _notify, int _scheduleDate, int scheduleRepeatPeriod, TopicsFragment topicsFragment) {
         final int account = dialogsFragment != null ? dialogsFragment.getCurrentAccount() : currentAccount;
 
@@ -6265,7 +6188,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         }
 
         VoIPFragment.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        StoryRecorder.onRequestPermissionsResult(requestCode, permissions, grantResults);
         NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.onRequestPermissionResultReceived, requestCode, permissions, grantResults);
 
         if (requestedPermissions.get(requestCode, -1) >= 0) {
@@ -6322,7 +6244,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         if (PhotoViewer.hasInstance() && PhotoViewer.getInstance().isVisible()) {
             PhotoViewer.getInstance().onPause();
         }
-        StoryRecorder.onPause();
 
         if (VoIPFragment.getInstance() != null) {
             VoIPFragment.onPause();
@@ -6575,7 +6496,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         if (PhotoViewer.hasInstance() && PhotoViewer.getInstance().isVisible()) {
             PhotoViewer.getInstance().onResume();
         }
-        StoryRecorder.onResume();
         PipRoundVideoView pipRoundVideoView = PipRoundVideoView.getInstance();
         if (pipRoundVideoView != null && MediaController.getInstance().isMessagePaused()) {
             MessageObject messageObject = MediaController.getInstance().getPlayingMessageObject();

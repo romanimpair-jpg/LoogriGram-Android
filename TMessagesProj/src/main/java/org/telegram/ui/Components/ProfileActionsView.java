@@ -101,7 +101,7 @@ public class ProfileActionsView extends View {
     public static final int KEY_LEAVE = 9;
     public static final int KEY_VOICE_CHAT = 10;
     public static final int KEY_STREAM = 11;
-    public static final int KEY_STORY = 12;
+    // LoogriGram: 12 was KEY_STORY, a channel admin's "Add story".
     public static final int KEY_STOP = 13;
     public static final int KEY_SET_PHOTO = 14;
     public static final int KEY_EDIT_USERNAME = 15;
@@ -733,14 +733,13 @@ public class ProfileActionsView extends View {
                 insertIfAvailable(out, KEY_NOTIFICATION);
                 if (!join) {
                     insertIfAvailable(out, KEY_DISCUSS);
-                    insertIfNotAvailable2(out, KEY_GIFT, KEY_DISCUSS, KEY_STORY);
+                    insertIfNotAvailable(out, KEY_GIFT, KEY_DISCUSS);
                 }
-                insertIfNotAvailable(out, KEY_SHARE, KEY_STORY);
+                insertIfAvailable(out, KEY_SHARE);
                 if (join) {
                     out.add(getOrCreate(KEY_REPORT));
                 } else {
-                    insertIfAvailable(out, KEY_STORY);
-                    insertIfNotAvailable(out, KEY_LEAVE, KEY_STORY);
+                    insertIfAvailable(out, KEY_LEAVE);
                 }
                 break;
             case MODE_GROUP:
@@ -756,7 +755,6 @@ public class ProfileActionsView extends View {
                 } else {
                     insertIfAvailable(out, KEY_VOICE_CHAT);
                     insertIfNotAvailable(out, KEY_STREAM, KEY_VOICE_CHAT);
-                    insertIfAvailable(out, KEY_STORY);
                     insertIfAvailable(out, KEY_LEAVE);
                 }
                 break;
@@ -802,14 +800,6 @@ public class ProfileActionsView extends View {
     private void insertIfNotAvailable(List<Action> list, int key, int notAvailable) {
         if (allAvailableActions.contains(key) &&
                 !allAvailableActions.contains(notAvailable)) {
-            list.add(getOrCreate(key));
-        }
-    }
-
-    private void insertIfNotAvailable2(List<Action> list, int key, int notAvailable1, int notAvailable2) {
-        if (allAvailableActions.contains(key) &&
-                !allAvailableActions.contains(notAvailable1) &&
-                !allAvailableActions.contains(notAvailable2)) {
             list.add(getOrCreate(key));
         }
     }
@@ -881,9 +871,6 @@ public class ProfileActionsView extends View {
                 newAction.supportsLoading = true;
                 newAction.supportsAnimate = R.raw.profile_voicechat;
                 newAction.stopDelay = 500;
-                break;
-            case KEY_STORY:
-                newAction = new Action(ActionButton.STORY);
                 break;
             case KEY_STOP:
                 newAction = new Action(ActionButton.STOP);
@@ -1227,7 +1214,6 @@ public class ProfileActionsView extends View {
         LEAVE(R.string.ProfileActionsLeave, R.drawable.leave, R.drawable.leave),
         VOICE_CHAT(R.string.ProfileActionsVoiceChat, R.drawable.live_stream, R.drawable.live_stream),
         STREAM(R.string.ProfileActionsLiveStream, R.drawable.live_stream, R.drawable.live_stream),
-        STORY(R.string.ProfileActionsAddStory, R.drawable.filled_profile_story, R.drawable.outline_profile_story),
         STOP(R.string.ProfileActionsStop, R.drawable.filled_profile_stop_24, R.drawable.outline_profile_stop_24),
         SET_PHOTO(R.string.ProfileActionsEditPhoto2, R.drawable.filled_profile_photo, R.drawable.outline_profile_photo),
         EDIT_USERNAME(R.string.ProfileActionsEditUsername, R.drawable.filled_profile_edit_24, R.drawable.outline_profile_edit_24),

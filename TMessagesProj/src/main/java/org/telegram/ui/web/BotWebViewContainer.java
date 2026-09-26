@@ -103,7 +103,6 @@ import org.telegram.messenger.SvgHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
-import org.telegram.messenger.VideoEditedInfo;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.utils.tlutils.TLKeyboardHelper;
 import org.telegram.tgnet.ConnectionsManager;
@@ -125,27 +124,18 @@ import org.telegram.ui.ArticleViewer;
 import org.telegram.ui.CameraScanActivity;
 import org.telegram.ui.ChatActivity;
 import org.telegram.ui.Components.AlertsCreator;
-import org.telegram.ui.Components.AnimatedFileDrawable;
-import org.telegram.ui.Components.AnimatedFileNative;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.CreateBotAlert;
 import org.telegram.ui.Components.EditTextCaption;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Components.Paint.Views.LinkPreview;
-import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
-import org.telegram.ui.Components.voip.AnimatedFileInfo;
 import org.telegram.ui.Components.voip.CellFlickerDrawable;
 import org.telegram.ui.DialogsActivity;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.MultiContactsSelectorBottomSheet;
 import org.telegram.ui.OAuthSheet;
-import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.ProfileActivity;
-import org.telegram.ui.Stories.recorder.StoryEntry;
-import org.telegram.ui.Stories.recorder.StoryRecorder;
-import org.telegram.ui.WrappedResourceProvider;
 import org.telegram.ui.bots.BotBiometry;
 import org.telegram.ui.bots.BotDownloads;
 import org.telegram.ui.bots.BotLocation;
@@ -2261,131 +2251,14 @@ public abstract class BotWebViewContainer extends FrameLayout implements Notific
                 }
                 lastClickMs = 0;
                 lastPostStoryMs = System.currentTimeMillis();
-                String media_url = null;
-                String text = null;
-                String widget_link = null;
-                String widget_link_name = null;
-                try {
-                    JSONObject jsonObject = new JSONObject(eventData);
-                    media_url = jsonObject.optString("media_url");
-                    text = jsonObject.optString("text");
-                    JSONObject link = jsonObject.optJSONObject("widget_link");
-                    if (link != null) {
-                        widget_link = link.optString("url");
-                        widget_link_name = link.optString("name");
-                    }
-                } catch (Exception e) {
-                    FileLog.e(e);
-                }
-                if (media_url == null) return;
-                final String finalText = text;
-                final String finalLink = widget_link;
-                final String finalLinkName = widget_link_name;
-
-                if (!MessagesController.getInstance(currentAccount).storiesEnabled()) {
-                    new PremiumFeatureBottomSheet(new BaseFragment() {
-                        { this.currentAccount = BotWebViewContainer.this.currentAccount; }
-                        @Override
-                        public Dialog showDialog(Dialog dialog) {
-                            dialog.show();
-                            return dialog;
-                        }
-                        @Override
-                        public Activity getParentActivity() {
-                            return BotWebViewContainer.this.parentActivity;
-                        }
-                        @Override
-                        public Theme.ResourcesProvider getResourceProvider() {
-                            return new WrappedResourceProvider(resourcesProvider) {
-                                @Override
-                                public void appendColors() {
-                                    sparseIntArray.append(Theme.key_dialogBackground, 0xFF1E1E1E);
-                                    sparseIntArray.append(Theme.key_windowBackgroundGray, 0xFF000000);
-                                }
-                            };
-                        }
-                        @Override
-                        public boolean isLightStatusBar() {
-                            return false;
-                        }
-                    }, PremiumPreviewFragment.PREMIUM_FEATURE_STORIES, true).show();
-                    return;
-                }
-
-                AlertDialog progressDialog = new AlertDialog(parentActivity, AlertDialog.ALERT_TYPE_SPINNER);
-                new HttpGetFileTask(file -> {
-                    AndroidUtilities.runOnUIThread(() -> {
-                        if (file == null) {
-                            progressDialog.dismissUnless(500);
-                            return;
-                        }
-                        final int[] params = new int[AnimatedFileInfo.PARAM_NUM_COUNT];
-                        Runnable open = () -> {
-                            StoryEntry entry;
-                            final boolean isVideo = params[AnimatedFileInfo.PARAM_NUM_DURATION] > 0;
-                            if (isVideo) {
-                                final int width = params[AnimatedFileInfo.PARAM_NUM_WIDTH];
-                                final int height = params[AnimatedFileInfo.PARAM_NUM_HEIGHT];
-                                int twidth = width, theight = height;
-                                if (twidth > AndroidUtilities.getPhotoSize()) {
-                                    twidth = AndroidUtilities.getPhotoSize();
-                                }
-                                if (theight > AndroidUtilities.getPhotoSize()) {
-                                    theight = AndroidUtilities.getPhotoSize();
-                                }
-                                File thumb = StoryEntry.makeCacheFile(UserConfig.selectedAccount, "jpg");
-                                AnimatedFileDrawable drawable = new AnimatedFileDrawable(file, true, 0, 0, null, null, null, 0, UserConfig.selectedAccount, true, twidth, theight, null);
-                                Bitmap thumbBitmap = drawable.getFirstFrame(null);
-                                drawable.recycle();
-                                if (thumbBitmap != null) {
-                                    try {
-                                        thumbBitmap.compress(Bitmap.CompressFormat.JPEG, 80, new FileOutputStream(thumb));
-                                    } catch (Exception e) {
-                                        FileLog.e(e);
-                                        thumb = null;
-                                    }
-                                }
-                                entry = StoryEntry.fromVideoShoot(file, thumb == null ? null : thumb.getAbsolutePath(), params[AnimatedFileInfo.PARAM_NUM_DURATION]);
-                                entry.width = width;
-                                entry.height = height;
-                                entry.setupMatrix();
-                            } else {
-                                Pair<Integer, Integer> orientation = AndroidUtilities.getImageOrientation(file);
-                                entry = StoryEntry.fromPhotoShoot(file, orientation.first);
-                            }
-                            if (entry.width <= 0 || entry.height <= 0) {
-                                progressDialog.dismissUnless(500);
-                                return;
-                            }
-                            if (finalText != null) {
-                                entry.caption = finalText;
-                            }
-                            if (!TextUtils.isEmpty(finalLink) && UserConfig.getInstance(currentAccount).isPremium()) {
-                                if (entry.mediaEntities == null) entry.mediaEntities = new ArrayList<>();
-                                VideoEditedInfo.MediaEntity entity = new VideoEditedInfo.MediaEntity();
-                                entity.type = VideoEditedInfo.MediaEntity.TYPE_LINK;
-                                entity.subType = -1;
-                                entity.color = 0xFFFFFFFF;
-                                entity.linkSettings = new LinkPreview.WebPagePreview();
-                                entity.linkSettings.url = finalLink;
-                                if (finalLinkName != null) {
-                                    entity.linkSettings.flags |= 2;
-                                    entity.linkSettings.name = finalLinkName;
-                                }
-                                entry.mediaEntities.add(entity);
-                            }
-                            StoryRecorder.getInstance(parentActivity, UserConfig.selectedAccount)
-                                .openRepost(null, entry);
-                            progressDialog.dismissUnless(500);
-                        };
-                        Utilities.globalQueue.postRunnable(() -> {
-                            String src = file.getAbsolutePath();
-                            AnimatedFileNative.getVideoInfo(src, params, 0);
-                            AndroidUtilities.runOnUIThread(open);
-                        });
-                    });
-                }, null).execute(media_url);
-                progressDialog.showDelayed(250);
+                // LoogriGram: this downloaded the media and opened the story
+                // editor on it, with the text as caption and a link sticker.
+                // Stories are not posted here, so the user is told, as on
+                // desktop; the event has no reply for the mini app to wait on.
+                showDialog(5, new AlertDialog.Builder(getContext(), resourcesProvider)
+                    .setMessage(getString(R.string.LoogriGramNoShareToStory))
+                    .setPositiveButton(getString(R.string.OK), (di, w) -> di.dismiss())
+                    .create(), null);
 
                 break;
             }

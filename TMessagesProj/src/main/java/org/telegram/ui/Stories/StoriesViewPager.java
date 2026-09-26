@@ -211,7 +211,7 @@ public class StoriesViewPager extends ViewPager {
     private void updateActiveStory() {
         for (int i = 0; i < getChildCount(); i++) {
             PeerStoriesView peerStoriesView = ((PeerStoriesView) ((FrameLayout) getChildAt(i)).getChildAt(0));
-            peerStoriesView.setActive((Integer) getChildAt(i).getTag() == getCurrentItem() && !peerStoriesView.editOpened);
+            peerStoriesView.setActive((Integer) getChildAt(i).getTag() == getCurrentItem());
         }
     }
 
