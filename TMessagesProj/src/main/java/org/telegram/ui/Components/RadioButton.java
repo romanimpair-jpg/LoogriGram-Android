@@ -15,17 +15,13 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
-import android.graphics.PorterDuffColorFilter;
 import android.graphics.PorterDuffXfermode;
 import androidx.annotation.Keep;
-import androidx.core.graphics.ColorUtils;
 
-import android.graphics.drawable.Drawable;
 import android.view.View;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.FileLog;
-import org.telegram.messenger.Utilities;
 import org.telegram.ui.ActionBar.Theme;
 
 public class RadioButton extends View {
@@ -83,14 +79,6 @@ public class RadioButton extends View {
             return;
         }
         size = value;
-    }
-
-    private int iconColor;
-    private Drawable icon;
-    public void setIcon(Drawable drawable) {
-        iconColor = 0;
-        icon = drawable;
-        invalidate();
     }
 
     public int getColor() {
@@ -177,27 +165,12 @@ public class RadioButton extends View {
         canvas.saveLayerAlpha(0, 0, getWidth(), getHeight(), 0xFF, Canvas.ALL_SAVE_FLAG);
         float rad = size / 2 - (1 + circleProgress) * AndroidUtilities.density;
         canvas.drawCircle(getMeasuredWidth() / 2, getMeasuredHeight() / 2, rad, paint);
-        if (icon == null) {
-            if (progress <= 0.5f) {
-                canvas.drawCircle(getMeasuredWidth() / 2, getMeasuredHeight() / 2, (rad - AndroidUtilities.dp(1)), checkedPaint);
-                canvas.drawCircle(getMeasuredWidth() / 2, getMeasuredHeight() / 2, (rad - AndroidUtilities.dp(1)) * (1.0f - circleProgress), eraser);
-            } else {
-                canvas.drawCircle(getMeasuredWidth() / 2, getMeasuredHeight() / 2, size / 4 + (rad - AndroidUtilities.dp(1) - size / 4) * circleProgress, checkedPaint);
-            }
+        if (progress <= 0.5f) {
+            canvas.drawCircle(getMeasuredWidth() / 2, getMeasuredHeight() / 2, (rad - AndroidUtilities.dp(1)), checkedPaint);
+            canvas.drawCircle(getMeasuredWidth() / 2, getMeasuredHeight() / 2, (rad - AndroidUtilities.dp(1)) * (1.0f - circleProgress), eraser);
+        } else {
+            canvas.drawCircle(getMeasuredWidth() / 2, getMeasuredHeight() / 2, size / 4 + (rad - AndroidUtilities.dp(1) - size / 4) * circleProgress, checkedPaint);
         }
         canvas.restore();
-        if (icon != null) {
-            final int finalIconColor = ColorUtils.blendARGB(color, checkedColor, Utilities.clamp(progress, 1, 0));
-            if (iconColor != finalIconColor) {
-                icon.setColorFilter(new PorterDuffColorFilter(iconColor = finalIconColor, PorterDuff.Mode.SRC_IN));
-            }
-            icon.setBounds(
-                    (int) (getWidth() / 2f  - icon.getIntrinsicWidth() / 2f),
-                    (int) (getHeight() / 2f - icon.getIntrinsicHeight() / 2f),
-                    (int) (getWidth() / 2f  + icon.getIntrinsicWidth() / 2f),
-                    (int) (getHeight() / 2f + icon.getIntrinsicHeight() / 2f)
-            );
-            icon.draw(canvas);
-        }
     }
 }

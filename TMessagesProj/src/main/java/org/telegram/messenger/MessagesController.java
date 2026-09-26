@@ -613,7 +613,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public int introDescriptionLengthLimit;
     public int businessChatLinksLimit;
     public boolean channelRevenueWithdrawalEnabled;
-    public boolean newNoncontactPeersRequirePremiumWithoutOwnpremium;
     public int reactionsUniqMax;
     public String premiumManageSubscriptionUrl;
     public boolean androidDisableRoundCamera2;
@@ -1681,7 +1680,6 @@ public class MessagesController extends BaseController implements NotificationCe
         introDescriptionLengthLimit = mainPreferences.getInt("introDescriptionLengthLimit", 72);
         businessChatLinksLimit = mainPreferences.getInt("businessChatLinksLimit", 100);
         channelRevenueWithdrawalEnabled = mainPreferences.getBoolean("channelRevenueWithdrawalEnabled", false);
-        newNoncontactPeersRequirePremiumWithoutOwnpremium = mainPreferences.getBoolean("newNoncontactPeersRequirePremiumWithoutOwnpremium", false);
         reactionsUniqMax = mainPreferences.getInt("reactionsUniqMax", 11);
         premiumManageSubscriptionUrl = mainPreferences.getString("premiumManageSubscriptionUrl", ApplicationLoader.isStandaloneBuild() ? "https://t.me/premiumbot?start=status" : "https://play.google.com/store/account/subscriptions?sku=telegram_premium&package=org.telegram.messenger");
         androidDisableRoundCamera2 = mainPreferences.getBoolean("androidDisableRoundCamera2", true);
@@ -4065,17 +4063,6 @@ public class MessagesController extends BaseController implements NotificationCe
                         if (num.value != channelRevenueWithdrawalEnabled) {
                             channelRevenueWithdrawalEnabled = num.value;
                             editor.putBoolean("channelRevenueWithdrawalEnabled", channelRevenueWithdrawalEnabled);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "new_noncontact_peers_require_premium_without_ownpremium": {
-                    if (value.value instanceof TLRPC.TL_jsonBool) {
-                        TLRPC.TL_jsonBool num = (TLRPC.TL_jsonBool) value.value;
-                        if (num.value != newNoncontactPeersRequirePremiumWithoutOwnpremium) {
-                            newNoncontactPeersRequirePremiumWithoutOwnpremium = num.value;
-                            editor.putBoolean("newNoncontactPeersRequirePremiumWithoutOwnpremium", newNoncontactPeersRequirePremiumWithoutOwnpremium);
                             changed = true;
                         }
                     }
@@ -19278,8 +19265,6 @@ public class MessagesController extends BaseController implements NotificationCe
                             getContactsController().setPrivacyRules(update.rules, ContactsController.PRIVACY_RULES_TYPE_PHONE);
                         } else if (update.key instanceof TLRPC.TL_privacyKeyAddedByPhone) {
                             getContactsController().setPrivacyRules(update.rules, ContactsController.PRIVACY_RULES_TYPE_ADDED_BY_PHONE);
-                        } else if (update.key instanceof TLRPC.TL_privacyKeyVoiceMessages) {
-                            getContactsController().setPrivacyRules(update.rules, ContactsController.PRIVACY_RULES_TYPE_VOICE_MESSAGES);
                         } else if (update.key instanceof TLRPC.TL_privacyKeyAbout) {
                             getContactsController().setPrivacyRules(update.rules, ContactsController.PRIVACY_RULES_TYPE_BIO);
                         } else if (update.key instanceof TLRPC.TL_privacyKeyBirthday) {

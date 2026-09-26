@@ -797,8 +797,6 @@ public class LinkManager {
                 else if ("calls".equalsIgnoreCase(second))
                     if ("p2p".equalsIgnoreCase(third))             type = ContactsController.PRIVACY_RULES_TYPE_P2P;
                     else                                            type = ContactsController.PRIVACY_RULES_TYPE_CALLS;
-                else if ("voice".equalsIgnoreCase(second))          type = ContactsController.PRIVACY_RULES_TYPE_VOICE_MESSAGES;
-                else if ("messages".equalsIgnoreCase(second))       type = ContactsController.PRIVACY_RULES_TYPE_MESSAGES;
                 else if ("invites".equalsIgnoreCase(second))        type = ContactsController.PRIVACY_RULES_TYPE_INVITE;
 
                 presentFragment(new PrivacyControlActivity(type));

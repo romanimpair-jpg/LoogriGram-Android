@@ -8,12 +8,9 @@ import android.content.Intent;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
-import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
-import android.text.TextPaint;
 import android.text.TextUtils;
-import android.text.style.ClickableSpan;
 import android.util.TypedValue;
 import android.view.HapticFeedbackConstants;
 import android.view.View;
@@ -21,7 +18,6 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 import androidx.annotation.CheckResult;
-import androidx.annotation.NonNull;
 import androidx.annotation.StringRes;
 import androidx.core.graphics.ColorUtils;
 
@@ -49,7 +45,6 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ChatActivity;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PeerColorActivity;
-import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.Stories.recorder.HintView2;
 
 import java.util.ArrayList;
@@ -943,33 +938,6 @@ public final class BulletinFactory {
         layout.textView.setSingleLine(false);
         layout.textView.setMaxLines(2);
         return create(layout, Bulletin.DURATION_SHORT);
-    }
-
-    public Bulletin createRestrictVoiceMessagesPremiumBulletin() {
-        Bulletin.LottieLayout layout = new Bulletin.LottieLayout(getContext(), null);
-        layout.setAnimation(R.raw.voip_muted);
-        String str = LocaleController.getString(R.string.PrivacyVoiceMessagesPremiumOnly);
-        SpannableStringBuilder spannable = new SpannableStringBuilder(str);
-        int indexStart = str.indexOf('*'), indexEnd = str.lastIndexOf('*');
-        if (indexStart >= 0) {
-            spannable.replace(indexStart, indexEnd + 1, str.substring(indexStart + 1, indexEnd));
-            spannable.setSpan(new ClickableSpan() {
-                @Override
-                public void onClick(@NonNull View widget) {
-                    fragment.presentFragment(new PremiumPreviewFragment("settings"));
-                }
-
-                @Override
-                public void updateDrawState(@NonNull TextPaint ds) {
-                    super.updateDrawState(ds);
-                    ds.setUnderlineText(false);
-                }
-            }, indexStart, indexEnd - 1, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        }
-        layout.textView.setText(spannable);
-        layout.textView.setSingleLine(false);
-        layout.textView.setMaxLines(2);
-        return create(layout, Bulletin.DURATION_LONG);
     }
 
     public Bulletin createErrorBulletinSubtitle(CharSequence errorMessage, CharSequence errorDescription, Theme.ResourcesProvider resourcesProvider) {
