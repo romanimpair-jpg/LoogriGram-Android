@@ -2652,57 +2652,6 @@ public class TL_account {
         }
     }
 
-    public static class TL_businessBotRecipients extends TLObject {
-        public static final int constructor = 0xb88cf373;
-
-        public int flags;
-        public boolean existing_chats;
-        public boolean new_chats;
-        public boolean contacts;
-        public boolean non_contacts;
-        public boolean exclude_selected;
-        public ArrayList<Long> users = new ArrayList<>();
-        public ArrayList<Long> exclude_users = new ArrayList<>();
-
-        public static TL_businessBotRecipients TLdeserialize(InputSerializedData stream, int constructor, boolean exception) {
-            final TL_businessBotRecipients result = constructor != TL_businessBotRecipients.constructor ? null : new TL_businessBotRecipients();
-            return TLdeserialize(TL_businessBotRecipients.class, result, stream, constructor, exception);
-        }
-
-        @Override
-        public void readParams(InputSerializedData stream, boolean exception) {
-            flags = stream.readInt32(exception);
-            existing_chats = hasFlag(flags, 1);
-            new_chats = hasFlag(flags, 2);
-            contacts = hasFlag(flags, 4);
-            non_contacts = hasFlag(flags, 8);
-            exclude_selected = hasFlag(flags, FLAG_5);
-            if (hasFlag(flags, 16)) {
-                users = Vector.deserializeLong(stream, exception);
-            }
-            if (hasFlag(flags, FLAG_6)) {
-                exclude_users = Vector.deserializeLong(stream, exception);
-            }
-        }
-
-        @Override
-        public void serializeToStream(OutputSerializedData stream) {
-            stream.writeInt32(constructor);
-            flags = setFlag(flags, 1, existing_chats);
-            flags = setFlag(flags, 2, new_chats);
-            flags = setFlag(flags, 4, contacts);
-            flags = setFlag(flags, 8, non_contacts);
-            flags = setFlag(flags, FLAG_5, exclude_selected);
-            stream.writeInt32(flags);
-            if (hasFlag(flags, 16)) {
-                Vector.serializeLong(stream, users);
-            }
-            if (hasFlag(flags, FLAG_6)) {
-                Vector.serializeLong(stream, exclude_users);
-            }
-        }
-    }
-
     public static class TL_inputBusinessRecipients extends TLObject {
         public static final int constructor = 0x6f8b32aa;
 

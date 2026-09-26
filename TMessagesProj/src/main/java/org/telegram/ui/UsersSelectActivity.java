@@ -64,7 +64,6 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Adapters.SearchAdapterHelper;
-import org.telegram.ui.Business.BusinessRecipientsHelper;
 import org.telegram.ui.Cells.GraySectionCell;
 import org.telegram.ui.Cells.GroupCreateUserCell;
 import org.telegram.ui.Components.AnimatedAvatarContainer;
@@ -85,7 +84,6 @@ public class UsersSelectActivity extends BaseFragment implements NotificationCen
 
     public final static int TYPE_FILTER = 0;
     public final static int TYPE_AUTO_DELETE_EXISTING_CHATS = 1;
-    public final static int TYPE_PRIVATE = 2;
 
     private ScrollView scrollView;
     private SpansContainer spansContainer;
@@ -107,7 +105,6 @@ public class UsersSelectActivity extends BaseFragment implements NotificationCen
 
     public boolean noChatTypes;
     public boolean allowSelf;
-    public boolean doNotNewChats;
     private boolean isInclude;
     private int filterFlags;
     private ArrayList<Long> initialIds;
@@ -366,11 +363,10 @@ public class UsersSelectActivity extends BaseFragment implements NotificationCen
         allowSelf = type != TYPE_AUTO_DELETE_EXISTING_CHATS;
     }
 
-    public UsersSelectActivity asPrivateChats() {
-        type = TYPE_PRIVATE;
-        allowSelf = false;
-        return this;
-    }
+    // LoogriGram: asPrivateChats() put this screen in a third mode, picking
+    // the private chats a Business greeting, away message or chatbot served
+    // (existing chats, new chats, contacts, non-contacts, or single users).
+    // Business is gone; the folder and auto-delete modes are what is left.
 
     public UsersSelectActivity(int type) {
         super();
@@ -400,34 +396,22 @@ public class UsersSelectActivity extends BaseFragment implements NotificationCen
         if (span.isDeleting()) {
             currentDeletingSpan = null;
             spansContainer.removeSpan(span);
-            if (type == TYPE_PRIVATE) {
-                if (span.getUid() == Long.MIN_VALUE + 8) {
-                    filterFlags &= ~BusinessRecipientsHelper.PRIVATE_FLAG_EXISTING_CHATS;
-                } else if (span.getUid() == Long.MIN_VALUE + 9) {
-                    filterFlags &= ~BusinessRecipientsHelper.PRIVATE_FLAG_NEW_CHATS;
-                } else if (span.getUid() == Long.MIN_VALUE) {
-                    filterFlags &= ~BusinessRecipientsHelper.PRIVATE_FLAG_CONTACTS;
-                } else if (span.getUid() == Long.MIN_VALUE + 1) {
-                    filterFlags &= ~BusinessRecipientsHelper.PRIVATE_FLAG_NON_CONTACTS;
-                }
-            } else {
-                if (span.getUid() == Long.MIN_VALUE) {
-                    filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_CONTACTS;
-                } else if (span.getUid() == Long.MIN_VALUE + 1) {
-                    filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_NON_CONTACTS;
-                } else if (span.getUid() == Long.MIN_VALUE + 2) {
-                    filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_GROUPS;
-                } else if (span.getUid() == Long.MIN_VALUE + 3) {
-                    filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_CHANNELS;
-                } else if (span.getUid() == Long.MIN_VALUE + 4) {
-                    filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_BOTS;
-                } else if (span.getUid() == Long.MIN_VALUE + 5) {
-                    filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_MUTED;
-                } else if (span.getUid() == Long.MIN_VALUE + 6) {
-                    filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_READ;
-                } else if (span.getUid() == Long.MIN_VALUE + 7) {
-                    filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_ARCHIVED;
-                }
+            if (span.getUid() == Long.MIN_VALUE) {
+                filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_CONTACTS;
+            } else if (span.getUid() == Long.MIN_VALUE + 1) {
+                filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_NON_CONTACTS;
+            } else if (span.getUid() == Long.MIN_VALUE + 2) {
+                filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_GROUPS;
+            } else if (span.getUid() == Long.MIN_VALUE + 3) {
+                filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_CHANNELS;
+            } else if (span.getUid() == Long.MIN_VALUE + 4) {
+                filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_BOTS;
+            } else if (span.getUid() == Long.MIN_VALUE + 5) {
+                filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_MUTED;
+            } else if (span.getUid() == Long.MIN_VALUE + 6) {
+                filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_READ;
+            } else if (span.getUid() == Long.MIN_VALUE + 7) {
+                filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_ARCHIVED;
             }
             updateHint();
             checkVisibleRows();
@@ -455,7 +439,7 @@ public class UsersSelectActivity extends BaseFragment implements NotificationCen
         }
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
         actionBar.setAllowOverlayTitle(true);
-        if (type == TYPE_FILTER || type == TYPE_PRIVATE) {
+        if (type == TYPE_FILTER) {
             if (isInclude) {
                 actionBar.setTitle(getString(R.string.FilterAlwaysShow));
             } else {
@@ -610,34 +594,22 @@ public class UsersSelectActivity extends BaseFragment implements NotificationCen
                     } else if (event.getAction() == KeyEvent.ACTION_UP && wasEmpty && !allSpans.isEmpty()) {
                         GroupCreateSpan span = allSpans.get(allSpans.size() - 1);
                         spansContainer.removeSpan(span);
-                        if (type == TYPE_PRIVATE) {
-                            if (span.getUid() == Long.MIN_VALUE + 8) {
-                                filterFlags &= ~BusinessRecipientsHelper.PRIVATE_FLAG_EXISTING_CHATS;
-                            } else if (span.getUid() == Long.MIN_VALUE + 9) {
-                                filterFlags &= ~BusinessRecipientsHelper.PRIVATE_FLAG_NEW_CHATS;
-                            } else if (span.getUid() == Long.MIN_VALUE) {
-                                filterFlags &= ~BusinessRecipientsHelper.PRIVATE_FLAG_CONTACTS;
-                            } else if (span.getUid() == Long.MIN_VALUE + 1) {
-                                filterFlags &= ~BusinessRecipientsHelper.PRIVATE_FLAG_NON_CONTACTS;
-                            }
-                        } else {
-                            if (span.getUid() == Long.MIN_VALUE) {
-                                filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_CONTACTS;
-                            } else if (span.getUid() == Long.MIN_VALUE + 1) {
-                                filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_NON_CONTACTS;
-                            } else if (span.getUid() == Long.MIN_VALUE + 2) {
-                                filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_GROUPS;
-                            } else if (span.getUid() == Long.MIN_VALUE + 3) {
-                                filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_CHANNELS;
-                            } else if (span.getUid() == Long.MIN_VALUE + 4) {
-                                filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_BOTS;
-                            } else if (span.getUid() == Long.MIN_VALUE + 5) {
-                                filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_MUTED;
-                            } else if (span.getUid() == Long.MIN_VALUE + 6) {
-                                filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_READ;
-                            } else if (span.getUid() == Long.MIN_VALUE + 7) {
-                                filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_ARCHIVED;
-                            }
+                        if (span.getUid() == Long.MIN_VALUE) {
+                            filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_CONTACTS;
+                        } else if (span.getUid() == Long.MIN_VALUE + 1) {
+                            filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_NON_CONTACTS;
+                        } else if (span.getUid() == Long.MIN_VALUE + 2) {
+                            filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_GROUPS;
+                        } else if (span.getUid() == Long.MIN_VALUE + 3) {
+                            filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_CHANNELS;
+                        } else if (span.getUid() == Long.MIN_VALUE + 4) {
+                            filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_BOTS;
+                        } else if (span.getUid() == Long.MIN_VALUE + 5) {
+                            filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_MUTED;
+                        } else if (span.getUid() == Long.MIN_VALUE + 6) {
+                            filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_READ;
+                        } else if (span.getUid() == Long.MIN_VALUE + 7) {
+                            filterFlags &= ~MessagesController.DIALOG_FILTER_FLAG_EXCLUDE_ARCHIVED;
                         }
                         updateHint();
                         checkVisibleRows();
@@ -715,21 +687,7 @@ public class UsersSelectActivity extends BaseFragment implements NotificationCen
                 long id;
                 if (object instanceof String) {
                     int flag;
-                    if (type == TYPE_PRIVATE) {
-                        if (position == 1) {
-                            flag = BusinessRecipientsHelper.PRIVATE_FLAG_EXISTING_CHATS;
-                            id = Long.MIN_VALUE + 8;
-                        } else if (position == 2 && !doNotNewChats) {
-                            flag = BusinessRecipientsHelper.PRIVATE_FLAG_NEW_CHATS;
-                            id = Long.MIN_VALUE + 9;
-                        } else if (position == 2 + (doNotNewChats ? 0 : 1)) {
-                            flag = BusinessRecipientsHelper.PRIVATE_FLAG_CONTACTS;
-                            id = Long.MIN_VALUE;
-                        } else {
-                            flag = BusinessRecipientsHelper.PRIVATE_FLAG_NON_CONTACTS;
-                            id = Long.MIN_VALUE + 1;
-                        }
-                    } else if (isInclude) {
+                    if (isInclude) {
                         if (position == 1) {
                             flag = MessagesController.DIALOG_FILTER_FLAG_CONTACTS;
                             id = Long.MIN_VALUE;
@@ -829,21 +787,7 @@ public class UsersSelectActivity extends BaseFragment implements NotificationCen
             int id;
             int flag;
             Object object;
-            if (type == TYPE_PRIVATE) {
-                if (position == 1) {
-                    object = "existing_chats";
-                    flag = BusinessRecipientsHelper.PRIVATE_FLAG_EXISTING_CHATS;
-                } else if (position == 2 && !doNotNewChats) {
-                    object = "new_chats";
-                    flag = BusinessRecipientsHelper.PRIVATE_FLAG_NEW_CHATS;
-                } else if (position == 2 + (doNotNewChats ? 0 : 1)) {
-                    object = "contacts";
-                    flag = BusinessRecipientsHelper.PRIVATE_FLAG_CONTACTS;
-                } else {
-                    object = "non_contacts";
-                    flag = BusinessRecipientsHelper.PRIVATE_FLAG_NON_CONTACTS;
-                }
-            } else if (isInclude) {
+            if (isInclude) {
                 if (position == 1) {
                     object = "contacts";
                     flag = MessagesController.DIALOG_FILTER_FLAG_CONTACTS;
@@ -981,12 +925,6 @@ public class UsersSelectActivity extends BaseFragment implements NotificationCen
                         case "read":
                             id = Long.MIN_VALUE + 6;
                             break;
-                        case "existing_chats":
-                            id = Long.MIN_VALUE + 8;
-                            break;
-                        case "new_chats":
-                            id = Long.MIN_VALUE + 8;
-                            break;
                         case "archived":
                         default:
                             id = Long.MIN_VALUE + 7;
@@ -1086,8 +1024,6 @@ public class UsersSelectActivity extends BaseFragment implements NotificationCen
 
             if (noChatTypes) {
                 usersStartRow = 0;
-            } else if (type == TYPE_PRIVATE) {
-                usersStartRow = 5 + (doNotNewChats ? 0 : 1);
             } else if (type == TYPE_FILTER) {
                 if (isInclude) {
                     usersStartRow = 7;
@@ -1097,9 +1033,6 @@ public class UsersSelectActivity extends BaseFragment implements NotificationCen
             } else {
                 usersStartRow = 0;
             }
-
-            final boolean allowBots = type != TYPE_PRIVATE;
-            final boolean allowChats = type != TYPE_PRIVATE;
 
             boolean hasSelf = false;
             ArrayList<TLRPC.Dialog> dialogs = getMessagesController().getAllDialogs();
@@ -1114,9 +1047,6 @@ public class UsersSelectActivity extends BaseFragment implements NotificationCen
                         if (!allowSelf && UserObject.isUserSelf(user)) {
                             continue;
                         }
-                        if (user.bot && !allowBots) {
-                            continue;
-                        }
                         contacts.add(user);
                         if (UserObject.isUserSelf(user)) {
                             hasSelf = true;
@@ -1124,7 +1054,6 @@ public class UsersSelectActivity extends BaseFragment implements NotificationCen
                     }
                 } else {
                     TLRPC.Chat chat = getMessagesController().getChat(-dialog.id);
-                    if (!allowChats) continue;
                     if (chat != null) {
                         contacts.add(chat);
                     }
@@ -1170,8 +1099,6 @@ public class UsersSelectActivity extends BaseFragment implements NotificationCen
             } else {
                 if (noChatTypes) {
                     count = 0;
-                } else if (type == TYPE_PRIVATE) {
-                    count = 3 + (doNotNewChats ? 0 : 1);
                 } else if (type == TYPE_FILTER) {
                     if (isInclude) {
                         count = 7;
@@ -1266,25 +1193,7 @@ public class UsersSelectActivity extends BaseFragment implements NotificationCen
                     } else {
                         if (position < usersStartRow) {
                             int flag;
-                            if (type == TYPE_PRIVATE) {
-                                if (position == 1) {
-                                    name = getString(R.string.FilterExistingChats);
-                                    object = "existing_chats";
-                                    flag = BusinessRecipientsHelper.PRIVATE_FLAG_EXISTING_CHATS;
-                                } else if (position == 2 && !doNotNewChats) {
-                                    name = getString(R.string.FilterNewChats);
-                                    object = "new_chats";
-                                    flag = BusinessRecipientsHelper.PRIVATE_FLAG_NEW_CHATS;
-                                } else if (position == 2 + (doNotNewChats ? 0 : 1)) {
-                                    name = getString(R.string.FilterContacts);
-                                    object = "contacts";
-                                    flag = BusinessRecipientsHelper.PRIVATE_FLAG_CONTACTS;
-                                } else {
-                                    name = getString(R.string.FilterNonContacts);
-                                    object = "non_contacts";
-                                    flag = BusinessRecipientsHelper.PRIVATE_FLAG_NON_CONTACTS;
-                                }
-                            } else if (isInclude) {
+                            if (isInclude) {
                                 if (position == 1) {
                                     name = getString(R.string.FilterContacts);
                                     object = "contacts";
@@ -1338,9 +1247,7 @@ public class UsersSelectActivity extends BaseFragment implements NotificationCen
                     }
                     boolean blueText = false;
                     boolean enabled = true;
-                    if (type == TYPE_PRIVATE) {
-
-                    } else if (type == TYPE_FILTER) {
+                    if (type == TYPE_FILTER) {
                         if (!searching) {
                             final Paint.FontMetricsInt fontMetricsInt = cell.getStatusTextView().getPaint().getFontMetricsInt();
                             SpannableStringBuilder builder = new SpannableStringBuilder();
@@ -1417,10 +1324,6 @@ public class UsersSelectActivity extends BaseFragment implements NotificationCen
                     if (position == 0) {
                         return 2;
                     }
-                } else if (type == TYPE_PRIVATE) {
-                    if (position == 0 || position == 4 + (doNotNewChats ? 0 : 1)) {
-                        return 2;
-                    }
                 } else if (type == TYPE_FILTER) {
                     if (isInclude) {
                         if (position == 0 || position == 6) {
@@ -1459,8 +1362,6 @@ public class UsersSelectActivity extends BaseFragment implements NotificationCen
                 Utilities.searchQueue.cancelRunnable(searchRunnable);
                 searchRunnable = null;
             }
-            final boolean allowBots = type != TYPE_PRIVATE;
-            final boolean allowChats = type != TYPE_PRIVATE;
             if (query == null) {
                 searchResult.clear();
                 searchResultNames.clear();
@@ -1470,7 +1371,7 @@ public class UsersSelectActivity extends BaseFragment implements NotificationCen
                 notifyDataSetChanged();
             } else {
                 Utilities.searchQueue.postRunnable(searchRunnable = () -> AndroidUtilities.runOnUIThread(() -> {
-                    searchAdapterHelper.queryServerSearch(query, true, allowChats, allowChats, allowSelf, false, 0, false, 0, 0);
+                    searchAdapterHelper.queryServerSearch(query, true, true, true, allowSelf, false, 0, false, 0, 0);
                     Utilities.searchQueue.postRunnable(searchRunnable = () -> {
                         String search1 = query.trim().toLowerCase();
                         if (search1.length() == 0) {
@@ -1505,15 +1406,11 @@ public class UsersSelectActivity extends BaseFragment implements NotificationCen
                                 } else if (UserObject.isUserSelf(user)) {
                                     if (!allowSelf) continue;
                                     names[2] = getString(R.string.SavedMessages).toLowerCase();
-                                } else if (user.bot && !allowBots) {
-                                    continue;
                                 }
                             } else {
                                 TLRPC.Chat chat = (TLRPC.Chat) object;
                                 names[0] = chat.title.toLowerCase();
                                 username = chat.username;
-                                if (!allowChats)
-                                    continue;
                             }
                             names[1] = LocaleController.getInstance().getTranslitString(names[0]);
                             if (names[0].equals(names[1])) {

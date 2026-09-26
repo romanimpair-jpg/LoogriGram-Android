@@ -2260,7 +2260,7 @@ public class Theme {
     public static Paint avatar_backgroundPaint;
 
     public static Drawable listSelector;
-    public static Drawable[] avatarDrawables = new Drawable[25];
+    public static Drawable[] avatarDrawables = new Drawable[23];
 
     public static Drawable moveUpDrawable;
 
@@ -7666,11 +7666,9 @@ public class Theme {
             avatarDrawables[17] = resources.getDrawable(R.drawable.large_repost_story);
             avatarDrawables[18] = resources.getDrawable(R.drawable.large_hidden);
             avatarDrawables[19] = resources.getDrawable(R.drawable.large_notes);
-            avatarDrawables[20] = resources.getDrawable(R.drawable.filled_folder_new);
-            avatarDrawables[21] = resources.getDrawable(R.drawable.filled_folder_existing);
-            avatarDrawables[22] = resources.getDrawable(R.drawable.filled_giveaway_premium);
-            avatarDrawables[23] = resources.getDrawable(R.drawable.filled_giveaway_stars);
-            avatarDrawables[24] = resources.getDrawable(R.drawable.filled_suggest_chat_avatar);
+            avatarDrawables[20] = resources.getDrawable(R.drawable.filled_giveaway_premium);
+            avatarDrawables[21] = resources.getDrawable(R.drawable.filled_giveaway_stars);
+            avatarDrawables[22] = resources.getDrawable(R.drawable.filled_suggest_chat_avatar);
 
             if (dialogs_archiveAvatarDrawable != null) {
                 dialogs_archiveAvatarDrawable.setCallback(null);

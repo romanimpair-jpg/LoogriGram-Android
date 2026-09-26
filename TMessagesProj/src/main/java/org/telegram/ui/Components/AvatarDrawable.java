@@ -96,8 +96,6 @@ public class AvatarDrawable extends Drawable {
     public static final int AVATAR_TYPE_STORY = 20;
     public static final int AVATAR_TYPE_ANONYMOUS = 21;
     public static final int AVATAR_TYPE_MY_NOTES = 22;
-    public static final int AVATAR_TYPE_EXISTING_CHATS = 23;
-    public static final int AVATAR_TYPE_NEW_CHATS = 24;
     public static final int AVATAR_TYPE_PREMIUM = 25;
     public static final int AVATAR_TYPE_STARS = 26;
     public static final int AVATAR_TYPE_SUGGESTION = 27;
@@ -286,11 +284,11 @@ public class AvatarDrawable extends Drawable {
             hasGradient = true;
             color = getThemedColor(Theme.keys_avatar_background[getColorIndex(4)]);
             color2 = getThemedColor(Theme.keys_avatar_background2[getColorIndex(4)]);
-        } else if (avatarType == AVATAR_TYPE_FILTER_GROUPS || avatarType == AVATAR_TYPE_EXISTING_CHATS) {
+        } else if (avatarType == AVATAR_TYPE_FILTER_GROUPS) {
             hasGradient = true;
             color = getThemedColor(Theme.keys_avatar_background[getColorIndex(3)]);
             color2 = getThemedColor(Theme.keys_avatar_background2[getColorIndex(3)]);
-        } else if (avatarType == AVATAR_TYPE_FILTER_CHANNELS || avatarType == AVATAR_TYPE_NEW_CHATS) {
+        } else if (avatarType == AVATAR_TYPE_FILTER_CHANNELS) {
             hasGradient = true;
             color = getThemedColor(Theme.keys_avatar_background[getColorIndex(1)]);
             color2 = getThemedColor(Theme.keys_avatar_background2[getColorIndex(1)]);
@@ -668,16 +666,12 @@ public class AvatarDrawable extends Drawable {
                 drawable = Theme.avatarDrawables[18];
             } else if (avatarType == AVATAR_TYPE_MY_NOTES) {
                 drawable = Theme.avatarDrawables[19];
-            } else if (avatarType == AVATAR_TYPE_EXISTING_CHATS) {
-                drawable = Theme.avatarDrawables[21];
-            } else if (avatarType == AVATAR_TYPE_NEW_CHATS) {
-                drawable = Theme.avatarDrawables[20];
             } else if (avatarType == AVATAR_TYPE_PREMIUM) {
-                drawable = Theme.avatarDrawables[22];
+                drawable = Theme.avatarDrawables[20];
             } else if (avatarType == AVATAR_TYPE_STARS) {
-                drawable = Theme.avatarDrawables[23];
+                drawable = Theme.avatarDrawables[21];
             } else if (avatarType == AVATAR_TYPE_SUGGESTION) {
-                drawable = Theme.avatarDrawables[24];
+                drawable = Theme.avatarDrawables[22];
             } else {
                 drawable = Theme.avatarDrawables[9];
             }
