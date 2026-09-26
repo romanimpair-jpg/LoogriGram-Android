@@ -1144,7 +1144,6 @@
     <string name="AttachLocation">Standort</string>
     <string name="AttachLiveLocation">Live-Standort</string>
     <string name="AttachContact">Kontakt</string>
-    <string name="AttachQuickReplies">Antworten</string>
     <string name="AttachDocument">Datei</string>
     <string name="AttachSticker">Sticker</string>
     <string name="AttachAudio">Sprachnachricht</string>

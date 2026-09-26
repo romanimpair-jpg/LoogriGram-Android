@@ -2445,29 +2445,6 @@ public class TL_account {
         }
     }
 
-    public static class TL_inputBusinessGreetingMessage extends TLObject {
-        public static final int constructor = 0x194cb3b;
-
-        public int shortcut_id;
-        public TL_inputBusinessRecipients recipients;
-        public int no_activity_days;
-
-        @Override
-        public void readParams(InputSerializedData stream, boolean exception) {
-            shortcut_id = stream.readInt32(exception);
-            recipients = TL_inputBusinessRecipients.TLdeserialize(stream, stream.readInt32(exception), exception);
-            no_activity_days = stream.readInt32(exception);
-        }
-
-        @Override
-        public void serializeToStream(OutputSerializedData stream) {
-            stream.writeInt32(constructor);
-            stream.writeInt32(shortcut_id);
-            recipients.serializeToStream(stream);
-            stream.writeInt32(no_activity_days);
-        }
-    }
-
     public static class TL_businessGreetingMessage extends TLObject {
         public static final int constructor = 0xe519abab;
 
@@ -2493,35 +2470,6 @@ public class TL_account {
             stream.writeInt32(shortcut_id);
             recipients.serializeToStream(stream);
             stream.writeInt32(no_activity_days);
-        }
-    }
-
-    public static class TL_inputBusinessAwayMessage extends TLObject {
-        public static final int constructor = 0x832175e0;
-
-        public int flags;
-        public boolean offline_only;
-        public int shortcut_id;
-        public BusinessAwayMessageSchedule schedule;
-        public TL_inputBusinessRecipients recipients;
-
-        @Override
-        public void readParams(InputSerializedData stream, boolean exception) {
-            flags = stream.readInt32(exception);
-            offline_only = hasFlag(flags, 1);
-            shortcut_id = stream.readInt32(exception);
-            schedule = BusinessAwayMessageSchedule.TLdeserialize(stream, stream.readInt32(exception), exception);
-            recipients = TL_inputBusinessRecipients.TLdeserialize(stream, stream.readInt32(exception), exception);
-        }
-
-        @Override
-        public void serializeToStream(OutputSerializedData stream) {
-            stream.writeInt32(constructor);
-            flags = offline_only ? (flags | 1) : (flags & 1);
-            stream.writeInt32(flags);
-            stream.writeInt32(shortcut_id);
-            schedule.serializeToStream(stream);
-            recipients.serializeToStream(stream);
         }
     }
 
@@ -2556,48 +2504,6 @@ public class TL_account {
             stream.writeInt32(shortcut_id);
             schedule.serializeToStream(stream);
             recipients.serializeToStream(stream);
-        }
-    }
-
-    public static class updateBusinessAwayMessage extends TLObject {
-        public static final int constructor = 0xa26a7fa5;
-
-        public int flags;
-        public TL_inputBusinessAwayMessage message;
-
-        @Override
-        public TLObject deserializeResponse(InputSerializedData stream, int constructor, boolean exception) {
-            return TLRPC.Bool.TLdeserialize(stream, constructor, exception);
-        }
-
-        @Override
-        public void serializeToStream(OutputSerializedData stream) {
-            stream.writeInt32(constructor);
-            stream.writeInt32(flags);
-            if (hasFlag(flags, 1)) {
-                message.serializeToStream(stream);
-            }
-        }
-    }
-
-    public static class updateBusinessGreetingMessage extends TLObject {
-        public static final int constructor = 0x66cdafc4;
-
-        public int flags;
-        public TL_inputBusinessGreetingMessage message;
-
-        @Override
-        public TLObject deserializeResponse(InputSerializedData stream, int constructor, boolean exception) {
-            return TLRPC.Bool.TLdeserialize(stream, constructor, exception);
-        }
-
-        @Override
-        public void serializeToStream(OutputSerializedData stream) {
-            stream.writeInt32(constructor);
-            stream.writeInt32(flags);
-            if (hasFlag(flags, 1)) {
-                message.serializeToStream(stream);
-            }
         }
     }
 
@@ -2648,50 +2554,6 @@ public class TL_account {
             }
             if (hasFlag(flags, FLAG_6)) {
                 Vector.serialize(stream, exclude_users);
-            }
-        }
-    }
-
-    public static class TL_inputBusinessRecipients extends TLObject {
-        public static final int constructor = 0x6f8b32aa;
-
-        public int flags;
-        public boolean existing_chats;
-        public boolean new_chats;
-        public boolean contacts;
-        public boolean non_contacts;
-        public boolean exclude_selected;
-        public ArrayList<TLRPC.InputUser> users = new ArrayList<>();
-
-        public static TL_inputBusinessRecipients TLdeserialize(InputSerializedData stream, int constructor, boolean exception) {
-            final TL_inputBusinessRecipients result = constructor != TL_inputBusinessRecipients.constructor ? null : new TL_inputBusinessRecipients();
-            return TLdeserialize(TL_inputBusinessRecipients.class, result, stream, constructor, exception);
-        }
-
-        @Override
-        public void readParams(InputSerializedData stream, boolean exception) {
-            flags = stream.readInt32(exception);
-            existing_chats = hasFlag(flags, 1);
-            new_chats = hasFlag(flags, 2);
-            contacts = hasFlag(flags, 4);
-            non_contacts = hasFlag(flags, 8);
-            exclude_selected = hasFlag(flags, FLAG_5);
-            if (hasFlag(flags, 16)) {
-                users = Vector.deserialize(stream, TLRPC.InputUser::TLdeserialize, exception);
-            }
-        }
-
-        @Override
-        public void serializeToStream(OutputSerializedData stream) {
-            stream.writeInt32(constructor);
-            flags = setFlag(flags, 1, existing_chats);
-            flags = setFlag(flags, 2, new_chats);
-            flags = setFlag(flags, 4, contacts);
-            flags = setFlag(flags, 8, non_contacts);
-            flags = setFlag(flags, FLAG_5, exclude_selected);
-            stream.writeInt32(flags);
-            if (hasFlag(flags, 16)) {
-                Vector.serialize(stream, users);
             }
         }
     }

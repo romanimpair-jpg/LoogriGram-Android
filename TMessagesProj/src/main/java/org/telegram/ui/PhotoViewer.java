@@ -5408,7 +5408,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                                     encryptedChat = MessagesController.getInstance(currentAccount).getEncryptedChat(DialogObject.getEncryptedChatId(obj.getDialogId()));
                                 }
 
-                                MessagesController.getInstance(currentAccount).deleteMessages(arr, random_ids, encryptedChat, obj.getDialogId(), obj.getQuickReplyId(), deleteForAll[0], obj.getChatMode());
+                                MessagesController.getInstance(currentAccount).deleteMessages(arr, random_ids, encryptedChat, obj.getDialogId(), 0, deleteForAll[0], obj.getChatMode());
                             }
                         } else if (!avatarsArr.isEmpty()) {
                             if (currentIndex < 0 || currentIndex >= avatarsArr.size()) {
@@ -5418,7 +5418,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                             if (message != null) {
                                 ArrayList<Integer> arr = new ArrayList<>();
                                 arr.add(message.id);
-                                MessagesController.getInstance(currentAccount).deleteMessages(arr, null, null, MessageObject.getDialogId(message), message.quick_reply_shortcut_id, true, 0);
+                                MessagesController.getInstance(currentAccount).deleteMessages(arr, null, null, MessageObject.getDialogId(message), 0, true, 0);
                                 NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.reloadDialogPhotos);
                             }
                             if (isCurrentAvatarSet()) {
@@ -13888,10 +13888,10 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     if (messageObject.canForwardMessage() && !noforwards) {
                         setItemVisible(sendItem, true, false);
                     }
-                } else if (!messageObject.scheduled && !messageObject.isQuickReply() && !(MessageObject.getMedia(messageObject.messageOwner) instanceof TLRPC.TL_messageMediaInvoice) && !(MessageObject.getMedia(messageObject.messageOwner) instanceof TLRPC.TL_messageMediaWebPage) && (messageObject.messageOwner.action == null || messageObject.messageOwner.action instanceof TLRPC.TL_messageActionEmpty)) {
+                } else if (!messageObject.scheduled && !(MessageObject.getMedia(messageObject.messageOwner) instanceof TLRPC.TL_messageMediaInvoice) && !(MessageObject.getMedia(messageObject.messageOwner) instanceof TLRPC.TL_messageMediaWebPage) && (messageObject.messageOwner.action == null || messageObject.messageOwner.action instanceof TLRPC.TL_messageActionEmpty)) {
                     needSearchImageInArr = true;
                     imagesByIds[0].put(messageObject.getId(), messageObject);
-                    if (parentChatActivity == null || !parentChatActivity.isThreadChat() && parentChatActivity.getChatMode() != ChatActivity.MODE_SAVED && parentChatActivity.getChatMode() != ChatActivity.MODE_QUICK_REPLIES) {
+                    if (parentChatActivity == null || !parentChatActivity.isThreadChat() && parentChatActivity.getChatMode() != ChatActivity.MODE_SAVED) {
                         menuItem.showSubItem(gallery_menu_showinchat);
                         boolean canWrite = true;
                         long dialogId = messageObject.getDialogId();
@@ -13974,7 +13974,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             }
             MessageObject openingObject = imagesArr.get(index);
             menuItem.setSubItemShown(gallery_menu_create_sticker, !noforwards && openingObject.isPhoto());
-            if (!openingObject.scheduled && !openingObject.isQuickReply() && (parentChatActivity == null || !parentChatActivity.isThreadChat())) {
+            if (!openingObject.scheduled && (parentChatActivity == null || !parentChatActivity.isThreadChat())) {
                 opennedFromMedia = parentChatActivity == null;
                 if (parentFragment instanceof ProfileActivity) {
                     openedFromProfile = true;
@@ -14228,7 +14228,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
 
             title = FilteredSearchView.createFromInfoString(newMessageObject, opennedFromMedia && !openedFromProfile, 0);
             CharSequence subtitle = null;
-            if (!newMessageObject.isQuickReply() && newMessageObject.messageOwner != null) {
+            if (newMessageObject.messageOwner != null) {
                 subtitle = LocaleController.formatDateAudio(newMessageObject.messageOwner.date, false);
             }
             actionBarContainer.setSubtitle(subtitle, animated);
@@ -14368,11 +14368,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 }
                 allowShare = !noforwards;
             }
-            if (parentChatActivity != null && parentChatActivity.getChatMode() == ChatActivity.MODE_QUICK_REPLIES) {
-                if (countView != null) {
-                    countView.updateShow(false, animated);
-                }
-            } else if (totalImagesCount + totalImagesCountMerge != 0 && !needSearchImageInArr) {
+            if (totalImagesCount + totalImagesCountMerge != 0 && !needSearchImageInArr) {
                 if (opennedFromMedia) {
                     if (startOffset + imagesArr.size() < totalImagesCount + totalImagesCountMerge && !loadingMoreImages && switchingToIndex > imagesArr.size() - 5) {
                         int loadFromMaxId = imagesArr.isEmpty() ? 0 : imagesArr.get(imagesArr.size() - 1).getId();

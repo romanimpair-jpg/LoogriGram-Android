@@ -176,7 +176,6 @@ import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.BasePermissionsActivity;
 import org.telegram.ui.Business.BusinessLinksController;
-import org.telegram.ui.Business.QuickRepliesController;
 import org.telegram.ui.ChatActivity;
 import org.telegram.ui.Components.Forum.ForumUtilities;
 import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
@@ -650,7 +649,6 @@ public class ChatActivityEnterView extends FrameLayout implements
     private TLRPC.TL_replyKeyboardMarkup botReplyMarkup;
     private int botCount;
     private boolean hasBotCommands;
-    private boolean hasQuickReplies;
 
     private PowerManager.WakeLock wakeLock;
     private AnimatorSet runningAnimation;
@@ -3609,7 +3607,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                 } else if (isPopupShowing() && currentPopupContentType == POPUP_CONTENT_BOT_KEYBOARD) {
                     showPopup(0, POPUP_CONTENT_BOT_KEYBOARD, true, false);
                 }
-            } else if (hasBotCommands || hasQuickReplies) {
+            } else if (hasBotCommands) {
                 setFieldText("/");
                 if (messageEditText != null) {
                     messageEditText.requestFocus();
@@ -4468,7 +4466,7 @@ public class ChatActivityEnterView extends FrameLayout implements
 
     private ActionBarMenuSubItem actionScheduleButton;
     private boolean onSendLongClick(View view) {
-        if (isInScheduleMode() || parentFragment != null && parentFragment.getChatMode() == ChatActivity.MODE_QUICK_REPLIES || animatorEphemeralMessageVisibility.getValue()) {
+        if (isInScheduleMode() || animatorEphemeralMessageVisibility.getValue()) {
             return false;
         }
 
@@ -6438,14 +6436,6 @@ public class ChatActivityEnterView extends FrameLayout implements
 
         if (chatActivityMode == ChatActivity.MODE_WELCOME_MESSAGES) {
             messageEditText.setHintText(getString(R.string.WelcomeMessageEnter));
-        } else if (chatActivityMode == ChatActivity.MODE_QUICK_REPLIES) {
-            if (QuickRepliesController.GREETING.equalsIgnoreCase(parentFragment.quickReplyShortcut)) {
-                messageEditText.setHintText(getString(R.string.BusinessGreetingEnter));
-            } else if (QuickRepliesController.AWAY.equalsIgnoreCase(parentFragment.quickReplyShortcut)) {
-                messageEditText.setHintText(getString(R.string.BusinessAwayEnter));
-            } else {
-                messageEditText.setHintText(getString(R.string.BusinessRepliesEnter));
-            }
         } else if (isPostSuggestions) {
             // LoogriGram: "Suggest a post for N Stars" when the channel charged.
             messageEditText.setHintText(LocaleController.formatString(R.string.SuggestPostForFree));
@@ -10766,7 +10756,7 @@ public class ChatActivityEnterView extends FrameLayout implements
         boolean hasBotWebView = hasBotWebView();
         boolean canShowBotsMenu = botMenuButtonType != BotMenuButtonType.NO_BUTTON && dialog_id > 0;
         boolean wasVisible = botButton != null && botButton.getVisibility() == VISIBLE;
-        if (hasBotWebView || hasBotCommands || hasQuickReplies || botReplyMarkup != null) {
+        if (hasBotWebView || hasBotCommands || botReplyMarkup != null) {
             if (botReplyMarkup != null) {
                 if (isPopupShowing() && currentPopupContentType == POPUP_CONTENT_BOT_KEYBOARD && botReplyMarkup.is_persistent) {
                     if (botButton != null && botButton.getVisibility() != GONE) {
@@ -10849,11 +10839,10 @@ public class ChatActivityEnterView extends FrameLayout implements
         updateBotButton(animated);
     }
 
-    public void setBotsCount(int count, boolean hasCommands, boolean hasQuickReplies, boolean animated) {
+    public void setBotsCount(int count, boolean hasCommands, boolean animated) {
         botCount = count;
-        if (hasBotCommands != hasCommands || this.hasQuickReplies != hasQuickReplies) {
+        if (hasBotCommands != hasCommands) {
             hasBotCommands = hasCommands;
-            this.hasQuickReplies = hasQuickReplies;
             updateBotButton(animated);
         }
     }
@@ -10952,7 +10941,6 @@ public class ChatActivityEnterView extends FrameLayout implements
         if (button == null || messageObject == null) {
             return false;
         }
-        if (parentFragment != null && parentFragment.getChatMode() == ChatActivity.MODE_QUICK_REPLIES) return false;
 
         final TL_keyboard.TL_inlineButtonTypeCopy buttonTypeCopy = TLKeyboardHelper.getType(button, TL_keyboard.TL_inlineButtonTypeCopy.class);
         final TL_keyboard.TL_inlineButtonTypeUserProfile buttonTypeUserProfile = TLKeyboardHelper.getType(button, TL_keyboard.TL_inlineButtonTypeUserProfile.class);
@@ -13013,7 +13001,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                     botMenuWebViewTitle = webViewButton.text;
                     botMenuWebViewUrl = webViewButton.url;
                     botMenuButtonType = BotMenuButtonType.WEB_VIEW;
-                } else if (hasBotCommands || hasQuickReplies) {
+                } else if (hasBotCommands) {
                     botMenuButtonType = BotMenuButtonType.COMMANDS;
                 } else {
                     botMenuButtonType = BotMenuButtonType.NO_BUTTON;

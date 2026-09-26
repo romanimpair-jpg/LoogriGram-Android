@@ -55,8 +55,6 @@ import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_bots;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.Business.QuickRepliesActivity;
-import org.telegram.ui.Business.QuickRepliesController;
 import org.telegram.ui.Cells.BotSwitchCell;
 import org.telegram.ui.Cells.ContextLinkCell;
 import org.telegram.ui.Cells.MentionCell;
@@ -110,8 +108,6 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
     private ArrayList<String> searchResultHashtags;
     private ArrayList<String> searchResultCommands;
     private ArrayList<String> searchResultCommandsHelp;
-    private String quickRepliesQuery;
-    private ArrayList<QuickRepliesController.QuickReply> quickReplies;
     private ArrayList<MediaDataController.KeywordResult> searchResultSuggestions;
     private String[] lastSearchKeyboardLanguage;
     private ArrayList<TLRPC.User> searchResultCommandsUsers;
@@ -412,9 +408,6 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
     }
 
     private boolean itemsEqual(Object a, Object b) {
-        if (a instanceof QuickRepliesController.QuickReply) {
-            return false;
-        }
         if (a == b) {
             return true;
         }
@@ -888,7 +881,6 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                 searchResultUsernamesMap = null;
                 searchResultCommands = null;
                 searchResultCommandsEphemeral = null;
-                quickReplies = null;
                 searchResultSuggestions = null;
                 searchResultCommandsHelp = null;
                 searchResultCommandsUsers = null;
@@ -1449,7 +1441,6 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             });
             searchResultHashtags = null;
             stickers = null;
-            quickReplies = null;
             searchResultCommands = null;
             searchResultCommandsEphemeral = null;
             searchResultCommandsHelp = null;
@@ -1540,7 +1531,6 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             stickers = null;
             searchResultUsernames = null;
             searchResultUsernamesMap = null;
-            quickReplies = null;
             searchResultCommands = null;
             searchResultCommandsEphemeral = null;
             searchResultCommandsHelp = null;
@@ -1568,23 +1558,8 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                     }
                 }
             }
-            if (parentFragment != null && !DialogObject.isEncryptedDialog(dialog_id) && parentFragment.getChatMode() == 0 && parentFragment.getCurrentUser() != null && !parentFragment.getCurrentUser().bot && !UserObject.isReplyUser(parentFragment.getCurrentUser()) && !UserObject.isService(parentFragment.getCurrentUser().id)) {
-                final QuickRepliesController quickRepliesController = QuickRepliesController.getInstance(currentAccount);
-                quickRepliesController.load();
-                quickRepliesQuery = command;
-                quickReplies = new ArrayList<>();
-                for (int i = 0; i < quickRepliesController.replies.size(); i++) {
-                    final QuickRepliesController.QuickReply reply = quickRepliesController.replies.get(i);
-                    if (reply.isSpecial()) continue;
-                    final String replyName = reply.name.toLowerCase();
-                    if (replyName.startsWith(command) || AndroidUtilities.translitSafe(replyName).startsWith(command)) {
-                        quickReplies.add(reply);
-                    }
-                }
-            } else {
-                quickRepliesQuery = null;
-                quickReplies = null;
-            }
+            // LoogriGram: in a chat with a person, "/" also offered our Business
+            // quick replies by name, sent with messages.sendQuickReplyMessages.
             searchResultHashtags = null;
             stickers = null;
             searchResultUsernames = null;
@@ -1597,7 +1572,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             contextMedia = false;
             searchResultBotContext = null;
             notifyDataSetChanged();
-            delegate.needChangePanelVisibility(!newResult.isEmpty() || quickReplies != null && !quickReplies.isEmpty());
+            delegate.needChangePanelVisibility(!newResult.isEmpty());
         } else if (foundType == 3) {
             String[] newLanguage = AndroidUtilities.getCurrentKeyboardLanguage();
             if (!Arrays.equals(newLanguage, lastSearchKeyboardLanguage)) {
@@ -1612,7 +1587,6 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                 searchResultUsernamesMap = null;
                 searchResultCommands = null;
                 searchResultCommandsEphemeral = null;
-                quickReplies = null;
                 searchResultCommandsHelp = null;
                 searchResultCommandsUsers = null;
                 notifyDataSetChanged();
@@ -1625,7 +1599,6 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             searchResultSuggestions = null;
             searchResultCommands = null;
             searchResultCommandsEphemeral = null;
-            quickReplies = null;
             searchResultCommandsHelp = null;
             searchResultCommandsUsers = null;
         }
@@ -1710,8 +1683,8 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             count += searchResultUsernames.size();
         } else if (searchResultHashtags != null) {
             count += searchResultHashtags.size();
-        } else if (searchResultCommands != null || quickReplies != null) {
-            count += (quickReplies == null ? 0 : quickReplies.size()) + (searchResultCommands == null ? 0 : searchResultCommands.size());
+        } else if (searchResultCommands != null) {
+            count += searchResultCommands.size();
         } else if (searchResultSuggestions != null) {
             count += searchResultSuggestions.size();
         }
@@ -1741,9 +1714,6 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
         if (searchResultCommands != null) {
             searchResultCommands.clear();
         }
-        if (quickReplies != null) {
-            quickReplies.clear();
-        }
         if (searchResultSuggestions != null) {
             searchResultSuggestions.clear();
         }
@@ -1767,8 +1737,6 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                 return 2;
             }
             return 1;
-        } else if (quickReplies != null && position >= 0 && position < quickReplies.size()) {
-            return 5;
         } else {
             return 0;
         }
@@ -1843,36 +1811,27 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                 return null;
             }
             return searchResultSuggestions.get(i);
-        } else if (quickReplies != null || searchResultCommands != null) {
-            if (quickReplies != null) {
-                if (i >= 0 && i < quickReplies.size()) {
-                    return quickReplies.get(i);
-                } else if (quickReplies != null) {
-                    i -= quickReplies.size();
-                }
+        } else if (searchResultCommands != null) {
+            if (i < 0 || i >= searchResultCommands.size()) {
+                return null;
             }
-            if (searchResultCommands != null) {
-                if (i < 0 || i >= searchResultCommands.size()) {
-                    return null;
-                }
 
-                final String result;
-                TLRPC.User searchUser = null;
-                if (searchResultCommandsUsers != null && (botsCount != 1 || info instanceof TLRPC.TL_channelFull)) {
-                    if (searchResultCommandsUsers.get(i) != null) {
-                        searchUser = searchResultCommandsUsers.get(i);
-                        result = String.format("%s@%s", searchResultCommands.get(i), searchUser != null ? UserObject.getPublicUsername(searchUser) : "");
-                    } else {
-                        result =String.format("%s", searchResultCommands.get(i));
-                    }
+            final String result;
+            TLRPC.User searchUser = null;
+            if (searchResultCommandsUsers != null && (botsCount != 1 || info instanceof TLRPC.TL_channelFull)) {
+                if (searchResultCommandsUsers.get(i) != null) {
+                    searchUser = searchResultCommandsUsers.get(i);
+                    result = String.format("%s@%s", searchResultCommands.get(i), searchUser != null ? UserObject.getPublicUsername(searchUser) : "");
                 } else {
-                    result = searchResultCommands.get(i);
+                    result =String.format("%s", searchResultCommands.get(i));
                 }
-                if (searchResultCommandsEphemeral != null && searchResultCommandsEphemeral.get(i) == true) {
-                    return new EphemeralCommand(result, searchUser != null ? searchUser.id : 0);
-                }
-                return result;
+            } else {
+                result = searchResultCommands.get(i);
             }
+            if (searchResultCommandsEphemeral != null && searchResultCommandsEphemeral.get(i) == true) {
+                return new EphemeralCommand(result, searchUser != null ? searchUser.id : 0);
+            }
+            return result;
         }
         return null;
     }
@@ -1938,9 +1897,6 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                 textView.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteGrayText2));
                 view = textView;
                 break;
-            case 5:
-                view = new QuickRepliesActivity.QuickReplyView(mContext, false, resourcesProvider);
-                break;
             case 6:
                 view = new HashtagHint(mContext, stories, resourcesProvider);
                 break;
@@ -1988,11 +1944,6 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                 } else {
                     textView.setText(LocaleController.formatString("AttachInlineRestricted", R.string.AttachInlineRestricted, LocaleController.formatDateForBan(chat.banned_rights.until_date)));
                 }
-            }
-        } else if (type == 5) {
-            QuickRepliesActivity.QuickReplyView cell = (QuickRepliesActivity.QuickReplyView) holder.itemView;
-            if (quickReplies != null && position >= 0 && position < quickReplies.size()) {
-                cell.set(quickReplies.get(position), quickRepliesQuery, USE_DIVIDERS && (position + 1) < getItemCount());
             }
         } else if (searchResultBotContext != null) {
             boolean hasTop = searchResultBotContextSwitch != null || searchResultBotWebViewSwitch != null;

@@ -149,8 +149,6 @@ public class NotificationCenter {
     public static final int updateSearchSettings = totalEvents++;
     public static final int updateTranscriptionLock = totalEvents++;
     public static final int businessMessagesUpdated = totalEvents++;
-    public static final int quickRepliesUpdated = totalEvents++;
-    public static final int quickRepliesDeleted = totalEvents++;
     public static final int bookmarkAdded = totalEvents++;
     // LoogriGram: starReactionAnonymousUpdate stood here. It told a chat that the
     // peer behind our own paid reaction had changed, and only the paid-reaction

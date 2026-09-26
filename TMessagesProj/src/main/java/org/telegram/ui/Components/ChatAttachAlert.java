@@ -133,8 +133,6 @@ import org.telegram.ui.ActionBar.INavigationLayout;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.BasePermissionsActivity;
-import org.telegram.ui.Business.ChatAttachAlertQuickRepliesLayout;
-import org.telegram.ui.Business.QuickRepliesController;
 import org.telegram.ui.ChatActivity;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
 import org.telegram.ui.Components.blur3.BlurredBackgroundWithFadeDrawable;
@@ -190,7 +188,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     public static final int LAYOUT_TYPE_DOCUMENTS = 4;
     // LoogriGram: LAYOUT_TYPE_CONTACTS (5) was the address book tab.
     public static final int LAYOUT_TYPE_POLL = 9;
-    public static final int LAYOUT_TYPE_REPLIES = 11;
     public static final int LAYOUT_TYPE_TODO = 12;
     public static final int LAYOUT_TYPE_STICKERS = 13;
     public static final int LAYOUT_TYPE_EMOJI = 14;
@@ -964,7 +961,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     private ChatAttachAlertDocumentLayout documentLayout;
     private ChatAttachAlertPhotoLayoutPreview photoPreviewLayout;
     public ChatAttachAlertColorsLayout colorsLayout;
-    private ChatAttachAlertQuickRepliesLayout quickRepliesLayout;
     private ChatAttachAlertEmojiLayout emojiLayout;
     private ChatAttachAlertEmojiLayout stickersLayout;
     private ChatAttachAlertRichLayout richLayout;
@@ -1309,7 +1305,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.reloadInlineHints);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.attachMenuBotsDidLoad);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.currentUserPremiumStatusChanged);
-        NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.quickRepliesUpdated);
         exclusionRects.add(exclustionRect);
 
         sizeNotifierFrameLayout = new SizeNotifierFrameLayout(context) {
@@ -1943,7 +1938,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     }
 
                     boolean result;
-                    if (child != quickRepliesLayout && child != audioLayout) {
+                    if (child != audioLayout) {
                         canvas.save();
                        // canvas.clipRect(backgroundPaddingLeft, actionBar.getY() + actionBar.getMeasuredHeight() - currentPanTranslationY, getMeasuredWidth() - backgroundPaddingLeft, getMeasuredHeight());
                         result = super.drawChild(canvas, child, drawingTime);
@@ -2738,8 +2733,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     } else {
                         showPollLayout(true, null);
                     }
-                } else if (num == 11) {
-                    openQuickRepliesLayout();
                 } else if (num == 12) {
                     if (!todoEnabled) {
                         restrictedLayout = new ChatAttachRestrictedLayout(9, this, getContext(), resourcesProvider);
@@ -3401,7 +3394,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 user = chatActivity.getCurrentUser();
                 replyMessage = chatActivity.getReplyMessage();
                 replyTopMessage = chatActivity.getReplyTopMessage();
-                if (chatActivity.isInScheduleMode() || chatActivity.getChatMode() == ChatActivity.MODE_QUICK_REPLIES) {
+                if (chatActivity.isInScheduleMode()) {
                     return false;
                 }
                 dialogId = chatActivity.getDialogId();
@@ -4212,8 +4205,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             newId = LAYOUT_TYPE_POLL;
         } else if (layout == colorsLayout) {
             newId = 10;
-        } else if (layout == quickRepliesLayout) {
-            newId = LAYOUT_TYPE_REPLIES;
         } else if (layout == todoLayout) {
             newId = LAYOUT_TYPE_TODO;
         } else if (layout == emojiLayout) {
@@ -4512,7 +4503,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         float isGray = 0;
         for (ListAnimator.Entry<Long> entry : animatorCurrentVisibleLayout) {
             long id = entry.item;
-            if (id == LAYOUT_TYPE_PHOTO || id == LAYOUT_TYPE_MUSIC || id == LAYOUT_TYPE_DOCUMENTS || id == LAYOUT_TYPE_POLL || id == LAYOUT_TYPE_REPLIES || id == LAYOUT_TYPE_TODO) {
+            if (id == LAYOUT_TYPE_PHOTO || id == LAYOUT_TYPE_MUSIC || id == LAYOUT_TYPE_DOCUMENTS || id == LAYOUT_TYPE_POLL || id == LAYOUT_TYPE_TODO) {
                 isGray += entry.getVisibility();
             }
         }
@@ -4556,13 +4547,8 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     // LoogriGram: openContactsLayout built the address book tab. See the
     // attach button handler above.
 
-    private void openQuickRepliesLayout() {
-        if (quickRepliesLayout == null) {
-            layouts[7] = quickRepliesLayout = new ChatAttachAlertQuickRepliesLayout(this, getContext(), resourcesProvider);
-            quickRepliesLayout.setupBlurredSearchField(iBlur3FactoryLiquidGlass);
-        }
-        showLayout(quickRepliesLayout);
-    }
+    // LoogriGram: openQuickRepliesLayout opened a tab listing our Business
+    // quick replies to send (in layouts[7], now left empty).
 
     private void openAudioLayout(boolean show) {
         if (!musicEnabled) {
@@ -5230,7 +5216,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
 
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
-        if (id == NotificationCenter.reloadInlineHints || id == NotificationCenter.attachMenuBotsDidLoad || id == NotificationCenter.quickRepliesUpdated) {
+        if (id == NotificationCenter.reloadInlineHints || id == NotificationCenter.attachMenuBotsDidLoad) {
             if (buttonsAdapter != null) {
                 buttonsAdapter.notifyDataSetChanged();
             }
@@ -5804,7 +5790,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.reloadInlineHints);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.attachMenuBotsDidLoad);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.currentUserPremiumStatusChanged);
-        NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.quickRepliesUpdated);
         destroyed = true;
         if (commentTextView != null) {
             commentTextView.onDestroy();
@@ -6044,7 +6029,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         private int musicButton;
         private int pollButton;
         private int todoButton;
-        private int quickRepliesButton;
         private int locationButton;
         private int stickerButton;
         private int emojiButton;
@@ -6103,10 +6087,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                         attachButton.setTag(9);
                         attachButton.setTag(5);
                         err = !checkContactsPermission(mContext);
-                    } else if (position == quickRepliesButton) {
-                        attachButton.setTextAndIcon(11, getString(R.string.AttachQuickReplies), GlassTabView.TabAnimation.REPLIES);
-                        attachButton.setTag(11);
-                        needPremium = true;
                     } else if (position == todoButton) {
                         attachButton.setTextAndIcon(12, getString(R.string.Todo), GlassTabView.TabAnimation.CHECKLIST);
                         attachButton.setTag(12);
@@ -6172,7 +6152,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             musicButton = -1;
             pollButton = -1;
             todoButton = -1;
-            quickRepliesButton = -1;
             locationButton = -1;
             stickerButton = -1;
             linksButton = -1;
@@ -6231,7 +6210,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 // LoogriGram: attach bots were hidden for a user who charges per
                 // message; such a user is locked now and has no attach menu.
                 if ((photosEnabled || videosEnabled) && (chat == null || !ChatObject.isMonoForum(chat))) {
-                    if (baseFragment instanceof ChatActivity && !((ChatActivity) baseFragment).isInScheduleMode() && !((ChatActivity) baseFragment).isSecretChat() && ((ChatActivity) baseFragment).getChatMode() != ChatActivity.MODE_QUICK_REPLIES) {
+                    if (baseFragment instanceof ChatActivity && !((ChatActivity) baseFragment).isInScheduleMode() && !((ChatActivity) baseFragment).isSecretChat()) {
                         ChatActivity chatActivity = (ChatActivity) baseFragment;
 
                         attachBotsStartRow = buttonsCount;
@@ -6262,9 +6241,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     todoButton = buttonsCount++;
                 }
                 // LoogriGram: no Contact button - see openContactsLayout.
-                if (baseFragment instanceof ChatActivity && ((ChatActivity) baseFragment).getChatMode() == 0 && user != null && !user.bot && QuickRepliesController.getInstance(currentAccount).hasReplies()) {
-                    quickRepliesButton = buttonsCount++;
-                }
                 musicButton = buttonsCount++;
             }
             super.notifyDataSetChanged();
@@ -6302,7 +6278,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         if (actionBar.isSearchFieldVisible()) {
             actionBar.closeSearchField();
         }
-        quickRepliesLayout = null;
         audioLayout = null;
         pollLayout = null;
         todoLayout = null;

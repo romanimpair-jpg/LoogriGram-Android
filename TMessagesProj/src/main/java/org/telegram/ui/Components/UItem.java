@@ -14,7 +14,6 @@ import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Business.BusinessLinksActivity;
-import org.telegram.ui.Business.QuickRepliesController;
 import org.telegram.ui.Cells.SlideIntChooseView;
 import org.telegram.ui.Components.ListView.AdapterWithDiffUtils;
 import org.telegram.ui.StatisticActivity;
@@ -408,18 +407,6 @@ public class UItem extends AdapterWithDiffUtils.Item {
     public UItem setMinSliderValue(int value) {
         this.longValue = value;
         return this;
-    }
-
-    public static UItem asQuickReply(QuickRepliesController.QuickReply quickReply) {
-        UItem item = new UItem(UniversalAdapter.VIEW_TYPE_QUICK_REPLY, false);
-        item.object = quickReply;
-        return item;
-    }
-
-    public static UItem asLargeQuickReply(QuickRepliesController.QuickReply quickReply) {
-        UItem item = new UItem(UniversalAdapter.VIEW_TYPE_LARGE_QUICK_REPLY, false);
-        item.object = quickReply;
-        return item;
     }
 
     public static UItem asBusinessChatLink(BusinessLinksActivity.BusinessLinkWrapper businessLink) {

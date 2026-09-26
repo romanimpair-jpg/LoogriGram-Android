@@ -82,8 +82,6 @@ import org.telegram.ui.Business.BusinessLinksActivity;
 import org.telegram.ui.Business.BusinessLinksController;
 import org.telegram.ui.Business.LocationActivity;
 import org.telegram.ui.Business.OpeningHoursActivity;
-import org.telegram.ui.Business.QuickRepliesActivity;
-import org.telegram.ui.Business.QuickRepliesController;
 import org.telegram.ui.Business.TimezonesController;
 import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.ShadowSectionCell;
@@ -543,7 +541,6 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
             fillBusinessFeaturesList(morePremiumFeatures, currentAccount, true);
 
             // preload
-            QuickRepliesController.getInstance(currentAccount).load();
             if (getUserConfig().isPremium()) {
                 TLRPC.InputStickerSet inputStickerSet = new TLRPC.TL_inputStickerSetShortName();
                 inputStickerSet.short_name = "RestrictedEmoji";
@@ -835,8 +832,6 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
                         presentFragment(new LocationActivity());
                     } else if (cell.data.type == PREMIUM_FEATURE_BUSINESS_OPENING_HOURS) {
                         presentFragment(new OpeningHoursActivity());
-                    } else if (cell.data.type == PREMIUM_FEATURE_BUSINESS_QUICK_REPLIES) {
-                        presentFragment(new QuickRepliesActivity());
                     } else if (cell.data.type == PREMIUM_FEATURE_STORIES) {
                         Bundle args = new Bundle();
                         args.putLong("dialog_id", UserConfig.getInstance(currentAccount).getClientUserId());
@@ -1000,7 +995,6 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
         if (!additional) {
             premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_BUSINESS_LOCATION, R.drawable.filled_location, getString(R.string.PremiumBusinessLocation), getString(R.string.PremiumBusinessLocationDescription)));
             premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_BUSINESS_OPENING_HOURS, R.drawable.filled_premium_hours, getString(R.string.PremiumBusinessOpeningHours), getString(R.string.PremiumBusinessOpeningHoursDescription)));
-            premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_BUSINESS_QUICK_REPLIES, R.drawable.filled_open_message, getString(R.string.PremiumBusinessQuickReplies), getString(R.string.PremiumBusinessQuickRepliesDescription)));
             premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_BUSINESS_CHAT_LINKS, R.drawable.filled_premium_chatlink, getString(R.string.PremiumBusinessChatLinks), getString(R.string.PremiumBusinessChatLinksDescription)));
             premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_BUSINESS_INTRO, R.drawable.filled_premium_intro, getString(R.string.PremiumBusinessIntro), getString(R.string.PremiumBusinessIntroDescription)));
         } else {

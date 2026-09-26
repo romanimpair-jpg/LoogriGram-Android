@@ -560,7 +560,6 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
         MUSIC(R.raw.tab_music, R.raw.tab_music_reverse),
         POLL(R.raw.tab_poll, R.raw.tab_poll_reverse),
         SYMBOLS(R.raw.tab_symbols, R.raw.tab_symbols_reverse),
-        REPLIES(R.raw.tab_reply, R.raw.tab_reply_reverse),
         WALLET(R.raw.tab_wallet, R.raw.tab_wallet_reverse),
         LINK(TabAnimationType.STATIC, R.drawable.tabs_link_24),
         // LoogriGram: the ghost mode tab. Static rather than lottie because

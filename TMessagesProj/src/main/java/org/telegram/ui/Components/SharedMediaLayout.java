@@ -9019,7 +9019,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     msg.translatedToLanguage = omsg.translatedToLanguage;
                     msg.translatedText = omsg.translatedText;
                     msg.replyStory = omsg.replyStory;
-                    msg.quick_reply_shortcut = omsg.quick_reply_shortcut;
                     return msg;
                 }
 

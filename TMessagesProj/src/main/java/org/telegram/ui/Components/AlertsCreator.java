@@ -7519,7 +7519,6 @@ public class AlertsCreator {
     public static void createDeleteMessagesAlert(BaseFragment fragment, TLRPC.User user, TLRPC.Chat chat, TLRPC.EncryptedChat encryptedChat, TLRPC.ChatFull chatInfo, long mergeDialogId, MessageObject selectedMessage, SparseArray<MessageObject>[] selectedMessages, MessageObject.GroupedMessages selectedGroup, int topicId, int mode, TLRPC.ChannelParticipant[] channelParticipants, Runnable onDelete, Runnable hideDim, Theme.ResourcesProvider resourcesProvider) {
         final boolean scheduled = mode == ChatActivity.MODE_SCHEDULED;
         final boolean isSavedMessages = mode == ChatActivity.MODE_SAVED;
-        final boolean quickReplies = mode == ChatActivity.MODE_QUICK_REPLIES;
         if (fragment == null || user == null && chat == null && encryptedChat == null) {
             return;
         }

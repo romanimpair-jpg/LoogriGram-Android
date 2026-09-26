@@ -272,9 +272,6 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
             if (checkSendMediaEnabled(photoEntry)) {
                 return -1;
             }
-            if (selectedPhotos.size() + 1 > maxCount()) {
-                return -1;
-            }
             boolean add = true;
             int num;
             if ((num = addToSelectedPhotos(photoEntry, -1)) == -1) {
@@ -1732,12 +1729,8 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
         return false;
     }
 
-    private int maxCount() {
-        if (parentAlert.baseFragment instanceof ChatActivity && ((ChatActivity) parentAlert.baseFragment).getChatMode() == ChatActivity.MODE_QUICK_REPLIES) {
-            return parentAlert.baseFragment.getMessagesController().config.quickReplyMessagesLimit.get() - ((ChatActivity) parentAlert.baseFragment).messages.size();
-        }
-        return Integer.MAX_VALUE;
-    }
+    // LoogriGram: maxCount() capped the selection at the room left in a
+    // Business quick reply; without quick replies there is no cap here.
 
     private int addToSelectedPhotos(MediaController.PhotoEntry object, int index) {
         Object key = object.imageId;
@@ -4247,10 +4240,6 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
                 int index = (Integer) v.getTag();
                 MediaController.PhotoEntry photoEntry = v.getPhotoEntry();
                 if (checkSendMediaEnabled(photoEntry)) {
-                    return;
-                }
-                if (selectedPhotos.size() + 1 > maxCount()) {
-                    BulletinFactory.of(parentAlert.sizeNotifierFrameLayout, resourcesProvider).createErrorBulletin(AndroidUtilities.replaceTags(LocaleController.formatPluralString("BusinessRepliesToastLimit", parentAlert.baseFragment.getMessagesController().config.quickReplyMessagesLimit.get()))).show();
                     return;
                 }
                 boolean added = !selectedPhotos.containsKey(photoEntry.imageId);

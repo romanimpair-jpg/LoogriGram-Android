@@ -461,7 +461,8 @@ public class MessagesStorage extends BaseController {
             "messages_holes",
             "media_holes_v2",
             "scheduled_messages_v2",
-            "quick_replies",
+            // LoogriGram: "quick_replies" was listed here, a table that was
+            // never created - the recovery copy failed on it.
             "messages_v2",
             "download_queue",
             // LoogriGram: user_contacts_v7 / user_phones_v7 were the cached
@@ -743,6 +744,9 @@ public class MessagesStorage extends BaseController {
         database.executeFast("CREATE INDEX IF NOT EXISTS tag_topic_idx_tag_message_id ON tag_message_id(topic_id, tag);").stepThis().dispose();
         database.executeFast("CREATE INDEX IF NOT EXISTS tag_topic_text_idx_tag_message_id ON tag_message_id(topic_id, tag, text COLLATE NOCASE);").stepThis().dispose();
 
+        // LoogriGram: business_replies and quick_replies_messages held our
+        // Business quick replies. Quick replies are gone; the two tables stay in
+        // the schema but are no longer written or read.
         database.executeFast("CREATE TABLE business_replies(topic_id INTEGER PRIMARY KEY, name TEXT, order_value INTEGER, count INTEGER);").stepThis().dispose();
         database.executeFast("CREATE TABLE quick_replies_messages(mid INTEGER, topic_id INTEGER, send_state INTEGER, date INTEGER, data BLOB, ttl INTEGER, replydata BLOB, reply_to_message_id INTEGER, PRIMARY KEY(mid, topic_id))").stepThis().dispose();
         database.executeFast("CREATE INDEX IF NOT EXISTS send_state_idx_quick_replies_messages ON quick_replies_messages(mid, send_state, date);").stepThis().dispose();
@@ -1097,19 +1101,9 @@ public class MessagesStorage extends BaseController {
                                 break;
                             }
                             case 103: {
-                                long dialogId = data.readInt64(false);
-                                int topicId = data.readInt32(false);
-                                int constructor = data.readInt32(false);
-                                TLObject request = TLRPC.TL_messages_deleteMessages.TLdeserialize(data, constructor, false);
-                                if (request == null) {
-                                    request = TLRPC.TL_channels_deleteMessages.TLdeserialize(data, constructor, false);
-                                }
-                                if (request == null) {
-                                    removePendingTask(taskId);
-                                } else {
-                                    TLObject finalRequest = request;
-                                    AndroidUtilities.runOnUIThread(() -> getMessagesController().deleteMessages(null, null, null, dialogId, true, 0, false, taskId, finalRequest, topicId));
-                                }
+                                // LoogriGram: a quick-reply message deletion queued by an
+                                // older build. Quick replies are gone; drop the task.
+                                removePendingTask(taskId);
                                 break;
                             }
                             case 9: {
@@ -3697,7 +3691,7 @@ public class MessagesStorage extends BaseController {
 
     protected static void addReplyMessages(TLRPC.Message message, LongSparseArray<SparseArray<ArrayList<TLRPC.Message>>> replyMessageOwners, LongSparseArray<ArrayList<Integer>> dialogReplyMessagesIds) {
         int messageId = message.reply_to.reply_to_msg_id;
-        long dialogId = (message.flags & 1073741824) != 0 ? message.quick_reply_shortcut_id : MessageObject.getReplyToDialogId(message);
+        long dialogId = MessageObject.getReplyToDialogId(message);
         SparseArray<ArrayList<TLRPC.Message>> sparseArray = replyMessageOwners.get(dialogId);
         ArrayList<Integer> ids = dialogReplyMessagesIds.get(dialogId);
         if (sparseArray == null) {
@@ -3725,9 +3719,7 @@ public class MessagesStorage extends BaseController {
         }
 
         final boolean scheduled = mode == ChatActivity.MODE_SCHEDULED;
-        final boolean quickReplies = mode == ChatActivity.MODE_QUICK_REPLIES;
         final boolean welcomeMessages = mode == ChatActivity.MODE_WELCOME_MESSAGES;
-        final long selfId = getUserConfig().getClientUserId();
 
         for (int b = 0, N2 = replyMessageOwners.size(); b < N2; b++) {
             long dialogId = replyMessageOwners.keyAt(b);
@@ -3745,8 +3737,6 @@ public class MessagesStorage extends BaseController {
                     boolean findInScheduled = i == 1;
                     if (welcomeMessages) {
                         cursor = database.queryFinalized(String.format(Locale.US, "SELECT data, mid, date, dialog_id FROM welcome_messages WHERE mid IN(%s) AND dialog_id = %d", TextUtils.join(",", ids), dialogId));
-                    } else if (quickReplies) {
-                        cursor = database.queryFinalized(String.format(Locale.US, "SELECT data, mid, date, topic_id FROM quick_replies_messages WHERE mid IN(%s) AND topic_id = %d", TextUtils.join(",", ids), dialogId));
                     } else if (findInScheduled) {
                         cursor = database.queryFinalized(String.format(Locale.US, "SELECT data, mid, date, uid FROM scheduled_messages_v2 WHERE mid IN(%s) AND uid = %d", TextUtils.join(",", ids), dialogId));
                     } else {
@@ -3760,13 +3750,7 @@ public class MessagesStorage extends BaseController {
                             data.reuse();
                             message.id = cursor.intValue(1);
                             message.date = cursor.intValue(2);
-                            if (quickReplies) {
-                                message.dialog_id = selfId;
-                                message.flags |= 1073741824;
-                                message.quick_reply_shortcut_id = cursor.intValue(3);
-                            } else {
-                                message.dialog_id = cursor.longValue(3);
-                            }
+                            message.dialog_id = cursor.longValue(3);
 
                             addUsersAndChatsFromMessage(message, usersToLoad, chatsToLoad, null);
 
@@ -8084,7 +8068,6 @@ public class MessagesStorage extends BaseController {
     public void getUnsentMessages(int count) {
         storageQueue.postRunnable(() -> {
             SQLiteCursor cursor = null;
-            SQLiteCursor cursor2 = null;
             try {
                 SparseArray<TLRPC.Message> messageHashMap = new SparseArray<>();
                 ArrayList<TLRPC.Message> messages = new ArrayList<>();
@@ -8172,66 +8155,6 @@ public class MessagesStorage extends BaseController {
                             }
                             message.dialog_id = cursor.longValue(5);
                             message.ttl = cursor.intValue(6);
-                            scheduledMessages.add(message);
-                            messageHashMap.put(message.id, message);
-
-                            if (DialogObject.isEncryptedDialog(message.dialog_id)) {
-                                int encryptedChatId = DialogObject.getEncryptedChatId(message.dialog_id);
-                                if (!encryptedChatIds.contains(encryptedChatId)) {
-                                    encryptedChatIds.add(encryptedChatId);
-                                }
-                            } else if (DialogObject.isUserDialog(message.dialog_id)) {
-                                if (!usersToLoad.contains(message.dialog_id)) {
-                                    usersToLoad.add(message.dialog_id);
-                                }
-                            } else {
-                                if (!chatsToLoad.contains(-message.dialog_id)) {
-                                    chatsToLoad.add(-message.dialog_id);
-                                }
-                            }
-
-                            addUsersAndChatsFromMessage(message, usersToLoad, chatsToLoad, null);
-
-                            if (message.send_state != 3 && (message.peer_id.channel_id == 0 && !MessageObject.isUnread(message) && !DialogObject.isEncryptedDialog(message.dialog_id) || message.id > 0)) {
-                                message.send_state = 0;
-                            }
-                        }
-                    }
-                }
-                cursor.dispose();
-                cursor = null;
-
-                final long selfId = getUserConfig().getClientUserId();
-                cursor = database.queryFinalized("SELECT m.data, m.send_state, m.mid, m.date, m.topic_id, m.ttl FROM quick_replies_messages as m WHERE (m.mid < 0 AND m.send_state = 1) OR (m.mid > 0 AND m.send_state = 3) ORDER BY mid DESC");
-                while (cursor.next()) {
-                    NativeByteBuffer data = cursor.byteBufferValue(0);
-                    if (data != null) {
-                        TLRPC.Message message = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
-                        message.send_state = cursor.intValue(1);
-                        message.readAttachPath(data, getUserConfig().clientUserId);
-                        data.reuse();
-                        if (messageHashMap.indexOfKey(message.id) < 0) {
-                            message.id = cursor.intValue(2);
-                            String topicName = null;
-                            int topic_id = cursor.intValue(4);
-                            cursor2 = database.queryFinalized("SELECT name FROM business_replies WHERE topic_id = ?", topic_id);
-                            if (cursor2.next()) {
-                                topicName = cursor2.stringValue(1);
-                            }
-                            cursor2.dispose();
-                            if (topicName == null) {
-                                database.executeFast("DELETE FROM quick_replies_messages WHERE mid = " + message.id + " AND topic_id = " + topic_id).stepThis().dispose();
-                                continue;
-                            }
-                            TLRPC.TL_inputQuickReplyShortcut shortcut = new TLRPC.TL_inputQuickReplyShortcut();
-                            shortcut.shortcut = topicName;
-                            message.quick_reply_shortcut = shortcut;
-                            message.quick_reply_shortcut_id = topic_id;
-                            if (topic_id != 0) {
-                                message.flags |= 1073741824;
-                            }
-                            message.date = cursor.intValue(3);
-                            message.ttl = cursor.intValue(5);
                             scheduledMessages.add(message);
                             messageHashMap.put(message.id, message);
 
@@ -8420,7 +8343,6 @@ public class MessagesStorage extends BaseController {
         long startLoadTime = SystemClock.elapsedRealtime();
         SQLiteCursor cursor = null;
         final boolean scheduled = mode == ChatActivity.MODE_SCHEDULED;
-        final boolean quickReplies = mode == ChatActivity.MODE_QUICK_REPLIES;
         final boolean welcomeMessages = mode == ChatActivity.MODE_WELCOME_MESSAGES;
         try {
             ArrayList<Long> usersToLoad = new ArrayList<>();
@@ -8553,59 +8475,6 @@ public class MessagesStorage extends BaseController {
                 cursor.dispose();
                 cursor = null;
 
-            } else if (quickReplies) {
-                isEnd = true;
-                if (threadMessageId != 0) {
-                    cursor = database.queryFinalized("SELECT m.data, m.send_state, m.mid, m.date, m.replydata, m.ttl FROM quick_replies_messages as m WHERE m.topic_id = ? ORDER BY m.mid DESC", threadMessageId);
-                    while (cursor.next()) {
-                        NativeByteBuffer data = cursor.byteBufferValue(0);
-                        if (data != null) {
-                            TLRPC.Message message = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
-                            message.send_state = cursor.intValue(1);
-                            message.id = cursor.intValue(2);
-                            if (message.id > 0 && message.send_state != 0 && message.send_state != 3) {
-                                message.send_state = 0;
-                            }
-                            if (dialogId == currentUserId) {
-                                message.out = true;
-                                message.unread = false;
-                            } else {
-                                message.unread = true;
-                            }
-                            message.readAttachPath(data, currentUserId);
-                            data.reuse();
-                            message.date = cursor.intValue(3);
-                            message.dialog_id = dialogId;
-                            if (message.ttl == 0) {
-                                message.ttl = cursor.intValue(5);
-                            }
-                            res.messages.add(message);
-
-                            addUsersAndChatsFromMessage(message, usersToLoad, chatsToLoad, animatedEmojiToLoad);
-
-                            if (message.reply_to != null && (message.reply_to.reply_to_msg_id != 0 || message.reply_to.reply_to_random_id != 0)) {
-                                if (!cursor.isNull(4)) {
-                                    data = cursor.byteBufferValue(4);
-                                    if (data != null) {
-                                        message.replyMessage = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
-                                        message.replyMessage.readAttachPath(data, currentUserId);
-                                        data.reuse();
-                                        if (message.replyMessage != null) {
-                                            addUsersAndChatsFromMessage(message.replyMessage, usersToLoad, chatsToLoad, animatedEmojiToLoad);
-                                        }
-                                    }
-                                }
-                                if (message.replyMessage == null) {
-                                    if (message.reply_to.reply_to_msg_id != 0) {
-                                        addReplyMessages(message, replyMessageOwners, dialogReplyMessagesIds);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    cursor.dispose();
-                    cursor = null;
-                }
             } else {
                 boolean withEphemeralMessages = false;
 
@@ -11400,11 +11269,6 @@ public class MessagesStorage extends BaseController {
         try {
             if (messages != null && !messages.isEmpty() && MessageObject.isWelcomeMessage(messages.get(0))) {
                 mode = ChatActivity.MODE_WELCOME_MESSAGES;
-            } else if (messages != null && !messages.isEmpty() && MessageObject.isQuickReply(messages.get(0))) {
-                mode = ChatActivity.MODE_QUICK_REPLIES;
-                if (threadMessageId == 0) {
-                    threadMessageId = MessageObject.getQuickReplyId(currentAccount, messages.get(0));
-                }
             }
             if (messages != null && mode == ChatActivity.MODE_DEFAULT) {
                 int currentTime = -1;
@@ -11429,7 +11293,6 @@ public class MessagesStorage extends BaseController {
             }
             final boolean scheduled = mode == ChatActivity.MODE_SCHEDULED;
             final boolean saved = mode == ChatActivity.MODE_SAVED;
-            final boolean quickReplies = mode == ChatActivity.MODE_QUICK_REPLIES;
             final boolean welcomeMessages = mode == ChatActivity.MODE_WELCOME_MESSAGES;
             final long selfId = getUserConfig().getClientUserId();
             if (welcomeMessages) {
@@ -11556,73 +11419,6 @@ public class MessagesStorage extends BaseController {
                 }
                 for (int a = 0, N = dialogsToUpdate.size(); a < N; a++) {
                     broadcastScheduledMessagesChange(dialogsToUpdate.get(a));
-                }
-            } else if (quickReplies) {
-                if (withTransaction) {
-                    database.beginTransaction();
-                    databaseInTransaction = true;
-                }
-
-                state_messages = database.executeFast("REPLACE INTO quick_replies_messages VALUES(?, ?, ?, ?, ?, ?, NULL, 0)");
-//                state_randoms = database.executeFast("REPLACE INTO randoms_v2 VALUES(?, ?, ?)");
-                ArrayList<Long> dialogsToUpdate = new ArrayList<>();
-
-                for (int a = 0; a < messages.size(); a++) {
-                    TLRPC.Message message = messages.get(a);
-                    if (message instanceof TLRPC.TL_messageEmpty) {
-                        continue;
-                    }
-                    fixUnsupportedMedia(message);
-
-                    state_messages.requery();
-                    int messageId = message.id;
-                    if (message.local_id != 0) {
-                        messageId = message.local_id;
-                    }
-                    MessageObject.normalizeFlags(message);
-                    NativeByteBuffer data = new NativeByteBuffer(message.getObjectSize());
-                    message.serializeToStream(data);
-
-                    long topicId = MessageObject.getQuickReplyId(currentAccount, message);
-
-                    if (topicId != 0) {
-                        database.executeFast(String.format(Locale.ENGLISH, "DELETE FROM quick_replies_messages WHERE mid = %d AND topic_id = %d", messageId, topicId)).stepThis().dispose();
-                    }
-
-                    long did = MessageObject.getDialogId(message);
-                    state_messages.bindInteger(1, messageId);
-                    state_messages.bindLong(2, topicId);
-                    state_messages.bindInteger(3, message.send_state);
-                    state_messages.bindInteger(4, message.date);
-                    state_messages.bindByteBuffer(5, data);
-                    state_messages.bindInteger(6, message.ttl);
-                    state_messages.step();
-
-//                    if (message.random_id != 0) {
-//                        state_randoms.requery();
-//                        state_randoms.bindLong(1, message.random_id);
-//                        state_randoms.bindInteger(2, messageId);
-//                        state_randoms.bindLong(3, message.dialog_id);
-//                        state_randoms.step();
-//                    }
-
-                    data.reuse();
-
-                    if (!dialogsToUpdate.contains(did)) {
-                        dialogsToUpdate.add(did);
-                    }
-                }
-                state_messages.dispose();
-                state_messages = null;
-//                state_randoms.dispose();
-//                state_randoms = null;
-
-                if (withTransaction) {
-                    database.commitTransaction();
-                    databaseInTransaction = false;
-                }
-                for (int a = 0, N = dialogsToUpdate.size(); a < N; a++) {
-                    broadcastQuickRepliesMessagesChange(dialogsToUpdate.get(a), threadMessageId);
                 }
             } else {
                 if (ifNoLastMessage) {
@@ -13297,16 +13093,12 @@ public class MessagesStorage extends BaseController {
             try {
                 int mode = _mode;
                 long messageId = message.id;
-                if (MessageObject.isQuickReply(message)) {
-                    mode = ChatActivity.MODE_QUICK_REPLIES;
-                } else if (MessageObject.isWelcomeMessage(message)) {
+                if (MessageObject.isWelcomeMessage(message)) {
                     mode = ChatActivity.MODE_WELCOME_MESSAGES;
                 }
 
                 if (mode == ChatActivity.MODE_WELCOME_MESSAGES) {
                     database.executeFast(String.format(Locale.US, "UPDATE welcome_messages SET send_state = 2 WHERE mid = %d AND dialog_id = %d", messageId, MessageObject.getDialogId(message))).stepThis().dispose();
-                } else if (mode == ChatActivity.MODE_QUICK_REPLIES) {
-                    database.executeFast(String.format(Locale.US, "UPDATE quick_replies_messages SET send_state = 2 WHERE mid = %d AND topic_id = %d", messageId, MessageObject.getQuickReplyId(currentAccount, message))).stepThis().dispose();
                 } else if (mode == ChatActivity.MODE_SCHEDULED) {
                     database.executeFast(String.format(Locale.US, "UPDATE scheduled_messages_v2 SET send_state = 2 WHERE mid = %d AND uid = %d", messageId, MessageObject.getDialogId(message))).stepThis().dispose();
                 } else {
@@ -13400,7 +13192,6 @@ public class MessagesStorage extends BaseController {
             return null;
         }
 
-        int topicId = newTopicId;
         long did = 0;
         if (scheduled == -1 || scheduled == 0) {
             try {
@@ -13408,19 +13199,6 @@ public class MessagesStorage extends BaseController {
                 if (cursor.next()) {
                     did = cursor.longValue(0);
                     scheduled = 0;
-                }
-            } catch (Exception e) {
-                checkSQLException(e);
-            } finally {
-                if (cursor != null) {
-                    cursor.dispose();
-                }
-            }
-            try {
-                cursor = database.queryFinalized(String.format(Locale.US, "SELECT topic_id FROM quick_replies_messages WHERE mid = %d LIMIT 1", oldMessageId));
-                if (cursor.next()) {
-                    topicId = cursor.intValue(0);
-                    scheduled = 2;
                 }
             } catch (Exception e) {
                 checkSQLException(e);
@@ -13460,7 +13238,7 @@ public class MessagesStorage extends BaseController {
             }
         }
 
-        if (did == 0 && scheduled != 2) {
+        if (did == 0) {
             return null;
         }
         SQLitePreparedStatement state = null;
@@ -13472,14 +13250,12 @@ public class MessagesStorage extends BaseController {
                     state = database.executeFast("UPDATE messages_v2 SET send_state = 0, date = ? WHERE mid = ? AND uid = ?");
                 } else if (scheduled == 1) {
                     state = database.executeFast("UPDATE scheduled_messages_v2 SET send_state = 0, date = ? WHERE mid = ? AND uid = ?");
-                } else if (scheduled == 2) {
-                    state = database.executeFast("UPDATE quick_replies_messages SET send_state = 0, date = ? WHERE mid = ? AND topic_id = ?");
                 } else if (scheduled == 3) {
                     state = database.executeFast("UPDATE welcome_messages SET send_state = 0, date = ? WHERE mid = ? AND dialog_id = ?");
                 }
                 state.bindInteger(1, date);
                 state.bindInteger(2, newId);
-                state.bindLong(3, scheduled == 2 ? topicId : did);
+                state.bindLong(3, did);
                 state.step();
 
                 if (scheduled == 0) {
@@ -13606,25 +13382,6 @@ public class MessagesStorage extends BaseController {
                 } catch (Exception e) {
                     try {
                         database.executeFast(String.format(Locale.US, "DELETE FROM scheduled_messages_v2 WHERE mid = %d AND uid = %d", oldMessageId, did)).stepThis().dispose();
-                    } catch (Exception e2) {
-                        checkSQLException(e2);
-                    }
-                } finally {
-                    if (state != null) {
-                        state.dispose();
-                    }
-                }
-            } else if (scheduled == 2) {
-                try {
-                    state = database.executeFast("UPDATE quick_replies_messages SET mid = ?, topic_id = ?, send_state = 0 WHERE mid = ? AND topic_id = ?");
-                    state.bindInteger(1, newId);
-                    state.bindInteger(2, newTopicId);
-                    state.bindInteger(3, oldMessageId);
-                    state.bindLong(4, topicId);
-                    state.step();
-                } catch (Exception e) {
-                    try {
-                        database.executeFast(String.format(Locale.US, "DELETE FROM quick_replies_messages WHERE mid = %d AND topic_id = %d", oldMessageId, topicId)).stepThis().dispose();
                     } catch (Exception e2) {
                         checkSQLException(e2);
                     }
@@ -14030,52 +13787,16 @@ public class MessagesStorage extends BaseController {
         }
     }
 
-    private void broadcastQuickRepliesMessagesChange(Long type, long topic_id) {
-        AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.quickRepliesUpdated));
-    }
-
     private ArrayList<Long> markMessagesAsDeletedInternal(long dialogId, ArrayList<Integer> messages, boolean deleteFiles, int mode, int threadMessageId) {
         SQLiteCursor cursor = null;
         SQLitePreparedStatement state = null;
         try {
             ArrayList<Long> dialogsIds = new ArrayList<>();
             final boolean scheduled = mode == ChatActivity.MODE_SCHEDULED;
-            final boolean quickReplies = mode == ChatActivity.MODE_QUICK_REPLIES;
             final boolean welcomeMessages = mode == ChatActivity.MODE_WELCOME_MESSAGES;
             if (welcomeMessages) {
                 String ids = TextUtils.join(",", messages);
                 database.executeFast(String.format(Locale.US, "DELETE FROM welcome_messages WHERE mid IN(%s) AND dialog_id = %d", ids, dialogId)).stepThis().dispose();
-            } else if (quickReplies) {
-                String ids = TextUtils.join(",", messages);
-
-//                LongSparseArray<ArrayList<Long>> dialogsToUpdate = new LongSparseArray<>();
-//
-//                cursor = database.queryFinalized(String.format(Locale.US, "SELECT topic_id FROM quick_replies_messages WHERE mid IN(%s)", ids));
-//                try {
-//                    while (cursor.next()) {
-//                        long did = cursor.longValue(0);
-//                        long topic_id = cursor.longValue(1);
-//                        ArrayList<Long> topicIds = dialogsToUpdate.get(did);
-//                        if (topicIds == null) {
-//                            dialogsToUpdate.put(did, topicIds = new ArrayList<>());
-//                            topicIds.add(topic_id);
-//                        } else if (topicIds.contains(topic_id)) {
-//                            topicIds.add(topic_id);
-//                        }
-//                    }
-//                } catch (Exception e) {
-//                    checkSQLException(e);
-//                }
-//                cursor.dispose();
-//                cursor = null;
-                database.executeFast(String.format(Locale.US, "DELETE FROM quick_replies_messages WHERE mid IN(%s) AND topic_id = %d", ids, threadMessageId)).stepThis().dispose();
-//                for (int a = 0, N = dialogsToUpdate.size(); a < N; a++) {
-//                    long type = dialogsToUpdate.keyAt(a);
-//                    ArrayList<Long> topicIds = dialogsToUpdate.valueAt(a);
-//                    for (long topic_id : topicIds) {
-//                        broadcastQuickRepliesMessagesChange(type, topic_id);
-//                    }
-//                }
             } else if (scheduled) {
                 String ids = TextUtils.join(",", messages);
 
@@ -14233,7 +13954,8 @@ public class MessagesStorage extends BaseController {
                 cursor = null;
 
                 database.beginTransaction();
-                for (int i = 0; i < 5; i++) {
+                // LoogriGram: a fifth pass (i == 2) updated quick_replies_messages.
+                for (int i = 0; i < 4; i++) {
                     if (i == 0) {
                         if (dialogId != 0) {
                             state = getMessagesStorage().getDatabase().executeFast("UPDATE messages_v2 SET replydata = ? WHERE reply_to_message_id IN(?) AND uid = ?");
@@ -14247,8 +13969,6 @@ public class MessagesStorage extends BaseController {
                             state = getMessagesStorage().getDatabase().executeFast("UPDATE scheduled_messages_v2 SET replydata = ? WHERE reply_to_message_id IN(?)");
                         }
                     } else if (i == 2) {
-                        state = getMessagesStorage().getDatabase().executeFast("UPDATE quick_replies_messages SET replydata = ? WHERE reply_to_message_id IN(?)");
-                    } else if (i == 3) {
                         state = getMessagesStorage().getDatabase().executeFast("UPDATE welcome_messages SET replydata = ? WHERE reply_to_message_id IN(?) AND dialog_id = ?");
                     } else {
                         if (dialogId == 0) {
@@ -14263,7 +13983,7 @@ public class MessagesStorage extends BaseController {
                     state.requery();
                     state.bindByteBuffer(1, data);
                     state.bindString(2, ids);
-                    if (dialogId != 0 && i != 2) {
+                    if (dialogId != 0) {
                         state.bindLong(3, dialogId);
                     }
                     state.step();
@@ -15531,7 +15251,6 @@ public class MessagesStorage extends BaseController {
             final long selfId = getUserConfig().getClientUserId();
             for (MessageObject messageObject : messageObjects) {
                 if (messageObject.scheduled) continue; // TODO if needed
-                if (messageObject.isQuickReply()) continue;
                 SQLiteCursor cursor = null;
                 try {
                     cursor = database.queryFinalized("SELECT data FROM messages_v2 WHERE uid = ? AND mid = ?", messageObject.getDialogId(), messageObject.getId());
@@ -15573,7 +15292,6 @@ public class MessagesStorage extends BaseController {
             try {
                 final long selfId = getUserConfig().getClientUserId();
                 final boolean scheduled = mode == ChatActivity.MODE_SCHEDULED;
-                final boolean quickReplies = mode == ChatActivity.MODE_QUICK_REPLIES;
                 final boolean welcomeMessages = mode == ChatActivity.MODE_WELCOME_MESSAGES;
                 if (welcomeMessages) {
                     state_messages = database.executeFast("REPLACE INTO welcome_messages VALUES(?, ?, ?, ?, ?, ?, NULL, 0)");
@@ -15610,43 +15328,6 @@ public class MessagesStorage extends BaseController {
                     putChatsInternal(messages.chats);
 
                     database.commitTransaction();
-                } else if (quickReplies) {
-                    state_messages = database.executeFast("REPLACE INTO quick_replies_messages VALUES(?, ?, ?, ?, ?, ?, NULL, 0)");
-                    int count = messages.messages.size();
-                    for (int a = 0; a < count; a++) {
-                        TLRPC.Message message = messages.messages.get(a);
-                        if (message instanceof TLRPC.TL_messageEmpty) {
-                            continue;
-                        }
-
-                        long topic_id = MessageObject.getQuickReplyId(currentAccount, message);
-                        if (topic_id != 0) {
-                            database.executeFast(String.format(Locale.ENGLISH, "DELETE FROM quick_replies_messages WHERE mid = %d AND topic_id = %d", message.id, topic_id)).stepThis().dispose();
-                        }
-
-                        fixUnsupportedMedia(message);
-                        MessageObject.normalizeFlags(message);
-                        state_messages.requery();
-                        NativeByteBuffer data = new NativeByteBuffer(message.getObjectSize());
-                        message.serializeToStream(data);
-                        state_messages.bindInteger(1, message.id);
-                        state_messages.bindLong(2, topic_id);
-                        state_messages.bindInteger(3, message.send_state);
-                        state_messages.bindInteger(4, message.date);
-                        state_messages.bindByteBuffer(5, data);
-                        state_messages.bindInteger(6, message.ttl);
-                        state_messages.step();
-                        data.reuse();
-                    }
-                    state_messages.dispose();
-                    state_messages = null;
-
-                    putUsersInternal(messages.users);
-                    putChatsInternal(messages.chats);
-
-                    database.commitTransaction();
-//                    broadcastScheduledMessagesChange(dialogId);
-
                 } else if (scheduled) {
                     database.executeFast(String.format(Locale.US, "DELETE FROM scheduled_messages_v2 WHERE uid = %d AND mid > 0", dialogId)).stepThis().dispose();
                     state_messages = database.executeFast("REPLACE INTO scheduled_messages_v2 VALUES(?, ?, ?, ?, ?, ?, NULL, 0)");

@@ -110,7 +110,7 @@ public class FileRefController extends BaseController {
         } else if (parentObject instanceof MessageObject) {
             MessageObject messageObject = (MessageObject) parentObject;
             long channelId = messageObject.getChannelId();
-            return "message" + messageObject.getRealId() + "_" + channelId + "_" + messageObject.scheduled + "_" + messageObject.getQuickReplyId();
+            return "message" + messageObject.getRealId() + "_" + channelId + "_" + messageObject.scheduled;
         } else if (parentObject instanceof TLRPC.Message) {
             TLRPC.Message message = (TLRPC.Message) parentObject;
             long channelId = message.peer_id != null ? message.peer_id.channel_id : 0;
@@ -555,12 +555,6 @@ public class FileRefController extends BaseController {
             if (messageObject.scheduled) {
                 TLRPC.TL_messages_getScheduledMessages req = new TLRPC.TL_messages_getScheduledMessages();
                 req.peer = getMessagesController().getInputPeer(messageObject.getDialogId());
-                req.id.add(messageObject.getRealId());
-                getConnectionsManager().sendRequest(req, (response, error) -> onRequestComplete(locationKey, parentKey, response, error, true, false));
-            } else if (messageObject.isQuickReply()) {
-                TLRPC.TL_messages_getQuickReplyMessages req = new TLRPC.TL_messages_getQuickReplyMessages();
-                req.shortcut_id = messageObject.getQuickReplyId();
-                req.flags |= 1;
                 req.id.add(messageObject.getRealId());
                 getConnectionsManager().sendRequest(req, (response, error) -> onRequestComplete(locationKey, parentKey, response, error, true, false));
             } else if (messageObject.messageOwner != null && messageObject.messageOwner.rich_message != null && richMessagePeer != null) {

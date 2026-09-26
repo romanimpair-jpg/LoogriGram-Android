@@ -1069,7 +1069,6 @@
     <string name="AttachLocation">Ubicación</string>
     <string name="AttachLiveLocation">Ubicación en tiempo real</string>
     <string name="AttachContact">Contacto</string>
-    <string name="AttachQuickReplies">Respuestas</string>
     <string name="AttachDocument">Archivo</string>
     <string name="AttachSticker">Sticker</string>
     <string name="AttachAudio">Mensaje de voz</string>

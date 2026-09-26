@@ -61,7 +61,6 @@ import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_iv;
 import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.Business.QuickRepliesController;
 import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.ChatActivity;
 import org.telegram.ui.MultiLayoutTypingAnimator;
@@ -298,8 +297,6 @@ public class MessageObject {
             return ChatActivity.MODE_SCHEDULED;
         } else if (isWelcomeMessage()) {
             return ChatActivity.MODE_WELCOME_MESSAGES;
-        } else if (isQuickReply()) {
-            return ChatActivity.MODE_QUICK_REPLIES;
         }
         return 0;
     }
@@ -384,7 +381,6 @@ public class MessageObject {
     public Drawable customAvatarDrawable;
     public boolean isSaved;
     public boolean isSavedFiltered;
-    public String quick_reply_shortcut;
     public int searchType;
     private BotInlineKeyboard.Source inlineKeyboardSource;
 
@@ -488,9 +484,6 @@ public class MessageObject {
         final long selfId = UserConfig.getInstance(currentAccount).getClientUserId();
         if (sureIsMonoForum) {
             return getMonoForumTopicId(message);
-        }
-        if ((message.flags & 1073741824) != 0 && DialogObject.getPeerDialogId(message.peer_id) == selfId) {
-            return message.quick_reply_shortcut_id;
         }
         if (!sureIsForum && message != null && currentAccount >= 0 && DialogObject.getPeerDialogId(message.peer_id) == selfId) {
             return getSavedDialogId(selfId, message);
@@ -11153,9 +11146,6 @@ public class MessageObject {
                     return title;
                 } else if (attribute instanceof TLRPC.TL_documentAttributeVideo) {
                     if (attribute.round_message) {
-                        if (isQuickReply()) {
-                            return formatString(R.string.BusinessInReplies, "/" + getQuickReplyDisplayName());
-                        }
                         return LocaleController.formatDateAudio(messageOwner.date, true);
                     }
                 }
@@ -11434,7 +11424,6 @@ public class MessageObject {
     }
 
     public boolean canForwardMessage() {
-        if (isQuickReply()) return false;
         if (type == TYPE_GIFT_THEME_UPDATE || type == TYPE_SHARING_OFFER || type == TYPE_COMMUNITY_CHANGED) return false;
         return !(messageOwner instanceof TLRPC.TL_message_secret) && !needDrawBluredPreview() && !isLiveLocation() && type != MessageObject.TYPE_PHONE_CALL && !messageOwner.noforwards;
     }
@@ -12615,86 +12604,9 @@ public class MessageObject {
         return prevIndex;
     }
 
-    public void applyQuickReply(String name, int id) {
-        if (messageOwner == null) return;
-        if (id != 0) {
-            messageOwner.flags |= 1073741824;
-            messageOwner.quick_reply_shortcut_id = id;
-//        }
-            TLRPC.TL_inputQuickReplyShortcutId shortcut = new TLRPC.TL_inputQuickReplyShortcutId();
-            shortcut.shortcut_id = id;
-            messageOwner.quick_reply_shortcut = shortcut;
-        } else if (name != null) {
-            TLRPC.TL_inputQuickReplyShortcut shortcut = new TLRPC.TL_inputQuickReplyShortcut();
-            shortcut.shortcut = name;
-            messageOwner.quick_reply_shortcut = shortcut;
-        } else {
-            messageOwner.flags &=~ 1073741824;
-            messageOwner.quick_reply_shortcut_id = 0;
-            messageOwner.quick_reply_shortcut = null;
-        }
-    }
-
-    public static int getQuickReplyId(TLRPC.Message message) {
-        if (message == null) return 0;
-        if ((message.flags & 1073741824) != 0) {
-            return message.quick_reply_shortcut_id;
-        }
-        if (message.quick_reply_shortcut instanceof TLRPC.TL_inputQuickReplyShortcutId) {
-            return ((TLRPC.TL_inputQuickReplyShortcutId) message.quick_reply_shortcut).shortcut_id;
-        }
-        return 0;
-    }
-
-    public static int getQuickReplyId(int currentAccount, TLRPC.Message message) {
-        if (message == null) return 0;
-        if ((message.flags & 1073741824) != 0) {
-            return message.quick_reply_shortcut_id;
-        }
-        if (message.quick_reply_shortcut instanceof TLRPC.TL_inputQuickReplyShortcutId) {
-            return ((TLRPC.TL_inputQuickReplyShortcutId) message.quick_reply_shortcut).shortcut_id;
-        }
-        String replyName = getQuickReplyName(message);
-        if (replyName != null) {
-            QuickRepliesController.QuickReply reply = QuickRepliesController.getInstance(currentAccount).findReply(replyName);
-            if (reply != null) {
-                return reply.id;
-            }
-        }
-        return 0;
-    }
-
-    public int getQuickReplyId() {
-        return getQuickReplyId(messageOwner);
-    }
-
-    public static String getQuickReplyName(TLRPC.Message message) {
-        if (message == null) return null;
-        if (message.quick_reply_shortcut instanceof TLRPC.TL_inputQuickReplyShortcut) {
-            return ((TLRPC.TL_inputQuickReplyShortcut) message.quick_reply_shortcut).shortcut;
-        }
-        return null;
-    }
-
-    public String getQuickReplyName() {
-        return getQuickReplyName(messageOwner);
-    }
-
-    public String getQuickReplyDisplayName() {
-        String name = getQuickReplyName();
-        if (name != null) return name;
-        QuickRepliesController.QuickReply quickReply = QuickRepliesController.getInstance(currentAccount).findReply(getQuickReplyId());
-        if (quickReply != null) return quickReply.name;
-        return "";
-    }
-
-    public static boolean isQuickReply(TLRPC.Message message) {
-        return message != null && ((message.flags & 1073741824) != 0 || message.quick_reply_shortcut != null);
-    }
-
-    public boolean isQuickReply() {
-        return isQuickReply(messageOwner);
-    }
+    // LoogriGram: the quick-reply helpers stood here (applyQuickReply,
+    // getQuickReplyId/Name/DisplayName, isQuickReply): a message belonging to
+    // one of our Business quick replies. None are kept or sent any more.
     
     public TLRPC.TL_availableEffect getEffect() {
         if (messageOwner == null || (messageOwner.flags2 & 4) == 0)

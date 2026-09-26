@@ -25,7 +25,6 @@ import androidx.annotation.Nullable;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.Utilities;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.Business.QuickRepliesActivity;
 
 public class ButtonSpan extends ReplacementSpan {
 

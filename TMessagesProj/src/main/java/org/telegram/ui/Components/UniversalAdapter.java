@@ -28,8 +28,6 @@ import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Business.BusinessLinksActivity;
-import org.telegram.ui.Business.QuickRepliesActivity;
-import org.telegram.ui.Business.QuickRepliesController;
 import org.telegram.ui.Cells.CheckBoxCell;
 import org.telegram.ui.Cells.CollapseTextCell;
 import org.telegram.ui.Cells.DialogCell;
@@ -81,8 +79,7 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
     public static final int VIEW_TYPE_USER_ADD = 13;
     public static final int VIEW_TYPE_SLIDE = 14;
     public static final int VIEW_TYPE_INTSLIDE = 15;
-    public static final int VIEW_TYPE_QUICK_REPLY = 16;
-    public static final int VIEW_TYPE_LARGE_QUICK_REPLY = 17;
+    // LoogriGram: 16 and 17 were a Business quick reply's row, small and large.
 
     public static final int VIEW_TYPE_CHART_LINEAR = 18;
     public static final int VIEW_TYPE_CHART_DOUBLE_LINEAR = 19;
@@ -352,8 +349,6 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
             case VIEW_TYPE_RADIO_USER:
             case VIEW_TYPE_SLIDE:
             case VIEW_TYPE_INTSLIDE:
-            case VIEW_TYPE_QUICK_REPLY:
-            case VIEW_TYPE_LARGE_QUICK_REPLY:
             case VIEW_TYPE_CHART_LINEAR:
             case VIEW_TYPE_CHART_DOUBLE_LINEAR:
             case VIEW_TYPE_CHART_STACK_BAR:
@@ -489,12 +484,6 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
                 break;
             case VIEW_TYPE_INTSLIDE:
                 view = new SlideIntChooseView(context, resourcesProvider);
-                break;
-            case VIEW_TYPE_QUICK_REPLY:
-                view = new QuickRepliesActivity.QuickReplyView(context, onReordered != null, resourcesProvider);
-                break;
-            case VIEW_TYPE_LARGE_QUICK_REPLY:
-                view = new QuickRepliesActivity.LargeQuickReplyView(context, resourcesProvider);
                 break;
             case VIEW_TYPE_CHART_LINEAR:
             case VIEW_TYPE_CHART_DOUBLE_LINEAR:
@@ -860,21 +849,6 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
                 slideIntChooseView.set(item.intValue, (SlideIntChooseView.Options) item.object, item.intCallback);
                 slideIntChooseView.setMinValueAllowed((int) item.longValue);
                 break;
-            case VIEW_TYPE_QUICK_REPLY:
-                QuickRepliesActivity.QuickReplyView replyView = (QuickRepliesActivity.QuickReplyView) holder.itemView;
-                replyView.setChecked(item.checked, false);
-                replyView.setReorder(allowReorder);
-                if (item.object instanceof QuickRepliesController.QuickReply) {
-                    replyView.set((QuickRepliesController.QuickReply) item.object, null, divider);
-                }
-                break;
-            case VIEW_TYPE_LARGE_QUICK_REPLY:
-                QuickRepliesActivity.LargeQuickReplyView replyView2 = (QuickRepliesActivity.LargeQuickReplyView) holder.itemView;
-                replyView2.setChecked(item.checked, false);
-                if (item.object instanceof QuickRepliesController.QuickReply) {
-                    replyView2.set((QuickRepliesController.QuickReply) item.object, divider);
-                }
-                break;
             case VIEW_TYPE_CHART_LINEAR:
             case VIEW_TYPE_CHART_DOUBLE_LINEAR:
             case VIEW_TYPE_CHART_STACK_BAR:
@@ -1090,12 +1064,6 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
             if (factory != null) {
                 factory.attachedView(listView, holder.itemView, getItem(holder.getAdapterPosition()));
             }
-        } else {
-            switch (viewType) {
-                case VIEW_TYPE_QUICK_REPLY:
-                    ((QuickRepliesActivity.QuickReplyView) holder.itemView).setReorder(allowReorder);
-                    break;
-            }
         }
     }
 
@@ -1123,8 +1091,6 @@ public class UniversalAdapter extends AdapterWithDiffUtils {
                 viewType == VIEW_TYPE_RADIO_2 ||
                 viewType == VIEW_TYPE_FILTER_CHAT ||
                 viewType == VIEW_TYPE_FILTER_CHAT_CHECK ||
-                viewType == VIEW_TYPE_LARGE_QUICK_REPLY ||
-                viewType == VIEW_TYPE_QUICK_REPLY ||
                 viewType == VIEW_TYPE_BUSINESS_LINK ||
                 viewType == VIEW_TYPE_RADIO_USER ||
                 viewType == VIEW_TYPE_PROFILE_CELL ||
