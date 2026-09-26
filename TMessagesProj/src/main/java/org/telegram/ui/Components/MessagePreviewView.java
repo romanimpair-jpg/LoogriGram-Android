@@ -1,7 +1,6 @@
 package org.telegram.ui.Components;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
-import static org.telegram.messenger.AndroidUtilities.replaceSingleTag;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -63,11 +62,9 @@ import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.Cells.IMessageCell;
 import org.telegram.ui.Cells.TextSelectionHelper;
 import org.telegram.ui.ChatActivity;
-import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.Components.Premium.PremiumPreviewBottomSheet;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
 import org.telegram.ui.Components.blur3.drawable.color.impl.BlurredBackgroundProviderImpl;
-import org.telegram.ui.PremiumPreviewFragment;
 
 import java.util.ArrayList;
 
@@ -1058,14 +1055,10 @@ public class MessagePreviewView extends FrameLayout {
                 sendersNameButton.setState(messagePreviewParams.hideForwardSendersName, false);
                 sendersNameButton.setOnClickListener(view -> {
                     if (!canHideSenderName) {
+                        // LoogriGram: without Premium an article keeps its sender's
+                        // name when forwarded. Upstream's bulletin sold Premium here.
                         BulletinFactory.of(MessagePreviewView.this, resourcesProvider)
-                            .createSimpleBulletin(R.raw.star_premium_2, replaceSingleTag("Subscribe to **Telegram Premium** to forward formatted messages without the sender’s name.", () -> {
-                                dismiss(false);
-                                AndroidUtilities.runOnUIThread(() -> {
-                                    if (!AndroidUtilities.isContextSafe(context)) return;
-                                    new PremiumFeatureBottomSheet(context, PremiumPreviewFragment.PREMIUM_FEATURE_RICH_EDITOR, true, resourcesProvider).show();
-                                });
-                            }))
+                            .createSimpleBulletin(R.raw.info, LocaleController.getString(R.string.LoogriGramForwardArticleWithName))
                             .show();
                         return;
                     }

@@ -92,7 +92,6 @@ import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.ForegroundColorSpanThemable;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.LoadingDrawable;
-import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.ReplyMessageLine;
 import org.telegram.ui.Components.TornEdge;
@@ -126,7 +125,6 @@ import org.telegram.ui.Components.spoilers.SpoilerEffect2;
 import org.telegram.ui.iv.RichHtml;
 import org.telegram.ui.iv.RichTextStyle;
 import org.telegram.ui.iv.Latex;
-import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.web.WebInstantView;
 
 import java.io.File;
@@ -9580,18 +9578,17 @@ public class RichMessageLayout {
             else if (checkboxItem instanceof TL_iv.PageListOrderedItem) ((TL_iv.PageListOrderedItem) checkboxItem).checked = value;
         }
 
+        // LoogriGram: a checkbox the rich editor may not edit takes no touch.
+        // Upstream took it and opened Premium's sheet.
         private boolean canToggleCheckbox() {
             return checkbox != null && checkboxItem != null
                 && root.getCell() != null && root.getDelegate() != null
-                && root.getDelegate().canToggleRichMessageCheckbox(root.getCell());
+                && root.getDelegate().canToggleRichMessageCheckbox(root.getCell())
+                && MessagesController.getInstance(root.currentAccount).richEditorAllowed();
         }
 
         private void toggleCheckbox() {
             if (!canToggleCheckbox()) return;
-            if (!MessagesController.getInstance(root.currentAccount).richEditorAllowed()) {
-                new PremiumFeatureBottomSheet(root.cell.getContext(), PremiumPreviewFragment.PREMIUM_FEATURE_RICH_EDITOR, true, root.resourcesProvider).show();
-                return;
-            }
             final boolean newChecked = !getCheckboxChecked();
             setCheckboxChecked(newChecked);
             if (root.view != null) checkbox.setParentView(root.view);

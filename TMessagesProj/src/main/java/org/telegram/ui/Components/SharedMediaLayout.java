@@ -29,12 +29,10 @@ import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.text.Layout;
-import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.StaticLayout;
@@ -148,7 +146,6 @@ import org.telegram.ui.DialogsActivity;
 import org.telegram.ui.Gifts.ProfileGiftsContainer;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PhotoViewer;
-import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.ProfileActivity;
 import org.telegram.ui.ProfileActivity2;
 import org.telegram.ui.ProfileStoriesCollectionTabs;
@@ -159,7 +156,6 @@ import org.telegram.ui.Stories.StoriesListPlaceProvider;
 import org.telegram.ui.Stories.UserListPoller;
 import org.telegram.ui.Stories.ViewsForPeerStoriesRequester;
 import org.telegram.ui.Stories.bots.BotPreviewsEditContainer;
-import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 import org.telegram.ui.Stories.recorder.PreviewView;
 import org.telegram.ui.Stories.recorder.StoryRecorder;
 import org.telegram.ui.ThemeActivity;
@@ -3014,14 +3010,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     if (!isChangeColumnsAnimation()) {
                         changeColumnsTab = -1;
                     }
-                }
-
-                @Override
-                public Integer getSelectorColor(int position) {
-                    if (getAdapter() == channelRecommendationsAdapter && channelRecommendationsAdapter.more > 0 && position == channelRecommendationsAdapter.getItemCount() - 1) {
-                        return 0;
-                    }
-                    return super.getSelectorColor(position);
                 }
 
                 @Override
@@ -8391,7 +8379,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
     public static final int VIEW_TYPE_GROUP_EMPTY = 15;
     public static final int VIEW_TYPE_GROUP_LOADING = 16;
     public static final int VIEW_TYPE_SIMILAR_CHANNEL = 17;
-    public static final int VIEW_TYPE_SIMILAR_CHANNEL_BLOCK = 18;
     public static final int VIEW_TYPE_STORY = 19;
     public static final int VIEW_TYPE_GROUPUSER_EMPTY = 20;
     public static final int VIEW_TYPE_GROUPUSER = 21;
@@ -10022,7 +10009,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
 
         private final Context mContext;
         private final ArrayList<TLObject> chats = new ArrayList<>();
-        private int more;
 
         public ChannelRecommendationsAdapter(Context context) {
             mContext = context;
@@ -10056,7 +10042,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     }
                 }
             }
-            more = chats.isEmpty() || UserConfig.getInstance(profileActivity.getCurrentAccount()).isPremium() ? 0 : rec.more;
             if (notify) {
                 notifyDataSetChanged();
             }
@@ -10074,17 +10059,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
 
         @Override
         public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View view;
-            if (viewType == VIEW_TYPE_SIMILAR_CHANNEL_BLOCK) {
-                MoreRecommendationsCell cell = new MoreRecommendationsCell(profileActivity == null ? UserConfig.selectedAccount : profileActivity.getCurrentAccount(), mContext, dialog_id > 0, resourcesProvider, () -> {
-                    if (profileActivity != null) {
-                        profileActivity.presentFragment(new PremiumPreviewFragment("similar_channels"));
-                    }
-                });
-                view = cell;
-            } else {
-                view = new ProfileSearchCell(mContext, resourcesProvider);
-            }
+            View view = new ProfileSearchCell(mContext, resourcesProvider);
             view.setLayoutParams(new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
             return new RecyclerListView.Holder(view);
         }
@@ -10150,93 +10125,15 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
 
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-            ProfileSearchCell cell = null;
-            if (holder.getItemViewType() == VIEW_TYPE_SIMILAR_CHANNEL) {
-                if (!(holder.itemView instanceof ProfileSearchCell)) return;
-                cell = (ProfileSearchCell) holder.itemView;
-            } else if (holder.getItemViewType() == VIEW_TYPE_SIMILAR_CHANNEL_BLOCK) {
-                if (!(holder.itemView instanceof MoreRecommendationsCell)) return;
-                cell = ((MoreRecommendationsCell) holder.itemView).channelCell;
-            }
-            if (cell != null) {
-                cell.setData(chats.get(position), null, null, null, false, false);
-                cell.useSeparator = position != chats.size() - 1;
-            }
+            if (!(holder.itemView instanceof ProfileSearchCell)) return;
+            final ProfileSearchCell cell = (ProfileSearchCell) holder.itemView;
+            cell.setData(chats.get(position), null, null, null, false, false);
+            cell.useSeparator = position != chats.size() - 1;
         }
 
         @Override
         public int getItemViewType(int position) {
-            if (more > 0 && position == getItemCount() - 1) {
-                return VIEW_TYPE_SIMILAR_CHANNEL_BLOCK;
-            }
             return VIEW_TYPE_SIMILAR_CHANNEL;
-        }
-    }
-
-    private static class MoreRecommendationsCell extends FrameLayout {
-
-        private final int currentAccount;
-        private final Theme.ResourcesProvider resourcesProvider;
-
-        public final ProfileSearchCell channelCell;
-
-        private final View gradientView;
-        private final ButtonWithCounterView button;
-        private final LinkSpanDrawable.LinksTextView textView;
-
-        public MoreRecommendationsCell(int currentAccount, Context context, boolean bots, Theme.ResourcesProvider resourcesProvider, Runnable onPremiumClick) {
-            super(context);
-
-            this.currentAccount = currentAccount;
-            this.resourcesProvider = resourcesProvider;
-
-            channelCell = new ProfileSearchCell(context, resourcesProvider);
-            channelCell.setBackground(Theme.createSelectorDrawable(Theme.getColor(Theme.key_listSelector, resourcesProvider), Theme.RIPPLE_MASK_ALL));
-            addView(channelCell, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
-
-            gradientView = new View(context);
-            gradientView.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[] {
-                Theme.multAlpha(Theme.getColor(Theme.key_windowBackgroundWhite, resourcesProvider), .4f),
-                Theme.getColor(Theme.key_windowBackgroundWhite, resourcesProvider)
-            }));
-            addView(gradientView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 60));
-
-            button = new ButtonWithCounterView(context, resourcesProvider);
-            final SpannableStringBuilder buttonText = new SpannableStringBuilder();
-            buttonText.append(getString(bots ? R.string.MoreSimilarBotsButton : R.string.MoreSimilarButton));
-            buttonText.append(" ");
-            SpannableString lock = new SpannableString("l");
-            lock.setSpan(new ColoredImageSpan(R.drawable.msg_mini_lock2), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            buttonText.append(lock);
-            button.setText(buttonText, false);
-            addView(button, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.TOP, 14, 38, 14, 0));
-            button.setOnClickListener(v -> {
-                if (onPremiumClick != null) {
-                    onPremiumClick.run();
-                }
-            });
-
-            textView = new LinkSpanDrawable.LinksTextView(context, resourcesProvider);
-            textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
-            textView.setTextAlignment(TEXT_ALIGNMENT_CENTER);
-            textView.setGravity(Gravity.CENTER);
-            textView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
-            textView.setLinkTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlueText, resourcesProvider));
-            textView.setLineSpacing(dp(3), 1f);
-            final SpannableStringBuilder text = AndroidUtilities.premiumText(getString(bots ? R.string.MoreSimilarBotsText : R.string.MoreSimilarText), () -> {
-                if (onPremiumClick != null) {
-                    onPremiumClick.run();
-                }
-            });
-            SpannableString count = new SpannableString("" + MessagesController.getInstance(currentAccount).recommendedChannelsLimitPremium);
-            count.setSpan(new TypefaceSpan(AndroidUtilities.bold()), 0, count.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            textView.setText(AndroidUtilities.replaceCharSequence("%s", text, count));
-            addView(textView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 24, 96, 24, 12));
-        }
-
-        @Override
-        protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-            super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(dp(145), MeasureSpec.EXACTLY));
         }
     }
 

@@ -988,7 +988,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
         } else if (id == SharedMediaLayout.TAB_RECOMMENDED_CHANNELS) {
             showSubtitle(i, true, true);
             MessagesController.ChannelRecommendations rec = MessagesController.getInstance(currentAccount).getChannelRecommendations(dialogId);
-            subtitleTextView[i].setText(LocaleController.formatPluralString("Channels", rec == null ? 0 : rec.more + rec.chats.size()), animated);
+            subtitleTextView[i].setText(LocaleController.formatPluralString("Channels", rec == null ? 0 : rec.chats.size()), animated);
         }
     }
 
