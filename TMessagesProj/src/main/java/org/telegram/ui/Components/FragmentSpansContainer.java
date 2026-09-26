@@ -213,9 +213,7 @@ public class FragmentSpansContainer extends ScrollView {
 
         public void addSpan(final GroupCreateSpan span) {
             allSpans.add(span);
-            if (!span.isFlag) {
-                selectedContacts.put(span.getUid(), span);
-            }
+            selectedContacts.put(span.getUid(), span);
 
             if (currentAnimation != null && currentAnimation.isRunning()) {
                 currentAnimation.setupEndValues();
@@ -249,9 +247,7 @@ public class FragmentSpansContainer extends ScrollView {
 
         public void removeSpan(final GroupCreateSpan span) {
             ignoreScrollEvent = true;
-            if (!span.isFlag) {
-                selectedContacts.remove(span.getUid());
-            }
+            selectedContacts.remove(span.getUid());
             allSpans.remove(span);
             span.setOnClickListener(null);
 

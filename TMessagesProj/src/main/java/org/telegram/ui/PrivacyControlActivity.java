@@ -78,7 +78,6 @@ import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.CircularProgressDrawable;
-import org.telegram.ui.Components.ColoredImageSpan;
 import org.telegram.ui.Components.CrossfadeDrawable;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.HintView;
@@ -106,14 +105,8 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
     private int initialRulesSubType;
     private ArrayList<Long> initialPlus = new ArrayList<>();
     private ArrayList<Long> initialMinus = new ArrayList<>();
-    private final boolean[] initialPlusPremium = new boolean[3];
-    private final boolean[] initialPlusMiniapps = new boolean[3];
-    private final boolean[] initialPlusChannels = new boolean[3];
 
     private int rulesType;
-    private final boolean[] currentPlusPremium = new boolean[3];
-    private final boolean[] currentPlusMiniapps = new boolean[3];
-    private final boolean[] currentPlusChannels = new boolean[3];
     private ArrayList<Long> currentPlus;
     private ArrayList<Long> currentMinus;
 
@@ -151,17 +144,6 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
     @Keep
     private int readRow;
     private int readDetailRow;
-    @Keep
-    private int showGiftIconRow;
-    private int showGiftIconInfoRow;
-    @Keep
-    private int giftTypesHeaderRow;
-    private int giftTypeUnlimitedRow;
-    private int giftTypeLimitedRow;
-    private int giftTypeUniqueRow;
-    private int giftTypeChannelsRow;
-    private int giftTypePremiumRow;
-    private int giftTypesInfoRow;
     private int rowCount;
 
     private final static int done_button = 1;
@@ -178,7 +160,7 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
     // both Premium's to restrict. See ContactsController.
     public final static int PRIVACY_RULES_TYPE_BIO = 9;
     public final static int PRIVACY_RULES_TYPE_BIRTHDAY = 11;
-    public final static int PRIVACY_RULES_TYPE_GIFTS = 12;
+    // LoogriGram: 12 was gifts, as desktop deleted it. See ContactsController.
     public final static int PRIVACY_RULES_TYPE_MUSIC = 14;
 
     public final static int TYPE_EVERYBODY = 0;
@@ -195,20 +177,6 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
 
     private boolean currentReadValue;
     private boolean selectedReadValue;
-
-    private boolean currentGiftIconValue;
-    private boolean selectedGiftIconValue;
-
-    private boolean currentGiftUnlimitedValue;
-    private boolean selectedGiftUnlimitedValue;
-    private boolean currentGiftLimitedValue;
-    private boolean selectedGiftLimitedValue;
-    private boolean currentGiftUniqueValue;
-    private boolean selectedGiftUniqueValue;
-    private boolean currentGiftChannelsValue;
-    private boolean selectedGiftChannelsValue;
-    private boolean currentGiftPremiumValue;
-    private boolean selectedGiftPremiumValue;
 
     @Override
     public void didUploadPhoto(TLRPC.InputFile photo, TLRPC.InputFile video, double videoStartTimestamp, String videoPath, TLRPC.PhotoSize bigSize, TLRPC.PhotoSize smallSize, boolean isVideo, TLRPC.VideoSize emojiMarkup) {
@@ -490,7 +458,6 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.emojiLoaded);
     }
 
-    private int shakeDp = 4;
 
     @Override
     public View createView(Context context) {
@@ -520,8 +487,6 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
             actionBar.setTitle(LocaleController.getString(R.string.PrivacyLastSeen));
         } else if (rulesType == PRIVACY_RULES_TYPE_BIRTHDAY) {
             actionBar.setTitle(LocaleController.getString(R.string.PrivacyBirthday));
-        } else if (rulesType == PRIVACY_RULES_TYPE_GIFTS) {
-            actionBar.setTitle(LocaleController.getString(R.string.PrivacyGifts));
         }
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override
@@ -613,10 +578,6 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
                     setAvatarCell.imageView.playAnimation();
                 }
             } else if (position == nobodyRow || position == everybodyRow || position == myContactsRow) {
-                if (rulesType == PRIVACY_RULES_TYPE_GIFTS && areAllStarGiftsDisabled()) {
-                    AndroidUtilities.shakeViewSpring(view, shakeDp = -shakeDp);
-                    return;
-                }
                 int newType;
                 if (position == nobodyRow) {
                     newType = TYPE_NOBODY;
@@ -646,10 +607,6 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
                 updateDoneButton();
                 updateRows(true);
             } else if (position == neverShareRow || position == alwaysShareRow) {
-                if (rulesType == PRIVACY_RULES_TYPE_GIFTS && areAllStarGiftsDisabled()) {
-                    AndroidUtilities.shakeViewSpring(view, shakeDp = -shakeDp);
-                    return;
-                }
                 ArrayList<Long> createFromArray;
                 if (position == neverShareRow) {
                     createFromArray = currentMinus;
@@ -659,32 +616,15 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
                 Bundle args = new Bundle();
                 args.putBoolean(position == neverShareRow ? "isNeverShare" : "isAlwaysShare", true);
                 args.putInt("chatAddType", rulesType != PRIVACY_RULES_TYPE_LASTSEEN ? 1 : 0);
-                if (position == alwaysShareRow && rulesType == PRIVACY_RULES_TYPE_INVITE) {
-                    args.putBoolean("allowPremium", true);
-                }
-                final boolean allowMiniapps;
-                if (rulesType == PRIVACY_RULES_TYPE_GIFTS) {
-                    if (currentType == TYPE_NOBODY) {
-                        allowMiniapps = (position == alwaysShareRow);
-                    } else if (currentType == TYPE_CONTACTS) {
-                        allowMiniapps = (position == alwaysShareRow);
-                    } else if (currentType == TYPE_EVERYBODY) {
-                        allowMiniapps = (position == neverShareRow);
-                    } else allowMiniapps = false;
-                } else allowMiniapps = false;
-                args.putBoolean("allowMiniapps", allowMiniapps);
                 GroupCreateActivity fragment = new GroupCreateActivity(args);
-                fragment.select(createFromArray, position == alwaysShareRow && currentPlusPremium[currentType == TYPE_CONTACTS ? 0 : 1], allowMiniapps && currentPlusMiniapps[currentType]);
-                fragment.setDelegate((premium, miniapps, ids) -> {
+                fragment.select(createFromArray);
+                fragment.setDelegate(ids -> {
                     if (position == neverShareRow) {
                         currentMinus = ids;
-                        currentPlusMiniapps[currentType] = allowMiniapps && miniapps;
                         for (int a = 0; a < currentMinus.size(); a++) {
                             currentPlus.remove(currentMinus.get(a));
                         }
                     } else {
-                        currentPlusPremium[currentType == TYPE_CONTACTS ? 0 : 1] = premium;
-                        currentPlusMiniapps[currentType] = allowMiniapps && miniapps;
                         currentPlus = ids;
                         for (int a = 0; a < currentPlus.size(); a++) {
                             currentMinus.remove(currentPlus.get(a));
@@ -701,95 +641,6 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
                 selectedReadValue = !selectedReadValue;
                 updateDoneButton();
                 ((TextCheckCell) view).setChecked(selectedReadValue);
-            } else if (position == showGiftIconRow) {
-                selectedGiftIconValue = !selectedGiftIconValue;
-                updateDoneButton();
-                ((TextCheckCell) view).setChecked(selectedGiftIconValue);
-            } else if (position == giftTypeLimitedRow) {
-                if (selectedGiftLimitedValue && !getUserConfig().isPremium()) {
-                    AndroidUtilities.shakeViewSpring(view, shakeDp = -shakeDp);
-                    showPremiumBulletin();
-                    return;
-                }
-                final boolean wereDisabled = areAllStarGiftsDisabled();
-                selectedGiftLimitedValue = !selectedGiftLimitedValue;
-                updateDoneButton();
-                ((TextCheckCell) view).setChecked(selectedGiftLimitedValue);
-                if (selectedGiftLimitedValue && !getUserConfig().isPremium()) {
-                    ((TextCheckCell) view).setCheckBoxIcon(R.drawable.permission_locked);
-                }
-                if (wereDisabled != areAllStarGiftsDisabled()) {
-                    updateRows(true);
-                    AndroidUtilities.updateVisibleRows(listView);
-                }
-            } else if (position == giftTypeUnlimitedRow) {
-                if (selectedGiftUnlimitedValue && !getUserConfig().isPremium()) {
-                    AndroidUtilities.shakeViewSpring(view, shakeDp = -shakeDp);
-                    showPremiumBulletin();
-                    return;
-                }
-                final boolean wereDisabled = areAllStarGiftsDisabled();
-                selectedGiftUnlimitedValue = !selectedGiftUnlimitedValue;
-                updateDoneButton();
-                ((TextCheckCell) view).setChecked(selectedGiftUnlimitedValue);
-                if (selectedGiftUnlimitedValue && !getUserConfig().isPremium()) {
-                    ((TextCheckCell) view).setCheckBoxIcon(R.drawable.permission_locked);
-                }
-                if (wereDisabled != areAllStarGiftsDisabled()) {
-                    updateRows(true);
-                    AndroidUtilities.updateVisibleRows(listView);
-                }
-            } else if (position == giftTypeUniqueRow) {
-                if (selectedGiftUniqueValue && !getUserConfig().isPremium()) {
-                    AndroidUtilities.shakeViewSpring(view, shakeDp = -shakeDp);
-                    showPremiumBulletin();
-                    return;
-                }
-                final boolean wereDisabled = areAllStarGiftsDisabled();
-                selectedGiftUniqueValue = !selectedGiftUniqueValue;
-                updateDoneButton();
-                ((TextCheckCell) view).setChecked(selectedGiftUniqueValue);
-                if (selectedGiftUniqueValue && !getUserConfig().isPremium()) {
-                    ((TextCheckCell) view).setCheckBoxIcon(R.drawable.permission_locked);
-                }
-                if (wereDisabled != areAllStarGiftsDisabled()) {
-                    updateRows(true);
-                    AndroidUtilities.updateVisibleRows(listView);
-                }
-            } else if (position == giftTypeChannelsRow) {
-                if (selectedGiftChannelsValue && !getUserConfig().isPremium()) {
-                    AndroidUtilities.shakeViewSpring(view, shakeDp = -shakeDp);
-                    showPremiumBulletin();
-                    return;
-                }
-                final boolean wereDisabled = areAllStarGiftsDisabled();
-                selectedGiftChannelsValue = !selectedGiftChannelsValue;
-                updateDoneButton();
-                ((TextCheckCell) view).setChecked(selectedGiftChannelsValue);
-                if (selectedGiftChannelsValue && !getUserConfig().isPremium()) {
-                    ((TextCheckCell) view).setCheckBoxIcon(R.drawable.permission_locked);
-                }
-                if (wereDisabled != areAllStarGiftsDisabled()) {
-                    updateRows(true);
-                    AndroidUtilities.updateVisibleRows(listView);
-                }
-            } else if (position == giftTypePremiumRow) {
-                if (selectedGiftPremiumValue && !getUserConfig().isPremium()) {
-                    AndroidUtilities.shakeViewSpring(view, shakeDp = -shakeDp);
-                    showPremiumBulletin();
-                    return;
-                }
-                final boolean wereDisabled = areAllStarGiftsDisabled();
-                selectedGiftPremiumValue = !selectedGiftPremiumValue;
-                updateDoneButton();
-                ((TextCheckCell) view).setChecked(selectedGiftPremiumValue);
-                if (selectedGiftPremiumValue && !getUserConfig().isPremium()) {
-                    ((TextCheckCell) view).setCheckBoxIcon(R.drawable.permission_locked);
-                }
-                if (wereDisabled != areAllStarGiftsDisabled()) {
-                    updateRows(true);
-                    AndroidUtilities.updateVisibleRows(listView);
-                }
             }
         });
         DefaultItemAnimator itemAnimator = new DefaultItemAnimator() {
@@ -807,16 +658,6 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
         setMessageText();
 
         return fragmentView;
-    }
-
-    private void showPremiumBulletin() {
-        BulletinFactory.of(this).createSimpleBulletin(
-            R.raw.star_premium_2,
-            getString(R.string.OptionPremiumRequiredTitle),
-            AndroidUtilities.replaceTags(getString(R.string.OptionPremiumRequiredMessage)),
-            getString(R.string.OptionPremiumRequiredButton),
-            () -> presentFragment(new PremiumPreviewFragment("noncontacts"))
-        ).show();
     }
 
     @Override
@@ -889,8 +730,6 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
             req.key = new TLRPC.TL_inputPrivacyKeyChatInvite();
         } else if (rulesType == PRIVACY_RULES_TYPE_BIRTHDAY) {
             req.key = new TLRPC.TL_inputPrivacyKeyBirthday();
-        } else if (rulesType == PRIVACY_RULES_TYPE_GIFTS) {
-            req.key = new TLRPC.TL_inputPrivacyKeyStarGiftsAutoSave();
         } else {
             req.key = new TLRPC.TL_inputPrivacyKeyStatusTimestamp();
         }
@@ -941,16 +780,9 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
         } else if (currentType == TYPE_CONTACTS) {
             req.rules.add(new TLRPC.TL_inputPrivacyValueAllowContacts());
         }
-        if (currentType != 0 && currentPlusPremium[currentType == TYPE_CONTACTS ? 0 : 1]) {
-            req.rules.add(new TLRPC.TL_inputPrivacyValueAllowPremium());
-        }
-        if (currentPlusMiniapps[currentType]) {
-            if (currentType == TYPE_EVERYBODY) {
-                req.rules.add(new TLRPC.TL_inputPrivacyValueDisallowBots());
-            } else {
-                req.rules.add(new TLRPC.TL_inputPrivacyValueAllowBots());
-            }
-        }
+        // LoogriGram: no "Premium users" or "Mini apps" rule is sent. Neither is
+        // offered as an exception (desktop removed both), so saving drops one
+        // set from another client.
 
         pendingRequests.incrementAndGet();
         ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
@@ -986,51 +818,6 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
             }));
         }
 
-        if (rulesType == PRIVACY_RULES_TYPE_GIFTS && (selectedGiftIconValue != currentGiftIconValue || selectedGiftLimitedValue != currentGiftLimitedValue || selectedGiftUnlimitedValue != currentGiftUnlimitedValue || selectedGiftUniqueValue != currentGiftUniqueValue || selectedGiftPremiumValue != currentGiftPremiumValue)) {
-            pendingRequests.incrementAndGet();
-            final TL_account.setGlobalPrivacySettings req2 = new TL_account.setGlobalPrivacySettings();
-            req2.settings = new TLRPC.TL_globalPrivacySettings();
-            final TLRPC.GlobalPrivacySettings settings = getContactsController().getGlobalPrivacySettings();
-            req2.settings.archive_and_mute_new_noncontact_peers = settings.archive_and_mute_new_noncontact_peers;
-            req2.settings.keep_archived_folders = settings.keep_archived_folders;
-            req2.settings.keep_archived_unmuted = settings.keep_archived_unmuted;
-            req2.settings.new_noncontact_peers_require_premium = settings.new_noncontact_peers_require_premium;
-            req2.settings.hide_read_marks = settings.hide_read_marks;
-            req2.settings.display_gifts_button = selectedGiftIconValue;
-            if (getUserConfig().isPremium()) {
-                req2.settings.flags |= 64;
-                req2.settings.disallowed_stargifts = new TLRPC.DisallowedGiftsSettings();
-                req2.settings.disallowed_stargifts.disallow_unlimited_stargifts = !selectedGiftUnlimitedValue;
-                req2.settings.disallowed_stargifts.disallow_limited_stargifts = !selectedGiftLimitedValue;
-                req2.settings.disallowed_stargifts.disallow_unique_stargifts = !selectedGiftUniqueValue;
-                req2.settings.disallowed_stargifts.disallow_premium_gifts = !selectedGiftPremiumValue;
-            }
-            getConnectionsManager().sendRequest(req2, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                if (settings.display_gifts_button != req2.settings.display_gifts_button) {
-                    final TLRPC.UserFull userFull = getMessagesController().getUserFull(getUserConfig().getClientUserId());
-                    if (userFull != null) {
-                        userFull.display_gifts_button = req2.settings.display_gifts_button;
-                        getMessagesStorage().updateUserInfo(userFull, false);
-                    }
-                }
-                settings.display_gifts_button = currentGiftIconValue = req2.settings.display_gifts_button;
-                if (settings.disallowed_stargifts == null) {
-                    settings.disallowed_stargifts = new TLRPC.DisallowedGiftsSettings();
-                }
-                if (req2.settings.disallowed_stargifts != null) {
-                    settings.flags |= 64;
-                    currentGiftUnlimitedValue = !(settings.disallowed_stargifts.disallow_unlimited_stargifts = req2.settings.disallowed_stargifts.disallow_unlimited_stargifts);
-                    currentGiftLimitedValue = !(settings.disallowed_stargifts.disallow_limited_stargifts = req2.settings.disallowed_stargifts.disallow_limited_stargifts);
-                    currentGiftUniqueValue = !(settings.disallowed_stargifts.disallow_unique_stargifts = req2.settings.disallowed_stargifts.disallow_unique_stargifts);
-                    currentGiftChannelsValue = !(settings.disallowed_stargifts.disallow_stargifts_from_channels = req2.settings.disallowed_stargifts.disallow_stargifts_from_channels);
-                    currentGiftPremiumValue = !(settings.disallowed_stargifts.disallow_premium_gifts = req2.settings.disallowed_stargifts.disallow_premium_gifts);
-                }
-                if (pendingRequests.decrementAndGet() == 0) {
-                    finished();
-                }
-            }));
-        }
-
         if (pendingRequests.get() > 0) {
             doneButtonDrawable.animateToProgress(1.0f);
         }
@@ -1047,19 +834,7 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
         showDialog(builder.create());
     }
 
-    private boolean areAllStarGiftsDisabled() {
-        return !selectedGiftUniqueValue && !selectedGiftUnlimitedValue && !selectedGiftLimitedValue;
-    }
-
     private void checkPrivacy() {
-        currentPlusPremium[0] = initialPlusPremium[0] = rulesType == PRIVACY_RULES_TYPE_INVITE;
-        currentPlusPremium[1] = initialPlusPremium[1] = false;
-        currentPlusMiniapps[TYPE_EVERYBODY] = initialPlusMiniapps[TYPE_EVERYBODY] = false;
-        currentPlusMiniapps[TYPE_NOBODY] =    initialPlusMiniapps[TYPE_NOBODY] =    rulesType == PRIVACY_RULES_TYPE_GIFTS;
-        currentPlusMiniapps[TYPE_CONTACTS] =  initialPlusMiniapps[TYPE_CONTACTS] =  false;
-        currentPlusChannels[TYPE_EVERYBODY] = initialPlusChannels[TYPE_EVERYBODY] = false;
-        currentPlusChannels[TYPE_NOBODY] =    initialPlusChannels[TYPE_NOBODY] =    rulesType == PRIVACY_RULES_TYPE_GIFTS;
-        currentPlusChannels[TYPE_CONTACTS] =  initialPlusChannels[TYPE_CONTACTS] =  false;
         currentPlus = new ArrayList<>();
         currentMinus = new ArrayList<>();
         ArrayList<TLRPC.PrivacyRule> privacyRules = ContactsController.getInstance(currentAccount).getPrivacyRules(rulesType);
@@ -1067,9 +842,6 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
             currentType = TYPE_NOBODY;
         } else {
             int type = -1;
-            boolean premium = false;
-            Boolean miniapps = null;
-            Boolean channels = null;
             boolean hadAllowContacts = false;
             for (int a = 0; a < privacyRules.size(); a++) {
                 TLRPC.PrivacyRule rule = privacyRules.get(a);
@@ -1089,12 +861,10 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
                 } else if (rule instanceof TLRPC.TL_privacyValueDisallowUsers) {
                     TLRPC.TL_privacyValueDisallowUsers privacyValueDisallowUsers = (TLRPC.TL_privacyValueDisallowUsers) rule;
                     currentMinus.addAll(privacyValueDisallowUsers.users);
-                } else if (rule instanceof TLRPC.TL_privacyValueAllowPremium) {
-                    premium = true;
-                } else if (rule instanceof TLRPC.TL_privacyValueAllowBots) {
-                    miniapps = true;
-                } else if (rule instanceof TLRPC.TL_privacyValueDisallowBots) {
-                    miniapps = false;
+                } else if (rule instanceof TLRPC.TL_privacyValueAllowPremium || rule instanceof TLRPC.TL_privacyValueAllowBots || rule instanceof TLRPC.TL_privacyValueDisallowBots) {
+                    // LoogriGram: "Premium users" and "Mini apps" are not offered as
+                    // exceptions, so they are skipped here - not left to the last
+                    // branch, which would read them as "My Contacts".
                 } else if (rule instanceof TLRPC.TL_privacyValueAllowAll) {
                     type = 0;
                 } else if (rule instanceof TLRPC.TL_privacyValueDisallowAll && !hadAllowContacts) {
@@ -1112,17 +882,13 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
                     }
                 }
             }
-            if (type == TYPE_EVERYBODY || type == -1 && (currentMinus.size() > 0 || miniapps != null && !miniapps)) {
+            if (type == TYPE_EVERYBODY || type == -1 && currentMinus.size() > 0) {
                 currentType = TYPE_EVERYBODY;
             } else if (type == TYPE_CONTACTS || type == -1 && currentMinus.size() > 0 && currentPlus.size() > 0) {
                 currentType = TYPE_CONTACTS;
-            } else if (type == TYPE_NOBODY || type == -1 && (currentPlus.size() > 0 || miniapps != null && miniapps)) {
+            } else if (type == TYPE_NOBODY || type == -1 && currentPlus.size() > 0) {
                 currentType = TYPE_NOBODY;
             }
-            int a = currentType == TYPE_CONTACTS ? 0 : 1;
-            currentPlusPremium[a] = initialPlusPremium[a] = premium;
-            currentPlusMiniapps[currentType] = initialPlusMiniapps[currentType] = miniapps != null;
-            currentPlusChannels[currentType] = initialPlusChannels[currentType] = channels != null;
             if (doneButton != null) {
                 doneButton.setAlpha(0.0f);
                 doneButton.setScaleX(0.0f);
@@ -1162,24 +928,6 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
             TLRPC.GlobalPrivacySettings privacySettings = getContactsController().getGlobalPrivacySettings();
             selectedReadValue = currentReadValue = privacySettings != null && privacySettings.hide_read_marks;
         }
-        if (rulesType == PRIVACY_RULES_TYPE_GIFTS) {
-            TLRPC.GlobalPrivacySettings privacySettings = getContactsController().getGlobalPrivacySettings();
-            selectedGiftIconValue = currentGiftIconValue = privacySettings != null && privacySettings.display_gifts_button;
-
-            if (privacySettings != null && privacySettings.disallowed_stargifts != null) {
-                currentGiftUnlimitedValue = selectedGiftUnlimitedValue = !privacySettings.disallowed_stargifts.disallow_unlimited_stargifts;
-                currentGiftLimitedValue = selectedGiftLimitedValue = !privacySettings.disallowed_stargifts.disallow_limited_stargifts;
-                currentGiftUniqueValue = selectedGiftUniqueValue = !privacySettings.disallowed_stargifts.disallow_unique_stargifts;
-                currentGiftChannelsValue = selectedGiftChannelsValue = !privacySettings.disallowed_stargifts.disallow_stargifts_from_channels;
-                currentGiftPremiumValue = selectedGiftPremiumValue = !privacySettings.disallowed_stargifts.disallow_premium_gifts;
-            } else {
-                currentGiftUnlimitedValue = selectedGiftUnlimitedValue = true;
-                currentGiftLimitedValue = selectedGiftLimitedValue = true;
-                currentGiftUniqueValue = selectedGiftUniqueValue = true;
-                currentGiftChannelsValue = selectedGiftChannelsValue = true;
-                currentGiftPremiumValue = selectedGiftPremiumValue = true;
-            }
-        }
         updateRows(false);
         AndroidUtilities.updateVisibleRows(listView);
     }
@@ -1188,19 +936,10 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
         if (rulesType == PRIVACY_RULES_TYPE_LASTSEEN && (currentType != TYPE_EVERYBODY || currentMinus != null && !currentMinus.isEmpty()) && currentReadValue != selectedReadValue) {
             return true;
         }
-        if (rulesType == PRIVACY_RULES_TYPE_GIFTS && (currentGiftIconValue != selectedGiftIconValue || currentGiftLimitedValue != selectedGiftLimitedValue || currentGiftUnlimitedValue != selectedGiftUnlimitedValue || currentGiftUniqueValue != selectedGiftUniqueValue || currentGiftChannelsValue != selectedGiftChannelsValue || currentGiftPremiumValue != selectedGiftPremiumValue)) {
-            return true;
-        }
         if (initialRulesType != currentType) {
             return true;
         }
         if (rulesType == PRIVACY_RULES_TYPE_PHONE && currentType == TYPE_NOBODY && initialRulesSubType != currentSubType) {
-            return true;
-        }
-        if (currentType != 0 && initialPlusPremium[currentType == TYPE_CONTACTS ? 0 : 1] != currentPlusPremium[currentType == TYPE_CONTACTS ? 0 : 1]) {
-            return true;
-        }
-        if (initialPlusMiniapps[currentType] != currentPlusMiniapps[currentType]) {
             return true;
         }
         if (initialMinus.size() != currentMinus.size()) {
@@ -1248,21 +987,8 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
         nobodyRow = -1;
         shareSectionRow = -1;
         shareDetailRow = -1;
-        showGiftIconRow = -1;
-        showGiftIconInfoRow = -1;
-        giftTypesHeaderRow = -1;
-        giftTypeUnlimitedRow = -1;
-        giftTypeLimitedRow = -1;
-        giftTypeUniqueRow = -1;
-        giftTypeChannelsRow = -1;
-        giftTypePremiumRow = -1;
-        giftTypesInfoRow = -1;
 
         rowCount = 0;
-        if (rulesType == PRIVACY_RULES_TYPE_GIFTS) {
-            showGiftIconRow = rowCount++;
-            showGiftIconInfoRow = rowCount++;
-        }
         if (rulesType == PRIVACY_RULES_TYPE_BIRTHDAY) {
             TLRPC.UserFull userFull = getMessagesController().getUserFull(getUserConfig().getClientUserId());
             if (userFull != null && userFull.birthday == null) {
@@ -1285,8 +1011,7 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
             rulesType == PRIVACY_RULES_TYPE_FORWARDS ||
             rulesType == PRIVACY_RULES_TYPE_PHONE ||
             rulesType == PRIVACY_RULES_TYPE_INVITE ||
-            rulesType == PRIVACY_RULES_TYPE_BIRTHDAY ||
-            rulesType == PRIVACY_RULES_TYPE_GIFTS
+            rulesType == PRIVACY_RULES_TYPE_BIRTHDAY
         ) {
             nobodyRow = rowCount++;
         }
@@ -1321,16 +1046,6 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
         if (rulesType == PRIVACY_RULES_TYPE_LASTSEEN && (currentType != TYPE_EVERYBODY || currentMinus != null && !currentMinus.isEmpty())) {
             readRow = rowCount++;
             readDetailRow = rowCount++;
-        }
-
-        if (rulesType == PRIVACY_RULES_TYPE_GIFTS) {
-            giftTypesHeaderRow = rowCount++;
-            giftTypeLimitedRow = rowCount++;
-            giftTypeUnlimitedRow = rowCount++;
-            giftTypeUniqueRow = rowCount++;
-            giftTypeChannelsRow = rowCount++;
-            giftTypePremiumRow = rowCount++;
-            giftTypesInfoRow = rowCount++;
         }
 
         setMessageText();
@@ -1478,9 +1193,8 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             int position = holder.getAdapterPosition();
             return position == p2pRow && !ContactsController.getInstance(currentAccount).getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_P2P) ||
-                    position == currentPhotoForRestRow || position == photoForRestDescriptionRow || position == photoForRestRow || position == readRow || position == showGiftIconRow ||
-                    position == giftTypeUniqueRow || position == giftTypeChannelsRow || position == giftTypePremiumRow || position == giftTypeLimitedRow || position == giftTypeUnlimitedRow ||
-                    (rulesType != PRIVACY_RULES_TYPE_GIFTS || !areAllStarGiftsDisabled()) && (position == nobodyRow || position == myContactsRow || position == everybodyRow || position == neverShareRow || position == alwaysShareRow);
+                    position == currentPhotoForRestRow || position == photoForRestDescriptionRow || position == photoForRestRow || position == readRow ||
+                    position == nobodyRow || position == myContactsRow || position == everybodyRow || position == neverShareRow || position == alwaysShareRow;
         }
 
         @Override
@@ -1596,27 +1310,10 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
                         } else {
                             value = LocaleController.getString(R.string.EmpryUsersPlaceholder);
                         }
-                        if (currentPlusPremium[currentType == TYPE_CONTACTS ? 0 : 1]) {
-                            if (currentPlus == null || currentPlus.isEmpty()) {
-                                value = formatString(R.string.PrivacyPremium);
-                            } else {
-                                value = formatString(R.string.PrivacyPremiumAnd, value);
-                            }
-                        }
-                        if (currentPlusMiniapps[currentType] && currentType != TYPE_EVERYBODY) {
-                            if (currentPlus == null || currentPlus.isEmpty()) {
-                                value = formatString(R.string.PrivacyValueBots);
-                            } else {
-                                value = formatString(R.string.PrivacyValueBotsAnd, value);
-                            }
-                        }
                         if (rulesType != PRIVACY_RULES_TYPE_LASTSEEN && rulesType != PRIVACY_RULES_TYPE_PHOTO && rulesType != PRIVACY_RULES_TYPE_BIO && rulesType != PRIVACY_RULES_TYPE_MUSIC) {
                             textCell.setTextAndValue(LocaleController.getString(R.string.AlwaysAllow), value, neverShareRow != -1);
                         } else {
                             textCell.setTextAndValue(LocaleController.getString(R.string.AlwaysShareWith), value, neverShareRow != -1);
-                        }
-                        if (rulesType == PRIVACY_RULES_TYPE_GIFTS) {
-                            textCell.setEnabled(!areAllStarGiftsDisabled());
                         }
                     } else if (position == neverShareRow) {
                         String value;
@@ -1626,20 +1323,10 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
                         } else {
                             value = LocaleController.getString(R.string.EmpryUsersPlaceholder);
                         }
-                        if (currentPlusMiniapps[currentType] && currentType == TYPE_EVERYBODY) {
-                            if (currentMinus == null || currentMinus.isEmpty()) {
-                                value = formatString(R.string.PrivacyValueBots);
-                            } else {
-                                value = formatString(R.string.PrivacyValueBotsAnd, value);
-                            }
-                        }
                         if (rulesType != PRIVACY_RULES_TYPE_LASTSEEN && rulesType != PRIVACY_RULES_TYPE_PHOTO && rulesType != PRIVACY_RULES_TYPE_BIO && rulesType != PRIVACY_RULES_TYPE_MUSIC) {
                             textCell.setTextAndValue(LocaleController.getString(R.string.NeverAllow), value, false);
                         } else {
                             textCell.setTextAndValue(LocaleController.getString(R.string.NeverShareWith), value, false);
-                        }
-                        if (rulesType == PRIVACY_RULES_TYPE_GIFTS) {
-                            textCell.setEnabled(!areAllStarGiftsDisabled());
                         }
                     } else if (position == p2pRow) {
                         String value;
@@ -1742,8 +1429,6 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
                             privacyCell.setText(LocaleController.getString(R.string.PrivacyMusicInfo3));
                         } else if (rulesType == PRIVACY_RULES_TYPE_BIRTHDAY) {
                             privacyCell.setText(LocaleController.getString(R.string.PrivacyBirthdayInfo));
-                        } else if (rulesType == PRIVACY_RULES_TYPE_GIFTS) {
-                            privacyCell.setText(LocaleController.getString(R.string.PrivacyGiftsInfo));
                         } else if (rulesType == PRIVACY_RULES_TYPE_P2P) {
                             privacyCell.setText(LocaleController.getString(R.string.PrivacyCallsP2PHelp));
                         } else if (rulesType == PRIVACY_RULES_TYPE_CALLS) {
@@ -1778,8 +1463,6 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
                             privacyCell.setText(LocaleController.getString(R.string.CustomCallInfo));
                         } else if (rulesType == PRIVACY_RULES_TYPE_INVITE) {
                             privacyCell.setText(LocaleController.getString(R.string.CustomShareInfo));
-                        } else if (rulesType == PRIVACY_RULES_TYPE_GIFTS) {
-                            privacyCell.setText(LocaleController.getString(R.string.CustomShareGiftsInfo));
                         } else {
                             privacyCell.setText(LocaleController.getString(R.string.CustomShareSettingsHelp));
                         }
@@ -1787,14 +1470,6 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
                         privacyCell.setText(LocaleController.getString(R.string.PhotoForRestDescription));
                     } else if (position == readDetailRow) {
                         privacyCell.setText(LocaleController.getString(R.string.HideReadTimeInfo));
-                    } else if (position == showGiftIconInfoRow) {
-                        final SpannableString giftIcon = new SpannableString("g");
-                        final ColoredImageSpan span = new ColoredImageSpan(R.drawable.msg_input_gift);
-                        span.setScale(0.583f, 0.583f);
-                        giftIcon.setSpan(span, 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        privacyCell.setText(LocaleController.formatSpannable(R.string.PrivacyGiftsShowIconInfo, giftIcon));
-                    } else if (position == giftTypesInfoRow) {
-                        privacyCell.setText(LocaleController.getString(R.string.PrivacyGiftsTypeInfo));
                     }
                     privacyCell.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundGray));
                     break;
@@ -1819,8 +1494,6 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
                             headerCell.setText(LocaleController.getString(R.string.WhoCanAddMe));
                         } else if (rulesType == PRIVACY_RULES_TYPE_BIRTHDAY) {
                             headerCell.setText(LocaleController.getString(R.string.PrivacyBirthdayTitle));
-                        } else if (rulesType == PRIVACY_RULES_TYPE_GIFTS) {
-                            headerCell.setText(LocaleController.getString(R.string.PrivacyGiftsTitle));
                         } else {
                             headerCell.setText(LocaleController.getString(R.string.LastSeenTitle));
                         }
@@ -1830,8 +1503,6 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
                         headerCell.setText(LocaleController.getString(R.string.PrivacyP2PHeader));
                     } else if (position == phoneSectionRow) {
                         headerCell.setText(LocaleController.getString(R.string.PrivacyPhoneTitle2));
-                    } else if (position == giftTypesHeaderRow) {
-                        headerCell.setText(getString(R.string.PrivacyGiftsTypeHeader));
                     }
                     break;
                 case 3:
@@ -1863,32 +1534,11 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
                             radioCell.setText(LocaleController.getString(R.string.LastSeenEverybody), currentSubType == 0, true);
                         }
                     }
-                    if (rulesType == PRIVACY_RULES_TYPE_GIFTS) {
-                        radioCell.setEnabled(!areAllStarGiftsDisabled(), null);
-                    }
                     break;
                 case 8:
                     final TextCheckCell checkCell = (TextCheckCell) holder.itemView;
-                    checkCell.setCheckBoxIcon(0);
                     if (position == readRow) {
                         checkCell.setTextAndCheck(LocaleController.getString(R.string.HideReadTime), selectedReadValue, false);
-                    } else if (position == showGiftIconRow) {
-                        checkCell.setTextAndCheck(getString(R.string.PrivacyGiftsShowIcon), selectedGiftIconValue, false);
-                    } else if (position == giftTypeUnlimitedRow) {
-                        checkCell.setTextAndCheck(getString(R.string.PrivacyGiftsTypeUnlimited), selectedGiftUnlimitedValue, true);
-                        checkCell.setCheckBoxIcon(!getUserConfig().isPremium() && selectedGiftUnlimitedValue ? R.drawable.permission_locked : 0);
-                    } else if (position == giftTypeLimitedRow) {
-                        checkCell.setTextAndCheck(getString(R.string.PrivacyGiftsTypeLimited), selectedGiftLimitedValue, true);
-                        checkCell.setCheckBoxIcon(!getUserConfig().isPremium() && selectedGiftLimitedValue ? R.drawable.permission_locked : 0);
-                    } else if (position == giftTypeUniqueRow) {
-                        checkCell.setTextAndCheck(getString(R.string.PrivacyGiftsTypeUnique), selectedGiftUniqueValue, true);
-                        checkCell.setCheckBoxIcon(!getUserConfig().isPremium() && selectedGiftUniqueValue ? R.drawable.permission_locked : 0);
-                    } else if (position == giftTypeChannelsRow) {
-                        checkCell.setTextAndCheck(getString(R.string.PrivacyGiftsTypeFromChannels), selectedGiftChannelsValue, true);
-                        checkCell.setCheckBoxIcon(!getUserConfig().isPremium() && selectedGiftChannelsValue ? R.drawable.permission_locked : 0);
-                    } else if (position == giftTypePremiumRow) {
-                        checkCell.setTextAndCheck(getString(R.string.PrivacyGiftsTypePremium), selectedGiftPremiumValue, false);
-                        checkCell.setCheckBoxIcon(!getUserConfig().isPremium() && selectedGiftPremiumValue ? R.drawable.permission_locked : 0);
                     }
                     break;
             }
@@ -1898,9 +1548,9 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
         public int getItemViewType(int position) {
             if (position == alwaysShareRow || position == neverShareRow || position == p2pRow) {
                 return 0;
-            } else if (position == shareDetailRow || position == detailRow || position == p2pDetailRow || position == photoForRestDescriptionRow || position == readDetailRow || position == setBirthdayRow || position == showGiftIconInfoRow || position == giftTypesInfoRow) {
+            } else if (position == shareDetailRow || position == detailRow || position == p2pDetailRow || position == photoForRestDescriptionRow || position == readDetailRow || position == setBirthdayRow) {
                 return 1;
-            } else if (position == sectionRow || position == shareSectionRow || position == p2pSectionRow || position == phoneSectionRow || position == giftTypesHeaderRow) {
+            } else if (position == sectionRow || position == shareSectionRow || position == p2pSectionRow || position == phoneSectionRow) {
                 return 2;
             } else if (position == everybodyRow || position == myContactsRow || position == nobodyRow || position == phoneEverybodyRow || position == phoneContactsRow) {
                 return 3;
@@ -1912,7 +1562,7 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
                 return 6;
             } else if (position == currentPhotoForRestRow) {
                 return 7;
-            } else if (position == readRow || position == showGiftIconRow || position == giftTypeUniqueRow || position == giftTypeChannelsRow || position == giftTypePremiumRow || position == giftTypeUnlimitedRow || position == giftTypeLimitedRow) {
+            } else if (position == readRow) {
                 return 8;
             }
             return 0;
@@ -1973,15 +1623,6 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
             put(++pointer, p2pDetailRow, sparseIntArray);
             put(++pointer, readRow, sparseIntArray);
             put(++pointer, readDetailRow, sparseIntArray);
-            put(++pointer, showGiftIconRow, sparseIntArray);
-            put(++pointer, showGiftIconInfoRow, sparseIntArray);
-            put(++pointer, giftTypesHeaderRow, sparseIntArray);
-            put(++pointer, giftTypeLimitedRow, sparseIntArray);
-            put(++pointer, giftTypeUnlimitedRow, sparseIntArray);
-            put(++pointer, giftTypeUniqueRow, sparseIntArray);
-            put(++pointer, giftTypeChannelsRow, sparseIntArray);
-            put(++pointer, giftTypePremiumRow, sparseIntArray);
-            put(++pointer, giftTypesInfoRow, sparseIntArray);
         }
 
         private void put(int id, int position, SparseIntArray sparseIntArray) {

@@ -16,9 +16,7 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.ColorFilter;
 import android.graphics.Paint;
-import android.graphics.PixelFormat;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
@@ -27,8 +25,6 @@ import android.view.Gravity;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.FrameLayout;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ChatObject;
@@ -50,7 +46,6 @@ import org.telegram.ui.Components.AnimatedFloat;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.CheckBox2;
-import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.Premium.PremiumGradient;
@@ -65,8 +60,6 @@ public class GroupCreateUserCell extends FrameLayout {
     private Object currentObject;
     private CharSequence currentName;
     private CharSequence currentStatus;
-    public boolean currentPremium;
-    public boolean currentMiniapps;
 
     private int checkBoxType;
 
@@ -187,69 +180,7 @@ public class GroupCreateUserCell extends FrameLayout {
         currentStatus = status;
         currentName = name;
         drawDivider = false;
-        currentPremium = false;
-        currentMiniapps = false;
         update(0);
-    }
-
-    public void setPremium() {
-        currentPremium = true;
-        currentObject = "premium";
-        avatarImageView.setImageDrawable(makePremiumUsersDrawable(getContext(), false));
-        nameTextView.setText(LocaleController.getString(R.string.PrivacyPremium));
-        statusTextView.setTag(Theme.key_windowBackgroundWhiteGrayText);
-        statusTextView.setTextColor(Theme.getColor(forceDarkTheme ? Theme.key_voipgroup_lastSeenText : Theme.key_windowBackgroundWhiteGrayText, resourcesProvider));
-        statusTextView.setEmojiColor(statusTextView.getTextColor());
-        statusTextView.setText(LocaleController.getString(R.string.PrivacyPremiumText));
-    }
-
-    public void setMiniapps() {
-        currentMiniapps = true;
-        currentObject = "miniapps";
-        avatarImageView.setImageDrawable(makeMiniAppsDrawable(getContext(), false));
-        nameTextView.setText(LocaleController.getString(R.string.PrivacyMiniapps));
-        statusTextView.setTag(Theme.key_windowBackgroundWhiteGrayText);
-        statusTextView.setTextColor(Theme.getColor(forceDarkTheme ? Theme.key_voipgroup_lastSeenText : Theme.key_windowBackgroundWhiteGrayText, resourcesProvider));
-        statusTextView.setEmojiColor(statusTextView.getTextColor());
-        statusTextView.setText(LocaleController.getString(R.string.PrivacyMiniappsText));
-    }
-
-    public static Drawable makePremiumUsersDrawable(Context context, boolean small) {
-        PremiumGradient.PremiumGradientTools gradientTools = new PremiumGradient.PremiumGradientTools(Theme.key_premiumGradient2, Theme.key_premiumGradient1, -1, -1, -1, null);
-        Drawable backgroundDrawable = new Drawable() {
-            @Override
-            public void draw(@NonNull Canvas canvas) {
-                gradientTools.gradientMatrix(getBounds());
-                canvas.drawCircle(
-                        getBounds().centerX(),
-                        getBounds().centerY(),
-                        Math.min(getBounds().width(), getBounds().height()) / 2f,
-                        gradientTools.paint
-                );
-            }
-            @Override
-            public void setAlpha(int alpha) {}
-            @Override
-            public void setColorFilter(@Nullable ColorFilter colorFilter) {}
-            @Override
-            public int getOpacity() {
-                return PixelFormat.TRANSPARENT;
-            }
-        };
-        Drawable starDrawable = context.getResources().getDrawable(R.drawable.msg_settings_premium);
-        CombinedDrawable drawable = new CombinedDrawable(backgroundDrawable, starDrawable, 0, 0);
-        if (small) {
-            drawable.setIconSize(dp(18), dp(18));
-        }
-        return drawable;
-    }
-
-    public static Drawable makeMiniAppsDrawable(Context context, boolean small) {
-        AvatarDrawable avatarDrawable = new AvatarDrawable();
-        avatarDrawable.setAvatarType(AvatarDrawable.AVATAR_TYPE_FILTER_BOTS);
-        avatarDrawable.setScaleSize(small ? .8f : 1.1f);
-        avatarDrawable.setColor(Theme.getColor(Theme.key_avatar_backgroundBlue), Theme.getColor(Theme.key_avatar_background2Blue));
-        return avatarDrawable;
     }
 
     public void setForbiddenCheck(boolean forbidden) {
@@ -323,7 +254,7 @@ public class GroupCreateUserCell extends FrameLayout {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(currentObject instanceof String && !"premium".equalsIgnoreCase((String) currentObject) && !"miniapps".equalsIgnoreCase((String) currentObject) ? 50 : 58), MeasureSpec.EXACTLY));
+        super.onMeasure(MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthMeasureSpec), MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(currentObject instanceof String ? 50 : 58), MeasureSpec.EXACTLY));
     }
 
     public void recycle() {
@@ -331,7 +262,7 @@ public class GroupCreateUserCell extends FrameLayout {
     }
 
     public void update(int mask) {
-        if (currentObject == null || currentPremium || currentMiniapps) {
+        if (currentObject == null) {
             return;
         }
         TLRPC.FileLocation photo = null;

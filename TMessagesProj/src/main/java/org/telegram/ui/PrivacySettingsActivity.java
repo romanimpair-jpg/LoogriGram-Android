@@ -92,8 +92,6 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
     @Keep
     private int musicRow;
     @Keep
-    private int giftsRow;
-    @Keep
     private int birthdayRow;
     @Keep
     private int forwardsRow;
@@ -396,8 +394,6 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                 presentFragment(new PrivacyControlActivity(ContactsController.PRIVACY_RULES_TYPE_MUSIC));
             } else if (position == birthdayRow) {
                 presentFragment(new PrivacyControlActivity(ContactsController.PRIVACY_RULES_TYPE_BIRTHDAY));
-            } else if (position == giftsRow) {
-                presentFragment(new PrivacyControlActivity(ContactsController.PRIVACY_RULES_TYPE_GIFTS));
             } else if (position == forwardsRow) {
                 presentFragment(new PrivacyControlActivity(ContactsController.PRIVACY_RULES_TYPE_FORWARDS));
             } else if (position == emailLoginRow) {
@@ -697,9 +693,9 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
         groupsDetailRow = -1;
         // LoogriGram: no voice-message or "who can message me" rows. Both are
         // Premium's to set, so upstream showed them only to a Premium account,
-        // and Premium is honoured for nobody here, ours included.
+        // and Premium is honoured for nobody here, ours included. No Gifts row
+        // either, as on desktop.
         birthdayRow = rowCount++;
-        giftsRow = rowCount++;
         bioRow = rowCount++;
         musicRow = rowCount++;
         groupsRow = rowCount++;
@@ -814,7 +810,6 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
 
     public static String formatRulesString(AccountInstance accountInstance, int rulesType) {
         final ArrayList<TLRPC.PrivacyRule> privacyRules = accountInstance.getContactsController().getPrivacyRules(rulesType);
-        final TLRPC.GlobalPrivacySettings global = accountInstance.getContactsController().getGlobalPrivacySettings();
         if (privacyRules == null || privacyRules.size() == 0) {
             if (rulesType == ContactsController.PRIVACY_RULES_TYPE_P2P) {
                 return getString(R.string.P2PNobody);
@@ -825,8 +820,6 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
         int type = -1;
         int plus = 0;
         int minus = 0;
-        boolean premium = false;
-        Boolean miniapps = null;
         for (int a = 0; a < privacyRules.size(); a++) {
             TLRPC.PrivacyRule rule = privacyRules.get(a);
             if (rule instanceof TLRPC.TL_privacyValueAllowChatParticipants) {
@@ -853,12 +846,10 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
             } else if (rule instanceof TLRPC.TL_privacyValueDisallowUsers) {
                 TLRPC.TL_privacyValueDisallowUsers privacyValueDisallowUsers = (TLRPC.TL_privacyValueDisallowUsers) rule;
                 minus += privacyValueDisallowUsers.users.size();
-            } else if (rule instanceof TLRPC.TL_privacyValueAllowPremium) {
-                premium = true;
-            } else if (rule instanceof TLRPC.TL_privacyValueAllowBots) {
-                miniapps = true;
-            } else if (rule instanceof TLRPC.TL_privacyValueDisallowBots) {
-                miniapps = false;
+            } else if (rule instanceof TLRPC.TL_privacyValueAllowPremium || rule instanceof TLRPC.TL_privacyValueAllowBots || rule instanceof TLRPC.TL_privacyValueDisallowBots) {
+                // LoogriGram: "Premium users" and "Mini apps" are not exceptions
+                // here; skipped rather than read as "My Contacts" below. See
+                // PrivacyControlActivity.checkPrivacy.
             } else if (type == -1) {
                 if (rule instanceof TLRPC.TL_privacyValueAllowAll) {
                     type = 0;
@@ -869,22 +860,12 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                 }
             }
         }
-        if (rulesType == ContactsController.PRIVACY_RULES_TYPE_GIFTS && global != null && global.disallowed_stargifts != null && (global.disallowed_stargifts.disallow_unique_stargifts && global.disallowed_stargifts.disallow_unlimited_stargifts && global.disallowed_stargifts.disallow_limited_stargifts && !global.disallowed_stargifts.disallow_premium_gifts)) {
-            return getString(R.string.PrivacyValueGiftsOnlyPremium);
-        } else if (rulesType == ContactsController.PRIVACY_RULES_TYPE_GIFTS && global != null && global.disallowed_stargifts != null && (global.disallowed_stargifts.disallow_unique_stargifts && global.disallowed_stargifts.disallow_unlimited_stargifts && global.disallowed_stargifts.disallow_limited_stargifts && global.disallowed_stargifts.disallow_premium_gifts)) {
-            return getString(R.string.PrivacyValueGiftsNone);
-        } else if (type == 0 || type == -1 && minus > 0) {
+        if (type == 0 || type == -1 && minus > 0) {
             if (rulesType == ContactsController.PRIVACY_RULES_TYPE_P2P) {
                 if (minus == 0) {
                     return getString(R.string.P2PEverybody);
                 } else {
                     return LocaleController.formatString(R.string.P2PEverybodyMinus, minus);
-                }
-            } else if (rulesType == ContactsController.PRIVACY_RULES_TYPE_GIFTS) {
-                if (minus == 0) {
-                    return getString(miniapps != null && !miniapps ? R.string.PrivacyValueEveryoneExceptBots : R.string.LastSeenEverybody);
-                } else {
-                    return LocaleController.formatString(miniapps != null && !miniapps ? R.string.PrivacyValueEveryoneExceptBotsMinus : R.string.LastSeenEverybodyMinus, minus);
                 }
             } else {
                 if (minus == 0) {
@@ -908,19 +889,14 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                 }
             } else {
                 if (plus == 0 && minus == 0) {
-                    if (premium) {
-                        return getString(R.string.LastSeenContactsPremium);
-                    } else if (miniapps != null && miniapps) {
-                        return LocaleController.getString(R.string.PrivacyContactsAndBotUsers);
-                    }
                     return getString(R.string.LastSeenContacts);
                 } else {
                     if (plus != 0 && minus != 0) {
-                        return LocaleController.formatString(miniapps != null && miniapps ? R.string.PrivacyContactsAndBotUsersMinusPlus : premium ? R.string.LastSeenContactsPremiumMinusPlus : R.string.LastSeenContactsMinusPlus, minus, plus);
+                        return LocaleController.formatString(R.string.LastSeenContactsMinusPlus, minus, plus);
                     } else if (minus != 0) {
-                        return LocaleController.formatString(miniapps != null && miniapps ? R.string.PrivacyContactsAndBotUsersMinus :premium ? R.string.LastSeenContactsPremiumMinus : R.string.LastSeenContactsMinus, minus);
+                        return LocaleController.formatString(R.string.LastSeenContactsMinus, minus);
                     } else {
-                        return LocaleController.formatString(miniapps != null && miniapps ? R.string.PrivacyContactsAndBotUsersPlus :premium ? R.string.LastSeenContactsPremiumPlus : R.string.LastSeenContactsPlus, plus);
+                        return LocaleController.formatString(R.string.LastSeenContactsPlus, plus);
                     }
                 }
             }
@@ -933,20 +909,10 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                 }
             } else {
                 if (plus == 0) {
-                    if (premium) {
-                        return getString(R.string.LastSeenNobodyPremium);
-                    }
-                    if (miniapps != null && miniapps) {
-                        return LocaleController.getString(R.string.PrivacyValueOnlyBots);
-                    }
                     return getString(R.string.LastSeenNobody);
                 } else {
-                    return LocaleController.formatString(premium ? R.string.LastSeenNobodyPremiumPlus : R.string.LastSeenNobodyPlus, plus);
+                    return LocaleController.formatString(R.string.LastSeenNobodyPlus, plus);
                 }
-            }
-        } else if (miniapps != null) {
-            if (miniapps) {
-                return LocaleController.getString(R.string.PrivacyValueOnlyBots);
             }
         }
         return "unknown";
@@ -979,7 +945,6 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                     position == bioRow && !getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_BIO) ||
                     position == musicRow && !getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_MUSIC) ||
                     position == birthdayRow && !getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_BIRTHDAY) ||
-                    position == giftsRow && !getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_GIFTS) ||
                     position == forwardsRow && !getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_FORWARDS) ||
                     position == phoneNumberRow && !getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_PHONE) ||
                     position == deleteAccountRow && !getContactsController().getLoadingDeleteInfo() ||
@@ -1098,14 +1063,6 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                             value = formatRulesString(getAccountInstance(), ContactsController.PRIVACY_RULES_TYPE_BIRTHDAY);
                         }
                         textCell.setTextAndValue(getString(R.string.PrivacyBirthday), value, true);
-                    } else if (position == giftsRow) {
-                        if (getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_GIFTS)) {
-                            showLoading = true;
-                            loadingLen = 30;
-                        } else {
-                            value = formatRulesString(getAccountInstance(), ContactsController.PRIVACY_RULES_TYPE_GIFTS);
-                        }
-                        textCell.setTextAndValue(getString(R.string.PrivacyGifts), value, true);
                     } else if (position == forwardsRow) {
                         if (getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_FORWARDS)) {
                             showLoading = true;

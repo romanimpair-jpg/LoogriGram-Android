@@ -69,7 +69,6 @@ public class ContactsController extends BaseController {
     private ArrayList<TLRPC.PrivacyRule> phonePrivacyRules;
     private ArrayList<TLRPC.PrivacyRule> addedByPhonePrivacyRules;
     private ArrayList<TLRPC.PrivacyRule> birthdayPrivacyRules;
-    private ArrayList<TLRPC.PrivacyRule> giftsPrivacyRules;
     private TLRPC.GlobalPrivacySettings globalPrivacySettings;
 
     public final static int PRIVACY_RULES_TYPE_LASTSEEN = 0;
@@ -86,7 +85,8 @@ public class ContactsController extends BaseController {
     // loaded nor tracked; the server keeps whatever it already is.
     public final static int PRIVACY_RULES_TYPE_BIO = 9;
     public final static int PRIVACY_RULES_TYPE_BIRTHDAY = 11;
-    public final static int PRIVACY_RULES_TYPE_GIFTS = 12;
+    // LoogriGram: 12 was gifts (who may send us one), deleted as desktop
+    // deleted it: neither loaded nor tracked, the server keeps the rule.
     // LoogriGram: 13 was NoPaidMessages, the "Remove fee" exceptions to a
     // price we never set.
     public final static int PRIVACY_RULES_TYPE_MUSIC = 14;
@@ -235,7 +235,6 @@ public class ContactsController extends BaseController {
         bioPrivacyRules = null;
         musicPrivacyRules = null;
         birthdayPrivacyRules = null;
-        giftsPrivacyRules = null;
         forwardsPrivacyRules = null;
         phonePrivacyRules = null;
 
@@ -1180,9 +1179,6 @@ public class ContactsController extends BaseController {
                 case PRIVACY_RULES_TYPE_BIRTHDAY:
                     req.key = new TLRPC.TL_inputPrivacyKeyBirthday();
                     break;
-                case PRIVACY_RULES_TYPE_GIFTS:
-                    req.key = new TLRPC.TL_inputPrivacyKeyStarGiftsAutoSave();
-                    break;
                 case PRIVACY_RULES_TYPE_ADDED_BY_PHONE:
                     req.key = new TLRPC.TL_inputPrivacyKeyAddedByPhone();
                     break;
@@ -1220,9 +1216,6 @@ public class ContactsController extends BaseController {
                             break;
                         case PRIVACY_RULES_TYPE_BIRTHDAY:
                             birthdayPrivacyRules = rules.rules;
-                            break;
-                        case PRIVACY_RULES_TYPE_GIFTS:
-                            giftsPrivacyRules = rules.rules;
                             break;
                         case PRIVACY_RULES_TYPE_FORWARDS:
                             forwardsPrivacyRules = rules.rules;
@@ -1368,8 +1361,6 @@ public class ContactsController extends BaseController {
                 return musicPrivacyRules;
             case PRIVACY_RULES_TYPE_BIRTHDAY:
                 return birthdayPrivacyRules;
-            case PRIVACY_RULES_TYPE_GIFTS:
-                return giftsPrivacyRules;
             case PRIVACY_RULES_TYPE_FORWARDS:
                 return forwardsPrivacyRules;
             case PRIVACY_RULES_TYPE_PHONE:
@@ -1405,9 +1396,6 @@ public class ContactsController extends BaseController {
                 break;
             case PRIVACY_RULES_TYPE_BIRTHDAY:
                 birthdayPrivacyRules = rules;
-                break;
-            case PRIVACY_RULES_TYPE_GIFTS:
-                giftsPrivacyRules = rules;
                 break;
             case PRIVACY_RULES_TYPE_FORWARDS:
                 forwardsPrivacyRules = rules;

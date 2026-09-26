@@ -776,13 +776,10 @@ public class LinkManager {
                 "last-seen".equalsIgnoreCase(second) ||
                 "profile-photos".equalsIgnoreCase(second) ||
                 "bio".equalsIgnoreCase(second) ||
-                "gifts".equalsIgnoreCase(second) ||
                 "birthday".equalsIgnoreCase(second) ||
                 "saved-music".equalsIgnoreCase(second) ||
                 "forwards".equalsIgnoreCase(second) ||
                 "calls".equalsIgnoreCase(second) ||
-                "voice".equalsIgnoreCase(second) ||
-                "messages".equalsIgnoreCase(second) ||
                 "invites".equalsIgnoreCase(second)
             )) {
                 int type = 0;
@@ -790,7 +787,6 @@ public class LinkManager {
                 else if ("last-seen".equalsIgnoreCase(second))      type = ContactsController.PRIVACY_RULES_TYPE_LASTSEEN;
                 else if ("profile-photos".equalsIgnoreCase(second)) type = ContactsController.PRIVACY_RULES_TYPE_PHOTO;
                 else if ("bio".equalsIgnoreCase(second))            type = ContactsController.PRIVACY_RULES_TYPE_BIO;
-                else if ("gifts".equalsIgnoreCase(second))          type = ContactsController.PRIVACY_RULES_TYPE_GIFTS;
                 else if ("birthday".equalsIgnoreCase(second))       type = ContactsController.PRIVACY_RULES_TYPE_BIRTHDAY;
                 else if ("saved-music".equalsIgnoreCase(second))    type = ContactsController.PRIVACY_RULES_TYPE_MUSIC;
                 else if ("forwards".equalsIgnoreCase(second))       type = ContactsController.PRIVACY_RULES_TYPE_FORWARDS;
@@ -809,13 +805,8 @@ public class LinkManager {
                 if ("never-share".equalsIgnoreCase(third) || "never-share".equalsIgnoreCase(fourth) ||
                     "never".equalsIgnoreCase(third) || "never".equalsIgnoreCase(fourth))
                     scrollTo("nobodyRow");
-                if ("gifts".equalsIgnoreCase(second) && "show-icon".equalsIgnoreCase(third))
-                    scrollTo("showGiftIconRow");
-                if ("gifts".equalsIgnoreCase(second) && "accepted-types".equalsIgnoreCase(third))
-                    scrollTo("giftTypesHeaderRow");
-                // LoogriGram: messages/set-price and messages/remove-fee scrolled
-                // to the price slider and its exceptions, which are gone; the
-                // links still open the messages screen.
+                // LoogriGram: voice, messages and gifts had screens here, all
+                // deleted as on desktop; their links open Privacy and Security.
                 if ("last-seen".equalsIgnoreCase(second) && "hide-read-time".equalsIgnoreCase(third))
                     scrollTo("readRow");
                 if ("profile-photos".equalsIgnoreCase(second)) {
@@ -860,8 +851,6 @@ public class LinkManager {
                 scrollTo("profilePhotoRow");
             if ("bio".equalsIgnoreCase(second))
                 scrollTo("bioRow");
-            if ("gifts".equalsIgnoreCase(second))
-                scrollTo("giftsRow");
             if ("birthday".equalsIgnoreCase(second))
                 scrollTo("birthdayRow");
             if ("saved-music".equalsIgnoreCase(second))
