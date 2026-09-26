@@ -2343,52 +2343,6 @@ public class TL_account {
         }
     }
 
-    public static class updateBusinessWorkHours extends TLObject {
-        public static final int constructor = 0x4b00e066;
-
-        public int flags;
-        public TL_businessWorkHours business_work_hours;
-
-        @Override
-        public TLObject deserializeResponse(InputSerializedData stream, int constructor, boolean exception) {
-            return TLRPC.Bool.TLdeserialize(stream, constructor, exception);
-        }
-
-        @Override
-        public void serializeToStream(OutputSerializedData stream) {
-            stream.writeInt32(constructor);
-            stream.writeInt32(flags);
-            if (hasFlag(flags, 1)) {
-                business_work_hours.serializeToStream(stream);
-            }
-        }
-    }
-
-    public static class updateBusinessLocation extends TLObject {
-        public static final int constructor = 0x9e6b131a;
-
-        public int flags;
-        public TLRPC.InputGeoPoint geo_point;
-        public String address;
-
-        @Override
-        public TLObject deserializeResponse(InputSerializedData stream, int constructor, boolean exception) {
-            return TLRPC.Bool.TLdeserialize(stream, constructor, exception);
-        }
-
-        @Override
-        public void serializeToStream(OutputSerializedData stream) {
-            stream.writeInt32(constructor);
-            stream.writeInt32(flags);
-            if (hasFlag(flags, 2)) {
-                geo_point.serializeToStream(stream);
-            }
-            if (hasFlag(flags, 1)) {
-                stream.writeString(address);
-            }
-        }
-    }
-
     public static class BusinessAwayMessageSchedule extends TLObject {
         public static BusinessAwayMessageSchedule TLdeserialize(InputSerializedData stream, int constructor, boolean exception) {
             BusinessAwayMessageSchedule result = null;
@@ -3013,62 +2967,6 @@ public class TL_account {
             stream.writeString(description);
             if (hasFlag(flags, 1)) {
                 sticker.serializeToStream(stream);
-            }
-        }
-    }
-
-    public static class TL_inputBusinessIntro extends TLObject {
-        public static final int constructor = 0x9c469cd;
-
-        public int flags;
-        public String title;
-        public String description;
-        public TLRPC.InputDocument sticker;
-
-        public static TL_inputBusinessIntro TLdeserialize(InputSerializedData stream, int constructor, boolean exception) {
-            final TL_inputBusinessIntro result = constructor != TL_inputBusinessIntro.constructor ? null : new TL_inputBusinessIntro();
-            return TLdeserialize(TL_inputBusinessIntro.class, result, stream, constructor, exception);
-        }
-
-        @Override
-        public void readParams(InputSerializedData stream, boolean exception) {
-            flags = stream.readInt32(exception);
-            title = stream.readString(exception);
-            description = stream.readString(exception);
-            if (hasFlag(flags, 1)) {
-                sticker = TLRPC.InputDocument.TLdeserialize(stream, stream.readInt32(exception), exception);
-            }
-        }
-
-        @Override
-        public void serializeToStream(OutputSerializedData stream) {
-            stream.writeInt32(constructor);
-            stream.writeInt32(flags);
-            stream.writeString(title);
-            stream.writeString(description);
-            if (hasFlag(flags, 1)) {
-                sticker.serializeToStream(stream);
-            }
-        }
-    }
-
-    public static class updateBusinessIntro extends TLObject {
-        public static final int constructor = 0xa614d034;
-
-        public int flags;
-        public TL_inputBusinessIntro intro;
-
-        @Override
-        public TLObject deserializeResponse(InputSerializedData stream, int constructor, boolean exception) {
-            return TLRPC.Bool.TLdeserialize(stream, constructor, exception);
-        }
-
-        @Override
-        public void serializeToStream(OutputSerializedData stream) {
-            stream.writeInt32(constructor);
-            stream.writeInt32(flags);
-            if (hasFlag(flags, 1)) {
-                intro.serializeToStream(stream);
             }
         }
     }

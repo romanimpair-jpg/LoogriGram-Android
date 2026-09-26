@@ -77,9 +77,6 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.EdgeToEdgeSupportMode;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
-import org.telegram.ui.Business.BusinessIntroActivity;
-import org.telegram.ui.Business.LocationActivity;
-import org.telegram.ui.Business.OpeningHoursActivity;
 import org.telegram.ui.Business.TimezonesController;
 import org.telegram.ui.Cells.HeaderCell;
 import org.telegram.ui.Cells.ShadowSectionCell;
@@ -825,11 +822,10 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
                 PremiumFeatureCell cell = (PremiumFeatureCell) view;
 
                 if (type == FEATURES_BUSINESS && getUserConfig().isPremium()) {
-                    if (cell.data.type == PREMIUM_FEATURE_BUSINESS_LOCATION) {
-                        presentFragment(new LocationActivity());
-                    } else if (cell.data.type == PREMIUM_FEATURE_BUSINESS_OPENING_HOURS) {
-                        presentFragment(new OpeningHoursActivity());
-                    } else if (cell.data.type == PREMIUM_FEATURE_STORIES) {
+                    // LoogriGram: the Business features' own screens opened from
+                    // here (hours, location, quick replies, greeting and away
+                    // messages, chatbots, chat links, intro). All are gone.
+                    if (cell.data.type == PREMIUM_FEATURE_STORIES) {
                         Bundle args = new Bundle();
                         args.putLong("dialog_id", UserConfig.getInstance(currentAccount).getClientUserId());
                         args.putInt("type", MediaActivity.TYPE_STORIES);
@@ -853,8 +849,6 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
                         });
                     } else if (cell.data.type == PREMIUM_FEATURE_FOLDER_TAGS) {
                         presentFragment(new FiltersSetupActivity().highlightTags());
-                    } else if (cell.data.type == PREMIUM_FEATURE_BUSINESS_INTRO) {
-                        presentFragment(new BusinessIntroActivity());
                     }
                     return;
                 }
@@ -987,11 +981,8 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
     public static void fillBusinessFeaturesList(ArrayList<PremiumFeatureData> premiumFeatures, int currentAccount, boolean additional) {
         MessagesController messagesController = MessagesController.getInstance(currentAccount);
 
-        if (!additional) {
-            premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_BUSINESS_LOCATION, R.drawable.filled_location, getString(R.string.PremiumBusinessLocation), getString(R.string.PremiumBusinessLocationDescription)));
-            premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_BUSINESS_OPENING_HOURS, R.drawable.filled_premium_hours, getString(R.string.PremiumBusinessOpeningHours), getString(R.string.PremiumBusinessOpeningHoursDescription)));
-            premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_BUSINESS_INTRO, R.drawable.filled_premium_intro, getString(R.string.PremiumBusinessIntro), getString(R.string.PremiumBusinessIntroDescription)));
-        } else {
+        // LoogriGram: the main list held the eight Business features, all gone.
+        if (additional) {
             premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_EMOJI_STATUS, R.drawable.filled_premium_status2, getString(R.string.PremiumPreviewBusinessEmojiStatus), getString(R.string.PremiumPreviewBusinessEmojiStatusDescription)));
             premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_FOLDER_TAGS, R.drawable.premium_tags, getString(R.string.PremiumPreviewFolderTags), getString(R.string.PremiumPreviewFolderTagsDescription)));
             premiumFeatures.add(new PremiumFeatureData(PREMIUM_FEATURE_STORIES, R.drawable.filled_premium_camera, getString(R.string.PremiumPreviewBusinessStories), getString(R.string.PremiumPreviewBusinessStoriesDescription)));

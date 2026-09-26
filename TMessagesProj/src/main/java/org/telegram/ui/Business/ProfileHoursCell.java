@@ -188,7 +188,7 @@ public class ProfileHoursCell extends LinearLayout {
 
         if (value == null) return;
 
-        final boolean is24x7 = OpeningHoursActivity.is24x7(value);
+        final boolean is24x7 = OpeningHours.is24x7(value);
         if (is24x7) {
             this.expanded = expanded = false;
         }
@@ -234,13 +234,13 @@ public class ProfileHoursCell extends LinearLayout {
         firstAfterAttach = false;
 
         ArrayList<TL_account.TL_businessWeeklyOpen> weekly_open = new ArrayList<>(value.weekly_open);
-        ArrayList<OpeningHoursActivity.Period>[] localDays = OpeningHoursActivity.getDaysHours(weekly_open);
+        ArrayList<OpeningHours.Period>[] localDays = OpeningHours.getDaysHours(weekly_open);
 
         int nowWeekday = (7 + calendar.get(Calendar.DAY_OF_WEEK) - 2) % 7;
         int nowHours = calendar.get(Calendar.HOUR_OF_DAY);
         int nowMinutes = calendar.get(Calendar.MINUTE);
 
-        ArrayList<TL_account.TL_businessWeeklyOpen> adapted_weekly_open = OpeningHoursActivity.adaptWeeklyOpen(value.weekly_open, utcOffset);
+        ArrayList<TL_account.TL_businessWeeklyOpen> adapted_weekly_open = OpeningHours.adaptWeeklyOpen(value.weekly_open, utcOffset);
         boolean open_now = false;
         int nowPeriodTime = nowMinutes + nowHours * 60 + nowWeekday * (24 * 60);
         for (int i = 0; i < adapted_weekly_open.size(); ++i) {
@@ -254,7 +254,7 @@ public class ProfileHoursCell extends LinearLayout {
                 break;
             }
         }
-        ArrayList<OpeningHoursActivity.Period>[] myDays = OpeningHoursActivity.getDaysHours(adapted_weekly_open);
+        ArrayList<OpeningHours.Period>[] myDays = OpeningHours.getDaysHours(adapted_weekly_open);
 
         textView.setText(getString(open_now ? R.string.BusinessHoursProfileNowOpen : R.string.BusinessHoursProfileNowClosed));
         textView.setTextColor(Theme.getColor(open_now ? Theme.key_avatar_nameInMessageGreen : Theme.key_text_RedRegular, resourcesProvider));
@@ -264,7 +264,7 @@ public class ProfileHoursCell extends LinearLayout {
         todayLinesCount = 1;
         todayLinesHeight = 0;
         for (int a = 0; a < 2; ++a) {
-            ArrayList<OpeningHoursActivity.Period>[] days = a == 0 ? localDays : myDays;
+            ArrayList<OpeningHours.Period>[] days = a == 0 ? localDays : myDays;
             for (int i = 0; i < 7; ++i) {
                 int weekday = (nowWeekday + i) % 7;
                 if (i == 0) {
@@ -309,7 +309,7 @@ public class ProfileHoursCell extends LinearLayout {
                             textView.setText(getString(R.string.BusinessHoursProfileFullOpen));
                         } else if (days[weekday].isEmpty()) {
                             textView.setText(getString(R.string.BusinessHoursProfileClose));
-                        } else if (OpeningHoursActivity.isFull(days[weekday])) {
+                        } else if (OpeningHours.isFull(days[weekday])) {
                             textView.setText(getString(R.string.BusinessHoursProfileOpen));
                         } else {
                             StringBuilder sb = new StringBuilder();

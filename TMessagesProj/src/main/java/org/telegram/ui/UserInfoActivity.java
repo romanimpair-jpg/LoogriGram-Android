@@ -47,8 +47,6 @@ import org.telegram.ui.ActionBar.ActionBarMenuItem;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BackDrawable;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.Business.LocationActivity;
-import org.telegram.ui.Business.OpeningHoursActivity;
 import org.telegram.ui.Cells.EditTextCell;
 import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.BulletinFactory;
@@ -281,8 +279,6 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
     private static final int BUTTON_BIRTHDAY = 1;
     private static final int BUTTON_REMOVE_BIRTHDAY = 2;
     private static final int BUTTON_CHANNEL = 3;
-    private static final int BUTTON_HOURS = 4;
-    private static final int BUTTON_LOCATION = 5;
     private static final int INFO_PHONE = 7;
     private static final int INFO_USERNAME = 8;
     private static final int INFO_BIRTHDAY = 9;
@@ -390,14 +386,9 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
         } else {
             items.add(SettingsActivity.SettingCell.Factory.of(BUTTON_CHANNEL, IconBackgroundColors.ORANGE.top, IconBackgroundColors.ORANGE.bottom, R.drawable.msg_filled_menu_channels, getString(R.string.EditProfileChannelTitle), channel.title));
         }
-        if (hadHours) {
-            items.add(SettingsActivity.SettingCell.Factory.of(BUTTON_HOURS, IconBackgroundColors.ORANGE_DEEP.top, IconBackgroundColors.ORANGE_DEEP.bottom, R.drawable.filled_premium_hours, getString(R.string.EditProfileHours)));
-        }
-        if (hadLocation) {
-            items.add(SettingsActivity.SettingCell.Factory.of(BUTTON_LOCATION, IconBackgroundColors.RED.top, IconBackgroundColors.RED.bottom, R.drawable.filled_location, getString(R.string.EditProfileLocation)));
-        }
-        // LoogriGram: a "Chat Automation" row opened the Business chatbot
-        // settings here, listing the bots connected to this account.
+        // LoogriGram: rows for our Business hours and location (shown once set)
+        // opened their editors, and a "Chat Automation" row the Business chatbot
+        // settings, listing the bots connected to this account. All are gone.
         items.add(UItem.asShadow(-3, null));
         final boolean hasAddAccount = UserConfig.getActivatedAccountsCount() < UserConfig.MAX_ACCOUNT_COUNT;
         if (hasAddAccount) {
@@ -514,10 +505,6 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
 //                    listView.adapter.update(true);
 //                }
 //            }));
-        } else if (item.id == BUTTON_LOCATION) {
-            presentFragment(new LocationActivity());
-        } else if (item.id == BUTTON_HOURS) {
-            presentFragment(new OpeningHoursActivity());
         } else if (item.id == INFO_PHONE) {
             presentFragment(new ActionIntroActivity(ActionIntroActivity.ACTION_TYPE_CHANGE_PHONE_NUMBER));
         } else if (item.id == INFO_USERNAME) {
@@ -573,7 +560,6 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
     private TL_account.TL_birthday birthday;
     private TLRPC.Chat channel;
 
-    private boolean hadHours, hadLocation;
 
     private AdminedChannelsFetcher channels = new AdminedChannelsFetcher(currentAccount, true);
 
@@ -608,8 +594,6 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
             currentChannel = 0;
             channel = null;
         }
-        hadHours = userFull.business_work_hours != null;
-        hadLocation = userFull.business_location != null;
         checkDone(true);
 
         if (listView != null && listView.adapter != null) {

@@ -184,7 +184,7 @@ import org.telegram.ui.ActionBar.OKLCH;
 import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
-import org.telegram.ui.Business.OpeningHoursActivity;
+import org.telegram.ui.Business.OpeningHours;
 import org.telegram.ui.Business.ProfileHoursCell;
 import org.telegram.ui.Business.ProfileLocationCell;
 import org.telegram.ui.Cells.AboutLinkCell;
@@ -7255,7 +7255,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             final String finalText;
             if (position == bizHoursRow) {
                 if (userInfo.business_work_hours == null) return false;
-                finalText = OpeningHoursActivity.toString(currentAccount, userInfo.user, userInfo.business_work_hours);
+                finalText = OpeningHours.toString(currentAccount, userInfo.user, userInfo.business_work_hours);
             } else if (position == bizLocationRow) {
                 if (editRow(view, position)) return true;
                 if (userInfo.business_location == null) return false;
@@ -15418,7 +15418,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         if (position == channelInfoRow || position == userInfoRow || position == bioRow) {
             textToCopy = userFull.about;
         } else if (position == bizHoursRow) {
-            textToCopy = OpeningHoursActivity.toString(currentAccount, user, userFull.business_work_hours);
+            textToCopy = OpeningHours.toString(currentAccount, user, userFull.business_work_hours);
             copyButton = getString(R.string.ProfileHoursCopy);
         } else if (position == bizLocationRow) {
             textToCopy = userFull.business_location.address;
@@ -15456,63 +15456,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             });
         }
 
-        if (position == bizHoursRow) {
-            itemOptions.add(R.drawable.msg_edit, getString(R.string.ProfileHoursEdit), () -> {
-                presentFragment(new OpeningHoursActivity());
-            });
-            itemOptions.add(R.drawable.msg_delete, getString(R.string.ProfileHoursRemove), true, () -> {
-                AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-                builder.setTitle(LocaleController.getString(R.string.BusinessHoursClearTitle));
-                builder.setMessage(LocaleController.getString(R.string.BusinessHoursClearMessage));
-                builder.setPositiveButton(LocaleController.getString(R.string.Remove), (di, w) -> {
-                    TL_account.updateBusinessWorkHours req = new TL_account.updateBusinessWorkHours();
-                    if (userFull != null) {
-                        userFull.business_work_hours = null;
-                        userFull.flags2 &= ~1;
-                    }
-                    getConnectionsManager().sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
-                        if (err != null) {
-                            BulletinFactory.showError(err);
-                        } else if (res instanceof TLRPC.TL_boolFalse) {
-                            BulletinFactory.of(this).createErrorBulletin(LocaleController.getString(R.string.UnknownError)).show();
-                        }
-                    }));
-                    updateRowsIds();
-                    listAdapter.notifyItemRemoved(position);
-                    getMessagesStorage().updateUserInfo(userFull, false);
-                });
-                builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
-                showDialog(builder.create());
-            });
-        } else if (position == bizLocationRow) {
-            itemOptions.add(R.drawable.msg_edit, getString(R.string.ProfileLocationEdit), () -> {
-                presentFragment(new org.telegram.ui.Business.LocationActivity());
-            });
-            itemOptions.add(R.drawable.msg_delete, getString(R.string.ProfileLocationRemove), true, () -> {
-                AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-                builder.setTitle(LocaleController.getString(R.string.BusinessLocationClearTitle));
-                builder.setMessage(LocaleController.getString(R.string.BusinessLocationClearMessage));
-                builder.setPositiveButton(LocaleController.getString(R.string.Remove), (di, w) -> {
-                    TL_account.updateBusinessLocation req = new TL_account.updateBusinessLocation();
-                    if (userFull != null) {
-                        userFull.business_location = null;
-                        userFull.flags2 &= ~2;
-                    }
-                    getConnectionsManager().sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
-                        if (err != null) {
-                            BulletinFactory.showError(err);
-                        } else if (res instanceof TLRPC.TL_boolFalse) {
-                            BulletinFactory.of(this).createErrorBulletin(LocaleController.getString(R.string.UnknownError)).show();
-                        }
-                    }));
-                    updateRowsIds();
-                    listAdapter.notifyItemRemoved(position);
-                    getMessagesStorage().updateUserInfo(userFull, false);
-                });
-                builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
-                showDialog(builder.create());
-            });
-        } else if (position == usernameRow) {
+        // LoogriGram: our own hours and location rows also offered Edit (the
+        // Business editors) and Remove (clearing them on the server). Both are
+        // Business settings and are gone; Copy and the map items stay.
+        if (position == usernameRow) {
             itemOptions.add(R.drawable.msg_edit, getString(R.string.ProfileUsernameEdit), () -> {
                 presentFragment(new ChangeUsernameActivity());
             });
