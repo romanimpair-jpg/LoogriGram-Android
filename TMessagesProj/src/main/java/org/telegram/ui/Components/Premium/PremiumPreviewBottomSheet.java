@@ -50,7 +50,6 @@ import org.telegram.tgnet.tl.TL_stars;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.AnimatedEmojiSpan;
@@ -755,8 +754,6 @@ public class PremiumPreviewBottomSheet extends BottomSheetWithRecyclerListView i
             Drawable startEnterFromDrawable = null;
             if (startEnterFromView instanceof SimpleTextView) {
                 startEnterFromDrawable = ((SimpleTextView) startEnterFromView).getRightDrawable();
-            } else if (startEnterFromView instanceof ChatMessageCell) {
-                startEnterFromDrawable = ((ChatMessageCell) startEnterFromView).currentNameStatusDrawable;
             }
             if (startEnterFromDrawable == null) {
                 canvas.restore();
@@ -828,20 +825,13 @@ public class PremiumPreviewBottomSheet extends BottomSheetWithRecyclerListView i
         final Drawable startEnterFromDrawable;
         if (startEnterFromView instanceof SimpleTextView) {
             startEnterFromDrawable = ((SimpleTextView) startEnterFromView).getRightDrawable();
-        } else if (startEnterFromView instanceof ChatMessageCell) {
-            startEnterFromDrawable = ((ChatMessageCell) startEnterFromView).currentNameStatusDrawable;
-            ((ChatMessageCell) startEnterFromView).invalidateOutbounds();
         } else {
             startEnterFromDrawable = null;
         }
         if (startEnterFromDrawable != null) {
             startEnterFromDrawable.setAlpha(0);
         }
-        if (startEnterFromView instanceof ChatMessageCell) {
-            ((ChatMessageCell) startEnterFromView).invalidateOutbounds();
-        } else {
-            startEnterFromView.invalidate();
-        }
+        startEnterFromView.invalidate();
         if (iconTextureView != null) {
             iconTextureView.startEnterAnimation(-360, 100);
         }
@@ -859,11 +849,7 @@ public class PremiumPreviewBottomSheet extends BottomSheetWithRecyclerListView i
                     ValueAnimator iconAlphaBack = ValueAnimator.ofInt(0, 255);
                     iconAlphaBack.addUpdateListener(animation1 -> {
                         startEnterFromDrawable.setAlpha((Integer) animation1.getAnimatedValue());
-                        if (startEnterFromView instanceof ChatMessageCell) {
-                            ((ChatMessageCell) startEnterFromView).invalidateOutbounds();
-                        } else {
-                            startEnterFromView.invalidate();
-                        }
+                        startEnterFromView.invalidate();
                     });
                     iconAlphaBack.start();
                 }

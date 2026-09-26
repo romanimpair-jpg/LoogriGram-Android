@@ -842,6 +842,7 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
             nameLayout.draw(canvas);
             canvas.restore();
 
+            int x;
             if (LocaleController.isRTL) {
                 if (nameLayout.getLineLeft(0) == 0) {
                     x = nameLeft - dp(3) - statusDrawable.getIntrinsicWidth();

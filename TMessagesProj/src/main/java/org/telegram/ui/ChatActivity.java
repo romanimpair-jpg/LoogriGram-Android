@@ -516,7 +516,6 @@ public class ChatActivity extends BaseFragment implements
     @Nullable
     private BusinessBotButton bizBotButton;
     @Nullable
-    @Nullable
     private ImageView closeReportSpam;
     private TextView chatWithAdminTextView;
     private FragmentContextView fragmentContextView;
@@ -18387,7 +18386,7 @@ public class ChatActivity extends BaseFragment implements
         }
         if (chatMode == MODE_SUGGESTIONS && currentChat != null) {
             if (isSubscriberSuggestions) {
-                avatarContainer.setTitle(ForumUtilities.getMonoForumTitle(currentAccount, currentChat), currentChat.scam, currentChat.fake, currentChat.verified, false, null, animated);
+                avatarContainer.setTitle(ForumUtilities.getMonoForumTitle(currentAccount, currentChat), currentChat.scam, currentChat.fake, currentChat.verified, animated);
             } else if (ChatObject.isMonoForum(currentChat)) {
                 if (threadMessageId == 0) {
                     if (currentChat.linked_monoforum_id != 0) {

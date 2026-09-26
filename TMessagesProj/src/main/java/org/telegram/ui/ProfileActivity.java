@@ -655,7 +655,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     @Keep
     private int botPermissionLocation;
     @Keep
-    @Keep
     private int botPermissionBiometry;
     private int botPermissionsDivider;
 
