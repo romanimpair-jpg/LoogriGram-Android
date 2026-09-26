@@ -62,7 +62,6 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
-import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
@@ -73,7 +72,6 @@ import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.AnimatedFloat;
 import org.telegram.ui.Components.AnimatedTextView;
 import org.telegram.ui.Components.AvatarDrawable;
@@ -159,8 +157,6 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
     AnimatedTextView titleView;
     ActionBarAnimatedSubtitleOverlayContainer subtitleOverlayContainer;
     ImageView telegramLogoView;
-    ImageView emojiStatusView;
-    AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable statusDrawable;
     boolean drawCircleForce;
     ArrayList<Runnable> afterNextLayout = new ArrayList<>();
     private float collapsedProgress1 = -1;
@@ -340,15 +336,6 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
         telegramLogoView.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
         telegramLogoView.setFocusableInTouchMode(true);
         addView(telegramLogoView, LayoutHelper.createFrame(90, 22));
-
-        statusDrawable = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(null, dp(26));
-        statusDrawable.center = true;
-        statusDrawable.setCallback(this);
-
-        emojiStatusView = new ImageView(context);
-        emojiStatusView.setScaleType(ImageView.ScaleType.CENTER);
-        emojiStatusView.setImageDrawable(statusDrawable);
-        addView(emojiStatusView, LayoutHelper.createFrame(40, 40));
 
         subtitleOverlayContainer = new ActionBarAnimatedSubtitleOverlayContainer(context, null, ellipsizeSpanAnimator) {
             @Override
@@ -944,9 +931,6 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
             telegramLogoView.setTranslationX(titleView.getTranslationX() + dp(1));
             telegramLogoView.setTranslationY(bottomY + dp(14 + FAKE_TOP_PADDING + 4.333f) + translationOffset /*titleView.getTranslationY() + dpf2(37.33f)*/);
 
-            emojiStatusView.setTranslationX(titleView.getTranslationX() - dpf2(3.33f) + telegramLogoView.getMeasuredWidth());
-            emojiStatusView.setTranslationY(bottomY + dp(14 - 11 + FAKE_TOP_PADDING + 4.333f) + translationOffset);
-
             subtitleOverlayContainer.setTranslationX(titleView.getTranslationX());
             subtitleOverlayContainer.setTranslationY(bottomY + dp(15 + FAKE_TOP_PADDING + 4.333f + 8));
         }
@@ -993,7 +977,6 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
         updateItems(false, false);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.storiesUpdated);
         ellipsizeSpanAnimator.onAttachedToWindow();
-        statusDrawable.attach();
     }
 
     @Override
@@ -1005,7 +988,6 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
             globalCancelable.cancel();
             globalCancelable = null;
         }
-        statusDrawable.detach();
     }
 
     @Override
@@ -2155,41 +2137,6 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
         return super.onTouchEvent(event);
     }
 
-    private Drawable premiumStar;
-
-    public void updateStatus(TLRPC.User user, boolean animated) {
-        if (statusDrawable == null || actionBar == null) {
-            return;
-        }
-        Long emojiStatusId = UserObject.getEmojiStatusDocumentId(user);
-        if (emojiStatusId != null) {
-            final boolean isCollectible = user.emoji_status instanceof TLRPC.TL_emojiStatusCollectible;
-            statusDrawable.set(emojiStatusId, animated);
-            statusDrawable.setParticles(isCollectible, animated);
-        } else if (user != null && MessagesController.getInstance(currentAccount).isPremiumUser(user)) {
-            if (premiumStar == null) {
-                premiumStar = getContext().getResources().getDrawable(R.drawable.msg_premium_liststar).mutate();
-                premiumStar = new AnimatedEmojiDrawable.WrapSizeDrawable(premiumStar, dp(18), dp(18)) {
-                    @Override
-                    public void draw(@NonNull Canvas canvas) {
-                        canvas.save();
-                        canvas.translate(dp(-2), dp(1));
-                        super.draw(canvas);
-                        canvas.restore();
-                    }
-                };
-            }
-            premiumStar.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_profile_verifiedBackground), PorterDuff.Mode.MULTIPLY));
-            statusDrawable.set(premiumStar, animated);
-            statusDrawable.setParticles(false, animated);
-        } else {
-            statusDrawable.set((Drawable) null, animated);
-            statusDrawable.setParticles(false, animated);
-        }
-        statusDrawable.setColor(getThemedColor(Theme.key_profile_verifiedBackground));
-        emojiStatusView.invalidate();
-    }
-
     private int getThemedColor(int key) {
         if (fragment == null || fragment.getResourceProvider() == null) {
             return Theme.getColor(key);
@@ -2219,10 +2166,6 @@ public class DialogStoriesCell extends FrameLayout implements NotificationCenter
         if (telegramLogoView != null) {
             telegramLogoView.setAlpha(logoAlpha);
             telegramLogoView.setVisibility(logoAlpha > 0 ? VISIBLE : GONE);
-        }
-        if (emojiStatusView != null) {
-            emojiStatusView.setAlpha(logoAlpha);
-            emojiStatusView.setVisibility(logoAlpha > 0 ? VISIBLE : GONE);
         }
         if (subtitleOverlayContainer != null) {
             subtitleOverlayContainer.setAlpha(progress);
