@@ -2540,25 +2540,11 @@ public class ChatObject {
         return -1;
     }
 
+    // LoogriGram: the profile's own background emoji, never a collectible
+    // status's pattern, as on desktop.
     public static long getProfileEmojiId(TLRPC.Chat chat) {
-        if (chat != null && chat.emoji_status instanceof TLRPC.TL_emojiStatusCollectible) {
-            return ((TLRPC.TL_emojiStatusCollectible) chat.emoji_status).pattern_document_id;
-        }
         if (chat != null && chat.profile_color instanceof TLRPC.TL_peerColor && (chat.profile_color.flags & 2) != 0)
             return chat.profile_color.background_emoji_id;
-        return 0;
-    }
-
-    public static long getOnlyProfileEmojiId(TLRPC.Chat chat) {
-        if (chat != null && chat.profile_color instanceof TLRPC.TL_peerColor && (chat.profile_color.flags & 2) != 0)
-            return chat.profile_color.background_emoji_id;
-        return 0;
-    }
-
-    public static long getProfileCollectibleId(TLRPC.Chat chat) {
-        if (chat != null && chat.emoji_status instanceof TLRPC.TL_emojiStatusCollectible) {
-            return ((TLRPC.TL_emojiStatusCollectible) chat.emoji_status).collectible_id;
-        }
         return 0;
     }
 

@@ -15,7 +15,6 @@ import androidx.annotation.NonNull;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_account;
-import org.telegram.tgnet.tl.TL_bots;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackupImageView;
 
@@ -374,41 +373,6 @@ public class DialogObject {
         return costs[s2.length()];
     }
 
-    public static boolean isEmojiStatusCollectible(long dialogId) {
-        if (dialogId >= 0) {
-            final TLRPC.User user = MessagesController.getInstance(UserConfig.selectedAccount).getUser(dialogId);
-            if (user == null) return false;
-            return isEmojiStatusCollectible(user.emoji_status);
-        } else {
-            final TLRPC.Chat chat = MessagesController.getInstance(UserConfig.selectedAccount).getChat(-dialogId);
-            if (chat == null) return false;
-            return isEmojiStatusCollectible(chat.emoji_status);
-        }
-    }
-
-    public static boolean isEmojiStatusCollectible(TLRPC.EmojiStatus emojiStatus) {
-        if (emojiStatus instanceof TLRPC.TL_emojiStatusCollectible) {
-            final TLRPC.TL_emojiStatusCollectible status = (TLRPC.TL_emojiStatusCollectible) emojiStatus;
-            if ((status.flags & 1) != 0 && status.until <= (int) (System.currentTimeMillis() / 1000)) {
-                return false;
-            }
-            return true;
-        }
-        return false;
-    }
-
-    public static long getEmojiStatusDocumentId(long dialogId) {
-        if (dialogId >= 0) {
-            final TLRPC.User user = MessagesController.getInstance(UserConfig.selectedAccount).getUser(dialogId);
-            if (user == null) return 0;
-            return getEmojiStatusDocumentId(user.emoji_status);
-        } else {
-            final TLRPC.Chat chat = MessagesController.getInstance(UserConfig.selectedAccount).getChat(-dialogId);
-            if (chat == null) return 0;
-            return getEmojiStatusDocumentId(chat.emoji_status);
-        }
-    }
-
     public static long getEmojiStatusDocumentId(TLRPC.EmojiStatus emojiStatus) {
         if (emojiStatus instanceof TLRPC.TL_emojiStatus) {
             final TLRPC.TL_emojiStatus status = (TLRPC.TL_emojiStatus) emojiStatus;
@@ -426,17 +390,6 @@ public class DialogObject {
         return 0;
     }
 
-    public static long getEmojiStatusCollectibleId(TLRPC.EmojiStatus emojiStatus) {
-        if (emojiStatus instanceof TLRPC.TL_emojiStatusCollectible) {
-            final TLRPC.TL_emojiStatusCollectible status = (TLRPC.TL_emojiStatusCollectible) emojiStatus;
-            if ((status.flags & 1) != 0 && status.until <= (int) (System.currentTimeMillis() / 1000)) {
-                return 0;
-            }
-            return status.collectible_id;
-        }
-        return 0;
-    }
-
     public static int getEmojiStatusUntil(TLRPC.EmojiStatus emojiStatus) {
         if (emojiStatus instanceof TLRPC.TL_emojiStatus) {
             final TLRPC.TL_emojiStatus status = (TLRPC.TL_emojiStatus) emojiStatus;
@@ -450,22 +403,6 @@ public class DialogObject {
             }
         }
         return 0;
-    }
-
-    public static TLRPC.EmojiStatus filterEmojiStatus(TLRPC.EmojiStatus emojiStatus) {
-        final int until = getEmojiStatusUntil(emojiStatus);
-        if (until != 0 && until <= (int) (System.currentTimeMillis() / 1000)) {
-            return null;
-        }
-        return emojiStatus;
-    }
-
-    public static boolean emojiStatusesEqual(TLRPC.EmojiStatus a, TLRPC.EmojiStatus b) {
-        return (
-            getEmojiStatusDocumentId(a) == getEmojiStatusDocumentId(b) &&
-            getEmojiStatusCollectibleId(a) == getEmojiStatusCollectibleId(b) &&
-            getEmojiStatusUntil(a) == getEmojiStatusUntil(b)
-        );
     }
 
     public static TLRPC.TL_username findUsername(String username, TLRPC.User user) {
@@ -486,26 +423,6 @@ public class DialogObject {
             }
         }
         return null;
-    }
-
-    public static TL_bots.botVerification getBotVerification(TLObject object) {
-        if (object instanceof TLRPC.UserFull) {
-            return ((TLRPC.UserFull) object).bot_verification;
-        } else if (object instanceof TLRPC.ChatFull) {
-            return ((TLRPC.ChatFull) object).bot_verification;
-        } else {
-            return null;
-        }
-    }
-
-    public static long getBotVerificationIcon(TLObject object) {
-        if (object instanceof TLRPC.User) {
-            return ((TLRPC.User) object).bot_verification_icon;
-        } else if (object instanceof TLRPC.Chat) {
-            return ((TLRPC.Chat) object).bot_verification_icon;
-        } else {
-            return 0;
-        }
     }
 
     public static boolean isEmpty(TL_account.RequirementToContact value) {

@@ -756,9 +756,6 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
                     continueUpdate = true;
                 }
             }
-            if (!continueUpdate && (mask & MessagesController.UPDATE_MASK_EMOJI_STATUS) != 0 && (user != null || chat != null)) {
-                updateStatus(user != null ? user.verified : chat.verified, user, chat, true);
-            }
             if (!continueUpdate && ((mask & MessagesController.UPDATE_MASK_NAME) != 0 && user != null) || (mask & MessagesController.UPDATE_MASK_CHAT_NAME) != 0 && chat != null) {
                 String newName;
                 if (user != null) {

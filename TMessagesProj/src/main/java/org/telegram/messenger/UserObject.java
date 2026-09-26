@@ -204,23 +204,10 @@ public class UserObject {
         return -1;
     }
 
+    // LoogriGram: the profile's own background emoji, never a collectible
+    // status's pattern, as on desktop.
     public static long getProfileEmojiId(TLRPC.User user) {
-        if (user != null && user.emoji_status instanceof TLRPC.TL_emojiStatusCollectible) {
-            return ((TLRPC.TL_emojiStatusCollectible) user.emoji_status).pattern_document_id;
-        }
         if (user != null && user.profile_color != null && (user.profile_color.flags & 2) != 0) return user.profile_color.background_emoji_id;
-        return 0;
-    }
-
-    public static long getOnlyProfileEmojiId(TLRPC.User user) {
-        if (user != null && user.profile_color instanceof TLRPC.TL_peerColor && (user.profile_color.flags & 2) != 0) return user.profile_color.background_emoji_id;
-        return 0;
-    }
-
-    public static long getProfileCollectibleId(TLRPC.User user) {
-        if (user != null && user.emoji_status instanceof TLRPC.TL_emojiStatusCollectible) {
-            return ((TLRPC.TL_emojiStatusCollectible) user.emoji_status).collectible_id;
-        }
         return 0;
     }
 

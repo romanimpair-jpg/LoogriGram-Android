@@ -28,7 +28,6 @@ import org.telegram.messenger.ImageLocation;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
-import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.ConnectionsManager;
@@ -344,7 +343,7 @@ public class MessageSeenView extends FrameLayout {
         return listView;
     }
 
-    public static class UserCell extends FrameLayout implements NotificationCenter.NotificationCenterDelegate {
+    public static class UserCell extends FrameLayout {
 
         private int currentAccount = UserConfig.selectedAccount;
 
@@ -433,18 +432,6 @@ public class MessageSeenView extends FrameLayout {
             info.setText(text);
         }
 
-        @Override
-        public void didReceivedNotification(int id, int account, Object... args) {
-            if (id == NotificationCenter.userEmojiStatusUpdated) {
-                TLRPC.User user = (TLRPC.User) args[0];
-                TLRPC.User currentUser = object instanceof TLRPC.User ? (TLRPC.User) object : null;
-                if (currentUser != null && user != null && currentUser.id == user.id) {
-                    this.object = user;
-                    updateStatus(true);
-                }
-            }
-        }
-
         private void updateStatus(boolean animated) {
             nameView.setRightDrawable(statusBadgeComponent.updateDrawable(object, Theme.getColor(Theme.key_chats_verifiedBackground), animated));
         }
@@ -453,14 +440,12 @@ public class MessageSeenView extends FrameLayout {
         protected void onAttachedToWindow() {
             super.onAttachedToWindow();
             statusBadgeComponent.onAttachedToWindow();
-            NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.userEmojiStatusUpdated);
         }
 
         @Override
         protected void onDetachedFromWindow() {
             super.onDetachedFromWindow();
             statusBadgeComponent.onDetachedFromWindow();
-            NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.userEmojiStatusUpdated);
         }
     }
 }

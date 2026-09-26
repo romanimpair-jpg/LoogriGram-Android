@@ -327,7 +327,6 @@ public class NotificationCenter {
     public static final int billingProductDetailsUpdated = totalEvents++;
     public static final int billingConfirmPurchaseError = totalEvents++;
     public static final int premiumStickersPreviewLoaded = totalEvents++;
-    public static final int userEmojiStatusUpdated = totalEvents++;
     public static final int requestPermissions = totalEvents++;
     public static final int permissionsGranted = totalEvents++;
     public static final int activityPermissionsGranted = totalEvents++;

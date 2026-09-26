@@ -125,7 +125,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -707,9 +706,6 @@ public class MessagesController extends BaseController implements NotificationCe
 
     public NewMessageCallback newMessageCallback;
 
-    private long recentEmojiStatusUpdateRunnableTimeout, recentEmojiStatusUpdateRunnableTime;
-    private Runnable recentEmojiStatusUpdateRunnable;
-    private final ConcurrentHashMap<Long, Integer> emojiStatusUntilValues = new ConcurrentHashMap<Long, Integer>();
     private TopicsController topicsController;
     private CacheByChatsController cacheByChatsController;
     private TranslateController translateController;
@@ -1172,7 +1168,7 @@ public class MessagesController extends BaseController implements NotificationCe
     public static int UPDATE_MASK_CHECK = 65536;
     public static int UPDATE_MASK_REORDER = 131072;
     public static int UPDATE_MASK_EMOJI_INTERACTIONS = 262144;
-    public static int UPDATE_MASK_EMOJI_STATUS = 524288;
+    // LoogriGram: 524288 was UPDATE_MASK_EMOJI_STATUS; nothing draws a status.
     public static int UPDATE_MASK_REACTIONS_READ = 1048576;
     public static int UPDATE_MASK_ALL = UPDATE_MASK_AVATAR | UPDATE_MASK_STATUS | UPDATE_MASK_NAME | UPDATE_MASK_CHAT_AVATAR | UPDATE_MASK_CHAT_NAME | UPDATE_MASK_CHAT_MEMBERS | UPDATE_MASK_USER_PRINT | UPDATE_MASK_USER_PHONE | UPDATE_MASK_READ_DIALOG_MESSAGE | UPDATE_MASK_PHONE | UPDATE_MASK_REACTIONS_READ;
 
@@ -2496,7 +2492,6 @@ public class MessagesController extends BaseController implements NotificationCe
             TLRPC.User user = getUserConfig().getCurrentUser();
             if (user != null) {
                 user.emoji_status = new_emoji_status;
-                getNotificationCenter().postNotificationName(NotificationCenter.userEmojiStatusUpdated, user);
             }
         } else {
             TLRPC.TL_channels_updateEmojiStatus req = new TLRPC.TL_channels_updateEmojiStatus();
@@ -2511,8 +2506,6 @@ public class MessagesController extends BaseController implements NotificationCe
                 putChat(chat, true);
             }
         }
-        getMessagesController().updateEmojiStatusUntilUpdate(dialogId, new_emoji_status);
-        getNotificationCenter().postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_EMOJI_STATUS);
         getConnectionsManager().sendRequest(r, null);
     }
 
@@ -4862,24 +4855,6 @@ public class MessagesController extends BaseController implements NotificationCe
             return peerColor;
         }
 
-        public static PeerColor fromCollectible(TLRPC.EmojiStatus status) {
-            if (!(status instanceof TLRPC.TL_emojiStatusCollectible)) return null;
-            final TLRPC.TL_emojiStatusCollectible s = (TLRPC.TL_emojiStatusCollectible) status;
-            final PeerColor peerColor = new PeerColor();
-            peerColor.id = -1;
-            peerColor.hidden = true;
-            peerColor.colors[0] = s.edge_color | 0xFF000000;
-            peerColor.colors[1] = s.center_color | 0xFF000000;
-            peerColor.colors[2] = s.edge_color | 0xFF000000;
-            peerColor.colors[3] = s.center_color | 0xFF000000;
-            peerColor.colors[4] = s.text_color | 0xFF000000;
-            peerColor.colors[5] = s.text_color | 0xFF000000;
-            System.arraycopy(peerColor.colors, 0, peerColor.darkColors, 0, 6);
-            peerColor.patternColor = s.pattern_color | 0xFF000000;
-            peerColor.textColor = s.text_color | 0xFF000000;
-            return peerColor;
-        }
-
         public static PeerColor fromTL(TLRPC.TL_help_peerColorOption tl) {
             if (tl == null) return null;
 
@@ -6296,7 +6271,6 @@ public class MessagesController extends BaseController implements NotificationCe
                 }
             }
         }
-        updateEmojiStatusUntilUpdate(user.id, user.emoji_status);
         if (oldUser != null && oldUser.access_hash == 0 && user.fromMessageDialogId != 0 && user.fromMessageId != 0) {
             oldUser.fromMessageDialogId = user.fromMessageDialogId;
             oldUser.fromMessageId = user.fromMessageId;
@@ -6430,7 +6404,6 @@ public class MessagesController extends BaseController implements NotificationCe
                 }
             }
         }
-        updateEmojiStatusUntilUpdate(-chat.id, chat.emoji_status);
         if (oldChat != null && oldChat.access_hash == 0 && chat.fromMessageDialogId != 0 && chat.fromMessageId != 0) {
             oldChat.fromMessageDialogId = chat.fromMessageDialogId;
             oldChat.fromMessageId = chat.fromMessageId;
@@ -18405,7 +18378,6 @@ public class MessagesController extends BaseController implements NotificationCe
                 }
                 updatesOnMainThread.add(baseUpdate);
             } else if (baseUpdate instanceof TL_update.TL_updateUserEmojiStatus) {
-                interfaceUpdateMask |= UPDATE_MASK_EMOJI_STATUS;
                 if (updatesOnMainThread == null) {
                     updatesOnMainThread = new ArrayList<>();
                 }
@@ -19317,9 +19289,6 @@ public class MessagesController extends BaseController implements NotificationCe
                         if (currentUser != null) {
                             currentUser.id = update.user_id;
                             currentUser.emoji_status = update.emoji_status;
-                            if (UserObject.isUserSelf(currentUser)) {
-                                getNotificationCenter().postNotificationName(NotificationCenter.userEmojiStatusUpdated, currentUser);
-                            }
                         }
                         TLRPC.User toDbUser = new TLRPC.TL_user();
                         toDbUser.id = update.user_id;
@@ -22696,48 +22665,6 @@ public class MessagesController extends BaseController implements NotificationCe
 
     public interface NewMessageCallback {
         boolean onMessageReceived(TLRPC.Message message);
-    }
-
-    public void updateEmojiStatusUntilUpdate(long dialogId, TLRPC.EmojiStatus status) {
-        final int until = DialogObject.getEmojiStatusUntil(status);
-        if (until != 0) {
-            emojiStatusUntilValues.put(dialogId, until);
-        } else {
-            if (!emojiStatusUntilValues.containsKey(dialogId))
-                return;
-            emojiStatusUntilValues.remove(dialogId);
-        }
-        updateEmojiStatusUntil();
-    }
-
-    public void updateEmojiStatusUntil() {
-        final int now = (int) (System.currentTimeMillis() / 1000L);
-        Long timeout = null;
-        for (Iterator<Long> it = emojiStatusUntilValues.keySet().iterator(); it.hasNext(); ) {
-            int until = emojiStatusUntilValues.get(it.next());
-            if (until > now) {
-                timeout = Math.min(timeout == null ? Long.MAX_VALUE : timeout, until - now);
-            } else {
-                it.remove();
-            }
-        }
-
-        if (timeout != null) {
-            timeout += 2;
-            if (now + timeout != recentEmojiStatusUpdateRunnableTime + recentEmojiStatusUpdateRunnableTimeout) {
-                AndroidUtilities.cancelRunOnUIThread(recentEmojiStatusUpdateRunnable);
-                recentEmojiStatusUpdateRunnableTime = now;
-                recentEmojiStatusUpdateRunnableTimeout = timeout;
-                AndroidUtilities.runOnUIThread(recentEmojiStatusUpdateRunnable = () -> {
-                    getNotificationCenter().postNotificationName(NotificationCenter.updateInterfaces, UPDATE_MASK_EMOJI_STATUS);
-                    updateEmojiStatusUntil();
-                }, timeout * 1000);
-            }
-        } else if (recentEmojiStatusUpdateRunnable != null) {
-            recentEmojiStatusUpdateRunnableTime = -1;
-            recentEmojiStatusUpdateRunnableTimeout = -1;
-            AndroidUtilities.cancelRunOnUIThread(recentEmojiStatusUpdateRunnable);
-        }
     }
 
     public String getMutedString(long dialogId, long topicId) {

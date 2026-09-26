@@ -8,7 +8,6 @@ import android.graphics.LinearGradient;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
-import android.graphics.PorterDuffColorFilter;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.RectF;
@@ -16,16 +15,13 @@ import android.graphics.Shader;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 
-import androidx.core.content.ContextCompat;
 
 import org.telegram.messenger.ApplicationLoader;
-import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.Theme;
 
 public class PremiumGradient {
 
     private final PremiumGradientTools mainGradient = new PremiumGradientTools(Theme.key_premiumGradient1, Theme.key_premiumGradient2, Theme.key_premiumGradient3, Theme.key_premiumGradient4);
-    private final PremiumGradientTools goldGradient = new PremiumGradientTools(Theme.key_starsGradient1, Theme.key_starsGradient2, -1);
 //    private final GradientTools grayGradient = new GradientTools(Theme.key_windowBackgroundWhiteGrayText7, Theme.key_windowBackgroundWhiteGrayText7, Theme.key_windowBackgroundWhiteGrayText7);
     Paint lockedPremiumPaint;
 
@@ -34,14 +30,8 @@ public class PremiumGradient {
 
     private static PremiumGradient instance;
 
-    public Drawable premiumStarColoredDrawable;
-    public Drawable premiumStarDrawableMini;
-    public InternalDrawable premiumStarMenuDrawable;
-    public InternalDrawable premiumStarMenuDrawable2;
-    public InternalDrawable premiumStarMenuDrawableGray;
-    public InternalDrawable goldenStarMenuDrawable;
-
-    private int lastStarColor;
+    // LoogriGram: the Premium stars drawn beside names and in menus, the golden
+    // one included, went with everything that drew them.
 
     public static PremiumGradient getInstance() {
         if (instance == null) {
@@ -51,14 +41,7 @@ public class PremiumGradient {
     }
 
     private PremiumGradient() {
-        premiumStarDrawableMini = ContextCompat.getDrawable(ApplicationLoader.applicationContext, R.drawable.msg_premium_liststar).mutate();
-        premiumStarMenuDrawable = createGradientDrawable(ContextCompat.getDrawable(ApplicationLoader.applicationContext, R.drawable.msg_settings_premium));
-        goldenStarMenuDrawable = createGradientDrawable(ContextCompat.getDrawable(ApplicationLoader.applicationContext, R.drawable.msg_settings_premium), goldGradient);
-        premiumStarMenuDrawable2 = createGradientDrawable(ContextCompat.getDrawable(ApplicationLoader.applicationContext, R.drawable.msg_premium_normal));
-//        premiumStarMenuDrawableGray = createGradientDrawable(ContextCompat.getDrawable(ApplicationLoader.applicationContext, R.drawable.msg_settings_premium), grayGradient);
-        premiumStarColoredDrawable = ContextCompat.getDrawable(ApplicationLoader.applicationContext, R.drawable.msg_premium_liststar).mutate();
         mainGradient.chekColors();
-        checkIconColors();
     }
 
     public InternalDrawable createGradientDrawable(Drawable drawable) {
@@ -82,22 +65,6 @@ public class PremiumGradient {
         gradient.paint.setXfermode(null);
 
         return new InternalDrawable(drawable, bitmap, gradient.colors);
-    }
-
-    public void checkIconColors() {
-        if (Theme.getColor(Theme.key_chats_verifiedBackground) != lastStarColor) {
-            lastStarColor = Theme.getColor(Theme.key_chats_verifiedBackground);
-            premiumStarDrawableMini.setColorFilter(new PorterDuffColorFilter(lastStarColor, PorterDuff.Mode.MULTIPLY));
-        }
-        premiumStarMenuDrawable = checkColors(premiumStarMenuDrawable);
-        premiumStarMenuDrawable2 = checkColors(premiumStarMenuDrawable2);
-    }
-
-    private InternalDrawable checkColors(InternalDrawable internalDrawable) {
-        if (mainGradient.colors[0] != internalDrawable.colors[0] || mainGradient.colors[1] != internalDrawable.colors[1] || mainGradient.colors[2] != internalDrawable.colors[2] || mainGradient.colors[3] != internalDrawable.colors[3]) {
-            return createGradientDrawable(internalDrawable.originDrawable);
-        }
-        return internalDrawable;
     }
 
     public void updateMainGradientMatrix(int x, int y, int width, int height, float xOffset, float yOffset) {

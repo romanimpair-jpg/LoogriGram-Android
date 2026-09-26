@@ -1431,7 +1431,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
             if ((mask & MessagesController.UPDATE_MASK_CHAT_NAME) != 0) {
                 applyCallParticipantUpdates(true);
             }
-            if ((mask & MessagesController.UPDATE_MASK_CHAT_NAME) != 0 || (mask & MessagesController.UPDATE_MASK_EMOJI_STATUS) != 0) {
+            if ((mask & MessagesController.UPDATE_MASK_CHAT_NAME) != 0) {
                 AndroidUtilities.updateVisibleRows(listView);
             }
         } else if (id == NotificationCenter.groupCallScreencastStateChanged) {

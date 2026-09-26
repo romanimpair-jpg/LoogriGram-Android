@@ -578,10 +578,6 @@ public class UserConfig extends BaseController {
         return user.premium;
     }
 
-    public Long getEmojiStatus() {
-        return UserObject.getEmojiStatusDocumentId(currentUser);
-    }
-
 
     int globalTtl = 0;
     boolean ttlIsLoading = false;
