@@ -13,7 +13,6 @@ import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.Business.BusinessLinksActivity;
 import org.telegram.ui.Cells.SlideIntChooseView;
 import org.telegram.ui.Components.ListView.AdapterWithDiffUtils;
 import org.telegram.ui.StatisticActivity;
@@ -407,12 +406,6 @@ public class UItem extends AdapterWithDiffUtils.Item {
     public UItem setMinSliderValue(int value) {
         this.longValue = value;
         return this;
-    }
-
-    public static UItem asBusinessChatLink(BusinessLinksActivity.BusinessLinkWrapper businessLink) {
-        UItem item = new UItem(UniversalAdapter.VIEW_TYPE_BUSINESS_LINK, false);
-        item.object = businessLink;
-        return item;
     }
 
     public static UItem asChart(int type, int stats_dc, StatisticActivity.ChartViewData data) {

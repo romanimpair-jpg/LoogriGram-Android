@@ -153,9 +153,6 @@ public class NotificationCenter {
     // LoogriGram: starReactionAnonymousUpdate stood here. It told a chat that the
     // peer behind our own paid reaction had changed, and only the paid-reaction
     // sheet ever posted it.
-    public static final int businessLinksUpdated = totalEvents++;
-    public static final int businessLinkCreated = totalEvents++;
-    public static final int needDeleteBusinessLink = totalEvents++;
     public static final int messageTranslated = totalEvents++;
     public static final int messageTranslating = totalEvents++;
     public static final int dialogIsTranslatable = totalEvents++;

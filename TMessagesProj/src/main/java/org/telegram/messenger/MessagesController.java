@@ -607,7 +607,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public int groupTranscribeLevelMin;
     public int introTitleLengthLimit;
     public int introDescriptionLengthLimit;
-    public int businessChatLinksLimit;
     public boolean channelRevenueWithdrawalEnabled;
     public int reactionsUniqMax;
     public String premiumManageSubscriptionUrl;
@@ -1669,7 +1668,6 @@ public class MessagesController extends BaseController implements NotificationCe
         folderTags = mainPreferences.getBoolean("folderTags", false);
         introTitleLengthLimit = mainPreferences.getInt("introTitleLengthLimit", 32);
         introDescriptionLengthLimit = mainPreferences.getInt("introDescriptionLengthLimit", 72);
-        businessChatLinksLimit = mainPreferences.getInt("businessChatLinksLimit", 100);
         channelRevenueWithdrawalEnabled = mainPreferences.getBoolean("channelRevenueWithdrawalEnabled", false);
         reactionsUniqMax = mainPreferences.getInt("reactionsUniqMax", 11);
         premiumManageSubscriptionUrl = mainPreferences.getString("premiumManageSubscriptionUrl", ApplicationLoader.isStandaloneBuild() ? "https://t.me/premiumbot?start=status" : "https://play.google.com/store/account/subscriptions?sku=telegram_premium&package=org.telegram.messenger");
@@ -4018,17 +4016,6 @@ public class MessagesController extends BaseController implements NotificationCe
                         if (num.value != introDescriptionLengthLimit) {
                             introDescriptionLengthLimit = (int) num.value;
                             editor.putInt("introDescriptionLengthLimit", introDescriptionLengthLimit);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "business_chat_links_limit": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != businessChatLinksLimit) {
-                            businessChatLinksLimit = (int) num.value;
-                            editor.putInt("businessChatLinksLimit", businessChatLinksLimit);
                             changed = true;
                         }
                     }
