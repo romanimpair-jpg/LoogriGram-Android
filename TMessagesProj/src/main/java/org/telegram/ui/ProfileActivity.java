@@ -3982,9 +3982,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             @Override
             public boolean onInterceptTouchEvent(MotionEvent e) {
                 if (sharedMediaLayout != null) {
-                    if (sharedMediaLayout.canEditStories() && sharedMediaLayout.isActionModeShown() && sharedMediaLayout.getClosestTab() == SharedMediaLayout.TAB_BOT_PREVIEWS) {
-                        return false;
-                    }
                     if (sharedMediaLayout.canEditStories() && sharedMediaLayout.isActionModeShown() && (sharedMediaLayout.getClosestTab() == SharedMediaLayout.TAB_STORIES || SharedMediaLayout.isStoryAlbumPageType(sharedMediaLayout.getClosestTab()))) {
                         return false;
                     }
@@ -7700,7 +7697,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             mediaCounterTextView.setText(onlineTextView[1].getText());
         } else if (id == SharedMediaLayout.TAB_STORIES || SharedMediaLayout.isStoryAlbumPageType(id)) {
             if (isBot) {
-                mediaCounterTextView.setText(sharedMediaLayout.getBotPreviewsSubtitle(false));
+                mediaCounterTextView.setText(sharedMediaLayout.getBotPreviewsSubtitle());
             } else {
                 int count = sharedMediaLayout.getStoriesCount(id);
                 if (count > 0) {
@@ -7709,8 +7706,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     mediaCounterTextView.setText(getString(R.string.ProfileStoriesCountZero));
                 }
             }
-        } else if (id == SharedMediaLayout.TAB_BOT_PREVIEWS) {
-            mediaCounterTextView.setText(sharedMediaLayout.getBotPreviewsSubtitle(true));
         } else if (id == SharedMediaLayout.TAB_ARCHIVED_STORIES) {
             mediaCounterTextView.setText(LocaleController.formatPluralString("ProfileStoriesArchiveCount", sharedMediaLayout.getStoriesCount(id)));
         } else if (id == SharedMediaLayout.TAB_RECOMMENDED_CHANNELS) {

@@ -66,7 +66,6 @@ import org.telegram.ui.Components.Reactions.ReactionImageHolder;
 import org.telegram.ui.Components.Reactions.ReactionsLayoutInBubble;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PremiumPreviewFragment;
-import org.telegram.ui.Stories.bots.BotPreviewsEditContainer;
 import org.telegram.ui.Stories.recorder.DraftsController;
 import org.telegram.ui.Stories.recorder.StoryEntry;
 import org.telegram.ui.Stories.recorder.StoryPrivacyBottomSheet;
@@ -2076,12 +2075,10 @@ public class StoriesController {
                     if (storiesList instanceof BotPreviewsList) {
                         ((BotPreviewsList) storiesList).edit(entry.editingBotPreview, previewMedia);
                     }
-                    BotPreviewsEditContainer.edit(currentAccount, dialogId, entry.botLang, entry.editingBotPreview, previewMedia);
                 } else {
                     if (storiesList instanceof BotPreviewsList) {
                         ((BotPreviewsList) storiesList).push(previewMedia);
                     }
-                    BotPreviewsEditContainer.push(currentAccount, dialogId, entry.botLang, previewMedia);
                 }
 
                 previewMedia = null;
@@ -2760,7 +2757,6 @@ public class StoriesController {
         public final String lang_code;
         private int reqId;
 
-        public final ArrayList<String> lang_codes = new ArrayList<>();
         private final ArrayList<ArrayList<Integer>> fakeDays = new ArrayList<>();
         private int lastId = 0;
 
@@ -2801,10 +2797,6 @@ public class StoriesController {
                     }
                 } else if (res instanceof TL_bots.previewInfo) {
                     TL_bots.previewInfo info = (TL_bots.previewInfo) res;
-
-                    lang_codes.clear();
-                    lang_codes.addAll(info.lang_codes);
-
                     medias.addAll(info.media);
                 } else {
                     return;

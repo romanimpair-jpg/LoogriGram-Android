@@ -155,9 +155,7 @@ import org.telegram.ui.Stories.StoriesController;
 import org.telegram.ui.Stories.StoriesListPlaceProvider;
 import org.telegram.ui.Stories.UserListPoller;
 import org.telegram.ui.Stories.ViewsForPeerStoriesRequester;
-import org.telegram.ui.Stories.bots.BotPreviewsEditContainer;
 import org.telegram.ui.Stories.recorder.PreviewView;
-import org.telegram.ui.Stories.recorder.StoryRecorder;
 import org.telegram.ui.ThemeActivity;
 import org.telegram.ui.TopicsFragment;
 
@@ -183,7 +181,8 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
     public static final int TAB_RECOMMENDED_CHANNELS = 10;
     public static final int TAB_SAVED_DIALOGS = 11;
     public static final int TAB_SAVED_MESSAGES = 12;
-    public static final int TAB_BOT_PREVIEWS = 13;
+    // LoogriGram: 13 was TAB_BOT_PREVIEWS, a bot owner's editor for the
+    // bot's preview media. Other people's bots show theirs under TAB_STORIES.
     public static final int TAB_GIFTS = 14;
     public static final int TAB_POLL = 15;
     private static final int TAB_STORIES_ALBUM_PREFIX = 0x00010000;
@@ -250,9 +249,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
 
     public boolean checkPinchToZoom(MotionEvent ev) {
         final int selectedType = mediaPages[0].selectedType;
-        if (selectedType == TAB_BOT_PREVIEWS && botPreviewsContainer != null) {
-            return botPreviewsContainer.checkPinchToZoom(ev);
-        }
         if (selectedType != TAB_PHOTOVIDEO && !isAnyStoryPageType(selectedType) || getParent() == null) {
             return false;
         }
@@ -401,7 +397,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
     }
 
     public boolean isSwipeBackEnabled() {
-        if (canEditStories() && (getClosestTab() == TAB_STORIES || getClosestTab() == TAB_BOT_PREVIEWS || isStoryAlbumPageType(getClosestTab())) && isActionModeShown()) {
+        if (canEditStories() && (getClosestTab() == TAB_STORIES || isStoryAlbumPageType(getClosestTab())) && isActionModeShown()) {
             return false;
         }
         if (giftsContainer != null && giftsContainer.isReordering()) {
@@ -558,9 +554,9 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             return 0;
         }
         float alpha = 0;
-        if (mediaPages[1] != null && (mediaPages[1].selectedType == TAB_PHOTOVIDEO || (mediaPages[1].selectedType == TAB_STORIES || isStoryAlbumPageType(mediaPages[1].selectedType)) && TextUtils.isEmpty(getStoriesHashtag()) || mediaPages[1].selectedType == TAB_ARCHIVED_STORIES || mediaPages[1].selectedType == TAB_SAVED_DIALOGS || mediaPages[1].selectedType == TAB_BOT_PREVIEWS || mediaPages[1].selectedType == TAB_GIFTS && giftsContainer != null && giftsContainer.canFilter()))
+        if (mediaPages[1] != null && (mediaPages[1].selectedType == TAB_PHOTOVIDEO || (mediaPages[1].selectedType == TAB_STORIES || isStoryAlbumPageType(mediaPages[1].selectedType)) && TextUtils.isEmpty(getStoriesHashtag()) || mediaPages[1].selectedType == TAB_ARCHIVED_STORIES || mediaPages[1].selectedType == TAB_SAVED_DIALOGS || mediaPages[1].selectedType == TAB_GIFTS && giftsContainer != null && giftsContainer.canFilter()))
             alpha += progress;
-        if (mediaPages[0] != null && (mediaPages[0].selectedType == TAB_PHOTOVIDEO || (mediaPages[0].selectedType == TAB_STORIES || isStoryAlbumPageType(mediaPages[0].selectedType)) && TextUtils.isEmpty(getStoriesHashtag()) || mediaPages[0].selectedType == TAB_ARCHIVED_STORIES || mediaPages[0].selectedType == TAB_SAVED_DIALOGS || mediaPages[0].selectedType == TAB_BOT_PREVIEWS || mediaPages[0].selectedType == TAB_GIFTS && giftsContainer != null && giftsContainer.canFilter()))
+        if (mediaPages[0] != null && (mediaPages[0].selectedType == TAB_PHOTOVIDEO || (mediaPages[0].selectedType == TAB_STORIES || isStoryAlbumPageType(mediaPages[0].selectedType)) && TextUtils.isEmpty(getStoriesHashtag()) || mediaPages[0].selectedType == TAB_ARCHIVED_STORIES || mediaPages[0].selectedType == TAB_SAVED_DIALOGS || mediaPages[0].selectedType == TAB_GIFTS && giftsContainer != null && giftsContainer.canFilter()))
             alpha += 1f - progress;
         return alpha;
     }
@@ -659,7 +655,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
     private SavedDialogsAdapter savedDialogsAdapter;
     private SavedMessagesSearchAdapter savedMessagesSearchAdapter;
     private ChatActivityContainer savedMessagesContainer;
-    private BotPreviewsEditContainer botPreviewsContainer;
     public ProfileGiftsContainer giftsContainer;
     public ProfileStoriesCollectionTabs storiesContainer;
     private ChatUsersAdapter chatUsersAdapter;
@@ -1603,8 +1598,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         }
         if (initialTab == TAB_GIFTS || initialTab == TAB_RECOMMENDED_CHANNELS || initialTab == TAB_SAVED_DIALOGS || initialTab == TAB_COMMON_GROUPS) {
             this.initialTab = initialTab;
-        } else if (user != null && user.bot && user.bot_has_main_app && user.bot_can_edit) {
-            this.initialTab = TAB_BOT_PREVIEWS;
         } else if (userInfo != null && userInfo.bot_info != null && userInfo.bot_info.has_preview_medias) {
             this.initialTab = TAB_STORIES;
         } else if (main_tab instanceof TLRPC.TL_profileTabPosts && (userInfo != null && userInfo.stories_pinned_available || chatInfo != null && chatInfo.stories_pinned_available || isStoriesView())) {
@@ -1976,29 +1969,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     return;
                 }
 
-                if (tab == TAB_BOT_PREVIEWS && user != null && user.bot && user.bot_has_main_app && user.bot_can_edit && botPreviewsContainer != null) {
-                    ItemOptions.makeOptions(profileActivity, photoVideoOptionsItem)
-                        .addIf(botPreviewsContainer.getItemsCount() < profileActivity.getMessagesController().botPreviewMediasMax, R.drawable.msg_addbot, getString(R.string.ProfileBotAddPreview), () -> {
-                            StoryRecorder.getInstance(profileActivity.getParentActivity(), profileActivity.getCurrentAccount()).openBot(dialog_id, botPreviewsContainer.getCurrentLang(), null);
-                        })
-                        .addIf(botPreviewsContainer.getItemsCount() > 1 && !botPreviewsContainer.isSelectedAll(), R.drawable.tabs_reorder, getString(R.string.ProfileBotReorder), () -> {
-                            botPreviewsContainer.selectAll();
-                        })
-                        .addIf(botPreviewsContainer.getItemsCount() > 0, R.drawable.msg_select, getString(botPreviewsContainer.isSelectedAll() ? R.string.ProfileBotUnSelect : R.string.ProfileBotSelect), () -> {
-                            if (botPreviewsContainer.isSelectedAll()) {
-                                botPreviewsContainer.unselectAll();
-                            } else {
-                                botPreviewsContainer.selectAll();
-                            }
-                        })
-                        .addIf(!TextUtils.isEmpty(botPreviewsContainer.getCurrentLang()), R.drawable.msg_delete, LocaleController.formatString(R.string.ProfileBotRemoveLang, TranslateAlert2.languageName(botPreviewsContainer.getCurrentLang())), true, () -> {
-                            botPreviewsContainer.deleteLang(botPreviewsContainer.getCurrentLang());
-                        })
-                        .translate(0, -dp(52))
-                        .setDimAlpha(0)
-                        .show();
-                    return;
-                }
                 if (getSelectedTab() == TAB_SAVED_DIALOGS) {
                     ItemOptions.makeOptions(profileActivity, photoVideoOptionsItem)
                         .add(R.drawable.msg_discussion, getString(R.string.SavedViewAsMessages), () -> {
@@ -2405,124 +2375,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         };
         animationSupportingArchivedStoriesAdapter = new StoriesAdapter(context, true);
         linksAdapter = new SharedLinksAdapter(context);
-        if (isBot()) {
-            botPreviewsContainer = new BotPreviewsEditContainer(context, profileActivity, dialog_id) {
-                @Override
-                public void onSelectedTabChanged() {
-                    SharedMediaLayout.this.onSelectedTabChanged();
-                }
-                @Override
-                protected boolean isSelected(MessageObject messageObject) {
-                    return selectedFiles[messageObject.getDialogId() == dialog_id ? 0 : 1].indexOfKey(messageObject.getId()) >= 0;
-                }
-                @Override
-                protected boolean select(MessageObject messageObject) {
-                    if (messageObject == null) return false;
-                    final int loadIndex = messageObject.getDialogId() == dialog_id ? 0 : 1;
-                    if (selectedFiles[loadIndex].indexOfKey(messageObject.getId()) < 0) {
-                        if (selectedFiles[0].size() + selectedFiles[1].size() >= 100) {
-                            return false;
-                        }
-                        selectedFiles[loadIndex].put(messageObject.getId(), messageObject);
-                        if (!messageObject.canDeleteMessage(false, null)) {
-                            cantDeleteMessagesCount++;
-                        }
-                        if (!isActionModeShowed) {
-                            AndroidUtilities.hideKeyboard(profileActivity.getParentActivity().getCurrentFocus());
-                            deleteItem.setVisibility(cantDeleteMessagesCount == 0 ? View.VISIBLE : View.GONE);
-                            if (gotoItem != null) {
-                                gotoItem.setVisibility(getClosestTab() != TAB_STORIES && getClosestTab() != TAB_BOT_PREVIEWS ? View.VISIBLE : View.GONE);
-                            }
-                            if (pinItem != null) {
-                                pinItem.setVisibility(View.GONE);
-                            }
-                            if (unpinItem != null) {
-                                unpinItem.setVisibility(View.GONE);
-                            }
-                            if (forwardItem != null) {
-                                forwardItem.setVisibility(getClosestTab() != TAB_STORIES && getClosestTab() != TAB_BOT_PREVIEWS ? View.VISIBLE : View.GONE);
-                            }
-                            selectedMessagesCountTextView.setNumber(selectedFiles[0].size() + selectedFiles[1].size(), false);
-                            AnimatorSet animatorSet = new AnimatorSet();
-                            ArrayList<Animator> animators = new ArrayList<>();
-                            for (int i = 0; i < actionModeViews.size(); i++) {
-                                View view2 = actionModeViews.get(i);
-                                AndroidUtilities.clearDrawableAnimation(view2);
-                                animators.add(ObjectAnimator.ofFloat(view2, View.SCALE_Y, 0.1f, 1.0f));
-                            }
-                            animatorSet.playTogether(animators);
-                            animatorSet.setDuration(250);
-                            animatorSet.start();
-                            scrolling = false;
-                            showActionMode(true);
-                        } else {
-                            selectedMessagesCountTextView.setNumber(selectedFiles[0].size() + selectedFiles[1].size(), true);
-                        }
-                        updateSelection(true);
-                        return true;
-                    }
-                    return false;
-                }
-                @Override
-                protected boolean unselect(MessageObject messageObject) {
-                    if (messageObject == null) return false;
-                    final int loadIndex = messageObject.getDialogId() == dialog_id ? 0 : 1;
-                    if (selectedFiles[loadIndex].indexOfKey(messageObject.getId()) >= 0) {
-                        selectedFiles[loadIndex].remove(messageObject.getId());
-                        if (!messageObject.canDeleteMessage(false, null)) {
-                            cantDeleteMessagesCount--;
-                        }
-                        if (selectedFiles[0].size() == 0 && selectedFiles[1].size() == 0) {
-                            AndroidUtilities.hideKeyboard(profileActivity.getParentActivity().getCurrentFocus());
-                            selectedFiles[0].clear();
-                            selectedFiles[1].clear();
-                            deleteItem.setVisibility(cantDeleteMessagesCount == 0 ? View.VISIBLE : View.GONE);
-                            if (gotoItem != null) {
-                                gotoItem.setVisibility(getClosestTab() != TAB_STORIES && getClosestTab() != TAB_BOT_PREVIEWS ? View.VISIBLE : View.GONE);
-                            }
-                            if (pinItem != null) {
-                                pinItem.setVisibility(View.GONE);
-                            }
-                            if (unpinItem != null) {
-                                unpinItem.setVisibility(View.GONE);
-                            }
-                            if (forwardItem != null) {
-                                forwardItem.setVisibility(getClosestTab() != TAB_STORIES && getClosestTab() != TAB_BOT_PREVIEWS ? View.VISIBLE : View.GONE);
-                            }
-                            AnimatorSet animatorSet = new AnimatorSet();
-                            ArrayList<Animator> animators = new ArrayList<>();
-                            for (int i = 0; i < actionModeViews.size(); i++) {
-                                View view2 = actionModeViews.get(i);
-                                AndroidUtilities.clearDrawableAnimation(view2);
-                                animators.add(ObjectAnimator.ofFloat(view2, View.SCALE_Y, 1.0f, 0.1f));
-                            }
-                            animatorSet.playTogether(animators);
-                            animatorSet.setDuration(250);
-                            animatorSet.start();
-                            scrolling = false;
-                            AndroidUtilities.runOnUIThread(() -> {
-                                if (isActionModeShowed) {
-                                    showActionMode(false);
-                                }
-                            }, 20);
-                        } else {
-                            selectedMessagesCountTextView.setNumber(selectedFiles[0].size() + selectedFiles[1].size(), true);
-                        }
-                        updateSelection(true);
-                        return true;
-                    }
-                    return false;
-                }
-                @Override
-                protected boolean isActionModeShowed() {
-                    return isActionModeShowed;
-                }
-                @Override
-                public int getStartedTrackingX() {
-                    return startedTrackingX;
-                }
-            };
-        } else if (profileActivity instanceof ProfileActivity) {
+        if (profileActivity instanceof ProfileActivity && !isBot()) {
             saveItem = new TextView(context);
             saveItem.setText(getString(R.string.Save).toUpperCase());
             saveItem.setTypeface(AndroidUtilities.bold());
@@ -4745,7 +4598,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             if (lastVisiblePosition + 1 >= profileActivity.getMessagesController().getSavedMessagesController().getLoadedCount()) {
                 profileActivity.getMessagesController().getSavedMessagesController().loadDialogs(false);
             }
-        } else if (mediaPage.selectedType != TAB_RECOMMENDED_CHANNELS && mediaPage.selectedType != TAB_SAVED_MESSAGES && mediaPage.selectedType != TAB_BOT_PREVIEWS && mediaPage.selectedType != TAB_GIFTS) {
+        } else if (mediaPage.selectedType != TAB_RECOMMENDED_CHANNELS && mediaPage.selectedType != TAB_SAVED_MESSAGES && mediaPage.selectedType != TAB_GIFTS) {
             final int threshold;
             if (mediaPage.selectedType == 0) {
                 threshold = 3;
@@ -4870,7 +4723,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             type != TAB_COMMON_GROUPS &&
             type != TAB_SAVED_DIALOGS &&
             type != TAB_RECOMMENDED_CHANNELS &&
-            type != TAB_BOT_PREVIEWS &&
             type != TAB_GIFTS
         );
     }
@@ -4885,7 +4737,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
 
     public boolean isOptionsItemVisible() {
         final int type = mediaPages[0].selectedType;
-        return type == TAB_PHOTOVIDEO || isAnyStoryPageType(type) || type == TAB_SAVED_DIALOGS || type == TAB_BOT_PREVIEWS || type == TAB_GIFTS && giftsContainer != null && giftsContainer.canFilter();
+        return type == TAB_PHOTOVIDEO || isAnyStoryPageType(type) || type == TAB_SAVED_DIALOGS || type == TAB_GIFTS && giftsContainer != null && giftsContainer.canFilter();
     }
 
     public int getSelectedTab() {
@@ -5111,57 +4963,30 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
 
     public void onActionBarItemClick(View v, int id) {
         if (id == delete) {
-            if (isAnyStoryPageType(getSelectedTab()) || getSelectedTab() == TAB_BOT_PREVIEWS) {
+            if (isAnyStoryPageType(getSelectedTab())) {
                 if (selectedFiles[0] != null) {
-                    if (isBot() && botPreviewsContainer != null && botPreviewsContainer.getCurrentList() != null) {
-                        final StoriesController.BotPreviewsList list = botPreviewsContainer.getCurrentList();
-                        ArrayList<TLRPC.MessageMedia> medias = new ArrayList<>();
-                        for (int i = 0; i < selectedFiles[0].size(); ++i) {
-                            MessageObject messageObject = selectedFiles[0].valueAt(i);
-                            if (messageObject.storyItem != null) {
-                                medias.add(messageObject.storyItem.media);
-                            }
+                    ArrayList<TL_stories.StoryItem> storyItems = new ArrayList<>();
+                    for (int i = 0; i < selectedFiles[0].size(); ++i) {
+                        MessageObject messageObject = selectedFiles[0].valueAt(i);
+                        if (messageObject.storyItem != null) {
+                            storyItems.add(messageObject.storyItem);
                         }
-                        if (!medias.isEmpty()) {
-                            AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), resourcesProvider);
-                            builder.setTitle(medias.size() > 1 ? LocaleController.getString(R.string.DeleteBotPreviewsTitle) : LocaleController.getString(R.string.DeleteBotPreviewTitle));
-                            builder.setMessage(LocaleController.formatPluralString("DeleteBotPreviewsSubtitle", medias.size()));
-                            builder.setPositiveButton(LocaleController.getString(R.string.Delete), (dialog, which) -> {
-                                list.delete(medias);
-                                BulletinFactory.of(profileActivity).createSimpleBulletin(R.raw.ic_delete, LocaleController.formatPluralString("BotPreviewsDeleted", medias.size())).show();
-                                closeActionMode(false);
-                            });
-                            builder.setNegativeButton(LocaleController.getString(R.string.Cancel), (dialog, which) -> {
-                                dialog.dismiss();
-                            });
-                            AlertDialog dialog = builder.create();
-                            dialog.show();
-                            dialog.redPositive();
-                        }
-                    } else {
-                        ArrayList<TL_stories.StoryItem> storyItems = new ArrayList<>();
-                        for (int i = 0; i < selectedFiles[0].size(); ++i) {
-                            MessageObject messageObject = selectedFiles[0].valueAt(i);
-                            if (messageObject.storyItem != null) {
-                                storyItems.add(messageObject.storyItem);
-                            }
-                        }
-                        if (!storyItems.isEmpty()) {
-                            AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), resourcesProvider);
-                            builder.setTitle(storyItems.size() > 1 ? LocaleController.getString(R.string.DeleteStoriesTitle) : LocaleController.getString(R.string.DeleteStoryTitle));
-                            builder.setMessage(LocaleController.formatPluralString("DeleteStoriesSubtitle", storyItems.size()));
-                            builder.setPositiveButton(LocaleController.getString(R.string.Delete), (dialog, which) -> {
-                                profileActivity.getMessagesController().getStoriesController().deleteStories(dialog_id, storyItems);
-                                BulletinFactory.of(profileActivity).createSimpleBulletin(R.raw.ic_delete, LocaleController.formatPluralString("StoriesDeleted", storyItems.size())).show();
-                                closeActionMode(false);
-                            });
-                            builder.setNegativeButton(LocaleController.getString(R.string.Cancel), (dialog, which) -> {
-                                dialog.dismiss();
-                            });
-                            AlertDialog dialog = builder.create();
-                            dialog.show();
-                            dialog.redPositive();
-                        }
+                    }
+                    if (!storyItems.isEmpty()) {
+                        AlertDialog.Builder builder = new AlertDialog.Builder(getContext(), resourcesProvider);
+                        builder.setTitle(storyItems.size() > 1 ? LocaleController.getString(R.string.DeleteStoriesTitle) : LocaleController.getString(R.string.DeleteStoryTitle));
+                        builder.setMessage(LocaleController.formatPluralString("DeleteStoriesSubtitle", storyItems.size()));
+                        builder.setPositiveButton(LocaleController.getString(R.string.Delete), (dialog, which) -> {
+                            profileActivity.getMessagesController().getStoriesController().deleteStories(dialog_id, storyItems);
+                            BulletinFactory.of(profileActivity).createSimpleBulletin(R.raw.ic_delete, LocaleController.formatPluralString("StoriesDeleted", storyItems.size())).show();
+                            closeActionMode(false);
+                        });
+                        builder.setNegativeButton(LocaleController.getString(R.string.Cancel), (dialog, which) -> {
+                            dialog.dismiss();
+                        });
+                        AlertDialog dialog = builder.create();
+                        dialog.show();
+                        dialog.redPositive();
                     }
                 }
                 return;
@@ -5530,13 +5355,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         if (canEditStories() && isActionModeShowed && (getClosestTab() == TAB_STORIES || isStoryAlbumPageType(getClosestTab()))) {
             return false;
         }
-        if (mediaPages[0] != null && mediaPages[0].selectedType == TAB_BOT_PREVIEWS && botPreviewsContainer != null && !botPreviewsContainer.canScroll(forward)) {
-            return false;
-        }
         if (mediaPages[0] != null && mediaPages[0].selectedType == TAB_GIFTS && giftsContainer != null && !giftsContainer.canScroll(forward)) {
-            return false;
-        }
-        if (isActionModeShowed && mediaPages[0] != null && mediaPages[0].selectedType == TAB_BOT_PREVIEWS) {
             return false;
         }
         if (giftsContainer != null && giftsContainer.isReordering()) {
@@ -5673,9 +5492,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
     }
 
     public RecyclerListView getCurrentListView() {
-        if (mediaPages[0].selectedType == TAB_BOT_PREVIEWS) {
-            return botPreviewsContainer.getCurrentListView();
-        }
         if (mediaPages[0].selectedType == TAB_GIFTS) {
             return giftsContainer.getCurrentListView();
         }
@@ -5907,10 +5723,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             }
             cantDeleteMessagesCount = 0;
             onActionModeSelectedUpdate(selectedFiles[0]);
-            if (botPreviewsContainer != null) {
-                botPreviewsContainer.unselectAll();
-                botPreviewsContainer.updateSelection(true);
-            }
             showActionMode(false);
             updateRowsSelection(uncheckAnimated);
             if (savedDialogsAdapter != null) {
@@ -5929,9 +5741,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             float t = -(getMeasuredHeight() - Math.max(height, dp(mediaPages[a].selectedType == TAB_STORIES ? 280 : 120))) / 2f;
             mediaPages[a].emptyView.setTranslationY(t);
             mediaPages[a].progressView.setTranslationY(-t);
-        }
-        if (botPreviewsContainer != null) {
-            botPreviewsContainer.setVisibleHeight(height);
         }
         if (giftsContainer != null) {
             giftsContainer.setVisibleHeight(height);
@@ -6781,8 +6590,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         boolean hasSavedDialogs = false;
         boolean hasSavedMessages = savedMessagesContainer != null && sharedMediaPreloader != null && sharedMediaPreloader.hasSavedMessages;
         final TLRPC.User user = dialog_id <= 0 || profileActivity == null ? null : profileActivity.getMessagesController().getUser(dialog_id);
-        boolean hasEditBotPreviews = user != null && user.bot && user.bot_has_main_app && user.bot_can_edit;
-        boolean hasBotPreviews = user != null && user.bot && !user.bot_can_edit && (userInfo != null && userInfo.bot_info != null && userInfo.bot_info.has_preview_medias) && !hasEditBotPreviews;
+        boolean hasBotPreviews = user != null && user.bot && !user.bot_can_edit && (userInfo != null && userInfo.bot_info != null && userInfo.bot_info.has_preview_medias);
         boolean hasStories = (DialogObject.isUserDialog(dialog_id) || DialogObject.isChatDialog(dialog_id)) && !DialogObject.isEncryptedDialog(dialog_id) && (userInfo != null && userInfo.stories_pinned_available || info != null && info.stories_pinned_available || isStoriesView()) && includeStories();
         boolean hasGifts = giftsContainer != null && (userInfo != null && userInfo.stargifts_count > 0 || info != null && info.stargifts_count > 0);
         final TLRPC.ProfileTab main_tab = info != null ? info.main_tab : userInfo != null ? userInfo.main_tab : null;
@@ -6791,9 +6599,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             changed++;
         }
         if ((hasStories || hasBotPreviews) != scrollSlidingTextTabStrip.hasTab(TAB_STORIES)) {
-            changed++;
-        }
-        if (hasEditBotPreviews != scrollSlidingTextTabStrip.hasTab(TAB_BOT_PREVIEWS)) {
             changed++;
         }
         if (isSearchingStories() != scrollSlidingTextTabStrip.hasTab(TAB_STORIES)) {
@@ -6911,9 +6716,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             if (hasGifts) {
                 tabs.add(new Pair(TAB_GIFTS, TextUtils.concat(getString(R.string.ProfileGifts), giftsContainer.getLastEmojis(null))));
                 giftsLastHash = giftsContainer.getLastEmojisHash();
-            }
-            if (hasEditBotPreviews) {
-                tabs.add(new Pair(TAB_BOT_PREVIEWS, getString(R.string.ProfileBotPreviewTab)));
             }
             if (!isStoriesView()) {
                 if (hasSavedDialogs) {
@@ -7284,15 +7086,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     AndroidUtilities.removeFromParent(savedMessagesContainer);
                     mediaPages[a].addView(savedMessagesContainer, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.FILL, 0, 48 + 8, 0, 0));
                 }
-            } else if (mediaPages[a].selectedType == TAB_BOT_PREVIEWS) {
-                if (currentAdapter != null) {
-                    recycleAdapter(currentAdapter);
-                    mediaPages[a].listView.setAdapter(null);
-                }
-                if (botPreviewsContainer != null && botPreviewsContainer.getParent() != mediaPages[a]) {
-                    AndroidUtilities.removeFromParent(botPreviewsContainer);
-                    mediaPages[a].addView(botPreviewsContainer);
-                }
             } else if (mediaPages[a].selectedType == TAB_GIFTS) {
                 if (currentAdapter != null) {
                     recycleAdapter(currentAdapter);
@@ -7343,13 +7136,10 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 savedMessagesContainer.chatActivity.onRemoveFromParent();
                 mediaPages[a].removeView(savedMessagesContainer);
             }
-            if (botPreviewsContainer != null && mediaPages[a].selectedType != TAB_BOT_PREVIEWS && botPreviewsContainer.getParent() == mediaPages[a]) {
-                mediaPages[a].removeView(botPreviewsContainer);
-            }
             if (giftsContainer != null && mediaPages[a].selectedType != TAB_GIFTS && giftsContainer.getParent() == mediaPages[a]) {
                 mediaPages[a].removeView(giftsContainer);
             }
-            if (mediaPages[a].selectedType == TAB_PHOTOVIDEO || mediaPages[a].selectedType == TAB_SAVED_DIALOGS || isAnyStoryPageType(mediaPages[a].selectedType)|| mediaPages[a].selectedType == TAB_VOICE || mediaPages[a].selectedType == TAB_GIF || mediaPages[a].selectedType == TAB_COMMON_GROUPS || mediaPages[a].selectedType == TAB_GROUPUSERS && !delegate.canSearchMembers() || mediaPages[a].selectedType == TAB_RECOMMENDED_CHANNELS || mediaPages[a].selectedType == TAB_BOT_PREVIEWS || mediaPages[a].selectedType == TAB_GIFTS) {
+            if (mediaPages[a].selectedType == TAB_PHOTOVIDEO || mediaPages[a].selectedType == TAB_SAVED_DIALOGS || isAnyStoryPageType(mediaPages[a].selectedType)|| mediaPages[a].selectedType == TAB_VOICE || mediaPages[a].selectedType == TAB_GIF || mediaPages[a].selectedType == TAB_COMMON_GROUPS || mediaPages[a].selectedType == TAB_GROUPUSERS && !delegate.canSearchMembers() || mediaPages[a].selectedType == TAB_RECOMMENDED_CHANNELS || mediaPages[a].selectedType == TAB_GIFTS) {
                 if (animated) {
                     searchItemState = 2;
                 } else {
@@ -7404,8 +7194,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             } else if (mediaPages[a].selectedType == TAB_SAVED_DIALOGS) {
 
             } else if (mediaPages[a].selectedType == TAB_SAVED_MESSAGES) {
-
-            } else if (mediaPages[a].selectedType == TAB_BOT_PREVIEWS) {
 
             } else if (mediaPages[a].selectedType == TAB_GIFTS) {
 
@@ -7633,10 +7421,10 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         }
         deleteItem.setVisibility(cantDeleteMessagesCount == 0 ? View.VISIBLE : View.GONE);
         if (gotoItem != null) {
-            gotoItem.setVisibility(getClosestTab() != TAB_STORIES && getClosestTab() != TAB_BOT_PREVIEWS && getClosestTab() != TAB_GIFTS ? View.VISIBLE : View.GONE);
+            gotoItem.setVisibility(getClosestTab() != TAB_STORIES && getClosestTab() != TAB_GIFTS ? View.VISIBLE : View.GONE);
         }
         if (forwardItem != null) {
-            forwardItem.setVisibility(getClosestTab() != TAB_STORIES && getClosestTab() != TAB_BOT_PREVIEWS && getClosestTab() != TAB_GIFTS ? View.VISIBLE : View.GONE);
+            forwardItem.setVisibility(getClosestTab() != TAB_STORIES && getClosestTab() != TAB_GIFTS ? View.VISIBLE : View.GONE);
         }
         selectedMessagesCountTextView.setNumber(1, false);
         AnimatorSet animatorSet = new AnimatorSet();
@@ -7704,10 +7492,10 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 selectedMessagesCountTextView.setNumber(selectedFiles[0].size() + selectedFiles[1].size(), true);
                 deleteItem.setVisibility(cantDeleteMessagesCount == 0 ? View.VISIBLE : View.GONE);
                 if (gotoItem != null) {
-                    gotoItem.setVisibility(getClosestTab() != TAB_STORIES && getClosestTab() != TAB_BOT_PREVIEWS && getClosestTab() != TAB_GIFTS && selectedFiles[0].size() == 1 ? View.VISIBLE : View.GONE);
+                    gotoItem.setVisibility(getClosestTab() != TAB_STORIES && getClosestTab() != TAB_GIFTS && selectedFiles[0].size() == 1 ? View.VISIBLE : View.GONE);
                 }
                 if (forwardItem != null) {
-                    forwardItem.setVisibility(getClosestTab() != TAB_STORIES && getClosestTab() != TAB_BOT_PREVIEWS && getClosestTab() != TAB_GIFTS ? View.VISIBLE : View.GONE);
+                    forwardItem.setVisibility(getClosestTab() != TAB_STORIES && getClosestTab() != TAB_GIFTS ? View.VISIBLE : View.GONE);
                 }
                 updateStoriesPinButton();
             }
@@ -10261,12 +10049,9 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         return 0;
     }
 
-    public String getBotPreviewsSubtitle(boolean edit) {
+    public String getBotPreviewsSubtitle() {
         if (!isBot()) {
             return getString(R.string.BotPreviewEmpty);
-        }
-        if (edit && botPreviewsContainer != null) {
-            return botPreviewsContainer.getBotPreviewsSubtitle();
         }
         int images = 0, videos = 0;
         if (storiesAdapter != null && storiesAdapter.storiesList != null) {
