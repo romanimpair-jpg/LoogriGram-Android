@@ -648,36 +648,6 @@ public class BotWebViewSheet extends Dialog implements NotificationCenter.Notifi
             }
 
             @Override
-            public void onEmojiStatusGranted(boolean granted) {
-                final TLRPC.User bot = MessagesController.getInstance(currentAccount).getUser(botId);
-                if (granted) {
-                    BulletinFactory.UndoObject undo = new BulletinFactory.UndoObject();
-                    undo.onUndo = () -> {
-                        TL_bots.toggleUserEmojiStatusPermission req = new TL_bots.toggleUserEmojiStatusPermission();
-                        req.bot = MessagesController.getInstance(currentAccount).getInputUser(botId);
-                        req.enabled = false;
-                        ConnectionsManager.getInstance(currentAccount).sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
-                            if (res instanceof TLRPC.TL_boolTrue) {
-                                webViewContainer.notifyEmojiStatusAccess("cancelled");
-                            } else {
-                                showBulletin(b -> b.makeForError(err));
-                            }
-                        }));
-                    };
-                    showBulletin(b ->
-                            b
-                                    .createUsersBulletin(Arrays.asList(bot), AndroidUtilities.replaceTags(LocaleController.formatString(R.string.BotEmojiStatusPermissionRequestGranted, UserObject.getUserName(bot))), null, undo)
-                                    .setDuration(DURATION_PROLONG)
-                    );
-                }
-            }
-
-            @Override
-            public void onEmojiStatusSet(TLRPC.Document document) {
-                showBulletin(b -> b.createEmojiBulletin(document, LocaleController.getString(R.string.BotEmojiStatusUpdated)));
-            }
-
-            @Override
             public void onSetBackButtonVisible(boolean visible) {
                 AndroidUtilities.updateImageViewImageAnimated(actionBar.getBackButton(), (backButtonShown = visible) ? R.drawable.ic_ab_back : R.drawable.ic_close_white);
                 if (fullscreenButtons != null) {

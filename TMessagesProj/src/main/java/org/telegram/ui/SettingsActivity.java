@@ -134,7 +134,6 @@ import org.telegram.ui.bots.BotBiometry;
 import org.telegram.ui.bots.BotDownloads;
 import org.telegram.ui.bots.BotLocation;
 import org.telegram.ui.bots.BotWebViewSheet;
-import org.telegram.ui.bots.SetupEmojiStatusSheet;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -1702,7 +1701,6 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 BotBiometry.clear();
                 BotLocation.clear();
                 BotDownloads.clear();
-                SetupEmojiStatusSheet.clear();
             } else if (which == 30) {
                 AuthTokensHelper.clearLogInTokens();
             } else if (which == 31) {

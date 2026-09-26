@@ -7235,6 +7235,17 @@ public class MessagesController extends BaseController implements NotificationCe
                         }
                     }
                     fullUsers.put(user.id, userFull);
+                    // LoogriGram: a bot holding this can set our emoji status. Nothing
+                    // here shows one, so a permission granted earlier, from here or
+                    // from another client, is revoked as soon as we see it, as on
+                    // desktop.
+                    if (userFull.bot_can_manage_emoji_status) {
+                        userFull.bot_can_manage_emoji_status = false;
+                        final TL_bots.toggleUserEmojiStatusPermission revoke = new TL_bots.toggleUserEmojiStatusPermission();
+                        revoke.bot = getInputUser(user);
+                        revoke.enabled = false;
+                        getConnectionsManager().sendRequest(revoke, null);
+                    }
                     getTranslateController().updateDialogFull(user.id);
                     GiftsController.getInstance(currentAccount).invalidateProfileGifts(userFull);
                     loadingFullUsers.remove(user.id);
