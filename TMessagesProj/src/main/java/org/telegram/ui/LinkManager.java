@@ -870,8 +870,6 @@ public class LinkManager {
             if ("archive-and-mute".equalsIgnoreCase(second))
                 scrollTo("newChatsRow");
             if ("data-settings".equalsIgnoreCase(second)) {
-                if ("sync-contacts".equalsIgnoreCase(third))
-                    scrollTo("contactsSyncRow");
                 if ("delete-synced".equalsIgnoreCase(third))
                     scrollTo("contactsDeleteRow");
                 if ("suggest-contacts".equalsIgnoreCase(third))
