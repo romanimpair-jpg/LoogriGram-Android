@@ -30788,10 +30788,6 @@ public class ChatActivity extends BaseFragment implements
                     setVisiblePart(getY() + emptyViewContent.getY(), getServiceHeight(this));
                 }
             };
-            ScaleStateListAnimator.apply(greetingsInfo, .02f, 1.2f);
-            greetingsInfo.setOnClickListener(v -> {
-                showDialog(new PremiumFeatureBottomSheet(this, PremiumPreviewFragment.PREMIUM_FEATURE_BUSINESS, true));
-            });
         }
         if (greetingsInfo == null) return;
         if (!show) {
@@ -30800,23 +30796,15 @@ public class ChatActivity extends BaseFragment implements
         } else {
             greetingsInfo.setVisibility(View.VISIBLE);
         }
+        // LoogriGram: the line ended in a "how?" pill, and a tap on it opened
+        // Business's Premium page. As on desktop, the greeting someone else
+        // set still shows with its line, and there is nothing to tap.
         String string = LocaleController.formatString(userInfo != null && userInfo.business_intro != null && TextUtils.isEmpty(userInfo.business_intro.title) && TextUtils.isEmpty(userInfo.business_intro.title) ? R.string.GreetingHowSticker : R.string.GreetingHow, UserObject.getFirstName(currentUser));
-        int fromIndex = string.indexOf("**"), toIndex;
-        SpannableStringBuilder ssb = new SpannableStringBuilder(string);
+        final int fromIndex = string.indexOf("**");
         if (fromIndex > 0) {
-            string = string.substring(0, fromIndex) + string.substring(fromIndex + 2);
-            toIndex = string.indexOf("**");
-            if (toIndex > 0) {
-                string = string.substring(0, toIndex) + string.substring(toIndex + 2);
-                ssb = new SpannableStringBuilder(string);
-                ProfileActivity.ShowDrawable drawable = new ProfileActivity.ShowDrawable(string.substring(fromIndex, toIndex));
-                drawable.setTextColor(Color.WHITE);
-                drawable.setBackgroundColor(0x1e000000);
-                drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
-                ssb.setSpan(new ImageSpan(drawable), fromIndex, toIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            }
+            string = string.substring(0, fromIndex).trim();
         }
-        greetingsInfo.setCustomText(ssb);
+        greetingsInfo.setCustomText(string);
         greetingsInfo.setOverrideTextMaxWidth(HintView2.cutInFancyHalf(string, (TextPaint) getThemedPaint(Theme.key_paint_chatActionText)));
         if (greetingsInfo.getParent() != null && (!show || greetingsInfo.getParent() != emptyViewContent)) {
             ((ViewGroup) greetingsInfo.getParent()).removeView(greetingsInfo);
