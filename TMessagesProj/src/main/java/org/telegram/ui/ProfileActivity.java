@@ -581,7 +581,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private final static int set_username = 43;
     private final static int bot_privacy = 44;
     private final static int delete_group = 45;
-    private final static int enable_no_forwards = 46;
     private final static int disable_no_forwards = 47;
 
     private Rect rect = new Rect();
@@ -2579,15 +2578,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     leaveChatPressed(false);
                 } else if (id == delete_group) {
                     leaveChatPressed(true);
-                } else if (id == enable_no_forwards) {
-                    if (!getUserConfig().isPremium()) {
-                        new PremiumFeatureBottomSheet(ProfileActivity.this, getContext(), currentAccount, false, PremiumPreviewFragment.PREMIUM_FEATURE_SHARING_DISABLE, false, null).show();
-                        return;
-                    }
-
-                    AlertsCreator.showDisableSharingInfo(context, resourcesProvider, () -> toggleNoForwards(true));
                 } else if (id == disable_no_forwards) {
-                    toggleNoForwards(false);
+                    enableSharing();
                 } else if (id == delete_topic) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
                     builder.setTitle(LocaleController.getPluralString("DeleteTopics", 1));
@@ -5872,17 +5864,17 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         return fragmentView;
     }
 
-    private void toggleNoForwards(boolean enabled) {
-        getMessagesController().toggleChatNoForwards(userId, 0, enabled, (res, err) -> {
+    private void enableSharing() {
+        getMessagesController().toggleChatNoForwards(userId, 0, false, (res, err) -> {
             if (finishFragmentIfPreviousIsChatActivity()) {
                 return;
             }
 
             if (BulletinFactory.canShowBulletin(ProfileActivity.this)) {
                 if (res == MessagesController.TOGGLE_NO_FORWARDS_RESULT_OK) {
-                    BulletinFactory.createDissableSharingBulletin(ProfileActivity.this, null, enabled).show();
+                    BulletinFactory.createDissableSharingBulletin(ProfileActivity.this, null, false).show();
                 } else if (res == MessagesController.TOGGLE_NO_FORWARDS_RESULT_PENDING) {
-                    BulletinFactory.createDissableSharingBulletin(ProfileActivity.this, DialogObject.getShortName(userId), enabled).show();
+                    BulletinFactory.createDissableSharingBulletin(ProfileActivity.this, DialogObject.getShortName(userId), false).show();
                 } else if (err != null) {
                     BulletinFactory.showError(err);
                 }
@@ -9170,9 +9162,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         otherItem.hideSubItem(bot_privacy);
                     }
 
-                    final boolean forwardsAllowed = !userInfo.noforwards_my_enabled && !userInfo.noforwards_peer_enabled;
-                    otherItem.setSubItemShown(enable_no_forwards, forwardsAllowed);
-                    otherItem.setSubItemShown(disable_no_forwards, !forwardsAllowed);
+                    otherItem.setSubItemShown(disable_no_forwards, userInfo.noforwards_my_enabled || userInfo.noforwards_peer_enabled);
                 }
             }
         } else if (id == NotificationCenter.privacyRulesUpdated) {
@@ -11986,12 +11976,12 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     otherItem.setSubItemShown(start_secret_chat, DialogObject.isEmpty(getMessagesController().isUserContactBlocked(userId)));
 
                     if (userInfo != null) {
-                        otherItem.addSubItem(enable_no_forwards, R.drawable.menu_share_off_24, getString(R.string.DisableSharing));
+                        // LoogriGram: turning sharing off is Premium's on the server, so,
+                        // as on desktop, the menu only offers to turn it back on.
+                        // Upstream offered "Disable Sharing" to everyone and answered
+                        // with Premium's sheet.
                         otherItem.addSubItem(disable_no_forwards, R.drawable.menu_share_on_24, getString(R.string.EnableSharing));
-
-                        final boolean forwardsAllowed = !userInfo.noforwards_my_enabled && !userInfo.noforwards_peer_enabled;
-                        otherItem.setSubItemShown(enable_no_forwards, forwardsAllowed);
-                        otherItem.setSubItemShown(disable_no_forwards, !forwardsAllowed);
+                        otherItem.setSubItemShown(disable_no_forwards, userInfo.noforwards_my_enabled || userInfo.noforwards_peer_enabled);
                     }
                 }
                 if (!isBot && getContactsController().contactsDict.get(userId) != null) {
