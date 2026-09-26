@@ -18,9 +18,9 @@ depends on.
 |---|---|
 | Fork, CI, degoogling | Done. No Google bytecode in the APK, verified in the dex. The last Google-shaped code went on 2026-09-23/24: the Play install referrer and the four Chromecast stubs |
 | Installed on the phone | **Yes.** `gf20af361`, installed 2026-09-22 over `adb` (`adb install -r` succeeded, so the key matched); launches clean. Not rechecked since: the phone was not on USB on 2026-09-24. `gaf5d70a5` built green on 2026-09-22 but was never installed |
-| Latest release | `gf2478ebb` (2026-09-25, green), until the full build below lands. Never installed. It superseded the crashing `g1ec92ae0` (trap 0e) - a buggy Latest is superseded by the next build, never deleted, the user's rule |
-| Pending build | Full build of `b81ce49d` dispatched 2026-09-26 ([run 36198351640](https://github.com/romanimpair-jpg/LoogriGram-Android/actions/runs/36198351640)); its result was not read here - the user reports builds. If green it is `gb81ce49d`. **It is the first full build carrying `14fae893`, which changed C++** (the native flood-wait report) - no compile ever saw that |
-| Premium pass | Well along (2026-09-25/26, 31 commits): the getters' non-Stories sites are gone, and 48 Premium-screen entry points remain of ~100. See "Remaining work" |
+| Latest release | `gb81ce49d` (2026-09-26, green, reported by the user), until the full build below lands. Not known to be installed. The line before it: `gf2478ebb`, which superseded the crashing `g1ec92ae0` (trap 0e) - a buggy Latest is superseded by the next build, never deleted, the user's rule |
+| Pending build | Full build of `20294896` dispatched 2026-09-26 ([run 36232289359](https://github.com/romanimpair-jpg/LoogriGram-Android/actions/runs/36232289359)); its result was not read here - the user reports builds. If green it is `g20294896`. It carries the second 2026-09-26 session's 17 commits; no C++ changed, but resources and the manifest did (the Premium launcher icons), which a compile validates but only a build packages |
+| Premium pass | Nearly done outside the parity passes (2026-09-25/26, 48 commits over two sessions). 27 Premium-screen entry points remain of ~100, every one inside Stories, the article editor, Business or the Premium sheets themselves; emoji statuses, Premium stars and bot icons are drawn for nobody. See "Remaining work" |
 | App name | Done — launcher, in-app strings, and the two wordmark screens |
 | Phone contacts | **Never touched.** Permissions, account and sync adapter all gone |
 | Updater | Ours, from this repo's releases. Checks on every cold start, then hourly; manual row in Settings (2026-09-21). Since `ec7c9d55` (2026-09-24) a download waiting to be installed no longer blocks the check: a newer release replaces it and one no longer Latest is dropped - the installed `gf20af361` does not have that yet. **Nobody has seen the automatic check find a release** |
@@ -62,19 +62,55 @@ The installed APK: ~44.5 MB, `lib/arm64-v8a/libtmessages.49.so` only, signed
 fingerprint is how to confirm a later build carries the same key - and it must,
 because Android will refuse an update signed with any other.
 
-### Start here next session (written 2026-09-26)
+### Start here next session (written 2026-09-26, end of the second session)
 
-1. **Ask the user how full build `b81ce49d` went** (run 36198351640). If
-   it failed, fix from `--log-failed` - suspect the C++ of `14fae893`
-   first (ConnectionsManager.cpp, Defines.h, TgNetWrapper.cpp), the only
-   native change since `gf2478ebb`. A failure in "Install Android SDK
-   components" with "Error on ZipFile unknown archive" is a corrupt NDK
-   download: just redispatch. Every commit up to `b81ce49d` compiles.
+1. **Ask the user how full build `20294896` went** (run 36232289359;
+   `gb81ce49d` before it was green). If it failed, fix from
+   `--log-failed`. No native code changed since `gb81ce49d`; resources
+   and the manifest did (`ee972df1`, the Premium launcher icons). A
+   failure in "Install Android SDK components" with "Error on ZipFile
+   unknown archive" is a corrupt NDK download: just redispatch. Every
+   commit compiles except `e53ce275` and the pair `ee75d83b`/`873fe3ab`,
+   each fixed by the commit after it (`b2682a10`, `0d485c6a`) - trap 0j.
 2. **Install it** (phone on USB; `adb` at
-   `C:\Users\Loogris\platform-tools\adb.exe`). Nothing since `gf20af361`
-   has been on the phone, so everything below is unseen.
+   `C:\Users\Loogris\platform-tools\adb.exe`). The notes know of nothing
+   since `gf20af361` on the phone, so everything below is unseen.
 3. **After installing, look first where a mistake would be silent** - a
-   compile draws nothing. From 2026-09-25/26:
+   compile draws nothing. From the second 2026-09-26 session:
+   - **the chat list**: rows lost the space an emoji status or bot icon
+     reserved - names, the mute icon and the verified check must sit right
+     (`873fe3ab` rewrote DialogCell's layout math); the title reads
+     "LoogriGram" with nothing beside it;
+   - **a group's messages**: author names, admin badges and topic chips,
+     with no status after the name;
+   - **profiles**: the name row (verified or scam only); the header colour
+     of someone wearing a collectible (their own profile colour now); the
+     pinned-gift ring and the story ring; a bot's profile has no
+     emoji-status permission row; a private chat's menu offers only
+     "Enable Sharing", and only when sharing is off;
+   - **Privacy and Security**: no Voice Messages, Messages or Gifts rows;
+     the Invites and Calls exception pickers have no "User types" section,
+     and each row's summary still reads sensibly;
+     tg://settings/privacy/voice, /messages and /gifts open Privacy and
+     Security;
+   - **Appearance**: no name-colour row, and three launcher icons
+     (Default, Vintage, Aqua);
+   - **a folder's edit screen**: the tag colour picker (PeerColorGrid, cut
+     down to folders in `b2682a10`);
+   - **a channel's admin log**: "changed colour" entries keep their dots
+     (PeerColorSpan moved out of the deleted screen);
+   - **pinning a gift past the limit**: the unpin sheet's gift cells
+     (`ProfileGiftsContainer.UnpinGiftCell`);
+   - **a long press on a custom emoji**: no "Set as Status";
+   - **the report bar** in a chat with a stranger: no emoji-status or
+     bot-verification hint under it;
+   - **an empty chat with a Business greeting**: the line has no "how?"
+     and takes no tap;
+   - Settings -> Reactions lists no Premium reactions; a channel's Similar
+     tab has no "More similar" block and a counter matching the list; the
+     translation sheet has no "Translate Entire Chat".
+
+   From the first 2026-09-26 session, built in `gb81ce49d` and also unseen:
    - **Saved Messages**: no tags anywhere, no reactions (double-tap, the
      menu's row); search there works as plain search; forwarding to it
      shows the ordinary "Forwarded to Saved Messages" bulletin;
@@ -355,6 +391,26 @@ Each of these was hit here. Do not relearn them.
    3,800 lines; custom emoji, 1,350) with a brief carrying these rules,
    the checkers and the desktop decision to copy - then reviewed here:
    re-run the checkers, read the risky joins, compile.
+
+0j. **Run every checker, and what they still miss, seen 2026-09-26.**
+   Three compiles failed. Two were stacked annotations again (`@Keep`,
+   `@Nullable`, from `ee75d83b` and `873fe3ab`), which
+   `check_annotations.py` catches - it was not run; run all of
+   `dropimports.py`, `orphan_private.py`, `check_annotations.py` and
+   `freed.py` before each commit. The rest the checkers cannot see:
+   - a nested class moved out of a class being deleted still read the
+     outer class's static constants (`PAGE_NAME`, `e53ce275`, fixed in
+     `b2682a10`) - grep a moved body for every static member of the old
+     outer class, not only for the helper names;
+   - a cut took a local declaration (`int x` in ProfileSearchCell) that
+     code after the cut still assigned;
+   - a call-site rewrite keyed on an argument's text (`emoji_status`)
+     missed the one call that passed a literal `null` - key on the
+     method name and argument count;
+   - removing a member another class overrode (`didPressUserStatus`) or
+     read (`currentNameStatusDrawable` in PremiumPreviewBottomSheet)
+     breaks that class - grep the whole tree for every removed public
+     name, including from dead screens.
 
 1. **A dependency you remove may be supplying something unrelated.** Dropping
    `androidx.mediarouter` with Chromecast took `androidx.media` with it, which
@@ -839,33 +895,40 @@ In rough order of how much is left behind:
   is a second, smaller case of the same thing - it is a (dialog, message) pair
   that merely lives in the class, and `MessagesController` keys its delivery
   reports on it.
-- **Premium economy - well along, continue here.** Where it stands on
-  2026-09-26:
+- **Premium economy - nearly done outside the parity passes, continue
+  there.** Where it stands at the end of 2026-09-26:
   - **The three forced getters** (`premiumFeaturesBlocked`,
-    `premiumPurchaseBlocked`, `starsPurchaseAvailable`) have 15 uses left,
-    none a live feature outside Stories: Stories (PeerStoriesView 4,
-    StoryRecorder 1, SelfStoryViewsPage 1, DialogsActivity's stealth-mode
-    item 1), PremiumPreviewFragment 1, AppIconsSelectorCell 1, two
-    commented-out mentions in ProfileActivity's name-row emoji status,
+    `premiumPurchaseBlocked`, `starsPurchaseAvailable`) have 12 uses left:
+    Stories (PeerStoriesView 4, StoryRecorder 1, SelfStoryViewsPage 1,
+    DialogsActivity's stealth-mode item 1), PremiumPreviewFragment 1,
     BillingController's comment, and the definitions. They go once
     Stories and the Premium screens do.
-  - **48 Premium-screen entry points remain** (`new PremiumPreviewFragment(`,
+  - **27 Premium-screen entry points remain** (`new PremiumPreviewFragment(`,
     `PremiumFeatureBottomSheet`, `PremiumPreviewBottomSheet`,
-    `GiftPremiumBottomSheet`), down from ~100: 15 in Stories, 5 in the
-    article editor and AIEditorAlert, 3 inside the Premium sheets
-    themselves; the rest are Business (quick replies, greetings -
-    ChatActivity, ChatAttachAlertQuickRepliesLayout), emoji statuses
-    (ChatActivity's status taps, ProfileActivity, SetupEmojiStatusSheet,
-    BotWebViewContainer), PrivacyControlActivity (4: the non-contacts
-    info link, the gift-limit bulletin), ProfileActivity (sharing-disable,
-    stories), PeerColorActivity:1511 (name colour - tangled with the
-    collectible colours kept earlier; read before cutting),
-    ReactionsDoubleTapManageActivity, TranslateAlert3,
-    RevenueSharingAdsInfoBottomSheet, MessagePreviewView:1062 (forwarding
-    articles), BulletinFactory:948 (voice), SharedMediaLayout,
-    RichMessageLayout and AppIconsSelectorCell with
-    PremiumAppIconsPreviewView (the three Premium launcher icons and their
-    aliases and artwork go together).
+    `GiftPremiumBottomSheet`), down from ~100, and each belongs to a
+    parity pass: 15 in Stories (PeerStoriesView, DialogStoriesCell,
+    StoriesController, StealthModeAlert, SelfStoryViewsPage, PaintView,
+    StoryRecorder, EmojiBottomSheet, DialogsActivity's stealth item,
+    ProfileActivity's add-story, BotWebViewContainer's share-to-story), 6
+    in the article editor (AIEditorAlert, ChatAttachAlertRichLayout,
+    RichEditor, ChatActivityEnterView's rich-draft send), 2 in Business
+    quick replies (ChatActivity, ChatAttachAlertQuickRepliesLayout), and 4
+    inside the Premium sheets themselves.
+  - **Emoji statuses are done** (2026-09-26, as desktop): no status,
+    Premium star or bot verification icon is drawn anywhere, bots may not
+    set a status and lose the permission on sight, and a collectible
+    status neither tints a profile nor gets a tooltip. Left for the
+    Premium screens' deletion because PremiumPreviewFragment is their last
+    user: SelectAnimatedEmojiDialog's status modes (TYPE_EMOJI_STATUS*),
+    MessagesController.updateEmojiStatus, MediaDataController's
+    default/recent status lists and `recentEmojiStatusesUpdate`. Not yet
+    compared with desktop: BotVerifySheet (a verifier bot's owner
+    verifying others).
+  - **Leftovers seen 2026-09-26**: the article attach button's Premium
+    badge (GlassTabView.setPremiumBadge, ChatAttachAlert) goes with the
+    article editor; PremiumGradient.createGradientDrawable and
+    InternalDrawable serve only DoubledLimitsBottomSheet;
+    TL_account.toggleSponsoredMessages has no sender.
   - **Then delete the Premium screens** - `PremiumPreviewFragment`
     (2,416 lines), `PremiumFeatureBottomSheet`, `PremiumPreviewBottomSheet`,
     `GiftPremiumBottomSheet`, the `ui/Components/Premium` preview views -
@@ -890,8 +953,16 @@ In rough order of how much is left behind:
   - its "Changed defaults".
 
   Keep what desktop kept on purpose, which those sections also list.
-  Started 2026-09-26: AI compose's buttons and `addstyle/` link are gone
-  (`962d6d07`). Its second half is the article editor - `ui/iv`, ~27,000
+  Done on 2026-09-26: AI compose's buttons and `addstyle/` link
+  (`962d6d07`); Premium badges and emoji statuses for everyone, with the
+  bot verification icon (`873fe3ab` and around it); our own name and
+  profile colour (`e53ce275`); Privacy's Voice Messages, Messages and
+  Gifts screens and the Premium-users / Mini-apps exceptions; the
+  private-chat sharing toggle (re-enable only); the Business greeting's
+  "how?". Still to do from the checklist: Business (the parts ours to
+  set - quick replies first), Stories, the article editor, greeting
+  stickers, suggestion popups, nags and help. AI compose's second half is
+  the article editor - `ui/iv`, ~27,000
   lines, which shares classes with the rendering of received rich
   messages, so split display from editor first (as GiftViews was split
   from GiftSheet) - and with it AIEditorAlert, AiButtonDrawable and
@@ -1023,6 +1094,23 @@ In rough order of how much is left behind:
   Premium emoji becomes a plain one - all as desktop). AI compose's first
   half. Two one-line compile fixes (trap 0i).
 
+- **Done on 2026-09-26, second session, for the record** (17 commits,
+  `46da8199..20294896`, about 7,300 lines net and 105 artwork files;
+  full build `20294896` pending): the ad revenue explainer and Premium's
+  "show ads" switch; Premium reactions left out of the double-tap list;
+  the similar-channels "More" block, "Translate Entire Chat", the
+  forward-article and rich-checkbox Premium offers; Privacy's Voice
+  Messages, Messages and Gifts screens with the Premium-users and
+  Mini-apps exceptions (rules parsed so both are skipped, never read as
+  "My Contacts"); a dead "Sync Contacts" search entry; sharing toggle
+  re-enable only; the greeting's "how?"; our own name and profile colour
+  (PeerColorActivity deleted, its helpers moved out: PeerColorGrid,
+  PeerColorDrawable, PeerColorSpan, UnpinGiftCell); the three Premium
+  launcher icons; and emoji statuses in six commits - bots refused,
+  drawing removed everywhere, the chat-list title's picker, "Set as
+  Status", the accounts/gifts/stories leftovers, then the plumbing. Two
+  compile fixes (trap 0j).
+
 ### Then
 
 1. **Verify what first use could not.** Installed and working, but still open:
@@ -1039,7 +1127,8 @@ In rough order of how much is left behind:
    look like it did nothing. Still to do: the launcher icon itself — L and G
    laid diagonally over the default, `icon_plane.xml` being a vector so the mark
    can be hand-written as paths, `icon_foreground.png` raster at five densities;
-   the five alternative app icons and their `activity-alias` blocks; the
+   the two alternative app icons (Vintage, Aqua; the three Premium ones are
+   deleted) and their `activity-alias` blocks; the
    `telegram_logo_2` wordmark still drawn by the stories row; and the dead
    pre-API-26 launcher paths.
 3. Consider caching the native build (`.cxx`) the way desktop caches `out/`, if
