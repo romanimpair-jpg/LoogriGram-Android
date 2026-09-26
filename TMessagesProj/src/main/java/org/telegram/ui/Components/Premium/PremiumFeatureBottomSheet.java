@@ -4,9 +4,6 @@ import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.LocaleController.getString;
 import static org.telegram.messenger.AndroidUtilities.replaceUnderstood;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -47,7 +44,6 @@ import org.telegram.ui.ActionBar.BottomSheet;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ChatActivity;
 import org.telegram.ui.Components.BottomPagesView;
-import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.FeatureIconCell;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.LinkSpanDrawable;
@@ -76,7 +72,6 @@ public class PremiumFeatureBottomSheet extends BottomSheet implements Notificati
 
     private FrameLayout buttonContainer;
     FrameLayout closeLayout;
-    boolean enterAnimationIsRunning;
     SvgHelper.SvgDrawable svgIcon;
     private final int startType;
     private final boolean onlySelectedType;
@@ -251,9 +246,6 @@ public class PremiumFeatureBottomSheet extends BottomSheet implements Notificati
             long lastTapTime;
             @Override
             public boolean onTouchEvent(MotionEvent ev) {
-                if (enterAnimationIsRunning) {
-                    return false;
-                }
                 boolean r = processTap(ev, false);
                 return super.onTouchEvent(ev) || r;
             }
@@ -343,21 +335,12 @@ public class PremiumFeatureBottomSheet extends BottomSheet implements Notificati
             private void checkPage() {
                 for (int i = 0; i < viewPager.getChildCount(); i++) {
                     ViewPage page = (ViewPage) viewPager.getChildAt(i);
-                    float offset = 0;
-                    if (!enterAnimationIsRunning || !(page.topView instanceof PremiumAppIconsPreviewView)) {
-                        if (page.position == selectedPosition) {
-                            page.topHeader.setOffset(offset = -page.getMeasuredWidth() * progress);
-                        } else if (page.position == toPosition) {
-                            page.topHeader.setOffset(offset = -page.getMeasuredWidth() * progress + page.getMeasuredWidth());
-                        } else {
-                            page.topHeader.setOffset(page.getMeasuredWidth());
-                        }
-                    }
-
-                    if (page.topView instanceof PremiumAppIconsPreviewView) {
-                        page.setTranslationX(-offset);
-                        page.title.setTranslationX(offset);
-                        page.description.setTranslationX(offset);
+                    if (page.position == selectedPosition) {
+                        page.topHeader.setOffset(-page.getMeasuredWidth() * progress);
+                    } else if (page.position == toPosition) {
+                        page.topHeader.setOffset(-page.getMeasuredWidth() * progress + page.getMeasuredWidth());
+                    } else {
+                        page.topHeader.setOffset(page.getMeasuredWidth());
                     }
                 }
                 containerViewsProgress = progress;
@@ -874,42 +857,8 @@ public class PremiumFeatureBottomSheet extends BottomSheet implements Notificati
                 }
             };
             return recyclerListView;
-        } else if (featureData.type == PremiumPreviewFragment.PREMIUM_FEATURE_APPLICATION_ICONS) {
-            return new PremiumAppIconsPreviewView(context, resourcesProvider);
         }
         return new VideoScreenPreview(context, svgIcon, currentAccount, featureData.type, resourcesProvider);
-    }
-
-    @Override
-    protected boolean onCustomOpenAnimation() {
-        if (viewPager.getChildCount() > 0) {
-            ViewPage page = (ViewPage) viewPager.getChildAt(0);
-            if (page.topView instanceof PremiumAppIconsPreviewView) {
-                PremiumAppIconsPreviewView premiumAppIconsPreviewView = (PremiumAppIconsPreviewView) page.topView;
-                ValueAnimator valueAnimator = ValueAnimator.ofFloat(page.getMeasuredWidth(), 0);
-                premiumAppIconsPreviewView.setOffset(page.getMeasuredWidth());
-                enterAnimationIsRunning = true;
-                valueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                    @Override
-                    public void onAnimationUpdate(ValueAnimator animation) {
-                        premiumAppIconsPreviewView.setOffset((Float) animation.getAnimatedValue());
-                    }
-                });
-                valueAnimator.addListener(new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        enterAnimationIsRunning = false;
-                        premiumAppIconsPreviewView.setOffset(0);
-                        super.onAnimationEnd(animation);
-                    }
-                });
-                valueAnimator.setDuration(500);
-                valueAnimator.setStartDelay(100);
-                valueAnimator.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
-                valueAnimator.start();
-            }
-        }
-        return super.onCustomOpenAnimation();
     }
 
     void checkTopOffset() {
