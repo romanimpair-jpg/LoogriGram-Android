@@ -251,13 +251,6 @@ public class ContentPreviewViewer {
             return true;
         }
 
-        default Boolean canSetAsStatus(TLRPC.Document document) {
-            return null;
-        }
-
-        default void setAsEmojiStatus(TLRPC.Document document, Integer until) {
-        }
-
         default boolean needCopy(TLRPC.Document document) {
             return false;
         }
@@ -902,18 +895,8 @@ public class ContentPreviewViewer {
                     icons.add(R.drawable.msg_send);
                     actions.add(0);
                 }
-                Boolean canSetAsStatus = delegate.canSetAsStatus(currentDocument);
-                if (canSetAsStatus != null) {
-                    if (canSetAsStatus) {
-                        items.add(LocaleController.getString(R.string.SetAsEmojiStatus));
-                        icons.add(R.drawable.msg_smile_status);
-                        actions.add(1);
-                    } else {
-                        items.add(LocaleController.getString(R.string.RemoveStatus));
-                        icons.add(R.drawable.msg_smile_status);
-                        actions.add(2);
-                    }
-                }
+                // LoogriGram: "Set as Status" and "Remove Status" followed, a
+                // Premium account's; no emoji status is drawn here, as on desktop.
                 if (delegate.needCopy(currentDocument)) {
                     items.add(LocaleController.getString(R.string.CopyEmojiPreview));
                     icons.add(R.drawable.msg_copy);
@@ -949,10 +932,6 @@ public class ContentPreviewViewer {
                     int action = actions.get(which);
                     if (action == 0) {
                         delegate.sendEmoji(currentDocument);
-                    } else if (action == 1) {
-                        delegate.setAsEmojiStatus(currentDocument, null);
-                    } else if (action == 2) {
-                        delegate.setAsEmojiStatus(null, null);
                     } else if (action == 3) {
                         delegate.copyEmoji(currentDocument);
                     } else if (action == 4) {

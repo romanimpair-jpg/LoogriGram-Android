@@ -571,46 +571,6 @@ public class EmojiView extends FrameLayout implements
         }
 
         @Override
-        public void setAsEmojiStatus(TLRPC.Document document, Integer until) {
-            final TLRPC.EmojiStatus emojiStatus;
-            if (document == null) {
-                emojiStatus = new TLRPC.TL_emojiStatusEmpty();
-            } else {
-                TLRPC.TL_emojiStatus status = new TLRPC.TL_emojiStatus();
-                status.document_id = document.id;
-                if (until != null) {
-                    status.flags |= 1;
-                    status.until = until;
-                }
-                emojiStatus = status;
-            }
-            final TLRPC.User user = UserConfig.getInstance(UserConfig.selectedAccount).getCurrentUser();
-            final TLRPC.EmojiStatus previousEmojiStatus = user == null ? new TLRPC.TL_emojiStatusEmpty() : user.emoji_status;
-            MessagesController.getInstance(currentAccount).updateEmojiStatus(emojiStatus);
-
-            Runnable undoAction = () -> MessagesController.getInstance(currentAccount).updateEmojiStatus(previousEmojiStatus);
-            if (document == null) {
-                final Bulletin.SimpleLayout layout = new Bulletin.SimpleLayout(getContext(), resourcesProvider);
-                layout.textView.setText(getString(R.string.RemoveStatusInfo));
-                layout.imageView.setImageResource(R.drawable.msg_settings_premium);
-                layout.imageView.setScaleX(.8f);
-                layout.imageView.setScaleY(.8f);
-                layout.imageView.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_chats_verifiedBackground, resourcesProvider), PorterDuff.Mode.MULTIPLY));
-                Bulletin.UndoButton undoButton = new Bulletin.UndoButton(getContext(), true, resourcesProvider);
-                undoButton.setUndoAction(undoAction);
-                layout.setButton(undoButton);
-                if (fragment != null) {
-                    Bulletin.make(fragment, layout, Bulletin.DURATION_SHORT).show();
-                } else {
-                    Bulletin.make(bulletinContainer, layout, Bulletin.DURATION_SHORT).show();
-                }
-            } else {
-                BulletinFactory factory = fragment != null ? BulletinFactory.of(fragment) : BulletinFactory.of(bulletinContainer, resourcesProvider);
-                factory.createEmojiBulletin(document, getString(R.string.SetAsEmojiStatusInfo), getString(R.string.UndoNoCaps), undoAction).show();
-            }
-        }
-
-        @Override
         public void copyEmoji(TLRPC.Document document) {
             Spannable spannable = SpannableStringBuilder.valueOf(MessageObject.findAnimatedEmojiEmoticon(document));
             spannable.setSpan(new AnimatedEmojiSpan(document, null), 0, spannable.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -638,19 +598,6 @@ public class EmojiView extends FrameLayout implements
                     emojiAdapter.notifyDataSetChanged();
                 }
             }
-        }
-
-        @Override
-        public Boolean canSetAsStatus(TLRPC.Document document) {
-            if (!UserConfig.getInstance(UserConfig.selectedAccount).isPremium()) {
-                return null;
-            }
-            TLRPC.User user = UserConfig.getInstance(UserConfig.selectedAccount).getCurrentUser();
-            if (user == null) {
-                return null;
-            }
-            Long emojiStatusId = UserObject.getEmojiStatusDocumentId(user);
-            return document != null && (emojiStatusId == null || emojiStatusId != document.id);
         }
 
         @Override

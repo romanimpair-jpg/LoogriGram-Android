@@ -9,7 +9,6 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
-import android.graphics.drawable.Drawable;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
@@ -29,7 +28,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.Emoji;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
@@ -37,7 +35,6 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserObject;
-import org.telegram.messenger.Utilities;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.BaseFragment;
@@ -225,56 +222,7 @@ public class TableView extends TableLayout {
                 }
             }, 3, ssb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
-        final int color = Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider);
-        final AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable emojiDrawable = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(textView, dp(20));
-        emojiDrawable.setColor(color);
-        emojiDrawable.offset(dp(12), 0);
-        textView.addOnAttachStateChangeListener(new OnAttachStateChangeListener() {
-            @Override
-            public void onViewAttachedToWindow(@NonNull View v) {
-                emojiDrawable.attach();
-            }
-
-            @Override
-            public void onViewDetachedFromWindow(@NonNull View v) {
-                emojiDrawable.detach();
-            }
-        });
-        final Drawable premiumDrawable = getContext().getResources().getDrawable(R.drawable.msg_premium_liststar).mutate();
-        premiumDrawable.setColorFilter(new PorterDuffColorFilter(color, PorterDuff.Mode.SRC_IN));
-        final Utilities.Callback<Object[]> updateStatus = args -> {
-            if (did == UserObject.ANONYMOUS || UserObject.isService(did)) {
-                return;
-            }
-            boolean isPremium;
-            TLRPC.EmojiStatus emoji_status;
-            if (did > 0) {
-                TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(did);
-                emoji_status = user != null ? user.emoji_status : null;
-                isPremium = user != null && user.premium;
-            } else {
-                TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-did);
-                emoji_status = chat != null ? chat.emoji_status : null;
-                isPremium = false;
-            }
-            final long emojiStatusDocumentId2 = DialogObject.getEmojiStatusDocumentId(emoji_status);
-            if (emojiStatusDocumentId2 != 0) {
-                emojiDrawable.set(emojiStatusDocumentId2, true);
-                emojiDrawable.setParticles(DialogObject.isEmojiStatusCollectible(emoji_status), true);
-                textView.setRightDrawable(emojiDrawable);
-            } else if (isPremium) {
-                emojiDrawable.set(premiumDrawable, true);
-                emojiDrawable.setParticles(false, true);
-                textView.setRightDrawable(emojiDrawable);
-            } else {
-                textView.setRightDrawable(null);
-            }
-            emojiDrawable.setColor(color);
-        };
-        updateStatus.run(null);
-        textView.setRightDrawable(emojiDrawable);
-        NotificationCenter.getInstance(currentAccount).listen(textView, NotificationCenter.updateInterfaces, updateStatus);
-        NotificationCenter.getInstance(currentAccount).listen(textView, NotificationCenter.userEmojiStatusUpdated, updateStatus);
+        // LoogriGram: no emoji status or Premium star after the name, as on desktop.
         textView.setText(ssb);
         return addRowUnpadded(title, textView);
     }

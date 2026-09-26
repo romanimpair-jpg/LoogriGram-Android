@@ -33,7 +33,6 @@ import org.telegram.messenger.Emoji;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
-import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
@@ -126,57 +125,6 @@ public class SuggestEmojiView extends FrameLayout implements NotificationCenter.
                     spannable.setSpan(new AnimatedEmojiSpan(document, null), 0, spannable.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                     if (AndroidUtilities.addToClipboard(spannable) && enterView != null) {
                         BulletinFactory.of(enterView.getParentFragment()).createCopyBulletin(LocaleController.getString(R.string.EmojiCopied)).show();
-                    }
-                }
-
-                @Override
-                public Boolean canSetAsStatus(TLRPC.Document document) {
-                    if (isSetAsStatusForbidden) {
-                        return null;
-                    }
-                    if (!UserConfig.getInstance(UserConfig.selectedAccount).isPremium()) {
-                        return null;
-                    }
-                    TLRPC.User user = UserConfig.getInstance(UserConfig.selectedAccount).getCurrentUser();
-                    if (user == null) {
-                        return null;
-                    }
-                    Long emojiStatusId = UserObject.getEmojiStatusDocumentId(user);
-                    return document != null && (emojiStatusId == null || emojiStatusId != document.id);
-                }
-
-                @Override
-                public void setAsEmojiStatus(TLRPC.Document document, Integer until) {
-                    final TLRPC.EmojiStatus emojiStatus;
-                    if (document == null) {
-                        emojiStatus = new TLRPC.TL_emojiStatusEmpty();
-                    } else {
-                        final TLRPC.TL_emojiStatus status = new TLRPC.TL_emojiStatus();
-                        status.document_id = document.id;
-                        if (until != null) {
-                            status.flags |= 1;
-                            status.until = until;
-                        }
-                        emojiStatus = status;
-                    }
-                    final TLRPC.User user = UserConfig.getInstance(UserConfig.selectedAccount).getCurrentUser();
-                    final TLRPC.EmojiStatus previousEmojiStatus = user == null ? new TLRPC.TL_emojiStatusEmpty() : user.emoji_status;
-                    MessagesController.getInstance(currentAccount).updateEmojiStatus(emojiStatus);
-
-                    final Runnable undoAction = () -> MessagesController.getInstance(currentAccount).updateEmojiStatus(previousEmojiStatus);
-                    final BaseFragment fragment = enterView == null ? null : enterView.getParentFragment();
-                    if (fragment != null) {
-                        if (document == null) {
-                            final Bulletin.SimpleLayout layout = new Bulletin.SimpleLayout(getContext(), resourcesProvider);
-                            layout.textView.setText(LocaleController.getString(R.string.RemoveStatusInfo));
-                            layout.imageView.setImageResource(R.drawable.msg_settings_premium);
-                            Bulletin.UndoButton undoButton = new Bulletin.UndoButton(getContext(), true, resourcesProvider);
-                            undoButton.setUndoAction(undoAction);
-                            layout.setButton(undoButton);
-                            Bulletin.make(fragment, layout, Bulletin.DURATION_SHORT).show();
-                        } else {
-                            BulletinFactory.of(fragment).createEmojiBulletin(document, LocaleController.getString(R.string.SetAsEmojiStatusInfo), LocaleController.getString(R.string.UndoNoCaps), undoAction).show();
-                        }
                     }
                 }
 

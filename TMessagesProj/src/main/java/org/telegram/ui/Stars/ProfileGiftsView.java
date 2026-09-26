@@ -269,17 +269,9 @@ public class ProfileGiftsView extends View implements NotificationCenter.Notific
         gifts.clear();
         giftIds.clear();
 
-        final TLRPC.EmojiStatus emojiStatus;
-        if (dialogId >= 0) {
-            final TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(dialogId);
-            emojiStatus = user == null ? null : user.emoji_status;
-        } else {
-            final TLRPC.User chat = MessagesController.getInstance(currentAccount).getUser(-dialogId);
-            emojiStatus = chat == null ? null : chat.emoji_status;
-        }
-        if (emojiStatus instanceof TLRPC.TL_emojiStatusCollectible) {
-            giftIds.add(((TLRPC.TL_emojiStatusCollectible) emojiStatus).collectible_id);
-        }
+        // LoogriGram: a collectible worn as an emoji status was held back from
+        // these, being drawn beside the name. No status is drawn, so it takes
+        // its place here like any other pinned gift.
         list = GiftsController.getInstance(currentAccount).getProfileGiftsList(dialogId);
         if (list != null) {
             for (int i = 0; i < list.gifts.size(); i++) {

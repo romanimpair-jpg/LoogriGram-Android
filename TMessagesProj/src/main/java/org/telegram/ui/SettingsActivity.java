@@ -98,7 +98,6 @@ import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.SettingsSearchCell;
 import org.telegram.ui.Components.AlertsCreator;
-import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.messenger.LoogriGramUpdate;
@@ -936,8 +935,8 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         private TextView counterView;
         private ImageView arrowView;
 
-        private final AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable botDrawable;
-        private final AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable emojiStatusDrawable;
+        // LoogriGram: no emoji status, Premium star or bot verification icon
+        // beside an account's name, as on desktop.
 
         public AccountCell(Context context, Theme.ResourcesProvider resourcesProvider) {
             super(context);
@@ -953,22 +952,6 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             textView.setTextSize(15);
             textView.setTypeface(AndroidUtilities.bold());
             textView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
-
-            botDrawable = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(textView, dp(24), AnimatedEmojiDrawable.CACHE_TYPE_EMOJI_STATUS);
-            emojiStatusDrawable = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(textView, dp(24), AnimatedEmojiDrawable.CACHE_TYPE_EMOJI_STATUS);
-            textView.addOnAttachStateChangeListener(new OnAttachStateChangeListener() {
-                @Override
-                public void onViewAttachedToWindow(@NonNull View v) {
-                    botDrawable.attach();
-                    emojiStatusDrawable.attach();
-                }
-
-                @Override
-                public void onViewDetachedFromWindow(@NonNull View v) {
-                    botDrawable.detach();
-                    emojiStatusDrawable.detach();
-                }
-            });
 
             counterView = new TextView(context);
             counterView.setPadding(dp(6.66f), 0, dp(6.66f), 0);
@@ -1007,7 +990,6 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             textView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
             counterView.setBackground(Theme.createRoundRectDrawable(dp(10), Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider)));
             arrowView.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_windowBackgroundWhiteGrayIcon, resourcesProvider), PorterDuff.Mode.SRC_IN));
-            emojiStatusDrawable.setColor(Theme.getColor(Theme.key_profile_verifiedBackground, resourcesProvider));
         }
 
         public void set(int account) {
@@ -1017,27 +999,6 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             avatarView.getImageReceiver().setCurrentAccount(account);
             avatarView.setForUserOrChat(user, avatarDrawable);
             textView.setText(UserObject.getUserName(user));
-
-            botDrawable.setCurrentAccount(account);
-            emojiStatusDrawable.setCurrentAccount(account);
-
-            botDrawable.setColor(Theme.getColor(Theme.key_profile_verifiedBackground, resourcesProvider));
-            if (user != null && user.bot_verification_icon != 0) {
-                botDrawable.set(user.bot_verification_icon, false);
-            } else {
-                botDrawable.set((Drawable) null, false);
-            }
-            final Long emojiStatusId = UserObject.getEmojiStatusDocumentId(user);
-            emojiStatusDrawable.setColor(Theme.getColor(Theme.key_profile_verifiedBackground, resourcesProvider));
-            if (emojiStatusId != null) {
-                emojiStatusDrawable.set(emojiStatusId, false);
-            } else if (user != null && user.premium) {
-                emojiStatusDrawable.set(getContext().getResources().getDrawable(R.drawable.msg_premium_liststar).mutate(), false);
-            } else {
-                emojiStatusDrawable.set((Drawable) null, false);
-            }
-            textView.setLeftDrawable(!botDrawable.isEmpty() ? botDrawable : null);
-            textView.setRightDrawable(!emojiStatusDrawable.isEmpty() ? emojiStatusDrawable : null);
 
             int counter = MessagesStorage.getInstance(account).getMainUnreadCount();
             counterView.setVisibility(counter > 0 ? View.VISIBLE : View.GONE);

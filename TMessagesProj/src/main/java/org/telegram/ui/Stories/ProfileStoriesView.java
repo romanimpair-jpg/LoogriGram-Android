@@ -397,19 +397,10 @@ public class ProfileStoriesView extends View implements NotificationCenter.Notif
         titleDrawable.setText(this.count > 0 ? LocaleController.formatPluralString("Stories", this.count) : "", animated && !LocaleController.isRTL);
 
         if (dialogId >= 0) {
-            final TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(dialogId);
-            if (user != null && user.emoji_status instanceof TLRPC.TL_emojiStatusCollectible) {
-                gradientTools.setColor(MessagesController.PeerColor.fromCollectible(user.emoji_status), animated);
-            } else {
-                gradientTools.setUser(user, animated);
-            }
+            // LoogriGram: the peer's own colours, never a collectible status's.
+            gradientTools.setUser(MessagesController.getInstance(currentAccount).getUser(dialogId), animated);
         } else {
-            TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
-            if (chat != null && chat.emoji_status instanceof TLRPC.TL_emojiStatusCollectible) {
-                gradientTools.setColor(MessagesController.PeerColor.fromCollectible(chat.emoji_status), animated);
-            } else {
-                gradientTools.setChat(chat, animated);
-            }
+            gradientTools.setChat(MessagesController.getInstance(currentAccount).getChat(-dialogId), animated);
         }
 
         invalidate();
