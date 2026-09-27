@@ -519,8 +519,7 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
             }
 
             @Override
-            protected void scrollToTop(boolean ifAtTop) {
-                if (ifAtTop && hashtagSearchListView.canScrollVertically(-1)) return;
+            protected void scrollToTop() {
                 hashtagSearchLayoutManager.scrollToPositionWithOffset(0, 0);
             }
         });
@@ -1291,7 +1290,6 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.dialogDeleted);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.dialogsNeedReload);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.reloadWebappsHints);
-        NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.storiesListUpdated);
         attached = true;
 
         if (channelsSearchAdapter != null) {
@@ -1310,7 +1308,6 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.dialogDeleted);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.dialogsNeedReload);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.reloadWebappsHints);
-        NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.storiesListUpdated);
     }
 
     @Override
@@ -1324,10 +1321,6 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
             channelsSearchAdapter.update(true);
         } else if (id == NotificationCenter.reloadWebappsHints) {
             botsSearchAdapter.update(true);
-        } else if (id == NotificationCenter.storiesListUpdated) {
-            if (args[0] == hashtagSearchAdapter.list) {
-                hashtagSearchAdapter.update(true);
-            }
         }
     }
 

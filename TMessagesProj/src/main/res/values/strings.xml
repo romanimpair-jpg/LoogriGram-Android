@@ -6544,7 +6544,6 @@
     <string name="PreparingVideo">Preparing video…</string>
     <string name="PreparingSticker">Preparing sticker…</string>
     <string name="NoStoriesTitle">No saved stories</string>
-    <string name="NoHashtagStoriesTitle">No stories found</string>
     <string name="NoPublicStoriesTitle2">No posts yet…</string>
     <string name="NoStoriesSubtitle2">Publish photos and videos to display on your profile page</string>
     <string name="NoArchivedStoriesTitle">No stories yet…</string>
@@ -6557,8 +6556,6 @@
     <string name="StorySavedSubtitle">Saved stories can be viewed by others on your profile until you remove them.</string>
     <string name="StoryArchived_one">%d story is hidden from your profile</string>
     <string name="StoryArchived_other">%d stories are hidden from your profile</string>
-    <string name="FoundStories_one">%d story</string>
-    <string name="FoundStories_other">%d stories</string>
     <string name="OpenLink">Open Link</string>
     <string name="StorySharedToEveryone">This story is shown to everyone.</string>
     <string name="StorySharedToCloseFriends">This story is shown to your close friends.</string>
@@ -8089,16 +8086,6 @@
     <string name="BotStarsButtonWithdraw_other">Withdraw ⭐️%d via Fragment</string>
     <string name="BotStarsChartRevenue">Revenue</string>
     <string name="BotStarsWithdrawMinLimit_other">You cannot withdraw less than **%d stars.**</string>
-    <string name="HashtagStoriesFound_one">%d Story found</string>
-    <string name="HashtagStoriesFound_other">%d Stories found</string>
-    <string name="HashtagStoriesFoundSubtitle">View stories with %s</string>
-    <string name="HashtagStoriesFoundChannel_one">%1$d story in **%2$s**</string>
-    <string name="HashtagStoriesFoundChannel_other">%1$d stories in **%2$s**</string>
-    <string name="HashtagMessagesFound_one">%d message found</string>
-    <string name="HashtagMessagesFound_other">%d messages found</string>
-    <string name="HashtagMessagesFoundChannel_one">%1$d message in **%2$s**</string>
-    <string name="HashtagMessagesFoundChannel_other">%1$d messages in **%2$s**</string>
-    <string name="HashtagMessagesFoundSubtitle">View posts with %s</string>
     <string name="BotStarsWithdrawalToast">Next withdrawal will be available in **%s**.</string>
     <string name="PeriodDHM">%1$sd:%2$sh:%3$sm</string>
     <string name="BotMoreTabs_one">%2$s &amp; %1$d Other</string>

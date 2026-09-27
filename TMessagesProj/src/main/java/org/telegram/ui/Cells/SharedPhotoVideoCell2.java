@@ -53,7 +53,6 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.AvatarSpan;
 import org.telegram.ui.Components.AnimatedFloat;
 import org.telegram.ui.Components.AnimatedTextView;
 import org.telegram.ui.Components.CanvasButton;
@@ -82,7 +81,6 @@ public class SharedPhotoVideoCell2 extends FrameLayout {
     private Shaker shaker;
     public int storyId;
     int currentAccount;
-    public boolean isSearchingHashtag;
     MessageObject currentMessageObject;
     int currentParentColumnsCount;
     FlickerLoadingView globalGradientView;
@@ -103,8 +101,6 @@ public class SharedPhotoVideoCell2 extends FrameLayout {
     boolean drawViews;
     AnimatedFloat viewsAlpha = new AnimatedFloat(this, 0, 350, CubicBezierInterpolator.EASE_OUT_QUINT);
     AnimatedTextView.AnimatedTextDrawable viewsText = new AnimatedTextView.AnimatedTextDrawable(false, true, true);
-
-    private Text authorText;
 
     CheckBoxBase checkBoxBase;
     SharedResources sharedResources;
@@ -295,7 +291,6 @@ public class SharedPhotoVideoCell2 extends FrameLayout {
             gradientDrawable = null;
             privacyType = -1;
             privacyBitmap = null;
-            authorText = null;
             updateAccessibilityDescription();
             return;
         } else {
@@ -442,16 +437,9 @@ public class SharedPhotoVideoCell2 extends FrameLayout {
 
         setPrivacyType(getPrivacyType(messageObject));
 
-        if (isSearchingHashtag) {
-            final long did = messageObject.getDialogId();
-            SpannableStringBuilder sb = new SpannableStringBuilder("x ");
-            sb.append(MessagesController.getInstance(currentAccount).getPeerName(did));
-            AvatarSpan avatar = new AvatarSpan(this, currentAccount, parentColumnsCount == 2 ? 16f : 13.66f);
-            avatar.setDialogId(did);
-            sb.setSpan(avatar, 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            authorText = new Text(sb, parentColumnsCount == 2 ? 14f : 10.1666f,  AndroidUtilities.bold());
-        }
-
+        // LoogriGram: the public stories found for a hashtag named their
+        // author on each cell (isSearchingHashtag). Stories are removed, as
+        // on desktop.
         updateAccessibilityDescription();
         invalidate();
     }
@@ -751,7 +739,7 @@ public class SharedPhotoVideoCell2 extends FrameLayout {
 
                 invalidate();
             }
-            if (!isSearchingHashtag && highlightProgress > 0) {
+            if (highlightProgress > 0) {
                 sharedResources.highlightPaint.setColor(ColorUtils.setAlphaComponent(Color.BLACK, (int) (0.5f * highlightProgress * 255)));
                 canvas.drawRect(imageReceiver.getDrawRegion(), sharedResources.highlightPaint);
             }
@@ -768,11 +756,7 @@ public class SharedPhotoVideoCell2 extends FrameLayout {
         }
         drawDuration(canvas, bounds, customsAlpha);
         drawViews(canvas, bounds, customsAlpha);
-        if (!isSearchingHashtag) {
-            drawPrivacy(canvas, bounds, customsAlpha);
-        } else {
-            drawAuthor(canvas, bounds, customsAlpha);
-        }
+        drawPrivacy(canvas, bounds, customsAlpha);
         if (check2) {
             canvas.restore();
         }
@@ -926,17 +910,6 @@ public class SharedPhotoVideoCell2 extends FrameLayout {
         AndroidUtilities.rectTmp.set(0, 0, sz, sz);
         canvas.drawBitmap(privacyBitmap, null, AndroidUtilities.rectTmp, privacyPaint);
         canvas.restore();
-    }
-
-    public void drawAuthor(Canvas canvas, RectF bounds, float alpha) {
-        if (!isStory || imageReceiver != null && !imageReceiver.getVisible() || !isSearchingHashtag || authorText == null) return;
-
-        final float p = dp(5.33f);
-        authorText
-            .ellipsize((int) (bounds.width() - p * 2))
-            .setVerticalClipPadding(dp(14))
-            .setShadow(.4f * alpha)
-            .draw(canvas, bounds.left + p, bounds.top + dp(currentParentColumnsCount <= 2 ? 15 : 11.33f), Theme.multAlpha(0xFFFFFFFF, alpha), 1f);
     }
 
     public void drawViews(Canvas canvas, RectF bounds, float alpha) {

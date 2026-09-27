@@ -239,7 +239,6 @@ import org.telegram.ui.Components.StickersAlert;
 import org.telegram.ui.Components.SwipeGestureSettingsView;
 import org.telegram.ui.Components.UndoView;
 import org.telegram.ui.Components.ViewPagerFixed;
-import org.telegram.ui.Stories.StoriesController;
 import org.telegram.ui.Stories.StoriesListPlaceProvider;
 import org.telegram.ui.community.CommunityChatType;
 import org.telegram.ui.community.CommunityEditActivity;
@@ -11865,13 +11864,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 args.putInt("message_id", msg.getId());
                 ChatActivity chatActivity = new ChatActivity(args);
                 presentFragment(highlightFoundQuote(chatActivity, msg));
-            } else if (item.object instanceof StoriesController.SearchStoriesList) {
-                StoriesController.SearchStoriesList list = (StoriesController.SearchStoriesList) item.object;
-                Bundle args = new Bundle();
-                args.putInt("type", MediaActivity.TYPE_STORIES_SEARCH);
-                args.putString("hashtag", list.query);
-                args.putInt("storiesCount", list.getCount());
-                presentFragment(new MediaActivity(args, null));
             }
         });
         searchViewPager.botsSearchListView.setOnItemLongClickListener((view, position) -> {

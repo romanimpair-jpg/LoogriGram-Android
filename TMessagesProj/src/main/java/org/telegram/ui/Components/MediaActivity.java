@@ -68,7 +68,8 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
     public static final int TYPE_MEDIA = 0;
     public static final int TYPE_STORIES = 1;
     public static final int TYPE_ARCHIVED_CHANNEL_STORIES = 2;
-    public static final int TYPE_STORIES_SEARCH = 3;
+    // LoogriGram: 3 was TYPE_STORIES_SEARCH, the public stories found for a
+    // hashtag. Stories are removed, as on desktop.
 
     private int type;
 
@@ -77,9 +78,6 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
     private TLRPC.UserFull currentUserInfo;
     private long dialogId;
     private long topicId;
-    private String hashtag;
-    private String username;
-    private int storiesCount;
     private FrameLayout titlesContainer;
     private FrameLayout[] titles = new FrameLayout[2];
     private SimpleTextView[] nameTextView = new SimpleTextView[2];
@@ -114,9 +112,6 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
         type = getArguments().getInt("type", TYPE_MEDIA);
         dialogId = getArguments().getLong("dialog_id");
         topicId = getArguments().getLong("topic_id", 0);
-        hashtag = getArguments().getString("hashtag", "");
-        username = getArguments().getString("username", "");
-        storiesCount = getArguments().getInt("storiesCount", -1);
         int defaultTab = SharedMediaLayout.TAB_PHOTOVIDEO;
         if (type == TYPE_ARCHIVED_CHANNEL_STORIES) {
             defaultTab = SharedMediaLayout.TAB_ARCHIVED_STORIES;
@@ -537,16 +532,6 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
             }
 
             @Override
-            public String getStoriesHashtag() {
-                return hashtag;
-            }
-
-            @Override
-            public String getStoriesHashtagUsername() {
-                return username;
-            }
-
-            @Override
             protected boolean canShowSearchItem() {
                 return type != TYPE_STORIES && type != TYPE_ARCHIVED_CHANNEL_STORIES;
             }
@@ -573,7 +558,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
             }
 
             protected boolean customTabs() {
-                return type == TYPE_STORIES || type == TYPE_ARCHIVED_CHANNEL_STORIES || type == TYPE_STORIES_SEARCH;
+                return type == TYPE_STORIES || type == TYPE_ARCHIVED_CHANNEL_STORIES;
             }
 
             @Override
@@ -755,12 +740,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
             avatarDialogId = topicId;
         }
         TLObject avatarObject = null;
-        if (type == TYPE_STORIES_SEARCH) {
-            nameTextView[0].setText(hashtag);
-            if (storiesCount != -1) {
-                subtitleTextView[0].setText(LocaleController.formatPluralStringSpaced("FoundStories", storiesCount));
-            }
-        } else if (type == TYPE_ARCHIVED_CHANNEL_STORIES) {
+        if (type == TYPE_ARCHIVED_CHANNEL_STORIES) {
             nameTextView[0].setText(LocaleController.getString(R.string.ProfileStoriesArchive));
         } else if (type == TYPE_STORIES) {
             nameTextView[0].setText(LocaleController.getString(R.string.ProfileMyStories));
@@ -874,9 +854,6 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
             return;
         }
         int id = sharedMediaLayout.getClosestTab();
-        if (type == TYPE_STORIES_SEARCH && id != SharedMediaLayout.TAB_STORIES) {
-            return;
-        }
         int[] mediaCount = sharedMediaPreloader.getLastMediaCount();
         final boolean animated = !LocaleController.isRTL;
         int i;
@@ -897,15 +874,8 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
 
             int count = sharedMediaLayout.getStoriesCount(SharedMediaLayout.TAB_STORIES);
             if (count > 0) {
-                if (type == TYPE_STORIES_SEARCH) {
-                    if (TextUtils.isEmpty(subtitleTextView[0].getText())) {
-                        showSubtitle(0, true, true);
-                        subtitleTextView[0].setText(LocaleController.formatPluralStringSpaced("FoundStories", count), animated);
-                    }
-                } else {
-                    showSubtitle(0, true, true);
-                    subtitleTextView[0].setText(LocaleController.formatPluralString("ProfileMyStoriesCount", count), animated);
-                }
+                showSubtitle(0, true, true);
+                subtitleTextView[0].setText(LocaleController.formatPluralString("ProfileMyStoriesCount", count), animated);
             } else {
                 showSubtitle(0, false, true);
             }
@@ -1003,7 +973,6 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
     private final boolean[] firstSubtitleCheck = new boolean[] { true, true };
     private final ValueAnimator[] subtitleAnimator = new ValueAnimator[2];
     private void showSubtitle(int i, boolean show, boolean animated) {
-        if (type == TYPE_STORIES_SEARCH) return;
         if (i == 1 && type == TYPE_ARCHIVED_CHANNEL_STORIES) {
             return;
         }

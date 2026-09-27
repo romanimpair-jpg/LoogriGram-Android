@@ -3202,7 +3202,6 @@ public class VoIPFragment implements
             avatarsDrawable = new AvatarsDrawable(this, false);
             avatarsDrawable.width = dp(100);
             avatarsDrawable.height = dp(30);
-            avatarsDrawable.drawStoriesCircle = false;
             avatarsDrawable.setSize(dp(24));
             avatarsDrawable.setAvatarsTextSize(dp(18));
             avatarsDrawable.setStepFactor(0.58f);

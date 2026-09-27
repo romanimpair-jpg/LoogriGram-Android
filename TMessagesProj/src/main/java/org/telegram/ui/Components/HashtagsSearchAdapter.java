@@ -10,8 +10,6 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.Adapters.MessagesSearchAdapter;
-import org.telegram.ui.Stories.StoriesController;
 
 import java.util.ArrayList;
 
@@ -19,8 +17,6 @@ public class HashtagsSearchAdapter extends UniversalAdapter {
 
     private final int currentAccount;
     private final ArrayList<MessageObject> messages = new ArrayList<>();
-    public boolean hasList;
-    public StoriesController.SearchStoriesList list;
 
     public HashtagsSearchAdapter(RecyclerListView listView, Context context, int currentAccount, int folderId, Theme.ResourcesProvider resourcesProvider) {
         super(listView, context, currentAccount, 0, null, resourcesProvider);
@@ -28,13 +24,9 @@ public class HashtagsSearchAdapter extends UniversalAdapter {
         this.currentAccount = currentAccount;
     }
 
-    private boolean hadStories;
+    // LoogriGram: the public stories found for the hashtag were a row above
+    // the posts, loaded alongside them. Stories are removed, as on desktop.
     public void fillItems(ArrayList<UItem> items, UniversalAdapter adapter) {
-        boolean hasStories = hasList && list != null && list.getLoadedCount() > 0;
-        if (hasStories) {
-            items.add(MessagesSearchAdapter.StoriesView.Factory.asStoriesList(list));
-        }
-        hadStories = hasStories;
         for (int i = 0; i < messages.size(); ++i) {
             items.add(UItem.asSearchMessage(1 + i, messages.get(i)));
         }
@@ -42,11 +34,6 @@ public class HashtagsSearchAdapter extends UniversalAdapter {
             items.add(UItem.asFlicker(-2, FlickerLoadingView.DIALOG_TYPE));
             items.add(UItem.asFlicker(-3, FlickerLoadingView.DIALOG_TYPE));
             items.add(UItem.asFlicker(-4, FlickerLoadingView.DIALOG_TYPE));
-        }
-        if (!hadStories && hasStories) {
-            AndroidUtilities.runOnUIThread(() -> {
-                scrollToTop(true);
-            });
         }
     }
 
@@ -94,13 +81,6 @@ public class HashtagsSearchAdapter extends UniversalAdapter {
                 return;
             }
             final String finalQuery = (cashtag[0] ? "$" : "#") + hashtagQuery;
-            if (list == null || !TextUtils.equals(list.query, finalQuery)) {
-                list = new StoriesController.SearchStoriesList(currentAccount, null, finalQuery);
-            }
-            if (list.getLoadedCount() <= 0) {
-                list.load(true, 4);
-            }
-            hasList = true;
             final TLRPC.TL_channels_searchPosts req = new TLRPC.TL_channels_searchPosts();
             req.flags |= 1;
             req.hashtag = this.hashtagQuery = hashtag;
@@ -142,7 +122,7 @@ public class HashtagsSearchAdapter extends UniversalAdapter {
                 }
                 update(true);
                 if (wasEmpty) {
-                    scrollToTop(false);
+                    scrollToTop();
                 }
             }));
         }, 300);
@@ -164,10 +144,6 @@ public class HashtagsSearchAdapter extends UniversalAdapter {
     }
 
     public void cancel() {
-        if (list != null) {
-            list.cancel();
-        }
-        hasList = false;
         if (reqId >= 0) {
             ConnectionsManager.getInstance(currentAccount).cancelRequest(reqId, true);
             reqId = -1;
@@ -197,7 +173,7 @@ public class HashtagsSearchAdapter extends UniversalAdapter {
         return false;
     }
 
-    protected void scrollToTop(boolean ifAtTop) {
+    protected void scrollToTop() {
 
     }
 

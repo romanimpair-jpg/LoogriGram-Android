@@ -130,7 +130,6 @@ public class UserInfoCell extends View implements NotificationCenter.Notificatio
 
         groupsAvatars.width = dp(50);
         groupsAvatars.height = dp(13);
-        groupsAvatars.drawStoriesCircle = false;
         groupsAvatars.setSize(dp(13));
         groupsAvatars.setAvatarsTextSize(dp(18));
 

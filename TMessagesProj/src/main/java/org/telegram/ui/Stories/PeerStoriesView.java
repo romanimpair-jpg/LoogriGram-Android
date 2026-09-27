@@ -910,17 +910,10 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
                 } else if (span instanceof URLSpanNoUnderline) {
                     String str = ((URLSpanNoUnderline) span).getURL();
                     if (str != null && (str.startsWith("#") || str.startsWith("$"))) {
-                        if (str.contains("@")) {
-                            if (storyViewer != null) {
-                                storyViewer.presentFragment(new HashtagActivity(str));
-                            }
-                        } else {
-                            Bundle args = new Bundle();
-                            args.putInt("type", MediaActivity.TYPE_STORIES_SEARCH);
-                            args.putString("hashtag", str);
-                            if (storyViewer != null) {
-                                storyViewer.presentFragment(new MediaActivity(args, null));
-                            }
+                        // LoogriGram: a hashtag without @channel opened the public
+                        // stories found for it; it now opens the channel posts.
+                        if (storyViewer != null) {
+                            storyViewer.presentFragment(new HashtagActivity(str));
                         }
                     } else {
                         String username = Browser.extractUsername(str);

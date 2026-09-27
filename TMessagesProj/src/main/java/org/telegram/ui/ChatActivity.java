@@ -282,7 +282,6 @@ import org.telegram.ui.Components.voip.VoIPHelper;
 import org.telegram.ui.Delegates.ChatActivityMemberRequestsDelegate;
 import org.telegram.ui.Stars.MessageSuggestionOfferSheet;
 import org.telegram.ui.Stories.StoriesListPlaceProvider;
-import org.telegram.ui.Stories.PublicStoriesList;
 import org.telegram.ui.Stories.recorder.HintView2;
 import org.telegram.ui.Stories.recorder.PreviewView;
 import org.telegram.ui.bots.BotCommandsMenuContainer;
@@ -3044,7 +3043,6 @@ public class ChatActivity extends BaseFragment implements
             showMessagesSearchListView(true);
             searchingHashtag = hashtag;
             searchingQuery = searchingHashtag;
-            checkHashtagStories(false);
             clearChatData(true);
             startMessageAppearTransitionMs = 0;
             firstMessagesLoaded = false;
@@ -7248,29 +7246,12 @@ public class ChatActivity extends BaseFragment implements
             .setColorProvider(BlurredBackgroundProviderImpl.topPanelChatActivitySearchListBg(themeDelegate)));
         contentView.addView(messagesSearchListContainer, LayoutHelper.createFrameMatchParent());
 
-        messagesSearchListView = new RecyclerListView(context, themeDelegate) {
-            @Override
-            protected void onAttachedToWindow() {
-                super.onAttachedToWindow();
-                if (messagesSearchAdapter != null) {
-                    messagesSearchAdapter.attach();
-                }
-            }
-
-            @Override
-            protected void onDetachedFromWindow() {
-                super.onDetachedFromWindow();
-                if (messagesSearchAdapter != null) {
-                    messagesSearchAdapter.detach();
-                }
-            }
-        };
+        messagesSearchListView = new RecyclerListView(context, themeDelegate);
         LinearLayoutManager messagesSearchLayoutManager = new LinearLayoutManager(context);
         messagesSearchLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
         messagesSearchListView.setLayoutManager(messagesSearchLayoutManager);
         messagesSearchListView.setAdapter(messagesSearchAdapter = new MessagesSearchAdapter(context, this, themeDelegate, searchType, dialog_id == getUserConfig().getClientUserId()));
         messagesSearchListView.setClipToPadding(false);
-        checkHashtagStories(true);
         DefaultItemAnimator itemAnimator = new DefaultItemAnimator();
         itemAnimator.setSupportsChangeAnimations(false);
         itemAnimator.setDelayAnimations(false);
@@ -7281,16 +7262,10 @@ public class ChatActivity extends BaseFragment implements
         messagesSearchListView.setOnItemClickListener((view, position) -> {
             if (chatMode == MODE_SEARCH) {
                 Object obj = messagesSearchAdapter.getItem(position);
-                if (position == 0 && messagesSearchAdapter.containsStories && messagesSearchAdapter.storiesList != null) {
-                    Bundle args = new Bundle();
-                    args.putInt("type", MediaActivity.TYPE_STORIES_SEARCH);
-                    args.putString("hashtag", messagesSearchAdapter.storiesList.query);
-                    if (messagesSearchAdapter.storiesList.username != null) {
-                        args.putString("username", messagesSearchAdapter.storiesList.username);
-                    }
-                    args.putInt("storiesCount", messagesSearchAdapter.storiesList.getCount());
-                    presentFragment(new MediaActivity(args, null));
-                } else if (obj instanceof MessageObject) {
+                // LoogriGram: the first row could be the public stories found
+                // for the hashtag, opening them as a grid. Stories are removed,
+                // as on desktop; the search of messages is unchanged.
+                if (obj instanceof MessageObject) {
                     openMessageInOriginalDialog((MessageObject) obj);
                 }
             } else {
@@ -7407,9 +7382,6 @@ public class ChatActivity extends BaseFragment implements
                 public void bindView(View view, int position, int viewType) {
                     if (view instanceof ChatActivityContainer) {
                         ((ChatActivityContainer) view).chatActivity.updateSearchingHashtag(searchingHashtag);
-                    } else if (view instanceof PublicStoriesList) {
-                        ((PublicStoriesList) view).setTabs(parentChatActivity != null ? parentChatActivity.hashtagSearchTabs.isShown() : hashtagSearchTabs.isShown());
-                        ((PublicStoriesList) view).setQuery("", searchingHashtag);
                     }
                     ViewCompat.requestApplyInsets(view);
                 }
@@ -32414,7 +32386,6 @@ public class ChatActivity extends BaseFragment implements
         searchingHashtag = hashtag;
         searchingQuery = searchingHashtag;
         boolean channelHashtags = hashtag.contains("@");
-        checkHashtagStories(true);
         if (!actionBar.isSearchFieldVisible()) {
             animatorSearchFieldVisibility.setValue(true, true);
             if (headerItem != null) {
@@ -35758,7 +35729,6 @@ public class ChatActivity extends BaseFragment implements
                     valueAnimator.start();
                 }
                 searchingHashtag = searchingQuery;
-                checkHashtagStories(true);
                 HashtagSearchController.getInstance(currentAccount).putToHistory(searchingHashtag);
                 hashtagHistoryView.update();
                 View view = searchViewPager.getCurrentView();
@@ -41645,12 +41615,6 @@ public class ChatActivity extends BaseFragment implements
             return false;
         }
 
-    }
-
-    private void checkHashtagStories(boolean instant) {
-        if (searchType != SEARCH_PUBLIC_POSTS) return;
-        if (messagesSearchAdapter == null) return;
-        messagesSearchAdapter.searchStories(searchingHashtag, instant);
     }
 
     public float getClipTop() {
