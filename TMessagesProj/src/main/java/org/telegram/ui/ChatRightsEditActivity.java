@@ -184,11 +184,11 @@ public class ChatRightsEditActivity extends BaseFragment implements Notification
     private int channelPostMessagesRow;
     private int channelEditMessagesRow;
     private int channelDeleteMessagesRow;
-    private int channelStoriesRow;
-    private boolean channelStoriesExpanded;
-    private int channelPostStoriesRow;
-    private int channelEditStoriesRow;
-    private int channelDeleteStoriesRow;
+    // LoogriGram: a "Manage stories" switch with post, edit and delete rows sat
+    // here. Stories are removed, but the three rights are the server's to keep:
+    // adminRights is filled from what the admin had (or, for a new one, from
+    // ours) in the constructor, nothing here changes them, and saving sends
+    // them back as they were - as desktop does.
 
     private ChatRightsEditActivityDelegate delegate;
 
@@ -217,7 +217,7 @@ public class ChatRightsEditActivity extends BaseFragment implements Notification
         currentUser = MessagesController.getInstance(currentAccount).getUser(userId);
         currentType = type;
         canEdit = edit;
-        channelMessagesExpanded = channelStoriesExpanded = !canEdit;
+        channelMessagesExpanded = !canEdit;
         botHash = addingNewBotHash;
         currentChat = getMessagesController().getChat(chatId);
         chatInfo = getMessagesController().getChatFull(chatId);
@@ -682,19 +682,6 @@ public class ChatRightsEditActivity extends BaseFragment implements Notification
                     listViewAdapter.notifyItemRangeRemoved(channelMessagesRow + 1, 3);
                 }
                 return;
-            } else if (position == channelStoriesRow) {
-                if (view instanceof TextCheckCell2 && !((TextCheckCell2) view).isEnabled()) {
-                    return;
-                }
-                channelStoriesExpanded = !channelStoriesExpanded;
-                updateRows(false);
-                listViewAdapter.notifyItemChanged(channelStoriesRow);
-                if (channelStoriesExpanded) {
-                    listViewAdapter.notifyItemRangeInserted(channelStoriesRow + 1, 3);
-                } else {
-                    listViewAdapter.notifyItemRangeRemoved(channelStoriesRow + 1, 3);
-                }
-                return;
             }
             if (position == 0) {
                 Bundle args = new Bundle();
@@ -878,17 +865,6 @@ public class ChatRightsEditActivity extends BaseFragment implements Notification
                         value = adminRights.delete_messages = !adminRights.delete_messages;
                     }
                     listViewAdapter.notifyItemChanged(channelMessagesRow);
-                    checkBoxCell.setChecked(value, true);
-                } else if (position == channelPostStoriesRow || position == channelEditStoriesRow || position == channelDeleteStoriesRow) {
-                    boolean value;
-                    if (position == channelPostStoriesRow) {
-                        value = adminRights.post_stories = !adminRights.post_stories;
-                    } else if (position == channelEditStoriesRow) {
-                        value = adminRights.edit_stories = !adminRights.edit_stories;
-                    } else {
-                        value = adminRights.delete_stories = !adminRights.delete_stories;
-                    }
-                    listViewAdapter.notifyItemChanged(channelStoriesRow);
                     checkBoxCell.setChecked(value, true);
                 } else if (currentType == TYPE_BANNED && bannedRights != null) {
                     boolean disabled = !checkBoxCell.isChecked();
@@ -1109,7 +1085,10 @@ public class ChatRightsEditActivity extends BaseFragment implements Notification
 
     private boolean hasAllAdminRights() {
         if (isChannel) {
-            return adminRights.change_info && adminRights.post_messages && adminRights.edit_messages && adminRights.delete_messages && adminRights.invite_users && adminRights.add_admins && adminRights.manage_call && adminRights.post_stories && adminRights.edit_stories && adminRights.delete_stories && adminRights.manage_direct_messages && adminRights.manage_welcome_messages;
+            // LoogriGram: the three story rights were required here too. They are
+            // not shown and cannot be granted from this screen any more, so as on
+            // desktop "all rights" means all the rights the screen offers.
+            return adminRights.change_info && adminRights.post_messages && adminRights.edit_messages && adminRights.delete_messages && adminRights.invite_users && adminRights.add_admins && adminRights.manage_call && adminRights.manage_direct_messages && adminRights.manage_welcome_messages;
         } else {
             return adminRights.change_info && adminRights.delete_messages && adminRights.ban_users && adminRights.invite_users && adminRights.pin_messages && adminRights.manage_ranks && adminRights.add_admins && adminRights.manage_call && (!isForum || adminRights.manage_topics) && adminRights.manage_welcome_messages;
         }
@@ -1357,10 +1336,6 @@ public class ChatRightsEditActivity extends BaseFragment implements Notification
         channelPostMessagesRow = -1;
         channelEditMessagesRow = -1;
         channelDeleteMessagesRow = -1;
-        channelStoriesRow = -1;
-        channelPostStoriesRow = -1;
-        channelEditStoriesRow = -1;
-        channelDeleteStoriesRow = -1;
 
         sendPhotosRow = -1;
         sendVideosRow = -1;
@@ -1394,12 +1369,6 @@ public class ChatRightsEditActivity extends BaseFragment implements Notification
                     channelEditMessagesRow = rowCount++;
                     channelDeleteMessagesRow = rowCount++;
                 }
-                channelStoriesRow = rowCount++;
-                if (channelStoriesExpanded) {
-                    channelPostStoriesRow = rowCount++;
-                    channelEditStoriesRow = rowCount++;
-                    channelDeleteStoriesRow = rowCount++;
-                }
                 manageDirectRow = rowCount++;
                 manageWelcomeRow = rowCount++;
                 addUsersRow = rowCount++;
@@ -1423,14 +1392,6 @@ public class ChatRightsEditActivity extends BaseFragment implements Notification
                 pinMessagesRow = rowCount++;
                 if (currentType != TYPE_ADD_BOT) { // TODO: bots will support?
                     editTagsRow = rowCount++;
-                }
-                if (ChatObject.isChannel(currentChat)) {
-                    channelStoriesRow = rowCount++;
-                    if (channelStoriesExpanded) {
-                        channelPostStoriesRow = rowCount++;
-                        channelEditStoriesRow = rowCount++;
-                        channelDeleteStoriesRow = rowCount++;
-                    }
                 }
                 manageWelcomeRow = rowCount++;
                 startVoiceChatRow = rowCount++;
@@ -1840,10 +1801,6 @@ public class ChatRightsEditActivity extends BaseFragment implements Notification
                 if (position == channelPostMessagesRow) return 37;
                 if (position == channelEditMessagesRow) return 38;
                 if (position == channelDeleteMessagesRow) return 39;
-                if (position == channelStoriesRow) return 40;
-                if (position == channelPostStoriesRow) return 41;
-                if (position == channelEditStoriesRow) return 42;
-                if (position == channelDeleteStoriesRow) return 43;
                 if (position == manageDirectRow) return 44;
                 if (position == editTagsRow) return 45;
                 if (position == sendReactionsRow) return 46;
@@ -1902,12 +1859,6 @@ public class ChatRightsEditActivity extends BaseFragment implements Notification
                         return myAdminRights.manage_ranks;
                     } else if (position == manageTopicsRow) {
                         return myAdminRights.manage_topics;
-                    } else if (position == channelPostStoriesRow) {
-                        return myAdminRights.post_stories;
-                    } else if (position == channelEditStoriesRow) {
-                        return myAdminRights.edit_stories;
-                    } else if (position == channelDeleteStoriesRow) {
-                        return myAdminRights.delete_stories;
                     } else if (position == manageLinkedPeersRow) {
                         return myAdminRights.manage_linked_peers;
                     }
@@ -2063,12 +2014,6 @@ public class ChatRightsEditActivity extends BaseFragment implements Notification
                         checkBoxCell.setText(LocaleController.getString(R.string.EditAdminEditMessages), "", adminRights.edit_messages, true, animated);
                     } else if (position == channelDeleteMessagesRow) {
                         checkBoxCell.setText(LocaleController.getString(R.string.EditAdminDeleteMessages), "", adminRights.delete_messages, true, animated);
-                    } else if (position == channelPostStoriesRow) {
-                        checkBoxCell.setText(LocaleController.getString(R.string.EditAdminPostStories), "", adminRights.post_stories, true, animated);
-                    } else if (position == channelEditStoriesRow) {
-                        checkBoxCell.setText(LocaleController.getString(R.string.EditAdminEditStories), "", adminRights.edit_stories, true, animated);
-                    } else if (position == channelDeleteStoriesRow) {
-                        checkBoxCell.setText(LocaleController.getString(R.string.EditAdminDeleteStories), "", adminRights.delete_stories, true, animated);
                     }
                     break;
                 case VIEW_TYPE_USER_CELL:
@@ -2165,15 +2110,6 @@ public class ChatRightsEditActivity extends BaseFragment implements Notification
                             boolean checked = checkCell.isChecked();
                             checkCell.setChecked(checked);
                             setChannelMessagesEnabled(checked);
-                        });
-                    } else if (position == channelStoriesRow) {
-                        int count = getChannelStoriesSelectedCount();
-                        checkCell.setTextAndCheck(LocaleController.getString(R.string.ChannelManageStories), count > 0, true, true);
-                        checkCell.setCollapseArrow(String.format(Locale.US, "%d/3", count), !channelStoriesExpanded, () -> {
-                            if (!checkCell.isEnabled()) return;
-                            boolean checked = checkCell.isChecked();
-                            checkCell.setChecked(checked);
-                            setChannelStoriesEnabled(checked);
                         });
                     } else if (position == manageRow) {
                         checkCell.setTextAndCheck(LocaleController.getString(R.string.ManageGroup), asAdmin, true);
@@ -2379,7 +2315,7 @@ public class ChatRightsEditActivity extends BaseFragment implements Notification
         public int getItemViewType(int position) {
             if (isExpandableSendMediaRow(position)) {
                 return VIEW_TYPE_INNER_CHECK;
-            } else if (position == sendMediaRow || position == channelMessagesRow || position == channelStoriesRow) {
+            } else if (position == sendMediaRow || position == channelMessagesRow) {
                 return VIEW_TYPE_EXPANDABLE_SWITCH;
             } else if (position == 0) {
                 return VIEW_TYPE_USER_CELL;
@@ -2486,27 +2422,6 @@ public class ChatRightsEditActivity extends BaseFragment implements Notification
         AndroidUtilities.updateVisibleRows(listView);
     }
 
-    private int getChannelStoriesSelectedCount() {
-        int i = 0;
-        if (adminRights.post_stories) {
-            i++;
-        }
-        if (adminRights.edit_stories) {
-            i++;
-        }
-        if (adminRights.delete_stories) {
-            i++;
-        }
-        return i;
-    }
-
-    private void setChannelStoriesEnabled(boolean enabled) {
-        adminRights.post_stories = !enabled;
-        adminRights.edit_stories = !enabled;
-        adminRights.delete_stories = !enabled;
-        AndroidUtilities.updateVisibleRows(listView);
-    }
-
     private boolean allDefaultMediaBanned() {
         return defaultBannedRights.send_photos && defaultBannedRights.send_videos && defaultBannedRights.send_stickers
             && defaultBannedRights.send_audios && defaultBannedRights.send_docs && defaultBannedRights.send_voices
@@ -2518,8 +2433,7 @@ public class ChatRightsEditActivity extends BaseFragment implements Notification
         if (position == sendStickersRow || position == embedLinksRow || position == sendPollsRow ||
             position == sendPhotosRow || position == sendVideosRow || position == sendFilesRow ||
             position == sendMusicRow || position == sendRoundRow || position == sendVoiceRow || position == sendReactionsRow ||
-            position == channelPostMessagesRow || position == channelEditMessagesRow || position == channelDeleteMessagesRow ||
-            position == channelPostStoriesRow || position == channelEditStoriesRow || position == channelDeleteStoriesRow) {
+            position == channelPostMessagesRow || position == channelEditMessagesRow || position == channelDeleteMessagesRow) {
             return true;
         }
         return false;

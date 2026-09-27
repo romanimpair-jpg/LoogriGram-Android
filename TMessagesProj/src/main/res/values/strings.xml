@@ -720,9 +720,6 @@
     <string name="EditAdminBotGroupSendWelcomeMessages">Send Welcome Messages</string>
     <string name="EditAdminEditMessages">Edit Messages of Others</string>
     <string name="EditAdminDeleteMessages">Delete Messages of Others</string>
-    <string name="EditAdminPostStories">Post Stories</string>
-    <string name="EditAdminEditStories">Edit Stories of Others</string>
-    <string name="EditAdminDeleteStories">Delete Stories of Others</string>
     <string name="EditAdminGroupDeleteMessages">Delete Messages</string>
     <string name="EditAdminAddAdmins">Add New Admins</string>
     <string name="EditAdminSendAnonymously">Send Anonymously</string>
@@ -7161,7 +7158,6 @@
     <string name="UnconfirmedAuthConfirmedBot">New Bot Allowed</string>
     <string name="UnconfirmedAuthConfirmedMessage">You can check the list of your active logins in **Settings > Devices**.</string>
     <string name="ChannelManageMessages">Manage Messages</string>
-    <string name="ChannelManageStories">Manage Stories</string>
     <string name="PremiumSubscribers">Premium subscribers</string>
     <string name="PremiumMembers">Premium members</string>
     <string name="BoostsExisting">Existing Boosts</string>
