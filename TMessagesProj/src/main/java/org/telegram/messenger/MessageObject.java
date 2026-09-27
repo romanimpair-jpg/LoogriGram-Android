@@ -7266,26 +7266,9 @@ public class MessageObject {
         if (linkDescription != null) {
             return;
         }
-        boolean allowUsernames = false;
         int hashtagsType = 0;
-        TLRPC.WebPage webpage = null;
-        if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaWebPage) {
-            webpage = ((TLRPC.TL_messageMediaWebPage) getMedia(messageOwner)).webpage;
-        }
-        if (webpage != null) {
-            for (int i = 0; i < webpage.attributes.size(); ++i) {
-                TLRPC.WebPageAttribute attr = webpage.attributes.get(i);
-                if (attr instanceof TLRPC.TL_webPageAttributeStory) {
-                    TLRPC.TL_webPageAttributeStory storyAttr = (TLRPC.TL_webPageAttributeStory) attr;
-                    if (storyAttr.storyItem != null && storyAttr.storyItem.caption != null) {
-                        linkDescription = new SpannableStringBuilder(storyAttr.storyItem.caption);
-                        webPageDescriptionEntities = storyAttr.storyItem.entities;
-                        allowUsernames = true;
-                        break;
-                    }
-                }
-            }
-        }
+        // LoogriGram: a story link's preview took its description from the
+        // story's caption here. Stories are removed, so it is the page's own.
         if (linkDescription == null) {
             if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaWebPage && getMedia(messageOwner).webpage instanceof TLRPC.TL_webPage && getMedia(messageOwner).webpage.description != null) {
                 linkDescription = Spannable.Factory.getInstance().newSpannable(getMedia(messageOwner).webpage.description);
@@ -7314,7 +7297,7 @@ public class MessageObject {
             }
             linkDescription = Emoji.replaceEmoji(linkDescription, Theme.chat_msgTextPaint.getFontMetricsInt(), false);
             if (webPageDescriptionEntities != null) {
-                addEntitiesToText(linkDescription, webPageDescriptionEntities, isOut(), allowUsernames, false, !allowUsernames);
+                addEntitiesToText(linkDescription, webPageDescriptionEntities, isOut(), false, false, true);
                 replaceAnimatedEmoji(linkDescription, webPageDescriptionEntities, Theme.chat_msgTextPaint.getFontMetricsInt());
             }
             if (hashtagsType != 0) {

@@ -87,7 +87,6 @@ import org.telegram.ui.Components.URLSpanReplacement;
 import org.telegram.ui.Components.URLSpanUserMention;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.messenger.utils.tlutils.AmountUtils;
-import org.telegram.ui.Stories.StoriesStorage;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -6116,7 +6115,6 @@ public class MediaDataController extends BaseController {
         } else {
             LongSparseArray<SparseArray<ArrayList<MessageObject>>> replyMessageOwners = new LongSparseArray<>();
             LongSparseArray<ArrayList<Integer>> dialogReplyMessagesIds = new LongSparseArray<>();
-            LongSparseArray<ArrayList<MessageObject>> messagesWithUnknownStories = null;
             Timer.Task t2 = Timer.start(logLogger, "loadReplyMessagesForMessages: filling replies from the same array");
             for (int a = 0; a < messages.size(); a++) {
                 MessageObject messageObject = messages.get(a);
@@ -6207,69 +6205,25 @@ public class MediaDataController extends BaseController {
                     arrayList.add(messageObject);
                     Timer.log(logLogger, "+message did=" + -channelId + " mid="+messageId+" at replied #" + messageObject.getId());
                 }
-                if (
-                    messageObject.type == MessageObject.TYPE_TEXT &&
-                    messageObject.messageOwner != null &&
-                    messageObject.messageOwner.media != null &&
-                    messageObject.messageOwner.media.webpage != null &&
-                    messageObject.messageOwner.media.webpage.attributes != null
-                ) {
-                    for (int i = 0; i < messageObject.messageOwner.media.webpage.attributes.size(); ++i) {
-                        TLRPC.WebPageAttribute attr = messageObject.messageOwner.media.webpage.attributes.get(i);
-                        if (attr instanceof TLRPC.TL_webPageAttributeStory) {
-                            TLRPC.TL_webPageAttributeStory attrStory = (TLRPC.TL_webPageAttributeStory) attr;
-                            if (attrStory.storyItem == null) {
-                                long storyDialogId = DialogObject.getPeerDialogId(attrStory.peer);
-                                if (messagesWithUnknownStories == null) {
-                                    messagesWithUnknownStories = new LongSparseArray<>();
-                                }
-                                ArrayList<MessageObject> array = messagesWithUnknownStories.get(storyDialogId);
-                                if (array == null) {
-                                    array = new ArrayList<>();
-                                    messagesWithUnknownStories.put(storyDialogId, array);
-                                }
-                                Timer.log(logLogger, "+story did=" + storyDialogId + " at webpage of #" + messageObject.getId());
-                                array.add(messageObject);
-                            } else {
-                                long storyDialogId = DialogObject.getPeerDialogId(attrStory.peer);
-                                attrStory.storyItem = StoriesStorage.checkExpiredStateLocal(currentAccount, storyDialogId, attrStory.storyItem);
-                            }
-                        }
-                    }
-                }
             }
             Timer.done(t3);
-            if (replyMessageOwners.isEmpty() && messagesWithUnknownStories == null) {
+            if (replyMessageOwners.isEmpty()) {
                 if (callback != null) {
                     callback.run();
                 }
                 return;
             }
 
-            LongSparseArray<ArrayList<MessageObject>> finalMessagesWithUnknownStories = messagesWithUnknownStories;
-
             Timer.Task t4 = Timer.start(logLogger, "loadReplyMessagesForMessages: storageQueue.postRunnable");
-            AtomicInteger requestsCount = new AtomicInteger(2);
+            // LoogriGram: this was 2, the second share being the stories this batch
+            // referred to - a forward, a reply's quote, a link preview - fetched
+            // alongside the replies. Stories are removed, so the replies are the
+            // only request left and the callback still runs exactly once. The early
+            // return above now also covers the batch that had only stories.
+            AtomicInteger requestsCount = new AtomicInteger(1);
             getMessagesStorage().getStorageQueue().postRunnable(() -> {
                 Timer.done(t4);
                 try {
-                    getMessagesController().getStoriesController().fillMessagesWithStories(finalMessagesWithUnknownStories, () -> {
-                        if (requestsCount.decrementAndGet() == 0) {
-                            if (callback != null) {
-                                AndroidUtilities.runOnUIThread(callback);
-                            }
-                        }
-                    }, classGuid, logLogger);
-                    if (replyMessageOwners.isEmpty()) {
-                        Timer.log(logLogger, "loadReplyMessagesForMessages: empty replyMessageOwners");
-                        if (requestsCount.decrementAndGet() == 0) {
-                            if (callback != null) {
-                                AndroidUtilities.runOnUIThread(callback);
-                            }
-                        }
-                        return;
-                    }
-
                     Timer.Task t5 = Timer.start(logLogger, "loadReplyMessagesForMessages: getting reply messages");
 
                     ArrayList<TLRPC.Message> result = new ArrayList<>();

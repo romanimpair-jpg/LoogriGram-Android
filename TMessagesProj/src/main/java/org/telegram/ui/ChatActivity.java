@@ -199,7 +199,6 @@ import org.telegram.tgnet.tl.TL_keyboard;
 import org.telegram.tgnet.tl.TL_iv;
 import org.telegram.tgnet.tl.TL_phone;
 import org.telegram.tgnet.tl.TL_stats;
-import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarLayout;
 import org.telegram.ui.ActionBar.ActionBarMenu;
@@ -13163,60 +13162,9 @@ public class ChatActivity extends BaseFragment implements
                 }
             }
             if (media != null) {
-                if (media.webpage != null && "telegram_story".equals(media.webpage.type)) {
-                    TLRPC.TL_webPageAttributeStory _attrStory = null;
-                    if (media.webpage.attributes != null) {
-                        for (int i = 0; i < media.webpage.attributes.size(); ++i) {
-                            if (media.webpage.attributes.get(i) instanceof TLRPC.TL_webPageAttributeStory) {
-                                _attrStory = (TLRPC.TL_webPageAttributeStory) media.webpage.attributes.get(i);
-                                break;
-                            }
-                        }
-                    }
-                    if (_attrStory == null) {
-                        done.run(false, null);
-                        return;
-                    }
-                    if (_attrStory != null && _attrStory.storyItem != null) {
-                        done.run(true, media.webpage);
-                        return;
-                    }
-                    final TLRPC.TL_webPageAttributeStory attrStory = _attrStory;
-                    final TLRPC.TL_messageMediaWebPage finalMedia = media;
-                    getMessagesStorage().getStorageQueue().postRunnable(() -> {
-                        try {
-                            LongSparseArray<ArrayList<MessageObject>> array = new LongSparseArray<>();
-                            TLRPC.TL_message message = new TLRPC.TL_message();
-                            message.message = "";
-                            message.id = 0;
-                            message.media = finalMedia;
-                            ArrayList<MessageObject> list = new ArrayList<>();
-                            list.add(new MessageObject(currentAccount, message, false, false));
-                            array.put(DialogObject.getPeerDialogId(attrStory.peer), list);
-                            getMessagesController().getStoriesController().getStoriesStorage().fillMessagesWithStories(array, () -> {
-                                MessageObject result = null;
-                                if (array.size() == 1 && array.valueAt(0) != null && array.valueAt(0).size() == 1) {
-                                    result = array.valueAt(0).get(0);
-                                }
-                                if (result != null && result.messageOwner != null && result.messageOwner.media != null && result.messageOwner.media.webpage != null && result.messageOwner.media.webpage.attributes != null) {
-                                    for (int i = 0; i < result.messageOwner.media.webpage.attributes.size(); ++i) {
-                                        TLRPC.WebPageAttribute attr = result.messageOwner.media.webpage.attributes.get(i);
-                                        if (attr instanceof TLRPC.TL_webPageAttributeStory) {
-                                            if (((TLRPC.TL_webPageAttributeStory) attr).storyItem != null) {
-                                                final TLRPC.WebPage webpage = result.messageOwner.media.webpage;
-                                                AndroidUtilities.runOnUIThread(() -> { done.run(true, webpage); });
-                                                return;
-                                            }
-                                        }
-                                    }
-                                }
-                                AndroidUtilities.runOnUIThread(() -> { done.run(false, null); });
-                            }, classGuid, false, null);
-                        } catch (Exception ignore) {}
-                    });
-                } else {
-                    done.run(media.webpage != null, media.webpage);
-                }
+                // LoogriGram: a story link's preview waited here for its story to be
+                // fetched. Stories are removed; it previews as the page it is.
+                done.run(media.webpage != null, media.webpage);
             } else {
                 done.run(false, null);
             }
@@ -25025,32 +24973,6 @@ public class ChatActivity extends BaseFragment implements
                         messageObject.generatePaymentSentMessageText(null, true);
                     } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionSuggestedPostApproval) {
                         messageObject.generateSuggestionApprovalMessageText();
-                    }
-                }
-                if (old.isWebpage() && messageObject.isWebpage()) {
-                    TLRPC.TL_messageMediaWebPage media = (TLRPC.TL_messageMediaWebPage) MessageObject.getMedia(old.messageOwner);
-                    if (media.webpage != null && "telegram_story".equals(media.webpage.type)) {
-                        TL_stories.StoryItem storyItem = null;
-                        for (int i = 0; i < media.webpage.attributes.size(); ++i) {
-                            TLRPC.WebPageAttribute attr = media.webpage.attributes.get(i);
-                            if (attr instanceof TLRPC.TL_webPageAttributeStory) {
-                                storyItem = ((TLRPC.TL_webPageAttributeStory) attr).storyItem;
-                                break;
-                            }
-                        }
-                        if (storyItem != null) {
-                            TLRPC.TL_messageMediaWebPage newMedia = (TLRPC.TL_messageMediaWebPage) MessageObject.getMedia(messageObject.messageOwner);
-                            for (int i = 0; i < newMedia.webpage.attributes.size(); ++i) {
-                                TLRPC.WebPageAttribute attr = newMedia.webpage.attributes.get(i);
-                                if (attr instanceof TLRPC.TL_webPageAttributeStory) {
-                                    TLRPC.TL_webPageAttributeStory storyAttr = (TLRPC.TL_webPageAttributeStory) attr;
-                                    if (!(storyAttr.storyItem instanceof TL_stories.TL_storyItem)) {
-                                        storyAttr.storyItem = storyItem;
-                                    }
-                                    break;
-                                }
-                            }
-                        }
                     }
                 }
                 if (!old.isEditing()) {
@@ -38521,20 +38443,8 @@ public class ChatActivity extends BaseFragment implements
                 if (webPage == null) {
                     return;
                 }
-                if (webPage.attributes != null) {
-                    for (int i = 0; i < webPage.attributes.size(); ++i) {
-                        if (webPage.attributes.get(i) instanceof TLRPC.TL_webPageAttributeStory) {
-                            TLRPC.TL_webPageAttributeStory story = (TLRPC.TL_webPageAttributeStory) webPage.attributes.get(i);
-                            if (story.storyItem != null) {
-                                story.storyItem.dialogId = DialogObject.getPeerDialogId(story.peer);
-                                story.storyItem.messageId = messageObject.getId();
-                                story.storyItem.messageType = 1;
-                                getOrCreateStoryViewer().open(getContext(), story.storyItem, StoriesListPlaceProvider.of(chatListView));
-                                return;
-                            }
-                        }
-                    }
-                }
+                // LoogriGram: a story link's preview opened the viewer here. The link
+                // is opened instead, which resolves the peer (see LaunchActivity).
                 if (!openLinkInternally(webPage.url, cell, null, messageObject.getId(), PROGRESS_INSTANT)) {
                     if (progressDialogCurrent != null) {
                         progressDialogCurrent.cancel(true);

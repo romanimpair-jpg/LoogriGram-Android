@@ -54,7 +54,6 @@ import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.GradientDrawable;
 import android.graphics.text.LineBreaker;
 import android.net.Uri;
 import android.os.Build;
@@ -149,7 +148,6 @@ import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_keyboard;
 import org.telegram.tgnet.tl.TL_iv;
 import org.telegram.tgnet.tl.TL_stars;
-import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.MessageDrawable;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.AvatarSpan;
@@ -234,10 +232,8 @@ import org.telegram.ui.PinchToZoomHelper;
 import org.telegram.ui.SecretMediaViewer;
 import org.telegram.ui.Components.StarGiftPatterns;
 import org.telegram.ui.Stars.StarGiftSheet;
-import org.telegram.ui.Stories.StoriesUtilities;
 import org.telegram.ui.Stories.StoryViewer;
 import org.telegram.ui.Stories.recorder.CaptionContainerView;
-import org.telegram.ui.Stories.recorder.DominantColors;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -877,7 +873,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private final static int DOCUMENT_ATTACH_TYPE_ROUND = 7;
     private final static int DOCUMENT_ATTACH_TYPE_WALLPAPER = 8;
     private final static int DOCUMENT_ATTACH_TYPE_THEME = 9;
-    private final static int DOCUMENT_ATTACH_TYPE_STORY = 10;
+    // LoogriGram: 10 was DOCUMENT_ATTACH_TYPE_STORY, a story link's preview.
 
     public class PollButton {
         public int x;
@@ -1050,7 +1046,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private ColorMatrixColorFilter fancyBlurFilter;
     private AvatarDrawable contactAvatarDrawable;
     private Drawable locationLoadingThumb;
-    private Drawable gradientDrawable;
     private Paint gradientLoadingPaint;
     private CaptionContainerView.PeriodDrawable oncePeriod;
     private Paint onceClearPaint;
@@ -6677,7 +6672,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             closeExplanationX = -1;
             closeExplanationY = -1;
             instantPressed = commentButtonPressed = false;
-            gradientDrawable = null;
             setInstantButtonPressed(false);
             if (!pollChanged) {
                 for (int a = 0; a < selectorDrawable.length; a++) {
@@ -7021,7 +7015,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 boolean slideshow = false;
                 String webpageType = webpage != null ? webpage.type : null;
                 TLRPC.Document androidThemeDocument = null;
-                TL_stories.StoryItem storyItem = null;
                 TLRPC.ThemeSettings androidThemeSettings = null;
                 ArrayList<TLRPC.Document> stickers = null;
                 long emoji_id = 0;
@@ -7033,11 +7026,12 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     if (messageObject.isUnsupported()) {
                         drawInstantView = true;
                         drawInstantViewType = 21;
-                    // LoogriGram: a boost link's and a gift code's previews had their
-                    // own name and button here, and a gift auction's (further down) a
-                    // countdown, its gift and its own button. Boosts, gift codes and
-                    // auctions are gone, so their links preview as plain pages - as
-                    // desktop shows story links. A boost link still opens its chat.
+                    // LoogriGram: a boost link's, a gift code's and a story's previews
+                    // had their own name and button here, and a gift auction's (further
+                    // down) a countdown, its gift and its own button. Boosts, gift codes,
+                    // auctions and stories are gone, so their links preview as the plain
+                    // page the server describes, as on desktop. A boost link still opens
+                    // its chat, and a story link its peer.
                     } else if ("telegram_livestream".equals(webpageType)) {
                         drawInstantView = true;
                         drawInstantViewType = 11;
@@ -7124,31 +7118,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                                 androidThemeSettings = attribute.settings;
                                 break;
                             }
-                        }
-                    } else if ("telegram_story".equals(webpageType)) {
-                        for (int b = 0, N2 = webpage.attributes.size(); b < N2; b++) {
-                            TLRPC.WebPageAttribute attribute_ = webpage.attributes.get(b);
-                            if (!(attribute_ instanceof TLRPC.TL_webPageAttributeStory)) {
-                                continue;
-                            }
-                            drawInstantView = true;
-                            drawInstantViewType = 17;
-                            TLRPC.TL_webPageAttributeStory attribute = (TLRPC.TL_webPageAttributeStory) attribute_;
-                            storyItem = attribute.storyItem;
-                            if (storyItem != null) {
-                                storyItem.messageId = messageObject.getId();
-                                storyItem.dialogId = DialogObject.getPeerDialogId(attribute.peer);
-                                if (storyItem instanceof TL_stories.TL_storyItemDeleted) {
-                                    drawInstantView = false;
-                                    hasLinkPreview = false;
-                                    drawInstantViewType = 0;
-                                }
-                            } else {
-                                drawInstantView = false;
-                                hasLinkPreview = false;
-                                drawInstantViewType = 0;
-                            }
-                            break;
                         }
                     } else if ("telegram_background".equals(webpageType)) {
                         drawInstantView = true;
@@ -7243,7 +7212,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     }
                 } else if (siteName != null) {
                     siteName = siteName.toLowerCase();
-                    if ((siteName.equals("instagram") || siteName.equals("twitter") || "telegram_album".equals(webpageType) || "telegram_story_album".equals(webpageType)) && webpage.cached_page instanceof TL_iv.TL_page &&
+                    if ((siteName.equals("instagram") || siteName.equals("twitter") || "telegram_album".equals(webpageType)) && webpage.cached_page instanceof TL_iv.TL_page &&
                             (webpage.photo instanceof TLRPC.TL_photo || MessageObject.isVideoDocument(webpage.document))) {
                         drawInstantView = false;
                         slideshow = true;
@@ -7367,28 +7336,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     boolean smallImage;
                     String type;
                     final int smallImageSide = dp(48), smallSideMargin = dp(10);
-                    if (drawInstantViewType == 17) {
-                        site_name = null;
-                        TLRPC.User user = storyItem == null ? null : MessagesController.getInstance(currentAccount).getUser(storyItem.dialogId);
-                        if (storyItem instanceof TL_stories.TL_storyItemDeleted) {
-                            site_name_additionalWidth += dp(14);
-                            site_name = StoriesUtilities.createExpiredStoryString();
-                        } else if (user != null) {
-                            site_name = UserObject.getUserName(user);
-                        } else {
-                            site_name = webpage == null ? null : webpage.title;
-                        }
-                        title = null;
-                        description = storyItem != null ? storyItem.caption : (webpage == null ? null : webpage.description);
-                        author = null;
-                        document = storyItem != null && storyItem.media != null && storyItem.media.document != null ? storyItem.media.document : (webpage == null ? null : webpage.document);
-                        photo = storyItem != null && storyItem.media != null && storyItem.media.photo != null ? storyItem.media.photo : (webpage == null ? null : webpage.photo);
-                        type = webpage == null ? null : webpage.type;
-                        duration = storyItem != null && storyItem.media != null && storyItem.media.document != null ? (int) MessageObject.getDocumentDuration(storyItem.media.document) : 0;
-                        smallImage = false;
-                        isSmallImage = false;
-                        linkPreviewAbove = currentMessageObject.messageOwner != null && currentMessageObject.messageOwner.invert_media;
-                    } else if (hasLinkPreview) {
+                    if (hasLinkPreview) {
                         TLRPC.TL_webPage webPage = (TLRPC.TL_webPage) webpage;
                         site_name = webPage.site_name;
                         title = drawInstantViewType != 6 && drawInstantViewType != 7 ? webPage.title : null;
@@ -7456,9 +7404,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     }
 
                     int additinalWidth = dp(20);
-                    if (drawInstantViewType == 17) {
-                        additinalWidth += dp(20);
-                    }
                     int restLinesCount = 3;
                     linkPreviewMaxWidth -= additinalWidth;
 
@@ -7655,45 +7600,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     }
                     int maxPhotoWidth = smallImage ? smallImageSide : linkPreviewMaxWidth;
 
-                    if (drawInstantViewType == 17) {
-                        if (storyItem != null && storyItem.media != null) {
-                            int side = (int) (maxPhotoWidth * 16f / 9f);
-                            if (storyItem.media.document != null) {
-                                document = storyItem.media.document;
-                                currentPhotoObject = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, side);
-                                if (currentMessageObject.strippedThumb == null) {
-                                    currentPhotoObjectThumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 40);
-                                } else {
-                                    currentPhotoObjectThumbStripped = currentMessageObject.strippedThumb;
-                                }
-                                if (currentPhotoObject != null && (currentPhotoObject.w == 0 || currentPhotoObject.h == 0)) {
-                                    for (int a = 0; a < document.attributes.size(); a++) {
-                                        TLRPC.DocumentAttribute attribute = document.attributes.get(a);
-                                        if (attribute instanceof TLRPC.TL_documentAttributeImageSize) {
-                                            currentPhotoObject.w = attribute.w;
-                                            currentPhotoObject.h = attribute.h;
-                                            break;
-                                        }
-                                    }
-                                    if (currentPhotoObject.w == 0 || currentPhotoObject.h == 0) {
-                                        currentPhotoObject.w = dp(150);
-                                        currentPhotoObject.h = (int) (currentPhotoObject.w / 9f * 16f);
-                                    }
-                                }
-                                documentAttach = document;
-                            } else if (storyItem.media.photo != null) {
-                                photo = storyItem.media.photo;
-                                currentPhotoObject = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, side);
-                                if (currentMessageObject.strippedThumb == null) {
-                                    currentPhotoObjectThumb = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, 40);
-                                } else {
-                                    currentPhotoObjectThumbStripped = currentMessageObject.strippedThumb;
-                                }
-                            }
-                            photoParentObject = storyItem;
-                            documentAttachType = DOCUMENT_ATTACH_TYPE_STORY;
-                        }
-                    } else if (document != null) {
+                    if (document != null) {
                         if (MessageObject.isRoundVideoDocument(document)) {
                             currentPhotoObject = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 90);
                             photoParentObject = document;
@@ -7963,8 +7870,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             } else if (documentAttachType == DOCUMENT_ATTACH_TYPE_ROUND) {
                                 maxPhotoWidth = AndroidUtilities.roundMessageSize;
                                 photoImage.setAllowDecodeSingleFrame(true);
-                            } else if (documentAttachType == DOCUMENT_ATTACH_TYPE_STORY) {
-                                maxPhotoWidth /= 2;
                             }
 
                             maxChildWidth = Math.max(maxChildWidth, maxPhotoWidth + additinalWidth);
@@ -8073,22 +7978,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                                 } else {
                                     photoImage.setImage(ImageLocation.getForDocument(currentPhotoObject, document), currentPhotoFilter, ImageLocation.getForDocument(currentPhotoObjectThumb, document), "b1", currentPhotoObjectThumbStripped, 0, "jpg", messageObject, 1);
                                 }
-                            } else if (documentAttachType == DOCUMENT_ATTACH_TYPE_STORY) {
-                                if (document != null) {
-                                    photoImage.setImage(ImageLocation.getForDocument(currentPhotoObject, document), currentPhotoFilter, ImageLocation.getForDocument(currentPhotoObjectThumb, document), "b1", currentPhotoObjectThumbStripped, 0, "jpg", messageObject, 1);
-                                } else if (photo != null) {
-                                    photoImage.setImage(ImageLocation.getForPhoto(currentPhotoObject, photo), currentPhotoFilter, ImageLocation.getForPhoto(currentPhotoObjectThumb, photo), "b1", currentPhotoObjectThumbStripped, 0, "jpg", messageObject, 1);
-                                }
-                                if (currentPhotoObject != null && (currentPhotoObject.gradientTopColor != 0 && currentPhotoObject.gradientBottomColor != 0)) {
-                                    gradientDrawable = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[] { currentPhotoObject.gradientTopColor, currentPhotoObject.gradientBottomColor });
-                                } else if (currentPhotoObjectThumbStripped != null && currentPhotoObjectThumbStripped.getBitmap() != null) {
-                                    final int[] colors = DominantColors.getColorsSync(false, currentPhotoObjectThumbStripped.getBitmap(), Theme.isCurrentThemeDark());
-                                    gradientDrawable = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, colors);
-                                    if (currentPhotoObject != null) {
-                                        currentPhotoObject.gradientTopColor = colors[0];
-                                        currentPhotoObject.gradientBottomColor = colors[1];
-                                    }
-                                }
                             } else if (documentAttachType == DOCUMENT_ATTACH_TYPE_STICKER) {
                                 boolean isWebpSticker = messageObject.isSticker();
                                 if (!SharedConfig.loopStickers() && messageObject.isVideoSticker()) {
@@ -8171,7 +8060,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             }
                             drawPhotoImage = true;
 
-                            if ((type != null && type.equals("video") || documentAttachType == DOCUMENT_ATTACH_TYPE_STORY) && duration != 0) {
+                            if (type != null && type.equals("video") && duration != 0) {
                                 String str = AndroidUtilities.formatShortDuration(duration);
                                 durationWidth = (int) Math.ceil(Theme.chat_durationPaint.measureText(str));
                                 videoInfoLayout = new StaticLayout(str, Theme.chat_durationPaint, durationWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
@@ -10268,9 +10157,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 }
                 if (currentMessageObject.type == MessageObject.TYPE_GEO && (MessageObject.getMedia(currentMessageObject) instanceof TLRPC.TL_messageMediaVenue || !locationExpired && MessageObject.getMedia(currentMessageObject) instanceof TLRPC.TL_messageMediaGeoLive)) {
                     br = bl = nearRad;
-                }
-                if (documentAttachType == DOCUMENT_ATTACH_TYPE_STORY) {
-                    tl = tr = br = bl = 0;
                 }
                 photoImage.setRoundRadius(tl, tr, br, bl);
             }
@@ -12644,8 +12530,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 str = getString(R.string.BotWebAppInstantViewOpen).toUpperCase();
             } else if (drawInstantViewType == 16) {
                 str = getString(R.string.OpenLink).toUpperCase();
-            } else if (drawInstantViewType == 17) {
-                str = getString(R.string.ViewStory).toUpperCase();
             } else if (drawInstantViewType == 21) {
                 str = getString(R.string.AppUpdate);
             } else if (drawInstantViewType == 23) {
@@ -13136,9 +13020,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
             if (currentMessageObject.type != MessageObject.TYPE_TEXT) {
                 x -= dp(2);
-            }
-            if (drawInstantViewType == 17) {
-                x += dp(10) + (instantWidth - photoImage.getImageWidth()) / 2;
             }
             if (!transitionParams.imageChangeBoundsTransition || transitionParams.updatePhotoImageX) {
                 transitionParams.updatePhotoImageX = false;
@@ -14590,58 +14471,25 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     linkPreviewY += yProgress * dp(2);
                 }
                 int photoWidth = width - dp(17);
-                float tx = 0;
-                if (!isSmallImage && drawInstantViewType == 17) {
-                    AndroidUtilities.rectTmp2.set(linkX + dp(10), linkPreviewY, linkX + dp(10) + photoWidth, linkPreviewY + (int) photoImage.getImageHeight());
-                    AndroidUtilities.rectTmp.set(AndroidUtilities.rectTmp2);
-                    if (gradientDrawable == null) {
-                        if (currentPhotoObject != null && currentPhotoObject.gradientTopColor != 0 && currentPhotoObject.gradientBottomColor != 0) {
-                            gradientDrawable = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[]{currentPhotoObject.gradientTopColor, currentPhotoObject.gradientBottomColor});
-                        } else if (photoImage.getBitmap() != null) {
-                            int[] colors = DominantColors.getColorsSync(false, photoImage.getBitmap(), Theme.isCurrentThemeDark());
-                            gradientDrawable = new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, colors);
-                            if (currentPhotoObject != null) {
-                                currentPhotoObject.gradientTopColor = colors[0];
-                                currentPhotoObject.gradientBottomColor = colors[1];
-                            }
-                        }
-                    }
-                    if (gradientDrawable != null) {
-                        canvas.save();
-                        if (drillHolePath != null) {
-                            drillHolePath.rewind();
-                        } else {
-                            drillHolePath = new Path();
-                        }
-                        drillHolePath.addRoundRect(AndroidUtilities.rectTmp, dp(4), dp(4), Path.Direction.CW);
-                        canvas.clipPath(drillHolePath);
-                        gradientDrawable.setBounds(AndroidUtilities.rectTmp2);
-                        gradientDrawable.draw(canvas);
-                        canvas.restore();
-                    }
-                    tx = (instantWidth - photoImage.getImageWidth() - dp(10) - (transitionParams == null ? 0 : (currentMessageObject.isOutOwner() ? transitionParams.deltaLeft : -transitionParams.deltaRight))) / 2f;
-                }
                 if (imageBackgroundSideColor != 0) {
                     int x = linkX + dp(10);
-                    photoImage.setImageX(tx + x + (imageBackgroundSideWidth - photoImage.getImageWidth()) / 2);
+                    photoImage.setImageX(x + (imageBackgroundSideWidth - photoImage.getImageWidth()) / 2);
                     photoImage.setImageY(linkPreviewY);
                     rect.set(x, photoImage.getImageY(), x + imageBackgroundSideWidth, photoImage.getImageY2());
                     Theme.chat_instantViewPaint.setColor(ColorUtils.setAlphaComponent(imageBackgroundSideColor, (int) (255 * alpha)));
                     canvas.drawRoundRect(rect, dp(4), dp(4), Theme.chat_instantViewPaint);
                 } else {
-                    photoImage.setImageX(tx + linkX + dp(10));
+                    photoImage.setImageX(linkX + dp(10));
                     photoImage.setImageY(linkPreviewY);
                 }
-                if (drawInstantViewType != 17) {
-                    if (transitionParams != null && transitionParams.animateSmallImage) {
-                        if (!isSmallImage && documentAttachType != DOCUMENT_ATTACH_TYPE_DOCUMENT) {
-                            photoImage.setImageWidth((int) AndroidUtilities.lerp(transitionParams.photoImageFromWidth, photoWidth, transitionParams.animateChangeProgress));
-                        }
-                        photoImage.setImageX(AndroidUtilities.lerp(transitionParams.photoImageFromCenterX, photoImage.getCenterX(), transitionParams.animateChangeProgress) - photoImage.getImageWidth() / 2f);
-                        photoImage.setImageY(AndroidUtilities.lerp(transitionParams.photoImageFromCenterY, photoImage.getCenterY(), transitionParams.animateChangeProgress) - photoImage.getImageHeight() / 2f);
-                    } else if (!isSmallImage && documentAttachType != DOCUMENT_ATTACH_TYPE_DOCUMENT) {
-                        photoImage.setImageWidth(photoWidth);
+                if (transitionParams != null && transitionParams.animateSmallImage) {
+                    if (!isSmallImage && documentAttachType != DOCUMENT_ATTACH_TYPE_DOCUMENT) {
+                        photoImage.setImageWidth((int) AndroidUtilities.lerp(transitionParams.photoImageFromWidth, photoWidth, transitionParams.animateChangeProgress));
                     }
+                    photoImage.setImageX(AndroidUtilities.lerp(transitionParams.photoImageFromCenterX, photoImage.getCenterX(), transitionParams.animateChangeProgress) - photoImage.getImageWidth() / 2f);
+                    photoImage.setImageY(AndroidUtilities.lerp(transitionParams.photoImageFromCenterY, photoImage.getCenterY(), transitionParams.animateChangeProgress) - photoImage.getImageHeight() / 2f);
+                } else if (!isSmallImage && documentAttachType != DOCUMENT_ATTACH_TYPE_DOCUMENT) {
+                    photoImage.setImageWidth(photoWidth);
                 }
                 if (imageBackgroundColor != 0) {
                     rect.set(photoImage.getImageX(), photoImage.getImageY(), photoImage.getImageX2(), photoImage.getImageY2());
@@ -16450,7 +16298,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         } else if (
             currentMessageObject.type == MessageObject.TYPE_TEXT &&
             documentAttachType != DOCUMENT_ATTACH_TYPE_DOCUMENT &&
-            documentAttachType != DOCUMENT_ATTACH_TYPE_STORY &&
             documentAttachType != DOCUMENT_ATTACH_TYPE_GIF &&
             documentAttachType != DOCUMENT_ATTACH_TYPE_VIDEO &&
             documentAttachType != DOCUMENT_ATTACH_TYPE_WALLPAPER &&
@@ -16533,7 +16380,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     invalidate();
                 } else {
                     getIconForCurrentState();
-                    if (currentMessageObject.isSticker() || currentMessageObject.isAnimatedSticker() || currentMessageObject.isLocation() || currentMessageObject.isGif() || documentAttachType == DOCUMENT_ATTACH_TYPE_STORY) {
+                    if (currentMessageObject.isSticker() || currentMessageObject.isAnimatedSticker() || currentMessageObject.isLocation() || currentMessageObject.isGif()) {
                         buttonState = -1;
                         radialProgress.setIcon(MediaActionDrawable.ICON_NONE, ifSame, false);
                     } else {

@@ -6600,7 +6600,6 @@
     <string name="StoryShared">Story shared</string>
     <string name="StoryDraftSaved">Draft saved</string>
     <string name="StoriesSoundEnabled">Stories</string>
-    <string name="ViewStory">View Story</string>
     <string name="StoryUnsupported">This story is not supported by your version of Telegram.</string>
     <string name="StoryReplyDisabled">You can’t reply to this story</string>
     <string name="StorySharedTo">Story forwarded to **%s**.</string>
@@ -6612,7 +6611,6 @@
     <string name="LinkSharedToManyChats_one">Link forwarded to **a chat**.</string>
     <string name="LinkSharedToManyChats_other">Link forwarded to **%1$d chats**.</string>
     <string name="StoryNotFound">This story is no longer available</string>
-    <string name="StoryAlbumNotFound">This album is no longer available</string>
     <string name="StoryNotificationHidden_one">%d story was posted</string>
     <string name="StoryNotificationHidden_other">%d stories were posted</string>
     <string name="StoryNotificationSingle">posted a story</string>
