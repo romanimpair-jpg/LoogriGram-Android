@@ -66,7 +66,6 @@ import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.Text;
 import org.telegram.ui.FilterCreateActivity;
 import org.telegram.ui.NotificationsSettingsActivity;
-import org.telegram.ui.Stories.StoriesUtilities;
 import org.telegram.ui.community.CommunityUtils;
 
 import java.util.Locale;
@@ -131,7 +130,7 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
     private int statusLeft;
     private StaticLayout statusLayout;
     private AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable statusDrawable;
-    public StoriesUtilities.AvatarStoryParams avatarStoryParams = new StoriesUtilities.AvatarStoryParams(false);
+    private final RectF avatarRect = new RectF();
 
 
     private RectF rect = new RectF();
@@ -628,7 +627,7 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
         } else {
             avatarLeft = dp(callCellStyle ? 14 : rectangularAvatar ? 15 : 11) + getPaddingLeft();
         }
-        avatarStoryParams.originalAvatarRect.set(avatarLeft, dp(callCellStyle ? 6 : 7), avatarLeft + dp(callCellStyle ? 44 : rectangularAvatar ? 42 : 46), dp(callCellStyle ? 6 : 7) + dp(callCellStyle ? 44 : 46));
+        avatarRect.set(avatarLeft, dp(callCellStyle ? 6 : 7), avatarLeft + dp(callCellStyle ? 44 : rectangularAvatar ? 42 : 46), dp(callCellStyle ? 6 : 7) + dp(callCellStyle ? 44 : 46));
 
         double widthpx;
         float left;
@@ -891,24 +890,22 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
             if (bubbleClip == null) {
                 bubbleClip = new PhotoBubbleClip();
             }
-            bubbleClip.setBounds((int) avatarStoryParams.originalAvatarRect.centerX(), (int) avatarStoryParams.originalAvatarRect.centerY(), (int) (avatarStoryParams.originalAvatarRect.width() / 2));
+            bubbleClip.setBounds((int) avatarRect.centerX(), (int) avatarRect.centerY(), (int) (avatarRect.width() / 2));
             canvas.save();
             canvas.clipPath(bubbleClip);
-            avatarImage.setImageCoords(avatarStoryParams.originalAvatarRect);
+            avatarImage.setImageCoords(avatarRect);
             avatarImage.draw(canvas);
             canvas.restore();
-        } else if (user != null) {
-            StoriesUtilities.drawAvatarWithStory(user.id, canvas, avatarImage, avatarStoryParams);
-        } else if (chat != null) {
-            if (ChatObject.isCommunity(chat)) {
-                DrawableUtils.drawCommunityCardDrawable(canvas, Theme.dialogs_communityCardsDrawable,
-                    avatarStoryParams.originalAvatarRect.centerX(),
-                    avatarStoryParams.originalAvatarRect.centerY(),
-                    avatarStoryParams.originalAvatarRect.width());
-            }
-            StoriesUtilities.drawAvatarWithStory(-chat.id, canvas, avatarImage, avatarStoryParams);
         } else {
-            avatarImage.setImageCoords(avatarStoryParams.originalAvatarRect);
+            // LoogriGram: a user's or a chat's avatar was drawn with the ring of
+            // their stories, and a tap on it opened them. Stories are removed.
+            if (user == null && chat != null && ChatObject.isCommunity(chat)) {
+                DrawableUtils.drawCommunityCardDrawable(canvas, Theme.dialogs_communityCardsDrawable,
+                    avatarRect.centerX(),
+                    avatarRect.centerY(),
+                    avatarRect.width());
+            }
+            avatarImage.setImageCoords(avatarRect);
             avatarImage.draw(canvas);
         }
 
@@ -1018,9 +1015,6 @@ public class ProfileSearchCell extends BaseCell implements NotificationCenter.No
             }
             if (hit || openButtonBounce.isPressed())
                 return true;
-        }
-        if ((user != null || chat != null) && avatarStoryParams.checkOnTouchEvent(event, this)) {
-            return true;
         }
         if (actionButton != null && actionButton.checkTouchEvent(event)) {
             return true;

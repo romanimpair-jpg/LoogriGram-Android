@@ -3920,7 +3920,6 @@ public class ChatActivity extends BaseFragment implements
         avatarContainer.setGlassMode();
         avatarContainer.allowShorterStatus = true;
         avatarContainer.premiumIconHiddable = true;
-        avatarContainer.allowDrawStories = dialog_id < 0 && !isTopic;
         avatarContainer.setClipChildren(false);
         updateTopicTitleIcon();
         if (inPreviewMode || inBubbleMode || isInsideContainer) {

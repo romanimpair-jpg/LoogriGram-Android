@@ -2089,10 +2089,6 @@ public class ChatObject {
         return chat != null && chat.monoforum;
     }
 
-    public static boolean hasStories(TLRPC.Chat chat) {
-        return chat != null && MessagesController.getInstance(UserConfig.selectedAccount).getStoriesController().hasStories(-chat.id);
-    }
-
     public static boolean isMegagroup(int currentAccount, long chatId) {
         TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(chatId);
         return ChatObject.isChannel(chat) && chat.megagroup;

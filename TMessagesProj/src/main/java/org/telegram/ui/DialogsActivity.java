@@ -241,7 +241,6 @@ import org.telegram.ui.Components.UndoView;
 import org.telegram.ui.Components.ViewPagerFixed;
 import org.telegram.ui.Stories.StoriesController;
 import org.telegram.ui.Stories.StoriesListPlaceProvider;
-import org.telegram.ui.Stories.UserListPoller;
 import org.telegram.ui.community.CommunityChatType;
 import org.telegram.ui.community.CommunityEditActivity;
 import org.telegram.ui.community.CommunityPendingRequestsActivity;
@@ -1578,7 +1577,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         float selectorPositionProgress = 1f;
         float animateFromSelectorPosition;
         boolean animateSwitchingSelector;
-        UserListPoller poller;
         public int additionalPadding;
 
         public DialogsRecyclerView(Context context, ViewPage page) {
@@ -1864,10 +1862,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             if (slidingView != null && pacmanAnimation != null) {
                 pacmanAnimation.draw(canvas, slidingView.getTop() + slidingView.getMeasuredHeight() / 2);
             }
-            if (poller == null) {
-                poller = UserListPoller.getInstance(currentAccount);
-            }
-            poller.checkList( this);
         }
 
         @Override
@@ -2774,7 +2768,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             .add(NotificationCenter.chatInfoDidLoad)
             .add(NotificationCenter.didClearDatabase)
             .add(NotificationCenter.onDatabaseReset)
-            .add(NotificationCenter.storiesUpdated)
             .add(NotificationCenter.unconfirmedAuthUpdate)
             .add(NotificationCenter.premiumPromoUpdated)
             .add(NotificationCenter.starBalanceUpdated)
@@ -9728,8 +9721,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     }
                 }
             }
-        } else if (id == NotificationCenter.storiesUpdated) {
-            updateVisibleRows(0);
         } else if (id == NotificationCenter.unconfirmedAuthUpdate) {
             updateDialogsHint();
         } else if (id == NotificationCenter.premiumPromoUpdated) {
@@ -11344,13 +11335,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         arrayList.add(new ThemeDescription(null, 0, null, null, null, null, Theme.key_voipgroup_mutedByAdminGradient3));
         arrayList.add(new ThemeDescription(null, 0, null, null, null, null, Theme.key_voipgroup_overlayAlertMutedByAdmin));
         arrayList.add(new ThemeDescription(null, 0, null, null, null, null, Theme.key_voipgroup_overlayAlertMutedByAdmin2));
-
-        arrayList.add(new ThemeDescription(null, 0, null, null, null, cellDelegate, Theme.key_stories_circle_dialog1));
-        arrayList.add(new ThemeDescription(null, 0, null, null, null, cellDelegate, Theme.key_stories_circle_dialog2));
-        arrayList.add(new ThemeDescription(null, 0, null, null, null, cellDelegate, Theme.key_stories_circle_closeFriends1));
-        arrayList.add(new ThemeDescription(null, 0, null, null, null, cellDelegate, Theme.key_stories_circle_closeFriends2));
-        arrayList.add(new ThemeDescription(null, 0, null, null, null, cellDelegate, Theme.key_stories_circle1));
-        arrayList.add(new ThemeDescription(null, 0, null, null, null, cellDelegate, Theme.key_stories_circle2));
 
         if (filtersView != null) {
             arrayList.addAll(filtersView.getThemeDescriptions());

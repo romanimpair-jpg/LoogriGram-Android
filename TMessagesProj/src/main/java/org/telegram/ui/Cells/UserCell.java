@@ -20,7 +20,6 @@ import android.icu.number.Scale;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.FrameLayout;
@@ -42,7 +41,6 @@ import org.telegram.messenger.UserObject;
 import org.telegram.messenger.utils.DrawableUtils;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.AvatarDrawable;
@@ -51,13 +49,9 @@ import org.telegram.ui.Components.ChatSearchTabs;
 import org.telegram.ui.Components.CheckBox2;
 import org.telegram.ui.Components.CheckBoxSquare;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.ScaleStateListAnimator;
 import org.telegram.ui.Components.UItem;
-import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.NotificationsSettingsActivity;
-import org.telegram.ui.Stories.StoriesListPlaceProvider;
-import org.telegram.ui.Stories.StoriesUtilities;
 
 public class UserCell extends FrameLayout implements NotificationCenter.NotificationCenterDelegate, Theme.Colorable {
 
@@ -74,7 +68,6 @@ public class UserCell extends FrameLayout implements NotificationCenter.Notifica
     protected Theme.ResourcesProvider resourcesProvider;
 
     protected AvatarDrawable avatarDrawable;
-    private boolean storiable;
     private Object currentObject;
     private TLRPC.EncryptedChat encryptedChat;
 
@@ -96,20 +89,6 @@ public class UserCell extends FrameLayout implements NotificationCenter.Notifica
     private int statusOnlineColor;
 
     public boolean needDivider;
-    public StoriesUtilities.AvatarStoryParams storyParams = new StoriesUtilities.AvatarStoryParams(false) {
-        @Override
-        public void openStory(long dialogId, Runnable onDone) {
-            UserCell.this.openStory(dialogId, onDone);
-        }
-    };
-
-    public void openStory(long dialogId, Runnable runnable) {
-        BaseFragment fragment = LaunchActivity.getLastFragment();
-        if (fragment != null) {
-            fragment.getOrCreateStoryViewer().doOnAnimationReady(runnable);
-            fragment.getOrCreateStoryViewer().open(getContext(), dialogId, StoriesListPlaceProvider.of((RecyclerListView) getParent()));
-        }
-    }
 
     protected long dialogId;
     private boolean isCommunity;
@@ -155,25 +134,9 @@ public class UserCell extends FrameLayout implements NotificationCenter.Notifica
 
         avatarDrawable = new AvatarDrawable();
 
-        avatarImageView = new BackupImageView(context) {
-            @Override
-            protected void onDraw(Canvas canvas) {
-                if (storiable) {
-                    storyParams.originalAvatarRect.set(0, 0, getMeasuredWidth(), getMeasuredHeight());
-                    StoriesUtilities.drawAvatarWithStory(dialogId, canvas, imageReceiver, storyParams);
-                } else {
-                    super.onDraw(canvas);
-                }
-            }
-
-            @Override
-            public boolean onTouchEvent(MotionEvent event) {
-                if (storyParams.checkOnTouchEvent(event, this)) {
-                    return true;
-                }
-                return super.onTouchEvent(event);
-            }
-        };
+        // LoogriGram: the avatar drew a ring for someone's stories and a tap
+        // on it opened them. Stories are removed, as on desktop.
+        avatarImageView = new BackupImageView(context);
         avatarImageView.setRoundRadius(dp(24));
         addView(avatarImageView, LayoutHelper.createFrame(46, 46, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, LocaleController.isRTL ? 0 : 7 + padding, 6, LocaleController.isRTL ? 7 + padding : 0, 0));
         setClipChildren(false);
@@ -331,7 +294,6 @@ public class UserCell extends FrameLayout implements NotificationCenter.Notifica
         if (object == null && name == null && status == null) {
             currentStatus = null;
             currentName = null;
-            storiable = false;
             currentObject = null;
             nameTextView.setText("");
             statusTextView.setText("");
@@ -346,7 +308,6 @@ public class UserCell extends FrameLayout implements NotificationCenter.Notifica
             }
         } catch (Exception ignore) {}
         currentName = name;
-        storiable = !(object instanceof String);
         currentObject = object;
         currentDrawable = resId;
         needDivider = divider;
@@ -767,7 +728,6 @@ public class UserCell extends FrameLayout implements NotificationCenter.Notifica
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.emojiLoaded);
-        storyParams.onDetachFromWindow();
     }
 
     public long getDialogId() {

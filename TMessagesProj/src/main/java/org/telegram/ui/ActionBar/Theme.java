@@ -7663,7 +7663,8 @@ public class Theme {
             avatarDrawables[14] = resources.getDrawable(R.drawable.filled_gift_premium);
             avatarDrawables[15] = resources.getDrawable(R.drawable.filled_unknown);
             avatarDrawables[16] = resources.getDrawable(R.drawable.filled_unclaimed);
-            avatarDrawables[17] = resources.getDrawable(R.drawable.large_repost_story);
+            // LoogriGram: 17 held our own story's avatar icon; the slot stays so
+            // the ones after it keep their numbers.
             avatarDrawables[18] = resources.getDrawable(R.drawable.large_hidden);
             avatarDrawables[19] = resources.getDrawable(R.drawable.large_notes);
             avatarDrawables[20] = resources.getDrawable(R.drawable.filled_giveaway_premium);

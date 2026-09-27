@@ -77,7 +77,6 @@ import org.telegram.ui.Components.chat.layouts.ChatActivityFadeView;
 import org.telegram.ui.DialogsActivity;
 import org.telegram.ui.FilteredSearchView;
 import org.telegram.ui.LaunchActivity;
-import org.telegram.ui.Stories.StoriesListPlaceProvider;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 import org.telegram.ui.TopicsFragment;
 import org.telegram.ui.community.cells.CommunityPendingRequestCell;
@@ -1378,20 +1377,8 @@ public class CommunitySheet extends BottomSheet implements NotificationCenter.No
     }
 
     @Override
-    public void openStory(DialogCell dialogCell, Runnable onDone) {
-        if (MessagesController.getInstance(currentAccount).getStoriesController().hasStories(dialogCell.getDialogId())) {
-            parentFragment.getOrCreateStoryViewer().doOnAnimationReady(onDone);
-            parentFragment.getOrCreateStoryViewer().open(parentFragment.getContext(), dialogCell.getDialogId(), StoriesListPlaceProvider.of((RecyclerListView) dialogCell.getParent()));
-        }
-    }
-
-    @Override
     public void showChatPreview(DialogCell dialogCell) {
 
     }
 
-    @Override
-    public void openHiddenStories() {
-
-    }
 }

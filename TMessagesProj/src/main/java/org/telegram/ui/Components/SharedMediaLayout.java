@@ -153,7 +153,6 @@ import org.telegram.ui.SelectStoriesBottomSheet;
 import org.telegram.ui.Gifts.GiftsController;
 import org.telegram.ui.Stories.StoriesController;
 import org.telegram.ui.Stories.StoriesListPlaceProvider;
-import org.telegram.ui.Stories.UserListPoller;
 import org.telegram.ui.Stories.ViewsForPeerStoriesRequester;
 import org.telegram.ui.Stories.recorder.PreviewView;
 import org.telegram.ui.ThemeActivity;
@@ -461,25 +460,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
     }
 
     @Override
-    public void openStory(DialogCell dialogCell, Runnable onDone) {
-        if (profileActivity == null) return;
-        if (profileActivity.getMessagesController().getStoriesController().hasStories(dialogCell.getDialogId())) {
-            profileActivity.getOrCreateStoryViewer().doOnAnimationReady(onDone);
-            profileActivity.getOrCreateStoryViewer().open(
-                profileActivity.getContext(),
-                dialogCell.getDialogId(),
-                StoriesListPlaceProvider.of((RecyclerListView) dialogCell.getParent())
-                    .addBottomClip(profileActivity instanceof ProfileActivity && ((ProfileActivity) profileActivity).myProfile ? dp(68) : 0)
-            );
-        }
-    }
-
-    @Override
     public void showChatPreview(DialogCell dialogCell) {
-    }
-
-    @Override
-    public void openHiddenStories() {
     }
 
     public static class MediaPage extends FrameLayout {
@@ -2856,10 +2837,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                         }
                         invalidate();
                     }
-                    if (poller == null) {
-                        poller = UserListPoller.getInstance(profileActivity.getCurrentAccount());
-                    }
-                    poller.checkList(this);
                     if (!isChangeColumnsAnimation()) {
                         changeColumnsTab = -1;
                     }
@@ -11428,8 +11405,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         protected TextPaint archivedHintPaint;
         protected StaticLayout archivedHintLayout;
         protected float archivedHintLayoutWidth, archivedHintLayoutLeft;
-
-        UserListPoller poller;
 
         public RecyclerListView.FastScrollAdapter getMovingAdapter() {
             return null;

@@ -47,7 +47,9 @@ import android.text.style.StyleSpan;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
-import android.view.View;
+import android.view.ViewConfiguration;
+import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.animation.Interpolator;
@@ -129,8 +131,6 @@ import org.telegram.ui.Components.spoilers.SpoilerEffect;
 import org.telegram.ui.DialogsActivity;
 import org.telegram.ui.FilterCreateActivity;
 import org.telegram.ui.RightSlidingDialogContainer;
-import org.telegram.ui.Stories.StoriesListPlaceProvider;
-import org.telegram.ui.Stories.StoriesUtilities;
 import org.telegram.ui.Stories.StoryViewer;
 import org.telegram.ui.community.CommunityArrowDrawable;
 import org.telegram.ui.community.CommunitySheet;
@@ -146,7 +146,7 @@ import java.util.Stack;
 
 import me.vkryl.android.animator.BoolAnimator;
 
-public class DialogCell extends BaseCell implements StoriesListPlaceProvider.AvatarOverlaysView, Theme.Colorable {
+public class DialogCell extends BaseCell implements Theme.Colorable {
 
     public boolean collapsed;
     public boolean drawArchive = true;
@@ -201,55 +201,101 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
     public boolean isSavedDialogCell;
     public DialogCellTags tags;
 
-    public final StoriesUtilities.AvatarStoryParams storyParams = new StoriesUtilities.AvatarStoryParams(false) {
-        @Override
-        public boolean isAvatarClickable(long dialogId, TLRPC.Chat chat, TLRPC.User user) {
-            return (chat != null && chat.linked_community_id != 0 || user != null && user.linked_community_id != 0) && !insideCommunityList;
-        }
+    // LoogriGram: the avatar was drawn and took its taps through
+    // StoriesUtilities.AvatarStoryParams, which drew the story ring and opened
+    // stories (the archive's the hidden ones). Stories are removed, as on
+    // desktop. What it also did for an avatar linked to a community stays:
+    // it bounces while pressed, a tap opens the community, and a long press
+    // shows the chat preview.
+    public final RectF avatarRect = new RectF();
+    private ButtonBounce avatarBounce;
+    private boolean avatarPressed;
+    private float avatarPressX, avatarPressY;
+    private Runnable avatarLongPress;
 
-        @Override
-        public boolean onAvatarClick(View view, long dialogId) {
-            if (parentFragment != null && !insideCommunityList) {
-                if (dialogId > 0) {
-                    final TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(dialogId);
-                    if (user != null && user.linked_community_id != 0) {
-                        parentFragment.showDialog(new CommunitySheet(parentFragment, user.linked_community_id));
-                        return true;
-                    }
-                } else {
-                    final TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
-                    if (chat != null && chat.linked_community_id != 0) {
-                        parentFragment.showDialog(new CommunitySheet(parentFragment, chat.linked_community_id));
-                        return true;
-                    }
+    private boolean isAvatarClickable() {
+        return (chat != null && chat.linked_community_id != 0 || user != null && user.linked_community_id != 0) && !insideCommunityList;
+    }
+
+    private void onAvatarClick() {
+        if (parentFragment == null || insideCommunityList) {
+            return;
+        }
+        final long dialogId = currentDialogId;
+        if (dialogId > 0) {
+            final TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(dialogId);
+            if (user != null && user.linked_community_id != 0) {
+                parentFragment.showDialog(new CommunitySheet(parentFragment, user.linked_community_id));
+            }
+        } else {
+            final TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
+            if (chat != null && chat.linked_community_id != 0) {
+                parentFragment.showDialog(new CommunitySheet(parentFragment, chat.linked_community_id));
+            }
+        }
+    }
+
+    private boolean checkAvatarTouch(MotionEvent event) {
+        final int action = event.getAction();
+        if (action == MotionEvent.ACTION_DOWN && avatarRect.contains(event.getX(), event.getY())) {
+            if (currentDialogId != UserConfig.getInstance(currentAccount).clientUserId && isAvatarClickable()) {
+                if (avatarBounce == null) {
+                    avatarBounce = new ButtonBounce(this, 1.5f, 5f);
                 }
-            }
-
-            return super.onAvatarClick(view, dialogId);
-        }
-
-        @Override
-        public void openStory(long dialogId, Runnable onDone) {
-            if (delegate == null) {
-                return;
-            }
-            if (currentDialogFolderId != 0) {
-                delegate.openHiddenStories();
-            } else {
-                if (delegate != null) {
-                    delegate.openStory(DialogCell.this, onDone);
+                getParent().requestDisallowInterceptTouchEvent(true);
+                avatarBounce.setPressed(true);
+                avatarPressed = true;
+                avatarPressX = event.getX();
+                avatarPressY = event.getY();
+                if (avatarLongPress != null) {
+                    AndroidUtilities.cancelRunOnUIThread(avatarLongPress);
                 }
+                AndroidUtilities.runOnUIThread(avatarLongPress = () -> {
+                    try {
+                        performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+                    } catch (Exception ignored) {}
+                    if (avatarBounce != null) {
+                        avatarBounce.setPressed(false);
+                    }
+                    ViewParent parent = getParent();
+                    if (parent instanceof ViewGroup) {
+                        ((ViewGroup) parent).requestDisallowInterceptTouchEvent(false);
+                    }
+                    avatarPressed = false;
+                    if (delegate != null) {
+                        delegate.showChatPreview(DialogCell.this);
+                    }
+                }, ViewConfiguration.getLongPressTimeout());
+            }
+        } else if (action == MotionEvent.ACTION_MOVE && avatarPressed) {
+            if (Math.abs(avatarPressX - event.getX()) > AndroidUtilities.touchSlop || Math.abs(avatarPressY - event.getY()) > AndroidUtilities.touchSlop) {
+                if (avatarBounce != null) {
+                    avatarBounce.setPressed(false);
+                }
+                if (avatarLongPress != null) {
+                    AndroidUtilities.cancelRunOnUIThread(avatarLongPress);
+                }
+                getParent().requestDisallowInterceptTouchEvent(false);
+                avatarPressed = false;
+            }
+        } else if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
+            if (avatarBounce != null) {
+                avatarBounce.setPressed(false);
+            }
+            if (avatarPressed && action == MotionEvent.ACTION_UP) {
+                onAvatarClick();
+            }
+            ViewParent parent = getParent();
+            if (parent instanceof ViewGroup) {
+                ((ViewGroup) parent).requestDisallowInterceptTouchEvent(false);
+            }
+            avatarPressed = false;
+            if (avatarLongPress != null) {
+                AndroidUtilities.cancelRunOnUIThread(avatarLongPress);
             }
         }
-
-        @Override
-        public void onLongPress() {
-            if (delegate == null) {
-                return;
-            }
-            delegate.showChatPreview(DialogCell.this);
-        }
-    };
+        return avatarPressed;
+    }
 
     private Path thumbPath;
     private SpoilerEffect thumbSpoiler;
@@ -669,7 +715,6 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
 
     public DialogCell(DialogsActivity fragment, Context context, boolean needCheck, boolean forceThreeLines, int account, Theme.ResourcesProvider resourcesProvider) {
         super(context);
-        storyParams.allowLongress = true;
         this.resourcesProvider = resourcesProvider;
         parentFragment = fragment;
         Theme.createDialogsResources(context);
@@ -779,9 +824,6 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         if (isForumCell()) {
             return false;
         }
-        if (storyParams.drawnLive) {
-            return false;
-        }
         if (user == null || user.self) {
             return false;
         }
@@ -802,7 +844,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
     }
 
     private void checkTtl() {
-        showTtl = ttlPeriod > 0 && !hasCall && !isOnline() && !(checkBox != null && checkBox.isChecked()) && !storyParams.drawnLive;
+        showTtl = ttlPeriod > 0 && !hasCall && !isOnline() && !(checkBox != null && checkBox.isChecked());
         ttlProgress = showTtl ? 1.0f : 0.0f;
     }
 
@@ -900,7 +942,8 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         AnimatedEmojiSpan.release(this, animatedEmojiStack2);
         AnimatedEmojiSpan.release(this, animatedEmojiStack3);
         AnimatedEmojiSpan.release(this, animatedEmojiStackName);
-        storyParams.onDetachFromWindow();
+        avatarBounce = null;
+        avatarPressed = false;
         canvasButton = null;
     }
 
@@ -1093,14 +1136,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 break;
             }
         }
-        if (MessagesController.getInstance(currentAccount).storiesController.getTotalStoriesCount(true) > 0) {
-            int totalCount;
-            totalCount = Math.max(1, MessagesController.getInstance(currentAccount).storiesController.getTotalStoriesCount(true));
-            if (builder.length() > 0) {
-                builder.append(", ");
-            }
-            builder.append(LocaleController.formatPluralString("Stories", totalCount));
-        }
+        // LoogriGram: the archive's row also counted the hidden stories here.
         return Emoji.replaceEmoji(builder, Theme.dialogs_messagePaint[paintIndex].getFontMetricsInt(), false);
     }
 
@@ -2306,7 +2342,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 avatarLeft = dp(avatarStart);
                 thumbLeft = avatarLeft + dp(56 + 13);
             }
-            storyParams.originalAvatarRect.set(avatarLeft, avatarTop, avatarLeft + dp(56), avatarTop + dp(56));
+            avatarRect.set(avatarLeft, avatarTop, avatarLeft + dp(56), avatarTop + dp(56));
             for (int i = 0; i < thumbImage.length; ++i) {
                 thumbImage[i].setImageCoords(thumbLeft + (thumbSize + 2) * i, avatarTop + dp(31) + (twoLinesForName ? dp(20) : 0) - (!(useForceThreeLines || SharedConfig.useThreeLinesLayout) && tags != null && !tags.isEmpty() ? dp(9) : 0), dp(18), dp(18));
             }
@@ -2329,7 +2365,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 avatarLeft = dp(avatarStart);
                 thumbLeft = avatarLeft + dp(56 + 11);
             }
-            storyParams.originalAvatarRect.set(avatarLeft, avatarTop, avatarLeft + dp(52), avatarTop + dp(52));
+            avatarRect.set(avatarLeft, avatarTop, avatarLeft + dp(52), avatarTop + dp(52));
             for (int i = 0; i < thumbImage.length; ++i) {
                 thumbImage[i].setImageCoords(thumbLeft + (thumbSize + 2) * i, avatarTop + dp(30) + (twoLinesForName ? dp(20) : 0) - (!(useForceThreeLines || SharedConfig.useThreeLinesLayout) && tags != null && !tags.isEmpty() ? dp(9) : 0), dp(thumbSize), dp(thumbSize));
             }
@@ -3480,14 +3516,6 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         if (!isTopic && (getMeasuredWidth() != 0 || getMeasuredHeight() != 0)) {
             rebuildLayout = true;
         }
-        if (!invalidate) {
-            boolean currentStoriesIsEmpty = storyParams.currentState == StoriesUtilities.STATE_EMPTY;
-            boolean newStateStoriesIsEmpty = StoriesUtilities.getPredictiveUnreadState(MessagesController.getInstance(currentAccount).getStoriesController(), getDialogId()) == StoriesUtilities.STATE_EMPTY;
-            if (!newStateStoriesIsEmpty || (!currentStoriesIsEmpty && newStateStoriesIsEmpty)) {
-                invalidate = true;
-            }
-        }
-
         if (!animated) {
             dialogMutedProgress = (dialogMuted || drawUnmute) ? 1f : 0f;
             if (countAnimator != null) {
@@ -4442,31 +4470,32 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 if (bubbleClip == null) {
                     bubbleClip = new PhotoBubbleClip();
                 }
-                bubbleClip.setBounds((int) storyParams.originalAvatarRect.centerX(), (int) storyParams.originalAvatarRect.centerY(), (int) (storyParams.originalAvatarRect.width() / 2));
+                bubbleClip.setBounds((int) avatarRect.centerX(), (int) avatarRect.centerY(), (int) (avatarRect.width() / 2));
                 canvas.save();
                 canvas.clipPath(bubbleClip);
-                avatarImage.setImageCoords(storyParams.originalAvatarRect);
+                avatarImage.setImageCoords(avatarRect);
                 avatarImage.draw(canvas);
                 canvas.restore();
             } else if (drawCommunityAvatar) {
                 DrawableUtils.setBounds(avatarImage,
-                    storyParams.originalAvatarRect.centerX() + dpf2(1),
-                    storyParams.originalAvatarRect.centerY(),
+                    avatarRect.centerX() + dpf2(1),
+                    avatarRect.centerY(),
                     dp(48), dp(48), Gravity.CENTER);
                 DrawableUtils.drawCommunityCardDrawable(canvas, Theme.dialogs_communityCardsDrawable,
                     avatarImage.getCenterX(), avatarImage.getCenterY(), dp(48));
                 avatarImage.draw(canvas);
             } else {
-                storyParams.drawHiddenStoriesAsSegments = currentDialogFolderId != 0;
-                StoriesUtilities.drawAvatarWithStory(currentDialogId, canvas, avatarImage, storyParams);
-                if (storyParams.drawnLive) {
-                    checkTtl();
-                }
+                avatarImage.setImageCoords(avatarRect);
+                final float scale = avatarBounce != null ? avatarBounce.getScale(0.08f) : 1f;
+                canvas.save();
+                canvas.scale(scale, scale, avatarRect.centerX(), avatarRect.centerY());
+                avatarImage.draw(canvas);
+                canvas.restore();
             }
 
             if (!insideCommunityList && (chat != null && chat.linked_community_id != 0 || user != null && user.linked_community_id != 0) && !drawCommunityAvatar && isDialogCell && !isDialogFolder()) {
-                final float ccx = storyParams.originalAvatarRect.centerX() + dp(20.33f);
-                final float ccy = storyParams.originalAvatarRect.centerY() + dp(19);
+                final float ccx = avatarRect.centerX() + dp(20.33f);
+                final float ccy = avatarRect.centerY() + dp(19);
                 if (communityArrowDrawable == null) {
                     communityArrowDrawable = new CommunityArrowDrawable();
                 }
@@ -4493,9 +4522,9 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
 
         if (rightFragmentOpenedProgress > 0 && currentDialogFolderId == 0) {
             final boolean drawCounterMuted = isCounterMuted();
-            int countLeftLocal = (int) (storyParams.originalAvatarRect.left + storyParams.originalAvatarRect.width() - countWidth - dp(5f));
-            int countLeftOld =  (int) (storyParams.originalAvatarRect.left + storyParams.originalAvatarRect.width() - countWidthOld - dp(5f));
-            int countTop = (int) (avatarImage.getImageY() + storyParams.originalAvatarRect.height() - dp(22));
+            int countLeftLocal = (int) (avatarRect.left + avatarRect.width() - countWidth - dp(5f));
+            int countLeftOld =  (int) (avatarRect.left + avatarRect.width() - countWidthOld - dp(5f));
+            int countTop = (int) (avatarImage.getImageY() + avatarRect.height() - dp(22));
             drawCounter(canvas, drawCounterMuted, countTop, countLeftLocal, countLeftOld, rightFragmentOpenedProgress, true);
         }
 
@@ -4752,7 +4781,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             return false;
         }
         if (isDialogCell && currentDialogFolderId == 0 && !stars) {
-            showTtl = ttlPeriod > 0 && !isOnline() && !hasCall && !storyParams.drawnLive;
+            showTtl = ttlPeriod > 0 && !isOnline() && !hasCall;
             if (rightFragmentOpenedProgress != 1f && (showTtl || ttlProgress > 0)) {
                 if (timerDrawable == null || (timerDrawable.getTime() != ttlPeriod && ttlPeriod > 0)) {
                     timerDrawable = TimerDrawable.getTtlIconForDialogs(ttlPeriod);
@@ -4765,9 +4794,9 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 int top = (int) (avatarImage.getImageY2() - dp(9));
                 int left;
                 if (LocaleController.isRTL) {
-                    left = (int) (storyParams.originalAvatarRect.left + dp(9));
+                    left = (int) (avatarRect.left + dp(9));
                 } else {
-                    left = (int) (storyParams.originalAvatarRect.right - dp(9));
+                    left = (int) (avatarRect.right - dp(9));
                 }
                 timerDrawable.setBounds(
                         0, 0, dp(22), dp(22)
@@ -4809,12 +4838,12 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 boolean isOnline = isOnline();
                 wasDrawnOnline = isOnline;
                 if (isOnline || onlineProgress != 0) {
-                    int top = (int) (storyParams.originalAvatarRect.bottom - dp(useForceThreeLines || SharedConfig.useThreeLinesLayout ? 6 : 8));
+                    int top = (int) (avatarRect.bottom - dp(useForceThreeLines || SharedConfig.useThreeLinesLayout ? 6 : 8));
                     int left;
                     if (LocaleController.isRTL) {
-                        left = (int) (storyParams.originalAvatarRect.left + dp(useForceThreeLines || SharedConfig.useThreeLinesLayout ? 10 : 6));
+                        left = (int) (avatarRect.left + dp(useForceThreeLines || SharedConfig.useThreeLinesLayout ? 10 : 6));
                     } else {
-                        left = (int) (storyParams.originalAvatarRect.right - dp(useForceThreeLines || SharedConfig.useThreeLinesLayout ? 10 : 6));
+                        left = (int) (avatarRect.right - dp(useForceThreeLines || SharedConfig.useThreeLinesLayout ? 10 : 6));
                     }
 
                     Theme.dialogs_onlineCirclePaint.setColor(Theme.getColor(Theme.key_windowBackgroundWhite, resourcesProvider));
@@ -4843,12 +4872,12 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 hasCall = chat.call_active && chat.call_not_empty;
                 if ((hasCall || chatCallProgress != 0) && rightFragmentOpenedProgress < 1f) {
                     float checkProgress = checkBox != null && checkBox.isChecked() ? 1.0f - checkBox.getProgress() : 1.0f;
-                    int top = (int) (storyParams.originalAvatarRect.bottom - dp(useForceThreeLines || SharedConfig.useThreeLinesLayout ? 6 : 8));
+                    int top = (int) (avatarRect.bottom - dp(useForceThreeLines || SharedConfig.useThreeLinesLayout ? 6 : 8));
                     int left;
                     if (LocaleController.isRTL) {
-                        left = (int) (storyParams.originalAvatarRect.left + dp(useForceThreeLines || SharedConfig.useThreeLinesLayout ? 10 : 6));
+                        left = (int) (avatarRect.left + dp(useForceThreeLines || SharedConfig.useThreeLinesLayout ? 10 : 6));
                     } else {
-                        left = (int) (storyParams.originalAvatarRect.right - dp(useForceThreeLines || SharedConfig.useThreeLinesLayout ? 10 : 6));
+                        left = (int) (avatarRect.right - dp(useForceThreeLines || SharedConfig.useThreeLinesLayout ? 10 : 6));
                     }
 
                     if (rightFragmentOpenedProgress != 0) {
@@ -5160,12 +5189,9 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                 archivedChatsDrawable.outRadius = 0;
                 archivedChatsDrawable.outImageSize = 0;
             } else {
-                archivedChatsDrawable.outCy = storyParams.originalAvatarRect.centerY();
-                archivedChatsDrawable.outCx = storyParams.originalAvatarRect.centerX();
-                archivedChatsDrawable.outRadius = storyParams.originalAvatarRect.width() / 2.0f;
-                if (MessagesController.getInstance(currentAccount).getStoriesController().hasHiddenStories()) {
-                    archivedChatsDrawable.outRadius -= AndroidUtilities.dpf2(3.5f);
-                }
+                archivedChatsDrawable.outCy = avatarRect.centerY();
+                archivedChatsDrawable.outCx = avatarRect.centerX();
+                archivedChatsDrawable.outRadius = avatarRect.width() / 2.0f;
                 archivedChatsDrawable.outImageSize = avatarImage.getBitmapWidth();
             }
             archivedChatsDrawable.startOutAnimation();
@@ -5793,7 +5819,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
-        if (rightFragmentOpenedProgress == 0 && !isTopic && storyParams.checkOnTouchEvent(ev, this)) {
+        if (rightFragmentOpenedProgress == 0 && !isTopic && checkAvatarTouch(ev)) {
             return true;
         }
         return super.onInterceptTouchEvent(ev);
@@ -5802,14 +5828,14 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
         if (!isTopic && ev.getAction() == MotionEvent.ACTION_UP || ev.getAction() == MotionEvent.ACTION_CANCEL) {
-            storyParams.checkOnTouchEvent(ev, this);
+            checkAvatarTouch(ev);
         }
         return super.dispatchTouchEvent(ev);
     }
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        if (rightFragmentOpenedProgress == 0 && !isTopic && storyParams.checkOnTouchEvent(event, this)) {
+        if (rightFragmentOpenedProgress == 0 && !isTopic && checkAvatarTouch(event)) {
             return true;
         }
         if (delegate == null || delegate.canClickButtonInside()) {
@@ -5882,9 +5908,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         void onButtonClicked(DialogCell dialogCell);
         void onButtonLongPress(DialogCell dialogCell);
         boolean canClickButtonInside();
-        void openStory(DialogCell dialogCell, Runnable onDone);
         void showChatPreview(DialogCell dialogCell);
-        void openHiddenStories();
     }
 
     private class DialogUpdateHelper {

@@ -76,7 +76,6 @@ import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.ReplaceableIconDrawable;
 import org.telegram.ui.Components.SearchField;
 import org.telegram.ui.Components.StickerEmptyView;
-import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.ProfileActivity;
 import org.telegram.ui.RecyclerListViewScroller;
@@ -854,18 +853,7 @@ public class SelfStoryViewsPage extends FrameLayout implements NotificationCente
                     view = new FixedHeightEmptyCell(getContext(), 70);
                     break;
                 case USER_ITEM:
-                    view = new ReactedUserHolderView(ReactedUserHolderView.STYLE_STORY, currentAccount, getContext(), resourcesProvider, false, true) {
-                        @Override
-                        public void openStory(long dialogId, Runnable onDone) {
-                            BaseFragment lastFragment = LaunchActivity.getLastFragment();
-                            if (lastFragment == null) {
-                                return;
-                            }
-                            StoryViewer storyViewer1 = lastFragment.createOverlayStoryViewer();
-                            storyViewer1.doOnAnimationReady(onDone);
-                            storyViewer1.open(getContext(), dialogId, StoriesListPlaceProvider.of(recyclerListView));
-                        }
-                    };
+                    view = new ReactedUserHolderView(ReactedUserHolderView.STYLE_STORY, currentAccount, getContext(), resourcesProvider, false, true);
                     break;
                 case FLICKER_LOADING_ITEM:
                     FlickerLoadingView loadingView = new FlickerLoadingView(getContext(), resourcesProvider);

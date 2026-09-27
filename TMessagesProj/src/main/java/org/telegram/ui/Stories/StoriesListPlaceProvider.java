@@ -13,19 +13,14 @@ import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.ChatActionCell;
 import org.telegram.ui.Cells.ChatMessageCell;
-import org.telegram.ui.Cells.DialogCell;
-import org.telegram.ui.Cells.ProfileChannelCell;
-import org.telegram.ui.Cells.ProfileSearchCell;
 import org.telegram.ui.Cells.ReactedUserHolderView;
 import org.telegram.ui.Cells.SharedPhotoVideoCell2;
-import org.telegram.ui.Cells.UserCell;
 import org.telegram.ui.Components.BlurredRecyclerView;
 import org.telegram.ui.Components.RecyclerListView;
 
 public class StoriesListPlaceProvider implements StoryViewer.PlaceProvider {
 
     private final RecyclerListView recyclerListView;
-    private final ProfileChannelCell profileChannelCell;
     int[] clipPoint = new int[2];
     private boolean isHiddenArchive;
     LoadNextInterface loadNextInterface;
@@ -49,10 +44,6 @@ public class StoriesListPlaceProvider implements StoryViewer.PlaceProvider {
         return new StoriesListPlaceProvider(recyclerListView, hiddenArchive);
     }
 
-    public static StoriesListPlaceProvider of(ProfileChannelCell profileChannelCell) {
-        return new StoriesListPlaceProvider(profileChannelCell);
-    }
-
     public StoriesListPlaceProvider with(LoadNextInterface loadNextInterface) {
         this.loadNextInterface = loadNextInterface;
         return this;
@@ -61,12 +52,6 @@ public class StoriesListPlaceProvider implements StoryViewer.PlaceProvider {
     public StoriesListPlaceProvider(RecyclerListView recyclerListView, boolean hiddenArchive) {
         this.recyclerListView = recyclerListView;
         this.isHiddenArchive = hiddenArchive;
-        this.profileChannelCell = null;
-    }
-
-    public StoriesListPlaceProvider(ProfileChannelCell profileChannelCell) {
-        this.profileChannelCell = profileChannelCell;
-        this.recyclerListView = null;
     }
 
     @Override
@@ -93,30 +78,12 @@ public class StoriesListPlaceProvider implements StoryViewer.PlaceProvider {
         holder.drawAbove = null;
 
         ViewGroup listView = recyclerListView;
-        if (profileChannelCell != null) {
-            listView = profileChannelCell;
-        }
         if (listView == null) return false;
 
         for (int i = 0; i < listView.getChildCount(); i++) {
             View child = listView.getChildAt(i);
 
-            if (child instanceof DialogCell) {
-                DialogCell cell = (DialogCell) child;
-                if ((cell.getDialogId() == dialogId && !isHiddenArchive) || (isHiddenArchive && cell.isDialogFolder())) {
-                    holder.view = child;
-                    holder.params = cell.storyParams;
-                    holder.avatarImage = cell.avatarImage;
-                    holder.clipParent = (View) cell.getParent();
-                    if (isHiddenArchive) {
-                        holder.crossfadeToAvatarImage = cell.avatarImage;
-                        holder.isLive = cell.storyParams.drawnLive;
-                    }
-                    holder.alpha = 1;
-                    updateClip(holder);
-                    return true;
-                }
-            } else if (child instanceof ChatMessageCell) {
+            if (child instanceof ChatMessageCell) {
                 ChatMessageCell cell = (ChatMessageCell) child;
                 if (cell.getMessageObject().getId() == messageId) {
                     holder.view = child;
@@ -179,17 +146,6 @@ public class StoriesListPlaceProvider implements StoryViewer.PlaceProvider {
                     updateClip(holder);
                     return true;
                 }
-            } else if (child instanceof UserCell) {
-                UserCell cell = (UserCell) child;
-                if (cell.getDialogId() == dialogId) {
-                    holder.view = cell.avatarImageView;
-                    holder.params = cell.storyParams;
-                    holder.avatarImage = cell.avatarImageView.getImageReceiver();
-                    holder.clipParent = (View) cell.getParent();
-                    holder.alpha = 1;
-                    updateClip(holder);
-                    return true;
-                }
             } else if (child instanceof ReactedUserHolderView) {
                 ReactedUserHolderView cell = (ReactedUserHolderView) child;
                 if (cell.dialogId == dialogId) {
@@ -205,32 +161,11 @@ public class StoriesListPlaceProvider implements StoryViewer.PlaceProvider {
                         }
                         updateClip(holder);
                         return true;
-                    } else if (!hasStoryPreview) {
-                        holder.view = cell.avatarView;
-                        holder.params = cell.params;
-                        holder.avatarImage = cell.avatarView.getImageReceiver();
-                        holder.clipParent = (View) cell.getParent();
-                        holder.alpha = cell.getAlpha() * cell.getAlphaInternal();
-                        if (holder.alpha < 1) {
-                            holder.bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-                            holder.bgPaint.setColor(Theme.getColor(Theme.key_dialogBackground, cell.getResourcesProvider()));
-                        }
-                        updateClip(holder);
-                        return true;
                     }
                 }
-            } else if (child instanceof ProfileSearchCell) {
-                ProfileSearchCell cell = (ProfileSearchCell) child;
-                if (cell.getDialogId() == dialogId) {
-                    holder.view = cell;
-                    holder.params = cell.avatarStoryParams;
-                    holder.avatarImage = cell.avatarImage;
-                    holder.clipParent = (View) cell.getParent();
-                    holder.alpha = 1;
-                    updateClip(holder);
-                    return true;
-                }
             }
+            // LoogriGram: a chat row's, a member's or a search result's avatar
+            // was a transition source here too; avatars no longer open stories.
             // LoogriGram: a statistics row (a recent story, a repost as a story)
             // was a transition source here. Statistics list no stories any more.
         }

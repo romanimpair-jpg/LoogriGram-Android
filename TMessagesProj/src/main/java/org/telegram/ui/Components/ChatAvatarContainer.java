@@ -58,7 +58,6 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ChatActivity;
 import org.telegram.ui.Components.Forum.ForumUtilities;
 import org.telegram.ui.ProfileActivity;
-import org.telegram.ui.Stories.StoriesUtilities;
 import org.telegram.ui.TopicsFragment;
 import org.telegram.ui.community.CommunityArrowDrawable;
 
@@ -72,8 +71,6 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
     private static final int ANIMATOR_ID_TIME_ITEM_VISIBLE = 0;
     private final BoolAnimator animatorTimeVisible = new BoolAnimator(ANIMATOR_ID_TIME_ITEM_VISIBLE, this, CubicBezierInterpolator.EASE_OUT_QUINT, 320);
 
-    public boolean allowDrawStories;
-    private Integer storiesForceState;
     private int avatarSizeInDp = 42;
     public BackupImageView avatarImageView;
     private boolean avatarImageIsHidden;
@@ -129,10 +126,6 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
         }
     }
 
-    public void setStoriesForceState(Integer storiesForceState) {
-        this.storiesForceState = storiesForceState;
-    }
-
     private class SimpleTextConnectedView extends SimpleTextView {
 
         private AtomicReference<SimpleTextView> reference;
@@ -176,25 +169,10 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
         }
 
         final boolean avatarClickable = parentFragment != null && (parentFragment.getChatMode() == 0 || parentFragment.getChatMode() == ChatActivity.MODE_SUGGESTIONS) && !UserObject.isReplyUser(parentFragment.getCurrentUser()) && (parentFragment.getCurrentUser() == null || parentFragment.getCurrentUser().id != UserObject.VERIFY);
+        // LoogriGram: in a group's or a channel's header the avatar drew the
+        // ring of its stories, and a tap on the ring opened them. Stories are
+        // removed, as on desktop; the avatar opens the profile as for any chat.
         avatarImageView = new BackupImageView(context) {
-
-            StoriesUtilities.AvatarStoryParams params = new StoriesUtilities.AvatarStoryParams(true) {
-                @Override
-                public void openStory(long dialogId, Runnable onDone) {
-                    baseFragment.getOrCreateStoryViewer().open(getContext(), dialogId, (dialogId1, messageId, storyId, type, holder) -> {
-                        holder.crossfadeToAvatarImage = holder.storyImage = imageReceiver;
-                        holder.params = params;
-                        holder.isLive = params.drawnLive;
-                        holder.view = avatarImageView;
-                        holder.alpha = avatarImageView.getAlpha();
-                        holder.clipTop = 0;
-                        holder.clipBottom = AndroidUtilities.displaySize.y;
-                        holder.clipParent = (View) getParent();
-                        return true;
-                    });
-                }
-            };
-
             @Override
             public void onInitializeAccessibilityNodeInfo(AccessibilityNodeInfo info) {
                 super.onInitializeAccessibilityNodeInfo(info);
@@ -206,39 +184,6 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
                 }
             }
 
-            @Override
-            protected void onDraw(Canvas canvas) {
-                if (allowDrawStories && animatedEmojiDrawable == null) {
-                    params.originalAvatarRect.set(0, 0, getMeasuredWidth(), getMeasuredHeight());
-                    params.drawSegments = true;
-                    params.drawInside = true;
-                    params.resourcesProvider = resourcesProvider;
-                    if (storiesForceState != null) {
-                        params.forceState = storiesForceState;
-                    }
-
-                    long dialogId = 0;
-                    if (parentFragment != null) {
-                        dialogId = parentFragment.getDialogId();
-                    } else if (baseFragment instanceof TopicsFragment) {
-                        dialogId = ((TopicsFragment) baseFragment).getDialogId();
-                    }
-
-                    StoriesUtilities.drawAvatarWithStory(dialogId, canvas, imageReceiver, params);
-                } else {
-                    super.onDraw(canvas);
-                }
-            }
-
-            @Override
-            public boolean onTouchEvent(MotionEvent event) {
-                if (allowDrawStories) {
-                    if (params.checkOnTouchEvent(event, this)) {
-                        return true;
-                    }
-                }
-                return super.onTouchEvent(event);
-            }
         };
         if (baseFragment instanceof ChatActivity || baseFragment instanceof TopicsFragment) {
             if (parentFragment == null || parentFragment.getChatMode() != ChatActivity.MODE_WELCOME_MESSAGES && parentFragment.getChatMode() != ChatActivity.MODE_SUGGESTIONS && !parentFragment.isInBotForumMode()) {
@@ -733,9 +678,7 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
             if (subtitleTextLargerCopyView2 != null) {
                 removeView(subtitleTextLargerCopyView2);
                 this.subtitleTextLargerCopyView.set(null);
-                if (!allowDrawStories) {
-                    setClipChildren(true);
-                }
+                setClipChildren(true);
             }
         }).start();
         addView(subtitleTextLargerCopyView);
@@ -1333,7 +1276,7 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
         avatarDrawable.setInfo(currentAccount, chat);
         if (avatarImageView != null) {
             avatarImageView.setForUserOrChat(chat, avatarDrawable);
-            avatarImageView.setRoundRadius(ChatObject.isForum(chat) ? dp(ChatObject.hasStories(chat) ? 11 : 16) : dp(21));
+            avatarImageView.setRoundRadius(ChatObject.isForum(chat) ? dp(16) : dp(21));
         }
     }
 
@@ -1449,7 +1392,7 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
             if (avatarImageView != null) {
                 avatarImageView.setAnimatedEmojiDrawable(null);
                 avatarImageView.setForUserOrChat(chat, avatarDrawable);
-                avatarImageView.setRoundRadius(chat.forum ? dp(ChatObject.hasStories(chat) ? 11 : 16) : dp(21));
+                avatarImageView.setRoundRadius(chat.forum ? dp(16) : dp(21));
             }
         }
     }

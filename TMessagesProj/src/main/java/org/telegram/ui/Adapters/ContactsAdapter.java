@@ -470,7 +470,6 @@ public class ContactsAdapter extends RecyclerListView.SectionsAdapter {
                 break;
             case USER_CELL:
                 UserCell userCell = (UserCell) holder.itemView;
-                userCell.storyParams.drawSegments = false;
                 userCell.setAvatarPadding(sortType == SORT_TYPE_BY_TIME || disableSections ? 7 : 58, 1);
                 ArrayList<TLRPC.TL_contact> arr;
                 if (sortType == SORT_TYPE_BY_TIME) {

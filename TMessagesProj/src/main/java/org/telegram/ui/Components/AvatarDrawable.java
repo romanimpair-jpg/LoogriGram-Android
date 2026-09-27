@@ -93,7 +93,8 @@ public class AvatarDrawable extends Drawable {
     public static final int AVATAR_TYPE_COUNTRY = 17;
     public static final int AVATAR_TYPE_UNCLAIMED = 18;
     public static final int AVATAR_TYPE_TO_BE_DISTRIBUTED = 19;
-    public static final int AVATAR_TYPE_STORY = 20;
+    // LoogriGram: 20 was the avatar of our own story (a repost icon). Stories
+    // are removed.
     public static final int AVATAR_TYPE_ANONYMOUS = 21;
     public static final int AVATAR_TYPE_MY_NOTES = 22;
     public static final int AVATAR_TYPE_PREMIUM = 25;
@@ -259,11 +260,6 @@ public class AvatarDrawable extends Drawable {
             hasGradient = true;
             color = getThemedColor(Theme.key_avatar_backgroundSaved);
             color2 = getThemedColor(Theme.key_avatar_background2Saved);
-        } else if (avatarType == AVATAR_TYPE_STORY) {
-            rotate45Background = true;
-            hasGradient = true;
-            color = getThemedColor(Theme.key_stories_circle1);
-            color2 = getThemedColor(Theme.key_stories_circle2);
         } else if (avatarType == AVATAR_TYPE_SHARES) {
             hasGradient = true;
             color = getThemedColor(Theme.keys_avatar_background[getColorIndex(5)]);
@@ -325,7 +321,7 @@ public class AvatarDrawable extends Drawable {
             color = getThemedColor(Theme.keys_avatar_background[getColorIndex(4)]);
             color2 = getThemedColor(Theme.keys_avatar_background2[getColorIndex(4)]);
         }
-        needApplyColorAccent = avatarType != AVATAR_TYPE_ARCHIVED && avatarType != AVATAR_TYPE_SAVED && avatarType != AVATAR_TYPE_STORY && avatarType != AVATAR_TYPE_ANONYMOUS && avatarType != AVATAR_TYPE_SUGGESTION && avatarType != AVATAR_TYPE_REPLIES && avatarType != AVATAR_TYPE_OTHER_CHATS;
+        needApplyColorAccent = avatarType != AVATAR_TYPE_ARCHIVED && avatarType != AVATAR_TYPE_SAVED && avatarType != AVATAR_TYPE_ANONYMOUS && avatarType != AVATAR_TYPE_SUGGESTION && avatarType != AVATAR_TYPE_REPLIES && avatarType != AVATAR_TYPE_OTHER_CHATS;
     }
 
     public void setArchivedAvatarHiddenProgress(float progress) {
@@ -660,8 +656,6 @@ public class AvatarDrawable extends Drawable {
                 drawable = Theme.avatarDrawables[15];
             } else if (avatarType == AVATAR_TYPE_UNCLAIMED) {
                 drawable = Theme.avatarDrawables[16];
-            } else if (avatarType == AVATAR_TYPE_STORY) {
-                drawable = Theme.avatarDrawables[17];
             } else if (avatarType == AVATAR_TYPE_ANONYMOUS) {
                 drawable = Theme.avatarDrawables[18];
             } else if (avatarType == AVATAR_TYPE_MY_NOTES) {

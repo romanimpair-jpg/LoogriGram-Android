@@ -54,7 +54,6 @@ import org.telegram.ui.Components.UItem;
 import org.telegram.ui.Components.UniversalAdapter;
 import org.telegram.ui.Components.UniversalRecyclerView;
 import org.telegram.ui.Stories.StoriesController;
-import org.telegram.ui.Stories.StoriesListPlaceProvider;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -273,23 +272,10 @@ public class MessagesSearchAdapter extends RecyclerListView.SelectionAdapter imp
                 }
 
                 @Override
-                public void openStory(DialogCell dialogCell, Runnable onDone) {
-                    if (MessagesController.getInstance(currentAccount).getStoriesController().hasStories(dialogCell.getDialogId())) {
-                        fragment.getOrCreateStoryViewer().doOnAnimationReady(onDone);
-                        fragment.getOrCreateStoryViewer().open(mContext, dialogCell.getDialogId(), StoriesListPlaceProvider.of((RecyclerListView) dialogCell.getParent()));
-                        return;
-                    }
-                }
-
-                @Override
                 public void showChatPreview(DialogCell dialogCell) {
 
                 }
 
-                @Override
-                public void openHiddenStories() {
-
-                }
             });
         } else if (holder.getItemViewType() == 2) {
             ((StoriesView) holder.itemView).set(storiesList);

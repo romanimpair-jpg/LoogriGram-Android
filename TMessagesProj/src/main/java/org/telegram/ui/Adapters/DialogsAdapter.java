@@ -72,8 +72,6 @@ import org.telegram.ui.Components.ListView.AdapterWithDiffUtils;
 import org.telegram.ui.Components.PullForegroundDrawable;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.DialogsActivity;
-import org.telegram.ui.Stories.StoriesController;
-import org.telegram.ui.Stories.StoriesListPlaceProvider;
 import org.telegram.ui.community.CommunityUtils;
 
 import java.util.ArrayList;
@@ -1180,36 +1178,8 @@ public class DialogsAdapter extends RecyclerListView.SelectionAdapter implements
     }
 
     @Override
-    public void openStory(DialogCell dialogCell, Runnable onDone) {
-        MessagesController messagesController = MessagesController.getInstance(currentAccount);
-        if (MessagesController.getInstance(currentAccount).getStoriesController().hasStories(dialogCell.getDialogId())) {
-            parentFragment.getOrCreateStoryViewer().doOnAnimationReady(onDone);
-            parentFragment.getOrCreateStoryViewer().open(parentFragment.getContext(), dialogCell.getDialogId(), StoriesListPlaceProvider.of((RecyclerListView) dialogCell.getParent()));
-            return;
-        }
-    }
-
-    @Override
     public void showChatPreview(DialogCell cell) {
         parentFragment.showChatPreview(cell);
-    }
-
-    @Override
-    public void openHiddenStories() {
-        StoriesController storiesController = MessagesController.getInstance(currentAccount).getStoriesController();
-        if (storiesController.getHiddenList().isEmpty()) {
-            return;
-        }
-        boolean unreadOnly = storiesController.getUnreadState(DialogObject.getPeerDialogId(storiesController.getHiddenList().get(0).peer)) != StoriesController.STATE_READ;
-        ArrayList<Long> peerIds = new ArrayList<>();
-        for (int i = 0; i < storiesController.getHiddenList().size(); i++) {
-            long dialogId = DialogObject.getPeerDialogId(storiesController.getHiddenList().get(i).peer);
-            if (!unreadOnly || storiesController.getUnreadState(dialogId) != StoriesController.STATE_READ) {
-                peerIds.add(dialogId);
-            }
-        }
-
-        parentFragment.getOrCreateStoryViewer().open(mContext, null, peerIds, 0, null, null, StoriesListPlaceProvider.of(recyclerListView, true), false);
     }
 
     public void setIsTransitionSupport() {

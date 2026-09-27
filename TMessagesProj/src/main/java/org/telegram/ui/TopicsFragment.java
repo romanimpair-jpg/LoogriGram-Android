@@ -861,7 +861,6 @@ public class TopicsFragment extends BaseFragment implements NotificationCenter.N
         avatarContainer = new ChatAvatarContainer(context, this, false, resourceProvider);
         avatarContainer.getAvatarImageView().setRoundRadius(AndroidUtilities.dp(16));
         avatarContainer.setOccupyStatusBar(!AndroidUtilities.isTablet() && !inPreviewMode);
-        avatarContainer.allowDrawStories = getDialogId() < 0;
         avatarContainer.setClipChildren(false);
         actionBar.addView(avatarContainer, 0, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, Gravity.TOP | Gravity.LEFT, 56, 0, 86, 0));
 

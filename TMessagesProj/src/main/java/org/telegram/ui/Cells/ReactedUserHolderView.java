@@ -13,7 +13,6 @@ import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.style.RelativeSizeSpan;
 import android.view.Gravity;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -50,7 +49,6 @@ import org.telegram.ui.Components.MessageSeenCheckDrawable;
 import org.telegram.ui.Components.Reactions.ReactionsLayoutInBubble;
 import org.telegram.messenger.LocaleController;
 import org.telegram.ui.Components.StatusBadgeComponent;
-import org.telegram.ui.Stories.StoriesUtilities;
 
 public class ReactedUserHolderView extends FrameLayout {
     public boolean drawDivider;
@@ -73,11 +71,6 @@ public class ReactedUserHolderView extends FrameLayout {
     Theme.ResourcesProvider resourcesProvider;
     int style;
     public long dialogId;
-    public StoriesUtilities.AvatarStoryParams params;
-
-    public void openStory(long dialogId, Runnable onDone) {
-
-    }
 
     public static final MessageSeenCheckDrawable seenDrawable = new MessageSeenCheckDrawable(R.drawable.msg_mini_checks, Theme.key_windowBackgroundWhiteGrayText);
     public static final MessageSeenCheckDrawable reactDrawable = new MessageSeenCheckDrawable(R.drawable.msg_reactions, Theme.key_windowBackgroundWhiteGrayText, 16, 16, 5.66f);
@@ -93,31 +86,12 @@ public class ReactedUserHolderView extends FrameLayout {
         this.style = style;
         this.currentAccount = currentAccount;
         this.resourcesProvider = resourcesProvider;
-        this.params = new StoriesUtilities.AvatarStoryParams(false, resourcesProvider) {
-            @Override
-            public void openStory(long dialogId, Runnable onDone) {
-                ReactedUserHolderView.this.openStory(dialogId, onDone);
-            }
-        };
         setLayoutParams(new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, AndroidUtilities.dp(ITEM_HEIGHT_DP)));
 
         int avatarSize = style == STYLE_STORY ? 48 : 34;
-        avatarView = new BackupImageView(context) {
-            @Override
-            protected void onDraw(Canvas canvas) {
-                if (style == STYLE_STORY) {
-                    params.originalAvatarRect.set(0, 0, getMeasuredWidth(), getMeasuredHeight());
-                    StoriesUtilities.drawAvatarWithStory(dialogId, canvas, getImageReceiver(), params);
-                } else {
-                    super.onDraw(canvas);
-                }
-            }
-
-            @Override
-            public boolean onTouchEvent(MotionEvent event) {
-                return params.checkOnTouchEvent(event, this);
-            }
-        };
+        // LoogriGram: in a story's viewers list the avatar drew the viewer's own
+        // story ring, and a tap opened their stories. Stories are removed.
+        avatarView = new BackupImageView(context);
         avatarView.setRoundRadius(AndroidUtilities.dp(avatarSize));
         addView(avatarView, LayoutHelper.createFrameRelatively(avatarSize, avatarSize, Gravity.START | Gravity.CENTER_VERTICAL, 10, 0, 0, 0));
         if (style == STYLE_STORY) {

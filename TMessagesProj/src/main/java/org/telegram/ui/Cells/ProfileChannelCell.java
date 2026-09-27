@@ -16,7 +16,6 @@ import androidx.annotation.NonNull;
 
 import org.telegram.SQLite.SQLiteCursor;
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
@@ -36,8 +35,6 @@ import org.telegram.ui.Components.ClickableAnimatedTextView;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.LoadingDrawable;
-import org.telegram.ui.Stories.StoriesController;
-import org.telegram.ui.Stories.StoriesListPlaceProvider;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -95,36 +92,10 @@ public class ProfileChannelCell extends FrameLayout implements Theme.Colorable {
             }
 
             @Override
-            public void openStory(DialogCell dialogCell, Runnable onDone) {
-                if (fragment.getMessagesController().getStoriesController().hasStories(dialogCell.getDialogId())) {
-                    fragment.getOrCreateStoryViewer().doOnAnimationReady(onDone);
-                    fragment.getOrCreateStoryViewer().open(fragment.getContext(), dialogCell.getDialogId(), StoriesListPlaceProvider.of(ProfileChannelCell.this));
-                    return;
-                }
-            }
-
-            @Override
             public void showChatPreview(DialogCell dialogCell) {
 
             }
 
-            @Override
-            public void openHiddenStories() {
-                StoriesController storiesController = fragment.getMessagesController().getStoriesController();
-                if (storiesController.getHiddenList().isEmpty()) {
-                    return;
-                }
-                boolean unreadOnly = storiesController.getUnreadState(DialogObject.getPeerDialogId(storiesController.getHiddenList().get(0).peer)) != StoriesController.STATE_READ;
-                ArrayList<Long> peerIds = new ArrayList<>();
-                for (int i = 0; i < storiesController.getHiddenList().size(); i++) {
-                    long dialogId = DialogObject.getPeerDialogId(storiesController.getHiddenList().get(i).peer);
-                    if (!unreadOnly || storiesController.getUnreadState(dialogId) != StoriesController.STATE_READ) {
-                        peerIds.add(dialogId);
-                    }
-                }
-
-                fragment.getOrCreateStoryViewer().open(context, null, peerIds, 0, null, null, StoriesListPlaceProvider.of(ProfileChannelCell.this), false);
-            }
         });
         dialogCell.avatarStart = 15;
         dialogCell.messagePaddingStart = 83;
