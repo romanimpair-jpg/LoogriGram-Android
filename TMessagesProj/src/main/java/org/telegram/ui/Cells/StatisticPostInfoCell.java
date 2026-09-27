@@ -39,7 +39,6 @@ import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.StatisticActivity;
-import org.telegram.ui.Stories.StoriesUtilities;
 
 import java.util.Date;
 
@@ -54,9 +53,7 @@ public class StatisticPostInfoCell extends FrameLayout {
     private final TextView likes;
     private final Paint dividerPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final AvatarDrawable avatarDrawable = new AvatarDrawable();
-    private final StoriesUtilities.AvatarStoryParams storyAvatarParams = new StoriesUtilities.AvatarStoryParams(false);
     private final Theme.ResourcesProvider resourcesProvider;
-    private StatisticActivity.RecentPostInfo postInfo;
     private final TLRPC.ChatFull chat;
     private boolean needDivider;
 
@@ -64,24 +61,7 @@ public class StatisticPostInfoCell extends FrameLayout {
         super(context);
         this.chat = chat;
         this.resourcesProvider = resourcesProvider;
-        imageView = new BackupImageView(context) {
-            @Override
-            protected void onDraw(Canvas canvas) {
-                if (postInfo != null && postInfo.isStory()) {
-                    int pad = AndroidUtilities.dp(1);
-                    storyAvatarParams.originalAvatarRect.set(pad, pad, getMeasuredWidth() - pad, getMeasuredHeight() - pad);
-                    storyAvatarParams.drawSegments = false;
-                    storyAvatarParams.animate = false;
-                    storyAvatarParams.drawInside = true;
-                    storyAvatarParams.isArchive = false;
-                    storyAvatarParams.forceState = StoriesUtilities.STATE_HAS_UNREAD;
-                    storyAvatarParams.resourcesProvider = resourcesProvider;
-                    StoriesUtilities.drawAvatarWithStory(0, canvas, imageReceiver, storyAvatarParams);
-                } else {
-                    super.onDraw(canvas);
-                }
-            }
-        };
+        imageView = new BackupImageView(context);
         setClipChildren(false);
         addView(imageView, LayoutHelper.createFrame(46, 46, (!LocaleController.isRTL ? Gravity.START : Gravity.END) | Gravity.CENTER_VERTICAL, !LocaleController.isRTL ? 12 : 16, 0, !LocaleController.isRTL ? 16 : 12, 0));
 
@@ -175,20 +155,7 @@ public class StatisticPostInfoCell extends FrameLayout {
         return imageView;
     }
 
-    public StoriesUtilities.AvatarStoryParams getStoryAvatarParams() {
-        return storyAvatarParams;
-    }
-
-    public StatisticActivity.RecentPostInfo getPostInfo() {
-        return postInfo;
-    }
-
-    public void setImageViewAction(View.OnClickListener action){
-        imageView.setOnClickListener(action);
-    }
-
     public void setData(StatisticActivity.RecentPostInfo postInfo, boolean isLast) {
-        this.postInfo = postInfo;
         this.needDivider = !isLast;
         MessageObject messageObject = postInfo.message;
         if (messageObject.photoThumbs != null) {
@@ -213,16 +180,9 @@ public class StatisticPostInfoCell extends FrameLayout {
             imageView.setScaleX(1f);
             imageView.setScaleY(1f);
         }
-        if (messageObject.isStory()) {
-            imageView.setScaleX(1f);
-            imageView.setScaleY(1f);
-            imageView.setRoundRadius(AndroidUtilities.dp(46) >> 1);
-        }
         CharSequence text;
         if (messageObject.isMusic()) {
             text = String.format("%s, %s", messageObject.getMusicTitle().trim(), messageObject.getMusicAuthor().trim());
-        } else if (messageObject.isStory()) {
-            text = LocaleController.getString(R.string.Story);
         } else {
             text = messageObject.caption != null ? messageObject.caption : messageObject.messageText;
         }
@@ -275,6 +235,5 @@ public class StatisticPostInfoCell extends FrameLayout {
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        storyAvatarParams.onDetachFromWindow();
     }
 }

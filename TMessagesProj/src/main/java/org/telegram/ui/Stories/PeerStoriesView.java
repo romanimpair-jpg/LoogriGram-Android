@@ -184,7 +184,6 @@ import org.telegram.ui.Components.chat.layouts.ChatActivitySideControlsButtonsLa
 import org.telegram.ui.Components.voip.CellFlickerDrawable;
 import org.telegram.ui.EmojiAnimationsOverlay;
 import org.telegram.ui.LaunchActivity;
-import org.telegram.ui.MessageStatisticActivity;
 import org.telegram.ui.NotificationsCustomSettingsActivity;
 import org.telegram.ui.PinchToZoomHelper;
 import org.telegram.ui.PremiumPreviewFragment;
@@ -1277,40 +1276,6 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
 
             popupMenu = new CustomPopupMenu(getContext(), resourcesProvider, hasSwipeBack) {
 
-                private void addViewStatistics(ActionBarPopupWindow.ActionBarPopupWindowLayout popupLayout, TL_stories.StoryItem storyItem) {
-                    if (isChannel && storyItem != null && !(storyItem.media instanceof TLRPC.TL_messageMediaVideoStream)) {
-                        TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
-                        if (chat != null) {
-                            TLRPC.ChatFull chatFull = MessagesController.getInstance(currentAccount).getChatFull(chat.id);
-                            if (chatFull == null) {
-                                chatFull = MessagesStorage.getInstance(currentAccount).loadChatInfo(chat.id, true, new CountDownLatch(1), false, false);
-                            }
-                            if (chatFull != null && chatFull.can_view_stats) {
-                                ActionBarMenuItem.addItem(popupLayout, R.drawable.msg_stats, getString(R.string.ViewStatistics), false, resourcesProvider).setOnClickListener(v -> {
-                                    if (popupMenu != null) {
-                                        popupMenu.dismiss();
-                                    }
-                                    storyItem.dialogId = dialogId;
-                                    storyItem.messageId = storyItem.id;
-                                    MessageObject msg = new MessageObject(currentAccount, storyItem);
-                                    msg.generateThumbs(false);
-                                    storyViewer.presentFragment(new MessageStatisticActivity(msg, chat.id, false) {
-                                        @Override
-                                        public Theme.ResourcesProvider getResourceProvider() {
-                                            return new DarkThemeResourceProvider();
-                                        }
-
-                                        @Override
-                                        public boolean isLightStatusBar() {
-                                            return false;
-                                        }
-                                    });
-                                });
-                            }
-                        }
-                    }
-                }
-
                 private void addSpeedLayout(ActionBarPopupWindow.ActionBarPopupWindowLayout popupLayout, boolean addGap) {
                     if (!speedControl) {
                         speedLayout = null;
@@ -1504,7 +1469,8 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
                             });
                         }
 
-                        addViewStatistics(popupLayout, storyItem);
+                        // LoogriGram: "View statistics" opened a story's own statistics
+                        // page, which is gone with the story parts of statistics.
 
                         if (!unsupported && !currentStory.isLive) {
                             final String str = currentStory.isVideo() ? getString(R.string.SaveVideo) : getString(R.string.SaveImage);
@@ -1806,7 +1772,7 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
                             }
                         }
 
-                        addViewStatistics(popupLayout, currentStory.storyItem);
+                        // LoogriGram: as above, no story statistics.
 
                         if (!unsupported) {
                             if (!UserObject.isService(dialogId) && !isBotsPreview()) {

@@ -104,14 +104,11 @@ import org.telegram.ui.Components.blur3.capture.IBlur3Capture;
 import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceColor;
 import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceRenderNode;
 import org.telegram.ui.Components.chat.ViewPositionWatcher;
-import org.telegram.ui.Stories.StoriesController;
-import org.telegram.ui.Stories.StoriesListPlaceProvider;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Locale;
 
 public class StatisticActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
@@ -146,8 +143,6 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
     private ChartViewData languagesData;
     private ChartViewData notificationsData;
     private ChartViewData reactionsByEmotionData;
-    private ChartViewData storyInteractionsData;
-    private ChartViewData storyReactionsByEmotionData;
 
     //chats
     private OverviewChatData overviewChatData;
@@ -207,17 +202,12 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
 
     private int loadFromId = -1;
     private final SparseIntArray recentPostIdtoIndexMap = new SparseIntArray();
-    private final SparseIntArray recentStoriesIdtoIndexMap = new SparseIntArray();
     private final ArrayList<RecentPostInfo> recentPostsAll = new ArrayList<>();
     private final ArrayList<RecentPostInfo> recentPostsLoaded = new ArrayList<>();
-    private final ArrayList<RecentPostInfo> recentStoriesAll = new ArrayList<>();
-    private final ArrayList<RecentPostInfo> recentStoriesLoaded = new ArrayList<>();
     private final ArrayList<RecentPostInfo> recentAllSortedDataLoaded = new ArrayList<>();
     private boolean messagesIsLoading;
     private boolean initialLoading = true;
     private DiffUtilsCallback diffUtilsCallback;
-    private StoriesController.StoriesList storiesList;
-    private int storiesListId;
 
     private final Runnable showProgressbar = new Runnable() {
         @Override
@@ -230,12 +220,6 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
     public boolean onFragmentCreate() {
         getNotificationCenter().addObserver(this, NotificationCenter.messagesDidLoad);
         getNotificationCenter().addObserver(this, NotificationCenter.chatInfoDidLoad);
-        getNotificationCenter().addObserver(this, NotificationCenter.storiesListUpdated);
-        StoriesController storiesController = getMessagesController().getStoriesController();
-        storiesList = storiesController.getStoriesList(-chatId, StoriesController.StoriesList.TYPE_STATISTICS);
-        if (storiesList != null) {
-            storiesListId = storiesList.link();
-        }
         if (chat != null) {
             loadStatistic();
         } else {
@@ -247,7 +231,6 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
     private void sortAllLoadedData() {
         recentAllSortedDataLoaded.clear();
         recentAllSortedDataLoaded.addAll(recentPostsLoaded);
-        recentAllSortedDataLoaded.addAll(recentStoriesLoaded);
         Collections.sort(recentAllSortedDataLoaded, Collections.reverseOrder(Comparator.comparingLong(RecentPostInfo::getDate)));
     }
 
@@ -265,7 +248,7 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
 
         int reqId = getConnectionsManager().sendRequest(req, (response, error) -> {
             if (response instanceof TL_stats.TL_broadcastStats) {
-                final ChartViewData[] chartsViewData = new ChartViewData[12];
+                final ChartViewData[] chartsViewData = new ChartViewData[10];
                 TL_stats.TL_broadcastStats stats = (TL_stats.TL_broadcastStats) response;
 
                 chartsViewData[0] = createViewData(stats.iv_interactions_graph, getString("IVInteractionsChartTitle", R.string.IVInteractionsChartTitle), 1);
@@ -278,8 +261,8 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
                 chartsViewData[7] = createViewData(stats.languages_graph, getString("LanguagesChartTitle", R.string.LanguagesChartTitle), 4, true);
                 chartsViewData[8] = createViewData(stats.mute_graph, getString("NotificationsChartTitle", R.string.NotificationsChartTitle), 0);
                 chartsViewData[9] = createViewData(stats.reactions_by_emotion_graph, getString("ReactionsByEmotionChartTitle", R.string.ReactionsByEmotionChartTitle), 2);
-                chartsViewData[10] = createViewData(stats.story_interactions_graph, getString("StoryInteractionsChartTitle", R.string.StoryInteractionsChartTitle), 1);
-                chartsViewData[11] = createViewData(stats.story_reactions_by_emotion_graph, getString("StoryReactionsByEmotionChartTitle", R.string.StoryReactionsByEmotionChartTitle), 2);
+                // LoogriGram: 10 and 11 were the story interactions and story reactions
+                // charts. Stories are removed, as on desktop.
 
                 if (chartsViewData[2] != null) {
                     chartsViewData[2].useHourFormat = true;
@@ -292,8 +275,6 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
                 recentPostsAll.clear();
 
                 int msgPos = 0;
-                int storiesPos = 0;
-                List<Integer> storiesIds = new ArrayList<>();
                 for (TL_stats.PostInteractionCounters interactionCounters : stats.recent_posts_interactions) {
                     RecentPostInfo recentPostInfo = new RecentPostInfo();
                     recentPostInfo.counters = interactionCounters;
@@ -303,20 +284,9 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
                         recentPostIdtoIndexMap.put(recentPostInfo.getId(), msgPos);
                         msgPos++;
                     }
-                    if (interactionCounters instanceof TL_stats.TL_postInteractionCountersStory) {
-                        storiesIds.add(recentPostInfo.getId());
-                        recentStoriesAll.add(recentPostInfo);
-                        recentStoriesIdtoIndexMap.put(recentPostInfo.getId(), storiesPos);
-                        storiesPos++;
-                    }
+                    // LoogriGram: recent stories were listed among the posts
+                    // (postInteractionCountersStory). Stories are removed, as on desktop.
                 }
-
-                AndroidUtilities.runOnUIThread(() -> {
-                    if (!storiesList.load(storiesIds)) {
-                        prepareStoriesLoadedItems();
-                        sortAllLoadedData();
-                    }
-                });
 
                 if (recentPostsAll.size() > 0) {
                     int lastPostId = recentPostsAll.get(0).getId();
@@ -337,8 +307,6 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
                     notificationsData = chartsViewData[8];
 
                     reactionsByEmotionData = chartsViewData[9];
-                    storyInteractionsData = chartsViewData[10];
-                    storyReactionsByEmotionData = chartsViewData[11];
 
                     dataLoaded(chartsViewData);
                 });
@@ -459,45 +427,18 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
     public void onFragmentDestroy() {
         getNotificationCenter().removeObserver(this, NotificationCenter.messagesDidLoad);
         getNotificationCenter().removeObserver(this, NotificationCenter.chatInfoDidLoad);
-        getNotificationCenter().removeObserver(this, NotificationCenter.storiesListUpdated);
 
         if (progressDialog[0] != null) {
             progressDialog[0].dismiss();
             progressDialog[0] = null;
         }
-        if (storiesList != null) {
-            storiesList.unlink(storiesListId);
-        }
         super.onFragmentDestroy();
-    }
-
-    private void prepareStoriesLoadedItems() {
-        recentStoriesLoaded.clear();
-        for (RecentPostInfo recentPostInfo : recentStoriesAll) {
-            MessageObject messageObject = storiesList.findMessageObject(recentPostInfo.getId());
-            if (messageObject != null) {
-                recentPostInfo.message = messageObject;
-                recentStoriesLoaded.add(recentPostInfo);
-            }
-        }
-        recentStoriesIdtoIndexMap.clear();
-        recentStoriesAll.clear();
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
-        if (id == NotificationCenter.storiesListUpdated) {
-            StoriesController.StoriesList list = (StoriesController.StoriesList) args[0];
-            if (list == storiesList) {
-                prepareStoriesLoadedItems();
-                sortAllLoadedData();
-                if (adapter != null) {
-                    recyclerListView.setItemAnimator(null);
-                    diffUtilsCallback.update();
-                }
-            }
-        } else if (id == NotificationCenter.messagesDidLoad) {
+        if (id == NotificationCenter.messagesDidLoad) {
             int guid = (Integer) args[10];
             if (guid == classGuid) {
                 ArrayList<MessageObject> messArr = (ArrayList<MessageObject>) args[2];
@@ -737,10 +678,6 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
             if (position >= adapter.recentPostsStartRow && position <= adapter.recentPostsEndRow) {
                 MessageObject messageObject = recentAllSortedDataLoaded.get(position - adapter.recentPostsStartRow).message;
 
-                if (messageObject.isStory()) {
-                    return false;
-                }
-
                 ItemOptions.makeOptions(this, view)
                     .add(R.drawable.msg_stats, getString(R.string.ViewMessageStatistic), () -> {
                         presentFragment(new MessageStatisticActivity(messageObject));
@@ -902,8 +839,6 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
         int languagesCell = -1;
         int notificationsCell = -1;
         int reactionsByEmotionCell = -1;
-        int storyInteractionsCell = -1;
-        int storyReactionsByEmotionCell = -1;
 
         int recentPostsHeaderCell = -1;
         int recentPostsStartRow = -1;
@@ -937,9 +872,9 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
         public int getItemViewType(int position) {
             if (position == growCell || position == folowersCell || position == topHourseCell || position == notificationsCell || position == actionsCell || position == groupMembersCell) {
                 return VIEW_TYPE_LINEAR;
-            } else if (position == interactionsCell || position == ivInteractionsCell || position == storyInteractionsCell) {
+            } else if (position == interactionsCell || position == ivInteractionsCell) {
                 return VIEW_TYPE_DOUBLE_LINEAR;
-            } else if (position == viewsBySourceCell || position == newFollowersBySourceCell || position == newMembersBySourceCell || position == messagesCell || position == reactionsByEmotionCell || position == storyReactionsByEmotionCell) {
+            } else if (position == viewsBySourceCell || position == newFollowersBySourceCell || position == newMembersBySourceCell || position == messagesCell || position == reactionsByEmotionCell) {
                 return VIEW_TYPE_STACKBAR;
             } else if (position == languagesCell || position == membersLanguageCell || position == topDayOfWeeksCell) {
                 return VIEW_TYPE_STACKLINEAR;
@@ -1002,10 +937,6 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
                 return 15;
             } else if (position == reactionsByEmotionCell) {
                 return 16;
-            } else if (position == storyInteractionsCell) {
-                return 17;
-            } else if (position == storyReactionsByEmotionCell) {
-                return 18;
             }
             return super.getItemId(position);
         }
@@ -1053,7 +984,7 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
                 headerCell.setPadding(headerCell.getPaddingLeft(), dp(16), headerCell.getRight(), dp(16));
                 v = headerCell;
             } else if (viewType == 14) {
-                v = new OverviewCell(parent.getContext(), isMegagroup ? 2 : 4);
+                v = new OverviewCell(parent.getContext(), isMegagroup ? 2 : 3);
             } else if (viewType == 15) {
                 v = new ManageChatTextCell(parent.getContext());
                 ((ManageChatTextCell) v).setColors(Theme.key_windowBackgroundWhiteBlueIcon, Theme.key_windowBackgroundWhiteBlueButton);
@@ -1087,10 +1018,6 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
                     data = notificationsData;
                 } else if (reactionsByEmotionCell == position) {
                     data = reactionsByEmotionData;
-                } else if (storyInteractionsCell == position) {
-                    data = storyInteractionsData;
-                } else if (storyReactionsByEmotionCell == position) {
-                    data = storyReactionsByEmotionData;
                 } else if (groupMembersCell == position) {
                     data = groupMembersData;
                 } else if (newMembersBySourceCell == position) {
@@ -1124,11 +1051,6 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
                     RecentPostInfo recentPostInfo = recentAllSortedDataLoaded.get(i);
                     StatisticPostInfoCell cell = ((StatisticPostInfoCell) holder.itemView);
                     cell.setData(recentPostInfo, i == recentAllSortedDataLoaded.size() - 1);
-                    if (recentPostInfo.isStory()) {
-                        cell.setImageViewAction(v -> getOrCreateStoryViewer().open(getContext(), recentPostInfo.getId(), storiesList, StoriesListPlaceProvider.of(recyclerListView)));
-                    } else {
-                        cell.setImageViewAction(null);
-                    }
                 }
             } else if (type == 13) {
                 ChartHeaderView headerCell = (ChartHeaderView) holder.itemView;
@@ -1180,8 +1102,6 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
             ivInteractionsCell = -1;
             topHourseCell = -1;
             notificationsCell = -1;
-            storyReactionsByEmotionCell = -1;
-            storyInteractionsCell = -1;
             reactionsByEmotionCell = -1;
             groupMembersCell = -1;
             newMembersBySourceCell = -1;
@@ -1366,18 +1286,6 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
                         shadowDivideCells.add(count++);
                     }
                     reactionsByEmotionCell = count++;
-                }
-                if (storyInteractionsData != null && !storyInteractionsData.isEmpty && !storyInteractionsData.isError) {
-                    if (count > 0) {
-                        shadowDivideCells.add(count++);
-                    }
-                    storyInteractionsCell = count++;
-                }
-                if (storyReactionsByEmotionData != null && !storyReactionsByEmotionData.isEmpty && !storyReactionsByEmotionData.isError) {
-                    if (count > 0) {
-                        shadowDivideCells.add(count++);
-                    }
-                    storyReactionsByEmotionCell = count++;
                 }
 
                 shadowDivideCells.add(count++);
@@ -2239,16 +2147,9 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
             return message.messageOwner.date;
         }
 
-        public boolean isStory() {
-            return counters instanceof TL_stats.TL_postInteractionCountersStory;
-        }
-
         public int getViews() {
             if (counters instanceof TL_stats.TL_postInteractionCountersMessage) {
                 return ((TL_stats.TL_postInteractionCountersMessage) counters).views;
-            }
-            if (counters instanceof TL_stats.TL_postInteractionCountersStory) {
-                return ((TL_stats.TL_postInteractionCountersStory) counters).views;
             }
             return 0;
         }
@@ -2257,9 +2158,6 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
             if (counters instanceof TL_stats.TL_postInteractionCountersMessage) {
                 return ((TL_stats.TL_postInteractionCountersMessage) counters).reactions;
             }
-            if (counters instanceof TL_stats.TL_postInteractionCountersStory) {
-                return ((TL_stats.TL_postInteractionCountersStory) counters).reactions;
-            }
             return 0;
         }
 
@@ -2267,18 +2165,12 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
             if (counters instanceof TL_stats.TL_postInteractionCountersMessage) {
                 return ((TL_stats.TL_postInteractionCountersMessage) counters).forwards;
             }
-            if (counters instanceof TL_stats.TL_postInteractionCountersStory) {
-                return ((TL_stats.TL_postInteractionCountersStory) counters).forwards;
-            }
             return 0;
         }
 
         public int getId() {
             if (counters instanceof TL_stats.TL_postInteractionCountersMessage) {
                 return ((TL_stats.TL_postInteractionCountersMessage) counters).msg_id;
-            }
-            if (counters instanceof TL_stats.TL_postInteractionCountersStory) {
-                return ((TL_stats.TL_postInteractionCountersStory) counters).story_id;
             }
             return 0;
         }
@@ -2378,8 +2270,6 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
         int topHourseCell = -1;
         int notificationsCell = -1;
         int reactionsByEmotionCell = -1;
-        int storyInteractionsCell = -1;
-        int storyReactionsByEmotionCell = -1;
 
         int groupMembersCell = -1;
         int newMembersBySourceCell = -1;
@@ -2414,8 +2304,6 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
             startPosts = adapter.recentPostsStartRow;
             endPosts = adapter.recentPostsEndRow;
             reactionsByEmotionCell = adapter.reactionsByEmotionCell;
-            storyInteractionsCell = adapter.storyInteractionsCell;
-            storyReactionsByEmotionCell = adapter.storyReactionsByEmotionCell;
 
             groupMembersCell = adapter.groupMembersCell;
             newMembersBySourceCell = adapter.newMembersBySourceCell;
@@ -2477,10 +2365,6 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
             } else if (oldItemPosition == topDayOfWeeksCell && newItemPosition == adapter.topDayOfWeeksCell) {
                 return true;
             } else if (oldItemPosition == reactionsByEmotionCell && newItemPosition == adapter.reactionsByEmotionCell) {
-                return true;
-            } else if (oldItemPosition == storyInteractionsCell && newItemPosition == adapter.storyInteractionsCell) {
-                return true;
-            } else if (oldItemPosition == storyReactionsByEmotionCell && newItemPosition == adapter.storyReactionsByEmotionCell) {
                 return true;
             }
             return false;
@@ -2610,7 +2494,7 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
                 putColorFromData(chartViewData, arrayList, themeDelegate);
             }
         } else {
-            for (int i = 0; i < 12; i++) {
+            for (int i = 0; i < 10; i++) {
                 ChartViewData chartViewData;
                 if (i == 0) {
                     chartViewData = growthData;
@@ -2630,12 +2514,8 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
                     chartViewData = topHoursData;
                 } else if (i == 8) {
                     chartViewData = languagesData;
-                } else if (i == 9) {
-                    chartViewData = reactionsByEmotionData;
-                } else if (i == 10) {
-                    chartViewData = storyInteractionsData;
                 } else {
-                    chartViewData = storyReactionsByEmotionData;
+                    chartViewData = reactionsByEmotionData;
                 }
 
                 putColorFromData(chartViewData, arrayList, themeDelegate);
@@ -2685,23 +2565,8 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
         boolean reactionsPerPostUp;
         boolean reactionsPerPostVisible;
 
-        String reactionsPerStoryTitle;
-        String reactionsPerStoryPrimary;
-        String reactionsPerStorySecondary;
-        boolean reactionsPerStoryUp;
-        boolean reactionsPerStoryVisible;
-
-        String viewsPerStoryTitle;
-        String viewsPerStoryPrimary;
-        String viewsPerStorySecondary;
-        boolean viewsPerStoryUp;
-        boolean viewsPerStoryVisible;
-
-        String sharesPerStoryTitle;
-        String sharesPerStoryPrimary;
-        String sharesPerStorySecondary;
-        boolean sharesPerStoryUp;
-        boolean sharesPerStoryVisible;
+        // LoogriGram: the mean reactions, views and shares per story sat here.
+        // Stories are removed; as on desktop the grid keeps the posts' own.
 
         public static class Quadruple<A, B, C, D> {
             public Quadruple(A fist, B second, C third, D fourth) {
@@ -2741,27 +2606,6 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
             reactionsPerPostSecondary = quadrupleData.second;
             reactionsPerPostUp = quadrupleData.third;
             reactionsPerPostVisible = quadrupleData.fourth;
-
-            quadrupleData = prepare(stats.reactions_per_story);
-            reactionsPerStoryTitle = getString("ReactionsPerStory", R.string.ReactionsPerStory);
-            reactionsPerStoryPrimary = quadrupleData.fist;
-            reactionsPerStorySecondary = quadrupleData.second;
-            reactionsPerStoryUp = quadrupleData.third;
-            reactionsPerStoryVisible = quadrupleData.fourth;
-
-            quadrupleData = prepare(stats.views_per_story);
-            viewsPerStoryTitle = getString("ViewsPerStory", R.string.ViewsPerStory);
-            viewsPerStoryPrimary = quadrupleData.fist;
-            viewsPerStorySecondary = quadrupleData.second;
-            viewsPerStoryUp = quadrupleData.third;
-            viewsPerStoryVisible = quadrupleData.fourth;
-
-            quadrupleData = prepare(stats.shares_per_story);
-            sharesPerStoryTitle = getString("SharesPerStory", R.string.SharesPerStory);
-            sharesPerStoryPrimary = quadrupleData.fist;
-            sharesPerStorySecondary = quadrupleData.second;
-            sharesPerStoryUp = quadrupleData.third;
-            sharesPerStoryVisible = quadrupleData.fourth;
 
             int dif = (int) (stats.followers.current - stats.followers.previous);
             float difPercent = stats.followers.previous == 0 ? 0 : Math.abs(dif / (float) stats.followers.previous * 100f);
@@ -2963,45 +2807,18 @@ public class StatisticActivity extends BaseFragment implements NotificationCente
                         k++;
                         break;
                     case 3:
-                        primary[k].setText(data.viewsPerStoryPrimary);
-                        secondary[k].setText(data.viewsPerStorySecondary);
-                        secondary[k].setTag(data.viewsPerStoryUp ? Theme.key_windowBackgroundWhiteGreenText2 : Theme.key_text_RedRegular);
-                        title[k].setText(data.viewsPerStoryTitle);
-                        if (data.viewsPerStoryVisible) {
-                            k++;
-                        }
-                        break;
-                    case 4:
                         primary[k].setText(data.sharesPrimary);
                         secondary[k].setText(data.sharesSecondary);
                         secondary[k].setTag(data.sharesUp ? Theme.key_windowBackgroundWhiteGreenText2 : Theme.key_text_RedRegular);
                         title[k].setText(data.sharesTitle);
                         k++;
                         break;
-                    case 5:
-                        primary[k].setText(data.sharesPerStoryPrimary);
-                        secondary[k].setText(data.sharesPerStorySecondary);
-                        secondary[k].setTag(data.sharesPerStoryUp ? Theme.key_windowBackgroundWhiteGreenText2 : Theme.key_text_RedRegular);
-                        title[k].setText(data.sharesPerStoryTitle);
-                        if (data.sharesPerStoryVisible) {
-                            k++;
-                        }
-                        break;
-                    case 6:
+                    case 4:
                         primary[k].setText(data.reactionsPerPostPrimary);
                         secondary[k].setText(data.reactionsPerPostSecondary);
                         secondary[k].setTag(data.reactionsPerPostUp ? Theme.key_windowBackgroundWhiteGreenText2 : Theme.key_text_RedRegular);
                         title[k].setText(data.reactionsPerPostTitle);
                         if (data.reactionsPerPostVisible) {
-                            k++;
-                        }
-                        break;
-                    case 7:
-                        primary[k].setText(data.reactionsPerStoryPrimary);
-                        secondary[k].setText(data.reactionsPerStorySecondary);
-                        secondary[k].setTag(data.reactionsPerStoryUp ? Theme.key_windowBackgroundWhiteGreenText2 : Theme.key_text_RedRegular);
-                        title[k].setText(data.reactionsPerStoryTitle);
-                        if (data.reactionsPerStoryVisible) {
                             k++;
                         }
                         break;

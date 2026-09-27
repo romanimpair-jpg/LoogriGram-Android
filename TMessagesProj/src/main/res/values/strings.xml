@@ -4129,8 +4129,6 @@
     <string name="FollowersChartTitle">Followers</string>
     <string name="ViewsAndSharesChartTitle">Views and Shares</string>
     <string name="ReactionsByEmotionChartTitle">Reactions</string>
-    <string name="StoryInteractionsChartTitle">Story Views and Shares</string>
-    <string name="StoryReactionsByEmotionChartTitle">Story Reactions</string>
     <string name="ViewsBySourceChartTitle">Views by source</string>
     <string name="NewFollowersBySourceChartTitle">New followers by source</string>
     <string name="LanguagesChartTitle">Languages</string>
@@ -4147,9 +4145,6 @@
     <string name="ClearTelegramCache">Clear Telegram Cache</string>
     <string name="StatisticOverview">Overview</string>
     <string name="ViewsPerPost">Views Per Post</string>
-    <string name="ViewsPerStory">Views Per Story</string>
-    <string name="SharesPerStory">Shares Per Story</string>
-    <string name="ReactionsPerStory">Reactions Per Story</string>
     <string name="ReactionsPerPost">Reactions Per Post</string>
     <string name="SharesPerPost">Shares Per Post</string>
     <string name="EnabledNotifications">Enabled Notifications</string>
@@ -4189,7 +4184,6 @@
     <string name="StatisticViews">Views</string>
     <string name="PublicShares">Public Shares</string>
     <string name="PrivateShares">Private Shares</string>
-    <string name="ViewStatistics">View Statistics</string>
     <string name="ViewChannelStats">View Channel Stats</string>
     <string name="ViewMessageStatistic">Message Statistic</string>
     <string name="ViewMessage">Open Message</string>
@@ -6498,7 +6492,6 @@
     <string name="NobodyViewsArchived">No views available</string>
     <string name="MyStory">My Story</string>
     <string name="Story">Story</string>
-    <string name="StoryStatistics">Story Statistics</string>
     <string name="PostStatistics">Post Statistics</string>
     <string name="MessageSent">Message sent.</string>
     <string name="RightNow">Just now</string>

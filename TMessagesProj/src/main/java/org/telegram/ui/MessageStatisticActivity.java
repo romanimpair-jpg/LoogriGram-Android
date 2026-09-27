@@ -56,7 +56,6 @@ import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_stats;
-import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
 import org.telegram.ui.ActionBar.ActionBarMenuItem;
@@ -75,15 +74,12 @@ import org.telegram.ui.Charts.BaseChartView;
 import org.telegram.ui.Charts.data.ChartData;
 import org.telegram.ui.Charts.data.StackLinearChartData;
 import org.telegram.ui.Charts.view_data.ChartHeaderView;
-import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.ChatAvatarContainer;
 import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.EmptyTextProgressView;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RLottieImageView;
 import org.telegram.ui.Components.RecyclerListView;
-import org.telegram.ui.Stories.StoriesListPlaceProvider;
-import org.telegram.ui.Stories.StoriesUtilities;
 
 import java.util.ArrayList;
 
@@ -259,17 +255,6 @@ public class MessageStatisticActivity extends BaseFragment implements Notificati
         }
     }
 
-    private boolean checkIsDeletedStory(MessageObject message) {
-        if (message == null || !message.isStory()) {
-            return false;
-        }
-        if (message.storyItem instanceof TL_stories.TL_storyItemDeleted) {
-            BulletinFactory.of(this).createSimpleBulletin(R.raw.story_bomb1, LocaleController.getString(R.string.StoryNotFound)).show();
-            return true;
-        }
-        return false;
-    }
-
     @Override
     public View createView(Context context) {
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
@@ -323,13 +308,6 @@ public class MessageStatisticActivity extends BaseFragment implements Notificati
         listView.setOnItemClickListener((view, position) -> {
             if (position >= startRow && position < endRow) {
                 MessageObject message = messages.get(position - startRow);
-                if (message.isStory()) {
-                    if (checkIsDeletedStory(message)) {
-                        return;
-                    }
-                    getOrCreateStoryViewer().open(getContext(), message.storyItem, StoriesListPlaceProvider.of(listView));
-                    return;
-                }
                 long did = MessageObject.getDialogId(message.messageOwner);
                 Bundle args = new Bundle();
                 if (DialogObject.isUserDialog(did)) {
@@ -356,29 +334,20 @@ public class MessageStatisticActivity extends BaseFragment implements Notificati
                 final ArrayList<Integer> actions = new ArrayList<>();
                 final ArrayList<Integer> icons = new ArrayList<>();
                 AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity(), getResourceProvider());
-                if (message.isStory()) {
-                    items.add(isDialog ? LocaleController.getString(R.string.OpenProfile) : LocaleController.getString(R.string.OpenChannel2));
-                    icons.add(isDialog ? R.drawable.msg_openprofile : R.drawable.msg_channel);
-                } else {
-                    items.add(LocaleController.getString(R.string.ViewMessage));
-                    icons.add(R.drawable.msg_msgbubble3);
-                }
+                items.add(LocaleController.getString(R.string.ViewMessage));
+                icons.add(R.drawable.msg_msgbubble3);
                 actions.add(0);
                 builder.setItems(items.toArray(new CharSequence[actions.size()]), AndroidUtilities.toIntArray(icons), (dialogInterface, i) -> {
-                    if (message.isStory()) {
-                        presentFragment(isDialog ? ProfileActivity.of(did) : ChatActivity.of(did));
+                    Bundle args = new Bundle();
+                    if (isDialog) {
+                        args.putLong("user_id", did);
                     } else {
-                        Bundle args = new Bundle();
-                        if (isDialog) {
-                            args.putLong("user_id", did);
-                        } else {
-                            args.putLong("chat_id", -did);
-                        }
-                        args.putInt("message_id", message.getId());
-                        args.putBoolean("need_remove_previous_same_chat_activity", false);
-                        if (getMessagesController().checkCanOpenChat(args, this)) {
-                            presentFragment(new ChatActivity(args));
-                        }
+                        args.putLong("chat_id", -did);
+                    }
+                    args.putInt("message_id", message.getId());
+                    args.putBoolean("need_remove_previous_same_chat_activity", false);
+                    if (getMessagesController().checkCanOpenChat(args, this)) {
+                        presentFragment(new ChatActivity(args));
                     }
                 });
                 showDialog(builder.create());
@@ -460,56 +429,54 @@ public class MessageStatisticActivity extends BaseFragment implements Notificati
         thumbImage.setRoundRadius(AndroidUtilities.dp(9));
 
         hasThumb = false;
-        if (!messageObject.isStory()) {
-            if (!messageObject.needDrawBluredPreview() && (messageObject.isPhoto() || messageObject.isNewGif() || messageObject.isVideo())) {
-                String type = messageObject.isWebpage() ? messageObject.messageOwner.media.webpage.type : null;
-                if (!("app".equals(type) || "profile".equals(type) || "article".equals(type) || type != null && type.startsWith("telegram_"))) {
-                    TLRPC.PhotoSize smallThumb = FileLoader.getClosestPhotoSizeWithSize(messageObject.photoThumbs, 50);
-                    TLRPC.PhotoSize bigThumb = FileLoader.getClosestPhotoSizeWithSize(messageObject.photoThumbs, AndroidUtilities.getPhotoSize());
-                    if (smallThumb == bigThumb) {
-                        bigThumb = null;
-                    }
-                    if (smallThumb != null) {
-                        hasThumb = true;
-                        drawPlay = messageObject.isVideo();
-                        String fileName = FileLoader.getAttachFileName(bigThumb);
-                        if (messageObject.mediaExists || DownloadController.getInstance(currentAccount).canDownloadMedia(messageObject) || FileLoader.getInstance(currentAccount).isLoadingFile(fileName)) {
-                            int size;
-                            if (messageObject.type == MessageObject.TYPE_PHOTO) {
-                                size = bigThumb != null ? bigThumb.size : 0;
-                            } else {
-                                size = 0;
-                            }
-                            thumbImage.setImage(ImageLocation.getForObject(bigThumb, messageObject.photoThumbsObject), "50_50", ImageLocation.getForObject(smallThumb, messageObject.photoThumbsObject), "50_50", size, null, messageObject, 0);
+        if (!messageObject.needDrawBluredPreview() && (messageObject.isPhoto() || messageObject.isNewGif() || messageObject.isVideo())) {
+            String type = messageObject.isWebpage() ? messageObject.messageOwner.media.webpage.type : null;
+            if (!("app".equals(type) || "profile".equals(type) || "article".equals(type) || type != null && type.startsWith("telegram_"))) {
+                TLRPC.PhotoSize smallThumb = FileLoader.getClosestPhotoSizeWithSize(messageObject.photoThumbs, 50);
+                TLRPC.PhotoSize bigThumb = FileLoader.getClosestPhotoSizeWithSize(messageObject.photoThumbs, AndroidUtilities.getPhotoSize());
+                if (smallThumb == bigThumb) {
+                    bigThumb = null;
+                }
+                if (smallThumb != null) {
+                    hasThumb = true;
+                    drawPlay = messageObject.isVideo();
+                    String fileName = FileLoader.getAttachFileName(bigThumb);
+                    if (messageObject.mediaExists || DownloadController.getInstance(currentAccount).canDownloadMedia(messageObject) || FileLoader.getInstance(currentAccount).isLoadingFile(fileName)) {
+                        int size;
+                        if (messageObject.type == MessageObject.TYPE_PHOTO) {
+                            size = bigThumb != null ? bigThumb.size : 0;
                         } else {
-                            thumbImage.setImage(null, null, ImageLocation.getForObject(smallThumb, messageObject.photoThumbsObject), "50_50", (Drawable) null, messageObject, 0);
+                            size = 0;
                         }
+                        thumbImage.setImage(ImageLocation.getForObject(bigThumb, messageObject.photoThumbsObject), "50_50", ImageLocation.getForObject(smallThumb, messageObject.photoThumbsObject), "50_50", size, null, messageObject, 0);
+                    } else {
+                        thumbImage.setImage(null, null, ImageLocation.getForObject(smallThumb, messageObject.photoThumbsObject), "50_50", (Drawable) null, messageObject, 0);
                     }
                 }
-            }
-
-            CharSequence message;
-            if (!TextUtils.isEmpty(messageObject.caption)) {
-                message = messageObject.caption;
-            } else if (!TextUtils.isEmpty(messageObject.messageOwner.message)) {
-                message = messageObject.messageText;
-                if (message.length() > 150) {
-                    message = message.subSequence(0, 150);
-                }
-                message = Emoji.replaceEmoji(message, avatarContainer.getSubtitlePaint().getFontMetricsInt(), false);
-            } else {
-                message = messageObject.messageText;
-            }
-
-            if (messageObject.isVideo() || messageObject.isPhoto()) {
-                avatarContainer.hideSubtitle();
-            } else {
-                avatarContainer.setSubtitle(message);
             }
         }
 
+        CharSequence message;
+        if (!TextUtils.isEmpty(messageObject.caption)) {
+            message = messageObject.caption;
+        } else if (!TextUtils.isEmpty(messageObject.messageOwner.message)) {
+            message = messageObject.messageText;
+            if (message.length() > 150) {
+                message = message.subSequence(0, 150);
+            }
+            message = Emoji.replaceEmoji(message, avatarContainer.getSubtitlePaint().getFontMetricsInt(), false);
+        } else {
+            message = messageObject.messageText;
+        }
+
+        if (messageObject.isVideo() || messageObject.isPhoto()) {
+            avatarContainer.hideSubtitle();
+        } else {
+            avatarContainer.setSubtitle(message);
+        }
+
         int avatarContainerMarginLeft = 56;
-        if (hasThumb || messageObject.isStory()) {
+        if (hasThumb) {
             avatarContainer.setRightAvatarPadding(-AndroidUtilities.dp(3));
             avatarContainerMarginLeft = 50;
         }
@@ -540,9 +507,6 @@ public class MessageStatisticActivity extends BaseFragment implements Notificati
         });
 
         avatarContainer.setOnClickListener(view -> {
-            if (messageObject.isStory()) {
-                return;
-            }
             if (getParentLayout().getFragmentStack().size() > 1) {
                 BaseFragment previousFragemnt = getParentLayout().getFragmentStack().get(getParentLayout().getFragmentStack().size() - 2);
                 if (previousFragemnt instanceof ChatActivity && ((ChatActivity) previousFragemnt).getCurrentChat().id == chatId) {
@@ -563,27 +527,10 @@ public class MessageStatisticActivity extends BaseFragment implements Notificati
     }
 
     private void setAvatarAndTitle() {
-        if (messageObject.isStory()) {
-            avatarContainer.setTitle(LocaleController.getString(R.string.StoryStatistics));
-            avatarContainer.hideSubtitle();
-            avatarContainer.allowDrawStories = true;
-            avatarContainer.setStoriesForceState(StoriesUtilities.STATE_HAS_UNREAD);
-            if (messageObject.photoThumbs != null) {
-                TLRPC.PhotoSize size = FileLoader.getClosestPhotoSizeWithSize(messageObject.photoThumbs, AndroidUtilities.getPhotoSize());
-                TLRPC.PhotoSize thumbSize = FileLoader.getClosestPhotoSizeWithSize(messageObject.photoThumbs, 50);
-                avatarContainer.getAvatarImageView().setImage(
-                        ImageLocation.getForObject(size, messageObject.photoThumbsObject), "50_50",
-                        ImageLocation.getForObject(thumbSize, messageObject.photoThumbsObject), "b1", 0, messageObject);
-                avatarContainer.setClipChildren(false);
-                avatarContainer.getAvatarImageView().setScaleX(0.96f);
-                avatarContainer.getAvatarImageView().setScaleY(0.96f);
-            }
-        } else {
-            avatarContainer.setTitle(LocaleController.getString(R.string.PostStatistics));
-            TLRPC.Chat chatLocal = getMessagesController().getChat(chatId);
-            if (chatLocal != null && !hasThumb) {
-                avatarContainer.setChatAvatar(chatLocal);
-            }
+        avatarContainer.setTitle(LocaleController.getString(R.string.PostStatistics));
+        TLRPC.Chat chatLocal = getMessagesController().getChat(chatId);
+        if (chatLocal != null && !hasThumb) {
+            avatarContainer.setChatAvatar(chatLocal);
         }
     }
 
@@ -606,54 +553,6 @@ public class MessageStatisticActivity extends BaseFragment implements Notificati
         loading = true;
         if (listViewAdapter != null) {
             listViewAdapter.notifyDataSetChanged();
-        }
-        if (messageObject.isStory()) {
-            TL_stats.TL_getStoryPublicForwards req = new TL_stats.TL_getStoryPublicForwards();
-            req.limit = count;
-            req.id = messageObject.storyItem.id;
-            req.peer = getMessagesController().getInputPeer(-chatId);
-            req.offset = nextOffset == null ? "" : nextOffset;
-            int reqId = getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                if (error == null) {
-                    TL_stats.TL_publicForwards res = (TL_stats.TL_publicForwards) response;
-                    if ((res.flags & 1) != 0) {
-                        nextOffset = res.next_offset;
-                    } else {
-                        nextOffset = null;
-                    }
-                    if (res.count != 0) {
-                        publicChats = res.count;
-                    } else if (publicChats == 0) {
-                        publicChats = res.forwards.size();
-                    }
-                    endReached = nextOffset == null;
-                    getMessagesController().putChats(res.chats, false);
-                    getMessagesController().putUsers(res.users, false);
-
-                    for (TL_stats.PublicForward forward : res.forwards) {
-                        if (forward instanceof TL_stories.TL_publicForwardStory) {
-                            TL_stories.TL_publicForwardStory forwardStory = (TL_stories.TL_publicForwardStory) forward;
-                            forwardStory.story.dialogId = DialogObject.getPeerDialogId(forwardStory.peer);
-                            forwardStory.story.messageId = forwardStory.story.id;
-                            MessageObject msg = new MessageObject(currentAccount, forwardStory.story);
-                            msg.generateThumbs(false);
-                            messages.add(msg);
-                        } else if (forward instanceof TL_stats.TL_publicForwardMessage) {
-                            TL_stats.TL_publicForwardMessage forwardMessage = (TL_stats.TL_publicForwardMessage) forward;
-                            messages.add(new MessageObject(currentAccount, forwardMessage.message, false, true));
-                        }
-                    }
-
-                    if (emptyView != null) {
-                        emptyView.showTextView();
-                    }
-                }
-                firstLoaded = true;
-                loading = false;
-                updateRows();
-            }), null, null, 0, chat.stats_dc, ConnectionsManager.ConnectionTypeGeneric, true);
-            getConnectionsManager().bindRequestToGuid(reqId, classGuid);
-            return;
         }
         TL_stats.TL_getMessagePublicForwards req = new TL_stats.TL_getMessagePublicForwards();
         req.limit = count;
@@ -683,14 +582,9 @@ public class MessageStatisticActivity extends BaseFragment implements Notificati
                 getMessagesController().putUsers(res.users, false);
 
                 for (TL_stats.PublicForward forward : res.forwards) {
-                    if (forward instanceof TL_stories.TL_publicForwardStory) {
-                        TL_stories.TL_publicForwardStory forwardStory = (TL_stories.TL_publicForwardStory) forward;
-                        forwardStory.story.dialogId = DialogObject.getPeerDialogId(forwardStory.peer);
-                        forwardStory.story.messageId = forwardStory.story.id;
-                        MessageObject msg = new MessageObject(currentAccount, forwardStory.story);
-                        msg.generateThumbs(false);
-                        messages.add(msg);
-                    } else if (forward instanceof TL_stats.TL_publicForwardMessage) {
+                    // LoogriGram: a repost of the post as a story (publicForwardStory)
+                    // was listed here too. Stories are removed, as on desktop.
+                    if (forward instanceof TL_stats.TL_publicForwardMessage) {
                         TL_stats.TL_publicForwardMessage forwardMessage = (TL_stats.TL_publicForwardMessage) forward;
                         messages.add(new MessageObject(currentAccount, forwardMessage.message, false, true));
                     }
@@ -709,22 +603,15 @@ public class MessageStatisticActivity extends BaseFragment implements Notificati
 
     private void loadStat() {
         TLObject reqObject;
-        if (messageObject.isStory()) {
-            TL_stories.TL_stats_getStoryStats req = new TL_stories.TL_stats_getStoryStats();
-            req.id = messageObject.storyItem.id;
-            req.peer = getMessagesController().getInputPeer(-chatId);
-            reqObject = req;
+        TL_stats.TL_getMessageStats req = new TL_stats.TL_getMessageStats();
+        if (messageObject.messageOwner.fwd_from != null) {
+            req.msg_id = messageObject.messageOwner.fwd_from.saved_from_msg_id;
+            req.channel = getMessagesController().getInputChannel(-messageObject.getFromChatId());
         } else {
-            TL_stats.TL_getMessageStats req = new TL_stats.TL_getMessageStats();
-            if (messageObject.messageOwner.fwd_from != null) {
-                req.msg_id = messageObject.messageOwner.fwd_from.saved_from_msg_id;
-                req.channel = getMessagesController().getInputChannel(-messageObject.getFromChatId());
-            } else {
-                req.msg_id = messageObject.getId();
-                req.channel = getMessagesController().getInputChannel(-messageObject.getDialogId());
-            }
-            reqObject = req;
+            req.msg_id = messageObject.getId();
+            req.channel = getMessagesController().getInputChannel(-messageObject.getDialogId());
         }
+        reqObject = req;
 
         getConnectionsManager().sendRequest(reqObject, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
             statsLoaded = true;
@@ -735,15 +622,9 @@ public class MessageStatisticActivity extends BaseFragment implements Notificati
 
             TL_stats.StatsGraph views_graph;
             TL_stats.StatsGraph reactions_by_emotion_graph;
-            if (response instanceof TL_stories.TL_stats_storyStats) {
-                TL_stories.TL_stats_storyStats res = (TL_stories.TL_stats_storyStats) response;
-                views_graph = res.views_graph;
-                reactions_by_emotion_graph = res.reactions_by_emotion_graph;
-            } else {
-                TL_stats.TL_messageStats res = (TL_stats.TL_messageStats) response;
-                views_graph = res.views_graph;
-                reactions_by_emotion_graph = res.reactions_by_emotion_graph;
-            }
+            TL_stats.TL_messageStats res = (TL_stats.TL_messageStats) response;
+            views_graph = res.views_graph;
+            reactions_by_emotion_graph = res.reactions_by_emotion_graph;
 
             interactionsViewData = StatisticActivity.createViewData(views_graph, LocaleController.getString(R.string.ViewsAndSharesChartTitle), 1, false);
             reactionsByEmotionData = StatisticActivity.createViewData(reactions_by_emotion_graph, LocaleController.getString(R.string.ReactionsByEmotionChartTitle), 2, false);
@@ -963,34 +844,20 @@ public class MessageStatisticActivity extends BaseFragment implements Notificati
                     long did = MessageObject.getDialogId(item.messageOwner);
                     TLObject object;
                     String status = null;
-                    if (item.isStory()) {
-                        object = DialogObject.isUserDialog(did) ? getMessagesController().getUser(did) : getMessagesController().getChat(-did);
-                        boolean isZeroViews = item.storyItem.views == null || item.storyItem.views.views_count == 0;
-                        status = isZeroViews ? LocaleController.getString(R.string.NoViews) : LocaleController.formatPluralString("Views", item.storyItem.views.views_count);
-                        userCell.setData(object, null, status, position != endRow - 1);
-                        userCell.setStoryItem(item.storyItem, v -> {
-                            if (checkIsDeletedStory(item)) {
-                                return;
-                            }
-                            getOrCreateStoryViewer().open(getContext(), item.storyItem, StoriesListPlaceProvider.of(listView));
-                        });
+                    if (DialogObject.isUserDialog(did)) {
+                        object = getMessagesController().getUser(did);
                     } else {
-                        userCell.setStoryItem(null, null);
-                        if (DialogObject.isUserDialog(did)) {
-                            object = getMessagesController().getUser(did);
-                        } else {
-                            object = getMessagesController().getChat(-did);
-                            TLRPC.Chat chat = (TLRPC.Chat) object;
-                            if (ChatObject.isChannel(chat) && !chat.megagroup) {
-                                status = LocaleController.formatPluralString("Views", item.messageOwner.views);
-                            } else if (chat.participants_count != 0) {
-                                status = LocaleController.formatPluralString("Members", chat.participants_count);
-                                status = String.format("%1$s, %2$s", status, LocaleController.formatPluralString("Views", item.messageOwner.views));
-                            }
+                        object = getMessagesController().getChat(-did);
+                        TLRPC.Chat chat = (TLRPC.Chat) object;
+                        if (ChatObject.isChannel(chat) && !chat.megagroup) {
+                            status = LocaleController.formatPluralString("Views", item.messageOwner.views);
+                        } else if (chat.participants_count != 0) {
+                            status = LocaleController.formatPluralString("Members", chat.participants_count);
+                            status = String.format("%1$s, %2$s", status, LocaleController.formatPluralString("Views", item.messageOwner.views));
                         }
-                        if (object != null) {
-                            userCell.setData(object, null, status, position != endRow - 1);
-                        }
+                    }
+                    if (object != null) {
+                        userCell.setData(object, null, status, position != endRow - 1);
                     }
                     break;
                 case 1:
@@ -1107,16 +974,12 @@ public class MessageStatisticActivity extends BaseFragment implements Notificati
                 forwards = recentPostInfo.getForwards();
                 reactions = recentPostInfo.getReactions();
             } else {
-                views = messageObject.isStory() ? messageObject.storyItem.views.views_count : messageObject.messageOwner.views;
-                forwards = messageObject.isStory() ? messageObject.storyItem.views.forwards_count : messageObject.messageOwner.forwards;
+                views = messageObject.messageOwner.views;
+                forwards = messageObject.messageOwner.forwards;
                 reactions = 0;
-                if (messageObject.isStory()) {
-                    reactions = messageObject.storyItem.views.reactions_count;
-                } else {
-                    if (messageObject.messageOwner.reactions != null) {
-                        for (int i = 0; i < messageObject.messageOwner.reactions.results.size(); i++) {
-                            reactions += messageObject.messageOwner.reactions.results.get(i).count;
-                        }
+                if (messageObject.messageOwner.reactions != null) {
+                    for (int i = 0; i < messageObject.messageOwner.reactions.results.size(); i++) {
+                        reactions += messageObject.messageOwner.reactions.results.get(i).count;
                     }
                 }
             }

@@ -29,13 +29,11 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Stories.StoriesUtilities;
 
 public class ManageChatUserCell extends FrameLayout {
 
@@ -47,7 +45,6 @@ public class ManageChatUserCell extends FrameLayout {
     private ImageView optionsButton;
     private ImageView customImageView;
     private Object currentObject;
-    private TL_stories.StoryItem storyItem;
     private CharSequence currentName;
     private CharSequence currentStatus;
     private String lastName;
@@ -62,7 +59,6 @@ public class ManageChatUserCell extends FrameLayout {
     private int dividerColor = -1;
     private ManageChatUserCellDelegate delegate;
     private final int currentAccount = UserConfig.selectedAccount;
-    private final StoriesUtilities.AvatarStoryParams storyAvatarParams = new StoriesUtilities.AvatarStoryParams(false);
 
     public interface ManageChatUserCellDelegate {
         boolean onOptionsButtonCheck(ManageChatUserCell cell, boolean click);
@@ -83,24 +79,7 @@ public class ManageChatUserCell extends FrameLayout {
 
         avatarDrawable = new AvatarDrawable();
 
-        avatarImageView = new BackupImageView(context) {
-            @Override
-            protected void onDraw(Canvas canvas) {
-                if (storyItem != null) {
-                    int pad = AndroidUtilities.dp(1);
-                    storyAvatarParams.originalAvatarRect.set(pad, pad, getMeasuredWidth() - pad, getMeasuredHeight() - pad);
-                    storyAvatarParams.drawSegments = false;
-                    storyAvatarParams.animate = false;
-                    storyAvatarParams.drawInside = true;
-                    storyAvatarParams.isArchive = false;
-                    storyAvatarParams.resourcesProvider = resourcesProvider;
-                    storyAvatarParams.storyItem = storyItem;
-                    StoriesUtilities.drawAvatarWithStory(storyItem.dialogId, canvas, imageReceiver, storyAvatarParams);
-                } else {
-                    super.onDraw(canvas);
-                }
-            }
-        };
+        avatarImageView = new BackupImageView(context);
         avatarImageView.setRoundRadius(AndroidUtilities.dp(23));
         addView(avatarImageView, LayoutHelper.createFrame(46, 46, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.TOP, LocaleController.isRTL ? 0 : 7 + avatarPadding, 8, LocaleController.isRTL ? 7 + avatarPadding : 0, 0));
 
@@ -130,21 +109,8 @@ public class ManageChatUserCell extends FrameLayout {
         }
     }
 
-    public void setStoryItem(TL_stories.StoryItem storyItem, OnClickListener listener) {
-        this.storyItem = storyItem;
-        avatarImageView.setOnClickListener(listener);
-    }
-
-    public TL_stories.StoryItem getStoryItem() {
-        return storyItem;
-    }
-
     public BackupImageView getAvatarImageView() {
         return avatarImageView;
-    }
-
-    public StoriesUtilities.AvatarStoryParams getStoryAvatarParams() {
-        return storyAvatarParams;
     }
 
     public void setCustomRightImage(int resId) {
