@@ -6479,7 +6479,6 @@
     <string name="DeleteStoriesSubtitle_other">Are you sure you want to delete %d stories?</string>
     <string name="NobodyViews">No views yet</string>
     <string name="NobodyViewsArchived">No views available</string>
-    <string name="MyStory">My Story</string>
     <string name="Story">Story</string>
     <string name="PostStatistics">Post Statistics</string>
     <string name="MessageSent">Message sent.</string>
@@ -6603,8 +6602,6 @@
     <string name="StorySelectedContactsHint">Only some contacts **%s** selected can view this story.</string>
     <string name="StoryContactsHint">Only **%s’s** contacts can view this story.</string>
     <string name="ExpiredViewsStub">List of viewers isn\'t available after **24 hours** of story expiration.</string>
-    <string name="ArchivedStories">Archived Stories</string>
-    <string name="SavedStories">Saved Stories</string>
     <string name="StoryBlockList_one">**%d person** won’t see your stories.</string>
     <string name="StoryBlockList_other">**%d people** won’t see your stories.</string>
     <string name="StoryLiveBlockList_one">**%d person** won’t see your stories.</string>
@@ -6685,7 +6682,6 @@
     <string name="StealthModeButton">Hide My View</string>
     <string name="StealthModeTitle">Stealth Mode</string>
     <string name="StealthModePremiumHint">Subscribe to Telegram Premium to hide the fact that you viewed peoples’ stories from them.</string>
-    <string name="ViewAnonymously">View\nAnonymously</string>
     <string name="HideRecentViews">Hide Recent Views</string>
     <string name="HideRecentViewsDescription">Hide my views in the last 5 minutes.</string>
     <string name="HideNextViews">Hide Next Views</string>

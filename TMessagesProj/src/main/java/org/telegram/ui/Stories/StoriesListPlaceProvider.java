@@ -71,14 +71,7 @@ public class StoriesListPlaceProvider implements StoryViewer.PlaceProvider {
 
     @Override
     public void preLayout(long currentDialogId, int messageId, Runnable r) {
-        if (recyclerListView != null && recyclerListView.getParent() instanceof DialogStoriesCell) {
-            DialogStoriesCell dilogsCell = (DialogStoriesCell) recyclerListView.getParent();
-            if (dilogsCell.scrollTo(currentDialogId)) {
-                dilogsCell.afterNextLayout(r);
-            } else {
-                r.run();
-            }
-        } else if (recyclerListView != null && recyclerListView.getParent() instanceof SelfStoryViewsPage) {
+        if (recyclerListView != null && recyclerListView.getParent() instanceof SelfStoryViewsPage) {
             SelfStoryViewsPage page = (SelfStoryViewsPage) recyclerListView.getParent();
             if (page.scrollToRepostCell(currentDialogId, messageId)) {
                 recyclerListView.post(r);
@@ -99,14 +92,7 @@ public class StoriesListPlaceProvider implements StoryViewer.PlaceProvider {
         holder.storyImage = null;
         holder.drawAbove = null;
 
-        DialogStoriesCell dialogStoriesCell = null;
-        if (recyclerListView != null && recyclerListView.getParent() instanceof DialogStoriesCell) {
-            dialogStoriesCell = (DialogStoriesCell) recyclerListView.getParent();
-        }
         ViewGroup listView = recyclerListView;
-        if (dialogStoriesCell != null && !dialogStoriesCell.isExpanded()) {
-            listView = dialogStoriesCell.listViewMini;
-        }
         if (profileChannelCell != null) {
             listView = profileChannelCell;
         }
@@ -115,22 +101,7 @@ public class StoriesListPlaceProvider implements StoryViewer.PlaceProvider {
         for (int i = 0; i < listView.getChildCount(); i++) {
             View child = listView.getChildAt(i);
 
-            if (child instanceof DialogStoriesCell.StoryCell) {
-                DialogStoriesCell.StoryCell cell = (DialogStoriesCell.StoryCell) child;
-
-                if (cell.dialogId == dialogId) {
-                    holder.view = child;
-                    holder.avatarImage = cell.avatarImage;
-                    holder.params = cell.params;
-                    DialogStoriesCell storiesCell = (DialogStoriesCell) cell.getParent().getParent();
-                    holder.clipParent = storiesCell;
-                    holder.clipTop = holder.clipBottom = 0;
-                    holder.alpha = 1;
-                    holder.drawClip = null;
-                 //   updateClip(holder);
-                    return true;
-                }
-            } else if (child instanceof DialogCell) {
+            if (child instanceof DialogCell) {
                 DialogCell cell = (DialogCell) child;
                 if ((cell.getDialogId() == dialogId && !isHiddenArchive) || (isHiddenArchive && cell.isDialogFolder())) {
                     holder.view = child;
