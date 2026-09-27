@@ -51,7 +51,6 @@ import org.telegram.ui.Components.ColoredImageSpan;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.Paint.Views.LocationMarker;
-import org.telegram.ui.Components.Paint.Views.WeatherView;
 import org.telegram.ui.Components.ScaleStateListAnimator;
 import org.telegram.ui.EmojiAnimationsOverlay;
 import org.telegram.ui.Stories.recorder.HintView2;

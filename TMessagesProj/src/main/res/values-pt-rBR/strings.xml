@@ -1171,12 +1171,10 @@
     <string name="PermissionNoCameraWithHint">O **Telegram** precisa de acesso à câmera para tirar fotos e gravar vídeos. Toque em Configurações &gt; Permissões, e ative **Câmera**.</string>
     <string name="PermissionNoCameraMicVideo">O **Telegram** precisa de acesso ao seu microfone e à câmera para enviar mensagens de vídeo. Toque em Configurações &gt; Permissões, e ative **Microfone** e **Câmera**.</string>
     <string name="PermissionNoLocation">Telegram precisa acessar sua localização para que você possa compartilhar com seus amigos.</string>
-    <string name="PermissionNoLocationStory">O Telegram precisa acessar sua localização para você poder adicionar o widget de tempo aos seus stories.</string>
     <string name="PermissionNoLocationFriends">O **Telegram** precisa acessar a localização para você compartilhar com seus amigos. Toque em Configurações &gt; Permissões e ative **Localização**.</string>
     <string name="PermissionNoLocationNavigation">O **Telegram** precisa acessar a sua localização para você obter direções. Toque em Configurações &gt; Permissões e ative **Localização**.</string>
     <string name="PermissionNoContactsSharing">O **Telegram** precisa acessar os seus contatos para você poder compartilhar com os seus amigos. Toque em Configurações &gt; Permissões e ative **Contatos**.</string>
     <string name="PermissionNoStorageAvatar">O **Telegram** precisa de acesso ao armazenamento para enviar a foto de perfil. Toque em Configurações &gt; Permissões e ative **Arquivos e mídia**.</string>
-    <string name="PermissionNoAudioStorageStory">O **Telegram** precisa de acesso aos arquivos de música para adicioná-los ao seu story. Toque em Configurações &gt; Permissões e ative **Música e Áudio**.</string>
     <string name="PermissionDrawAboveOtherApps">Para reproduzir vídeos no modo PiP, o Telegram precisa de acesso para aparecer sobre outros apps.</string>
     <string name="PermissionDrawAboveOtherAppsGroupCall">O modo flutuante permite usar o recurso \"Aperte para Falar\" e também ver quem está falando até mesmo quando você estiver fora do Telegram.</string>
     <string name="PermissionOpenSettings">Configurações</string>

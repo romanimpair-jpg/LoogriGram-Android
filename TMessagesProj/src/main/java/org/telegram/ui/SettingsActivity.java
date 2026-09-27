@@ -128,7 +128,6 @@ import org.telegram.ui.Components.blur3.capture.IBlur3Capture;
 import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceRenderNode;
 import org.telegram.ui.Components.voip.VoIPHelper;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
-import org.telegram.ui.Stories.recorder.DualCameraView;
 import org.telegram.ui.bots.BotBiometry;
 import org.telegram.ui.bots.BotDownloads;
 import org.telegram.ui.bots.BotLocation;
@@ -1369,7 +1368,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 BuildVars.DEBUG_PRIVATE_VERSION ? "Share device info" : null,
                 BuildVars.DEBUG_PRIVATE_VERSION ? "Force performance class" : null,
                 BuildVars.DEBUG_PRIVATE_VERSION && !InstantCameraView.allowBigSizeCameraDebug() ? !SharedConfig.bigCameraForRound ? "Force big camera for round" : "Disable big camera for round" : null,
-                getString(DualCameraView.dualAvailableStatic(getContext()) ? "DebugMenuDualOff" : "DebugMenuDualOn"),
+                null, // LoogriGram: 23 switched the story camera's dual view.
                 BuildVars.DEBUG_VERSION ? SharedConfig.useSurfaceInStories ? "back to TextureView in stories" : "use SurfaceView in stories" : null,
                 BuildVars.DEBUG_PRIVATE_VERSION ? SharedConfig.photoViewerBlur ? "do not blur in photoviewer" : "blur in photoviewer" : null,
                 !SharedConfig.payByInvoice ? "Enable Invoice Payment" : "Disable Invoice Payment",
@@ -1638,13 +1637,6 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 builder2.show();
             } else if (which == 22) {
                 SharedConfig.toggleRoundCamera();
-            } else if (which == 23) {
-                boolean enabled = DualCameraView.dualAvailableStatic(getContext());
-                MessagesController.getGlobalMainSettings().edit().putBoolean("dual_available", !enabled).apply();
-                try {
-                    Toast.makeText(getParentActivity(), getString(!enabled ? R.string.DebugMenuDualOnToast : R.string.DebugMenuDualOffToast), Toast.LENGTH_SHORT).show();
-                } catch (Exception e) {
-                }
             } else if (which == 24) {
                 SharedConfig.toggleSurfaceInStories();
                 for (int i = 0; i < getParentLayout().getFragmentStack().size(); i++) {

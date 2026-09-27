@@ -491,12 +491,8 @@ public class EmojiView extends FrameLayout implements
 
         }
 
-        // LoogriGram: this opened the Premium sheet for a padlocked emoji or
-        // pack. EmojiView no longer calls it and every implementation outside
-        // ui/Stories/ is gone; it stays only because stories' PaintView still
-        // overrides it, and goes when Stories do.
-        default void onAnimatedEmojiUnlockClick() {
-        }
+        // LoogriGram: onAnimatedEmojiUnlockClick opened the Premium sheet for a
+        // padlocked emoji or pack. Its last override went with the story editor.
 
         default boolean isSearchOpened() {
             return false;

@@ -1478,12 +1478,10 @@
     <string name="PermissionNoCameraWithHint">**Telegram** deve accedere alla fotocamera per poter scattare foto e video. Tocca Impostazioni &gt; Permessi, e attiva **Fotocamera**.</string>
     <string name="PermissionNoCameraMicVideo">**Telegram** deve accedere alla fotocamera e al microfono per poter inviare videomessaggi. Tocca Impostazioni &gt; Permessi, e attiva **Microfono** e **Fotocamera**.</string>
     <string name="PermissionNoLocation">Telegram deve accedere alla tua posizione perché tu possa condividerla con i tuoi amici.</string>
-    <string name="PermissionNoLocationStory">Telegram deve accedere alla tua posizione perché tu possa aggiungere il widget meteo alle tue storie.</string>
     <string name="PermissionNoLocationFriends">**Telegram** deve accedere alla posizione perché tu possa condividerla con i tuoi amici. Tocca Impostazioni &gt; Permessi, e attiva **Posizione**.</string>
     <string name="PermissionNoLocationNavigation">**Telegram** deve accedere alla posizione per poter ottenere le indicazioni. Tocca Impostazioni &gt; Permessi, e attiva **Posizione**.</string>
     <string name="PermissionNoContactsSharing">**Telegram** deve accedere ai contatti perché tu possa condividerli con i tuoi amici. Tocca Impostazioni &gt; Permessi, e attiva **Contatti**.</string>
     <string name="PermissionNoStorageAvatar">**Telegram** deve accedere all\'archivio per poter caricare foto del profilo. Tocca Impostazioni &gt; Permessi, e attiva **File e media**.</string>
-    <string name="PermissionNoAudioStorageStory">**Telegram** deve accedere ai tuoi file musicali per aggiungerli alla tua storia. Tocca Impostazioni &gt; Permessi, e attiva **Musica e audio**.</string>
     <string name="PermissionDrawAboveOtherApps">Telegram deve accedere allo spostamento su altre app per riprodurre i video in modalità Picture-in-Picture.</string>
     <string name="PermissionDrawAboveOtherAppsGroupCall">La modalità overlay ti consente di usare il push-to-talk e vedere chi sta parlando anche quando sei fuori da Telegram.</string>
     <string name="PermissionOpenSettings">Impostazioni</string>

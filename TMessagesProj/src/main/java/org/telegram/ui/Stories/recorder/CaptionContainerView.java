@@ -176,14 +176,6 @@ public class CaptionContainerView extends FrameLayout {
 
         editText = new EditTextEmoji(context, sizeNotifierFrameLayout, null, getEditTextStyle(), true, new DarkThemeResourceProvider()) {
             @Override
-            public boolean dispatchTouchEvent(MotionEvent ev) {
-                if (CaptionContainerView.this instanceof CaptionStory && ((CaptionStory) CaptionContainerView.this).isRecording()) {
-                    return false;
-                }
-                return super.dispatchTouchEvent(ev);
-            }
-
-            @Override
             protected void updatedEmojiExpanded() {
                 keyboardNotifier.fire();
             }
@@ -484,9 +476,6 @@ public class CaptionContainerView extends FrameLayout {
             return false;
         }
         if (ev.getAction() == MotionEvent.ACTION_DOWN && !keyboardShown) {
-            if (this instanceof CaptionStory && ((CaptionStory) this).isRecording()) {
-                return super.dispatchTouchEvent(ev);
-            }
             for (int i = 0; i < getChildCount(); ++i) {
                 View child = getChildAt(i);
                 if (child == null || !child.isClickable() || child.getVisibility() != View.VISIBLE || child.getAlpha() < .5f || editText == child) {
@@ -593,7 +582,7 @@ public class CaptionContainerView extends FrameLayout {
         mentionContainer.getAdapter().setAllowStickers(false);
         mentionContainer.getAdapter().setAllowBots(false);
         mentionContainer.getAdapter().setAllowChats(false);
-        mentionContainer.getAdapter().setSearchInDialogs(this instanceof CaptionStory);
+        mentionContainer.getAdapter().setSearchInDialogs(false);
     }
 
     private void replaceWithText(int start, int len, CharSequence text, boolean parseEmoji) {

@@ -1025,12 +1025,10 @@
     <string name="PermissionNoCameraWithHint">**Telegram** heeft toegang tot je camera nodig zodat je foto\'s en video\'s kunt maken. Tik op Instellingen &gt; Machtigingen en schakel **Camera** aan.</string>
     <string name="PermissionNoCameraMicVideo">**Telegram** heeft toegang tot je camera en microfoon nodig zodat je videoberichten kunt versturen. Tik op Instellingen &gt; Machtigingen en schakel **Microfoon** en **Camera** aan.</string>
     <string name="PermissionNoLocation">Telegram heeft toegang tot je locatie nodig om deze te kunnen delen met je vrienden.</string>
-    <string name="PermissionNoLocationStory">Telegram heeft toegang nodig tot je locatie zodat je het weerbericht in je verhalen kunt plaatsen.</string>
     <string name="PermissionNoLocationFriends">**Telegram** heeft toegang tot je locatie nodig zodat je het met vrienden kunt delen. Tik op Instellingen &gt; Machtigingen en schakel **Locatie** aan.</string>
     <string name="PermissionNoLocationNavigation">**Telegram** heeft toegang tot je locatie nodig zodat je aanwijzingen kunt krijgen. Tik op Instellingen &gt; Machtigingen en schakel **Locatie** aan.</string>
     <string name="PermissionNoContactsSharing">**Telegram** heeft toegang tot je contacten nodig zodat je die met vrienden kunt delen. Tik op Instellingen &gt; Machtigingen en schakel **Contacten** aan.</string>
     <string name="PermissionNoStorageAvatar">**Telegram** heeft toegang tot je opslag nodig zodat je profielfoto\'s s kunt uploaden. Tik op Instellingen &gt; Machtigingen en schakel **Bestanden en media** in.</string>
-    <string name="PermissionNoAudioStorageStory">**Telegram** heeft toegang tot je muziekbestanden nodig om ze aan je verhaal toe te voegen. Tik op Instellingen &gt; Machtigingen en schakel **Muziek en geluid** in.</string>
     <string name="PermissionDrawAboveOtherApps">Telegram heeft de toestemming \'over andere apps tekenen\' nodig om video\'s af te spelen in beeld-in-beeld-modus.</string>
     <string name="PermissionDrawAboveOtherAppsGroupCall">Met overlay-modus  kun je Push-To-Talk gebruiken en zien wie er aan het praten is zelfs als je Telegram niet in de voorgrond hebt.</string>
     <string name="PermissionOpenSettings">Instellingen</string>
