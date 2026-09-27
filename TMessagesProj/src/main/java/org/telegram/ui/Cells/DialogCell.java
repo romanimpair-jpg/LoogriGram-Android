@@ -1896,12 +1896,6 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                                         currentMessagePaint = Theme.dialogs_messagePrintingPaint[paintIndex];
                                     }
                                 }
-                                if (message.isReplyToStory()) {
-                                    SpannableStringBuilder builder = new SpannableStringBuilder(messageString);
-                                    builder.insert(0, "d ");
-                                    builder.setSpan(new ColoredImageSpan(ContextCompat.getDrawable(getContext(), R.drawable.msg_mini_replystory).mutate()), 0, 1, 0);
-                                    messageString = builder;
-                                }
                                 if (thumbsCount > 0) {
                                     if (message.hasHighlightedWords() && !TextUtils.isEmpty(message.messageOwner.message)) {
                                         messageString = message.messageTrimmedToHighlight;

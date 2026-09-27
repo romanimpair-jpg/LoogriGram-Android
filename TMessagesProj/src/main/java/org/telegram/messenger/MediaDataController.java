@@ -6123,7 +6123,7 @@ public class MediaDataController extends BaseController {
                 if (messageObject == null) {
                     continue;
                 }
-                if (!messageObject.isReplyToStory() && messageObject.isReply() && messageObject.getRealId() > 0) {
+                if (messageObject.isReply() && messageObject.getRealId() > 0) {
                     if (messageObject.messageOwner.reply_to.reply_to_peer_id != null) {
                         continue;
                     }
@@ -6156,24 +6156,7 @@ public class MediaDataController extends BaseController {
                 if (messageObject == null) {
                     continue;
                 }
-                if (messageObject.getRealId() > 0 && messageObject.isReplyToStory()) {
-                    if (messageObject.messageOwner.replyStory == null) {
-                        long storyDialogId = DialogObject.getPeerDialogId(messageObject.messageOwner.reply_to.peer);
-                        if (messagesWithUnknownStories == null) {
-                            messagesWithUnknownStories = new LongSparseArray<>();
-                        }
-                        ArrayList<MessageObject> array = messagesWithUnknownStories.get(storyDialogId);
-                        if (array == null) {
-                            array = new ArrayList<>();
-                            messagesWithUnknownStories.put(storyDialogId, array);
-                        }
-                        Timer.log(logLogger, "+story did=" + storyDialogId + " at replied #" + messageObject.getId());
-                        array.add(messageObject);
-                    } else {
-                        long storyDialogId = DialogObject.getPeerDialogId(messageObject.messageOwner.reply_to.peer);
-                        messageObject.messageOwner.replyStory = StoriesStorage.checkExpiredStateLocal(currentAccount, storyDialogId, messageObject.messageOwner.replyStory);
-                    }
-                } else if (messageObject.getRealId() > 0 && messageObject.isReply()) {
+                if (messageObject.getRealId() > 0 && messageObject.isReply()) {
                     int messageId = messageObject.messageOwner.reply_to.reply_to_msg_id;
                     if (messageId == threadMessageId) {
                         continue;

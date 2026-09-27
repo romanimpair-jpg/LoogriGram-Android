@@ -283,7 +283,6 @@ import org.telegram.ui.Components.voip.VoIPHelper;
 import org.telegram.ui.Delegates.ChatActivityMemberRequestsDelegate;
 import org.telegram.ui.Stars.MessageSuggestionOfferSheet;
 import org.telegram.ui.Stories.StoriesListPlaceProvider;
-import org.telegram.ui.Stories.StoriesUtilities;
 import org.telegram.ui.Stories.PublicStoriesList;
 import org.telegram.ui.Stories.recorder.HintView2;
 import org.telegram.ui.Stories.recorder.PreviewView;
@@ -36029,7 +36028,6 @@ public class ChatActivity extends BaseFragment implements
         msg.originalLanguage = omsg.originalLanguage;
         msg.translatedToLanguage = omsg.translatedToLanguage;
         msg.translatedText = omsg.translatedText;
-        msg.replyStory = omsg.replyStory;
         return msg;
     }
 
@@ -37739,131 +37737,118 @@ public class ChatActivity extends BaseFragment implements
             }
             MessageObject messageObject = cell.getMessageObject();
             if (messageObject == null) return;
-            if (messageObject.isReplyToStory() && messageObject.messageOwner.replyStory != null) {
-                if (messageObject.messageOwner.replyStory instanceof TL_stories.TL_storyItemDeleted) {
-                    BulletinFactory.of(ChatActivity.this).createSimpleBulletin(R.raw.story_bomb1, LocaleController.getString(R.string.StoryNotFound)).show();
-                } else {
-                    TL_stories.StoryItem storyItem = messageObject.messageOwner.replyStory;
-                    storyItem.dialogId = DialogObject.getPeerDialogId(messageObject.messageOwner.reply_to.peer);
-                    storyItem.messageId = messageObject.getId();
-                    storyItem.messageType = 3;
-                    StoriesUtilities.applyViewedUser(storyItem, currentUser);
-                    getOrCreateStoryViewer().open(getContext(), storyItem, StoriesListPlaceProvider.of(chatListView));
+            String quote = null;
+            int quoteOffset = -1;
+            Integer task_id = null;
+            byte[] option_id = null;
+            if (messageObject.messageOwner != null && messageObject.messageOwner.reply_to != null && (messageObject.messageOwner.reply_to.flags & 2048) != 0) {
+                task_id = messageObject.messageOwner.reply_to.todo_item_id;
+            } else if (messageObject.messageOwner != null && messageObject.messageOwner.reply_to != null && messageObject.messageOwner.reply_to.poll_option != null) {
+                option_id = messageObject.messageOwner.reply_to.poll_option;
+            } else if (messageObject.messageOwner != null && messageObject.messageOwner.reply_to != null && messageObject.messageOwner.reply_to.quote) {
+                quote = messageObject.messageOwner.reply_to.quote_text;
+                if ((messageObject.messageOwner.reply_to.flags & 1024) != 0) {
+                    quoteOffset = messageObject.messageOwner.reply_to.quote_offset;
                 }
-            } else {
-                String quote = null;
-                int quoteOffset = -1;
-                Integer task_id = null;
-                byte[] option_id = null;
-                if (messageObject.messageOwner != null && messageObject.messageOwner.reply_to != null && (messageObject.messageOwner.reply_to.flags & 2048) != 0) {
-                    task_id = messageObject.messageOwner.reply_to.todo_item_id;
-                } else if (messageObject.messageOwner != null && messageObject.messageOwner.reply_to != null && messageObject.messageOwner.reply_to.poll_option != null) {
-                    option_id = messageObject.messageOwner.reply_to.poll_option;
-                } else if (messageObject.messageOwner != null && messageObject.messageOwner.reply_to != null && messageObject.messageOwner.reply_to.quote) {
-                    quote = messageObject.messageOwner.reply_to.quote_text;
-                    if ((messageObject.messageOwner.reply_to.flags & 1024) != 0) {
-                        quoteOffset = messageObject.messageOwner.reply_to.quote_offset;
-                    }
-                }
-                long did = dialog_id;
-                boolean couldBeDifferentTopic = false;
-                if (messageObject.messageOwner != null && messageObject.messageOwner.reply_to != null) {
-                    if (messageObject.messageOwner.reply_to.reply_to_peer_id != null) {
-                        if (!(messageObject.messageOwner.reply_to.reply_to_peer_id instanceof TLRPC.TL_peerUser)) {
-                            did = DialogObject.getPeerDialogId(messageObject.messageOwner.reply_to.reply_to_peer_id);
-                            couldBeDifferentTopic = true;
-                        } else if (DialogObject.getPeerDialogId(messageObject.messageOwner.reply_to.reply_to_peer_id) != dialog_id) {
-                            did = Long.MAX_VALUE;
-                        }
-                    } else if (messageObject.messageOwner.reply_to.reply_from != null) {
+            }
+            long did = dialog_id;
+            boolean couldBeDifferentTopic = false;
+            if (messageObject.messageOwner != null && messageObject.messageOwner.reply_to != null) {
+                if (messageObject.messageOwner.reply_to.reply_to_peer_id != null) {
+                    if (!(messageObject.messageOwner.reply_to.reply_to_peer_id instanceof TLRPC.TL_peerUser)) {
+                        did = DialogObject.getPeerDialogId(messageObject.messageOwner.reply_to.reply_to_peer_id);
+                        couldBeDifferentTopic = true;
+                    } else if (DialogObject.getPeerDialogId(messageObject.messageOwner.reply_to.reply_to_peer_id) != dialog_id) {
                         did = Long.MAX_VALUE;
-                        if (messageObject.messageOwner.reply_to.reply_from.from_id != null) {
-                            if (!(messageObject.messageOwner.reply_to.reply_from.from_id instanceof TLRPC.TL_peerUser)) {
-                                did = DialogObject.getPeerDialogId(messageObject.messageOwner.reply_to.reply_from.from_id);
-                            }
-                        } else if (messageObject.messageOwner.reply_to.reply_from.saved_from_peer != null) {
-                            did = DialogObject.getPeerDialogId(messageObject.messageOwner.reply_to.reply_from.saved_from_peer);
+                    }
+                } else if (messageObject.messageOwner.reply_to.reply_from != null) {
+                    did = Long.MAX_VALUE;
+                    if (messageObject.messageOwner.reply_to.reply_from.from_id != null) {
+                        if (!(messageObject.messageOwner.reply_to.reply_from.from_id instanceof TLRPC.TL_peerUser)) {
+                            did = DialogObject.getPeerDialogId(messageObject.messageOwner.reply_to.reply_from.from_id);
                         }
+                    } else if (messageObject.messageOwner.reply_to.reply_from.saved_from_peer != null) {
+                        did = DialogObject.getPeerDialogId(messageObject.messageOwner.reply_to.reply_from.saved_from_peer);
                     }
                 }
-                TLRPC.Chat chat = null;
-                if (did < 0) {
-                    chat = getMessagesController().getChat(-did);
-                }
-                if (did == Long.MAX_VALUE || did != dialog_id && chat != null && !ChatObject.isPublic(chat) && (chat.left || chat.kicked)) {
-                    if (messageObject != null && messageObject.messageOwner != null && messageObject.messageOwner.reply_to != null && !TextUtils.isEmpty(messageObject.messageOwner.reply_to.quote_text) && messageObject.replyTextEllipsized && !messageObject.replyTextRevealed && !messageObject.shouldDrawWithoutBackground()) {
-                        messageObject.replyTextRevealed = true;
-                        updateMessageAnimated(messageObject, true);
-                    } else {
-                        int str;
-                        if (messageObject.messageOwner != null && messageObject.messageOwner.reply_to != null && messageObject.messageOwner.reply_to.quote) {
-                            if (chat != null && chat.megagroup) {
-                                str = R.string.QuotePrivateGroup;
-                            } else if (ChatObject.isChannel(chat)) {
-                                str = R.string.QuotePrivateChannel;
-                            } else {
-                                str = R.string.QuotePrivate;
-                            }
-                        } else {
-                            if (chat != null && chat.megagroup) {
-                                str = R.string.ReplyPrivateGroup;
-                            } else if (ChatObject.isChannel(chat)) {
-                                str = R.string.ReplyPrivateChannel;
-                            } else {
-                                str = R.string.ReplyPrivate;
-                            }
-                        }
-                        BulletinFactory.of(ChatActivity.this).createSimpleBulletin(R.raw.error, LocaleController.getString(str)).show(true);
-                    }
-                    return;
-                }
-                if ((did != dialog_id || ChatObject.isForum(currentChat) && couldBeDifferentTopic) && did != Long.MAX_VALUE || chatMode == MODE_SAVED && (messageObject.replyMessageObject == null || messageObject.replyMessageObject.getSavedDialogId() != getTopicId())) {
-                    if (LaunchActivity.instance != null) {
-                        if (progressDialogCurrent != null) {
-                            progressDialogCurrent.cancel();
-                            progressDialogCurrent = null;
-                        }
-                        LaunchActivity.instance.openMessage(did, id, quote, progressDialogCurrent = new Browser.Progress() {
-                            @Override
-                            public void init() {
-                                progressDialogAtMessageId = messageObject.getId();
-                                progressDialogAtMessageType = PROGRESS_REPLY;
-                                progressDialogLinkSpan = null;
-                                cell.invalidate();
-                            }
-
-                            @Override
-                            public void end(boolean replaced) {
-                                if (!replaced) {
-                                    AndroidUtilities.runOnUIThread(ChatActivity.this::resetProgressDialogLoading, 250);
-                                }
-                            }
-                        }, messageObject.getId(), quoteOffset, task_id, option_id);
-                    }
-                } else if (chatMode == MODE_PINNED || chatMode == MODE_SCHEDULED) {
-                    chatActivityDelegate.openReplyMessage(id);
-                    finishFragment();
+            }
+            TLRPC.Chat chat = null;
+            if (did < 0) {
+                chat = getMessagesController().getChat(-did);
+            }
+            if (did == Long.MAX_VALUE || did != dialog_id && chat != null && !ChatObject.isPublic(chat) && (chat.left || chat.kicked)) {
+                if (messageObject != null && messageObject.messageOwner != null && messageObject.messageOwner.reply_to != null && !TextUtils.isEmpty(messageObject.messageOwner.reply_to.quote_text) && messageObject.replyTextEllipsized && !messageObject.replyTextRevealed && !messageObject.shouldDrawWithoutBackground()) {
+                    messageObject.replyTextRevealed = true;
+                    updateMessageAnimated(messageObject, true);
                 } else {
-                    if (option_id != null) {
-                        highlightPollOptionId = option_id;
-                    } else if (task_id != null) {
-                        highlightTaskId = task_id;
-                    } else if (messageObject.messageOwner != null && messageObject.messageOwner.reply_to != null && messageObject.messageOwner.reply_to.quote) {
-                        highlightMessageQuoteFirst = true;
-                        highlightMessageQuote = messageObject.messageOwner.reply_to.quote_text;
-                        highlightMessageQuoteOffset = quoteOffset;
-                        showNoQuoteAlert = true;
+                    int str;
+                    if (messageObject.messageOwner != null && messageObject.messageOwner.reply_to != null && messageObject.messageOwner.reply_to.quote) {
+                        if (chat != null && chat.megagroup) {
+                            str = R.string.QuotePrivateGroup;
+                        } else if (ChatObject.isChannel(chat)) {
+                            str = R.string.QuotePrivateChannel;
+                        } else {
+                            str = R.string.QuotePrivate;
+                        }
+                    } else {
+                        if (chat != null && chat.megagroup) {
+                            str = R.string.ReplyPrivateGroup;
+                        } else if (ChatObject.isChannel(chat)) {
+                            str = R.string.ReplyPrivateChannel;
+                        } else {
+                            str = R.string.ReplyPrivate;
+                        }
                     }
-                    final Integer finalTaskId = task_id;
-                    final byte[] finalPollOptionId = option_id;
-                    Runnable scroll = () -> {
-                        scrollToMessageId(id, messageObject.getId(), true, messageObject.getDialogId() == mergeDialogId ? 1 : 0, true, 0, finalTaskId, finalPollOptionId, () -> {
+                    BulletinFactory.of(ChatActivity.this).createSimpleBulletin(R.raw.error, LocaleController.getString(str)).show(true);
+                }
+                return;
+            }
+            if ((did != dialog_id || ChatObject.isForum(currentChat) && couldBeDifferentTopic) && did != Long.MAX_VALUE || chatMode == MODE_SAVED && (messageObject.replyMessageObject == null || messageObject.replyMessageObject.getSavedDialogId() != getTopicId())) {
+                if (LaunchActivity.instance != null) {
+                    if (progressDialogCurrent != null) {
+                        progressDialogCurrent.cancel();
+                        progressDialogCurrent = null;
+                    }
+                    LaunchActivity.instance.openMessage(did, id, quote, progressDialogCurrent = new Browser.Progress() {
+                        @Override
+                        public void init() {
                             progressDialogAtMessageId = messageObject.getId();
                             progressDialogAtMessageType = PROGRESS_REPLY;
-                        });
-                    };
-                    scroll.run();
+                            progressDialogLinkSpan = null;
+                            cell.invalidate();
+                        }
+
+                        @Override
+                        public void end(boolean replaced) {
+                            if (!replaced) {
+                                AndroidUtilities.runOnUIThread(ChatActivity.this::resetProgressDialogLoading, 250);
+                            }
+                        }
+                    }, messageObject.getId(), quoteOffset, task_id, option_id);
                 }
+            } else if (chatMode == MODE_PINNED || chatMode == MODE_SCHEDULED) {
+                chatActivityDelegate.openReplyMessage(id);
+                finishFragment();
+            } else {
+                if (option_id != null) {
+                    highlightPollOptionId = option_id;
+                } else if (task_id != null) {
+                    highlightTaskId = task_id;
+                } else if (messageObject.messageOwner != null && messageObject.messageOwner.reply_to != null && messageObject.messageOwner.reply_to.quote) {
+                    highlightMessageQuoteFirst = true;
+                    highlightMessageQuote = messageObject.messageOwner.reply_to.quote_text;
+                    highlightMessageQuoteOffset = quoteOffset;
+                    showNoQuoteAlert = true;
+                }
+                final Integer finalTaskId = task_id;
+                final byte[] finalPollOptionId = option_id;
+                Runnable scroll = () -> {
+                    scrollToMessageId(id, messageObject.getId(), true, messageObject.getDialogId() == mergeDialogId ? 1 : 0, true, 0, finalTaskId, finalPollOptionId, () -> {
+                        progressDialogAtMessageId = messageObject.getId();
+                        progressDialogAtMessageType = PROGRESS_REPLY;
+                    });
+                };
+                scroll.run();
             }
         }
 

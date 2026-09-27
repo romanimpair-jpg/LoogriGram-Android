@@ -586,29 +586,21 @@ public class TextMessageEnterTransition implements MessageEnterTransitionContain
 
             if (!currentMessageObject.shouldDrawWithoutBackground()) {
                 if (currentMessageObject.isOutOwner()) {
-                    if (currentMessageObject.isReplyToStory()) {
-                        replyMessageColor = replyOwnerMessageColor;
-                    } else {
-                        float blendPressed = 0;
-                        int color = getThemedColor(Theme.key_chat_outReplyMessageText);
-                        if (!currentMessageObject.forceAvatar && !(currentMessageObject.hasValidReplyMessageObject() && (currentMessageObject.replyMessageObject.type == MessageObject.TYPE_TEXT || !TextUtils.isEmpty(currentMessageObject.replyMessageObject.caption)) && !(MessageObject.getMedia(currentMessageObject.replyMessageObject.messageOwner) instanceof TLRPC.TL_messageMediaGame || MessageObject.getMedia(currentMessageObject.replyMessageObject.messageOwner) instanceof TLRPC.TL_messageMediaInvoice) || messageView.isReplyQuote)) {
-                            color = getThemedColor(Theme.key_chat_outReplyMediaMessageText);
-                            blendPressed = .6f + (blendPressed * .4f);
-                        }
-                        replyMessageColor = ColorUtils.blendARGB(color, Theme.adaptHue(color, replyOwnerMessageColor), blendPressed);
+                    float blendPressed = 0;
+                    int color = getThemedColor(Theme.key_chat_outReplyMessageText);
+                    if (!currentMessageObject.forceAvatar && !(currentMessageObject.hasValidReplyMessageObject() && (currentMessageObject.replyMessageObject.type == MessageObject.TYPE_TEXT || !TextUtils.isEmpty(currentMessageObject.replyMessageObject.caption)) && !(MessageObject.getMedia(currentMessageObject.replyMessageObject.messageOwner) instanceof TLRPC.TL_messageMediaGame || MessageObject.getMedia(currentMessageObject.replyMessageObject.messageOwner) instanceof TLRPC.TL_messageMediaInvoice) || messageView.isReplyQuote)) {
+                        color = getThemedColor(Theme.key_chat_outReplyMediaMessageText);
+                        blendPressed = .6f + (blendPressed * .4f);
                     }
+                    replyMessageColor = ColorUtils.blendARGB(color, Theme.adaptHue(color, replyOwnerMessageColor), blendPressed);
                 } else {
-                    if (currentMessageObject.isReplyToStory()) {
-                        replyMessageColor = replyOwnerMessageColor;
-                    } else {
-                        float blendPressed = 0;
-                        int color = getThemedColor(Theme.key_chat_inReplyMessageText);
-                        if (!currentMessageObject.forceAvatar && !(currentMessageObject.hasValidReplyMessageObject() && (currentMessageObject.replyMessageObject.type == MessageObject.TYPE_TEXT || !TextUtils.isEmpty(currentMessageObject.replyMessageObject.caption)) && !(MessageObject.getMedia(currentMessageObject.replyMessageObject.messageOwner) instanceof TLRPC.TL_messageMediaGame || MessageObject.getMedia(currentMessageObject.replyMessageObject.messageOwner) instanceof TLRPC.TL_messageMediaInvoice) || messageView.isReplyQuote)) {
-                            color = getThemedColor(Theme.key_chat_inReplyMediaMessageText);
-                            blendPressed = .6f + (blendPressed * .4f);
-                        }
-                        replyMessageColor = ColorUtils.blendARGB(color, Theme.adaptHue(color, replyOwnerMessageColor), blendPressed);
+                    float blendPressed = 0;
+                    int color = getThemedColor(Theme.key_chat_inReplyMessageText);
+                    if (!currentMessageObject.forceAvatar && !(currentMessageObject.hasValidReplyMessageObject() && (currentMessageObject.replyMessageObject.type == MessageObject.TYPE_TEXT || !TextUtils.isEmpty(currentMessageObject.replyMessageObject.caption)) && !(MessageObject.getMedia(currentMessageObject.replyMessageObject.messageOwner) instanceof TLRPC.TL_messageMediaGame || MessageObject.getMedia(currentMessageObject.replyMessageObject.messageOwner) instanceof TLRPC.TL_messageMediaInvoice) || messageView.isReplyQuote)) {
+                        color = getThemedColor(Theme.key_chat_inReplyMediaMessageText);
+                        blendPressed = .6f + (blendPressed * .4f);
                     }
+                    replyMessageColor = ColorUtils.blendARGB(color, Theme.adaptHue(color, replyOwnerMessageColor), blendPressed);
                 }
             } else if (messageView.replyLine != null) {
                 replyMessageColor = messageView.replyLine.nameColorAnimated.get();

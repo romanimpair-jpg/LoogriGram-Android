@@ -4623,7 +4623,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         }
                     }
                 } else {
-                    if (delegate != null && (currentMessageObject.hasValidReplyMessageObject() || currentMessageObject.isReplyToStory() || hasReplyQuote || currentMessageObject.messageOwner != null && currentMessageObject.messageOwner.reply_to != null && currentMessageObject.messageOwner.reply_to.reply_from != null)) {
+                    if (delegate != null && (currentMessageObject.hasValidReplyMessageObject() || hasReplyQuote || currentMessageObject.messageOwner != null && currentMessageObject.messageOwner.reply_to != null && currentMessageObject.messageOwner.reply_to.reply_from != null)) {
                         delegate.didPressReplyMessage(this, currentMessageObject.getReplyMsgId(), x, y, false);
                     }
                 }
@@ -11440,7 +11440,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 replyBounce.setPressed(false);
             }
             playSoundEffect(SoundEffectConstants.CLICK);
-            if (delegate != null && (currentMessageObject.hasValidReplyMessageObject() || currentMessageObject.isReplyToStory() || hasReplyQuote || currentMessageObject.messageOwner != null && currentMessageObject.messageOwner.reply_to != null && currentMessageObject.messageOwner.reply_to.reply_from != null)) {
+            if (delegate != null && (currentMessageObject.hasValidReplyMessageObject() || hasReplyQuote || currentMessageObject.messageOwner != null && currentMessageObject.messageOwner.reply_to != null && currentMessageObject.messageOwner.reply_to.reply_from != null)) {
                 delegate.didPressReplyMessage(this, currentMessageObject.getReplyMsgId(), replyBounceX, replyBounceY, true);
             }
             return true;
@@ -17977,7 +17977,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
         }
 
-        if (((!isThreadChat || isSavedChat || messageObject.getReplyTopMsgId(isForum) != 0 || isForumGeneral || isMonoForum) && messageObject.hasValidReplyMessageObject() || messageObject.messageOwner.fwd_from != null && messageObject.isDice() || (messageObject.messageOwner.reply_to != null && (messageObject.messageOwner.reply_to.story_id != 0 || !TextUtils.isEmpty(messageObject.messageOwner.reply_to.quote_text) || messageObject.messageOwner.reply_to.reply_from != null))) && !messageObject.isRepostPreview) {
+        if (((!isThreadChat || isSavedChat || messageObject.getReplyTopMsgId(isForum) != 0 || isForumGeneral || isMonoForum) && messageObject.hasValidReplyMessageObject() || messageObject.messageOwner.fwd_from != null && messageObject.isDice() || (messageObject.messageOwner.reply_to != null && (!TextUtils.isEmpty(messageObject.messageOwner.reply_to.quote_text) || messageObject.messageOwner.reply_to.reply_from != null))) && !messageObject.isRepostPreview) {
             if (currentPosition == null || currentPosition.minY == 0) {
                 if (isSideMenued && !drawBackground || !messageObject.isAnyKindOfSticker() && messageObject.type != MessageObject.TYPE_ROUND_VIDEO || messageObject.type == MessageObject.TYPE_EMOJIS) {
                     namesOffset += dp(20) + (Theme.chat_replyTextPaint.getTextSize() + Theme.chat_replyNamePaint.getTextSize());
@@ -18012,22 +18012,11 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     replyQuoteDrawableColor = Color.WHITE;
                 }
                 final TextPaint textPaint = isReplyQuote && messageObject.shouldDrawWithoutBackground() ? Theme.chat_quoteTextPaint : Theme.chat_replyTextPaint;
-                if (messageObject.messageOwner.reply_to != null && messageObject.messageOwner.reply_to.story_id != 0) {
-                    name = AndroidUtilities.removeDiacritics(getNameFromDialogId(DialogObject.getPeerDialogId(messageObject.messageOwner.reply_to.peer)));
-                    if (messageObject.messageOwner.replyStory == null || messageObject.messageOwner.replyStory instanceof TL_stories.TL_storyItemDeleted) {
-                        if (messageObject.messageOwner.replyStory == null) {
-                            stringFinalText = getString("Loading", R.string.Loading);
-                        } else {
-                            stringFinalText = StoriesUtilities.createExpiredStoryString();
-                        }
-                        needReplyImage = false;
-                    } else {
-                        needReplyImage = true;
-                        StoriesUtilities.setStoryMiniImage(replyImageReceiver, messageObject.messageOwner.replyStory);
-                        stringFinalText = StoriesUtilities.createReplyStoryString();
-                        maxWidth -= dp(16) + (textPaint.getTextSize() + Theme.chat_replyNamePaint.getTextSize());
-                    }
-                } else if ((!isThreadChat || isMonoForum || isSavedChat || messageObject.getReplyTopMsgId(isForum) != 0 || isForumGeneral) && messageObject.hasValidReplyMessageObject() || hasReplyQuote || messageObject.messageOwner.reply_to != null && messageObject.messageOwner.reply_to.reply_from != null) {
+                // LoogriGram: a reply to a story drew the story's thumbnail and
+                // "Story" here, and opened the viewer on a tap. Stories are
+                // removed; as on desktop the reply keeps its text and loses the
+                // quote - the condition above no longer admits it.
+                if ((!isThreadChat || isMonoForum || isSavedChat || messageObject.getReplyTopMsgId(isForum) != 0 || isForumGeneral) && messageObject.hasValidReplyMessageObject() || hasReplyQuote || messageObject.messageOwner.reply_to != null && messageObject.messageOwner.reply_to.reply_from != null) {
                     lastReplyMessage = messageObject.replyMessageObject == null ? null : messageObject.replyMessageObject.messageOwner;
                     int cacheType = 1;
                     int size = 0;
@@ -18501,22 +18490,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
 
         requestLayout();
-    }
-
-    private String getNameFromDialogId(long fromId) {
-        String name = null;
-        if (fromId > 0) {
-            TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(fromId);
-            if (user != null) {
-                name = UserObject.getUserName(user);
-            }
-        } else if (fromId < 0) {
-            TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-fromId);
-            if (chat != null) {
-                name = chat.title;
-            }
-        }
-        return name;
     }
 
     protected boolean isNeedAuthorName() {
@@ -21194,33 +21167,23 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 }
             } else {
                 if (currentMessageObject.isOutOwner()) {
-                    if (currentMessageObject.isReplyToStory()) {
-                        Theme.chat_replyTextPaint.setColor(Theme.chat_replyNamePaint.getColor());
-                        Theme.chat_replyTextPaint.linkColor = Theme.chat_replyTextPaint.getColor();
-                    } else {
-                        float blendPressed = replyPressedT;
-                        int color = getThemedColor(Theme.key_chat_outReplyMessageText);
-                        if (!currentMessageObject.forceAvatar && !(currentMessageObject.hasValidReplyMessageObject() && (currentMessageObject.replyMessageObject.contentType != 1 && currentMessageObject.replyMessageObject.type == MessageObject.TYPE_TEXT || !TextUtils.isEmpty(currentMessageObject.replyMessageObject.caption)) && !(MessageObject.getMedia(currentMessageObject.replyMessageObject.messageOwner) instanceof TLRPC.TL_messageMediaGame || MessageObject.getMedia(currentMessageObject.replyMessageObject.messageOwner) instanceof TLRPC.TL_messageMediaInvoice || MessageObject.getMedia(currentMessageObject.replyMessageObject.messageOwner) instanceof TLRPC.TL_messageMediaPoll) || hasReplyQuote)) {
-                            color = getThemedColor(isDrawSelectionBackground() ? Theme.key_chat_outReplyMediaMessageSelectedText : Theme.key_chat_outReplyMediaMessageText);
-                            blendPressed = .6f + (blendPressed * .4f);
-                        }
-                        Theme.chat_replyTextPaint.setColor(ColorUtils.blendARGB(color, Theme.adaptHue(color, Theme.chat_replyNamePaint.getColor()), blendPressed));
-                        Theme.chat_replyTextPaint.linkColor = ColorUtils.blendARGB(color, Theme.adaptHue(color, Theme.chat_replyNamePaint.getColor()), Utilities.clamp(blendPressed * 2, 1f, 0f));
+                    float blendPressed = replyPressedT;
+                    int color = getThemedColor(Theme.key_chat_outReplyMessageText);
+                    if (!currentMessageObject.forceAvatar && !(currentMessageObject.hasValidReplyMessageObject() && (currentMessageObject.replyMessageObject.contentType != 1 && currentMessageObject.replyMessageObject.type == MessageObject.TYPE_TEXT || !TextUtils.isEmpty(currentMessageObject.replyMessageObject.caption)) && !(MessageObject.getMedia(currentMessageObject.replyMessageObject.messageOwner) instanceof TLRPC.TL_messageMediaGame || MessageObject.getMedia(currentMessageObject.replyMessageObject.messageOwner) instanceof TLRPC.TL_messageMediaInvoice || MessageObject.getMedia(currentMessageObject.replyMessageObject.messageOwner) instanceof TLRPC.TL_messageMediaPoll) || hasReplyQuote)) {
+                        color = getThemedColor(isDrawSelectionBackground() ? Theme.key_chat_outReplyMediaMessageSelectedText : Theme.key_chat_outReplyMediaMessageText);
+                        blendPressed = .6f + (blendPressed * .4f);
                     }
+                    Theme.chat_replyTextPaint.setColor(ColorUtils.blendARGB(color, Theme.adaptHue(color, Theme.chat_replyNamePaint.getColor()), blendPressed));
+                    Theme.chat_replyTextPaint.linkColor = ColorUtils.blendARGB(color, Theme.adaptHue(color, Theme.chat_replyNamePaint.getColor()), Utilities.clamp(blendPressed * 2, 1f, 0f));
                 } else {
-                    if (currentMessageObject.isReplyToStory()) {
-                        Theme.chat_replyTextPaint.setColor(Theme.chat_replyNamePaint.getColor());
-                        Theme.chat_replyTextPaint.linkColor = Theme.chat_replyTextPaint.getColor();
-                    } else {
-                        float blendPressed = replyPressedT;
-                        int color = getThemedColor(Theme.key_chat_inReplyMessageText);
-                        if (!currentMessageObject.forceAvatar && !(currentMessageObject.hasValidReplyMessageObject() && (currentMessageObject.replyMessageObject.contentType != 1 && currentMessageObject.replyMessageObject.type == MessageObject.TYPE_TEXT || !TextUtils.isEmpty(currentMessageObject.replyMessageObject.caption)) && !(MessageObject.getMedia(currentMessageObject.replyMessageObject.messageOwner) instanceof TLRPC.TL_messageMediaGame || MessageObject.getMedia(currentMessageObject.replyMessageObject.messageOwner) instanceof TLRPC.TL_messageMediaInvoice) || hasReplyQuote)) {
-                            color = getThemedColor(isDrawSelectionBackground() ? Theme.key_chat_inReplyMediaMessageSelectedText : Theme.key_chat_inReplyMediaMessageText);
-                            blendPressed = .6f + (blendPressed * .4f);
-                        }
-                        Theme.chat_replyTextPaint.setColor(ColorUtils.blendARGB(color, Theme.adaptHue(color, Theme.chat_replyNamePaint.getColor()), blendPressed));
-                        Theme.chat_replyTextPaint.linkColor = ColorUtils.blendARGB(color, Theme.adaptHue(color, Theme.chat_replyNamePaint.getColor()), Utilities.clamp(blendPressed * 2, 1f, 0f));
+                    float blendPressed = replyPressedT;
+                    int color = getThemedColor(Theme.key_chat_inReplyMessageText);
+                    if (!currentMessageObject.forceAvatar && !(currentMessageObject.hasValidReplyMessageObject() && (currentMessageObject.replyMessageObject.contentType != 1 && currentMessageObject.replyMessageObject.type == MessageObject.TYPE_TEXT || !TextUtils.isEmpty(currentMessageObject.replyMessageObject.caption)) && !(MessageObject.getMedia(currentMessageObject.replyMessageObject.messageOwner) instanceof TLRPC.TL_messageMediaGame || MessageObject.getMedia(currentMessageObject.replyMessageObject.messageOwner) instanceof TLRPC.TL_messageMediaInvoice) || hasReplyQuote)) {
+                        color = getThemedColor(isDrawSelectionBackground() ? Theme.key_chat_inReplyMediaMessageSelectedText : Theme.key_chat_inReplyMediaMessageText);
+                        blendPressed = .6f + (blendPressed * .4f);
                     }
+                    Theme.chat_replyTextPaint.setColor(ColorUtils.blendARGB(color, Theme.adaptHue(color, Theme.chat_replyNamePaint.getColor()), blendPressed));
+                    Theme.chat_replyTextPaint.linkColor = ColorUtils.blendARGB(color, Theme.adaptHue(color, Theme.chat_replyNamePaint.getColor()), Utilities.clamp(blendPressed * 2, 1f, 0f));
                 }
             }
             Theme.chat_quoteTextPaint.setColor(Theme.chat_replyTextPaint.getColor());

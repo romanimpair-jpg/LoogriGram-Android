@@ -761,7 +761,6 @@ public class MessageObject {
             }
         }
         isSpoilersRevealed = old.isSpoilersRevealed;
-        messageOwner.replyStory = old.messageOwner.replyStory;
         if (isSpoilersRevealed && textLayoutBlocks != null) {
             for (TextLayoutBlock block : textLayoutBlocks) {
                 block.spoilers.clear();
@@ -781,10 +780,6 @@ public class MessageObject {
             }
         }
         return choosenReactions;
-    }
-
-    public boolean isReplyToStory() {
-        return !(replyMessageObject != null && replyMessageObject.messageOwner instanceof TLRPC.TL_messageEmpty) && messageOwner.reply_to != null && messageOwner.reply_to.story_id != 0 && (messageOwner.flags & TLRPC.MESSAGE_FLAG_REPLY) != 0;
     }
 
     public boolean isUnsupported() {
