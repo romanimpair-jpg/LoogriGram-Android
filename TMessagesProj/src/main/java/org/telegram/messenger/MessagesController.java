@@ -97,7 +97,6 @@ import org.telegram.ui.Components.JoinCallAlert;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.MotionBackgroundDrawable;
 import org.telegram.ui.Components.Premium.LimitReachedBottomSheet;
-import org.telegram.ui.Components.Reactions.ReactionsLayoutInBubble;
 import org.telegram.ui.Components.SwipeGestureSettingsView;
 import org.telegram.ui.Components.TranscribeButton;
 import org.telegram.ui.DialogsActivity;
@@ -11715,7 +11714,7 @@ public class MessagesController extends BaseController implements NotificationCe
                             // stories_sound. Its settings rows are gone; it is read here so
                             // that what goes back is what the server had.
                             if ((notify_settings.flags & 512) != 0) {
-                                getNotificationsController().getNotificationsSettingsFacade().applySoundSettings(notify_settings.stories_android_sound, editor, 0, 0, NotificationsController.TYPE_STORIES, false);
+                                getNotificationsController().getNotificationsSettingsFacade().applyStoriesSoundSettings(notify_settings.stories_android_sound, editor);
                             }
                             if ((notify_settings.flags & 2) != 0) {
                             /*if (notify_settings.silent) {
@@ -19094,36 +19093,8 @@ public class MessagesController extends BaseController implements NotificationCe
                             getNotificationCenter().postNotificationName(NotificationCenter.mainUserInfoChanged);
                         }
                     } else if (baseUpdate instanceof TL_update.TL_updateNewStoryReaction) {
-                        TL_update.TL_updateNewStoryReaction update = (TL_update.TL_updateNewStoryReaction) baseUpdate;
-                        long dialogId = DialogObject.getPeerDialogId(update.peer);
-                        int story_id = update.story_id;
-                        TLRPC.Message msg = new TLRPC.Message();
-                        msg.id = -story_id;
-                        msg.dialog_id = dialogId;
-                        msg.peer_id = getPeer(dialogId);
-                        msg.date = getConnectionsManager().getCurrentTime();
-                        TLRPC.User user = getMessagesController().getUser(msg.dialog_id);
-                        if (user != null && getNotificationsSettings(currentAccount).getBoolean("EnableReactionsPreview", true)) {
-                            ReactionsLayoutInBubble.VisibleReaction reaction = ReactionsLayoutInBubble.VisibleReaction.fromTL(update.reaction).flatten();
-                            if (reaction.emojicon != null) {
-                                msg.message = LocaleController.formatString(R.string.PushReactStory, UserObject.getFirstName(user), reaction.emojicon);
-                            } else {
-                                msg.message = LocaleController.formatString(R.string.PushReactStoryHidden);
-                            }
-                        } else {
-                            msg.message = LocaleController.formatString(R.string.PushReactStoryHidden);
-                        }
-                        ArrayList<MessageObject> messageObjects = new ArrayList<MessageObject>();
-                        MessageObject message = new MessageObject(currentAccount, msg, false, false);
-                        message.isStoryReactionPush = true;
-                        message.localType = 1;
-                        if (user != null && !UserObject.isDeleted(user)) {
-                            message.localUserName = UserObject.getFirstName(user);
-                        } else {
-                            message.localUserName = LocaleController.getString(R.string.PushReactStoryHiddenSender);
-                        }
-                        messageObjects.add(message);
-                        getNotificationsController().processNewMessages(messageObjects, true, false, null);
+                        // LoogriGram: a reaction to one of our stories. Stories are
+                        // removed, and so is the notification this posted.
                     } else if (baseUpdate instanceof TL_update.TL_updateStarsBalance) {
                         // LoogriGram: our Stars or TON balance - there is no wallet to update.
                     } else if (baseUpdate instanceof TL_update.TL_updateUser) {
@@ -19229,30 +19200,19 @@ public class MessagesController extends BaseController implements NotificationCe
                                         editor.remove("GlobalSoundPath");
                                     }*/
                                 }
-                                Boolean storiesEnabled = null;
-                                if (notificationsPreferences.contains("EnableAllStories")) {
-                                    storiesEnabled = notificationsPreferences.getBoolean("EnableAllStories", true);
-                                }
-                                Boolean storiesSendersHide = null;
-                                if (notificationsPreferences.contains("EnableHideStoriesSenders")) {
-                                    storiesSendersHide = notificationsPreferences.getBoolean("EnableHideStoriesSenders", true);
-                                }
-                                Boolean newStoriesEnabled = null;
+                                // LoogriGram: the story settings are kept as the server has them,
+                                // to be sent back unchanged. There is no story notification
+                                // channel any more, so a change no longer marks one to rebuild.
                                 if ((update.notify_settings.flags & 64) != 0) {
-                                    editor.putBoolean("EnableAllStories", newStoriesEnabled = !update.notify_settings.stories_muted);
+                                    editor.putBoolean("EnableAllStories", !update.notify_settings.stories_muted);
                                 }
-                                Boolean newStoriesSendersHide = null;
                                 if ((update.notify_settings.flags & 128) != 0) {
-                                    editor.putBoolean("EnableHideStoriesSenders", newStoriesSendersHide = update.notify_settings.stories_hide_sender);
+                                    editor.putBoolean("EnableHideStoriesSenders", update.notify_settings.stories_hide_sender);
                                 }
                                 // LoogriGram: as when the settings are loaded - keep the story
                                 // sound the server has, so saving sends it back unchanged.
                                 if ((update.notify_settings.flags & 512) != 0) {
-                                    getNotificationsController().getNotificationsSettingsFacade().applySoundSettings(update.notify_settings.stories_android_sound, editor, 0, 0, NotificationsController.TYPE_STORIES, false);
-                                }
-                                if ((storiesEnabled == null) != (newStoriesEnabled == null) || (storiesSendersHide == null) != (newStoriesSendersHide == null) ||
-                                    storiesEnabled != null && storiesEnabled != newStoriesEnabled || storiesSendersHide != null && storiesSendersHide != newStoriesSendersHide) {
-                                    editor.putBoolean("overwrite_stories", true);
+                                    getNotificationsController().getNotificationsSettingsFacade().applyStoriesSoundSettings(update.notify_settings.stories_android_sound, editor);
                                 }
                                 getNotificationsController().getNotificationsSettingsFacade().applySoundSettings(update.notify_settings.android_sound, editor, 0, 0, TYPE_PRIVATE, false);
                                 if ((update.notify_settings.flags & 4) != 0) {
@@ -20562,7 +20522,7 @@ public class MessagesController extends BaseController implements NotificationCe
             if (topicId != 0) {
                 return isDialogMuted(dialogId, 0, chat);
             } else {
-                return !getNotificationsController().isGlobalNotificationsEnabled(dialogId, forceChannel, false, false);
+                return !getNotificationsController().isGlobalNotificationsEnabled(dialogId, forceChannel, false);
             }
         }
         if (mute_type == 2) {

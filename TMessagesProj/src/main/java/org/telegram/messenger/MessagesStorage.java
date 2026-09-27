@@ -732,6 +732,8 @@ public class MessagesStorage extends BaseController {
 
         database.executeFast("CREATE TABLE story_drafts (id INTEGER PRIMARY KEY, date INTEGER, data BLOB, type INTEGER);").stepThis().dispose();
 
+        // LoogriGram: story_pushes held the story notifications. They are gone; the
+        // table stays in the schema but is no longer written or read.
         database.executeFast("CREATE TABLE story_pushes (uid INTEGER, sid INTEGER, date INTEGER, localName TEXT, flags INTEGER, expire_date INTEGER, live INTEGER, PRIMARY KEY(uid, sid));").stepThis().dispose();
 
         database.executeFast("CREATE TABLE unconfirmed_auth (data BLOB);").stepThis().dispose();
@@ -1301,64 +1303,6 @@ public class MessagesStorage extends BaseController {
         });
     }
 
-    public void putStoryPushMessage(NotificationsController.StoryNotification push) {
-        storageQueue.postRunnable(() -> {
-            try {
-                database.executeFast("DELETE FROM story_pushes WHERE uid = " + push.dialogId).stepThis().dispose();
-                SQLitePreparedStatement state = database.executeFast("REPLACE INTO story_pushes VALUES(?, ?, ?, ?, ?, ?)");
-                for (Map.Entry<Integer, Pair<Long, Long>> e : push.dateByIds.entrySet()) {
-                    int id = e.getKey();
-                    long date = e.getValue().first;
-                    long expire_date = e.getValue().second;
-                    state.requery();
-                    state.bindLong(1, push.dialogId);
-                    state.bindInteger(2, id);
-                    state.bindLong(3, date);
-                    if (push.localName == null) {
-                        push.localName = "";
-                    }
-                    state.bindString(4, push.localName);
-                    state.bindInteger(5, push.hidden ? 1 : 0);
-                    state.bindLong(6, expire_date);
-                    state.step();
-                }
-                state.dispose();
-            } catch (Exception e) {
-                checkSQLException(e);
-            }
-        });
-    }
-
-    public void deleteStoryPushMessage(long dialogId) {
-        storageQueue.postRunnable(() -> {
-            try {
-                database.executeFast("DELETE FROM story_pushes WHERE uid = " + dialogId).stepThis().dispose();
-            } catch (Exception e) {
-                checkSQLException(e);
-            }
-        });
-    }
-
-    public void deleteAllStoryPushMessages() {
-        storageQueue.postRunnable(() -> {
-            try {
-                database.executeFast("DELETE FROM story_pushes").stepThis().dispose();
-            } catch (Exception e) {
-                checkSQLException(e);
-            }
-        });
-    }
-
-    public void deleteAllStoryReactionPushMessages() {
-        storageQueue.postRunnable(() -> {
-            try {
-                database.executeFast("DELETE FROM unread_push_messages WHERE is_reaction = 2").stepThis().dispose();
-            } catch (Exception e) {
-                checkSQLException(e);
-            }
-        });
-    }
-
     public void putPushMessage(MessageObject message) {
         storageQueue.postRunnable(() -> {
             try {
@@ -1397,7 +1341,7 @@ public class MessagesStorage extends BaseController {
                 }
                 state.bindInteger(9, flags);
                 state.bindLong(10, MessageObject.getTopicId(currentAccount, message.messageOwner, false));
-                state.bindInteger(11, (message.isReactionPush ? 1 : 0) + (message.isStoryReactionPush ? 1 : 0));
+                state.bindInteger(11, message.isReactionPush ? 1 : 0);
                 state.step();
 
                 data.reuse();
@@ -3923,7 +3867,6 @@ public class MessagesStorage extends BaseController {
                             MessageObject messageObject = new MessageObject(currentAccount, message, messageText, name, userName, (flags & 1) != 0, (flags & 2) != 0, (message.flags & 0x80000000) != 0, false);
                             final int is_reaction = cursor.intValue(10);
                             messageObject.isReactionPush = is_reaction == 1;
-                            messageObject.isStoryReactionPush = is_reaction == 2;
                             pushMessages.add(messageObject);
                             addUsersAndChatsFromMessage(message, usersToLoad, chatsToLoad, null);
                         }
@@ -3965,52 +3908,7 @@ public class MessagesStorage extends BaseController {
                 }
                 Collections.reverse(messages);
 
-                usersToLoad.clear();
-                chatsToLoad.clear();
-                cursor = database.queryFinalized("SELECT uid, sid, date, expire_date, localName, flags FROM story_pushes");
-                HashMap<Long, NotificationsController.StoryNotification> storyPushes = new HashMap<>();
-                while (cursor.next()) {
-                    long dialogId = cursor.longValue(0);
-                    if (dialogId >= 0) {
-                        if (!usersToLoad.contains(dialogId)) {
-                            usersToLoad.add(dialogId);
-                        }
-                    } else {
-                        if (!chatsToLoad.contains(dialogId)) {
-                            chatsToLoad.add(dialogId);
-                        }
-                    }
-                    int id = cursor.intValue(1);
-                    long date = cursor.longValue(2);
-                    long expire_date = cursor.longValue(3);
-                    String localName = cursor.stringValue(4);
-                    int flags = cursor.intValue(5);
-                    NotificationsController.StoryNotification notification = storyPushes.get(dialogId);
-                    if (notification != null) {
-                        notification.dateByIds.put(id, new Pair<>(date, expire_date));
-                        notification.date = notification.getLeastDate();
-                        notification.hidden |= (flags & 1) != 0;
-                        if (!TextUtils.isEmpty(localName)) {
-                            notification.localName = localName;
-                        }
-                    } else {
-                        notification = new NotificationsController.StoryNotification(dialogId, localName, id, date, expire_date);
-                        notification.hidden = (flags & 1) != 0;
-                        storyPushes.put(dialogId, notification);
-                    }
-                }
-                cursor.dispose();
-                cursor = null;
-
-                if (!usersToLoad.isEmpty()) {
-                    getUsersInternal(usersToLoad, users);
-                }
-
-                if (!chatsToLoad.isEmpty()) {
-                    getChatsInternal(TextUtils.join(",", chatsToLoad), chats);
-                }
-
-                AndroidUtilities.runOnUIThread(() -> getNotificationsController().processLoadedUnreadMessages(pushDialogs, messages, pushMessages, users, chats, encryptedChats, storyPushes.values()));
+                AndroidUtilities.runOnUIThread(() -> getNotificationsController().processLoadedUnreadMessages(pushDialogs, messages, pushMessages, users, chats, encryptedChats));
             } catch (Exception e) {
                 checkSQLException(e);
             } finally {

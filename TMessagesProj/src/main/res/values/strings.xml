@@ -2714,7 +2714,6 @@
     <string name="NotificationsPrivateChats">Private Chats</string>
     <string name="NotificationsGroups">Groups</string>
     <string name="NotificationsChannels">Channels</string>
-    <string name="NotificationsStories">Stories</string>
     <string name="NotificationsReactions">Reactions</string>
     <string name="NotificationsExceptionsAlert">Please note that **%1$s** are listed as exceptions and won\'t be affected by this change.</string>
     <string name="NotificationsExceptionsSingleAlert">Please note that **%1$s** is listed as an exception and won\'t be affected by this change.</string>
@@ -5457,9 +5456,6 @@
     <string name="PushChatReactGame">%3$s to your game in %2$s</string>
     <string name="PushChatReactInvoice">%3$s to your invoice in %2$s</string>
     <string name="PushChatReactGif">%3$s to your GIF in %2$s</string>
-    <string name="PushReactStory">%2$s to your story</string>
-    <string name="PushReactStoryHidden">New reaction to your story</string>
-    <string name="PushReactStoryHiddenSender">Story Reaction</string>
     <string name="BlurInChat">Blur in chat</string>
 
     <string name="AllowBackgroundActivity">Allow background activity</string>
@@ -6596,15 +6592,6 @@
     <string name="LinkSharedToManyChats_one">Link forwarded to **a chat**.</string>
     <string name="LinkSharedToManyChats_other">Link forwarded to **%1$d chats**.</string>
     <string name="StoryNotFound">This story is no longer available</string>
-    <string name="StoryNotificationHidden_one">%d story was posted</string>
-    <string name="StoryNotificationHidden_other">%d stories were posted</string>
-    <string name="StoryNotificationSingle">posted a story</string>
-    <string name="StoryNotification1_one">posted a story</string>
-    <string name="StoryNotification1_other">posted %d stories</string>
-    <string name="StoryNotification2">posted by %1$s and %2$s</string>
-    <string name="StoryNotification3">posted by %1$s, %2$s and %3$s</string>
-    <string name="StoryNotification4_other">posted by %2$s, %3$s and %1$d more</string>
-    <string name="StoryLiveNotificationSingle">started live stream!</string>
     <string name="StoryUnavailable">Story unavailable</string>
     <string name="StoryExpiredSubtitle">This story has expired</string>
     <string name="AutoDownloadStories">Stories</string>

@@ -657,7 +657,6 @@
     <string name="NotificationsPrivateChats">Chats Privados</string>
     <string name="NotificationsGroups">Grupos</string>
     <string name="NotificationsChannels">Canais</string>
-    <string name="NotificationsStories">Stories</string>
     <string name="NotificationsReactions">Reações</string>
     <string name="NotificationsExceptionsAlert">Por favor note que **%1$s** são listados como exceções e não serão afetados por essa alteração.</string>
     <string name="NotificationsExceptionsSingleAlert">Por favor note que **%1$s** está listado como uma exceção e não será afetado por essa alteração.</string>

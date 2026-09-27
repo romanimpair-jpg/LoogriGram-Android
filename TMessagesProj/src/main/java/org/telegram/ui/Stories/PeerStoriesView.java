@@ -4199,7 +4199,6 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
                 allowShareLink = user != null && UserObject.getPublicUsername(user) != null && currentStory.storyItem.isPublic;
             }
         }
-        NotificationsController.getInstance(currentAccount).processReadStories(dialogId, storyItem.id);
 
         if (currentStory.storyItem != null && !preload) {
             storyViewer.dayStoryId = currentStory.storyItem.id;

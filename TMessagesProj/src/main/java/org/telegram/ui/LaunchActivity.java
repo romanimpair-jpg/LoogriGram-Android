@@ -80,7 +80,6 @@ import androidx.core.graphics.ColorUtils;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 
-import com.google.common.primitives.Longs;
 
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AccountInstance;
@@ -144,7 +143,6 @@ import org.telegram.tgnet.tl.TL_account;
 import org.telegram.tgnet.tl.TL_chatlists;
 import org.telegram.tgnet.tl.TL_forum;
 import org.telegram.tgnet.tl.TL_stars;
-import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.ActionBarLayout;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
@@ -199,9 +197,6 @@ import org.telegram.ui.Components.voip.VoIPHelper;
 import org.telegram.ui.Components.ISuperRipple;
 import org.telegram.ui.Stars.StarGiftSheet;
 import org.telegram.ui.Components.SuperRipple;
-import org.telegram.ui.Stories.StoriesController;
-import org.telegram.ui.Stories.StoriesListPlaceProvider;
-import org.telegram.ui.Stories.StoryViewer;
 import org.telegram.ui.Stories.LiveStoryPipOverlay;
 import org.telegram.ui.bots.BotWebViewAttachedSheet;
 import org.telegram.ui.bots.BotWebViewSheet;
@@ -1513,8 +1508,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         boolean pushOpened = false;
         long push_user_id = 0;
         long push_chat_id = 0;
-        long[] push_story_dids = null;
-        int push_story_id = -1;
         long push_topic_id = 0;
         int push_enc_id = 0;
         int push_msg_id = 0;
@@ -2689,8 +2682,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 //                    Integer chatIdInt = intent.getIntExtra("chatId", 0);
                     long chatId = intent.getLongExtra("chatId", 0);
 //                    Integer userIdInt = intent.getIntExtra("userId", 0);
-                    long[] storyDialogIds = intent.getLongArrayExtra("storyDialogIds");
-                    int storyId = intent.getIntExtra("storyId", -1);
                     long userId = intent.getLongExtra("userId", 0);
                     int encId = intent.getIntExtra("encId", 0);
                     int widgetId = intent.getIntExtra("appWidgetId", 0);
@@ -2729,17 +2720,9 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                         if (push_msg_id == 0) {
                             push_msg_id = intent.getIntExtra("message_id", 0);
                         }
-                        if (storyId != -1) {
-                            NotificationCenter.getInstance(intentAccount[0]).postNotificationName(NotificationCenter.closeChats);
-                            push_chat_id = chatId;
-                            push_user_id = userId;
-                            push_story_id = storyId;
-                        } else if (storyDialogIds != null) {
-                            NotificationCenter.getInstance(intentAccount[0]).postNotificationName(NotificationCenter.closeChats);
-                            push_story_dids = storyDialogIds;
-//                            push_story_id = intent.getIntExtra("storyId", 0);
-                            showDialogsList = true;
-                        } else if (chatId != 0) {
+                        // LoogriGram: a story notification's storyId or storyDialogIds
+                        // opened the story viewer here. Stories are removed.
+                        if (chatId != 0) {
                             NotificationCenter.getInstance(intentAccount[0]).postNotificationName(NotificationCenter.closeChats);
                             push_chat_id = chatId;
                             push_topic_id = topicId;
@@ -2784,19 +2767,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 }
             }
 
-            if (push_story_id > 0) {
-                NotificationsController.getInstance(intentAccount[0]).processSeenStoryReactions(UserConfig.getInstance(intentAccount[0]).getClientUserId(), push_story_id);
-                long storyDialogId = UserConfig.getInstance(currentAccount).getClientUserId();
-                if (push_user_id != 0) {
-                    storyDialogId = push_user_id;
-                } else if (push_chat_id != 0) {
-                    storyDialogId = -push_chat_id;
-                }
-                openStory(storyDialogId, push_story_id, storyDialogId == UserConfig.getInstance(currentAccount).getClientUserId());
-            } else if (push_story_dids != null) {
-                NotificationCenter.getInstance(intentAccount[0]).postNotificationName(NotificationCenter.closeChats);
-                openStories(push_story_dids, true);
-            } else if (push_user_id != 0) {
+            if (push_user_id != 0) {
                 if (audioCallUser || videoCallUser) {
                     if (needCallAlert) {
                         final BaseFragment lastFragment = actionBarLayout.getLastFragment();
@@ -8153,251 +8124,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
 
     public boolean isLightNavigationBar() {
         return AndroidUtilities.getLightNavigationBar(getWindow());
-    }
-
-    private void openStory(long dialogId, final int storyId, boolean openViews) {
-        StoriesController storiesController = MessagesController.getInstance(currentAccount).getStoriesController();
-        TL_stories.PeerStories peerStories = storiesController.getStories(dialogId);
-        TL_stories.StoryItem storyItem = null;
-        if (peerStories != null) {
-            for (int i = 0; i < peerStories.stories.size(); ++i) {
-                if (peerStories.stories.get(i).id == storyId) {
-                    storyItem = peerStories.stories.get(i);
-                    break;
-                }
-            }
-            if (storyItem != null) {
-                storyItem.dialogId = dialogId;
-                BaseFragment lastFragment = getLastFragment(); //IncludeMainTabs();
-                if (lastFragment == null) {
-                    return;
-                }
-                StoryViewer.PlaceProvider placeProvider = null;
-                if (lastFragment instanceof DialogsActivity) {
-                    try {
-                        placeProvider = StoriesListPlaceProvider.of(((DialogsActivity) lastFragment).dialogStoriesCell.recyclerListView);
-                    } catch (Exception ignore) {}
-                }
-                lastFragment.getOrCreateStoryViewer().instantClose();
-                ArrayList<Long> dialogIds = new ArrayList<>();
-                dialogIds.add(storyItem.dialogId);
-                if (openViews) {
-                    lastFragment.getOrCreateStoryViewer().showViewsAfterOpening();
-                }
-                lastFragment.getOrCreateStoryViewer().open(this, storyItem, dialogIds, 0, null, peerStories, placeProvider, false);
-                return;
-            }
-        }
-        if (storyItem == null) {
-            StoriesController.StoriesList list = null;
-            StoriesController.StoriesList profileList = storiesController.getStoriesList(dialogId, StoriesController.StoriesList.TYPE_PINNED);
-            if (profileList != null) {
-                MessageObject msg = profileList.findMessageObject(storyId);
-                if (msg != null) {
-                    storyItem = msg.storyItem;
-                    list = profileList;
-                }
-            }
-            if (storyItem == null) {
-                StoriesController.StoriesList archiveList = storiesController.getStoriesList(dialogId, StoriesController.StoriesList.TYPE_ARCHIVE);
-                if (archiveList != null) {
-                    MessageObject msg = archiveList.findMessageObject(storyId);
-                    if (msg != null) {
-                        storyItem = msg.storyItem;
-                        list = archiveList;
-                    }
-                }
-            }
-            if (storyItem != null && list != null) {
-                storyItem.dialogId = dialogId;
-                BaseFragment lastFragment = getLastFragment(); //IncludeMainTabs();
-                if (lastFragment == null) {
-                    return;
-                }
-                StoryViewer.PlaceProvider placeProvider = null;
-                if (lastFragment instanceof DialogsActivity) {
-                    try {
-                        placeProvider = StoriesListPlaceProvider.of(((DialogsActivity) lastFragment).dialogStoriesCell.recyclerListView);
-                    } catch (Exception ignore) {}
-                }
-                lastFragment.getOrCreateStoryViewer().instantClose();
-                ArrayList<Long> dialogIds = new ArrayList<>();
-                dialogIds.add(storyItem.dialogId);
-                if (openViews) {
-                    lastFragment.getOrCreateStoryViewer().showViewsAfterOpening();
-                }
-                lastFragment.getOrCreateStoryViewer().open(this, storyItem, dialogIds, 0, list, null, placeProvider, false);
-                return;
-            }
-        }
-        TL_stories.TL_stories_getStoriesByID req = new TL_stories.TL_stories_getStoriesByID();
-        req.peer = MessagesController.getInstance(currentAccount).getInputPeer(dialogId);
-        req.id.add(storyId);
-        ConnectionsManager.getInstance(currentAccount).sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
-            if (res instanceof TL_stories.TL_stories_stories) {
-                TL_stories.TL_stories_stories response = (TL_stories.TL_stories_stories) res;
-                TL_stories.StoryItem storyItem1 = null;
-                for (int i = 0; i < response.stories.size(); ++i) {
-                    if (response.stories.get(i).id == storyId) {
-                        storyItem1 = response.stories.get(i);
-                        break;
-                    }
-                }
-                if (storyItem1 != null) {
-                    storyItem1.dialogId = dialogId;
-                    BaseFragment lastFragment = getLastFragment(); //IncludeMainTabs();
-                    if (lastFragment == null) {
-                        return;
-                    }
-                    StoryViewer.PlaceProvider placeProvider = null;
-                    if (lastFragment instanceof DialogsActivity) {
-                        try {
-                            placeProvider = StoriesListPlaceProvider.of(((DialogsActivity) lastFragment).dialogStoriesCell.recyclerListView);
-                        } catch (Exception ignore) {}
-                    }
-                    lastFragment.getOrCreateStoryViewer().instantClose();
-                    ArrayList<Long> dialogIds = new ArrayList<>();
-                    dialogIds.add(dialogId);
-                    if (openViews) {
-                        lastFragment.getOrCreateStoryViewer().showViewsAfterOpening();
-                    }
-                    lastFragment.getOrCreateStoryViewer().open(this, storyItem1, dialogIds, 0, null, null, placeProvider, false);
-                    return;
-                }
-            }
-            BulletinFactory.global().createSimpleBulletin(R.raw.error, LocaleController.getString(R.string.StoryNotFound)).show(false);
-        }));
-    }
-
-    private void openStories(long[] dialogIds, boolean requestWhenNeeded) {
-        boolean onlyArchived = true;
-        for (int i = 0; i < dialogIds.length; ++i) {
-            TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(dialogIds[i]);
-            if (user != null && !user.stories_hidden) {
-                onlyArchived = false;
-                break;
-            }
-        }
-//        NotificationsController.getInstance(currentAccount).processIgnoreStories();
-//        List<BaseFragment> fragments = actionBarLayout.getFragmentStack();
-//        DialogsActivity dialogsActivity = null;
-//        for (int i = fragments.size() - 1; i >= 0; --i) {
-//            BaseFragment fragment = fragments.get(i);
-//            if (fragment instanceof DialogsActivity && (!((DialogsActivity) fragment).isArchive() || onlyArchived) && ((DialogsActivity) fragment).getType() == DialogsActivity.DIALOGS_TYPE_DEFAULT) {
-//                dialogsActivity = (DialogsActivity) fragment;
-//                break;
-//            } else {
-//                fragment.removeSelfFromStack(true);
-//            }
-//        }
-//        if (dialogsActivity != null) {
-//            if (drawerLayoutContainer != null) {
-//                drawerLayoutContainer.closeDrawer(true);
-//            }
-//            if (onlyArchived) {
-//                MessagesController.getInstance(dialogsActivity.getCurrentAccount()).getStoriesController().loadHiddenStories();
-//            } else {
-//                MessagesController.getInstance(dialogsActivity.getCurrentAccount()).getStoriesController().loadStories();
-//            }
-//            if (dialogsActivity.rightSlidingDialogContainer.hasFragment()) {
-//                dialogsActivity.rightSlidingDialogContainer.finishPreview();
-//            }
-//            if (onlyArchived && !dialogsActivity.isArchive()) {
-//                Bundle args = new Bundle();
-//                args.putInt("folderId", 1);
-//                presentFragment(dialogsActivity = new DialogsActivity(args));
-//            }
-//            final DialogsActivity dialogsActivity1 = dialogsActivity;
-//            dialogsActivity1.scrollToTop(false, false);
-//            AndroidUtilities.runOnUIThread(() -> {
-//                dialogsActivity1.scrollToTop(true, true);
-//            }, 500);
-//            return;
-//        }
-
-        BaseFragment lastFragment = getLastFragment(); //IncludeMainTabs();
-        if (lastFragment == null) {
-            return;
-        }
-        StoriesController storiesController = MessagesController.getInstance(currentAccount).getStoriesController();
-        ArrayList<TL_stories.PeerStories> stories = new ArrayList<>(onlyArchived ? storiesController.getHiddenList() : storiesController.getDialogListStories());
-        ArrayList<Long> peerIds = new ArrayList<>();
-        ArrayList<Long> toLoadPeerIds = new ArrayList<>();
-        final long[] finalDialogIds;
-        if (!onlyArchived) {
-            ArrayList<Long> dids = new ArrayList<>();
-            for (int i = 0; i < dialogIds.length; ++i) {
-                TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(dialogIds[i]);
-                if (user == null || !user.stories_hidden) {
-                    dids.add(dialogIds[i]);
-                }
-            }
-            finalDialogIds = Longs.toArray(dids);
-        } else {
-            finalDialogIds = dialogIds;
-        }
-        if (requestWhenNeeded) {
-            for (int i = 0; i < finalDialogIds.length; ++i) {
-                toLoadPeerIds.add(finalDialogIds[i]);
-            }
-        } else {
-            for (int i = 0; i < finalDialogIds.length; ++i) {
-                peerIds.add(finalDialogIds[i]);
-            }
-        }
-        if (!toLoadPeerIds.isEmpty() && requestWhenNeeded) {
-            final MessagesController messagesController = MessagesController.getInstance(currentAccount);
-            final int[] loaded = new int[] { toLoadPeerIds.size() };
-            final Runnable whenDone = () -> {
-                loaded[0]--;
-                if (loaded[0] == 0) {
-                    NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.storiesUpdated);
-                    openStories(finalDialogIds, false);
-                }
-            };
-            for (int i = 0; i < toLoadPeerIds.size(); ++i) {
-                long did = toLoadPeerIds.get(i);
-                TL_stories.TL_stories_getPeerStories req = new TL_stories.TL_stories_getPeerStories();
-                req.peer = messagesController.getInputPeer(did);
-                if (req.peer instanceof TLRPC.TL_inputPeerEmpty) {
-                    loaded[0]--;
-                    continue;
-                }
-                if (req.peer == null) {
-                    loaded[0]--;
-                    continue;
-                }
-                ConnectionsManager.getInstance(currentAccount).sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
-                    if (res instanceof TL_stories.TL_stories_peerStories) {
-                        TL_stories.TL_stories_peerStories r = (TL_stories.TL_stories_peerStories) res;
-                        messagesController.putUsers(r.users, false);
-                        messagesController.getStoriesController().putStories(did, r.stories);
-                        whenDone.run();
-                    } else {
-                        whenDone.run();
-                    }
-                }));
-            }
-        } else {
-            long me = UserConfig.getInstance(currentAccount).getClientUserId();
-            for (int i = 0; i < stories.size(); ++i) {
-                TL_stories.PeerStories userStories = stories.get(i);
-                long dialogId = DialogObject.getPeerDialogId(userStories.peer);
-                if (dialogId != me && !peerIds.contains(dialogId) && storiesController.hasUnreadStories(dialogId)) {
-                    peerIds.add(dialogId);
-                }
-            }
-            if (!peerIds.isEmpty()) {
-                StoryViewer.PlaceProvider placeProvider = null;
-                if (lastFragment instanceof DialogsActivity) {
-                    try {
-                        placeProvider = StoriesListPlaceProvider.of(((DialogsActivity) lastFragment).dialogStoriesCell.recyclerListView);
-                    } catch (Exception ignore) {}
-                }
-                lastFragment.getOrCreateStoryViewer().instantClose();
-                lastFragment.getOrCreateStoryViewer().open(this, null, peerIds, 0, null, null, placeProvider, false);
-            }
-        }
     }
 
     public static void dismissAllWeb() {

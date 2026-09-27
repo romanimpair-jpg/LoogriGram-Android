@@ -6213,7 +6213,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             NotificationsCheckCell checkCell = (NotificationsCheckCell) view;
             boolean checked = !checkCell.isChecked();
 
-            boolean defaultEnabled = getNotificationsController().isGlobalNotificationsEnabled(did, false, false);
+            boolean defaultEnabled = getNotificationsController().isGlobalNotificationsEnabled(did, false);
 
             String key = NotificationsController.getSharedPrefKey(did, topicId);
             if (checked) {
@@ -6371,7 +6371,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 if (hasOverride) {
                     enabled = true;
                 } else {
-                    enabled = getNotificationsController().isGlobalNotificationsEnabled(did, false, false);
+                    enabled = getNotificationsController().isGlobalNotificationsEnabled(did, false);
                 }
             } else if (value == 1) {
                 enabled = true;
@@ -13076,7 +13076,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                                 if (hasOverride) {
                                     enabled = true;
                                 } else {
-                                    enabled = getNotificationsController().isGlobalNotificationsEnabled(did, false, false);
+                                    enabled = getNotificationsController().isGlobalNotificationsEnabled(did, false);
                                 }
                             } else if (value == 1) {
                                 enabled = true;

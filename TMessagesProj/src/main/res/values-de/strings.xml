@@ -597,7 +597,6 @@
     <string name="NotificationsPrivateChats">Einzelchats</string>
     <string name="NotificationsGroups">Gruppen</string>
     <string name="NotificationsChannels">Kanäle</string>
-    <string name="NotificationsStories">Stories</string>
     <string name="NotificationsReactions">Reaktionen</string>
     <string name="NotificationsExceptionsAlert">Beachte bitte, dass **%1$s** als Ausnahmen festgelegt wurden und von den folgenden Änderungen nicht betroffen sind.</string>
     <string name="NotificationsExceptionsSingleAlert">Beachte bitte, dass **%1$s** als Ausnahme festgelegt wurde und von dieser Änderung nicht betroffen ist.</string>

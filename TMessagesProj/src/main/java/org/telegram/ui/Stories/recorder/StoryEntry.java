@@ -109,18 +109,6 @@ public class StoryEntry {
         }
     }
 
-    public static int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
-        final int height = options.outHeight;
-        final int width = options.outWidth;
-        int inSampleSize = 1;
-        if (height > reqHeight || width > reqWidth) {
-            final int heightRatio = (int) Math.ceil((float) height / (float) reqHeight);
-            final int widthRatio = (int) Math.ceil((float) width / (float) reqWidth);
-            inSampleSize = Math.min(heightRatio, widthRatio);
-        }
-        return Math.max(1, (int) Math.pow(inSampleSize, Math.floor(Math.log(inSampleSize) / Math.log(2))));
-    }
-
     public static void setupScale(BitmapFactory.Options options, int reqWidth, int reqHeight) {
         Runtime runtime = Runtime.getRuntime();
         long maxMemory = runtime.maxMemory();

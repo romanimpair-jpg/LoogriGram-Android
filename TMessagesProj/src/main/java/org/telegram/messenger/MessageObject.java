@@ -200,8 +200,6 @@ public class MessageObject {
     public String customName;
     public boolean reactionsChanged;
     public boolean isReactionPush;
-    public boolean isStoryReactionPush;
-    public boolean isStoryPush, isStoryPushHidden, isLiveStoryPush;
     public boolean isOauthPush;
     public boolean putInDownloadsStore;
     public boolean isDownloadingFile;

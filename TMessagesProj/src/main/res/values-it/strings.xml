@@ -674,7 +674,6 @@
     <string name="NotificationsPrivateChats">Chat private</string>
     <string name="NotificationsGroups">Gruppi</string>
     <string name="NotificationsChannels">Canali</string>
-    <string name="NotificationsStories">Storie</string>
     <string name="NotificationsReactions">Reazioni</string>
     <string name="NotificationsExceptionsAlert">Per favore ricorda che **%1$s** sono nella lista delle eccezioni e questa modifica non avrà effetto.</string>
     <string name="NotificationsExceptionsSingleAlert">Per favore ricorda che **%1$s** è nella lista delle eccezioni e questa modifica non avrà effetto.</string>

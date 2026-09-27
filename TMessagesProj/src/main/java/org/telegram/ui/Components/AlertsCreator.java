@@ -1494,7 +1494,7 @@ public class AlertsCreator {
             return;
         }
         boolean enabled;
-        boolean defaultEnabled = NotificationsController.getInstance(currentAccount).isGlobalNotificationsEnabled(did, false, false);
+        boolean defaultEnabled = NotificationsController.getInstance(currentAccount).isGlobalNotificationsEnabled(did, false);
 
         String[] descriptions = new String[]{
                 LocaleController.getString(R.string.NotificationsTurnOn),

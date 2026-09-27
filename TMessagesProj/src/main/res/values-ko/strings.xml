@@ -669,7 +669,6 @@
     <string name="NotificationsPrivateChats">개인 대화</string>
     <string name="NotificationsGroups">그룹</string>
     <string name="NotificationsChannels">채널</string>
-    <string name="NotificationsStories">스토리들</string>
     <string name="NotificationsReactions">Reactions</string>
     <string name="NotificationsExceptionsAlert">**%1$s**는 예외로 분류되어 이번 변경에 영향을 받지 않는다는 점을 유의해주세요.</string>
     <string name="NotificationsExceptionsSingleAlert">**%1$s**는 예외로 분류되어 이번 변경에 영향을 받지 않는다는 점을 유의해주세요.</string>

@@ -615,7 +615,6 @@
     <string name="NotificationsPrivateChats">المحادثات الخاصة</string>
     <string name="NotificationsGroups">المجموعات</string>
     <string name="NotificationsChannels">القنوات</string>
-    <string name="NotificationsStories">القصص</string>
     <string name="NotificationsReactions">التفاعلات</string>
     <string name="NotificationsExceptionsAlert">يرجى ملاحظة أن **%1$s** مدرجة كاستثناءات ولن تتأثر بهذا التغيير.</string>
     <string name="NotificationsExceptionsSingleAlert">يرجى ملاحظة أن **%1$s** مدرجة كاستثناءات ولن تتأثر بهذا التغيير.</string>

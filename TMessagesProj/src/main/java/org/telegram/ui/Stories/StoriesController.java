@@ -27,7 +27,6 @@ import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
-import org.telegram.messenger.NotificationsController;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.Timer;
 import org.telegram.messenger.UserConfig;
@@ -433,7 +432,6 @@ public class StoriesController {
                 TL_stories.StoryItem story = userStories.stories.get(j);
                 if (story instanceof TL_stories.TL_storyItemDeleted ||
                     story instanceof TL_stories.TL_storyItem && now > story.expire_date && !(story.media instanceof TLRPC.TL_messageMediaVideoStream)) {
-                    NotificationsController.getInstance(currentAccount).processDeleteStory(dialogId, story.id);
                     userStories.stories.remove(j);
                     j--;
                 }
@@ -670,9 +668,6 @@ public class StoriesController {
             if (currentUserStory != null) {
                 boolean changed = false;
                 TL_stories.StoryItem newStory = updateStory.story;
-                if (newStory instanceof TL_stories.TL_storyItemDeleted) {
-                    NotificationsController.getInstance(currentAccount).processDeleteStory(dialogId, newStory.id);
-                }
                 boolean found = false;
                 for (int i = 0; i < currentUserStory.stories.size(); i++) {
                     if (currentUserStory.stories.get(i).id == newStory.id) {
@@ -1108,7 +1103,6 @@ public class StoriesController {
         final long dialogId = DialogObject.getPeerDialogId(userStories.peer);
         int currentReadId = dialogIdToMaxReadId.get(dialogId);
         int newReadId = Math.max(userStories.max_read_id, Math.max(currentReadId, storyItem.id));
-        NotificationsController.getInstance(currentAccount).processReadStories(dialogId, newReadId);
         userStories.max_read_id = newReadId;
         dialogIdToMaxReadId.put(dialogId, newReadId);
         if (newReadId > currentReadId) {

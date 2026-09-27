@@ -397,7 +397,7 @@ public class NotificationsCustomSettingsActivity extends BaseFragment implements
                 }
 
                 long did = exception.did;
-                boolean defaultEnabled = NotificationsController.getInstance(currentAccount).isGlobalNotificationsEnabled(did, false, false);
+                boolean defaultEnabled = NotificationsController.getInstance(currentAccount).isGlobalNotificationsEnabled(did, false);
                 ChatNotificationsPopupWrapper chatNotificationsPopupWrapper = new ChatNotificationsPopupWrapper(context, currentAccount, null, true, true, new ChatNotificationsPopupWrapper.Callback() {
                     @Override
                     public void toggleSound() {

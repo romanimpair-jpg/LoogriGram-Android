@@ -2,7 +2,6 @@ package org.telegram.messenger;
 
 import static org.telegram.messenger.NotificationsController.TYPE_PRIVATE;
 import static org.telegram.messenger.NotificationsController.TYPE_REACTIONS_MESSAGES;
-import static org.telegram.messenger.NotificationsController.TYPE_REACTIONS_STORIES;
 
 import android.content.SharedPreferences;
 
@@ -202,15 +201,11 @@ public class NotificationsSettingsFacade {
                 soundPref = "GroupSound";
                 soundDocPref = "GroupSoundDocId";
                 soundPathPref = "GroupSoundPath";
-            } else if (globalType == NotificationsController.TYPE_STORIES) {
-                soundPref = "StoriesSound";
-                soundDocPref = "StoriesSoundDocId";
-                soundPathPref = "StoriesSoundPath";
             } else if (globalType == TYPE_PRIVATE) {
                 soundPref = "GlobalSound";
                 soundDocPref = "GlobalSoundDocId";
                 soundPathPref = "GlobalSoundPath";
-            } else if (globalType == TYPE_REACTIONS_MESSAGES || globalType == TYPE_REACTIONS_STORIES) {
+            } else if (globalType == TYPE_REACTIONS_MESSAGES) {
                 soundPref = "ReactionSound";
                 soundDocPref = "ReactionSoundDocId";
                 soundPathPref = "ReactionSoundPath";
@@ -220,7 +215,21 @@ public class NotificationsSettingsFacade {
                 soundPathPref = "ChannelSoundPath";
             }
         }
+        applySoundSettings(settings, editor, dialogId, soundPref, soundDocPref, soundPathPref, serverUpdate);
+    }
 
+    // LoogriGram: the story sound has no notification type any more - story
+    // notifications are removed - but the server's value is still kept in
+    // these prefs, so that saving the private-chat settings sends it back
+    // unchanged (see MessagesController and updateServerNotificationsSettings).
+    public void applyStoriesSoundSettings(TLRPC.NotificationSound settings, SharedPreferences.Editor editor) {
+        if (settings == null) {
+            return;
+        }
+        applySoundSettings(settings, editor, 0, "StoriesSound", "StoriesSoundDocId", "StoriesSoundPath", false);
+    }
+
+    private void applySoundSettings(TLRPC.NotificationSound settings, SharedPreferences.Editor editor, long dialogId, String soundPref, String soundDocPref, String soundPathPref, boolean serverUpdate) {
         if (settings instanceof TLRPC.TL_notificationSoundLocal) {
             TLRPC.TL_notificationSoundLocal localSound = (TLRPC.TL_notificationSoundLocal) settings;
             if ("Default".equalsIgnoreCase(localSound.data)) {

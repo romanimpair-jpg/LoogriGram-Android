@@ -81,16 +81,6 @@ public class NotificationsDisabledReceiver extends BroadcastReceiver {
             }
             preferences.edit().putInt(NotificationsController.getGlobalNotificationsKey(NotificationsController.TYPE_PRIVATE), state ? Integer.MAX_VALUE : 0).commit();
             AccountInstance.getInstance(account).getNotificationsController().updateServerNotificationsSettings(NotificationsController.TYPE_PRIVATE);
-        } else if (args[1].startsWith("stories")) {
-            String currentChannel = preferences.getString("stories", null);
-            if (!channelId.equals(currentChannel)) {
-                return;
-            }
-            if (BuildVars.LOGS_ENABLED) {
-                FileLog.d("apply channel{stories} " + channelId + " state");
-            }
-            preferences.edit().putBoolean(NotificationsController.getGlobalNotificationsKey(NotificationsController.TYPE_STORIES), !state).commit();
-            AccountInstance.getInstance(account).getNotificationsController().updateServerNotificationsSettings(NotificationsController.TYPE_PRIVATE);
         } else {
             long dialogId = Utilities.parseLong(args[1]);
             if (dialogId == 0) {

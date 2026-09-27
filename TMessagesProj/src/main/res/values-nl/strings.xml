@@ -651,7 +651,6 @@
     <string name="NotificationsPrivateChats">Privéchats</string>
     <string name="NotificationsGroups">Groepen</string>
     <string name="NotificationsChannels">Kanalen</string>
-    <string name="NotificationsStories">Verhalen</string>
     <string name="NotificationsReactions">Reacties</string>
     <string name="NotificationsExceptionsAlert">Houd er rekening mee dat **%1$s** zijn uitgezonderd en niet door deze wijziging worden beïnvloed.</string>
     <string name="NotificationsExceptionsSingleAlert">**%1$s** is opgegeven als uitzondering, deze wijziging heeft geen effect op hem/haar.</string>

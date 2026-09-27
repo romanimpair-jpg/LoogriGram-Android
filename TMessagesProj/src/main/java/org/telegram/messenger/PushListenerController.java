@@ -391,12 +391,6 @@ public class PushListenerController {
                                 updates.add(update);
                             }
                             MessagesController.getInstance(accountFinal).processUpdateArray(updates, null, null, false, 0);
-                        } else if ("READ_STORIES".equals(loc_key)) {
-                            int maxId = custom.getInt("max_id");
-                            NotificationsController.getInstance(currentAccount).processReadStories(dialogId, maxId);
-                        } else if ("STORY_DELETED".equals(loc_key)) {
-                            int storyId = custom.getInt("story_id");
-                            NotificationsController.getInstance(currentAccount).processDeleteStory(dialogId, storyId);
                         } else if ("MESSAGE_DELETED".equals(loc_key)) {
                             String messages = custom.getString("messages");
                             String[] messagesArgs = messages.split(",");
@@ -434,8 +428,6 @@ public class PushListenerController {
                             int msg_id;
                             if (custom.has("msg_id")) {
                                 msg_id = custom.getInt("msg_id");
-                            } else if (custom.has("story_id")) {
-                                msg_id = custom.getInt("story_id");
                             } else {
                                 msg_id = 0;
                             }
@@ -467,13 +459,11 @@ public class PushListenerController {
                                 processNotification = true;
                             }
 
-                            int story_id = -1;
-                            if (loc_key.equals("STORY_NOTEXT") || loc_key.equals("STORY_LIVE") || loc_key.equals("STORY_HIDDEN_AUTHOR")) {
-                                if (custom.has("story_id")) {
-                                    story_id = custom.getInt("story_id");
-                                }
-                                processNotification = story_id >= 0;
-                            }
+                            // LoogriGram: stories are removed, and so are their pushes.
+                            // STORY_NOTEXT, STORY_LIVE and STORY_HIDDEN_AUTHOR carry no
+                            // msg_id, so they post nothing; READ_STORIES and STORY_DELETED
+                            // did nothing but update those; REACT_STORY and
+                            // REACT_STORY_HIDDEN get no text below, so they post nothing.
 
                             if (processNotification) {
                                 long chat_from_id = custom.optLong("chat_from_id", 0);
@@ -523,24 +513,6 @@ public class PushListenerController {
                                     messageText = getReactedText(loc_key, args);
                                 } else {
                                     switch (loc_key) {
-                                        case "STORY_NOTEXT": {
-                                            messageText = getString(R.string.StoryNotificationSingle);
-                                            message1 = null;
-                                            msg_id = story_id;
-                                            break;
-                                        }
-                                        case "STORY_LIVE": {
-                                            messageText = getString(R.string.StoryLiveNotificationSingle);
-                                            message1 = null;
-                                            msg_id = story_id;
-                                            break;
-                                        }
-                                        case "STORY_HIDDEN_AUTHOR": {
-                                            messageText = LocaleController.formatPluralString("StoryNotificationHidden", 1);
-                                            message1 = null;
-                                            msg_id = story_id;
-                                            break;
-                                        }
                                         case "MESSAGE_SAME_WALLPAPER": {
                                             messageText = LocaleController.formatString("ActionSetSameWallpaperForThisChat", R.string.ActionSetSameWallpaperForThisChat, args[0]);
                                             message1 = getString(R.string.WallpaperSameNotification);
@@ -1401,9 +1373,6 @@ public class PushListenerController {
                                 }
                                 if (messageText != null) {
                                     TLRPC.TL_message messageOwner = new TLRPC.TL_message();
-                                    if (loc_key.startsWith("REACT_STORY") && msg_id > 0) {
-                                        msg_id = -msg_id;
-                                    }
                                     messageOwner.id = msg_id;
                                     messageOwner.random_id = random_id;
                                     messageOwner.message = message1 != null ? message1 : messageText;
@@ -1448,16 +1417,12 @@ public class PushListenerController {
                                         messageObject.messageOwner.reply_to.forum_topic = true;
                                         messageObject.messageOwner.reply_to.reply_to_top_id = topicId;
                                     }
-                                    messageObject.isStoryReactionPush = loc_key.startsWith("REACT_STORY");
-                                    messageObject.isReactionPush = !messageObject.isStoryReactionPush && (loc_key.startsWith("REACT_") || loc_key.startsWith("CHAT_REACT_"));
-                                    messageObject.isStoryPush = loc_key.equals("STORY_NOTEXT") || loc_key.equals("STORY_HIDDEN_AUTHOR");
-                                    messageObject.isLiveStoryPush = loc_key.equals("STORY_LIVE");
-                                    messageObject.isStoryPushHidden = loc_key.equals("STORY_HIDDEN_AUTHOR");
+                                    messageObject.isReactionPush = loc_key.startsWith("REACT_") || loc_key.startsWith("CHAT_REACT_");
                                     ArrayList<MessageObject> arrayList = new ArrayList<>();
                                     arrayList.add(messageObject);
                                     canRelease = false;
                                     FileLog.d("PushListenerController push notification to NotificationsController of " + messageOwner.dialog_id);
-                                    if (!messageObject.isStoryReactionPush && !messageObject.isReactionPush && !messageObject.isStoryPush && !messageObject.isStoryPushHidden && !mention && !pinned && msg_id > 0) {
+                                    if (!messageObject.isReactionPush && !mention && !pinned && msg_id > 0) {
                                         final long did = dialogId;
                                         final int mid = msg_id;
                                         AndroidUtilities.runOnUIThread(() -> MessagesController.getInstance(accountFinal).reportMessageDelivery(did, mid, true));
@@ -1613,13 +1578,6 @@ public class PushListenerController {
             }
             case "CHAT_REACT_GIF": {
                 return LocaleController.formatString(R.string.PushChatReactGif, args);
-            }
-            /* stories */
-            case "REACT_STORY": {
-                return LocaleController.formatString(R.string.PushReactStory, args);
-            }
-            case "REACT_STORY_HIDDEN": {
-                return LocaleController.formatString(R.string.PushReactStoryHidden, args);
             }
         }
         return null;
