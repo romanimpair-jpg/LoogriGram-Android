@@ -342,7 +342,6 @@ public class ReactedUserHolderView extends FrameLayout {
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         statusBadgeComponent.onDetachedFromWindow();
-        params.onDetachFromWindow();
     }
 
     public void setObject(TLRPC.User user, long date, boolean b) {
