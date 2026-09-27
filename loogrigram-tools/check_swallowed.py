@@ -35,7 +35,8 @@ RANGE = sys.argv[1] if len(sys.argv) > 1 else 'origin/dev..HEAD'
 REV = (RANGE.split('..')[-1] or 'HEAD') if '..' in RANGE else None
 
 DECL = re.compile(
-    r'^\s*(?:@\w+\s+)*(?:public|private|protected)\s+'
+    # An interface's default method has no access modifier, only `default`.
+    r'^\s*(?:@\w+\s+)*(?:(?:public|private|protected)\s+|(?=default\s))'
     r'(?:static\s+|final\s+|abstract\s+|synchronized\s+|native\s+|default\s+)*'
     r'(?:<[^>]+>\s*)?'
     r'[\w.$<>,\[\]?\s]+?\s+'
