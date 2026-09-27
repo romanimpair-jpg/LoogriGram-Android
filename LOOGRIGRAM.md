@@ -18,9 +18,9 @@ depends on.
 |---|---|
 | Fork, CI, degoogling | Done. No Google bytecode in the APK, verified in the dex. The last Google-shaped code went on 2026-09-23/24: the Play install referrer and the four Chromecast stubs |
 | Installed on the phone | **Yes.** `gf20af361`, installed 2026-09-22 over `adb` (`adb install -r` succeeded, so the key matched); launches clean. Not rechecked since: the phone was not on USB on 2026-09-24. `gaf5d70a5` built green on 2026-09-22 but was never installed |
-| Latest release | `gb81ce49d` (2026-09-26, green, reported by the user), until the full build below lands. Not known to be installed. The line before it: `gf2478ebb`, which superseded the crashing `g1ec92ae0` (trap 0e) - a buggy Latest is superseded by the next build, never deleted, the user's rule |
-| Pending build | Full build of `20294896` dispatched 2026-09-26 ([run 36232289359](https://github.com/romanimpair-jpg/LoogriGram-Android/actions/runs/36232289359)); its result was not read here - the user reports builds. If green it is `g20294896`. It carries the second 2026-09-26 session's 17 commits; no C++ changed, but resources and the manifest did (the Premium launcher icons), which a compile validates but only a build packages |
-| Premium pass | Nearly done outside the parity passes (2026-09-25/26, 48 commits over two sessions). 27 Premium-screen entry points remain of ~100, every one inside Stories, the article editor, Business or the Premium sheets themselves; emoji statuses, Premium stars and bot icons are drawn for nobody. See "Remaining work" |
+| Latest release | `g20294896` (full build run 36232289359, green, 2026-09-26). Not installed: the phone was not on USB. Before it: `gb81ce49d`, `gf2478ebb` (which superseded the crashing `g1ec92ae0`, trap 0e) - a buggy Latest is superseded by the next build, never deleted, the user's rule |
+| Pending build | None. Nothing after `20294896` is in a build: Business and Stories stages 1-2 (below) are compile-checked only |
+| Premium pass | Nearly done outside the parity passes. 15 Premium-screen entry points remain of ~100 (2026-09-27): 5 in the story viewer, 6 in the article editor, 4 in the Premium sheets themselves; emoji statuses, Premium stars and bot icons are drawn for nobody. See "Remaining work" |
 | App name | Done — launcher, in-app strings, and the two wordmark screens |
 | Phone contacts | **Never touched.** Permissions, account and sync adapter all gone |
 | Updater | Ours, from this repo's releases. Checks on every cold start, then hourly; manual row in Settings (2026-09-21). Since `ec7c9d55` (2026-09-24) a download waiting to be installed no longer blocks the check: a newer release replaces it and one no longer Latest is dropped - the installed `gf20af361` does not have that yet. **Nobody has seen the automatic check find a release** |
@@ -62,21 +62,72 @@ The installed APK: ~44.5 MB, `lib/arm64-v8a/libtmessages.49.so` only, signed
 fingerprint is how to confirm a later build carries the same key - and it must,
 because Android will refuse an update signed with any other.
 
-### Start here next session (written 2026-09-26, end of the second session)
+### Start here next session (written 2026-09-27, work frozen mid-Stories)
 
-1. **Ask the user how full build `20294896` went** (run 36232289359;
-   `gb81ce49d` before it was green). If it failed, fix from
-   `--log-failed`. No native code changed since `gb81ce49d`; resources
-   and the manifest did (`ee972df1`, the Premium launcher icons). A
-   failure in "Install Android SDK components" with "Error on ZipFile
-   unknown archive" is a corrupt NDK download: just redispatch. Every
-   commit compiles except `e53ce275` and the pair `ee75d83b`/`873fe3ab`,
-   each fixed by the commit after it (`b2682a10`, `0d485c6a`) - trap 0j.
-2. **Install it** (phone on USB; `adb` at
-   `C:\Users\Loogris\platform-tools\adb.exe`). The notes know of nothing
-   since `gf20af361` on the phone, so everything below is unseen.
-3. **After installing, look first where a mistake would be silent** - a
-   compile draws nothing. From the second 2026-09-26 session:
+The user froze the session on 2026-09-27 mid-way through Stories stage 2.
+**Resume exactly here:**
+
+1. **Uncommitted in the working tree:** `ChatRightsEditActivity.java`
+   (+12/-98): the "Manage stories" rows are out of the admin rights
+   editor; the story rights are carried from the admin's existing rights
+   (or ours for a new admin) and saved unchanged; `hasAllAdminRights` no
+   longer requires story rights (as desktop), so "Transfer ownership"
+   still appears. **The checkers have not been run on it.** Run them all,
+   read the joins, then commit it as the settings-rows commit.
+2. **The committed head compiles**: `6e806af0` green (run 36328263281),
+   `346c9ce1` green before it (36326226194). Every stage-2 commit is
+   pushed; only the file in item 1 is not.
+3. **Finish Stories stage 2** (settings rows, round-tripped - see
+   "Stories" under Remaining work for the stage plan and what is left).
+   Then stages 3 and 4. Each stage went to a subagent with a full brief
+   (rules, checkers, desktop's decisions) and was reviewed here after:
+   re-run every checker over the stage's whole range (`git reset --soft
+   <base>`, run, `reset --soft` back) and read the riskiest joins.
+4. **The phone**: `g20294896` is Latest and not installed; nothing after it
+   is in any build. When the user asks for a full build (pack everything,
+   head must compile), install it and walk the checklists below, newest
+   first. `adb` is at `C:\Users\Loogris\platform-tools\adb.exe`.
+
+**Look first where a mistake would be silent** - a compile draws
+nothing. From 2026-09-27, Stories stages 1-2 (unbuilt):
+   - the chat photo editor: stickers, and the sticker sheet's Photo
+     widget; choosing a video cover (GallerySheet, TimelineView); the
+     round-video camera and the in-chat camera's flash;
+   - share sheets (chat, photo viewer, a gift link) and sharing a photo
+     from another app: no "My Story" row;
+   - the chat list: no story button above the pencil, the new-chat hint's
+     arrow is back;
+   - our own profile's stories tab: its button shows only while stories
+     are selected; archiving and "Add to album" still work;
+   - a mini app calling shareToStory: the "not supported" popup;
+     tg://post links are refused as unopenable;
+   - a forwarded story and a story mention: no bubble, no chat-list
+     preview, no unread badge that will not clear;
+   - a reply to a story: its text, no quote;
+   - `t.me/x/s/1`, `/a/1`, `?story=`, `?album=` open the peer; a story
+     link previews as a plain page;
+   - channel statistics: the overview in 3 rows, no story charts.
+
+   From 2026-09-26/27, Business (unbuilt):
+   - Devices: the session list, and Terminate all shows the plain alert;
+   - Edit profile: no Chat Automation, hours or location rows;
+   - a chat with a person: no bot bar, "/" offers nothing; a bot chat:
+     "/" lists commands and sends them, the menu button works;
+   - the attach menu: no Quick Replies tab, the rest work, photo
+     multi-select is not capped;
+   - the folder include/exclude picker: type rows show avatars and
+     toggle, search finds users, bots and groups; the auto-delete
+     "existing chats" picker;
+   - a group's Welcome messages: empty state, hint row, sending;
+   - a business user's profile: hours expand, my-time toggle, location;
+     their chat intro in an empty chat; their t.me/m/ link opens the chat
+     with the preset text;
+   - the giveaway, Stars and suggested-post placeholder avatars (the
+     avatar drawable slots were renumbered);
+   - sending, forwarding, editing, deleting and retrying messages,
+     albums included.
+
+   From the second 2026-09-26 session, built in `g20294896`, unseen:
    - **the chat list**: rows lost the space an emoji status or bot icon
      reserved - names, the mute icon and the verified check must sit right
      (`873fe3ab` rewrote DialogCell's layout math); the title reads
@@ -173,8 +224,9 @@ because Android will refuse an update signed with any other.
      pages; a collectible's (`telegram_nft`) preview and button remain;
    - **limit sheets** (LimitPreviewView lost its dark-gradient paths): the
      bars and counters look as before.
-4. **Then continue** - see "Remaining work": the rest of the Premium
-   pass, then desktop parity. **When a decision is needed, first check
+After Stories - see "Remaining work": the article editor, greeting
+   stickers, suggestion popups, nags and help, then the Premium screens
+   themselves. **When a decision is needed, first check
    what the desktop fork decided** (its `LOOGRIGRAM.md` and `LoogriGram:`
    comments) and copy it - the user's rule, 2026-09-25.
 
@@ -903,7 +955,11 @@ In rough order of how much is left behind:
     DialogsActivity's stealth-mode item 1), PremiumPreviewFragment 1,
     BillingController's comment, and the definitions. They go once
     Stories and the Premium screens do.
-  - **27 Premium-screen entry points remain** (`new PremiumPreviewFragment(`,
+  - **15 Premium-screen entry points remain** as of 2026-09-27: the story
+    viewer 5 (StealthModeAlert 2, PeerStoriesView 2, SelfStoryViewsPage
+    1), the article editor 6, the Premium sheets 4. Business's two and
+    Stories posting's went with them; the older breakdown below is kept
+    for the record (`new PremiumPreviewFragment(`,
     `PremiumFeatureBottomSheet`, `PremiumPreviewBottomSheet`,
     `GiftPremiumBottomSheet`), down from ~100, and each belongs to a
     parity pass: 15 in Stories (PeerStoriesView, DialogStoriesCell,
@@ -959,14 +1015,62 @@ In rough order of how much is left behind:
   profile colour (`e53ce275`); Privacy's Voice Messages, Messages and
   Gifts screens and the Premium-users / Mini-apps exceptions; the
   private-chat sharing toggle (re-enable only); the Business greeting's
-  "how?". Still to do from the checklist: Business (the parts ours to
-  set - quick replies first), Stories, the article editor, greeting
-  stickers, suggestion popups, nags and help. AI compose's second half is
+  "how?". Business done 2026-09-26/27 (see the record below). Stories in
+  progress, see the next bullet. Still to do after it: the article
+  editor, greeting stickers, suggestion popups, nags and help. AI
+  compose's second half is
   the article editor - `ui/iv`, ~27,000
   lines, which shares classes with the rendering of received rich
   messages, so split display from editor first (as GiftViews was split
   from GiftSheet) - and with it AIEditorAlert, AiButtonDrawable and
   AiTonesController, whose last users it is.
+- **Stories - four stages, as desktop (2026-09-19), each a subagent with
+  a full brief, reviewed here.** Desktop's decisions: story-carrying
+  messages held, not dropped; a story reply keeps its text and loses the
+  quote; story links open the peer; story previews are plain articles;
+  admin story rights, `stories_muted` and the story-reaction notify
+  setting are round-tripped unchanged; `updateStory`/`updateReadStories`
+  ignored; bot previews gone for everyone (desktop has no bot-preview
+  code); a mini app's share_to_story gets a "not supported" alert.
+  Shared widgets in `ui/Stories/recorder/` stay in that package (moving
+  them would churn ~100 imports and every rebase).
+  1. **Posting - done** (`cdca4e1c..cf493c29`, ~44,500 lines).
+  2. **Messages, links, statistics, settings - frozen mid-way**
+     (`7f098cd6..6e806af0` pushed; the admin-rights file uncommitted, see
+     "Start here"). Left of it: notification settings - the Stories row
+     and exceptions, NotificationsCustomSettingsActivity's stories screen,
+     the story-reactions row, the per-chat stories switch, LinkManager's
+     `notifications/stories` links; NotificationsSettingsActivity's
+     reactions toggle also writes `EnableReactionsStories` and must stop.
+     `stories_muted`, `stories_hide_sender` and the reaction settings are
+     already read and sent back as the server had them; `stories_sound` is
+     **not** - upstream sends the local `StoriesSound*` prefs (default
+     NoSound), so the server's value must be read into them where the
+     global settings load and update (which field holds it was being
+     checked when work froze).
+  3. **The viewer and every way into it**: StoryViewer, PeerStoriesView,
+     SelfStoryViewsPage, StealthModeAlert, StoriesListPlaceProvider, live
+     stories, the chat-list strip (DialogStoriesCell, DialogsActivity's
+     stealth item), avatar rings, profile story tabs and albums, bot
+     previews for everyone (BotPreviewsList too), story reporting, story
+     push notifications (keys, channels, `TYPE_STORIES`), sending story
+     replies and `replyStory` storage, hashtag story search in chats.
+     Left for it by stage 1: our own stories' delete/archive/pin, the
+     albums UI, the live-story end item, `isEditBotsPreview`,
+     StoryPrivacyButton's always-false `animated`, the strip's self cell,
+     SharedPhotoVideoCell2's privacy icons. By stage 2: the ChatActionCell
+     branch in StoriesListPlaceProvider.
+  4. **The data layer**: StoriesController (incl. `canPostStories`,
+     `canEditStories`, album management, `fillMessagesWithStories`),
+     StoriesStorage (its fill methods), the dead story link resolvers,
+     story updates ignored, story state on peers, the story_drafts table
+     and input media-area TL types, then the three forced Premium getters.
+  Kept on purpose: `TYPE_STORY` (the file cache tags story files with
+  it), the video pipeline's handling of story stickers and collages
+  (VideoEditedInfo, TextureRenderer, MediaCodecVideoConvertor - nothing
+  sets them now), TimelineView's audio/round/collage tracks (trim not
+  clean yet), the debug menu's dual-camera slot left null so later
+  indices hold.
 - **Smaller leftovers.** `ChatMessageCell.getStarsPrice` and
   `starsPriceText` (the Stars someone else paid to send a group message -
   check what desktop does); `LiveCommentsView`'s reads of
@@ -1110,6 +1214,27 @@ In rough order of how much is left behind:
   drawing removed everywhere, the chat-list title's picker, "Set as
   Status", the accounts/gifts/stories leftovers, then the plumbing. Two
   compile fixes (trap 0j).
+
+- **Done on 2026-09-26/27, for the record** (Business `ba0abf9e..892c08b2`,
+  ~11,100 lines; Stories stage 1 `cdca4e1c..cf493c29`, ~44,500; stage 2 so
+  far `7f098cd6..6e806af0`, ~1,600; all compile-checked, none built):
+  Business, the parts ours to set, as desktop - chatbots and the bot bar,
+  away/greeting messages and the recipients picker, quick replies (their
+  updates dropped), our own chat links, our own hours/location/intro
+  editors; kept the bot-connection confirm prompt (security, desktop has
+  none), others' hours, location, intro and t.me/m/ links, the "via
+  business bot" label, and the Business tables unused in the schema (the
+  recovery list's nonexistent `quick_replies` table went). Stories
+  posting (the camera, editor, drafts, upload queue, posting limits, bot
+  preview editing, seven story-only paint views, every add/repost/share
+  entry point). Stories stage 2: story messages held (`LoogriGramHidden`
+  now covers `TL_messageMediaStory`; the four story push keys are
+  silent), story replies without the quote, story links to the peer and
+  plain previews, story statistics. Checker fixes: `check_swallowed.py`
+  counts `default` interface methods (`914849f9`); new local helpers
+  `freed_res.py`, `removed_decls.py`, `keep_members.py`,
+  `ed.cut_else_if`. Lesson: a file due for deletion in a *later* commit
+  still compiles in this one - grep it too (two failed compiles).
 
 ### Then
 
