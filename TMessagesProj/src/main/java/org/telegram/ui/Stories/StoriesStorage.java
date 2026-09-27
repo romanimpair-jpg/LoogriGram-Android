@@ -653,15 +653,8 @@ public class StoriesStorage {
         if (messageObject.messageOwner.reply_to instanceof TLRPC.TL_messageReplyStoryHeader && messageObject.messageOwner.reply_to.story_id == storyItem.id) {
             messageObject.messageOwner.replyStory = checkExpiredStateLocal(currentAccount, dialogId, storyItem);
         }
-        if (messageObject.type == MessageObject.TYPE_STORY || messageObject.type == MessageObject.TYPE_STORY_MENTION) {
-            MessageMediaStoryFull mediaStoryFull = new MessageMediaStoryFull();
-            mediaStoryFull.user_id = DialogObject.getPeerDialogId(messageObject.messageOwner.media.peer);
-            mediaStoryFull.peer = messageObject.messageOwner.media.peer;
-            mediaStoryFull.id = messageObject.messageOwner.media.id;
-            mediaStoryFull.storyItem = checkExpiredStateLocal(currentAccount, dialogId, storyItem);
-            mediaStoryFull.via_mention = messageObject.messageOwner.media.via_mention;
-            messageObject.messageOwner.media = mediaStoryFull;
-        }
+        // LoogriGram: a message carrying a story had its story filled in here.
+        // It is held unshown now (LoogriGramHidden), so nothing asks for that.
         if (
             messageObject.messageOwner.media != null &&
             messageObject.messageOwner.media.webpage != null &&
@@ -678,9 +671,7 @@ public class StoriesStorage {
     }
 
     private static int getStoryId(MessageObject messageObject) {
-        if (messageObject.type == MessageObject.TYPE_STORY || messageObject.type == MessageObject.TYPE_STORY_MENTION) {
-            return messageObject.messageOwner.media.id;
-        } else if (
+        if (
             messageObject.messageOwner.media != null &&
             messageObject.messageOwner.media.webpage != null &&
             messageObject.messageOwner.media.webpage.attributes != null

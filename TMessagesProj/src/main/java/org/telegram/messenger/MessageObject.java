@@ -150,8 +150,11 @@ public class MessageObject {
     public static final int TYPE_EMOJIS = 19;
     public static final int TYPE_SUGGEST_PHOTO = 21;
     public static final int TYPE_ACTION_WALLPAPER = 22;
+    // LoogriGram: no message is given TYPE_STORY any more - a forwarded story
+    // is held unshown (LoogriGramHidden). The number stays because the file
+    // cache still tags the viewer's story files with it. 24 was
+    // TYPE_STORY_MENTION, held the same way.
     public static final int TYPE_STORY = 23;
-    public static final int TYPE_STORY_MENTION = 24;
     // LoogriGram: 26 and 28 were TYPE_GIVEAWAY and TYPE_GIVEAWAY_RESULTS; a
     // giveaway is held unshown, so neither was assigned any more.
     public static final int TYPE_JOINED_CHANNEL = 27; // recommendations list
@@ -198,7 +201,7 @@ public class MessageObject {
     public boolean reactionsChanged;
     public boolean isReactionPush;
     public boolean isStoryReactionPush;
-    public boolean isStoryPush, isStoryMentionPush, isStoryPushHidden, isLiveStoryPush;
+    public boolean isStoryPush, isStoryPushHidden, isLiveStoryPush;
     public boolean isOauthPush;
     public boolean putInDownloadsStore;
     public boolean isDownloadingFile;
@@ -759,9 +762,6 @@ public class MessageObject {
         }
         isSpoilersRevealed = old.isSpoilersRevealed;
         messageOwner.replyStory = old.messageOwner.replyStory;
-        if (messageOwner.media != null && old.messageOwner.media != null) {
-            messageOwner.media.storyItem = old.messageOwner.media.storyItem;
-        }
         if (isSpoilersRevealed && textLayoutBlocks != null) {
             for (TextLayoutBlock block : textLayoutBlocks) {
                 block.spoilers.clear();
@@ -789,10 +789,6 @@ public class MessageObject {
 
     public boolean isUnsupported() {
         return getMedia(messageOwner) instanceof TLRPC.TL_messageMediaUnsupported;
-    }
-
-    public boolean isExpiredStory() {
-        return (type == MessageObject.TYPE_STORY || type == MessageObject.TYPE_STORY_MENTION) && messageOwner.media.storyItem instanceof TL_stories.TL_storyItemDeleted;
     }
 
     public static class SendAnimationData {
@@ -5898,22 +5894,6 @@ public class MessageObject {
                     messageText = getString(isChannel ? R.string.BoostingGiveawayChannelStarted : R.string.BoostingGiveawayGroupStarted);
                 } else if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaGiveawayResults) {
                     messageText = getString(R.string.BoostingGiveawayResults);
-                } else if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaStory) {
-                    if (getMedia(messageOwner).via_mention) {
-                        TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(getMedia(messageOwner).user_id);
-                        String link = null, username;
-                        if (user != null && (username = UserObject.getPublicUsername(user)) != null) {
-                            link = MessagesController.getInstance(currentAccount).linkPrefix + "/" + username + "/s/" + getMedia(messageOwner).id;
-                        }
-                        if (link != null) {
-                            messageText = new SpannableString(link);
-                            ((SpannableString) messageText).setSpan(new URLSpanReplacement("https://" + link, new TextStyleSpan.TextStyleRun()), 0, messageText.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        } else {
-                            messageText = "";
-                        }
-                    } else {
-                        messageText = getString(R.string.ForwardedStory);
-                    }
                 } else if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaDice) {
                     messageText = getDiceEmoji();
                 } else if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaPoll) {
@@ -6365,23 +6345,6 @@ public class MessageObject {
             return getString(R.string.BoostingGiveaway);
         } else if (media instanceof TLRPC.TL_messageMediaGiveawayResults) {
             return getString(R.string.BoostingGiveawayResults);
-        } else if (media instanceof TLRPC.TL_messageMediaStory) {
-            if (media.via_mention) {
-                TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(media.user_id);
-                String link = null, username;
-                if (user != null && (username = UserObject.getPublicUsername(user)) != null) {
-                    link = MessagesController.getInstance(currentAccount).linkPrefix + "/" + username + "/s/" + media.id;
-                }
-                if (link != null) {
-                    SpannableString str = new SpannableString(link);
-                    ((SpannableString) str).setSpan(new URLSpanReplacement("https://" + link, new TextStyleSpan.TextStyleRun()), 0, str.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    return str;
-                } else {
-                    return "";
-                }
-            } else {
-                return getString(R.string.ForwardedStory);
-            }
         } else if (media instanceof TLRPC.TL_messageMediaDice) {
             return getDiceEmoji((TLRPC.TL_messageMediaDice) media);
         } else if (media instanceof TLRPC.TL_messageMediaPoll) {
@@ -6523,7 +6486,7 @@ public class MessageObject {
         int oldType = type;
         type = 1000;
         isRoundVideoCached = 0;
-        // LoogriGram: money messages are held but never drawn. contentType -1
+        // LoogriGram: money and story messages are held but never drawn. contentType -1
         // with type -1 is upstream's own state for exactly that - it uses it
         // for a cleared history - so nothing downstream needs to learn a new
         // case. See LoogriGramHidden for why the message is kept at all. The
@@ -6616,11 +6579,6 @@ public class MessageObject {
                 type = TYPE_TEXT;
             } else if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaInvoice) {
                 type = TYPE_TEXT;
-            } else if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaStory) {
-                type = getMedia(messageOwner).via_mention ? TYPE_STORY_MENTION : TYPE_STORY;
-                if (type == TYPE_STORY_MENTION) {
-                    contentType = 1;
-                }
             }
         } else if (currentEvent != null && currentEvent.action instanceof TLRPC.TL_channelAdminLogEventActionChangeWallpaper) {
             TLRPC.TL_channelAdminLogEventActionChangeWallpaper wallPaper = (TLRPC.TL_channelAdminLogEventActionChangeWallpaper) currentEvent.action;
@@ -7316,9 +7274,7 @@ public class MessageObject {
         boolean allowUsernames = false;
         int hashtagsType = 0;
         TLRPC.WebPage webpage = null;
-        if (storyMentionWebpage != null) {
-            webpage = storyMentionWebpage;
-        } else if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaWebPage) {
+        if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaWebPage) {
             webpage = ((TLRPC.TL_messageMediaWebPage) getMedia(messageOwner)).webpage;
         }
         if (webpage != null) {
@@ -7469,17 +7425,6 @@ public class MessageObject {
         }
         String text = messageOwner.message;
         ArrayList<TLRPC.MessageEntity> entities = messageOwner.entities;
-        boolean forceManualEntities = false;
-        if (type == TYPE_STORY) {
-            if (messageOwner.media != null && messageOwner.media.storyItem != null) {
-                text = messageOwner.media.storyItem.caption;
-                entities = messageOwner.media.storyItem.entities;
-                forceManualEntities = true;
-            } else {
-                text = "";
-                entities = new ArrayList<>();
-            }
-        }
         if (messageOwner.translatedSummaryText != null && summarized && translated) {
             captionSummarized = true;
             captionTranslated = true;
@@ -7510,7 +7455,7 @@ public class MessageObject {
                 hasEntities = !entities.isEmpty();
             }
 
-            boolean useManualParse = forceManualEntities || !hasEntities && (
+            boolean useManualParse = !hasEntities && (
                 eventId != 0 ||
                 getMedia(messageOwner) instanceof TLRPC.TL_messageMediaPhoto_old ||
                 getMedia(messageOwner) instanceof TLRPC.TL_messageMediaPhoto_layer68 ||
@@ -8519,7 +8464,7 @@ public class MessageObject {
             }
             return;
         }
-        if (type != TYPE_TEXT && type != TYPE_EMOJIS && type != TYPE_STORY_MENTION || messageOwner.peer_id == null || TextUtils.isEmpty(messageText) && !isBotPendingDraft) {
+        if (type != TYPE_TEXT && type != TYPE_EMOJIS || messageOwner.peer_id == null || TextUtils.isEmpty(messageText) && !isBotPendingDraft) {
             return;
         }
         boolean hasUrls = applyEntities();
@@ -10347,10 +10292,6 @@ public class MessageObject {
             return getMedia(message).webpage.document;
         } else if (getMedia(message) instanceof TLRPC.TL_messageMediaGame) {
             return getMedia(message).game.document;
-        } else if (getMedia(message) instanceof TLRPC.TL_messageMediaStory) {
-            TLRPC.TL_messageMediaStory story = (TLRPC.TL_messageMediaStory) getMedia(message);
-            if (story.storyItem != null && story.storyItem.media != null && story.storyItem.media.document != null)
-                return story.storyItem.media.document;
         } else if (getMedia(message) instanceof TLRPC.TL_messageMediaPaidMedia) {
             TLRPC.TL_messageMediaPaidMedia paidMedia = (TLRPC.TL_messageMediaPaidMedia) getMedia(message);
             if (paidMedia.extended_media.size() == 1 && paidMedia.extended_media.get(0) instanceof TLRPC.TL_messageExtendedMedia) {
@@ -10964,7 +10905,7 @@ public class MessageObject {
     }
 
     public boolean shouldDrawWithoutBackground() {
-        return type == TYPE_STICKER || type == TYPE_ANIMATED_STICKER || type == TYPE_ROUND_VIDEO || type == TYPE_EMOJIS || isExpiredStory();
+        return type == TYPE_STICKER || type == TYPE_ANIMATED_STICKER || type == TYPE_ROUND_VIDEO || type == TYPE_EMOJIS;
     }
 
     public boolean isAnimatedEmojiStickers() {
@@ -11026,10 +10967,6 @@ public class MessageObject {
 
     public boolean isPhoto() {
         return isPhoto(messageOwner);
-    }
-
-    public boolean isStoryMedia() {
-        return messageOwner != null && messageOwner.media instanceof TLRPC.TL_messageMediaStory;
     }
 
     public boolean isLiveLocation() {
@@ -11188,12 +11125,6 @@ public class MessageObject {
             return attributeDuration;
         }
         TLRPC.Document document = getDocument();
-        if (document == null && type == TYPE_STORY) {
-            TL_stories.StoryItem storyItem = getMedia(messageOwner).storyItem;
-            if (storyItem != null && storyItem.media != null) {
-                document = storyItem.media.document;
-            }
-        }
         if (document == null) {
             return 0;
         }
@@ -11339,9 +11270,6 @@ public class MessageObject {
     }
 
     public boolean needDrawForwarded() {
-        if (type == MessageObject.TYPE_STORY && !isExpiredStory()) {
-            return true;
-        }
         if (getDialogId() == UserObject.VERIFY) {
             return false;
         }
@@ -11975,23 +11903,7 @@ public class MessageObject {
     }
 
     public void createMediaThumbs() {
-        if (isStoryMedia()) {
-            TL_stories.StoryItem storyItem = getMedia(messageOwner).storyItem;
-            if (storyItem != null && storyItem.media != null) {
-                TLRPC.Document document = storyItem.media.document;
-                if (document != null) {
-                    TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 50);
-                    TLRPC.PhotoSize qualityThumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 320, false, null, true);
-                    mediaThumb = ImageLocation.getForDocument(qualityThumb, document);
-                    mediaSmallThumb = ImageLocation.getForDocument(thumb, document);
-                } else {
-                    TLRPC.PhotoSize currentPhotoObjectThumb = FileLoader.getClosestPhotoSizeWithSize(photoThumbs, 50);
-                    TLRPC.PhotoSize currentPhotoObject = FileLoader.getClosestPhotoSizeWithSize(photoThumbs, 320, false, currentPhotoObjectThumb, true);
-                    mediaThumb = ImageLocation.getForObject(currentPhotoObject, photoThumbsObject);
-                    mediaSmallThumb = ImageLocation.getForObject(currentPhotoObjectThumb, photoThumbsObject);
-                }
-            }
-        } else if (isVideo()) {
+        if (isVideo()) {
             TLRPC.Document document = getDocument();
             TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 50);
             TLRPC.PhotoSize qualityThumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 320);
@@ -12017,7 +11929,7 @@ public class MessageObject {
     }
 
     public boolean isReactionsAvailable() {
-        return !isEditing() && isSent() && !isEphemeral() && !isExpiredStory() && canSetReaction();
+        return !isEditing() && isSent() && !isEphemeral() && canSetReaction();
     }
 
     public boolean isPaidReactionChosen() {
@@ -12232,31 +12144,6 @@ public class MessageObject {
 
     public boolean isBotPreview() {
         return storyItem instanceof StoriesController.BotPreview;
-    }
-
-    private TLRPC.WebPage storyMentionWebpage;
-    public TLRPC.WebPage getStoryMentionWebpage() {
-        if (!isStoryMention()) {
-            return null;
-        }
-        if (storyMentionWebpage != null) {
-            return storyMentionWebpage;
-        }
-        TLRPC.WebPage webpage = new TLRPC.TL_webPage();
-        webpage.type = "telegram_story";
-        TLRPC.TL_webPageAttributeStory attr = new TLRPC.TL_webPageAttributeStory();
-        attr.id = messageOwner.media.id;
-        attr.peer = MessagesController.getInstance(currentAccount).getPeer(messageOwner.media.user_id);
-        if (messageOwner.media.storyItem != null) {
-            attr.flags |= 1;
-            attr.storyItem = messageOwner.media.storyItem;
-        }
-        webpage.attributes.add(attr);
-        return (storyMentionWebpage = webpage);
-    }
-
-    public boolean isStoryMention() {
-        return type == MessageObject.TYPE_STORY_MENTION && !isExpiredStory();
     }
 
     private static CharSequence[] userSpan;

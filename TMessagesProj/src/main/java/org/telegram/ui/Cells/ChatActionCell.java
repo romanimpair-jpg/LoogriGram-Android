@@ -89,7 +89,6 @@ import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_keyboard;
 import org.telegram.tgnet.tl.TL_payments;
 import org.telegram.tgnet.tl.TL_stars;
-import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
@@ -121,7 +120,6 @@ import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PhotoViewer;
 import org.telegram.ui.ProfileActivity;
 import org.telegram.ui.Stars.StarGiftSheet;
-import org.telegram.ui.Stories.StoriesUtilities;
 import org.telegram.ui.Stories.UploadingDotsSpannable;
 import org.telegram.ui.Stories.recorder.HintView2;
 import org.telegram.ui.Stories.recorder.PreviewView;
@@ -248,7 +246,6 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
     private boolean giftButtonPressed;
     RadialProgressView progressView;
     float progressToProgress;
-    StoriesUtilities.AvatarStoryParams avatarStoryParams = new StoriesUtilities.AvatarStoryParams(false);
     public boolean isAllChats;
     public boolean isForum;
     public boolean isMonoForum;
@@ -373,7 +370,6 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
 
     public ChatActionCell(Context context, boolean canDrawInParent, Theme.ResourcesProvider resourcesProvider) {
         super(context);
-        avatarStoryParams.drawSegments = false;
         this.canDrawInParent = canDrawInParent;
         this.themeDelegate = resourcesProvider;
         imageReceiver = new ImageReceiver(this);
@@ -507,17 +503,7 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
             ScaleStateListAnimator.reset(this);
             overriddenMaxWidth = 0;
         }
-        if (messageObject.isStoryMention()) {
-            TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(messageObject.messageOwner.media.user_id);
-            avatarDrawable.setInfo(currentAccount, user);
-            TL_stories.StoryItem storyItem = messageObject.messageOwner.media.storyItem;
-            if (storyItem != null && storyItem.noforwards) {
-                imageReceiver.setForUserOrChat(user, avatarDrawable, null, true, 0, true);
-            } else {
-                StoriesUtilities.setImage(imageReceiver, storyItem);
-            }
-            imageReceiver.setRoundRadius((int) (stickerSize / 2f));
-        } else if (messageObject.type == MessageObject.TYPE_ACTION_WALLPAPER) {
+        if (messageObject.type == MessageObject.TYPE_ACTION_WALLPAPER) {
             TLRPC.PhotoSize strippedPhotoSize = null;
             if (messageObject.strippedThumb == null) {
                 for (int a = 0, N = messageObject.photoThumbs.size(); a < N; a++) {
@@ -844,7 +830,6 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
         }
 
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.emojiLoaded);
-        avatarStoryParams.onDetachFromWindow();
 
         transitionParams.onDetach();
         reactionsLayoutInBubble.onDetachFromWindow();
@@ -1345,8 +1330,7 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
             || currentMessageObject.type == MessageObject.TYPE_COMMUNITY_CHANGED
             || currentMessageObject.type == MessageObject.TYPE_SHARING_OFFER
             || currentMessageObject.type == MessageObject.TYPE_SUGGEST_PHOTO
-            || currentMessageObject.type == MessageObject.TYPE_ACTION_WALLPAPER
-            || currentMessageObject.isStoryMention();
+            || currentMessageObject.type == MessageObject.TYPE_ACTION_WALLPAPER;
     }
 
     private int getImageSize(MessageObject messageObject) {
@@ -1362,14 +1346,7 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
         CharSequence text = null;
         MessageObject messageObject = currentMessageObject;
         if (messageObject != null) {
-            if (messageObject.isExpiredStory()) {
-                long dialogId = messageObject.messageOwner.media.user_id;
-                if (dialogId != UserConfig.getInstance(currentAccount).getClientUserId()) {
-                    text = StoriesUtilities.createExpiredStoryString(true, R.string.ExpiredStoryMention);
-                } else {
-                    text = StoriesUtilities.createExpiredStoryString(true, R.string.ExpiredStoryMentioned, MessagesController.getInstance(currentAccount).getUser(messageObject.getDialogId()).first_name);
-                }
-            } else if (delegate != null && delegate.getTopicId() == 0 && MessageObject.isTopicActionMessage(messageObject)) {
+            if (delegate != null && delegate.getTopicId() == 0 && MessageObject.isTopicActionMessage(messageObject)) {
                 TLRPC.TL_forumTopic topic = MessagesController.getInstance(currentAccount).getTopicsController().findTopic(-messageObject.getDialogId(), MessageObject.getTopicId(currentAccount, messageObject.messageOwner, true));
                 text = ForumUtilities.createActionTextWithTopic(topic, messageObject);
             }
@@ -1547,23 +1524,6 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
                 textLayout = null;
                 textHeight = 0;
                 textY = 0;
-            } else if (messageObject.isStoryMention()) {
-                TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(messageObject.messageOwner.media.user_id);
-                CharSequence description;
-                String action = null;
-
-                if (user.self) {
-                    TLRPC.User user2 = MessagesController.getInstance(currentAccount).getUser(messageObject.getDialogId());
-                    description = AndroidUtilities.replaceTags(formatString(R.string.StoryYouMentionedTitle, user2.first_name));
-                } else {
-                    description = AndroidUtilities.replaceTags(formatString(R.string.StoryMentionedTitle, user.first_name));
-                }
-                action = getString(R.string.StoryMentionedAction);
-
-                createGiftPremiumLayouts(description, action, giftRectSize, true);
-                textLayout = null;
-                textHeight = 0;
-                textY = 0;
             }
         }
         reactionsLayoutInBubble.x = dp(12);
@@ -1658,10 +1618,6 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
             int top = textY + textHeight + dp(4) + dp(16);
             float x = (previousWidth - imageSize) / 2f;
             float y = top;
-            if (messageObject.isStoryMention()) {
-                avatarStoryParams.storyItem = messageObject.messageOwner.media.storyItem;
-            }
-            avatarStoryParams.originalAvatarRect.set(x, y, x + imageSize, y + imageSize);
             if (messageObject.type == MessageObject.TYPE_GIFT_THEME_UPDATE || messageObject.type == MessageObject.TYPE_SHARING_OFFER) {
                 x += dp(10);
                 y += dp(10);
@@ -1710,11 +1666,6 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
                 wallpaperPreviewDrawable.setBounds(0, 0, (int) imageReceiver.getImageWidth(), (int) imageReceiver.getImageHeight());
                 wallpaperPreviewDrawable.draw(canvas);
                 canvas.restore();
-            } else if (messageObject.isStoryMention()) {
-                long dialogId = messageObject.messageOwner.media.user_id;
-                avatarStoryParams.storyId = messageObject.messageOwner.media.id;
-                StoriesUtilities.drawAvatarWithStory(dialogId, canvas, imageReceiver, avatarStoryParams);
-             //   imageReceiver.draw(canvas);
             } else {
                 imageReceiver.draw(canvas);
             }

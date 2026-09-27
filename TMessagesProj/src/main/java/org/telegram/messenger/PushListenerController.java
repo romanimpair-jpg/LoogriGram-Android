@@ -627,16 +627,6 @@ public class PushListenerController {
                                             message1 = getString(R.string.Message);
                                             break;
                                         }
-                                        case "MESSAGE_STORY": {
-                                            messageText = LocaleController.formatString("NotificationStory", R.string.NotificationStory, args[0]);
-                                            message1 = getString(R.string.Story);
-                                            break;
-                                        }
-                                        case "MESSAGE_STORY_MENTION": {
-                                            messageText = getString(R.string.StoryNotificationMention);
-                                            message1 = null;
-                                            break;
-                                        }
                                         case "MESSAGE_PHOTO": {
                                             messageText = LocaleController.formatString("NotificationMessagePhoto", R.string.NotificationMessagePhoto, args[0]);
                                             message1 = getString(R.string.AttachPhoto);
@@ -808,11 +798,6 @@ public class PushListenerController {
                                             message1 = getString(R.string.Message);
                                             break;
                                         }
-                                        case "CHANNEL_MESSAGE_STORY": {
-                                            messageText = LocaleController.formatString("NotificationChannelStory", R.string.NotificationChannelStory, args[0]);
-                                            message1 = getString(R.string.Story);
-                                            break;
-                                        }
                                         case "CHANNEL_MESSAGE_PHOTO": {
                                             messageText = LocaleController.formatString("ChannelMessagePhoto", R.string.ChannelMessagePhoto, args[0]);
                                             message1 = getString(R.string.AttachPhoto);
@@ -948,11 +933,6 @@ public class PushListenerController {
                                         case "CHAT_MESSAGE_NOTEXT": {
                                             messageText = LocaleController.formatString("NotificationMessageGroupNoText", R.string.NotificationMessageGroupNoText, args[0], args[1]);
                                             message1 = getString(R.string.Message);
-                                            break;
-                                        }
-                                        case "CHAT_MESSAGE_STORY": {
-                                            messageText = LocaleController.formatString("NotificationChatStory", R.string.NotificationChatStory, args[0]);
-                                            message1 = getString(R.string.Story);
                                             break;
                                         }
                                         case "CHAT_MESSAGE_PHOTO": {
@@ -1394,7 +1374,15 @@ public class PushListenerController {
                                         case "ENCRYPTION_ACCEPT":
                                         case "PHONE_CALL_REQUEST":
                                         case "MESSAGE_MUTED":
-                                        case "PHONE_CALL_MISSED": {
+                                        case "PHONE_CALL_MISSED":
+                                        // LoogriGram: a forwarded story or a story mention. The
+                                        // message is held unshown (LoogriGramHidden), and the
+                                        // update path already gives it no notification, so the
+                                        // push leaves messageText null and posts nothing either.
+                                        case "MESSAGE_STORY":
+                                        case "MESSAGE_STORY_MENTION":
+                                        case "CHANNEL_MESSAGE_STORY":
+                                        case "CHAT_MESSAGE_STORY": {
                                             //ignored
                                             break;
                                         }
@@ -1464,13 +1452,12 @@ public class PushListenerController {
                                     messageObject.isReactionPush = !messageObject.isStoryReactionPush && (loc_key.startsWith("REACT_") || loc_key.startsWith("CHAT_REACT_"));
                                     messageObject.isStoryPush = loc_key.equals("STORY_NOTEXT") || loc_key.equals("STORY_HIDDEN_AUTHOR");
                                     messageObject.isLiveStoryPush = loc_key.equals("STORY_LIVE");
-                                    messageObject.isStoryMentionPush = loc_key.equals("MESSAGE_STORY_MENTION");
                                     messageObject.isStoryPushHidden = loc_key.equals("STORY_HIDDEN_AUTHOR");
                                     ArrayList<MessageObject> arrayList = new ArrayList<>();
                                     arrayList.add(messageObject);
                                     canRelease = false;
                                     FileLog.d("PushListenerController push notification to NotificationsController of " + messageOwner.dialog_id);
-                                    if (!messageObject.isStoryReactionPush && !messageObject.isReactionPush && !messageObject.isStoryMentionPush && !messageObject.isStoryPush && !messageObject.isStoryPushHidden && !mention && !pinned && msg_id > 0) {
+                                    if (!messageObject.isStoryReactionPush && !messageObject.isReactionPush && !messageObject.isStoryPush && !messageObject.isStoryPushHidden && !mention && !pinned && msg_id > 0) {
                                         final long did = dialogId;
                                         final int mid = msg_id;
                                         AndroidUtilities.runOnUIThread(() -> MessagesController.getInstance(accountFinal).reportMessageDelivery(did, mid, true));

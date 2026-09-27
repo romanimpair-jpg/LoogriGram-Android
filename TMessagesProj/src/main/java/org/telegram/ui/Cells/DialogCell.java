@@ -90,7 +90,6 @@ import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_account;
 import org.telegram.tgnet.tl.TL_iv;
-import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Adapters.DialogsAdapter;
 import org.telegram.ui.AvatarSpan;
@@ -1870,22 +1869,6 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
                                         messageString = message.messageOwner.media.title;
                                     } else if (message.type == MessageObject.TYPE_MUSIC) {
                                         messageString = String.format("\uD83C\uDFA7 %s - %s", message.getMusicAuthor(), message.getMusicTitle());
-                                    } else if (message.messageOwner.media instanceof TLRPC.TL_messageMediaStory && message.messageOwner.media.via_mention) {
-                                        if (message.isOut()) {
-                                            long did = message.getDialogId();
-                                            String username = "";
-                                            TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(did);
-                                            if (user != null) {
-                                                username = UserObject.getFirstName(user);
-                                                int index;
-                                                if ((index = username.indexOf(' ')) >= 0) {
-                                                    username = username.substring(0, index);
-                                                }
-                                            }
-                                            messageString = LocaleController.formatString(R.string.StoryYouMentionInDialog, username);
-                                        } else {
-                                            messageString = getString(R.string.StoryMentionInDialog);
-                                        }
                                     } else {
                                         if (message.hasHighlightedWords() && !TextUtils.isEmpty(message.messageOwner.message)){
                                             messageString = message.messageTrimmedToHighlight;
@@ -5426,7 +5409,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
             Collections.sort(groupMessages, Comparator.comparingInt(MessageObject::getId));
             for (int i = 0; i < Math.min(3, groupMessages.size()); ++i) {
                 MessageObject message = groupMessages.get(i);
-                if (message != null && !message.needDrawBluredPreview() && (message.isPhoto() || message.isNewGif() || message.isVideo() || message.isRoundVideo() || message.isStoryMedia())) {
+                if (message != null && !message.needDrawBluredPreview() && (message.isPhoto() || message.isNewGif() || message.isVideo() || message.isRoundVideo())) {
                     String type = message.isWebpage() ? message.messageOwner.media.webpage.type : null;
                     if (!("app".equals(type) || "profile".equals(type) || "article".equals(type) || type != null && type.startsWith("telegram_"))) {
                         setThumb(i, message);
@@ -5436,7 +5419,7 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
         } else if (message != null && currentDialogFolderId == 0) {
             thumbsCount = 0;
             hasVideoThumb = false;
-            if (!message.needDrawBluredPreview() && (message.isPhoto() || message.isNewGif() || message.isVideo() || message.isRoundVideo() || message.isStoryMedia())) {
+            if (!message.needDrawBluredPreview() && (message.isPhoto() || message.isNewGif() || message.isVideo() || message.isRoundVideo())) {
                 String type = message.isWebpage() ? message.messageOwner.media.webpage.type : null;
                 if (!("app".equals(type) || "profile".equals(type) || "article".equals(type) || type != null && type.startsWith("telegram_"))) {
                     setThumb(0, message);
@@ -5448,20 +5431,6 @@ public class DialogCell extends BaseCell implements StoriesListPlaceProvider.Ava
     private void setThumb(int index, MessageObject message) {
         ArrayList<TLRPC.PhotoSize> photoThumbs = message.photoThumbs;
         TLObject photoThumbsObject = message.photoThumbsObject;
-        if (message.isStoryMedia()) {
-            TL_stories.StoryItem storyItem = message.messageOwner.media.storyItem;
-            if (storyItem != null && storyItem.media != null) {
-                if (storyItem.media.document != null) {
-                    photoThumbs = storyItem.media.document.thumbs;
-                    photoThumbsObject = storyItem.media.document;
-                } else if (storyItem.media.photo != null) {
-                    photoThumbs = storyItem.media.photo.sizes;
-                    photoThumbsObject = storyItem.media.photo;
-                }
-            } else {
-                return;
-            }
-        }
 
         TLRPC.PhotoSize smallThumb = FileLoader.getStrippedPhotoSize(photoThumbs);
         if (smallThumb == null) {

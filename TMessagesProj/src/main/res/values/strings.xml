@@ -1284,7 +1284,6 @@
     <string name="NoMessages">No messages here yet...</string>
     <string name="NoScheduledMessages">No scheduled messages yet...</string>
     <string name="From">From</string>
-    <string name="FromFormatted">From %1$s</string>
     <string name="SearchFrom">from:</string>
     <string name="NoRecent">No recent</string>
     <string name="Message">Message</string>
@@ -6590,7 +6589,6 @@
     <string name="StoryAddedToAlbumX">This story has been added to **%s** album.</string>
     <string name="StoryRemovedFromAlbumX">This story has been removed from **%s** album.</string>
     <string name="ShowInChats">Show in Chats</string>
-    <string name="ForwardedStory">Forwarded Story</string>
     <string name="ForwardedStoryFrom">From **%s**</string>
     <string name="UniqueGiftFrom">From **%s**</string>
     <string name="StoryPeriodKeep">Keep Always</string>
@@ -6601,9 +6599,6 @@
     <string name="StoriesMovedToDialogs">Stories of **%s** were moved to **Chats**.</string>
     <string name="StoryShared">Story shared</string>
     <string name="StoryDraftSaved">Draft saved</string>
-    <string name="NotificationStory">%s shared a story with you</string>
-    <string name="NotificationChatStory">%s shared a story to the group</string>
-    <string name="NotificationChannelStory">%s shared a story</string>
     <string name="StoriesSoundEnabled">Stories</string>
     <string name="ViewStory">View Story</string>
     <string name="StoryUnsupported">This story is not supported by your version of Telegram.</string>
@@ -6627,14 +6622,11 @@
     <string name="StoryNotification3">posted by %1$s, %2$s and %3$s</string>
     <string name="StoryNotification4_other">posted by %2$s, %3$s and %1$d more</string>
     <string name="StoryLiveNotificationSingle">started live stream!</string>
-    <string name="StoryNotificationMention">mentioned you in a story</string>
     <string name="StoryUnavailable">Story unavailable</string>
     <string name="StoryExpiredSubtitle">This story has expired</string>
     <string name="AutoDownloadStories">Stories</string>
     <string name="AutoDownloadOn">On</string>
     <string name="HiddenStories">Hidden Stories</string>
-    <string name="StoryMentionInDialog">Mentioned you in a story</string>
-    <string name="StoryYouMentionInDialog">You mentioned %s</string>
     <string name="NotificationStories">Stories</string>
     <string name="NotificationEnabled">Enabled</string>
     <string name="NotificationEnabledAutomatically">Automatically enabled</string>
@@ -6657,11 +6649,6 @@
     <string name="StoryKeepGroupInfo_other">Keep this story on the group page even after it expires in %d hours.</string>
     <string name="StoryKeepChannelInfo_one">Keep this story on the channel page even after it expires in %d hour.</string>
     <string name="StoryKeepChannelInfo_other">Keep this story on the channel page even after it expires in %d hours.</string>
-    <string name="StoryMentionedTitle">**%s** mentioned you in a story.</string>
-    <string name="StoryMentionedAction">View Story</string>
-    <string name="ExpiredStoryMention">The story you were mentioned in is no longer available</string>
-    <string name="ExpiredStoryMentioned">The story where you mentioned %s is no longer available</string>
-    <string name="StoryYouMentionedTitle">You mentioned %s in a story.</string>
     <string name="FilterStories">Stories</string>
     <string name="CachedStory">cached story</string>
     <string name="LocalStoriesCache">Stories</string>

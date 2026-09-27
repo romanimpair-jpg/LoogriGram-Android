@@ -82,12 +82,10 @@ import org.telegram.ui.ActionBar.AdjustPanLayoutHelper;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ArticleViewer;
-import org.telegram.ui.Cells.ChatActionCell;
 import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.SizeNotifierFrameLayout;
 import org.telegram.ui.Stories.LiveStoryPipOverlay;
 import org.telegram.ui.LaunchActivity;
@@ -2897,19 +2895,6 @@ public class StoryViewer implements NotificationCenter.NotificationCenterDelegat
                     FileLog.e(e);
                 }
             }
-        }
-    }
-
-    public void openFor(BaseFragment fragment, RecyclerListView recyclerListView, ChatActionCell cell) {
-        MessageObject messageObject = cell.getMessageObject();
-        if (fragment == null || fragment.getContext() == null) {
-            return;
-        }
-        if (messageObject.type == MessageObject.TYPE_STORY_MENTION) {
-            TL_stories.StoryItem storyItem =  messageObject.messageOwner.media.storyItem;
-            storyItem.dialogId = DialogObject.getPeerDialogId(messageObject.messageOwner.media.peer);
-            storyItem.messageId = messageObject.getId();
-            open(fragment.getContext(), messageObject.messageOwner.media.storyItem, StoriesListPlaceProvider.of(recyclerListView));
         }
     }
 

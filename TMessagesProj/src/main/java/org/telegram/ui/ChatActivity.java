@@ -1839,7 +1839,7 @@ public class ChatActivity extends BaseFragment implements
             } else {
                 return;
             }
-            if (messageObject.isSecret() || !messageObject.canSetReaction() || messageObject.isExpiredStory() || messageObject.type == MessageObject.TYPE_JOINED_CHANNEL) {
+            if (messageObject.isSecret() || !messageObject.canSetReaction() || messageObject.type == MessageObject.TYPE_JOINED_CHANNEL) {
                 return;
             }
             if (!(currentChat == null || ChatObject.isChannelAndNotMegaGroup(currentChat) || ChatObject.canUserDoAction(currentChat, ChatObject.ACTION_SEND_REACTIONS))) {
@@ -3346,7 +3346,7 @@ public class ChatActivity extends BaseFragment implements
             return !isFactCheck && (
                 chatActivity != null && chatActivity.getCurrentEncryptedChat() == null &&
                 (selectedView == null ||
-                    selectedView.getMessageObject() != null && selectedView.getMessageObject().type != MessageObject.TYPE_STORY &&
+                    selectedView.getMessageObject() != null &&
                     !selectedView.getMessageObject().isVoiceTranscriptionOpen() && !selectedView.getMessageObject().isInvoice() &&
                     selectedView.getMessageObject().richLayout == null &&
                     !chatActivity.textSelectionHelper.isDescription
@@ -14092,12 +14092,6 @@ public class ChatActivity extends BaseFragment implements
                         text = LocaleController.getString(R.string.AttachGif);
                     } else {
                         text = LocaleController.formatPluralString("PreviewForwardFile", messageObjectsToForward.size());
-                    }
-                } else if (type == MessageObject.TYPE_STORY) {
-                    if (messageObjectsToForward.size() == 1) {
-                        text = LocaleController.getString(R.string.Story);
-                    } else {
-                        text = LocaleController.formatPluralString("Stories", messageObjectsToForward.size());
                     }
                 }
                 replyNameTextView.setText(text);
@@ -28766,10 +28760,10 @@ public class ChatActivity extends BaseFragment implements
         if (UserObject.isReplyUser(dialog_id) || dialog_id == UserObject.VERIFY) {
             allowPin = false;
         }
-        allowPin = allowPin && message.getId() > 0 && (message.messageOwner.action == null || message.messageOwner.action instanceof TLRPC.TL_messageActionEmpty) && !message.isExpiredStory() && message.type != MessageObject.TYPE_STORY_MENTION;
+        allowPin = allowPin && message.getId() > 0 && (message.messageOwner.action == null || message.messageOwner.action instanceof TLRPC.TL_messageActionEmpty);
         boolean noforwards = isPeerNoForwards() || message.messageOwner.noforwards || getDialogId() == UserObject.VERIFY;
-        boolean allowUnpin = message.getDialogId() != mergeDialogId && allowPin && (pinnedMessageObjects.containsKey(message.getId()) || groupedMessages != null && !groupedMessages.messages.isEmpty() && pinnedMessageObjects.containsKey(groupedMessages.messages.get(0).getId())) && !message.isExpiredStory();
-        boolean allowEdit = message.canEditMessage(currentChat) && !chatActivityEnterView.hasAudioToSend() && message.getDialogId() != mergeDialogId && message.type != MessageObject.TYPE_STORY && message.type != MessageObject.TYPE_POLL;
+        boolean allowUnpin = message.getDialogId() != mergeDialogId && allowPin && (pinnedMessageObjects.containsKey(message.getId()) || groupedMessages != null && !groupedMessages.messages.isEmpty() && pinnedMessageObjects.containsKey(groupedMessages.messages.get(0).getId()));
+        boolean allowEdit = message.canEditMessage(currentChat) && !chatActivityEnterView.hasAudioToSend() && message.getDialogId() != mergeDialogId && message.type != MessageObject.TYPE_POLL;
         if (allowEdit && groupedMessages != null) {
             int captionsCount = 0;
             for (int a = 0, N = groupedMessages.messages.size(); a < N; a++) {
@@ -28783,7 +28777,7 @@ public class ChatActivity extends BaseFragment implements
             }
             allowEdit = captionsCount < 2;
         }
-        if (message.isExpiredStory() || chatMode == MODE_SCHEDULED || threadMessageObjects != null && threadMessageObjects.contains(message) ||
+        if (chatMode == MODE_SCHEDULED || threadMessageObjects != null && threadMessageObjects.contains(message) ||
                 type == 1 && message.getDialogId() == mergeDialogId ||
                 message.messageOwner.action instanceof TLRPC.TL_messageActionSecureValuesSent ||
                 currentEncryptedChat == null && message.getId() < 0 ||
@@ -34330,10 +34324,6 @@ public class ChatActivity extends BaseFragment implements
                         TLRPC.PhotoSize photoSize = FileLoader.getClosestPhotoSizeWithSize(message.photoThumbs, 640);
                         TLRPC.VideoSize videoSize = null;
                         TLRPC.VideoSize emojiMarkup = null;
-                        if (cell.getMessageObject().type == MessageObject.TYPE_STORY_MENTION) {
-                            getOrCreateStoryViewer().openFor(ChatActivity.this, chatListView, cell);
-                            return;
-                        }
                         if (cell.getMessageObject().type == MessageObject.TYPE_ACTION_WALLPAPER) {
                             MessagesController messagesController = MessagesController.getInstance(currentAccount);
                             if (cell.showingCancelButton() && message.getId() < 0 && messagesController.uploadingWallpaper != null && TextUtils.equals(message.messageOwner.action.wallpaper.uploadingImage, messagesController.uploadingWallpaper)) {
@@ -38207,17 +38197,7 @@ public class ChatActivity extends BaseFragment implements
         @Override
         public void didPressImage(ChatMessageCell cell, float x, float y, boolean fullPreview) {
             MessageObject message = cell.getMessageObject();
-            if (message.type == MessageObject.TYPE_STORY) {
-                if (message.messageOwner.media.storyItem != null && !(message.messageOwner.media.storyItem instanceof TL_stories.TL_storyItemDeleted)) {
-                    TL_stories.StoryItem storyItem = message.messageOwner.media.storyItem;
-                    storyItem.dialogId = DialogObject.getPeerDialogId(message.messageOwner.media.peer);
-                    storyItem.messageId = message.getId();
-                    storyItem.messageType = 2;
-                    StoriesUtilities.applyViewedUser(storyItem, currentUser);
-                    getOrCreateStoryViewer().open(getContext(), message.messageOwner.media.storyItem, StoriesListPlaceProvider.of(chatListView));
-                }
-                return;
-            } else if (message.isVideo()) {
+            if (message.isVideo()) {
                 if (DownloadController.getInstance(currentAccount).canDownloadMedia(message.messageOwner) == 1) {
                     message.putInDownloadsStore = true;
                 }
@@ -38552,10 +38532,7 @@ public class ChatActivity extends BaseFragment implements
                 }
                 Browser.openUrl(getParentActivity(), Uri.parse(webPage.url), true, true, false, progressDialogCurrent, null, false, true, false);
             } else {
-                TLRPC.WebPage webPage = messageObject.getStoryMentionWebpage();
-                if (webPage == null && messageObject.messageOwner != null && messageObject.messageOwner.media != null) {
-                    webPage = messageObject.messageOwner.media.webpage;
-                }
+                final TLRPC.WebPage webPage = messageObject.messageOwner != null && messageObject.messageOwner.media != null ? messageObject.messageOwner.media.webpage : null;
                 if (webPage == null) {
                     return;
                 }
@@ -42111,10 +42088,10 @@ public class ChatActivity extends BaseFragment implements
         if (UserObject.isReplyUser(dialog_id) || dialog_id == UserObject.VERIFY) {
             allowPin = false;
         }
-        allowPin = allowPin && message.getId() > 0 && (message.messageOwner.action == null || message.messageOwner.action instanceof TLRPC.TL_messageActionEmpty) && !message.isExpiredStory() && message.type != MessageObject.TYPE_STORY_MENTION;
+        allowPin = allowPin && message.getId() > 0 && (message.messageOwner.action == null || message.messageOwner.action instanceof TLRPC.TL_messageActionEmpty);
         boolean noforwards = isPeerNoForwards() || message.messageOwner.noforwards || getDialogId() == UserObject.VERIFY;
-        boolean allowUnpin = !isEphemeral && message.getDialogId() != mergeDialogId && allowPin && (pinnedMessageObjects.containsKey(message.getId()) || groupedMessages != null && !groupedMessages.messages.isEmpty() && pinnedMessageObjects.containsKey(groupedMessages.messages.get(0).getId())) && !message.isExpiredStory();
-        boolean allowEdit = !isEphemeral && message.canEditMessage(currentChat) && !chatActivityEnterView.hasAudioToSend() && message.getDialogId() != mergeDialogId && message.type != MessageObject.TYPE_STORY && message.type != MessageObject.TYPE_POLL;
+        boolean allowUnpin = !isEphemeral && message.getDialogId() != mergeDialogId && allowPin && (pinnedMessageObjects.containsKey(message.getId()) || groupedMessages != null && !groupedMessages.messages.isEmpty() && pinnedMessageObjects.containsKey(groupedMessages.messages.get(0).getId()));
+        boolean allowEdit = !isEphemeral && message.canEditMessage(currentChat) && !chatActivityEnterView.hasAudioToSend() && message.getDialogId() != mergeDialogId && message.type != MessageObject.TYPE_POLL;
         if (allowEdit && groupedMessages != null) {
             int captionsCount = 0;
             for (int a = 0, N = groupedMessages.messages.size(); a < N; a++) {
@@ -42128,7 +42105,7 @@ public class ChatActivity extends BaseFragment implements
             }
             allowEdit = captionsCount < 2;
         }
-        if (message.isExpiredStory() || chatMode == MODE_SCHEDULED || threadMessageObjects != null && threadMessageObjects.contains(message) ||
+        if (chatMode == MODE_SCHEDULED || threadMessageObjects != null && threadMessageObjects.contains(message) ||
             type == 1 && message.getDialogId() == mergeDialogId ||
             message.messageOwner.action instanceof TLRPC.TL_messageActionSecureValuesSent ||
             isEphemeral ||
@@ -42159,7 +42136,7 @@ public class ChatActivity extends BaseFragment implements
         }
 
         if (type == -1) {
-            if ((selectedObject.type == MessageObject.TYPE_TEXT || selectedObject.type == MessageObject.TYPE_ARTICLE || selectedObject.isAnimatedEmoji() || selectedObject.isAnimatedEmojiStickers() || getMessageCaption(selectedObject, selectedObjectGroup) != null) && (!noforwards || isEphemeral) && !message.isExpiredStory()) {
+            if ((selectedObject.type == MessageObject.TYPE_TEXT || selectedObject.type == MessageObject.TYPE_ARTICLE || selectedObject.isAnimatedEmoji() || selectedObject.isAnimatedEmojiStickers() || getMessageCaption(selectedObject, selectedObjectGroup) != null) && (!noforwards || isEphemeral)) {
                 items.add(LocaleController.getString(R.string.Copy));
                 options.add(OPTION_COPY);
                 icons.add(R.drawable.msg_copy);
@@ -42517,9 +42494,7 @@ public class ChatActivity extends BaseFragment implements
                     && !noforwards && selectedObject.type != MessageObject.TYPE_SHARING_OFFER
                     && selectedObject.type != MessageObject.TYPE_COMMUNITY_CHANGED
                     && selectedObject.type != MessageObject.TYPE_SUGGEST_PHOTO
-                    && !selectedObject.isWallpaperAction()
-                    && !message.isExpiredStory()
-                    && message.type != MessageObject.TYPE_STORY_MENTION;
+                    && !selectedObject.isWallpaperAction();
                 if (canForward) {
                     items.add(LocaleController.getString(R.string.Forward));
                     options.add(OPTION_FORWARD);

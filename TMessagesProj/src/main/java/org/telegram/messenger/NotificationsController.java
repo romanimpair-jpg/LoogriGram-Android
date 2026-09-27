@@ -1029,8 +1029,8 @@ public class NotificationsController extends BaseController implements Notificat
                 final MessageObject messageObject = messageObjects.get(i);
                 // LoogriGram: no toast for a message that is not shown. The
                 // message itself stays in history - see LoogriGramHidden - but
-                // announcing a gift that the chat does not display would be
-                // worse than silence.
+                // announcing a gift or a story that the chat does not display
+                // would be worse than silence.
                 if (messageObject != null && LoogriGramHidden.isHidden(messageObject.messageOwner)) {
                     messageObjects.remove(i);
                     i--;
@@ -2428,13 +2428,6 @@ public class NotificationsController extends BaseController implements Notificat
                                 return LocaleController.getString(R.string.AttachDocument);
                             }
                         }
-                    } else if (messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaStory) {
-                        TLRPC.TL_messageMediaStory storyMedia = (TLRPC.TL_messageMediaStory) messageObject.messageOwner.media;
-                        if (storyMedia.via_mention) {
-                            return LocaleController.formatString(R.string.StoryNotificationMention, userName[0] == null ? "" : userName[0]);
-                        } else {
-                            return LocaleController.getString(R.string.Story);
-                        }
                     } else if (!TextUtils.isEmpty(messageObject.messageText)) {
                         return replaceSpoilers(messageObject);
                     } else {
@@ -2482,7 +2475,7 @@ public class NotificationsController extends BaseController implements Notificat
         if (AndroidUtilities.needShowPasscode() || SharedConfig.isWaitingForPasscodeEnter) {
             return LocaleController.getString(R.string.YouHaveNewMessage);
         }
-        if (messageObject.isStoryPush || messageObject.isStoryMentionPush) {
+        if (messageObject.isStoryPush) {
             return "!" + messageObject.messageOwner.message;
         }
         long dialogId = messageObject.messageOwner.dialog_id;

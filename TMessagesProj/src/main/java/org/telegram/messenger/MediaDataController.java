@@ -6156,24 +6156,7 @@ public class MediaDataController extends BaseController {
                 if (messageObject == null) {
                     continue;
                 }
-                if (messageObject.type == MessageObject.TYPE_STORY || messageObject.type == MessageObject.TYPE_STORY_MENTION) {
-                    if (messageObject.messageOwner.media.storyItem == null) {
-                        long storyDialogId = DialogObject.getPeerDialogId(messageObject.messageOwner.media.peer);
-                        if (messagesWithUnknownStories == null) {
-                            messagesWithUnknownStories = new LongSparseArray<>();
-                        }
-                        ArrayList<MessageObject> array = messagesWithUnknownStories.get(storyDialogId);
-                        if (array == null) {
-                            array = new ArrayList<>();
-                            messagesWithUnknownStories.put(storyDialogId, array);
-                        }
-                        Timer.log(logLogger, "+story did=" + storyDialogId + " at "+(messageObject.type == MessageObject.TYPE_STORY ? "forwarded" : "mentioned")+" #" + messageObject.getId());
-                        array.add(messageObject);
-                    } else {
-                        long storyDialogId = DialogObject.getPeerDialogId(messageObject.messageOwner.media.peer);
-                        messageObject.messageOwner.media.storyItem = StoriesStorage.checkExpiredStateLocal(currentAccount, storyDialogId, messageObject.messageOwner.media.storyItem);
-                    }
-                } else if (messageObject.getRealId() > 0 && messageObject.isReplyToStory()) {
+                if (messageObject.getRealId() > 0 && messageObject.isReplyToStory()) {
                     if (messageObject.messageOwner.replyStory == null) {
                         long storyDialogId = DialogObject.getPeerDialogId(messageObject.messageOwner.reply_to.peer);
                         if (messagesWithUnknownStories == null) {

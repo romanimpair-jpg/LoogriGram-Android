@@ -7,7 +7,9 @@ import org.telegram.tgnet.TLRPC;
  *
  * There are no money features here in either direction, so a message that is
  * a gift, an invoice, a payment, a giveaway, paid media or a Stars transfer
- * has nothing to display. The desktop fork settled the shape of this and the
+ * has nothing to display. Stories are removed too, so neither has a message
+ * that carries one - a forwarded story or a story mention. The desktop fork
+ * settled the shape of this and the
  * reasoning is worth repeating, because the obvious implementation is wrong:
  *
  * **The message is still created and still lives in history - it is only
@@ -31,7 +33,7 @@ public class LoogriGramHidden {
     private LoogriGramHidden() {
     }
 
-    /** True for a message whose whole content is a money feature. */
+    /** True for a message whose whole content is a money feature or a story. */
     public static boolean isHidden(TLRPC.Message message) {
         if (message == null) {
             return false;
@@ -43,7 +45,10 @@ public class LoogriGramHidden {
         return media instanceof TLRPC.TL_messageMediaInvoice
             || media instanceof TLRPC.TL_messageMediaPaidMedia
             || media instanceof TLRPC.TL_messageMediaGiveaway
-            || media instanceof TLRPC.TL_messageMediaGiveawayResults;
+            || media instanceof TLRPC.TL_messageMediaGiveawayResults
+            // a forwarded story, or a story mention (the same media with
+            // via_mention) - desktop holds both the same way
+            || media instanceof TLRPC.TL_messageMediaStory;
     }
 
     private static boolean isHiddenAction(TLRPC.MessageAction action) {

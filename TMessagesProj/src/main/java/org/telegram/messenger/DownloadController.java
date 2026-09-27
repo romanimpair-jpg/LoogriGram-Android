@@ -25,7 +25,6 @@ import org.telegram.SQLite.SQLitePreparedStatement;
 import org.telegram.tgnet.NativeByteBuffer;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_account;
-import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.LaunchActivity;
 
@@ -606,16 +605,11 @@ public class DownloadController extends BaseController implements NotificationCe
         }
     }
 
+    // LoogriGram: a message carrying a story had its story's video preloaded
+    // here and below. Those messages are held unshown (LoogriGramHidden), and
+    // with nothing drawn there is nothing to fetch, so they now fall through to
+    // the plain checks, which find no photo or document and answer 0.
     public boolean canDownloadMedia(MessageObject messageObject) {
-        if (messageObject.type == MessageObject.TYPE_STORY) {
-            if (!SharedConfig.isAutoplayVideo()) return false;
-            TLRPC.TL_messageMediaStory mediaStory = (TLRPC.TL_messageMediaStory) MessageObject.getMedia(messageObject);
-            TL_stories.StoryItem storyItem = mediaStory.storyItem;
-            if (storyItem == null || storyItem.media == null || storyItem.media.document == null || !storyItem.isPublic) {
-                return false;
-            }
-            return true;
-        }
         if (messageObject.isHiddenSensitive())
             return false;
         return canDownloadMediaInternal(messageObject) == 1;
@@ -647,30 +641,12 @@ public class DownloadController extends BaseController implements NotificationCe
     }
 
     public int canDownloadMediaType(MessageObject messageObject) {
-        if (messageObject.type == MessageObject.TYPE_STORY) {
-            if (!SharedConfig.isAutoplayVideo()) return 0;
-            TLRPC.TL_messageMediaStory mediaStory = (TLRPC.TL_messageMediaStory) MessageObject.getMedia(messageObject);
-            TL_stories.StoryItem storyItem = mediaStory.storyItem;
-            if (storyItem == null || storyItem.media == null || storyItem.media.document == null || !storyItem.isPublic) {
-                return 0;
-            }
-            return 2;
-        }
         if (messageObject.isHiddenSensitive())
             return 0;
         return canDownloadMediaInternal(messageObject);
     }
 
     public int canDownloadMediaType(MessageObject messageObject, long overrideSize) {
-        if (messageObject.type == MessageObject.TYPE_STORY) {
-            if (!SharedConfig.isAutoplayVideo()) return 0;
-            TLRPC.TL_messageMediaStory mediaStory = (TLRPC.TL_messageMediaStory) MessageObject.getMedia(messageObject);
-            TL_stories.StoryItem storyItem = mediaStory.storyItem;
-            if (storyItem == null || storyItem.media == null || storyItem.media.document == null || !storyItem.isPublic) {
-                return 0;
-            }
-            return 2;
-        }
         if (messageObject.isHiddenSensitive())
             return 0;
         return canDownloadMediaInternal(messageObject, overrideSize);
@@ -678,9 +654,6 @@ public class DownloadController extends BaseController implements NotificationCe
 
     private int canDownloadMediaInternal(MessageObject message) {
         if (message == null || message.messageOwner == null) return 0;
-        if (message.messageOwner.media instanceof TLRPC.TL_messageMediaStory) {
-            return canPreloadStories() ? 2 : 0;
-        }
         TLRPC.Message msg = message.messageOwner;
         int type;
         boolean isVideo;
@@ -768,9 +741,6 @@ public class DownloadController extends BaseController implements NotificationCe
 
     private int canDownloadMediaInternal(MessageObject message, long overrideSize) {
         if (message == null || message.messageOwner == null) return 0;
-        if (message.messageOwner.media instanceof TLRPC.TL_messageMediaStory) {
-            return canPreloadStories() ? 2 : 0;
-        }
         TLRPC.Message msg = message.messageOwner;
         int type;
         boolean isVideo;
@@ -850,8 +820,8 @@ public class DownloadController extends BaseController implements NotificationCe
     }
 
     public int canDownloadMedia(TLRPC.Message message) {
-        if (message == null || message.media instanceof TLRPC.TL_messageMediaStory) {
-            return canPreloadStories() ? 2 : 0;
+        if (message == null) {
+            return 0;
         }
         int type;
         boolean isVideo;
@@ -931,8 +901,8 @@ public class DownloadController extends BaseController implements NotificationCe
     }
 
     public int canDownloadMedia(TLRPC.Message message, TLRPC.MessageMedia media) {
-        if (message == null || media instanceof TLRPC.TL_messageMediaStory) {
-            return canPreloadStories() ? 2 : 0;
+        if (message == null) {
+            return 0;
         }
         int type;
         boolean isVideo = false;

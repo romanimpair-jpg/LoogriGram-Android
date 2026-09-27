@@ -11444,7 +11444,7 @@ public class MessagesStorage extends BaseController {
                     databaseInTransaction = false;
                 }
                 LongSparseArray<TLRPC.Message> messagesMap = new LongSparseArray<>();
-                // LoogriGram: the held money messages passed over when picking the map
+                // LoogriGram: the held money and story messages passed over when picking the map
                 // above, kept only for a dialog that has no row yet - there is nothing
                 // older to fall back to there, so the row has to be created from the held
                 // message or it is created pointing at nothing. Topics need no equivalent:
@@ -11924,7 +11924,7 @@ public class MessagesStorage extends BaseController {
                     }
 
                     if (updateDialog) {
-                        // LoogriGram: a held money message is never drawn, so it must not
+                        // LoogriGram: a held money or story message is never drawn, so it must not
                         // become what the chat list shows either - the row would rise to the
                         // top with an empty preview for something the chat does not show.
                         // A null value here is upstream's own "update this dialog's counts
@@ -15963,23 +15963,6 @@ public class MessagesStorage extends BaseController {
                             }
                         }
                     }
-                }
-            }
-            if (message.media instanceof TLRPC.TL_messageMediaStory && message.media.storyItem != null) {
-                if (message.media.storyItem.fwd_from != null) {
-                    addLoadPeerInfo(message.media.storyItem.fwd_from.from, usersToLoad, chatsToLoad);
-                }
-                if (message.media.storyItem != null && message.media.storyItem.media_areas != null) {
-                    for (int j = 0; j < message.media.storyItem.media_areas.size(); ++j) {
-                        if (message.media.storyItem.media_areas.get(j) instanceof TL_stories.TL_mediaAreaChannelPost) {
-                            long channelId = ((TL_stories.TL_mediaAreaChannelPost) message.media.storyItem.media_areas.get(j)).channel_id;
-                            if (!chatsToLoad.contains(channelId))
-                                chatsToLoad.add(channelId);
-                        }
-                    }
-                }
-                if (message.media.storyItem != null && message.media.storyItem.from_id != null) {
-                    addLoadPeerInfo(message.media.storyItem.from_id, usersToLoad, chatsToLoad);
                 }
             }
             if (message.media instanceof TLRPC.TL_messageMediaWebPage && message.media.webpage != null && message.media.webpage.attributes != null) {
