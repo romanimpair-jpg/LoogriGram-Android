@@ -6495,16 +6495,9 @@
     <string name="DeleteStoriesTitle">Delete Stories</string>
     <string name="DeleteStoriesSubtitle_one">Are you sure you want to delete %d story?</string>
     <string name="DeleteStoriesSubtitle_other">Are you sure you want to delete %d stories?</string>
-    <string name="StoryEditing">Uploading edit…</string>
     <string name="NobodyViews">No views yet</string>
     <string name="NobodyViewsArchived">No views available</string>
-    <string name="StoryUploadError">Uploading story error</string>
     <string name="MyStory">My Story</string>
-    <string name="UploadingStory">Uploading…</string>
-    <string name="FailedStory">Failed</string>
-    <string name="FailedToUploadStory">failed to upload</string>
-    <string name="StoryError">Couldn’t upload</string>
-    <string name="TryAgain">Try Again</string>
     <string name="Story">Story</string>
     <string name="StoryStatistics">Story Statistics</string>
     <string name="PostStatistics">Post Statistics</string>
@@ -6596,8 +6589,6 @@
     <string name="StoryUnpinnedFromPosts">Story removed from the channel’s profile</string>
     <string name="StoryAddedToAlbumX">This story has been added to **%s** album.</string>
     <string name="StoryRemovedFromAlbumX">This story has been removed from **%s** album.</string>
-    <string name="StoryDraft">Draft</string>
-    <string name="StoryDraftsAlbum">Drafts</string>
     <string name="ShowInChats">Show in Chats</string>
     <string name="ForwardedStory">Forwarded Story</string>
     <string name="ForwardedStoryFrom">From **%s**</string>
@@ -6609,10 +6600,7 @@
     <string name="StoriesMovedToContacts">Stories of **%s** were moved to **Archive**.</string>
     <string name="StoriesMovedToDialogs">Stories of **%s** were moved to **Chats**.</string>
     <string name="StoryShared">Story shared</string>
-    <string name="StoryDrafts_one">%d Draft</string>
-    <string name="StoryDrafts_other">%d Drafts</string>
     <string name="StoryDraftSaved">Draft saved</string>
-    <string name="StoryUploading">Uploading story…</string>
     <string name="NotificationStory">%s shared a story with you</string>
     <string name="NotificationChatStory">%s shared a story to the group</string>
     <string name="NotificationChannelStory">%s shared a story</string>
@@ -6808,16 +6796,6 @@
     <string name="Reposts_other">%d reposts</string>
     <string name="Reactions_one">%d reaction</string>
     <string name="Reactions_other">%d reactions</string>
-    <string name="LimitReachedStoriesCount2First_one">You can post **%d** story in **24** hours.</string>
-    <string name="LimitReachedStoriesCount2First_other">You can post **%d** stories in **24** hours.</string>
-    <string name="LimitReachedStoriesCount2Second_one">Subscribe to **Telegram Premium** to increase this limit to **%d**.</string>
-    <string name="LimitReachedStoriesCount2Second_other">Subscribe to **Telegram Premium** to increase this limit to **%d**.</string>
-    <string name="LimitReachedStoriesCount2Premium_one">Sorry, you can’t post more than **%d** story in **24** hours.</string>
-    <string name="LimitReachedStoriesCount2Premium_other">Sorry, you can’t post more than **%d** stories in **24** hours.</string>
-    <string name="LimitReachedStoriesWeekly">You can post **%1$d** stories in a week.\nSubscribe to **Telegram Premium** to increase this limit to **%2$d**.</string>
-    <string name="LimitReachedStoriesWeeklyPremium">Sorry, you can’t post more than **%1$d** stories in a week.</string>
-    <string name="LimitReachedStoriesMonthly">You can post **%1$d** stories in a month.\nSubscribe to **Telegram Premium** to increase this limit to **%2$d**.</string>
-    <string name="LimitReachedStoriesMonthlyPremium">Sorry, you can’t post more than **%1$d** stories in a month.</string>
     <string name="UsersDeselectAll">Deselect All</string>
     <string name="StoryWidgetPhoto">Photo</string>
     <string name="StoryReactionsHint">Send reaction as a private message</string>
@@ -9486,7 +9464,6 @@
     <string name="StoriesCreate_one">Create %d Story</string>
     <string name="StoriesCreate_other">Create %d Stories</string>
     <string name="StoriesCollage">Combine into Collage</string>
-    <string name="CreateMultipleStories">Create Multiple Stories</string>
     <string name="WebsiteSays">%s says</string>
     <string name="SuggestedMessageDecline">Decline</string>
     <string name="SuggestedMessageDeclineInfo">Do you want to decline publishing this post from **%1$s**?</string>
@@ -9974,8 +9951,6 @@
     <string name="LiveStoryHighlightFeatureEmoji">emoji</string>
     <string name="LiveStoryMessageSent">Sent %s</string>
     <string name="LiveStoryAdminRole">admin</string>
-    <string name="LiveStoryAlreadyStreamingTitle">Already Live</string>
-    <string name="LiveStoryAlreadyStreaming">You have already live stream running.</string>
     <string name="LiveStoryRTMPEnable">Connect Stream</string>
     <string name="LiveStoryRTMPRevoke">Revoke Stream Key</string>
     <string name="LiveStoryRTMPRevokeTitle">Revoke Stream Key</string>
@@ -10877,7 +10852,6 @@
     <!-- LoogriGram: the server will not take a channel's or group's story
          until it has more boosts. Upstream opened the boost sheet; see
          StoriesController.canSendStoryFor. -->
-    <string name="LoogriGramStoriesNeedBoosts">**%1$s** needs more boosts before it can post stories.</string>
     <!-- LoogriGram: this week's free voice transcriptions are used up. Follows
          "TranscriptionTrialEnd"; upstream's sentence there went on to offer
          Premium. The desktop fork says the same. See ChatActivity's

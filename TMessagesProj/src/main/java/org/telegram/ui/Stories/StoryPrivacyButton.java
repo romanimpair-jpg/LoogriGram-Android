@@ -23,7 +23,6 @@ import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.Components.AnimatedFloat;
 import org.telegram.ui.Components.ButtonBounce;
 import org.telegram.ui.Components.CubicBezierInterpolator;
-import org.telegram.ui.Stories.recorder.StoryPrivacyBottomSheet;
 
 public class StoryPrivacyButton extends View {
 
@@ -74,35 +73,6 @@ public class StoryPrivacyButton extends View {
             setIcon(R.drawable.msg_folders_channels, 17.33f);
             setupGradient(0xFF16A5F2, 0xFF1180F7);
             crossfadeT.set(animated, true);
-        } else {
-            draw = false;
-        }
-        setVisibility(draw ? View.VISIBLE : View.GONE);
-        invalidate();
-        return draw;
-    }
-
-    public boolean set(boolean mine, StoriesController.UploadingStory uploadingStory, boolean animated) {
-        drawArrow = mine;
-        draw = true;
-        if (uploadingStory == null || uploadingStory.entry.privacy == null) {
-            draw = false;
-        } else if (uploadingStory.entry.privacy.type == StoryPrivacyBottomSheet.TYPE_CLOSE_FRIENDS) {
-            setIcon(R.drawable.msg_stories_closefriends, 15);
-            setupGradient(0xFF88D93A, 0xFF2DB63B);
-            crossfadeT.set(animated, !animated);
-        } else if (uploadingStory.entry.privacy.type == StoryPrivacyBottomSheet.TYPE_CONTACTS) {
-            setIcon(R.drawable.msg_folders_private, 17.33f);
-            setupGradient(0xFFC468F2, 0xFF965CFA);
-            crossfadeT.set(animated, !animated);
-        } else if (uploadingStory.entry.privacy.type == StoryPrivacyBottomSheet.TYPE_SELECTED_CONTACTS) {
-            setIcon(R.drawable.msg_folders_groups, 17.33f);
-            setupGradient(0xFFFFB743, 0xFFF68E34);
-            crossfadeT.set(animated, !animated);
-        } else if (mine) {
-            setIcon(R.drawable.msg_folders_channels, 17.33f);
-            setupGradient(0xFF16A5F2, 0xFF1180F7);
-            crossfadeT.set(animated, !animated);
         } else {
             draw = false;
         }

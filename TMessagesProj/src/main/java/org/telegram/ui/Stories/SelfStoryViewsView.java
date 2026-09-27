@@ -20,9 +20,7 @@ import androidx.viewpager.widget.ViewPager;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.MessageObject;
-import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
-import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.AdjustPanLayoutHelper;
@@ -354,13 +352,6 @@ public class SelfStoryViewsView extends FrameLayout {
         for (int i = 0; i < storyItems.size(); i++) {
             this.storyItems.add(new StoryItemInternal(storyItems.get(i)));
         }
-        long clientUserId = UserConfig.getInstance(UserConfig.selectedAccount).getClientUserId();
-        ArrayList<StoriesController.UploadingStory> uploadingStories = MessagesController.getInstance(storyViewer.currentAccount).storiesController.getUploadingStories(clientUserId);
-        if (uploadingStories != null) {
-            for (int i = 0; i < uploadingStories.size(); i++) {
-                this.storyItems.add(new StoryItemInternal(uploadingStories.get(i)));
-            }
-        }
         selfStoriesPreviewView.setItems(this.storyItems, selectedPosition);
         viewPager.setAdapter(null);
         viewPager.setAdapter(pagerAdapter);
@@ -500,14 +491,10 @@ public class SelfStoryViewsView extends FrameLayout {
 
     public class StoryItemInternal {
         public TL_stories.StoryItem storyItem;
-        public StoriesController.UploadingStory uploadingStory;
 
+        // LoogriGram: an item could also be a story of ours still uploading.
         public StoryItemInternal(TL_stories.StoryItem storyItem) {
             this.storyItem = storyItem;
-        }
-
-        public StoryItemInternal(StoriesController.UploadingStory uploadingStory) {
-            this.uploadingStory = uploadingStory;
         }
     }
 

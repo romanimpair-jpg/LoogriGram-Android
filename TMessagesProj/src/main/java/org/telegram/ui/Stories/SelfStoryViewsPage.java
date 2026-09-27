@@ -164,8 +164,6 @@ public class SelfStoryViewsPage extends FrameLayout implements NotificationCente
                     storyItem.storyItem.parsedPrivacy = new StoryPrivacyBottomSheet.StoryPrivacy(currentAccount, storyItem.storyItem.privacy);
                 }
                 return storyItem.storyItem.parsedPrivacy.containsUser(user);
-            } else if (storyItem.uploadingStory != null && storyItem.uploadingStory.entry != null && storyItem.uploadingStory.entry.privacy != null) {
-                return storyItem.uploadingStory.entry.privacy.containsUser(user);
             }
         }
 
@@ -651,11 +649,6 @@ public class SelfStoryViewsPage extends FrameLayout implements NotificationCente
 
                 // titleView.setText(LocaleController.formatPluralStringComma("Views", serverItem.views.views_count));
             }
-        } else {
-            TOP_PADDING = 46;
-            titleView.setText(LocaleController.getString(R.string.UploadingStory));
-            searchField.setVisibility(View.GONE);
-            headerView.setVisibility(View.GONE);
         }
         headerView.buttonContainer.setVisibility(showReactionsSort ? View.VISIBLE : View.GONE);
         headerView.allViewersView.setVisibility(showContactsFilter ? View.VISIBLE : View.GONE);
@@ -699,7 +692,6 @@ public class SelfStoryViewsPage extends FrameLayout implements NotificationCente
             currentModel.animateDateForUsers.clear();
         }
         listAdapter.updateRows();
-        NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.storiesUpdated);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.storiesBlocklistUpdate);
         Bulletin.addDelegate(this, new Bulletin.Delegate() {
             @Override
@@ -716,7 +708,6 @@ public class SelfStoryViewsPage extends FrameLayout implements NotificationCente
         if (currentModel != null) {
             currentModel.removeListener(this);
         }
-        NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.storiesUpdated);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.storiesBlocklistUpdate);
         Bulletin.removeDelegate(this);
     }
@@ -795,22 +786,7 @@ public class SelfStoryViewsPage extends FrameLayout implements NotificationCente
 
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
-        if (id == NotificationCenter.storiesUpdated) {
-            if (storyItem.uploadingStory != null) {
-                TL_stories.PeerStories stories = MessagesController.getInstance(currentAccount).storiesController.getStories(UserConfig.getInstance(currentAccount).clientUserId);
-                if (stories != null) {
-                    for (int i = 0; i < stories.stories.size(); i++) {
-                        TL_stories.StoryItem storyItem = stories.stories.get(i);
-                        if (storyItem.attachPath != null && storyItem.attachPath.equals(this.storyItem.uploadingStory.path)) {
-                            this.storyItem.uploadingStory = null;
-                            this.storyItem.storyItem = storyItem;
-                            setStoryItem(dialogId, this.storyItem);
-                            break;
-                        }
-                    }
-                }
-            }
-        } else if (id == NotificationCenter.storiesBlocklistUpdate) {
+        if (id == NotificationCenter.storiesBlocklistUpdate) {
             for (int i = 0; i < recyclerListView.getChildCount(); ++i) {
                 View child = recyclerListView.getChildAt(i);
                 if (child instanceof ReactedUserHolderView) {

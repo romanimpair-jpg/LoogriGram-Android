@@ -414,12 +414,6 @@
             android:foregroundServiceType="dataSync"
         />
         <service
-            android:name="org.telegram.ui.Stories.recorder.StoryUploadingService"
-            android:enabled="true"
-            android:exported="true"
-            android:foregroundServiceType="dataSync"
-        />
-        <service
             android:name=".ImportingService"
             android:enabled="true"
             android:exported="true"

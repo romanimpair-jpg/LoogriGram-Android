@@ -277,7 +277,6 @@ public class UserConfig extends BaseController {
 
                 getMediaDataController().loadPremiumPromo(false);
                 getMediaDataController().loadReactions(false, null);
-                getMessagesController().getStoriesController().invalidateStoryLimit();
             });
         } else if (oldUser == null) {
             AndroidUtilities.runOnUIThread(() -> {

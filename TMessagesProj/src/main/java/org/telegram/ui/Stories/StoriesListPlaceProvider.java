@@ -127,7 +127,6 @@ public class StoriesListPlaceProvider implements StoryViewer.PlaceProvider {
                     holder.view = child;
                     holder.avatarImage = cell.avatarImage;
                     holder.params = cell.params;
-                    holder.radialProgressUpload = cell.radialProgress;
                     DialogStoriesCell storiesCell = (DialogStoriesCell) cell.getParent().getParent();
                     holder.clipParent = storiesCell;
                     holder.clipTop = holder.clipBottom = 0;

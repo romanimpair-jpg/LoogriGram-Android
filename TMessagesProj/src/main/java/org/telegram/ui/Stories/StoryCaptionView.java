@@ -82,7 +82,6 @@ import org.telegram.ui.Components.Text;
 import org.telegram.ui.Components.URLSpanMono;
 import org.telegram.ui.Components.spoilers.SpoilerEffect;
 import org.telegram.ui.Components.spoilers.SpoilersClickDetector;
-import org.telegram.ui.Stories.recorder.StoryEntry;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -731,37 +730,6 @@ public class StoryCaptionView extends NestedScrollView implements ItemOptions.Sc
                         panel.currentAccount = currentAccount;
                         panel.small = true;
                         panel.messageId = postArea.msg_id;
-                        panel.title = new SpannableStringBuilder(ChatObject.isChannelAndNotMegaGroup(chat) ? MessageObject.channelSpan() : MessageObject.groupSpan()).append(" ").append(chat.title);
-                        return panel;
-                    }
-                }
-            }
-            return null;
-        }
-
-        public static Panel from(StoriesController.UploadingStory uploadingStory) {
-            if (uploadingStory == null || uploadingStory.entry == null) {
-                return null;
-            }
-            if (uploadingStory.entry.isRepost) {
-                Panel panel = new Panel();
-                panel.title = uploadingStory.entry.repostPeerName;
-                panel.text = uploadingStory.entry.repostCaption;
-                panel.small = TextUtils.isEmpty(panel.text);
-                return panel;
-            }
-            if (uploadingStory.entry.isRepostMessage && uploadingStory.entry.messageObjects != null && uploadingStory.entry.messageObjects.size() > 0) {
-                MessageObject messageObject = uploadingStory.entry.messageObjects.get(0);
-                final long dialogId = StoryEntry.getRepostDialogId(messageObject);
-                if (dialogId < 0) {
-                    TLRPC.Chat chat = MessagesController.getInstance(messageObject.currentAccount).getChat(-dialogId);
-                    if (chat != null) {
-                        Panel panel = new Panel();
-                        panel.peerId = dialogId;
-                        panel.isRepostMessage = true;
-                        panel.currentAccount = messageObject.currentAccount;
-                        panel.small = true;
-                        panel.messageId = StoryEntry.getRepostMessageId(messageObject);
                         panel.title = new SpannableStringBuilder(ChatObject.isChannelAndNotMegaGroup(chat) ? MessageObject.channelSpan() : MessageObject.groupSpan()).append(" ").append(chat.title);
                         return panel;
                     }

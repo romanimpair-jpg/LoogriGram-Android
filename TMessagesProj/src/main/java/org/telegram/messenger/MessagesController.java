@@ -583,8 +583,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public int publicLinksLimitPremium;
     public int captionLengthLimitDefault;
     public int captionLengthLimitPremium;
-    public int storyCaptionLengthLimitDefault;
-    public int storyCaptionLengthLimitPremium;
     public int aboutLengthLimitDefault;
     public int aboutLengthLimitPremium;
     public int reactionsUserMaxDefault;
@@ -596,14 +594,9 @@ public class MessagesController extends BaseController implements NotificationCe
     public int telegramAntispamGroupSizeMin;
     public int hiddenMembersGroupSizeMin;
     private int chatlistUpdatePeriod;
-    public int storyExpiringLimitDefault;
-    public int storyExpiringLimitPremium;
-    public int storiesSentWeeklyLimitDefault;
-    public int storiesSentWeeklyLimitPremium;
-    public int storiesSentMonthlyLimitDefault;
-    public int storiesSentMonthlyLimitPremium;
-    public int storiesSuggestedReactionsLimitDefault;
-    public int storiesSuggestedReactionsLimitPremium;
+    // LoogriGram: the story posting config - stories_posting and the story
+    // count, weekly, monthly, caption and suggested-reaction limits - is no
+    // longer read. Stories are not posted here.
     public int groupTranscribeLevelMin;
     public int introTitleLengthLimit;
     public int introDescriptionLengthLimit;
@@ -637,7 +630,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public int chatlistInvitesLimitPremium;
     public int chatlistJoinedLimitDefault;
     public int chatlistJoinedLimitPremium;
-    public String storiesPosting;
     public String storiesEntities;
     public int stargiftsMessageLengthMax;
     public int stargiftsConvertPeriodMax;
@@ -1583,8 +1575,6 @@ public class MessagesController extends BaseController implements NotificationCe
         publicLinksLimitPremium = mainPreferences.getInt("publicLinksLimitPremium", 20);
         captionLengthLimitDefault = mainPreferences.getInt("captionLengthLimitDefault", 1024);
         captionLengthLimitPremium = mainPreferences.getInt("captionLengthLimitPremium", 4096);
-        storyCaptionLengthLimitDefault = mainPreferences.getInt("storyCaptionLengthLimit", 200);
-        storyCaptionLengthLimitPremium = mainPreferences.getInt("storyCaptionLengthLimitPremium", 2048);
         aboutLengthLimitDefault = mainPreferences.getInt("aboutLengthLimitDefault", 70);
         aboutLengthLimitPremium = mainPreferences.getInt("aboutLengthLimitPremium", 140);
         reactionsUserMaxDefault = mainPreferences.getInt("reactionsUserMaxDefault", 1);
@@ -1616,14 +1606,6 @@ public class MessagesController extends BaseController implements NotificationCe
         stealthModeCooldown = mainPreferences.getInt("stories_stealth_cooldown_period", 60 * 60);
         boolean isTest = ConnectionsManager.native_isTestBackend(currentAccount) != 0;
         chatlistInvitesLimitDefault = mainPreferences.getInt("chatlistInvitesLimitDefault", 3);
-        storyExpiringLimitDefault = mainPreferences.getInt("storyExpiringLimitDefault", 50);
-        storyExpiringLimitPremium = mainPreferences.getInt("storyExpiringLimitPremium", 100);
-        storiesSentWeeklyLimitDefault = mainPreferences.getInt("storiesSentWeeklyLimitDefault", 7);
-        storiesSuggestedReactionsLimitDefault = mainPreferences.getInt("storiesSuggestedReactionsLimitDefault", 1);
-        storiesSuggestedReactionsLimitPremium = mainPreferences.getInt("storiesSuggestedReactionsLimitPremium", 5);
-        storiesSentWeeklyLimitPremium = mainPreferences.getInt("storiesSentWeeklyLimitPremium", 70);
-        storiesSentMonthlyLimitDefault = mainPreferences.getInt("storiesSentMonthlyLimitDefault", 30);
-        storiesSentMonthlyLimitPremium = mainPreferences.getInt("storiesSentMonthlyLimitPremium", 300);
         groupTranscribeLevelMin = mainPreferences.getInt("groupTranscribeLevelMin", 1);
         chatlistInvitesLimitPremium = mainPreferences.getInt("chatlistInvitesLimitPremium",  isTest ? 5 : 20);
         chatlistJoinedLimitDefault = mainPreferences.getInt("chatlistJoinedLimitDefault", 2);
@@ -1647,7 +1629,6 @@ public class MessagesController extends BaseController implements NotificationCe
         starsGroupcallMessageLimits = parseTiersString(mainPreferences.getString("starsGroupcallMessageLimits", null));
         freezeAppealUrl = mainPreferences.getString("freezeAppealUrl", "t.me/spambot");
         enableGiftsInProfile = mainPreferences.getBoolean("enableGiftsInProfile", true);
-        storiesPosting = mainPreferences.getString("storiesPosting", "enabled");
         storiesEntities = mainPreferences.getString("storiesEntities", "premium");
         storiesExportNopublicLink = mainPreferences.getBoolean("storiesExportNopublicLink", false);
         authorizationAutoconfirmPeriod = mainPreferences.getInt("authorization_autoconfirm_period", 604800);
@@ -2531,7 +2512,6 @@ public class MessagesController extends BaseController implements NotificationCe
     private void applyAppConfig(TLRPC.TL_jsonObject object) {
         SharedPreferences.Editor editor = mainPreferences.edit();
         boolean changed = false;
-        boolean storiesChanged = false;
         boolean keelAliveChanged = false;
         resetAppConfig();
         TLRPC.TL_jsonObject liteAppOptions = null;
@@ -3463,28 +3443,6 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
-                case "story_caption_length_limit_default": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber number = (TLRPC.TL_jsonNumber) value.value;
-                        if (number.value != storyCaptionLengthLimitDefault) {
-                            storyCaptionLengthLimitDefault = (int) number.value;
-                            editor.putInt("storyCaptionLengthLimit", storyCaptionLengthLimitDefault);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "story_caption_length_limit_premium": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber number = (TLRPC.TL_jsonNumber) value.value;
-                        if (number.value != storyCaptionLengthLimitPremium) {
-                            storyCaptionLengthLimitPremium = (int) number.value;
-                            editor.putInt("storyCaptionLengthLimitPremium", storyCaptionLengthLimitPremium);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
                 case "about_length_limit_default": {
                     if (value.value instanceof TLRPC.TL_jsonNumber) {
                         TLRPC.TL_jsonNumber number = (TLRPC.TL_jsonNumber) value.value;
@@ -3644,94 +3602,6 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
-                case "story_expiring_limit_default": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != storyExpiringLimitDefault) {
-                            storyExpiringLimitDefault = (int) num.value;
-                            editor.putInt("storyExpiringLimitDefault", storyExpiringLimitDefault);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "story_expiring_limit_premium": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != storyExpiringLimitPremium) {
-                            storyExpiringLimitPremium = (int) num.value;
-                            editor.putInt("storyExpiringLimitPremium", storyExpiringLimitPremium);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "stories_suggested_reactions_limit_default": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != storiesSuggestedReactionsLimitDefault) {
-                            storiesSuggestedReactionsLimitDefault = (int) num.value;
-                            editor.putInt("storiesSuggestedReactionsLimitDefault", storiesSuggestedReactionsLimitDefault);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "stories_suggested_reactions_limit_premium": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != storiesSuggestedReactionsLimitPremium) {
-                            storiesSuggestedReactionsLimitPremium = (int) num.value;
-                            editor.putInt("storiesSuggestedReactionsLimitPremium", storiesSuggestedReactionsLimitPremium);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "stories_sent_weekly_limit_default": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != storiesSentWeeklyLimitDefault) {
-                            storiesSentWeeklyLimitDefault = (int) num.value;
-                            editor.putInt("storiesSentWeeklyLimitDefault", storiesSentWeeklyLimitDefault);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "stories_sent_weekly_limit_premium": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != storiesSentWeeklyLimitPremium) {
-                            storiesSentWeeklyLimitPremium = (int) num.value;
-                            editor.putInt("storiesSentWeeklyLimitPremium", storiesSentWeeklyLimitPremium);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "stories_sent_monthly_limit_default": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != storiesSentMonthlyLimitDefault) {
-                            storiesSentMonthlyLimitDefault = (int) num.value;
-                            editor.putInt("storiesSentMonthlyLimitDefault", storiesSentMonthlyLimitDefault);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "stories_sent_monthly_limit_premium": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != storiesSentMonthlyLimitPremium) {
-                            storiesSentMonthlyLimitPremium = (int) num.value;
-                            editor.putInt("storiesSentMonthlyLimitPremium", storiesSentMonthlyLimitPremium);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
                 case "chatlist_invites_limit_premium": {
                     if (value.value instanceof TLRPC.TL_jsonNumber) {
                         TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
@@ -3838,17 +3708,6 @@ public class MessagesController extends BaseController implements NotificationCe
                             enableGiftsInProfile = num.value;
                             editor.putBoolean("enableGiftsInProfile", enableGiftsInProfile);
                             changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "stories_posting": {
-                    if (value.value instanceof TLRPC.TL_jsonString) {
-                        TLRPC.TL_jsonString str = (TLRPC.TL_jsonString) value.value;
-                        if (!TextUtils.equals(str.value, storiesPosting)) {
-                            storiesPosting = str.value;
-                            editor.putString("storiesPosting", storiesPosting);
-                            changed = storiesChanged = true;
                         }
                     }
                     break;
@@ -4424,11 +4283,6 @@ public class MessagesController extends BaseController implements NotificationCe
             ApplicationLoader.startPushService();
             ConnectionsManager connectionsManager = getConnectionsManager();
             connectionsManager.setPushConnectionEnabled(connectionsManager.isPushConnectionEnabled());
-        }
-        if (storiesChanged) {
-            AndroidUtilities.runOnUIThread(() -> {
-                getNotificationCenter().postNotificationName(NotificationCenter.storiesEnabledUpdate);
-            });
         }
         logDeviceStats();
     }
@@ -22726,18 +22580,6 @@ public class MessagesController extends BaseController implements NotificationCe
             unconfirmedAuthController = new UnconfirmedAuthController(currentAccount);
         }
         return unconfirmedAuthController;
-    }
-
-    public boolean storiesEnabled() {
-        switch (storiesPosting) {
-            case "premium":
-                return getUserConfig().isPremium();
-            case "enabled":
-                return true;
-            default:
-            case "disabled":
-                return false;
-        }
     }
 
     public boolean richEditorAvailable() {

@@ -306,105 +306,6 @@ public class TL_stories {
         }
     }
 
-    public static class canSendStoryCount extends TLObject {
-        public static final int constructor = 0xc387c04e;
-
-        public int count_remains;
-
-        public static canSendStoryCount TLdeserialize(InputSerializedData stream, int constructor, boolean exception) {
-            final canSendStoryCount result = canSendStoryCount.constructor != constructor ? null : new canSendStoryCount();
-            return TLdeserialize(canSendStoryCount.class, result, stream, constructor, exception);
-        }
-
-        @Override
-        public void serializeToStream(OutputSerializedData stream) {
-            stream.writeInt32(constructor);
-            stream.writeInt32(count_remains);
-        }
-
-        @Override
-        public void readParams(InputSerializedData stream, boolean exception) {
-            count_remains = stream.readInt32(exception);
-        }
-    }
-
-    public static class TL_stories_canSendStory extends TLObject {
-        public static final int constructor = 0x30eb63f0;
-
-        public TLRPC.InputPeer peer;
-
-        public TLObject deserializeResponse(InputSerializedData stream, int constructor, boolean exception) {
-            return canSendStoryCount.TLdeserialize(stream, constructor, exception);
-        }
-
-        public void serializeToStream(OutputSerializedData stream) {
-            stream.writeInt32(constructor);
-            peer.serializeToStream(stream);
-        }
-    }
-
-    public static class TL_stories_sendStory extends TLObject {
-        public static final int constructor = 0x8f9e6898;
-
-        public int flags;
-        public boolean pinned;
-        public boolean noforwards;
-        public boolean fwd_modified;
-        public TLRPC.InputPeer peer;
-        public TLRPC.InputMedia media;
-        public ArrayList<MediaArea> media_areas = new ArrayList<>();
-        public String caption;
-        public ArrayList<TLRPC.MessageEntity> entities = new ArrayList<>();
-        public ArrayList<TLRPC.InputPrivacyRule> privacy_rules = new ArrayList<>();
-        public long random_id;
-        public int period;
-        public TLRPC.InputPeer fwd_from_id;
-        public int fwd_from_story;
-        public ArrayList<Integer> albums;
-        public TLRPC.InputDocument music;
-
-        public TLObject deserializeResponse(InputSerializedData stream, int constructor, boolean exception) {
-            return TLRPC.Updates.TLdeserialize(stream, constructor, exception);
-        }
-
-        public void serializeToStream(OutputSerializedData stream) {
-            stream.writeInt32(constructor);
-            flags = setFlag(flags, 4, pinned);
-            flags = setFlag(flags, 16, noforwards);
-            flags = setFlag(flags, FLAG_7, fwd_modified);
-            flags = setFlag(flags, FLAG_8, albums != null);
-            stream.writeInt32(flags);
-            peer.serializeToStream(stream);
-            media.serializeToStream(stream);
-            if (hasFlag(flags, FLAG_5)) {
-                Vector.serialize(stream, media_areas);
-            }
-            if (hasFlag(flags, 1)) {
-                stream.writeString(caption);
-            }
-            if (hasFlag(flags, 2)) {
-                Vector.serialize(stream, entities);
-            }
-            Vector.serialize(stream, privacy_rules);
-            stream.writeInt64(random_id);
-            if (hasFlag(flags, 8)) {
-                stream.writeInt32(period);
-            }
-            if (hasFlag(flags, FLAG_6)) {
-                fwd_from_id.serializeToStream(stream);
-            }
-            if (hasFlag(flags, FLAG_6)) {
-                stream.writeInt32(fwd_from_story);
-            }
-            if (hasFlag(flags, FLAG_8)) {
-                Vector.serializeInt(stream, albums);
-            }
-            if (hasFlag(flags, FLAG_9)) {
-                music.serializeToStream(stream);
-            }
-        }
-    }
-
     public static class TL_stories_deleteStories extends TLObject {
         public static final int constructor = 0xae59db5f;
 
@@ -438,49 +339,6 @@ public class TL_stories {
             peer.serializeToStream(stream);
             Vector.serializeInt(stream, id);
             stream.writeBool(pinned);
-        }
-    }
-
-    public static class TL_stories_editStory extends TLObject {
-        public static final int constructor = 0x2c63a72b;
-
-        public int flags;
-        public TLRPC.InputPeer peer;
-        public int id;
-        public TLRPC.InputMedia media;
-        public ArrayList<MediaArea> media_areas = new ArrayList<>();
-        public String caption;
-        public ArrayList<TLRPC.MessageEntity> entities = new ArrayList<>();
-        public ArrayList<TLRPC.InputPrivacyRule> privacy_rules = new ArrayList<>();
-        public TLRPC.InputDocument music;
-
-        public TLObject deserializeResponse(InputSerializedData stream, int constructor, boolean exception) {
-            return TLRPC.Updates.TLdeserialize(stream, constructor, exception);
-        }
-
-        public void serializeToStream(OutputSerializedData stream) {
-            stream.writeInt32(constructor);
-            stream.writeInt32(flags);
-            peer.serializeToStream(stream);
-            stream.writeInt32(id);
-            if (hasFlag(flags, 1)) {
-                media.serializeToStream(stream);
-            }
-            if (hasFlag(flags, 8)) {
-                Vector.serialize(stream, media_areas);
-            }
-            if (hasFlag(flags, 2)) {
-                stream.writeString(caption);
-            }
-            if (hasFlag(flags, 2)) {
-                Vector.serialize(stream, entities);
-            }
-            if (hasFlag(flags, 4)) {
-                Vector.serialize(stream, privacy_rules);
-            }
-            if (hasFlag(flags, FLAG_4)) {
-                music.serializeToStream(stream);
-            }
         }
     }
 
@@ -1116,18 +974,6 @@ public class TL_stories {
         }
     }
 
-    public static class TL_stories_getChatsToSend extends TLObject {
-        public static final int constructor = 0xa56a8b60;
-
-        public TLObject deserializeResponse(InputSerializedData stream, int constructor, boolean exception) {
-            return TLRPC.TL_messages_chats.TLdeserialize(stream, constructor, exception);
-        }
-
-        public void serializeToStream(OutputSerializedData stream) {
-            stream.writeInt32(constructor);
-        }
-    }
-
     public static class TL_myBoost extends TLObject {
         public static int constructor = 0xc448415c;
 
@@ -1539,7 +1385,6 @@ public class TL_stories {
         public String attachPath; //custom
         public String firstFramePath; //custom
         public long dialogId;// custom
-        public boolean justUploaded;// custom
         public int messageId;//custom
         public int messageType;//custom
         public int fileReference;

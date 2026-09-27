@@ -7,7 +7,6 @@ import static org.telegram.messenger.Utilities.clamp;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
-import android.animation.AnimatorSet;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -49,7 +48,6 @@ import org.telegram.ui.Components.AnimatedFloat;
 import org.telegram.ui.Components.AnimatedTextView;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.CubicBezierInterpolator;
-import org.telegram.ui.Components.RadialProgress;
 import org.telegram.ui.ProfileActivity;
 
 import java.util.ArrayList;
@@ -83,15 +81,8 @@ public class ProfileStoriesView extends View implements NotificationCenter.Notif
 
     private boolean attached;
     Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private boolean lastDrawnStateIsFailed;
-    private RadialProgress radialProgress;
-    private boolean progressWasDrawn;
-    private boolean progressIsDone;
-    private float bounceScale = 1f;
     private float progressToInsets = 1f;
     private float fragmentTransitionProgress;
-    private int uploadingStoriesCount;
-    private StoriesController.UploadingStory lastUploadingStory;
     private final StoriesUtilities.StoryGradientTools gradientTools = new StoriesUtilities.StoryGradientTools(this, false);
 
     public void setProgressToStoriesInsets(float progressToInsets) {
@@ -383,13 +374,7 @@ public class ProfileStoriesView extends View implements NotificationCenter.Notif
                 break;
             }
         }
-        ArrayList<StoriesController.UploadingStory> uploadingStories = storiesController.getUploadingStories(dialogId);
-        uploadingStoriesCount = uploadingStories == null ? 0 : uploadingStories.size();
-
         int newCount = Math.max(storiesToShow.size(), count);
-        if (newCount == 0 && uploadingStoriesCount != 0) {
-            newCount = 1;
-        }
         if (asUpdate && animated && newCount == this.count + 1 && unreadCount == lastUnreadCount + 1) {
             animateNewStory();
         }
@@ -435,7 +420,6 @@ public class ProfileStoriesView extends View implements NotificationCenter.Notif
 
     private final AnimatedFloat segmentsCountAnimated = new AnimatedFloat(this, 0, 240 * 2, CubicBezierInterpolator.EASE_OUT_QUINT);
     private final AnimatedFloat segmentsUnreadCountAnimated = new AnimatedFloat(this, 0, 240, CubicBezierInterpolator.EASE_OUT_QUINT);
-    private final AnimatedFloat progressToUploading = new AnimatedFloat(this, 0, 150, CubicBezierInterpolator.DEFAULT);
 
     private float newStoryBounceT = 1;
     private ValueAnimator newStoryBounce;
@@ -520,190 +504,116 @@ public class ProfileStoriesView extends View implements NotificationCenter.Notif
             Collections.sort(circles, (a, b) -> (int) (b.cachedIndex - a.cachedIndex));
         }
 
+        // LoogriGram: while a story of ours was being posted this drew a
+        // progress ring instead of the segments, and a red one if it failed.
         float segmentsAlpha = clamp(1f - expandProgress / 0.2f, 1, 0);
-        boolean isFailed = storiesController.isLastUploadingFailed(dialogId);
-        boolean hasUploadingStories = storiesController.hasUploadingStories(dialogId);
-        if (!hasUploadingStories && lastUploadingStory != null && lastUploadingStory.canceled) {
-            progressWasDrawn = false;
-            progressIsDone = false;
-            this.progressToUploading.set(false, true);
-        }
-        boolean isUploading = (hasUploadingStories && !isFailed) || progressWasDrawn && !progressIsDone;
-        float progressToUploading = this.progressToUploading.set(isUploading);
-        progressToUploading = lerp(0f, progressToUploading, fragmentTransitionProgress);
 
         canvas.save();
-        canvas.scale(bounceScale, bounceScale, rect1.centerX(), rect1.centerY());
 
         float cy = lerp(rect1.centerY(), this.expandY, expandProgress);
 
         Paint unreadPaint = null;
-        lastUploadingStory = null;
-        if (progressToUploading > 0) {
+        final float segmentsCount = segmentsCountAnimated.set(count);
+        final float segmentsUnreadCount = segmentsUnreadCountAnimated.set(unreadCount);
+
+        if (mainCircle != null && segmentsAlpha > 0) {
             rect2.set(rect1);
             rect2.inset(-dpf2(2.66f + 2.23f / 2), -dpf2(2.66f + 2.23f / 2));
-            unreadPaint = gradientTools.getPaint(rect2);
-            if (radialProgress == null) {
-                radialProgress = new RadialProgress(this);
-                radialProgress.setBackground(null, true, false);
-                radialProgress.setRoundRectProgress(ChatObject.isForum(UserConfig.selectedAccount, dialogId));
+            rect3.set(rect1);
+            rect3.inset(-dpf2(2.66f + 1.5f / 2), -dpf2(2.66f + 1.5f / 2));
+            AndroidUtilities.lerp(rect2, rect3, avatarPullProgress, rect3);
+
+            float separatorAngle = lerp(0, (float) (dpf2(2 + 2.23f) / (rect1.width() * Math.PI) * 360f), clamp(segmentsCount - 1, 1, 0) * segmentsAlpha);
+            final float maxCount = 50;
+
+            final int mcount = Math.min(count, (int) maxCount);
+            final float animcount = Math.min(segmentsCount, maxCount);
+
+            int gap = mcount > 20 ? 3 : 5;
+            if (mcount <= 1) {
+                gap = 0;
             }
-            float uploadingProgress = 0;
-            if (!storiesController.hasUploadingStories(dialogId) || storiesController.isLastUploadingFailed(dialogId)) {
-                uploadingProgress = 1f;
-            } else {
-                ArrayList<StoriesController.UploadingStory> uploadingOrEditingStories = storiesController.getUploadingStories(dialogId);
-                if (uploadingOrEditingStories != null) {
-                    if (uploadingOrEditingStories.size() > 0) {
-                        lastUploadingStory = uploadingOrEditingStories.get(0);
-                    }
-                    for (int i = 0; i < uploadingOrEditingStories.size(); i++) {
-                        uploadingProgress += uploadingOrEditingStories.get(i).progress;
-                    }
-                    uploadingProgress = uploadingProgress / uploadingOrEditingStories.size();
-                } else {
-                    uploadingProgress = 0f;
-                }
+            float collapsedGapAngle = gap * 2;
+
+            separatorAngle = lerp(collapsedGapAngle, separatorAngle, avatarPullProgress);
+
+            final float widthAngle = (360 - Math.max(0, animcount) * separatorAngle) / Math.max(1, animcount);
+            readPaint.setColor(ColorUtils.blendARGB(0x5affffff, 0x3a000000, actionBarProgress));
+            readPaintAlpha = readPaint.getAlpha();
+            float a = -90 - separatorAngle / 2f;
+
+            boolean hasLive = false;
+            for (int i = 0; i < mcount; ++i) {
+                final boolean isLive = i < circles.size() && circles.get(i).live;
+                if (isLive) hasLive = true;
             }
-            radialProgress.setDiff(0);
-            int wasAlpha = unreadPaint.getAlpha();
-            unreadPaint.setAlpha((int) (wasAlpha * segmentsAlpha * progressToUploading));
-            unreadPaint.setStrokeWidth(dpf2(2.33f));
-            radialProgress.setPaint(unreadPaint);
-            radialProgress.setProgressRect((int) rect2.left, (int) rect2.top, (int) rect2.right, (int) rect2.bottom);
-            radialProgress.setProgress(Utilities.clamp(uploadingProgress, 1f, 0), true);
-            if (avatarImage.drawAvatar) {
-                radialProgress.draw(canvas);
-            }
-            unreadPaint.setAlpha(wasAlpha);
-            progressWasDrawn = true;
-            boolean oldIsDone = progressIsDone;
-            progressIsDone = radialProgress.getAnimatedProgress() >= 0.98f;
-            if (oldIsDone != progressIsDone) {
-                segmentsCountAnimated.set(count, true);
-                segmentsUnreadCountAnimated.set(unreadCount, true);
-                animateBounce();
-            }
-        } else {
-            progressWasDrawn = false;
-        }
-        if (progressToUploading < 1f) {
-            segmentsAlpha = clamp(1f - expandProgress / 0.2f, 1, 0) * (1f - progressToUploading);
-            final float segmentsCount = segmentsCountAnimated.set(count);
-            final float segmentsUnreadCount = segmentsUnreadCountAnimated.set(unreadCount);
+            if (hasLive) {
+                AndroidUtilities.rectTmp.set(rect3);
+                AndroidUtilities.rectTmp.inset(-dp(12), -dp(12));
+                canvas.saveLayerAlpha(AndroidUtilities.rectTmp, 0xFF, Canvas.ALL_SAVE_FLAG);
 
-            if (isFailed) {
-                rect2.set(rect1);
-                rect2.inset(-dpf2(2.66f + 2.23f / 2), -dpf2(2.66f + 2.23f / 2));
-                final Paint paint = StoriesUtilities.getErrorPaint(rect2);
-                paint.setStrokeWidth(AndroidUtilities.dp(2));
-                paint.setAlpha((int) (255 * segmentsAlpha));
-                boolean isForum = ChatObject.isForum(UserConfig.selectedAccount, dialogId);
-                if (isForum) {
-                    float r = rect2.height() * 0.32f;
-                    canvas.drawRoundRect(rect2, r, r, paint);
-                } else {
-                    canvas.drawCircle(rect2.centerX(), rect2.centerY(), rect2.width() / 2f, paint);
-                }
-            } else if ((mainCircle != null || uploadingStoriesCount > 0) && segmentsAlpha > 0) {
-                rect2.set(rect1);
-                rect2.inset(-dpf2(2.66f + 2.23f / 2), -dpf2(2.66f + 2.23f / 2));
-                rect3.set(rect1);
-                rect3.inset(-dpf2(2.66f + 1.5f / 2), -dpf2(2.66f + 1.5f / 2));
-                AndroidUtilities.lerp(rect2, rect3, avatarPullProgress, rect3);
+                float bounceScale = 1 + (newStoryBounceT - 1) / 2.5f;
 
-                float separatorAngle = lerp(0, (float) (dpf2(2 + 2.23f) / (rect1.width() * Math.PI) * 360f), clamp(segmentsCount - 1, 1, 0) * segmentsAlpha);
-                final float maxCount = 50;
-
-                final int mcount = Math.min(count, (int) maxCount);
-                final float animcount = Math.min(segmentsCount, maxCount);
-
-                int gap = mcount > 20 ? 3 : 5;
-                if (mcount <= 1) {
-                    gap = 0;
-                }
-                float collapsedGapAngle = gap * 2;
-
-                separatorAngle = lerp(collapsedGapAngle, separatorAngle, avatarPullProgress);
-
-                final float widthAngle = (360 - Math.max(0, animcount) * separatorAngle) / Math.max(1, animcount);
-                readPaint.setColor(ColorUtils.blendARGB(0x5affffff, 0x3a000000, actionBarProgress));
-                readPaintAlpha = readPaint.getAlpha();
-                float a = -90 - separatorAngle / 2f;
-
-                boolean hasLive = false;
-                for (int i = 0; i < mcount; ++i) {
-                    final boolean isLive = i < circles.size() && circles.get(i).live;
-                    if (isLive) hasLive = true;
-                }
-                if (hasLive) {
-                    AndroidUtilities.rectTmp.set(rect3);
-                    AndroidUtilities.rectTmp.inset(-dp(12), -dp(12));
-                    canvas.saveLayerAlpha(AndroidUtilities.rectTmp, 0xFF, Canvas.ALL_SAVE_FLAG);
-
-                    float bounceScale = 1 + (newStoryBounceT - 1) / 2.5f;
-
-                    if (bounceScale != 1) {
-                        canvas.save();
-                        canvas.scale(bounceScale, bounceScale, rect2.centerX(), rect2.centerY());
-                    }
-
-                    final int wasAlpha = livePaint.getAlpha();
-                    livePaint.setAlpha((int) (wasAlpha * segmentsAlpha));
-                    AndroidUtilities.rectTmp.set(rect3);
-                    AndroidUtilities.rectTmp.inset(-dp(3), -dp(3));
-                    livePaint.setStrokeWidth(dpf2(2.5f));
-                    drawArc(canvas, rect3, 0, 360, false, livePaint);
-                    livePaint.setAlpha(wasAlpha);
-
-                    if (bounceScale != 1) {
-                        canvas.restore();
-                    }
-                } else for (int i = 0; i < mcount; ++i) {
-                    final float read = 1f - clamp(segmentsUnreadCount - i, 1, 0);
-                    final float appear = 1f - clamp(mcount - animcount - i, 1, 0);
-                    if (appear < 0) {
-                        continue;
-                    }
-
-                    float bounceScale = i == 0 ? 1 + (newStoryBounceT - 1) / 2.5f : 1f;
-
-                    if (bounceScale != 1) {
-                        canvas.save();
-                        canvas.scale(bounceScale, bounceScale, rect2.centerX(), rect2.centerY());
-                    }
-
-                    final boolean isLive = i < circles.size() && circles.get(i).live;
-                    Paint paint;
-                    if (read < 1) {
-                        paint = (isLive ? livePaint : (unreadPaint = gradientTools.getPaint(rect2)));
-                        final int wasAlpha = paint.getAlpha();
-                        paint.setAlpha((int) (wasAlpha * (1f - read) * segmentsAlpha));
-                        paint.setStrokeWidth(dpf2(isLive ? 3 : 2.33f));
-                        drawArc(canvas, rect2, a, -widthAngle * appear, false, paint);
-                        paint.setAlpha(wasAlpha);
-                    }
-
-                    if (read > 0) {
-                        paint = isLive ? livePaint : readPaint;
-                        final int wasAlpha = paint.getAlpha();
-                        paint.setAlpha((int) (wasAlpha * read * segmentsAlpha));
-                        paint.setStrokeWidth(dpf2(isLive ? 3 : 1.5f));
-                        drawArc(canvas, rect3, a, -widthAngle * appear, false, paint);
-                        paint.setAlpha(wasAlpha);
-                    }
-
-                    if (bounceScale != 1) {
-                        canvas.restore();
-                    }
-
-                    a -= widthAngle * appear + separatorAngle * appear;
+                if (bounceScale != 1) {
+                    canvas.save();
+                    canvas.scale(bounceScale, bounceScale, rect2.centerX(), rect2.centerY());
                 }
 
-                if (hasLive) {
-                    StoriesUtilities.drawLive(canvas, rect3, segmentsAlpha, avatarImage.getImageReceiver().getVisible(), fragmentTransitionProgress);
+                final int wasAlpha = livePaint.getAlpha();
+                livePaint.setAlpha((int) (wasAlpha * segmentsAlpha));
+                AndroidUtilities.rectTmp.set(rect3);
+                AndroidUtilities.rectTmp.inset(-dp(3), -dp(3));
+                livePaint.setStrokeWidth(dpf2(2.5f));
+                drawArc(canvas, rect3, 0, 360, false, livePaint);
+                livePaint.setAlpha(wasAlpha);
+
+                if (bounceScale != 1) {
                     canvas.restore();
                 }
+            } else for (int i = 0; i < mcount; ++i) {
+                final float read = 1f - clamp(segmentsUnreadCount - i, 1, 0);
+                final float appear = 1f - clamp(mcount - animcount - i, 1, 0);
+                if (appear < 0) {
+                    continue;
+                }
+
+                float bounceScale = i == 0 ? 1 + (newStoryBounceT - 1) / 2.5f : 1f;
+
+                if (bounceScale != 1) {
+                    canvas.save();
+                    canvas.scale(bounceScale, bounceScale, rect2.centerX(), rect2.centerY());
+                }
+
+                final boolean isLive = i < circles.size() && circles.get(i).live;
+                Paint paint;
+                if (read < 1) {
+                    paint = (isLive ? livePaint : (unreadPaint = gradientTools.getPaint(rect2)));
+                    final int wasAlpha = paint.getAlpha();
+                    paint.setAlpha((int) (wasAlpha * (1f - read) * segmentsAlpha));
+                    paint.setStrokeWidth(dpf2(isLive ? 3 : 2.33f));
+                    drawArc(canvas, rect2, a, -widthAngle * appear, false, paint);
+                    paint.setAlpha(wasAlpha);
+                }
+
+                if (read > 0) {
+                    paint = isLive ? livePaint : readPaint;
+                    final int wasAlpha = paint.getAlpha();
+                    paint.setAlpha((int) (wasAlpha * read * segmentsAlpha));
+                    paint.setStrokeWidth(dpf2(isLive ? 3 : 1.5f));
+                    drawArc(canvas, rect3, a, -widthAngle * appear, false, paint);
+                    paint.setAlpha(wasAlpha);
+                }
+
+                if (bounceScale != 1) {
+                    canvas.restore();
+                }
+
+                a -= widthAngle * appear + separatorAngle * appear;
+            }
+
+            if (hasLive) {
+                StoriesUtilities.drawLive(canvas, rect3, segmentsAlpha, avatarImage.getImageReceiver().getVisible(), fragmentTransitionProgress);
+                canvas.restore();
             }
         }
 
@@ -806,35 +716,6 @@ public class ProfileStoriesView extends View implements NotificationCenter.Notif
             titleDrawable.setAlpha((int) (0xFF * titleAlpha));
             titleDrawable.draw(canvas);
         }
-    }
-
-    private void animateBounce() {
-        AnimatorSet animatorSet = new AnimatorSet();
-        ValueAnimator inAnimator = ValueAnimator.ofFloat(1, 1.05f);
-        inAnimator.setDuration(100);
-        inAnimator.setInterpolator(CubicBezierInterpolator.EASE_OUT);
-
-        ValueAnimator outAnimator = ValueAnimator.ofFloat(1.05f, 1f);
-        outAnimator.setDuration(250);
-        outAnimator.setInterpolator(new OvershootInterpolator());
-
-        ValueAnimator.AnimatorUpdateListener updater = animation -> {
-            avatarImage.bounceScale = bounceScale = (float) animation.getAnimatedValue();
-            avatarImage.invalidate();
-            invalidate();
-        };
-        inAnimator.addUpdateListener(updater);
-        outAnimator.addUpdateListener(updater);
-        animatorSet.playSequentially(inAnimator, outAnimator);
-        animatorSet.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                avatarImage.bounceScale = bounceScale = 1f;
-                avatarImage.invalidate();
-                invalidate();
-            }
-        });
-        animatorSet.start();
     }
 
     private void clipCircle(Canvas canvas, StoryCircle circle, StoryCircle nextCircle) {
@@ -1073,7 +954,6 @@ public class ProfileStoriesView extends View implements NotificationCenter.Notif
                 holder.clipTop = 0;
                 holder.clipBottom = AndroidUtilities.displaySize.y;
                 holder.clipParent = (View) getParent();
-                holder.radialProgressUpload = radialProgress;
                 holder.checkParentScale = true;
                 return true;
             }
@@ -1171,7 +1051,7 @@ public class ProfileStoriesView extends View implements NotificationCenter.Notif
             return true;
         } else if (event.getAction() == MotionEvent.ACTION_UP) {
             AndroidUtilities.cancelRunOnUIThread(onLongPressRunnable);
-            if (hit && System.currentTimeMillis() - tapTime <= ViewConfiguration.getTapTimeout() && MathUtils.distance(tapX, tapY, event.getX(), event.getY()) <= AndroidUtilities.dp(12) && (storiesController.hasUploadingStories(dialogId) || storiesController.hasStories(dialogId) || !circles.isEmpty())) {
+            if (hit && System.currentTimeMillis() - tapTime <= ViewConfiguration.getTapTimeout() && MathUtils.distance(tapX, tapY, event.getX(), event.getY()) <= AndroidUtilities.dp(12) && (storiesController.hasStories(dialogId) || !circles.isEmpty())) {
                 onTap(provider);
                 return true;
             }

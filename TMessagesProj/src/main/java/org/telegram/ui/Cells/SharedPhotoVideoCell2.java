@@ -119,7 +119,6 @@ public class SharedPhotoVideoCell2 extends FrameLayout {
     private boolean gradientDrawableLoading;
 
     public boolean isStory;
-    public boolean isStoryUploading;
     public boolean isStoryPinned;
 
     static long lastUpdateDownloadSettingsTime;
@@ -139,9 +138,6 @@ public class SharedPhotoVideoCell2 extends FrameLayout {
     public final static int STYLE_CACHE = 1;
     private int style = STYLE_SHARED_MEDIA;
 
-    private final Paint scrimPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint progressPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final AnimatedFloat animatedProgress = new AnimatedFloat(this, 0, 200, CubicBezierInterpolator.EASE_OUT_QUINT);
 
     CanvasButton canvasButton;
 
@@ -272,7 +268,6 @@ public class SharedPhotoVideoCell2 extends FrameLayout {
         if (currentMessageObject != null &&
             messageObject != null &&
             currentMessageObject.getId() == messageObject.getId() &&
-            ((currentMessageObject != null ? currentMessageObject.uploadingStory : null) == (messageObject != null ? messageObject.uploadingStory : null)) &&
             ((currentMessageObject != null ? currentMessageObject.parentStoriesList : null) == (messageObject != null ? messageObject.parentStoriesList : null)) &&
             mediaEqual(getStoryMedia(currentMessageObject), getStoryMedia(messageObject)) &&
             oldParentColumnsCount == parentColumnsCount &&
@@ -284,7 +279,6 @@ public class SharedPhotoVideoCell2 extends FrameLayout {
         }
         currentMessageObject = messageObject;
         isStory = currentMessageObject != null && currentMessageObject.isStory();
-        isStoryUploading = currentMessageObject != null && currentMessageObject.uploadingStory != null;
         updateSpoilers2();
         if (messageObject == null) {
             imageReceiver.onDetachedFromWindow();
@@ -355,8 +349,6 @@ public class SharedPhotoVideoCell2 extends FrameLayout {
             Drawable icon = getContext().getResources().getDrawable(R.drawable.msg_emoji_recent).mutate();
             icon.setColorFilter(new PorterDuffColorFilter(0x40FFFFFF, PorterDuff.Mode.SRC_IN));
             imageReceiver.setImageBitmap(new CombinedDrawable(new ColorDrawable(0xFF333333), icon));
-        } else if (messageObject.uploadingStory != null && messageObject.uploadingStory.firstFramePath != null) {
-            imageReceiver.setImage(ImageLocation.getForPath(messageObject.uploadingStory.firstFramePath), imageFilter, null, null, parentObject, 0);
         } else {
             final TLRPC.Document video = messageObject.getDocument();
             final TLRPC.Photo photo = messageObject.getPhoto();
@@ -764,24 +756,6 @@ public class SharedPhotoVideoCell2 extends FrameLayout {
                 canvas.drawRect(imageReceiver.getDrawRegion(), sharedResources.highlightPaint);
             }
         }
-        if (isStoryUploading) {
-            scrimPaint.setColor(0x30000000);
-            canvas.drawRect(imageReceiver.getDrawRegion(), scrimPaint);
-            progressPaint.setStyle(Paint.Style.STROKE);
-            progressPaint.setColor(Color.WHITE);
-            progressPaint.setStrokeWidth(dp(3));
-            progressPaint.setStrokeJoin(Paint.Join.ROUND);
-            progressPaint.setStrokeCap(Paint.Cap.ROUND);
-            final float r = dp(18);
-            AndroidUtilities.rectTmp.set(
-                    imageReceiver.getCenterX() - r, imageReceiver.getCenterY() - r,
-                    imageReceiver.getCenterX() + r, imageReceiver.getCenterY() + r
-            );
-            final float a = (System.currentTimeMillis() % 1500L) / 1500f * 360f;
-            canvas.drawArc(AndroidUtilities.rectTmp, a, animatedProgress.set(lerp(0.15f, 0.95f, currentMessageObject != null ? currentMessageObject.getProgress() : 0f)) * 360, false, progressPaint);
-            invalidate();
-        }
-
         bounds.set(imageReceiver.getImageX(), imageReceiver.getImageY(), imageReceiver.getImageX2(), imageReceiver.getImageY2());
         if (showLivePhoto && Theme.chat_livePhoto != null) {
             Theme.chat_livePhoto.setBounds(

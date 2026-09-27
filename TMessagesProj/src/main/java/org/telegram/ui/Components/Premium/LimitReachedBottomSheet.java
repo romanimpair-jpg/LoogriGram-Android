@@ -74,9 +74,7 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView {
     public static final int TYPE_FOLDER_INVITES = 12;
     public static final int TYPE_SHARED_FOLDERS = 13;
 
-    public static final int TYPE_STORIES_COUNT = 14;
-    public static final int TYPE_STORIES_WEEK = 15;
-    public static final int TYPE_STORIES_MONTH = 16;
+    // LoogriGram: 14 to 16 were the story posting limits (count, week, month).
     // LoogriGram: 17 to 32 and 35 were the boost types - "boost this channel"
     // (TYPE_BOOSTS_FOR_USERS), the level each boost-locked option needed
     // (posting stories, colours, wallpapers, reactions, emoji status, wearing
@@ -88,7 +86,6 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView {
     // opens this sheet for them any more. 33 and 34 keep their numbers.
     public static final int TYPE_PIN_SAVED_DIALOGS = 33;
 
-    protected int storiesCount;
     private boolean canSendLink;
 
     public static String limitTypeToServerString(int type) {
@@ -394,10 +391,7 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView {
             type == TYPE_LARGE_FILE ||
             type == TYPE_ACCOUNTS ||
             type == TYPE_FOLDER_INVITES ||
-            type == TYPE_SHARED_FOLDERS ||
-            type == TYPE_STORIES_COUNT ||
-            type == TYPE_STORIES_WEEK ||
-            type == TYPE_STORIES_MONTH
+            type == TYPE_SHARED_FOLDERS
         );
     }
 
@@ -721,8 +715,6 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView {
                 title.setText(getString(R.string.CallInviteViaLinkTitle));
             } else if (type == TYPE_LARGE_FILE) {
                 title.setText(getString(R.string.FileTooLarge));
-            } else if (type == TYPE_STORIES_COUNT && storiesCount > 1) {
-                title.setText(getString(R.string.CreateMultipleStories));
             } else {
                 title.setText(getString(R.string.LimitReached));
             }
@@ -822,27 +814,6 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView {
             limitParams.descriptionStr = LocaleController.formatString("LimitReachedAccounts", R.string.LimitReachedAccounts, limitParams.defaultLimit, limitParams.premiumLimit);
             limitParams.descriptionStrPremium = "";
             limitParams.descriptionStrLocked = "";
-        } else if (type == TYPE_STORIES_COUNT) {
-            limitParams.defaultLimit = MessagesController.getInstance(currentAccount).storyExpiringLimitDefault;
-            limitParams.premiumLimit = MessagesController.getInstance(currentAccount).storyExpiringLimitPremium;
-            limitParams.icon = R.drawable.msg_limit_stories;
-            limitParams.descriptionStr = LocaleController.formatPluralStringComma("LimitReachedStoriesCount2First", limitParams.defaultLimit) + "\n" + LocaleController.formatPluralStringComma("LimitReachedStoriesCount2Second", limitParams.premiumLimit);
-            limitParams.descriptionStrPremium = LocaleController.formatPluralStringComma("LimitReachedStoriesCount2Premium", limitParams.premiumLimit);
-            limitParams.descriptionStrLocked = LocaleController.formatPluralStringComma("LimitReachedStoriesCount2Premium", limitParams.defaultLimit);
-        } else if (type == TYPE_STORIES_WEEK) {
-            limitParams.defaultLimit = MessagesController.getInstance(currentAccount).storiesSentWeeklyLimitDefault;
-            limitParams.premiumLimit = MessagesController.getInstance(currentAccount).storiesSentWeeklyLimitPremium;
-            limitParams.icon = R.drawable.msg_limit_stories;
-            limitParams.descriptionStr = LocaleController.formatString("LimitReachedStoriesWeekly", R.string.LimitReachedStoriesWeekly, limitParams.defaultLimit, limitParams.premiumLimit);
-            limitParams.descriptionStrPremium = LocaleController.formatString("LimitReachedStoriesWeeklyPremium", R.string.LimitReachedStoriesWeeklyPremium, limitParams.premiumLimit);
-            limitParams.descriptionStrLocked = LocaleController.formatString("LimitReachedStoriesWeeklyPremium", R.string.LimitReachedStoriesWeeklyPremium, limitParams.defaultLimit);
-        } else if (type == TYPE_STORIES_MONTH) {
-            limitParams.defaultLimit = MessagesController.getInstance(currentAccount).storiesSentMonthlyLimitDefault;
-            limitParams.premiumLimit = MessagesController.getInstance(currentAccount).storiesSentMonthlyLimitPremium;
-            limitParams.icon = R.drawable.msg_limit_stories;
-            limitParams.descriptionStr = LocaleController.formatString("LimitReachedStoriesMonthly", R.string.LimitReachedStoriesMonthly, limitParams.defaultLimit, limitParams.premiumLimit);
-            limitParams.descriptionStrPremium = LocaleController.formatString("LimitReachedStoriesMonthlyPremium", R.string.LimitReachedStoriesMonthlyPremium, limitParams.premiumLimit);
-            limitParams.descriptionStrLocked = LocaleController.formatString("LimitReachedStoriesMonthlyPremium", R.string.LimitReachedStoriesMonthlyPremium, limitParams.defaultLimit);
         }
         return limitParams;
     }

@@ -87,7 +87,6 @@ import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Components.RadialProgress;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.SizeNotifierFrameLayout;
 import org.telegram.ui.Stories.LiveStoryPipOverlay;
@@ -272,7 +271,7 @@ public class StoryViewer implements NotificationCenter.NotificationCenterDelegat
             isLongpressed = b;
             if (b && !isInPinchToZoom) {
                 PeerStoriesView peerView = storiesViewPager.getCurrentPeerView();
-                if (peerView != null && peerView.currentStory != null && !peerView.currentStory.isLive() && peerView.currentStory.uploadingStory == null) {
+                if (peerView != null && peerView.currentStory != null && !peerView.currentStory.isLive()) {
                     if (!inSeekingMode && !inSwipeToDissmissMode && currentPlayerScope != null && currentPlayerScope.player != null) {
                         peerView.storyContainer.invalidate();
                         BotWebViewVibrationEffect.IMPACT_LIGHT.vibrate();
@@ -811,7 +810,6 @@ public class StoryViewer implements NotificationCenter.NotificationCenterDelegat
                                         thisAlpha = lerp(transitionViewHolder.alpha, thisAlpha, progress2);
                                     }
                                     headerView.backupImageView.getImageReceiver().setAlpha(thisAlpha);
-                                    headerView.drawUploadingProgress(canvas, rect3, !runOpenAnimationAfterLayout, progressToOpen);
                                     headerView.backupImageView.getImageReceiver().draw(canvas);
                                     headerView.backupImageView.getImageReceiver().setAlpha(alpha);
                                     headerView.backupImageView.getImageReceiver().setVisible(false, false);
@@ -1005,7 +1003,7 @@ public class StoryViewer implements NotificationCenter.NotificationCenterDelegat
                         float dx = Math.abs(startX - ev.getX());
                         if (isLongpressed && inSeekingMode && !isInPinchToZoom && !inSwipeToDissmissMode && currentPlayerScope != null && currentPlayerScope.player != null) {
                             PeerStoriesView peerView = storiesViewPager.getCurrentPeerView();
-                            if (peerView != null && peerView.currentStory != null && peerView.currentStory.uploadingStory == null && peerView.currentStory.isVideo()) {
+                            if (peerView != null && peerView.currentStory != null && peerView.currentStory.isVideo()) {
                                 long videoDuration = peerView.videoDuration;
                                 if (videoDuration <= 0 && peerView.currentStory.storyItem != null && peerView.currentStory.storyItem.media != null && peerView.currentStory.storyItem.media.document != null) {
                                     videoDuration = (long) (MessageObject.getDocumentDuration(peerView.currentStory.storyItem.media.document) * 1000L);
@@ -2370,12 +2368,6 @@ public class StoryViewer implements NotificationCenter.NotificationCenterDelegat
         foundViewToClose = false;
         animationInProgress = true;
         fromDismissOffset = swipeToDismissOffset;
-        if (transitionViewHolder.radialProgressUpload != null) {
-            final PeerStoriesView peerStoriesView = getCurrentPeerView();
-            if (peerStoriesView != null && peerStoriesView.headerView.radialProgress != null) {
-                peerStoriesView.headerView.radialProgress.copyParams(transitionViewHolder.radialProgressUpload);
-            }
-        }
         opening = true;
         openCloseAnimator = ValueAnimator.ofFloat(0, 1f);
         openCloseAnimator.addUpdateListener(animation -> {
@@ -2586,12 +2578,6 @@ public class StoryViewer implements NotificationCenter.NotificationCenterDelegat
                     if (transitionViewHolder.storyImage != null) {
                         transitionViewHolder.storyImage.setAlpha(1f);
                         transitionViewHolder.storyImage.setVisible(true, true);
-                    }
-                    if (transitionViewHolder.radialProgressUpload != null) {
-                        final PeerStoriesView peerStoriesView = getCurrentPeerView();
-                        if (peerStoriesView != null && peerStoriesView.headerView.radialProgress != null) {
-                            transitionViewHolder.radialProgressUpload.copyParams(peerStoriesView.headerView.radialProgress);
-                        }
                     }
                     if (currentPlayerScope != null) {
                         currentPlayerScope.invalidate();
@@ -3095,7 +3081,6 @@ public class StoryViewer implements NotificationCenter.NotificationCenterDelegat
         public View view;
         public ImageReceiver avatarImage;
         public ImageReceiver storyImage;
-        public RadialProgress radialProgressUpload;
         public HolderDrawAbove drawAbove;
         public HolderClip drawClip;
         public View clipParent;
@@ -3128,7 +3113,6 @@ public class StoryViewer implements NotificationCenter.NotificationCenterDelegat
             drawAbove = null;
             drawClip = null;
             clipParent = null;
-            radialProgressUpload = null;
             isLive = false;
             crossfadeToAvatarImage = null;
             clipTop = 0;

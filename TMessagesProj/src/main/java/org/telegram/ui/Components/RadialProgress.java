@@ -76,16 +76,6 @@ public class RadialProgress {
         return animatedProgressValue;
     }
 
-    public void copyParams(RadialProgress radialProgressUpload) {
-        currentProgress = radialProgressUpload.currentProgress;
-        animatedProgressValue = radialProgressUpload.animatedProgressValue;
-        radOffset = radialProgressUpload.radOffset;
-        lastUpdateTime = System.currentTimeMillis();
-//        currentProgressTime = radialProgressUpload.currentProgressTime;
-//        animationProgressStart = radialProgressUpload.animationProgressStart;
-        invalidateParent();
-    }
-
     public void disableUpdate(boolean disableUpdate) {
         this.disableUpdate = disableUpdate;
     }

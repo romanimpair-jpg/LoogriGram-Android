@@ -176,7 +176,6 @@ public class MessageObject {
     public StoriesController.StoriesList parentStoriesList;
     public TLRPC.Message messageOwner;
     public TL_stories.StoryItem storyItem;
-    public StoriesController.UploadingStory uploadingStory;
     public TLRPC.Document emojiAnimatedSticker;
     public Long emojiAnimatedStickerId;
     public boolean isTopicMainMessage;

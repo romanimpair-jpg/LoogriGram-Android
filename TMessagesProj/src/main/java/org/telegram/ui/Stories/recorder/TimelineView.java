@@ -483,46 +483,6 @@ public class TimelineView extends View {
         invalidate();
     }
 
-    public void setCollage(ArrayList<StoryEntry> entries) {
-        for (int i = 0; i < collageTracks.size(); ++i) {
-            Track track = collageTracks.get(i);
-            if (track != null && track.thumbs != null) {
-                track.thumbs.destroy();
-            }
-        }
-        collageTracks.clear();
-        for (int i = 0; i < collageWaveforms.size(); ++i) {
-            AudioWaveformLoader waveform = collageWaveforms.get(i);
-            if (waveform != null) {
-                waveform.destroy();
-            }
-        }
-        collageWaveforms.clear();
-        timelineWaveformMax.set(1, true);
-        if (entries != null) {
-            for (int i = 0; i < entries.size(); ++i) {
-                collageWaveforms.add(null);
-                StoryEntry entry = entries.get(i);
-                if (entry.isVideo) {
-                    final Track track = new Track();
-                    track.index = i;
-                    track.isRound = false;
-                    track.path = entry.file.getAbsolutePath();
-                    track.duration = entry.duration;
-                    track.offset = entry.videoOffset;
-                    track.volume = entry.videoVolume;
-                    track.left = entry.videoLeft;
-                    track.right = entry.videoRight;
-                    track.setupThumbs(false);
-                    track.setupWaveform(false);
-                    collageTracks.add(track);
-                }
-            }
-        }
-        sortCollage();
-        collageSelected = 0;
-    }
-
     public void sortCollage() {
         Collections.sort(collageTracks, (a, b) -> (int) (b.duration - a.duration));
         collageMain = collageTracks.isEmpty() ? null : collageTracks.get(0);

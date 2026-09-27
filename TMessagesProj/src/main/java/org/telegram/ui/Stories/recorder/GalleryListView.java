@@ -85,7 +85,6 @@ import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.ScaleStateListAnimator;
 import org.telegram.ui.Components.StickerEmptyView;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -207,21 +206,9 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
                 return;
             }
             Cell cell = (Cell) view;
+            // LoogriGram: story drafts were listed ahead of the photos, with
+            // an album of their own. Stories are not posted here.
             int index = position - 2;
-            if (containsDraftFolder) {
-                if (index == 0) {
-                    selectAlbum(draftsAlbum, true);
-                    return;
-                }
-                index--;
-            } else if (containsDrafts) {
-                if (index >= 0 && index < drafts.size()) {
-                    StoryEntry entry = drafts.get(index);
-                    onSelectListener.run(entry, entry.isVideo ? prepareBlurredThumb(cell) : null);
-                    return;
-                }
-                index -= drafts.size();
-            }
 
             if (index >= 0 && index < photos.size()) {
                 MediaController.PhotoEntry entry = photos.get(index);
@@ -248,17 +235,6 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
                 return false;
             }
             int index = position - 2;
-            if (containsDraftFolder) {
-                if (index == 0) {
-                    return false;
-                }
-                index--;
-            } else if (containsDrafts) {
-                if (index >= 0 && index < drafts.size()) {
-                    return false;
-                }
-                index -= drafts.size();
-            }
 
             if (index >= 0 && index < photos.size()) {
                 MediaController.PhotoEntry entry = photos.get(index);
@@ -521,16 +497,6 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
             }
         });
 
-        drafts.clear();
-        if (!onlyPhotos) {
-            ArrayList<StoryEntry> draftArray = MessagesController.getInstance(currentAccount).getStoriesController().getDraftsController().drafts;
-            for (StoryEntry draft : draftArray) {
-                if (!draft.isEdit && !draft.isError) {
-                    drafts.add(draft);
-                }
-            }
-        }
-
         if (collaging) {
             selectButton = null;
 
@@ -584,7 +550,7 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
         }
 
         updateAlbumsDropDown();
-        if (startAlbum != null && (startAlbum != draftsAlbum || drafts.size() > 0)) {
+        if (startAlbum != null) {
             selectedAlbum = startAlbum;
         } else {
             if (dropDownAlbums == null || dropDownAlbums.isEmpty()) {
@@ -594,11 +560,8 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
             }
         }
         photos = getPhotoEntries(selectedAlbum);
-        updateContainsDrafts();
         if (selectedAlbum == MediaController.allMediaAlbumEntry) {
             dropDown.setText(getString(R.string.ChatGallery));
-        } else if (selectedAlbum == draftsAlbum) {
-            dropDown.setText(getString(R.string.StoryDraftsAlbum));
         } else {
             dropDown.setText(selectedAlbum.bucketName);
         }
@@ -807,10 +770,6 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
         this.onSelectMultipleListener = listener;
     }
 
-    private static final MediaController.AlbumEntry draftsAlbum = new MediaController.AlbumEntry(-1, null, null);
-    private final ArrayList<StoryEntry> drafts = new ArrayList<>();
-    private boolean containsDraftFolder, containsDrafts;
-
     public MediaController.AlbumEntry selectedAlbum;
     public ArrayList<MediaController.PhotoEntry> photos;
     private ArrayList<MediaController.AlbumEntry> dropDownAlbums;
@@ -837,25 +796,17 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
                 return 0;
             }
         });
-        if (!drafts.isEmpty()) {
-            dropDownAlbums.add(dropDownAlbums.isEmpty() ? 0 : 1, draftsAlbum);
-        }
         if (dropDownAlbums.isEmpty()) {
             dropDown.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
         } else {
             dropDown.setCompoundDrawablesWithIntrinsicBounds(null, null, dropDownDrawable, null);
             for (int a = 0, N = dropDownAlbums.size(); a < N; a++) {
                 MediaController.AlbumEntry album = dropDownAlbums.get(a);
-                AlbumButton button;
-                if (album == draftsAlbum) {
-                    button = new AlbumButton(getContext(), album.coverPhoto, getString("StoryDraftsAlbum"), drafts.size(), resourcesProvider);
-                } else {
-                    ArrayList<MediaController.PhotoEntry> photoEntries = getPhotoEntries(album);
-                    if (photoEntries.isEmpty()) {
-                        continue;
-                    }
-                    button = new AlbumButton(getContext(), album.coverPhoto, album.bucketName, photoEntries.size(), resourcesProvider);
+                ArrayList<MediaController.PhotoEntry> photoEntries = getPhotoEntries(album);
+                if (photoEntries.isEmpty()) {
+                    continue;
                 }
+                AlbumButton button = new AlbumButton(getContext(), album.coverPhoto, album.bucketName, photoEntries.size(), resourcesProvider);
                 dropDownContainer.getPopupLayout().addView(button);
                 button.setOnClickListener(e -> {
                     selectAlbum(album, false);
@@ -869,11 +820,8 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
         selectedAlbum = album;
         photos = getPhotoEntries(selectedAlbum);
         selectedPhotos.clear();
-        updateContainsDrafts();
         if (selectedAlbum == MediaController.allMediaAlbumEntry) {
             dropDown.setText(getString(R.string.ChatGallery));
-        } else if (selectedAlbum == draftsAlbum) {
-            dropDown.setText(getString(R.string.StoryDraftsAlbum));
         } else {
             dropDown.setText(selectedAlbum.bucketName);
         }
@@ -904,15 +852,12 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
 
         private final Paint durationBackgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final TextPaint durationTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
-        private final TextPaint draftTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
         private final Drawable durationPlayDrawable;
 
         private boolean drawDurationPlay;
         private StaticLayout durationLayout;
         private float durationLayoutWidth, durationLayoutLeft;
 
-        private StaticLayout draftLayout;
-        private float draftLayoutWidth, draftLayoutLeft;
 
         public FrameLayout checkBoxContainer;
         public CheckBox2 checkBox;
@@ -934,8 +879,6 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
             durationTextPaint.setTypeface(AndroidUtilities.bold());
             durationTextPaint.setTextSize(dpf2(12.66f));
             durationTextPaint.setColor(0xffffffff);
-            draftTextPaint.setTextSize(AndroidUtilities.dp(11.33f));
-            draftTextPaint.setColor(0xffffffff);
             durationPlayDrawable = context.getResources().getDrawable(R.drawable.play_mini_video).mutate();
 
             checkBox = new CheckBox2(context, 24, resourcesProvider) {
@@ -979,30 +922,9 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
 
         private final Runnable unload = () -> loadBitmap(null);
 
-        public void set(StoryEntry storyEntry, int draftsCount) {
-            currentObject = storyEntry;
-            if (draftsCount > 0) {
-                setDraft(false);
-                setDuration(LocaleController.formatPluralString("StoryDrafts", draftsCount));
-                drawDurationPlay = false;
-                accessibilityText = LocaleController.formatPluralString("StoryDrafts", draftsCount);
-            } else {
-                setDraft(storyEntry != null && storyEntry.isDraft);
-                setDuration(storyEntry != null && storyEntry.isVideo ? AndroidUtilities.formatShortDuration((int) Math.max(0L, storyEntry.duration * (storyEntry.right - storyEntry.left) / 1000L)) : null);
-                if (storyEntry != null && storyEntry.isVideo) {
-                    final int sec = (int) Math.max(0L, storyEntry.duration * (storyEntry.right - storyEntry.left) / 1000L);
-                    accessibilityText = LocaleController.getString(R.string.StoryDraft) + ", " + LocaleController.formatDuration(sec);
-                } else {
-                    accessibilityText = LocaleController.getString(R.string.StoryDraft);
-                }
-            }
-            loadBitmap(storyEntry);
-        }
-
         public void set(MediaController.PhotoEntry photoEntry) {
             currentObject = photoEntry;
             setDuration(photoEntry != null && photoEntry.isVideo && !photoEntry.isLivePhoto() ? AndroidUtilities.formatShortDuration(photoEntry.duration) : null);
-            setDraft(false);
             if (photoEntry == null) {
                 accessibilityText = null;
             } else if (photoEntry.isVideo) {
@@ -1201,20 +1123,6 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
                         colors = new int[] {photoEntry.gradientTopColor, photoEntry.gradientBottomColor};
                     }
                 }
-            } else if (entry instanceof StoryEntry) {
-                File file = ((StoryEntry) entry).draftThumbFile;
-
-                if (file != null) {
-                    BitmapFactory.Options opts = new BitmapFactory.Options();
-                    opts.inJustDecodeBounds = true;
-                    BitmapFactory.decodeFile(file.getPath(), opts);
-
-                    StoryEntry.setupScale(opts, rw, rh);
-                    opts.inPreferredConfig = Bitmap.Config.ARGB_8888;
-                    opts.inDither = true;
-                    opts.inJustDecodeBounds = false;
-                    bitmap = BitmapFactory.decodeFile(file.getPath(), opts);
-                }
             }
 
             return new Pair<>(bitmap, colors);
@@ -1234,8 +1142,6 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
             final String key;
             if (entry instanceof MediaController.PhotoEntry) {
                 key = key((MediaController.PhotoEntry) entry);
-            } else if (entry instanceof StoryEntry) {
-                key = "d" + ((StoryEntry) entry).draftId;
             } else {
                 key = null;
             }
@@ -1407,16 +1313,6 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
                 canvas.drawBitmap(bitmap, bitmapMatrix, bitmapPaint);
             }
 
-            if (draftLayout != null) {
-                AndroidUtilities.rectTmp.set(dp(4), dp(4), dp(4 + 6) + draftLayoutWidth + dp(6), dp(5) + draftLayout.getHeight() + dp(2));
-                canvas.drawRoundRect(AndroidUtilities.rectTmp, dp(10), dp(10), durationBackgroundPaint);
-
-                canvas.save();
-                canvas.translate(AndroidUtilities.rectTmp.left + dp(6) - draftLayoutLeft, AndroidUtilities.rectTmp.top + dp(1.33f));
-                draftLayout.draw(canvas);
-                canvas.restore();
-            }
-
             if (durationLayout != null) {
                 AndroidUtilities.rectTmp.set(dp(4), getHeight() - dp(4) - durationLayout.getHeight() - dp(2), dp(4) + (drawDurationPlay ? dp(16) : dp(4)) + durationLayoutWidth + dp(5), getHeight() - dp(4));
                 canvas.drawRoundRect(AndroidUtilities.rectTmp, dp(10), dp(10), durationBackgroundPaint);
@@ -1455,16 +1351,6 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
             drawDurationPlay = true;
         }
 
-        private void setDraft(boolean draft) {
-            if (draft) {
-                draftLayout = new StaticLayout(getString("StoryDraft"), draftTextPaint, getMeasuredWidth() > 0 ? getMeasuredWidth() : AndroidUtilities.displaySize.x, Layout.Alignment.ALIGN_NORMAL, 1, 0, false);
-                draftLayoutWidth = draftLayout.getLineCount() > 0 ? draftLayout.getLineWidth(0) : 0;
-                draftLayoutLeft = draftLayout.getLineCount() > 0 ? draftLayout.getLineLeft(0) : 0;
-            } else {
-                draftLayout = null;
-            }
-        }
-
         @Override
         protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
             final int w = MeasureSpec.getSize(widthMeasureSpec);
@@ -1493,10 +1379,8 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
             final int width = MeasureSpec.getSize(widthMeasureSpec);
             if (height == -1) {
                 final int photosCount;
-                if (selectedAlbum == draftsAlbum) {
-                    photosCount = drafts.size();
-                } else if (photos != null) {
-                    photosCount = photos.size() + (containsDraftFolder ? 1 : 0) + (containsDrafts ? drafts.size() : 0);
+                if (photos != null) {
+                    photosCount = photos.size();
                 } else {
                     photosCount = 0;
                 }
@@ -1589,21 +1473,6 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
                 };
 
                 int index = position - 2;
-                if (containsDraftFolder) {
-                    if (index == 0) {
-                        cell.setCheckbox(false, -1, false);
-                        cell.set(drafts.get(0), drafts.size());
-                        return;
-                    }
-                    index--;
-                } else if (containsDrafts) {
-                    if (index >= 0 && index < drafts.size()) {
-                        cell.setCheckbox(false, -1, false);
-                        cell.set(drafts.get(index), 0);
-                        return;
-                    }
-                    index -= drafts.size();
-                }
 
                 if (photos == null || index < 0 || index >= photos.size()) {
                     return;
@@ -1664,18 +1533,6 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
         @Override
         public String getLetter(int position) {
             position -= 2;
-            if (containsDraftFolder) {
-                if (position == 0) {
-                    return null;
-                }
-                position--;
-            } else if (containsDrafts) {
-                if (position >= 0 && position < drafts.size()) {
-                    StoryEntry draft = drafts.get(position);
-                    return LocaleController.formatYearMont(draft.draftDate / 1000L, true);
-                }
-                position -= drafts.size();
-            }
             if (photos != null && position >= 0 && position < photos.size()) {
                 MediaController.PhotoEntry entry = photos.get(position);
                 if (entry != null) {
@@ -1691,13 +1548,7 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
 
         @Override
         public int getTotalItemsCount() {
-            int count = photos == null ? 0 : photos.size();
-            if (containsDraftFolder) {
-                count++;
-            } else if (containsDrafts) {
-                count += drafts.size();
-            }
-            return count;
+            return photos == null ? 0 : photos.size();
         }
 
         @Override
@@ -1760,7 +1611,6 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
     @Override
     protected void onAttachedToWindow() {
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.albumsDidLoad);
-        NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.storiesDraftsUpdated);
         super.onAttachedToWindow();
     }
 
@@ -1768,7 +1618,6 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.albumsDidLoad);
-        NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.storiesDraftsUpdated);
 
         Cell.cleanupQueues();
     }
@@ -1794,35 +1643,10 @@ public class GalleryListView extends FrameLayout implements NotificationCenter.N
             }
             photos = getPhotoEntries(selectedAlbum);
             selectedPhotos.clear();
-            updateContainsDrafts();
             if (adapter != null) {
                 adapter.notifyDataSetChanged();
             }
-        } else if (id == NotificationCenter.storiesDraftsUpdated) {
-            updateDrafts();
         }
-    }
-
-    public void updateDrafts() {
-        drafts.clear();
-        if (!onlyPhotos) {
-            ArrayList<StoryEntry> draftArray = MessagesController.getInstance(currentAccount).getStoriesController().getDraftsController().drafts;
-            for (StoryEntry draft : draftArray) {
-                if (!draft.isEdit && !draft.isError) {
-                    drafts.add(draft);
-                }
-            }
-        }
-        updateAlbumsDropDown();
-        updateContainsDrafts();
-        if (adapter != null) {
-            adapter.notifyDataSetChanged();
-        }
-    }
-
-    private void updateContainsDrafts() {
-        containsDraftFolder = dropDownAlbums != null && !dropDownAlbums.isEmpty() && dropDownAlbums.get(0) == selectedAlbum && drafts.size() > 2;
-        containsDrafts = !containsDraftFolder && (selectedAlbum == draftsAlbum || dropDownAlbums != null && !dropDownAlbums.isEmpty() && dropDownAlbums.get(0) == selectedAlbum);
     }
 
     public static final int SEARCH_TYPE_IMAGES = 0;

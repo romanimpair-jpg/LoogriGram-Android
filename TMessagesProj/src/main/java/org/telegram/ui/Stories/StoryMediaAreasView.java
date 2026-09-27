@@ -54,7 +54,6 @@ import org.telegram.ui.Components.Paint.Views.LocationMarker;
 import org.telegram.ui.Components.ScaleStateListAnimator;
 import org.telegram.ui.EmojiAnimationsOverlay;
 import org.telegram.ui.Stories.recorder.HintView2;
-import org.telegram.ui.Stories.recorder.StoryEntry;
 import org.telegram.ui.Stories.recorder.Weather;
 
 import java.util.ArrayList;
@@ -84,19 +83,6 @@ public class StoryMediaAreasView extends FrameLayout implements View.OnClickList
         addView(hintsContainer = new FrameLayout(context));
 
         setLayerType(View.LAYER_TYPE_HARDWARE, null);
-    }
-
-    public static ArrayList<TL_stories.MediaArea> getMediaAreasFor(StoryEntry entry) {
-        if (entry == null || entry.mediaEntities == null) {
-            return null;
-        }
-        ArrayList<TL_stories.MediaArea> areas = new ArrayList<>();
-        for (int i = 0; i < entry.mediaEntities.size(); i++) {
-            if (entry.mediaEntities.get(i).mediaArea instanceof TL_stories.TL_mediaAreaSuggestedReaction) {
-                areas.add(entry.mediaEntities.get(i).mediaArea);
-            }
-        }
-        return areas;
     }
 
     protected void onHintVisible(boolean hintVisible) {

@@ -10089,7 +10089,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
 
         private final boolean isArchive;
         private final int albumId;
-        private final ArrayList<StoriesController.UploadingStory> uploadingStories = new ArrayList<>();
         @Nullable
         public StoriesController.StoriesList storiesList;
         private StoriesAdapter supportingAdapter;
@@ -10230,13 +10229,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
 
         @Override
         public void notifyDataSetChanged() {
-            if (storiesList != null && isBot()) {
-                uploadingStories.clear();
-                ArrayList<StoriesController.UploadingStory> list = MessagesController.getInstance(storiesList.currentAccount).getStoriesController().getUploadingStories(dialog_id);
-                if (list != null) {
-                    uploadingStories.addAll(list);
-                }
-            }
+            // LoogriGram: a bot's own previews being uploaded were listed first.
             super.notifyDataSetChanged();
             if (supportingAdapter != null) {
                 supportingAdapter.notifyDataSetChanged();
@@ -10264,7 +10257,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             if (storiesList == null) {
                 return 0;
             }
-            return uploadingStories.size() + (storiesList.isOnlyCache() && hasInternet() ? 0 : storiesList.getCount());
+            return storiesList.isOnlyCache() && hasInternet() ? 0 : storiesList.getCount();
         }
 
         @Override
@@ -10314,28 +10307,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 if (!(holder.itemView instanceof SharedPhotoVideoCell2)) return;
                 SharedPhotoVideoCell2 cell = (SharedPhotoVideoCell2) holder.itemView;
                 cell.isStory = true;
-                if (position >= 0 && position < uploadingStories.size()) {
-                    StoriesController.UploadingStory uploadingStory = uploadingStories.get(position);
-                    cell.isStoryPinned = false;
-                    if (uploadingStory.sharedMessageObject == null) {
-                        final TL_stories.TL_storyItem storyItem = new TL_stories.TL_storyItem();
-                        storyItem.id = storyItem.messageId = Long.hashCode(uploadingStory.random_id);
-                        storyItem.attachPath = uploadingStory.firstFramePath;
-                        uploadingStory.sharedMessageObject = new MessageObject(storiesList.currentAccount, storyItem) {
-                            @Override
-                            public float getProgress() {
-                                return uploadingStory.progress;
-                            }
-                        };
-                        uploadingStory.sharedMessageObject.uploadingStory = uploadingStory;
-                    }
-                    cell.setMessageObject(uploadingStory.sharedMessageObject, columnsCount());
-                    cell.isStory = true;
-                    cell.setReorder(false);
-                    cell.setChecked(false, false);
-                    return;
-                }
-                position -= uploadingStories.size();
                 if (position < 0 || position >= storiesList.messageObjects.size()) {
                     cell.isStoryPinned = false;
                     cell.setMessageObject(null, columnsCount());

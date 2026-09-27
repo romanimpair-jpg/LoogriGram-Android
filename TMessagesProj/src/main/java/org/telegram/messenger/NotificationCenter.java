@@ -217,10 +217,7 @@ public class NotificationCenter {
     public static final int didUpdatePremiumGiftStickers = totalEvents++;
     public static final int didUpdateTonGiftStickers = totalEvents++;
     public static final int didUpdatePremiumGiftFieldIcon = totalEvents++;
-    public static final int storiesEnabledUpdate = totalEvents++;
     public static final int storiesBlocklistUpdate = totalEvents++;
-    public static final int storiesLimitUpdate = totalEvents++;
-    public static final int storiesSendAsUpdate = totalEvents++;
     public static final int unconfirmedAuthUpdate = totalEvents++;
     public static final int dialogPhotosUpdate = totalEvents++;
     public static final int channelRecommendationsLoaded = totalEvents++;
@@ -332,10 +329,7 @@ public class NotificationCenter {
     public static final int storiesUpdated = totalEvents++;
     public static final int storyDeleted = totalEvents++;
     public static final int storiesListUpdated = totalEvents++;
-    public static final int storiesDraftsUpdated = totalEvents++;
     public static final int chatlistFolderUpdate = totalEvents++;
-    public static final int uploadStoryProgress = totalEvents++;
-    public static final int uploadStoryEnd = totalEvents++;
     public static final int customTypefacesLoaded = totalEvents++;
     public static final int stealthModeChanged = totalEvents++;
     public static final int onReceivedChannelDifference = totalEvents++;

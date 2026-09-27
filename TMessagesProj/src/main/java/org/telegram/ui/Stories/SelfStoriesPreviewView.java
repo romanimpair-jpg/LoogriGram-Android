@@ -421,11 +421,7 @@ public abstract class SelfStoriesPreviewView extends View {
             if (isAttachedToWindow) {
                 receiver.onAttachedToWindow();
             }
-            if (storyItem.storyItem != null) {
-                StoriesUtilities.setImage(receiver, storyItem.storyItem);
-            } else {
-                StoriesUtilities.setImage(receiver, storyItem.uploadingStory);
-            }
+            StoriesUtilities.setImage(receiver, storyItem.storyItem);
             updateLayout();
         }
 

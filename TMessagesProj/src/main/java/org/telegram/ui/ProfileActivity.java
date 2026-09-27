@@ -5429,7 +5429,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             protected void onTap(StoryViewer.PlaceProvider provider) {
                 long did = getDialogId();
                 StoriesController storiesController = getMessagesController().getStoriesController();
-                if (storiesController.hasStories(did) || storiesController.hasUploadingStories(did) || storiesController.isLastUploadingFailed(did)) {
+                if (storiesController.hasStories(did)) {
                     getOrCreateStoryViewer().open(context, did, provider);
                 } else if (userInfo != null && userInfo.stories != null && !userInfo.stories.stories.isEmpty() && userId != getUserConfig().clientUserId) {
                     getOrCreateStoryViewer().open(context, userInfo.stories, provider);

@@ -35,7 +35,6 @@ import org.telegram.ui.Stories.recorder.CollageLayout;
 import org.telegram.ui.Stories.recorder.StoryEntry;
 import org.telegram.ui.Stories.recorder.Weather;
 
-import java.io.File;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.Locale;
@@ -740,53 +739,8 @@ public class VideoEditedInfo {
         public CollageLayout.Part part;
 
         public Part() {}
-        public Part(StoryEntry entry) {
-            isVideo = entry.isVideo;
-            muted = entry.muted;
-            path = entry.file.getAbsolutePath();
-            volume = entry.videoVolume;
-            loop = entry.videoLoop;
-            offset = entry.videoOffset;
-            left = entry.videoLeft;
-            right = entry.videoRight;
-            width = entry.width;
-            height = entry.height;
-            duration = entry.duration;
-        }
-
-        public static ArrayList<Part> toParts(StoryEntry collageEntry) {
-            if (collageEntry == null || collageEntry.collageContent == null)
-                return null;
-            final ArrayList<Part> parts = new ArrayList<>();
-            for (int i = 0; i < collageEntry.collageContent.size(); ++i) {
-                final StoryEntry entry = collageEntry.collageContent.get(i);
-                Part part = new Part(entry);
-                part.part = collageEntry.collage.parts.get(i);
-                parts.add(part);
-            }
-            return parts;
-        }
-
-        public static ArrayList<StoryEntry> toStoryEntries(ArrayList<Part> parts) {
-            if (parts == null) return null;
-            final ArrayList<StoryEntry> entries = new ArrayList<>();
-            for (Part part : parts) {
-                final StoryEntry entry = new StoryEntry();
-                entry.isVideo = part.isVideo;
-                entry.muted = part.muted;
-                entry.file = new File(part.path);
-                entry.videoVolume = part.volume;
-                entry.videoLoop = part.loop;
-                entry.videoOffset = part.offset;
-                entry.videoLeft = part.left;
-                entry.videoRight = part.right;
-                entry.width = part.width;
-                entry.height = part.height;
-                entry.duration = part.duration;
-                entries.add(entry);
-            }
-            return entries;
-        }
+        // LoogriGram: a part was also made from, and turned back into, a
+        // collage's StoryEntry, for the story editor.
 
         @Override
         public void readParams(InputSerializedData stream, boolean exception) {

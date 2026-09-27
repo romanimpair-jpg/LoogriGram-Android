@@ -27,7 +27,6 @@ import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.ViewParent;
-import android.widget.TextView;
 
 import androidx.core.graphics.ColorUtils;
 import androidx.recyclerview.widget.RecyclerView;
@@ -51,10 +50,8 @@ import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.BaseFragment;
-import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.AnimatedColor;
-import org.telegram.ui.Components.AnimatedTextView;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.ButtonBounce;
 import org.telegram.ui.Components.ColoredImageSpan;
@@ -526,7 +523,7 @@ public class StoriesUtilities {
                 } else {
                     if (i >= userStories.stories.size()) {
                         segmentPaint = unreadPaint;
-                    } else if (userStories.stories.get(i).justUploaded || userStories.stories.get(i).id > maxUnread) {
+                    } else if (userStories.stories.get(i).id > maxUnread) {
                         if (userStories.stories.get(i).media instanceof TLRPC.TL_messageMediaVideoStream) {
                             segmentPaint = livePaint;
                         } else if (userStories.stories.get(i).close_friends) {
@@ -902,14 +899,6 @@ public class StoriesUtilities {
         }
     }
 
-    public static void setImage(ImageReceiver imageReceiver, StoriesController.UploadingStory uploadingStory) {
-        if (uploadingStory.entry.isVideo) {
-            imageReceiver.setImage(ImageLocation.getForPath(uploadingStory.firstFramePath), "320_180", null, null, null, 0, null, null, 0);
-        } else {
-            imageReceiver.setImage(ImageLocation.getForPath(uploadingStory.path), "320_180", null, null, null, 0, null, null, 0);
-        }
-    }
-
     public static void setThumbImage(AvatarDrawable avatarDrawable, ImageReceiver imageReceiver, TL_stories.StoryItem storyItem, int w, int h) {
         if (storyItem.media instanceof TLRPC.TL_messageMediaVideoStream) {
             final TLObject peer = MessagesController.getInstance(imageReceiver.getCurrentAccount()).getUserOrChat(storyItem.dialogId);
@@ -943,58 +932,6 @@ public class StoriesUtilities {
             expiredStoryDrawable = new BitmapDrawable(bitmap);
         }
         return expiredStoryDrawable;
-    }
-
-    public static CharSequence getUploadingStr(TextView textView, boolean medium, boolean edit) {
-        String str;
-        if (edit) {
-            str = getString(R.string.StoryEditing);
-        } else {
-            str = getString(R.string.UploadingStory);
-        }
-        int index = str.indexOf("…");
-        if (index > 0) {
-            SpannableStringBuilder spannableStringBuilder = SpannableStringBuilder.valueOf(str);
-            UploadingDotsSpannable dotsSpannable = new UploadingDotsSpannable();
-            spannableStringBuilder.setSpan(dotsSpannable, spannableStringBuilder.length() - 1, spannableStringBuilder.length(), 0);
-            dotsSpannable.setParent(textView, medium);
-            return spannableStringBuilder;
-        } else {
-            return str;
-        }
-    }
-
-    public static void applyUploadingStr(SimpleTextView textView, boolean medium, boolean edit) {
-        String str;
-        if (edit) {
-            str = getString(R.string.StoryEditing);
-        } else {
-            str = getString(R.string.UploadingStory);
-        }
-        int index = str.indexOf("…");
-        if (index > 0) {
-            SpannableStringBuilder spannableStringBuilder = SpannableStringBuilder.valueOf(str);
-            UploadingDotsSpannable dotsSpannable = new UploadingDotsSpannable();
-            spannableStringBuilder.setSpan(dotsSpannable, spannableStringBuilder.length() - 1, spannableStringBuilder.length(), 0);
-            dotsSpannable.setParent(textView, medium);
-            textView.setText(spannableStringBuilder);//, animated);
-        } else {
-            textView.setText(str);
-        }
-    }
-
-    public static void applyUploadingStr(AnimatedTextView textView, boolean medium, boolean animated) {
-        String str = getString(R.string.UploadingStory);
-        int index = str.indexOf("…");
-        if (index > 0) {
-            SpannableStringBuilder spannableStringBuilder = SpannableStringBuilder.valueOf(str);
-            UploadingDotsSpannable dotsSpannable = new UploadingDotsSpannable();
-            spannableStringBuilder.setSpan(dotsSpannable, spannableStringBuilder.length() - 1, spannableStringBuilder.length(), 0);
-            dotsSpannable.setParent(textView, medium);
-            textView.setText(str, animated);
-        } else {
-            textView.setText(str);
-        }
     }
 
     public static CharSequence createExpiredStoryString() {

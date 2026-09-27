@@ -39,51 +39,6 @@ public class TL_bots {
         }
     }
 
-    public static class addPreviewMedia extends TLObject {
-        public static final int constructor = 0x17aeb75a;
-
-        public TLRPC.InputUser bot;
-        public String lang_code = "";
-        public TLRPC.InputMedia media;
-
-        @Override
-        public TLObject deserializeResponse(InputSerializedData stream, int constructor, boolean exception) {
-            return botPreviewMedia.TLdeserialize(stream, constructor, exception);
-        }
-
-        @Override
-        public void serializeToStream(OutputSerializedData stream) {
-            stream.writeInt32(constructor);
-            bot.serializeToStream(stream);
-            stream.writeString(lang_code);
-            media.serializeToStream(stream);
-        }
-    }
-
-    public static class editPreviewMedia extends TLObject {
-        public static final int constructor = 0x8525606f;
-
-        public TLRPC.InputUser bot;
-        public String lang_code = "";
-
-        public TLRPC.InputMedia media;
-        public TLRPC.InputMedia new_media;
-
-        @Override
-        public TLObject deserializeResponse(InputSerializedData stream, int constructor, boolean exception) {
-            return botPreviewMedia.TLdeserialize(stream, constructor, exception);
-        }
-
-        @Override
-        public void serializeToStream(OutputSerializedData stream) {
-            stream.writeInt32(constructor);
-            bot.serializeToStream(stream);
-            stream.writeString(lang_code);
-            media.serializeToStream(stream);
-            new_media.serializeToStream(stream);
-        }
-    }
-
     public static class deletePreviewMedia extends TLObject {
         public static final int constructor = 0x2d0135b3;
 
