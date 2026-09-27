@@ -2356,7 +2356,6 @@
     <string name="MessagePreview">Message Preview</string>
     <string name="NotificationShowSenderNames">Show Senders Name</string>
     <string name="StoryAutoExceptions">Automatic Exceptions</string>
-    <string name="StoryAutoExceptionsInfo">Automatically enable story notifications from 5 users you contact most frequently.</string>
     <string name="Sound">Sound</string>
     <string name="InAppNotifications">In-app notifications</string>
     <string name="InAppSounds">In-App Sounds</string>
@@ -4784,8 +4783,6 @@
     <string name="Subscribers_other">%1$d subscribers</string>
     <string name="Exception_one">%1$d exception</string>
     <string name="Exception_other">%1$d exceptions</string>
-    <string name="AutoException_one">%1$d automatic exception</string>
-    <string name="AutoException_other">%1$d automatic exceptions</string>
     <string name="RemovedUser_one">%1$d removed user</string>
     <string name="RemovedUser_other">%1$d removed users</string>
     <string name="Points_one">%1$d</string>
@@ -5524,7 +5521,6 @@
     <string name="NotificationsSoundPrivate">Private Chats Sound</string>
     <string name="NotificationsSoundGroup">Groups Sound</string>
     <string name="NotificationsSoundChannels">Channels Sound</string>
-    <string name="NotificationsSoundStories">Stories Sound</string>
     <string name="NotificationsSoundReactions">Reactions Sound</string>
     <string name="TooLongError">Too long</string>
     <string name="TooLargeError">Too large</string>
@@ -6589,7 +6585,6 @@
     <string name="StoriesMovedToDialogs">Stories of **%s** were moved to **Chats**.</string>
     <string name="StoryShared">Story shared</string>
     <string name="StoryDraftSaved">Draft saved</string>
-    <string name="StoriesSoundEnabled">Stories</string>
     <string name="StoryUnsupported">This story is not supported by your version of Telegram.</string>
     <string name="StoryReplyDisabled">You can’t reply to this story</string>
     <string name="StorySharedTo">Story forwarded to **%s**.</string>
@@ -6615,10 +6610,6 @@
     <string name="AutoDownloadStories">Stories</string>
     <string name="AutoDownloadOn">On</string>
     <string name="HiddenStories">Hidden Stories</string>
-    <string name="NotificationStories">Stories</string>
-    <string name="NotificationEnabled">Enabled</string>
-    <string name="NotificationEnabledAutomatically">Automatically enabled</string>
-    <string name="NotificationDisabled">Disabled</string>
     <string name="NoViewsStub">No one has viewed this story so far.</string>
     <string name="NoReactionsStub">No one has reacted to this story so far.</string>
     <string name="StoryCloseFriendsHint">You are seeing this story because **%s** added you to their list of Close Friends</string>
@@ -7891,15 +7882,11 @@
     <string name="StoriesPinLimit_other">You can’t pin more than %d posts.</string>
     <string name="NotificationReactions">Reactions</string>
     <string name="NotificationReactionsMessages">Messages</string>
-    <string name="NotificationReactionsStories">Stories</string>
     <string name="NotifyMeAbout">Notify me about…</string>
     <string name="NotifyMeAboutPrivate">New Messages in Private Chats</string>
-    <string name="NotifyMeAboutNewStories">New Stories</string>
-    <string name="NotifyMeAboutImportantStories">Important Stories</string>
     <string name="NotifyMeAboutGroups">New Messages in Groups</string>
     <string name="NotifyMeAboutChannels">New Messages in Channels</string>
     <string name="NotifyMeAboutMessagesReactions">Reactions to My Messages</string>
-    <string name="NotifyMeAboutStoriesReactions">Reactions to My Stories</string>
     <string name="NotifyFromContacts">From My Contacts</string>
     <string name="NotifyFromEveryone">From Everyone</string>
     <string name="NotifyFromNobody">Off</string>

@@ -287,7 +287,6 @@
     <string name="MessagePreview">Mostrar vistas previas</string>
     <string name="NotificationShowSenderNames">Mostrar remitente</string>
     <string name="StoryAutoExceptions">Excepciones automáticas</string>
-    <string name="StoryAutoExceptionsInfo">Activa automáticamente las notificaciones para las historias de tus 5 contactos más frecuentes.</string>
     <string name="Sound">Sonido</string>
     <string name="InAppNotifications">Notificaciones en la app</string>
     <string name="InAppSounds">Sonidos en la app</string>

@@ -306,7 +306,6 @@
     <string name="MessagePreview">Prévias de Mensagens</string>
     <string name="NotificationShowSenderNames">Mostrar Nome do Autor</string>
     <string name="StoryAutoExceptions">Exceções Automáticas</string>
-    <string name="StoryAutoExceptionsInfo">Ativa automaticamente notificações de stories dos seus 5 usuários mais frequentes.</string>
     <string name="Sound">Som</string>
     <string name="InAppNotifications">Notificações no aplicativo</string>
     <string name="InAppSounds">Sons no Aplicativo</string>

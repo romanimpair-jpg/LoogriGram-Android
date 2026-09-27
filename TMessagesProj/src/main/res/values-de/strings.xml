@@ -269,7 +269,6 @@
     <string name="MessagePreview">Nachrichtenvorschau</string>
     <string name="NotificationShowSenderNames">Absendername zeigen</string>
     <string name="StoryAutoExceptions">Automatische Ausnahmen</string>
-    <string name="StoryAutoExceptionsInfo">Aktiviere automatisch Story-Benachrichtigungen von 5 Nutzern, die du am häufigsten kontaktierst.</string>
     <string name="Sound">Ton</string>
     <string name="InAppNotifications">"In-App "</string>
     <string name="InAppSounds">In-App-Töne</string>

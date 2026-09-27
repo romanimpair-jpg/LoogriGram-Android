@@ -323,7 +323,6 @@
     <string name="MessagePreview">Mostra anteprime messaggi</string>
     <string name="NotificationShowSenderNames">Mostra nome mittente</string>
     <string name="StoryAutoExceptions">Eccezioni automatiche</string>
-    <string name="StoryAutoExceptionsInfo">Attiva automaticamente le notifiche delle storie per i 5 utenti che contatti più di frequente.</string>
     <string name="Sound">Suono</string>
     <string name="InAppNotifications">Notifiche in-app</string>
     <string name="InAppSounds">Suoni in-app</string>

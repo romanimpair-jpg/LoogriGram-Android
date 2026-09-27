@@ -323,7 +323,6 @@
     <string name="MessagePreview">Berichtvoorbeelden weergeven</string>
     <string name="NotificationShowSenderNames">Naam afzender weergeven</string>
     <string name="StoryAutoExceptions">Automatische uitzonderingen</string>
-    <string name="StoryAutoExceptionsInfo">Verhaalmeldingen automatisch inschakelen voor de 5 gebruikers die je het vaakst spreekt.</string>
     <string name="Sound">Geluid</string>
     <string name="InAppNotifications">In-app meldingen</string>
     <string name="InAppSounds">Geluiden</string>

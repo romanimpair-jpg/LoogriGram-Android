@@ -287,7 +287,6 @@
     <string name="MessagePreview">إظهار معاينة للرسالة</string>
     <string name="NotificationShowSenderNames">إظهار اسم المرسل</string>
     <string name="StoryAutoExceptions">الاستثناءات التلقائية</string>
-    <string name="StoryAutoExceptionsInfo">التمكين التلقائي لإشعارات القصة لأكثر ٥ مستخدمين تواصلت معهم.</string>
     <string name="Sound">الصوت</string>
     <string name="InAppNotifications">إشعارات داخل التطبيق</string>
     <string name="InAppSounds">أصوات داخل التطبيق</string>

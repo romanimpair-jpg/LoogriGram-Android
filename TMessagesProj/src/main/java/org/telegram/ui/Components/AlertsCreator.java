@@ -1485,11 +1485,11 @@ public class AlertsCreator {
         }
     }
 
-    public static void showCustomNotificationsDialog(BaseFragment parentFragment, long did, int topicId, int globalType, ArrayList<NotificationsSettingsActivity.NotificationException> exceptions, ArrayList<NotificationsSettingsActivity.NotificationException> autoExceptions, int currentAccount, MessagesStorage.IntCallback callback) {
-        showCustomNotificationsDialog(parentFragment, did, topicId, globalType, exceptions, autoExceptions, currentAccount, callback, null);
+    public static void showCustomNotificationsDialog(BaseFragment parentFragment, long did, int topicId, int globalType, ArrayList<NotificationsSettingsActivity.NotificationException> exceptions, int currentAccount, MessagesStorage.IntCallback callback) {
+        showCustomNotificationsDialog(parentFragment, did, topicId, globalType, exceptions, currentAccount, callback, null);
     }
 
-    public static void showCustomNotificationsDialog(BaseFragment parentFragment, long did, int topicId, int globalType, ArrayList<NotificationsSettingsActivity.NotificationException> exceptions, ArrayList<NotificationsSettingsActivity.NotificationException> autoExceptions, int currentAccount, MessagesStorage.IntCallback callback, MessagesStorage.IntCallback resultCallback) {
+    public static void showCustomNotificationsDialog(BaseFragment parentFragment, long did, int topicId, int globalType, ArrayList<NotificationsSettingsActivity.NotificationException> exceptions, int currentAccount, MessagesStorage.IntCallback callback, MessagesStorage.IntCallback resultCallback) {
         if (parentFragment == null || parentFragment.getParentActivity() == null) {
             return;
         }
@@ -1575,7 +1575,7 @@ public class AlertsCreator {
                         args.putLong("dialog_id", did);
                         parentFragment.presentFragment(new ProfileNotificationsActivity(args));
                     } else {
-                        parentFragment.presentFragment(new NotificationsCustomSettingsActivity(globalType, exceptions, autoExceptions));
+                        parentFragment.presentFragment(new NotificationsCustomSettingsActivity(globalType, exceptions));
                     }
                 } else {
                     int untilTime = ConnectionsManager.getInstance(currentAccount).getCurrentTime();
@@ -6721,9 +6721,7 @@ public class AlertsCreator {
             currentColor = preferences.getInt("MessagesLed", 0xff0000ff);
         } else if (globalType == NotificationsController.TYPE_GROUP) {
             currentColor = preferences.getInt("GroupLed", 0xff0000ff);
-        } else if (globalType == NotificationsController.TYPE_STORIES) {
-            currentColor = preferences.getInt("StoriesLed", 0xff0000ff);
-        } else if (globalType == NotificationsController.TYPE_REACTIONS_STORIES || globalType == NotificationsController.TYPE_REACTIONS_MESSAGES) {
+        } else if (globalType == NotificationsController.TYPE_REACTIONS_MESSAGES) {
             currentColor = preferences.getInt("ReactionsLed", 0xff0000ff);
         } else {
             currentColor = preferences.getInt("ChannelLed", 0xff0000ff);
@@ -6770,9 +6768,7 @@ public class AlertsCreator {
                     editor.putInt("MessagesLed", selectedColor[0]);
                 } else if (globalType == NotificationsController.TYPE_GROUP) {
                     editor.putInt("GroupLed", selectedColor[0]);
-                } else if (globalType == NotificationsController.TYPE_STORIES) {
-                    editor.putInt("StoriesLed", selectedColor[0]);
-                } else if (globalType == NotificationsController.TYPE_REACTIONS_STORIES || globalType == NotificationsController.TYPE_REACTIONS_MESSAGES) {
+                } else if (globalType == NotificationsController.TYPE_REACTIONS_MESSAGES) {
                     editor.putInt("ReactionLed", selectedColor[0]);
                 } else {
                     editor.putInt("ChannelLed", selectedColor[0]);
@@ -6793,9 +6789,7 @@ public class AlertsCreator {
                 editor.putInt("MessagesLed", 0);
             } else if (globalType == NotificationsController.TYPE_GROUP) {
                 editor.putInt("GroupLed", 0);
-            } else if (globalType == NotificationsController.TYPE_STORIES) {
-                editor.putInt("StoriesLed", 0);
-            } else if (globalType == NotificationsController.TYPE_REACTIONS_STORIES || globalType == NotificationsController.TYPE_REACTIONS_MESSAGES) {
+            } else if (globalType == NotificationsController.TYPE_REACTIONS_MESSAGES) {
                 editor.putInt("ReactionsLed", 0);
             } else {
                 editor.putInt("ChannelLed", 0);
@@ -7236,9 +7230,7 @@ public class AlertsCreator {
                 selected[0] = preferences.getInt("priority_group", 1);
             } else if (globalType == NotificationsController.TYPE_CHANNEL) {
                 selected[0] = preferences.getInt("priority_channel", 1);
-            } else if (globalType == NotificationsController.TYPE_STORIES) {
-                selected[0] = preferences.getInt("priority_stories", 1);
-            } else if (globalType == NotificationsController.TYPE_REACTIONS_MESSAGES || globalType == NotificationsController.TYPE_REACTIONS_STORIES) {
+            } else if (globalType == NotificationsController.TYPE_REACTIONS_MESSAGES) {
                 selected[0] = preferences.getInt("priority_react", 1);
             }
             if (selected[0] == 4) {
@@ -7309,10 +7301,7 @@ public class AlertsCreator {
                     } else if (globalType == NotificationsController.TYPE_CHANNEL) {
                         editor.putInt("priority_channel", option);
                         selected[0] = preferences.getInt("priority_channel", 1);
-                    } else if (globalType == NotificationsController.TYPE_STORIES) {
-                        editor.putInt("priority_stories", option);
-                        selected[0] = preferences.getInt("priority_stories", 1);
-                    } else if (globalType == NotificationsController.TYPE_REACTIONS_MESSAGES || globalType == NotificationsController.TYPE_REACTIONS_STORIES) {
+                    } else if (globalType == NotificationsController.TYPE_REACTIONS_MESSAGES) {
                         editor.putInt("priority_react", option);
                         selected[0] = preferences.getInt("priority_react", 1);
                     }

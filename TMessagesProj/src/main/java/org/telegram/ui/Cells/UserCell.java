@@ -360,58 +360,45 @@ public class UserCell extends FrameLayout implements NotificationCenter.Notifica
 
     public void setException(NotificationsSettingsActivity.NotificationException exception, CharSequence name, boolean divider) {
         String text;
-        if (exception.story) {
-            if (exception.notify <= 0 && exception.auto) {
-                text = getString(R.string.NotificationEnabledAutomatically);
-            } else if (exception.notify <= 0) {
-                text = getString(R.string.NotificationEnabled);
-            } else {
-                text = getString(R.string.NotificationDisabled);
-            }
-        } else {
-            boolean enabled;
-            boolean custom = exception.hasCustom;
-            int value = exception.notify;
-            int delta = exception.muteUntil;
-            if (value == 3 && delta != Integer.MAX_VALUE) {
-                delta -= ConnectionsManager.getInstance(currentAccount).getCurrentTime();
-                if (delta <= 0) {
-                    if (custom) {
-                        text = getString(R.string.NotificationsCustom);
-                    } else {
-                        text = getString(R.string.NotificationsUnmuted);
-                    }
-                } else if (delta < 60 * 60) {
-                    text = LocaleController.formatString("WillUnmuteIn", R.string.WillUnmuteIn, LocaleController.formatPluralString("Minutes", delta / 60));
-                } else if (delta < 60 * 60 * 24) {
-                    text = LocaleController.formatString("WillUnmuteIn", R.string.WillUnmuteIn, LocaleController.formatPluralString("Hours", (int) Math.ceil(delta / 60.0f / 60)));
-                } else if (delta < 60 * 60 * 24 * 365) {
-                    text = LocaleController.formatString("WillUnmuteIn", R.string.WillUnmuteIn, LocaleController.formatPluralString("Days", (int) Math.ceil(delta / 60.0f / 60 / 24)));
-                } else {
-                    text = null;
-                }
-            } else {
-                if (value == 0) {
-                    enabled = true;
-                } else if (value == 1) {
-                    enabled = true;
-                } else if (value == 2) {
-                    enabled = false;
-                } else {
-                    enabled = false;
-                }
-                if (enabled && custom) {
+        boolean enabled;
+        boolean custom = exception.hasCustom;
+        int value = exception.notify;
+        int delta = exception.muteUntil;
+        if (value == 3 && delta != Integer.MAX_VALUE) {
+            delta -= ConnectionsManager.getInstance(currentAccount).getCurrentTime();
+            if (delta <= 0) {
+                if (custom) {
                     text = getString(R.string.NotificationsCustom);
                 } else {
-                    text = getString(enabled ? R.string.NotificationsUnmuted : R.string.NotificationsMuted);
+                    text = getString(R.string.NotificationsUnmuted);
                 }
+            } else if (delta < 60 * 60) {
+                text = LocaleController.formatString("WillUnmuteIn", R.string.WillUnmuteIn, LocaleController.formatPluralString("Minutes", delta / 60));
+            } else if (delta < 60 * 60 * 24) {
+                text = LocaleController.formatString("WillUnmuteIn", R.string.WillUnmuteIn, LocaleController.formatPluralString("Hours", (int) Math.ceil(delta / 60.0f / 60)));
+            } else if (delta < 60 * 60 * 24 * 365) {
+                text = LocaleController.formatString("WillUnmuteIn", R.string.WillUnmuteIn, LocaleController.formatPluralString("Days", (int) Math.ceil(delta / 60.0f / 60 / 24)));
+            } else {
+                text = null;
             }
-            if (text == null) {
-                text = getString(R.string.NotificationsOff);
+        } else {
+            if (value == 0) {
+                enabled = true;
+            } else if (value == 1) {
+                enabled = true;
+            } else if (value == 2) {
+                enabled = false;
+            } else {
+                enabled = false;
             }
-            if (exception.auto) {
-                text += ", Auto";
+            if (enabled && custom) {
+                text = getString(R.string.NotificationsCustom);
+            } else {
+                text = getString(enabled ? R.string.NotificationsUnmuted : R.string.NotificationsMuted);
             }
+        }
+        if (text == null) {
+            text = getString(R.string.NotificationsOff);
         }
 
         if (DialogObject.isEncryptedDialog(exception.did)) {

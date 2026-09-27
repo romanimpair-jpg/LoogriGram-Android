@@ -3881,8 +3881,9 @@ public class NotificationsController extends BaseController implements Notificat
                                     if (type == TYPE_STORIES) {
                                         editor.putBoolean("EnableAllStories", false);
                                     } else if (type == TYPE_REACTIONS_MESSAGES) {
+                                        // LoogriGram: this also switched story reactions on;
+                                        // they stay the server's (see above).
                                         editor.putBoolean("EnableReactionsMessages", true);
-                                        editor.putBoolean("EnableReactionsStories", true);
                                     } else {
                                         editor.putInt(getGlobalNotificationsKey(type), Integer.MAX_VALUE);
                                     }
@@ -3914,8 +3915,9 @@ public class NotificationsController extends BaseController implements Notificat
                                     if (type == TYPE_STORIES) {
                                         editor.putBoolean("EnableAllStories", true);
                                     } else if (type == TYPE_REACTIONS_MESSAGES) {
+                                        // LoogriGram: this also switched story reactions on;
+                                        // they stay the server's (see above).
                                         editor.putBoolean("EnableReactionsMessages", true);
-                                        editor.putBoolean("EnableReactionsStories", true);
                                     } else {
                                         editor.putInt(getGlobalNotificationsKey(type), 0);
                                     }
@@ -6110,6 +6112,8 @@ public class NotificationsController extends BaseController implements Notificat
                     req.settings.messages_notify_from = new TL_account.TL_reactionNotificationsFromAll();
                 }
             }
+            // LoogriGram: reactions to our stories have no switch any more; this is
+            // the server's value as MessagesController read it, sent back unchanged.
             if (preferences.getBoolean("EnableReactionsStories", true)) {
                 req.settings.flags |= 2;
                 if (preferences.getBoolean("EnableReactionsStoriesContacts", false)) {
@@ -6139,8 +6143,14 @@ public class NotificationsController extends BaseController implements Notificat
             req.settings.mute_until = preferences.getInt("EnableAll2", 0);
             req.settings.show_previews = preferences.getBoolean("EnablePreviewAll", true);
 
-            req.settings.flags |= 128;
-            req.settings.stories_hide_sender = preferences.getBoolean("EnableHideStoriesSenders", false);
+            // LoogriGram: the three story settings have no rows any more. Each is
+            // sent only when we hold the server's value (MessagesController reads
+            // all three), so saving the private-chat settings hands them back as
+            // they were instead of resetting them to our local defaults.
+            if (preferences.contains("EnableHideStoriesSenders")) {
+                req.settings.flags |= 128;
+                req.settings.stories_hide_sender = preferences.getBoolean("EnableHideStoriesSenders", false);
+            }
             if (preferences.contains("EnableAllStories")) {
                 req.settings.flags |= 64;
                 req.settings.stories_muted = !preferences.getBoolean("EnableAllStories", true);
@@ -6149,8 +6159,10 @@ public class NotificationsController extends BaseController implements Notificat
             req.settings.flags |= 8;
             req.settings.sound = getInputSound(preferences, "GlobalSound", "GlobalSoundDocId", "GlobalSoundPath");
 
-            req.settings.flags |= 256;
-            req.settings.stories_sound = getInputSound(preferences, "StoriesSound", "StoriesSoundDocId", "StoriesSoundPath");
+            if (preferences.contains("StoriesSoundPath") || preferences.contains("StoriesSoundDocId")) {
+                req.settings.flags |= 256;
+                req.settings.stories_sound = getInputSound(preferences, "StoriesSound", "StoriesSoundDocId", "StoriesSoundPath");
+            }
         } else {
             req.peer = new TLRPC.TL_inputNotifyBroadcasts();
             req.settings.mute_until = preferences.getInt("EnableChannel2", 0);

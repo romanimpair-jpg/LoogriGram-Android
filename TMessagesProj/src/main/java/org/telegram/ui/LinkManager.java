@@ -565,18 +565,20 @@ public class LinkManager {
         }
 
         if ("notifications".equalsIgnoreCase(first)) {
+            // LoogriGram: notifications/stories and its rows (new, important, show
+            // sender, ...) opened the Stories notification settings, and
+            // notifications/reactions/stories the story-reactions switch. Stories
+            // are removed; those links open the notification settings themselves.
             if (!TextUtils.isEmpty(third) && (
                 "private-chats".equalsIgnoreCase(second) ||
                 "groups".equalsIgnoreCase(second) ||
                 "channels".equalsIgnoreCase(second) ||
-                "stories".equalsIgnoreCase(second) ||
                 "reactions".equalsIgnoreCase(second)
             )) {
                 int _type = 0;
                 if      ("private-chats".equalsIgnoreCase(second)) _type = NotificationsController.TYPE_PRIVATE;
                 else if ("groups".equalsIgnoreCase(second))        _type = NotificationsController.TYPE_GROUP;
                 else if ("channels".equalsIgnoreCase(second))      _type = NotificationsController.TYPE_CHANNEL;
-                else if ("stories".equalsIgnoreCase(second))       _type = NotificationsController.TYPE_STORIES;
                 else if ("reactions".equalsIgnoreCase(second))     _type = NotificationsController.TYPE_REACTIONS_MESSAGES;
                 final int type = _type;
 
@@ -592,14 +594,8 @@ public class LinkManager {
 
                     if ("show".equalsIgnoreCase(third))
                         scrollTo("showRow");
-                    if ("new".equalsIgnoreCase(third))
-                        scrollTo("newRow");
-                    if ("important".equalsIgnoreCase(third))
-                        scrollTo("importantRow");
                     if ("messages".equalsIgnoreCase(third))
                         scrollTo("messagesRow");
-                    if ("stories".equalsIgnoreCase(third))
-                        scrollTo("storiesRow");
                     if ("preview".equalsIgnoreCase(third))
                         scrollTo("previewRow");
                     if ("show-sender".equalsIgnoreCase(third))
@@ -632,8 +628,6 @@ public class LinkManager {
                 scrollTo("groupRow");
             if ("channels".equalsIgnoreCase(second))
                 scrollTo("channelsRow");
-            if ("stories".equalsIgnoreCase(second))
-                scrollTo("storiesRow");
             if ("reactions".equalsIgnoreCase(second))
                 scrollTo("reactionsRow");
 

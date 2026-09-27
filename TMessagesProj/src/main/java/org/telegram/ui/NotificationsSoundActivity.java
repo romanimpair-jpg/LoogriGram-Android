@@ -151,10 +151,7 @@ public class NotificationsSoundActivity extends BaseFragment implements ChatAtta
             } else if (currentType == NotificationsController.TYPE_CHANNEL) {
                 prefPath = "ChannelSoundPath";
                 prefDocId = "ChannelSoundDocId";
-            } else if (currentType == NotificationsController.TYPE_STORIES) {
-                prefPath = "StoriesSoundPath";
-                prefDocId = "StoriesSoundDocId";
-            } else if (currentType == NotificationsController.TYPE_REACTIONS_MESSAGES || currentType == NotificationsController.TYPE_REACTIONS_STORIES) {
+            } else if (currentType == NotificationsController.TYPE_REACTIONS_MESSAGES) {
                 prefPath = "ReactionSoundPath";
                 prefDocId = "ReactionSoundDocId";
             } else {
@@ -298,9 +295,7 @@ public class NotificationsSoundActivity extends BaseFragment implements ChatAtta
                 actionBar.setTitle(LocaleController.getString(R.string.NotificationsSoundGroup));
             } else if (currentType == NotificationsController.TYPE_CHANNEL) {
                 actionBar.setTitle(LocaleController.getString(R.string.NotificationsSoundChannels));
-            } else if (currentType == NotificationsController.TYPE_STORIES) {
-                actionBar.setTitle(LocaleController.getString(R.string.NotificationsSoundStories));
-            } else if (currentType == NotificationsController.TYPE_REACTIONS_STORIES || currentType == NotificationsController.TYPE_REACTIONS_MESSAGES) {
+            } else if (currentType == NotificationsController.TYPE_REACTIONS_MESSAGES) {
                 actionBar.setTitle(LocaleController.getString(R.string.NotificationsSoundReactions));
             }
         } else {
@@ -890,11 +885,7 @@ public class NotificationsSoundActivity extends BaseFragment implements ChatAtta
                     prefName = "ChannelSound";
                     prefPath = "ChannelSoundPath";
                     prefDocId = "ChannelSoundDocId";
-                } else if (currentType == NotificationsController.TYPE_STORIES) {
-                    prefName = "StoriesSound";
-                    prefPath = "StoriesSoundPath";
-                    prefDocId = "StoriesSoundDocId";
-                } else if (currentType == NotificationsController.TYPE_REACTIONS_STORIES || currentType == NotificationsController.TYPE_REACTIONS_MESSAGES) {
+                } else if (currentType == NotificationsController.TYPE_REACTIONS_MESSAGES) {
                     prefName = "ReactionSound";
                     prefPath = "ReactionSoundPath";
                     prefDocId = "ReactionSoundDocId";

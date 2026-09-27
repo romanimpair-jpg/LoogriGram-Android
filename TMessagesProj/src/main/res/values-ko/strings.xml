@@ -319,7 +319,6 @@
     <string name="MessagePreview">메시지 미리보기 표시</string>
     <string name="NotificationShowSenderNames">보내는 사람 이름 보기</string>
     <string name="StoryAutoExceptions">자동 예외</string>
-    <string name="StoryAutoExceptionsInfo">가장 빈번하게 연락하는 사용자 5명에게 자동으로 스토리 알림을 허용합니다.</string>
     <string name="Sound">소리</string>
     <string name="InAppNotifications">앱 사용 중 알림</string>
     <string name="InAppSounds">앱 사용 중 소리</string>

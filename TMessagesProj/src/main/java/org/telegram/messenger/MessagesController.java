@@ -11710,6 +11710,13 @@ public class MessagesController extends BaseController implements NotificationCe
                             if ((notify_settings.flags & 128) != 0) {
                                 editor.putBoolean("EnableHideStoriesSenders", notify_settings.stories_hide_sender);
                             }
+                            // LoogriGram: the story sound was never read, so every save of
+                            // private-chat settings sent our local default (none) back as
+                            // stories_sound. Its settings rows are gone; it is read here so
+                            // that what goes back is what the server had.
+                            if ((notify_settings.flags & 512) != 0) {
+                                getNotificationsController().getNotificationsSettingsFacade().applySoundSettings(notify_settings.stories_android_sound, editor, 0, 0, NotificationsController.TYPE_STORIES, false);
+                            }
                             if ((notify_settings.flags & 2) != 0) {
                             /*if (notify_settings.silent) {
                                 editor.putString("GlobalSoundPath", "NoSound");
@@ -19237,6 +19244,11 @@ public class MessagesController extends BaseController implements NotificationCe
                                 Boolean newStoriesSendersHide = null;
                                 if ((update.notify_settings.flags & 128) != 0) {
                                     editor.putBoolean("EnableHideStoriesSenders", newStoriesSendersHide = update.notify_settings.stories_hide_sender);
+                                }
+                                // LoogriGram: as when the settings are loaded - keep the story
+                                // sound the server has, so saving sends it back unchanged.
+                                if ((update.notify_settings.flags & 512) != 0) {
+                                    getNotificationsController().getNotificationsSettingsFacade().applySoundSettings(update.notify_settings.stories_android_sound, editor, 0, 0, NotificationsController.TYPE_STORIES, false);
                                 }
                                 if ((storiesEnabled == null) != (newStoriesEnabled == null) || (storiesSendersHide == null) != (newStoriesSendersHide == null) ||
                                     storiesEnabled != null && storiesEnabled != newStoriesEnabled || storiesSendersHide != null && storiesSendersHide != newStoriesSendersHide) {
