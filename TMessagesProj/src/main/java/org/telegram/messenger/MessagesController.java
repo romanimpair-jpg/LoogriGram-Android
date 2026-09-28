@@ -17766,16 +17766,11 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                 }
             } else if (baseUpdate instanceof TL_update.TL_updateGroupCallMessage) {
-                final TL_update.TL_updateGroupCallMessage u = (TL_update.TL_updateGroupCallMessage) baseUpdate;
-                GroupCallMessagesController.getInstance(currentAccount).processUpdate(u);
-                AndroidUtilities.runOnUIThread(() -> {
-                    getNotificationCenter().postNotificationName(NotificationCenter.liveStoryMessageUpdate, u.call.id, u, false);
-                });
+                GroupCallMessagesController.getInstance(currentAccount).processUpdate((TL_update.TL_updateGroupCallMessage) baseUpdate);
             } else if (baseUpdate instanceof TL_update.TL_updateDeleteGroupCallMessages) {
-                final TL_update.TL_updateDeleteGroupCallMessages u = (TL_update.TL_updateDeleteGroupCallMessages) baseUpdate;
-                AndroidUtilities.runOnUIThread(() -> {
-                    getNotificationCenter().postNotificationName(NotificationCenter.liveStoryMessageUpdate, u.call.id, u, false);
-                });
+                // LoogriGram: this and the message above also told a live story's
+                // comments to refresh (liveStoryMessageUpdate). Live stories are
+                // removed, as on desktop, and nothing else showed a deletion.
             } else if (baseUpdate instanceof TL_update.TL_updateGroupCallEncryptedMessage) {
                 GroupCallMessagesController.getInstance(currentAccount)
                     .processUpdate((TL_update.TL_updateGroupCallEncryptedMessage) baseUpdate);
@@ -18045,8 +18040,12 @@ public class MessagesController extends BaseController implements NotificationCe
                     chatInfoToUpdate = new ArrayList<>();
                 }
                 chatInfoToUpdate.add(update.participants);
-            } else if (baseUpdate instanceof TL_stories.TL_updateStory) {
-                getStoriesController().processUpdate((TL_stories.TL_updateStory) baseUpdate);
+            } else if (baseUpdate instanceof TL_stories.TL_updateStory || baseUpdate instanceof TL_stories.TL_updateReadStories
+                || baseUpdate instanceof TL_stories.TL_updateStoriesStealthMode || baseUpdate instanceof TL_update.TL_updateStoryID
+                || baseUpdate instanceof TL_update.TL_updateSentStoryReaction || baseUpdate instanceof TL_update.TL_updateNewStoryReaction) {
+                // LoogriGram: stories are removed, as on desktop, so their updates are
+                // accepted and ignored - a story posted, edited or deleted, stories read,
+                // a reaction sent or received, anonymous viewing. None carries a pts.
             } else if (baseUpdate instanceof TL_update.TL_updateUserStatus) {
                 interfaceUpdateMask |= UPDATE_MASK_STATUS;
                 if (updatesOnMainThread == null) {
@@ -18094,10 +18093,6 @@ public class MessagesController extends BaseController implements NotificationCe
                     updatesOnMainThread = new ArrayList<>();
                 }
                 updatesOnMainThread.add(baseUpdate);
-            } else if (baseUpdate instanceof TL_stories.TL_updateReadStories) {
-                TL_stories.TL_updateReadStories updateReadStories = (TL_stories.TL_updateReadStories) baseUpdate;
-                long dialogId = DialogObject.getPeerDialogId(updateReadStories.peer);
-                getStoriesController().markStoriesAsReadFromServer(dialogId, updateReadStories.max_id);
             } else if (baseUpdate instanceof TL_update.TL_updatePeerSettings) {
                 TL_update.TL_updatePeerSettings update = (TL_update.TL_updatePeerSettings) baseUpdate;
                 if (contactsIds == null) {
@@ -18227,7 +18222,8 @@ public class MessagesController extends BaseController implements NotificationCe
                         blockePeers.delete(id);
                     }
                     getNotificationCenter().postNotificationName(NotificationCenter.blockedUsersDidLoad);
-                    getStoriesController().updateBlockUser(id, finalUpdate.blocked_my_stories_from, false);
+                    // LoogriGram: blocked_my_stories_from also updated the list of who
+                    // may not see our stories. Stories are removed, and so is the list.
                 }));
             } else if (baseUpdate instanceof TL_update.TL_updateServiceNotification) {
                 TL_update.TL_updateServiceNotification update = (TL_update.TL_updateServiceNotification) baseUpdate;
@@ -18398,7 +18394,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     updatesOnMainThread = new ArrayList<>();
                 }
                 updatesOnMainThread.add(baseUpdate);
-            } else if (baseUpdate instanceof TL_update.TL_updateChat || baseUpdate instanceof TL_update.TL_updateSentStoryReaction) {
+            } else if (baseUpdate instanceof TL_update.TL_updateChat) {
                 if (updatesOnMainThread == null) {
                     updatesOnMainThread = new ArrayList<>();
                 }
@@ -19067,9 +19063,6 @@ public class MessagesController extends BaseController implements NotificationCe
                         if (UserObject.isUserSelf(currentUser)) {
                             getNotificationCenter().postNotificationName(NotificationCenter.mainUserInfoChanged);
                         }
-                    } else if (baseUpdate instanceof TL_update.TL_updateNewStoryReaction) {
-                        // LoogriGram: a reaction to one of our stories. Stories are
-                        // removed, and so is the notification this posted.
                     } else if (baseUpdate instanceof TL_update.TL_updateStarsBalance) {
                         // LoogriGram: our Stars or TON balance - there is no wallet to update.
                     } else if (baseUpdate instanceof TL_update.TL_updateUser) {
@@ -19341,9 +19334,6 @@ public class MessagesController extends BaseController implements NotificationCe
                             DialogObject.getPeerDialogId(update.saved_peer_id): update.top_msg_id;
 
                         getMediaDataController().saveDraft(did, threadId, update.draft, null, true);
-                    } else if (baseUpdate instanceof TL_stories.TL_updateStoriesStealthMode) {
-                        TL_stories.TL_updateStoriesStealthMode storiesStealthModeUpdate = (TL_stories.TL_updateStoriesStealthMode) baseUpdate;
-                        getStoriesController().setStealthMode(storiesStealthModeUpdate.stealth_mode);
                     } else if (baseUpdate instanceof TL_update.TL_updateReadFeaturedStickers) {
                         getMediaDataController().markFeaturedStickersAsRead(false, false);
                     } else if (baseUpdate instanceof TL_update.TL_updateReadFeaturedEmojiStickers) {
@@ -19386,9 +19376,8 @@ public class MessagesController extends BaseController implements NotificationCe
                         }
                     } else if (baseUpdate instanceof TL_update.TL_updateGroupCall) {
                         TL_update.TL_updateGroupCall update = (TL_update.TL_updateGroupCall) baseUpdate;
-                        if (update.live_story) {
-                            getNotificationCenter().postNotificationName(NotificationCenter.storyGroupCallUpdated, DialogObject.getPeerDialogId(update.peer), update.call);
-                        }
+                        // LoogriGram: a live story's call was announced to the viewer
+                        // here (storyGroupCallUpdated). Live stories are removed.
                         ChatObject.Call call = groupCalls.get(update.call.id);
                         if (call != null) {
                             call.processGroupCallUpdate(update);
@@ -19682,10 +19671,6 @@ public class MessagesController extends BaseController implements NotificationCe
                                 getNotificationCenter().postNotificationName(NotificationCenter.voiceTranscriptionUpdate, null, (Long) update.transcription_id, (String) update.text, null, (Boolean) !update.pending);
                             }
                         }
-                    } else if (baseUpdate instanceof TL_update.TL_updateSentStoryReaction) {
-                        TL_update.TL_updateSentStoryReaction updateReaction = (TL_update.TL_updateSentStoryReaction) baseUpdate;
-                        long dialogId = DialogObject.getPeerDialogId(updateReaction.peer);
-                        getStoriesController().updateStoryReaction(dialogId, updateReaction.story_id, updateReaction.reaction);
                     } else if (baseUpdate instanceof TL_update.TL_updateChannelViewForumAsMessages) {
                         TL_update.TL_updateChannelViewForumAsMessages update = (TL_update.TL_updateChannelViewForumAsMessages) baseUpdate;
                         TLRPC.ChatFull chatFull = getChatFull(update.channel_id);

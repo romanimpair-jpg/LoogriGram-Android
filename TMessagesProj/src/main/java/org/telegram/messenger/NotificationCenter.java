@@ -192,7 +192,6 @@ public class NotificationCenter {
     public static final int audioRouteChanged = totalEvents++;
     public static final int didStartedCall = totalEvents++;
     public static final int groupCallUpdated = totalEvents++;
-    public static final int storyGroupCallUpdated = totalEvents++;
     public static final int groupCallSpeakingUsersUpdated = totalEvents++;
     public static final int groupCallScreencastStateChanged = totalEvents++;
     public static final int activeGroupCallsUpdated = totalEvents++;
@@ -201,7 +200,6 @@ public class NotificationCenter {
     public static final int didEndCall = totalEvents++;
     public static final int closeInCallActivity = totalEvents++;
     public static final int groupCallVisibilityChanged = totalEvents++;
-    public static final int liveStoryMessageUpdate = totalEvents++;
     public static final int appDidLogout = totalEvents++;
     public static final int configLoaded = totalEvents++;
     public static final int needDeleteDialog = totalEvents++;
