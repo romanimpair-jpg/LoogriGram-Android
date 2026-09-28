@@ -89,7 +89,7 @@ public class ReactedUsersListView extends FrameLayout {
             @NonNull
             @Override
             public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-                return new RecyclerListView.Holder(new ReactedUserHolderView(ReactedUserHolderView.STYLE_DEFAULT, currentAccount, context, resourcesProvider, true, showReactionPreview));
+                return new RecyclerListView.Holder(new ReactedUserHolderView(currentAccount, context, resourcesProvider, true, showReactionPreview));
             }
 
             @Override

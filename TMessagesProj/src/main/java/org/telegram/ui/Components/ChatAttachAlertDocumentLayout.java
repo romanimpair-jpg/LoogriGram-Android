@@ -806,9 +806,6 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
                 if (item.file.length() == 0) {
                     return false;
                 }
-                if (parentAlert.storyMediaPicker) {
-
-                }
                 selectedFiles.put(path, item);
                 selectedFilesOrder.add(path);
                 add = true;

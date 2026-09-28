@@ -232,8 +232,9 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
 
     public boolean canOpenPreview = false;
     private boolean isSoundPicker = false;
-    // LoogriGram: the three location-picker modes are gone with the map.
-    public boolean isStoryAudioPicker = false;
+    // LoogriGram: the three location-picker modes are gone with the map, and
+    // the story media and story audio pickers (setStories, setStoryMediaPicker,
+    // setStoryAudioPicker) with stories.
     private ImageUpdater.AvatarFor setAvatarFor;
     public boolean pinnedToTop;
 
@@ -994,9 +995,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     protected boolean avatarSearch;
     protected Utilities.Callback0Return<PhotoViewer.PlaceProviderObject> avatarWithBulletin;
     protected boolean typeButtonsAvailable;
-
-    private boolean stories;
-    public boolean storyMediaPicker;
 
     boolean sendButtonEnabled = true;
     private float sendButtonEnabledProgress = 1f;
@@ -2057,7 +2055,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 if (currentSheetAnimationType == 1) {
                     if (translationY < 0) {
                         currentAttachLayout.setTranslationY(translationY);
-                        if (avatarPicker != 0 || storyMediaPicker) {
+                        if (avatarPicker != 0) {
                             headerView.setTranslationY(baseSelectedTextViewTranslationY + translationY - currentPanTranslationY);
                         }
                         translationY = 0;
@@ -5268,7 +5266,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         }
 
         float offset = actionBar.getAlpha() != 0 ? 0.0f : dp(26 * (1.0f - headerView.getAlpha()));
-        if (menuShowed && avatarPicker == 0 && !storyMediaPicker) {
+        if (menuShowed && avatarPicker == 0) {
             selectedMenuItem.setTranslationY(Math.max(ActionBar.getCurrentActionBarHeight() - dp(3) - dp(37 + finalMove), scrollOffset - dp(37 + finalMove * moveProgress) + offset - topCommentContainer.getMeasuredHeight() * topCommentContainer.getAlpha()) + currentPanTranslationY);
         } else {
             selectedMenuItem.setTranslationY(ActionBar.getCurrentActionBarHeight() - dp(3) - dp(37 + finalMove) + currentPanTranslationY);
@@ -5357,7 +5355,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             }
 
             boolean needsSearchItem = searchItem != null && false && (avatarSearch || currentAttachLayout == photoLayout && !menuShowed && baseFragment instanceof ChatActivity && ((ChatActivity) baseFragment).allowSendGifs() && ((ChatActivity) baseFragment).allowSendPhotos());
-            boolean needMoreItem = !isPhotoPicker && !storyMediaPicker && (avatarPicker != 0 || !menuShowed) && currentAttachLayout == photoLayout && (photosEnabled || videosEnabled);
+            boolean needMoreItem = !isPhotoPicker && (avatarPicker != 0 || !menuShowed) && currentAttachLayout == photoLayout && (photosEnabled || videosEnabled);
             if (currentAttachLayout == restrictedLayout) {
                 needsSearchItem = false;
                 needMoreItem = false;
@@ -5522,15 +5520,15 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
 //            selectedMenuItem.setClickable(count > 0);
 //            selectedMenuItem.animate().alpha(count > 0 ? 1f : 0f).scaleX(count > 0 ? 1f : .6f).scaleY(count > 0 ? 1f : .6f).setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT).setDuration(320).start();
 //        } else
-        if (currentAttachLayout == photoLayout && ((baseFragment instanceof ChatActivity) || avatarPicker != 0 || storyMediaPicker) && (count == 0 && menuShowed || (count != 0 || avatarPicker != 0 || storyMediaPicker) && !menuShowed)) {
-            menuShowed = count != 0 || avatarPicker != 0 || storyMediaPicker;
+        if (currentAttachLayout == photoLayout && ((baseFragment instanceof ChatActivity) || avatarPicker != 0) && (count == 0 && menuShowed || (count != 0 || avatarPicker != 0) && !menuShowed)) {
+            menuShowed = count != 0 || avatarPicker != 0;
             if (menuAnimator != null) {
                 menuAnimator.cancel();
                 menuAnimator = null;
             }
             boolean needsSearchItem = avatarPicker != 0 && searchItem != null && actionBar.getTag() != null && baseFragment instanceof ChatActivity && ((ChatActivity) baseFragment).allowSendGifs();
             if (menuShowed) {
-                if (avatarPicker == 0 && !storyMediaPicker) {
+                if (avatarPicker == 0) {
                     selectedMenuItem.setVisibility(View.VISIBLE);
                     selectedMenuItem.setClickable(true);
                 }
@@ -5541,7 +5539,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 }
             }
             if (animated == 0) {
-                if (actionBar.getTag() == null && avatarPicker == 0 && !storyMediaPicker) {
+                if (actionBar.getTag() == null && avatarPicker == 0) {
                     selectedMenuItem.setAlpha(menuShowed ? 1.0f : 0.0f);
                     selectedMenuItem.setScaleX(menuShowed ? 1.0f : 0.6f);
                     selectedMenuItem.setScaleY(menuShowed ? 1.0f : 0.6f);
@@ -5556,7 +5554,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             } else {
                 menuAnimator = new AnimatorSet();
                 ArrayList<Animator> animators = new ArrayList<>();
-                if (actionBar.getTag() == null && avatarPicker == 0 && !storyMediaPicker) {
+                if (actionBar.getTag() == null && avatarPicker == 0) {
                     animators.add(ObjectAnimator.ofFloat(selectedMenuItem, View.ALPHA, menuShowed ? 1.0f : 0.0f));
                     animators.add(ObjectAnimator.ofFloat(selectedMenuItem, View.SCALE_X, menuShowed ? 1.0f : 0.6f));
                     animators.add(ObjectAnimator.ofFloat(selectedMenuItem, View.SCALE_Y, menuShowed ? 1.0f : 0.6f));
@@ -5571,7 +5569,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     public void onAnimationEnd(Animator animation) {
                         menuAnimator = null;
                         if (!menuShowed) {
-                            if (actionBar.getTag() == null && avatarPicker == 0 && !storyMediaPicker) {
+                            if (actionBar.getTag() == null && avatarPicker == 0) {
                                 selectedMenuItem.setVisibility(View.INVISIBLE);
                             }
                             headerView.setVisibility(View.INVISIBLE);
@@ -5704,11 +5702,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         enterCommentEventSent = false;
         setFocusable(false);
         ChatAttachAlert.AttachAlertLayout layoutToSet;
-        if (isStoryAudioPicker) {
-            openAudioLayout(false);
-            layoutToSet = audioLayout;
-            selectedId = 3;
-        } else if (isSoundPicker) {
+        if (isSoundPicker) {
             openDocumentsLayout(false);
             layoutToSet = documentLayout;
             selectedId = 4;
@@ -5744,7 +5738,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             }
         } else {
             layoutToSet = photoLayout;
-            typeButtonsAvailable = avatarPicker == 0 && !storyMediaPicker;
+            typeButtonsAvailable = avatarPicker == 0;
             selectedId = 1;
         }
         buttonsRecyclerViewWrapper.setVisibility(typeButtonsAvailable ? View.VISIBLE : View.GONE);
@@ -5835,10 +5829,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         }
     }
 
-    public void setStories(boolean value) {
-        stories = value;
-    }
-
     public void setAvatarPicker(int type, boolean search, Utilities.Callback0Return<PhotoViewer.PlaceProviderObject> withBulletinClosingAnimation) {
         avatarPicker = type;
         avatarSearch = search;
@@ -5859,12 +5849,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         if (photoLayout != null) {
             photoLayout.updateAvatarPicker();
         }
-    }
-
-    public void setStoryMediaPicker() {
-        storyMediaPicker = true;
-        typeButtonsAvailable = false;
-        selectedTextView.setText(getString(R.string.ChoosePhotoOrVideo));
     }
 
     public void enableStickerMode(Utilities.Callback2<String, TLRPC.InputDocument> customStickerHandler) {
@@ -5962,10 +5946,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         isSoundPicker = true;
         buttonsRecyclerViewWrapper.setVisibility(View.GONE);
         selectedTextView.setText(getString(R.string.ChoosePhotoOrVideo));
-    }
-
-    public void setStoryAudioPicker() {
-        isStoryAudioPicker = true;
     }
 
     public void setMaxSelectedPhotos(int value, boolean order) {

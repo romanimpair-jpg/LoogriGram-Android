@@ -104,7 +104,7 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
 
     public final static int TYPE_DEFAULT = 0;
     public final static int TYPE_STORY = 1;
-    public static final int TYPE_STORY_LIKES = 2;
+    // LoogriGram: 2 was TYPE_STORY_LIKES, the like picker under a story.
     // LoogriGram: 3 was TYPE_TAGS, the row of Saved Messages tags, which only
     // Premium can set.
     public static final int TYPE_STICKER_SET_EMOJI = 4;
@@ -427,7 +427,7 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
         nextRecentReaction.getLayoutParams().width = size - dp(12);
         nextRecentReaction.getLayoutParams().height = size;
 
-        if (type == TYPE_STORY_LIKES || type == TYPE_STICKER_SET_EMOJI) {
+        if (type == TYPE_STICKER_SET_EMOJI) {
             bgPaint.setColor(ColorUtils.blendARGB(Color.BLACK, Color.WHITE, 0.13f));
         } else {
             bgPaint.setColor(Theme.getColor(Theme.key_actionBarDefaultSubmenuBackground, resourcesProvider));
@@ -785,7 +785,7 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
                 nextRecentReaction.setScaleX(scale);
                 nextRecentReaction.setScaleY(scale);
                 float additionalOffset = 0;
-                if (type != TYPE_STORY && type != TYPE_STORY_LIKES) {
+                if (type != TYPE_STORY) {
                     additionalOffset = - dp(20);
                 } else {
                     additionalOffset = - dp(8);
@@ -1530,7 +1530,7 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
             hintView.setPadding(dp(8), 0, dp(8), 0);
             hintView.setClickable(true);
             hintView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 12);
-            if (type == TYPE_STORY || type == TYPE_STORY_LIKES || type == TYPE_STICKER_SET_EMOJI) {
+            if (type == TYPE_STORY || type == TYPE_STICKER_SET_EMOJI) {
                 hintView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
                 hintView.setAlpha(0.5f);
             } else {
@@ -1573,7 +1573,7 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
         }
 
         int margin = Math.max(dp(20), dp(7) + hintViewHeight);
-        if (type == TYPE_STORY || type == TYPE_STORY_LIKES) {
+        if (type == TYPE_STORY) {
             margin = dp(20);
         } else {
             getLayoutParams().height = dp(52) + margin + dp(22);
@@ -1891,7 +1891,7 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
                 loopImageView.getImageReceiver().clearImage();
                 AnimatedEmojiDrawable pressedDrawable = new AnimatedEmojiDrawable(AnimatedEmojiDrawable.CACHE_TYPE_ALERT_PREVIEW_LARGE, currentAccount, currentReaction.documentId);
                 AnimatedEmojiDrawable loopDrawable = new AnimatedEmojiDrawable(AnimatedEmojiDrawable.CACHE_TYPE_ALERT_PREVIEW, currentAccount, currentReaction.documentId);
-                if (type == TYPE_STORY || type == TYPE_STORY_LIKES || type == TYPE_STICKER_SET_EMOJI) {
+                if (type == TYPE_STORY || type == TYPE_STICKER_SET_EMOJI) {
                     pressedDrawable.setColorFilter(new PorterDuffColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN));
                     loopDrawable.setColorFilter(new PorterDuffColorFilter(Color.WHITE, PorterDuff.Mode.SRC_IN));
                 } else {
@@ -2321,7 +2321,7 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
         @Override
         protected void dispatchDraw(Canvas canvas) {
             int color;
-            if (type == TYPE_STORY || type == TYPE_STORY_LIKES || type == TYPE_STICKER_SET_EMOJI) {
+            if (type == TYPE_STORY || type == TYPE_STICKER_SET_EMOJI) {
                 color = ColorUtils.setAlphaComponent(Color.WHITE, 30);
             } else {
                 color = ColorUtils.blendARGB(Theme.getColor(Theme.key_actionBarDefaultSubmenuItemIcon, resourcesProvider), Theme.getColor(Theme.key_dialogBackground, resourcesProvider), 0.7f);
@@ -2382,7 +2382,7 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
                     customEmojiReactionsIconView = new InternalImageView(getContext());
                     customEmojiReactionsIconView.setImageResource(R.drawable.msg_reactions_expand);
                     customEmojiReactionsIconView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-                    if (type == TYPE_STORY || type == TYPE_STORY_LIKES || type == TYPE_STICKER_SET_EMOJI) {
+                    if (type == TYPE_STORY || type == TYPE_STICKER_SET_EMOJI) {
                         customEmojiReactionsIconView.setColorFilter(new PorterDuffColorFilter(Color.WHITE, PorterDuff.Mode.MULTIPLY));
                     } else {
                         customEmojiReactionsIconView.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_dialogBackground), PorterDuff.Mode.MULTIPLY));

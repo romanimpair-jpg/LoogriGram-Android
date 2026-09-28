@@ -4,14 +4,12 @@ import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.ui.Components.ReactionsContainerLayout.TYPE_MESSAGE_EFFECTS;
 import static org.telegram.ui.Components.ReactionsContainerLayout.TYPE_STICKER_SET_EMOJI;
 import static org.telegram.ui.Components.ReactionsContainerLayout.TYPE_STORY;
-import static org.telegram.ui.Components.ReactionsContainerLayout.TYPE_STORY_LIKES;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Outline;
 import android.graphics.Paint;
 import android.graphics.Path;
@@ -35,7 +33,6 @@ import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
-import androidx.core.graphics.ColorUtils;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.AnimationNotificationsLocker;
@@ -164,7 +161,7 @@ public class CustomEmojiReactionsWindow {
                 dismiss();
             }
         });
-        attachToParent = type == TYPE_STORY_LIKES || type == TYPE_STICKER_SET_EMOJI || type == TYPE_MESSAGE_EFFECTS || forceAttachToParent;
+        attachToParent = type == TYPE_STICKER_SET_EMOJI || type == TYPE_MESSAGE_EFFECTS || forceAttachToParent;
 
         containerView = new ContainerView(context);
         final int dialogType = reactionsContainerLayout.getWindowType();
@@ -324,7 +321,7 @@ public class CustomEmojiReactionsWindow {
         }
         float y = yTranslation;
         int bottomOffset = dp(32);
-        if (type == TYPE_STORY || type == TYPE_STORY_LIKES) {
+        if (type == TYPE_STORY) {
             bottomOffset = dp(24);
         }
         if (y + containerView.getMeasuredHeight() > windowView.getMeasuredHeight() - keyboardHeight - bottomOffset) {
@@ -385,7 +382,7 @@ public class CustomEmojiReactionsWindow {
 
         if (type == TYPE_STORY) {
             containerView.setTranslationX((windowView.getMeasuredWidth() - containerView.getMeasuredWidth()) / 2f - dp(16));
-        } else if (type == TYPE_STORY_LIKES || type == TYPE_STICKER_SET_EMOJI) {
+        } else if (type == TYPE_STICKER_SET_EMOJI) {
             containerView.setTranslationX(location[0] - windowLocation[0] - dp(18));
         } else {
             containerView.setTranslationX(location[0] - windowLocation[0] - dp(2));
@@ -774,11 +771,9 @@ public class CustomEmojiReactionsWindow {
             shadow = ContextCompat.getDrawable(context, R.drawable.reactions_bubble_shadow).mutate();
             shadowPad.left = shadowPad.top = shadowPad.right = shadowPad.bottom = dp(7);
             shadow.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_chat_messagePanelShadow, resourcesProvider), PorterDuff.Mode.MULTIPLY));
-            if (type == TYPE_STORY_LIKES) {
-                backgroundPaint.setColor(ColorUtils.blendARGB(Color.BLACK, Color.WHITE, 0.13f));
-            } else {
-                backgroundPaint.setColor(Theme.getColor(Theme.key_actionBarDefaultSubmenuBackground, resourcesProvider));
-            }
+            // LoogriGram: the story like picker (TYPE_STORY_LIKES) drew a dark
+            // background here. It went with stories.
+            backgroundPaint.setColor(Theme.getColor(Theme.key_actionBarDefaultSubmenuBackground, resourcesProvider));
         }
 
         @Override
@@ -792,7 +787,7 @@ public class CustomEmojiReactionsWindow {
         @Override
         protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
             int size;
-            if (type == TYPE_STORY || type == TYPE_STORY_LIKES || type == TYPE_STICKER_SET_EMOJI) {
+            if (type == TYPE_STORY || type == TYPE_STICKER_SET_EMOJI) {
                 size = reactionsContainerLayout.getMeasuredWidth();
             } else if (type == TYPE_MESSAGE_EFFECTS) {
                 size = dp(36) * 8 + dp(12);

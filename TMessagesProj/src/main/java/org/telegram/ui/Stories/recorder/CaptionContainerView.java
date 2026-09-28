@@ -132,9 +132,9 @@ public class CaptionContainerView extends FrameLayout {
 
     private boolean ignoreTextChange;
 
-    protected int getEditTextStyle() {
-        return EditTextEmoji.STYLE_STORY;
-    }
+    // LoogriGram: getEditTextStyle() let the story recorder's caption take
+    // EditTextEmoji.STYLE_STORY. CaptionPhotoViewer is the only subclass left,
+    // and it always chose STYLE_PHOTOVIEWER.
 
     boolean waitingForScrollYChange;
     int beforeScrollY;
@@ -174,7 +174,7 @@ public class CaptionContainerView extends FrameLayout {
 
         keyboardNotifier = new KeyboardNotifier(rootView, this::updateKeyboard);
 
-        editText = new EditTextEmoji(context, sizeNotifierFrameLayout, null, getEditTextStyle(), true, new DarkThemeResourceProvider()) {
+        editText = new EditTextEmoji(context, sizeNotifierFrameLayout, null, EditTextEmoji.STYLE_PHOTOVIEWER, true, new DarkThemeResourceProvider()) {
             @Override
             protected void updatedEmojiExpanded() {
                 keyboardNotifier.fire();
@@ -199,7 +199,7 @@ public class CaptionContainerView extends FrameLayout {
             protected void createEmojiView() {
                 super.createEmojiView();
                 EmojiView emojiView = getEmojiView();
-                if (emojiView != null && (getEditTextStyle() == EditTextEmoji.STYLE_STORY || getEditTextStyle() == EditTextEmoji.STYLE_PHOTOVIEWER)) {
+                if (emojiView != null) {
                     emojiView.shouldLightenBackground = false;
                     emojiView.fixBottomTabContainerTranslation = false;
                     emojiView.setShouldDrawBackground(false);

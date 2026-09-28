@@ -1057,9 +1057,6 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
             }
         });
         gridView.setOnItemLongClickListener((view, position) -> {
-            if (parentAlert.storyMediaPicker) {
-                return false;
-            }
             if (position == 0 && selectedAlbumEntry == galleryAlbumEntry) {
                 if (parentAlert.delegate != null) {
                     parentAlert.delegate.didPressedButton(0, false, true, 0, 0, 0, parentAlert.isCaptionAbove(), false);
@@ -2245,7 +2242,7 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
     }
 
     protected void updatePhotosCounter(boolean added) {
-        if (counterTextView == null || parentAlert.avatarPicker != 0 || parentAlert.storyMediaPicker || parentAlert.isPollAttach) {
+        if (counterTextView == null || parentAlert.avatarPicker != 0 || parentAlert.isPollAttach) {
             return;
         }
         boolean hasVideo = false;
@@ -2487,7 +2484,7 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
     }
 
     private boolean shouldLoadAllMedia() {
-        return includeVideosInGallery || !parentAlert.isPhotoPicker && (parentAlert.baseFragment instanceof ChatActivity || parentAlert.storyMediaPicker || parentAlert.avatarPicker == 2);
+        return includeVideosInGallery || !parentAlert.isPhotoPicker && (parentAlert.baseFragment instanceof ChatActivity || parentAlert.avatarPicker == 2);
     }
 
     public void showCamera() {
@@ -4313,7 +4310,7 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
                     } else {
                         cell.setIsVertical(cameraPhotoLayoutManager.getOrientation() == LinearLayoutManager.VERTICAL);
                     }
-                    if (parentAlert.avatarPicker != 0 || parentAlert.storyMediaPicker || parentAlert.isPollAttach) {
+                    if (parentAlert.avatarPicker != 0 || parentAlert.isPollAttach) {
                         cell.getCheckBox().setVisibility(GONE);
                     } else {
                         cell.getCheckBox().setVisibility(VISIBLE);

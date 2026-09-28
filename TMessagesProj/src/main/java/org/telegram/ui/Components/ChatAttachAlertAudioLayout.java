@@ -495,7 +495,7 @@ public class ChatAttachAlertAudioLayout extends ChatAttachAlert.AttachAlertLayou
         SharedAudioCell audioCell = (SharedAudioCell) view;
         MediaController.AudioEntry audioEntry = (MediaController.AudioEntry) audioCell.getTag();
         boolean add;
-        if (parentAlert.isStoryAudioPicker || parentAlert.isPollAttach) {
+        if (parentAlert.isPollAttach) {
             sendPressed = true;
             ArrayList<MessageObject> audios = new ArrayList<>();
             audios.add(audioEntry.messageObject);

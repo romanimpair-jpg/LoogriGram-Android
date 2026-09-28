@@ -6561,7 +6561,6 @@
     <string name="PremiumStoriesFormattingDescription">Add links and formatting in captions of your stories.</string>
     <string name="UpgradedStories">Upgraded Stories</string>
     <string name="LocationsShowAll">Show All</string>
-    <string name="AccDescrLike">Like</string>
     <string name="ReactionAddReactionsHint">Add Reactions...</string>
     <string name="ReactionCreateOwnPack">You can also **create your own** emoji packs and use them.</string>
     <string name="ReactionAddEmojiFromAnyPack">You can add emoji from any emoji pack as a reaction.</string>
@@ -7177,7 +7176,6 @@
     <string name="MoreSimilarText">Subscribe to **Telegram Premium**\nto unlock up to %s similar channels.</string>
     <string name="MoreSimilarBotsButton">Show More Apps</string>
     <string name="MoreSimilarBotsText">Subscribe to **Telegram Premium**\nto unlock up to %s similar apps.</string>
-    <string name="StoryRepostCommented">commented</string>
     <string name="BoostLevel_other">Level %d</string>
     <string name="BoostLevelPlus_other">Level %d+</string>
     <string name="BoostFeatureStoriesPerDay_one">%d Story Per Day</string>

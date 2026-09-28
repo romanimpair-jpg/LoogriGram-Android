@@ -17,7 +17,6 @@ import android.content.pm.PackageManager;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
-import android.location.Location;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -41,7 +40,6 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.LocationController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.TLRPC;
@@ -60,7 +58,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 
-public class ActionIntroActivity extends BaseFragment implements LocationController.LocationFetchCallback {
+public class ActionIntroActivity extends BaseFragment {
 
     private RLottieImageView imageView;
     private GradientDrawable startMessagingButtonBackground;
@@ -79,9 +77,6 @@ public class ActionIntroActivity extends BaseFragment implements LocationControl
     private final int currentType;
     private boolean flickerButton;
 
-    private String currentGroupCreateAddress;
-    private String currentGroupCreateDisplayAddress;
-    private Location currentGroupCreateLocation;
     private boolean showingAsBottomSheet;
 
     private ActionIntroQRLoginDelegate qrLoginDelegate;
@@ -639,17 +634,6 @@ public class ActionIntroActivity extends BaseFragment implements LocationControl
     }
 
     @Override
-    public void onLocationAddressAvailable(String address, String displayAddress,  TLRPC.TL_messageMediaVenue city, TLRPC.TL_messageMediaVenue street, Location location) {
-        if (subtitleTextView == null) {
-            return;
-        }
-        subtitleTextView.setText(address);
-        currentGroupCreateAddress = address;
-        currentGroupCreateDisplayAddress = displayAddress;
-        currentGroupCreateLocation = location;
-    }
-
-    @Override
     public void onResume() {
         super.onResume();
     }
@@ -675,15 +659,6 @@ public class ActionIntroActivity extends BaseFragment implements LocationControl
         colors[6] = 0x212020;
         colors[7] = Theme.getColor(Theme.key_windowBackgroundWhite);
         imageView.replaceColors(colors);
-    }
-
-    public void setGroupCreateAddress(String address, String displayAddress, Location location) {
-        currentGroupCreateAddress = address;
-        currentGroupCreateDisplayAddress = displayAddress;
-        currentGroupCreateLocation = location;
-        if (location != null && address == null) {
-            LocationController.fetchLocationAddress(location, this);
-        }
     }
 
     @Override

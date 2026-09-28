@@ -58,11 +58,6 @@ public class CaptionPhotoViewer extends CaptionContainerView {
 
     private BlurredBackgroundDrawable backgroundForCaptionButton;
 
-    @Override
-    protected int getEditTextStyle() {
-        return EditTextEmoji.STYLE_PHOTOVIEWER;
-    }
-
     public CaptionPhotoViewer(
         Context context,
         FrameLayout rootView,

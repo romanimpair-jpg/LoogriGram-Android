@@ -101,7 +101,8 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
 
     public boolean WRITE_TO_FILE_IN_BACKGROUND = false;
 
-    public boolean isStory;
+    // LoogriGram: isStory, set by the story camera for smaller photos and a
+    // preview no bigger than asked, went with stories.
     public boolean recordHevc;
     private float scaleX, scaleY;
     private Size[] previewSize = new Size[2];
@@ -740,10 +741,6 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
             aspectRatio = new Size(1, 1);
             photoMaxWidth = wantedWidth = 720;
             photoMaxHeight = wantedHeight = 720;
-//        } else if (!isStory) {
-//            photoMaxWidth = wantedWidth = AndroidUtilities.displaySize.x;
-//            photoMaxHeight = wantedHeight = AndroidUtilities.displaySize.y;
-//            aspectRatio = new Size(wantedWidth, wantedHeight);
         } else if (initialFrontface) {
             aspectRatio = new Size(16, 9);
             photoMaxWidth = wantedWidth = 1280;
@@ -770,13 +767,13 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
                     photoMaxWidth = 1280;
                     photoMaxHeight = 960;
                 } else {
-                    photoMaxWidth = isStory ? 1280 : 1920;
-                    photoMaxHeight = isStory ? 720 : 1080;
+                    photoMaxWidth = 1920;
+                    photoMaxHeight = 1080;
                 }
             }
         }
 
-        previewSize[i] = CameraController.chooseOptimalSize(info[i].getPreviewSizes(), wantedWidth, wantedHeight, aspectRatio, isStory);
+        previewSize[i] = CameraController.chooseOptimalSize(info[i].getPreviewSizes(), wantedWidth, wantedHeight, aspectRatio, false);
         pictureSize[i] = CameraController.chooseOptimalSize(info[i].getPictureSizes(), photoMaxWidth, photoMaxHeight, aspectRatio, false);
 
         if (BuildVars.LOGS_ENABLED) {
