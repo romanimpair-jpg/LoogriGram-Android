@@ -8501,7 +8501,6 @@
     <string name="Gift2SoldOutTitle">Sold Out!</string>
     <string name="Gift2SoldOutCount_one">All %d gifts were already sold.</string>
     <string name="Gift2SoldOutCount_other">All %d gifts were already sold.</string>
-    <string name="ReportStory">Report Story</string>
     <string name="Report2">Report</string>
     <string name="Report2Comment">Add Comment</string>
     <string name="Report2CommentOptional">Add Comment (Optional)</string>

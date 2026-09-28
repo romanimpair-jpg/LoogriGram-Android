@@ -15,10 +15,6 @@ import static org.telegram.messenger.NotificationsController.TYPE_PRIVATE;
 import static org.telegram.messenger.NotificationsController.TYPE_REACTIONS_MESSAGES;
 import static org.telegram.messenger.Utilities.tryParseLong;
 import static org.telegram.ui.Gifts.GiftsController.findAttribute;
-import static org.telegram.ui.Stories.HighlightMessageSheet.parseTiers;
-import static org.telegram.ui.Stories.HighlightMessageSheet.parseTiersString;
-import static org.telegram.ui.Stories.HighlightMessageSheet.tiersEqual;
-import static org.telegram.ui.Stories.HighlightMessageSheet.tiersToString;
 
 import android.Manifest;
 import android.app.Activity;
@@ -648,7 +644,9 @@ public class MessagesController extends BaseController implements NotificationCe
     public String translationsManualEnabled; // "enabled", "alternative", "system", "disabled"
     public String translationsAutoEnabled; // "enabled", "alternative", "system", "disabled"
     public HashSet<Long> whitelistedBots;
-    public int[] starsGroupcallMessageLimits;
+    // LoogriGram: starsGroupcallMessageLimits (stars_groupcall_message_limits),
+    // the paid tiers of a live story comment, sat here. Stories and payments
+    // are removed; the key is no longer read.
     // LoogriGram: the smallest, largest and suggested TON stakes for a dice roll stood
     // here. Nothing stakes, so the server's answer has no reader.
     public int[][] stargiftsCraftAttributesPermilles;
@@ -1625,7 +1623,6 @@ public class MessagesController extends BaseController implements NotificationCe
         translationsManualEnabled = mainPreferences.getString("translationsManualEnabled", "enabled");
         translationsAutoEnabled = mainPreferences.getString("translationsAutoEnabled", "enabled");
         whitelistedBots = mainPreferences.getStringSet("whitelistedBots", new HashSet<>()).stream().map(s -> tryParseLong(s, 0)).collect(Collectors.toCollection(HashSet::new));
-        starsGroupcallMessageLimits = parseTiersString(mainPreferences.getString("starsGroupcallMessageLimits", null));
         freezeAppealUrl = mainPreferences.getString("freezeAppealUrl", "t.me/spambot");
         enableGiftsInProfile = mainPreferences.getBoolean("enableGiftsInProfile", true);
         storiesEntities = mainPreferences.getString("storiesEntities", "premium");
@@ -4194,16 +4191,6 @@ public class MessagesController extends BaseController implements NotificationCe
                         whitelistedBots = set;
                         editor.putStringSet("whitelistedBots", set.stream().map(id -> String.valueOf(id)).collect(Collectors.toCollection(HashSet::new)));
                         changed = true;
-                    }
-                    break;
-                }
-                case "stars_groupcall_message_limits": {
-                    if (value.value instanceof TLRPC.TL_jsonArray) {
-                        final int[] tiers = parseTiers((TLRPC.TL_jsonArray) value.value);
-                        if (!tiersEqual(tiers, starsGroupcallMessageLimits)) {
-                            editor.putString("starsGroupcallMessageLimits", tiersToString(starsGroupcallMessageLimits = tiers));
-                            changed = true;
-                        }
                     }
                     break;
                 }

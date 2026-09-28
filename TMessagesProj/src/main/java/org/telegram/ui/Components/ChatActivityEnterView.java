@@ -55,7 +55,6 @@ import android.os.PowerManager;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.text.Editable;
-import android.text.InputFilter;
 import android.text.Layout;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -90,7 +89,6 @@ import android.view.animation.OvershootInterpolator;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 import android.webkit.MimeTypeMap;
-import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -164,7 +162,6 @@ import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_bots;
 import org.telegram.tgnet.tl.TL_keyboard;
 import org.telegram.tgnet.tl.TL_iv;
-import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenuSubItem;
 import org.telegram.ui.ActionBar.ActionBarPopupWindow;
@@ -195,7 +192,6 @@ import org.telegram.ui.PhotoViewer;
 import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.ProfileActivity;
 import org.telegram.ui.StickersActivity;
-import org.telegram.ui.Stories.HighlightMessageSheet;
 import org.telegram.ui.Stories.recorder.CaptionContainerView;
 import org.telegram.ui.Stories.recorder.HintView2;
 import org.telegram.ui.bots.BotCommandsMenuContainer;
@@ -214,7 +210,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -391,17 +386,12 @@ public class ChatActivityEnterView extends FrameLayout implements
             return null;
         }
 
-        default TLRPC.Peer getDefaultSendAs() {
-            return null;
-        }
-
         default boolean setDefaultSendAs(long dialogId, long newPeer) {
             return false;
         }
 
-        default TL_stories.StoryItem getReplyToStory() {
-            return null;
-        }
+        // LoogriGram: getReplyToStory gave the story a reply typed in the story
+        // viewer went to. Stories are removed, as on desktop.
 
         default ChatActivity.ReplyQuote getReplyQuote() {
             return null;
@@ -879,8 +869,7 @@ public class ChatActivityEnterView extends FrameLayout implements
 
                 delegate.needStartRecordAudio(1);
                 startedDraggingX = -1;
-                TL_stories.StoryItem storyItem = delegate != null ? delegate.getReplyToStory() : null;
-                MediaController.getInstance().startRecording(currentAccount, dialog_id, replyingMessageObject, getThreadMessage(), storyItem, recordingGuid, true, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, getSendMonoForumPeerId(), getSendMessageSuggestionParams());
+                MediaController.getInstance().startRecording(currentAccount, dialog_id, replyingMessageObject, getThreadMessage(), recordingGuid, true, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, getSendMonoForumPeerId(), getSendMessageSuggestionParams());
                 recordingAudioVideo = true;
                 updateRecordInterface(RECORD_STATE_ENTER, true);
                 if (recordTimerView != null) {
@@ -2817,13 +2806,11 @@ public class ChatActivityEnterView extends FrameLayout implements
 
             @Override
             public boolean onInterceptTouchEvent(MotionEvent ev) {
-                if (isLiveComment) return false;
                 return true;
             }
 
             @Override
             public boolean onTouchEvent(MotionEvent motionEvent) {
-                if (isLiveComment) return false;
                 createRecordCircle();
                 if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                     if (recordCircle.isSendButtonVisible()) {
@@ -3350,50 +3337,11 @@ public class ChatActivityEnterView extends FrameLayout implements
         viewParentForEmojiView = viewParent;
     }
 
-    // LoogriGram: this kept the price pill on the send button in step with
-    // what the message would cost. Nothing is paid for, so all that is left is
-    // a live comment's length limit, which the free tier sets.
-    public void updateSendButtonPaid() {
-        if (isLiveComment) {
-            createCaptionLimitView();
-            int newLimit = areLiveCommentsFree() ? HighlightMessageSheet.getMaxLength(currentAccount) : HighlightMessageSheet.getTierOption(currentAccount, 0, HighlightMessageSheet.TIER_LENGTH);
-            if (currentLimit != newLimit) {
-                currentLimit = newLimit;
-                int beforeLimit;
-                if (currentLimit > 0 && (beforeLimit = currentLimit - codePointCount) <= (isLiveComment ? 5 : 100)) {
-                    if (beforeLimit < -9999) {
-                        beforeLimit = -9999;
-                    }
-                    createCaptionLimitView();
-                    captionLimitView.setNumber(beforeLimit, captionLimitView.getVisibility() == View.VISIBLE);
-                    if (captionLimitView.getVisibility() != View.VISIBLE) {
-                        captionLimitView.setVisibility(View.VISIBLE);
-                        captionLimitView.setAlpha(0);
-                        captionLimitView.setScaleX(0.5f);
-                        captionLimitView.setScaleY(0.5f);
-                    }
-                    captionLimitView.animate().setListener(null).cancel();
-                    captionLimitView.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(100).start();
-                    captionLimitView.setTextColor(getThemedColor(beforeLimit < 0 ? Theme.key_text_RedRegular : Theme.key_windowBackgroundWhiteGrayText));
-                } else if (captionLimitView != null) {
-                    captionLimitView.animate().alpha(0).scaleX(0.5f).scaleY(0.5f).setDuration(100).setListener(new AnimatorListenerAdapter() {
-                        @Override
-                        public void onAnimationEnd(Animator animation) {
-                            captionLimitView.setVisibility(View.GONE);
-                        }
-                    });
-                }
-            }
-        }
-    }
-
-    public void setOnSendButtonLongClick(OnLongClickListener listener) {
-        sendButton.setOnLongClickListener(listener != null ? listener : this::onSendLongClick);
-    }
-
-    public boolean areLiveCommentsFree() {
-        return false;
-    }
+    // LoogriGram: updateSendButtonPaid kept the price pill on the send button in
+    // step with what the message would cost, and then only a live story
+    // comment's paid length limit. Nothing is paid for and stories are removed,
+    // as on desktop. setOnSendButtonLongClick and areLiveCommentsFree served
+    // the story viewer's field alone.
 
     public int getMessagesCount() {
         int count = 0;
@@ -3487,12 +3435,7 @@ public class ChatActivityEnterView extends FrameLayout implements
         suggestButton.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_glass_defaultIcon), PorterDuff.Mode.MULTIPLY));
         suggestButton.setImageResource(R.drawable.input_suggest_paid_24);
         suggestButton.setBackground(Theme.createSelectorDrawable(getThemedColor(Theme.key_listSelector)));
-        if (isLiveComment) {
-            suggestButton.setTranslationX(dp(42));
-            textFieldContainer.addView(suggestButton, LayoutHelper.createFrame(DEFAULT_HEIGHT, DEFAULT_HEIGHT, Gravity.BOTTOM | Gravity.RIGHT, 0, 0, 6 + DEFAULT_HEIGHT, 0));
-        } else {
-            attachLayout.addView(suggestButton, 0, LayoutHelper.createLinear(DEFAULT_HEIGHT, DEFAULT_HEIGHT));
-        }
+        attachLayout.addView(suggestButton, 0, LayoutHelper.createLinear(DEFAULT_HEIGHT, DEFAULT_HEIGHT));
         suggestButton.setOnClickListener(v -> {
             if (adjustPanLayoutHelper != null && adjustPanLayoutHelper.animationInProgress() || attachLayoutPaddingAlpha == 0f) {
                 return;
@@ -3507,7 +3450,7 @@ public class ChatActivityEnterView extends FrameLayout implements
     public void setSuggestionButtonVisible(boolean visible, boolean animated) {
         if (suggestButtonVisible == visible && animated) return;
         if (suggestButton == null) {
-            if (visible || isLiveComment) {
+            if (visible) {
                 createSuggestionButton();
             } else {
                 return;
@@ -3526,23 +3469,12 @@ public class ChatActivityEnterView extends FrameLayout implements
             suggestButtonAppear = null;
         }
         if (animated) {
-            if (isLiveComment) {
-                suggestButton.setVisibility(View.VISIBLE);
-            }
             suggestButtonAppear = ValueAnimator.ofFloat(suggestButton.getAlpha(), alpha);
             suggestButtonAppear.addUpdateListener(a -> {
                 final float t = (float) a.getAnimatedValue();
                 suggestButton.setScaleX(lerp(0.6f, 1, t));
                 suggestButton.setScaleY(lerp(0.6f, 1, t));
                 suggestButton.setAlpha(t);
-            });
-            suggestButtonAppear.addListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    if (isLiveComment) {
-                        suggestButton.setVisibility(visible ? View.VISIBLE : View.GONE);
-                    }
-                }
             });
             suggestButtonAppear.setDuration(220);
             suggestButtonAppear.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
@@ -3551,9 +3483,6 @@ public class ChatActivityEnterView extends FrameLayout implements
             suggestButton.setScaleX(s);
             suggestButton.setScaleY(s);
             suggestButton.setAlpha(alpha);
-            if (isLiveComment) {
-                suggestButton.setVisibility(visible ? View.VISIBLE : View.GONE);
-            }
         }
 
         updateFieldRight(lastAttachVisible);
@@ -3813,13 +3742,9 @@ public class ChatActivityEnterView extends FrameLayout implements
         }
         senderSelectView = new SenderSelectView(getContext());
         senderSelectView.setOnClickListener(v -> {
-            if (isLiveComment ? isPopupShowing() : getTranslationY() != 0) {
+            if (getTranslationY() != 0) {
                 onEmojiSearchClosed = () -> senderSelectView.callOnClick();
-                if (isLiveComment) {
-                    hidePopup(true, false);
-                } else {
-                    hidePopup(true, true);
-                }
+                hidePopup(true, true);
                 return;
             }
             if (delegate.measureKeyboardHeight() > dp(20)) {
@@ -3850,28 +3775,13 @@ public class ChatActivityEnterView extends FrameLayout implements
                 }
                 MessagesController controller = MessagesController.getInstance(currentAccount);
 
-                final TLRPC.ChatFull chatFull;
-                TLRPC.Peer defPeer;
-                if (isLiveComment) {
-                    final TLRPC.Chat chat = null;
-                    chatFull = null;
-                    defPeer = delegate.getDefaultSendAs();
-                } else {
-                    final TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-dialog_id);
-                    chatFull = MessagesController.getInstance(currentAccount).getChatFull(-dialog_id);
-                    defPeer = chatFull != null ? chatFull.default_send_as : null;
-                }
+                final TLRPC.ChatFull chatFull = MessagesController.getInstance(currentAccount).getChatFull(-dialog_id);
+                TLRPC.Peer defPeer = chatFull != null ? chatFull.default_send_as : null;
                 if (defPeer == null && delegate.getSendAsPeers() != null && !delegate.getSendAsPeers().peers.isEmpty()) {
                     defPeer = delegate.getSendAsPeers().peers.get(0).peer;
                 }
                 final boolean isChannel = ChatObject.isChannelAndNotMegaGroup(controller.getChat(-dialog_id));
 
-                ViewGroup fl;
-                if (isLiveComment) {
-                    fl = (ViewGroup) getParent();
-                } else {
-                    fl = parentFragment.getParentLayout().getOverlayContainerView();
-                }
 
                 senderSelectPopupWindow = new SenderSelectPopup(getContext(), parentFragment, controller, isChannel, defPeer, delegate.getSendAsPeers(), (recyclerView, senderView, peer) -> {
                     if (senderSelectPopupWindow == null) return;
@@ -3952,7 +3862,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                         avatar.setTranslationY(startY);
 
                         final float startScale = (float) (SenderSelectPopup.AVATAR_SIZE_DP - 10) / SenderSelectPopup.AVATAR_SIZE_DP;
-                        final float endScale = senderSelectView.getLayoutParams().width * (isLiveComment ? senderSelectView.getScaleX() : 1.0f) / (float) dp(SenderSelectPopup.AVATAR_SIZE_DP);
+                        final float endScale = senderSelectView.getLayoutParams().width / (float) dp(SenderSelectPopup.AVATAR_SIZE_DP);
                         avatar.setPivotX(0);
                         avatar.setPivotY(0);
                         avatar.setScaleX(startScale);
@@ -3969,20 +3879,16 @@ public class ChatActivityEnterView extends FrameLayout implements
                         });
                         d.show();
 
-                        if (!isLiveComment) {
-                            senderSelectView.setScaleX(1f);
-                            senderSelectView.setScaleY(1f);
-                        }
+                        senderSelectView.setScaleX(1f);
+                        senderSelectView.setScaleY(1f);
                         senderSelectView.setAlpha(1f);
 
                         float translationStiffness = 700f;
                         senderSelectPopupWindow.startDismissAnimation(
-                                isLiveComment ? null :
                                 new SpringAnimation(senderSelectView, DynamicAnimation.SCALE_X)
                                         .setSpring(new SpringForce(0.5f)
                                                 .setStiffness(SenderSelectPopup.SPRING_STIFFNESS)
                                                 .setDampingRatio(SpringForce.DAMPING_RATIO_NO_BOUNCY)),
-                                isLiveComment ? null :
                                 new SpringAnimation(senderSelectView, DynamicAnimation.SCALE_Y)
                                         .setSpring(new SpringForce(0.5f)
                                                 .setStiffness(SenderSelectPopup.SPRING_STIFFNESS)
@@ -3997,10 +3903,8 @@ public class ChatActivityEnterView extends FrameLayout implements
                                                 avatar.setTranslationY(endY);
 
                                                 senderSelectView.setProgress(0, false);
-                                                if (!isLiveComment) {
-                                                    senderSelectView.setScaleX(1);
-                                                    senderSelectView.setScaleY(1);
-                                                }
+                                                senderSelectView.setScaleX(1);
+                                                senderSelectView.setScaleY(1);
                                                 senderSelectView.setAlpha(1);
 
                                                 senderSelectView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
@@ -4045,10 +3949,8 @@ public class ChatActivityEnterView extends FrameLayout implements
                                                 avatar.setTranslationY(endY);
 
                                                 senderSelectView.setProgress(0, false);
-                                                if (!isLiveComment) {
-                                                    senderSelectView.setScaleX(1);
-                                                    senderSelectView.setScaleY(1);
-                                                }
+                                                senderSelectView.setScaleX(1);
+                                                senderSelectView.setScaleY(1);
                                                 senderSelectView.setAlpha(1);
 
                                                 senderSelectView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
@@ -4396,7 +4298,6 @@ public class ChatActivityEnterView extends FrameLayout implements
     public boolean allowBlur = true;
     public boolean shouldDrawBackground = true;
     public boolean shouldDrawRecordedAudioPanelInParent;
-    public boolean isStories;
 
     Paint backgroundPaint = new Paint();
     private float composeShadowAlpha = 1f;
@@ -4464,7 +4365,7 @@ public class ChatActivityEnterView extends FrameLayout implements
             return false;
         }
 
-        if (isStories || (messageEditText == null || TextUtils.isEmpty(messageEditText.getText())) && parentFragment != null && parentFragment.messagePreviewParams != null && parentFragment.messagePreviewParams.forwardMessages != null && parentFragment.messagePreviewParams.forwardMessages.messages != null && !parentFragment.messagePreviewParams.forwardMessages.messages.isEmpty()) {
+        if ((messageEditText == null || TextUtils.isEmpty(messageEditText.getText())) && parentFragment != null && parentFragment.messagePreviewParams != null && parentFragment.messagePreviewParams.forwardMessages != null && parentFragment.messagePreviewParams.forwardMessages.messages != null && !parentFragment.messagePreviewParams.forwardMessages.messages.isEmpty()) {
 
             boolean self = parentFragment != null && UserObject.isUserSelf(parentFragment.getCurrentUser());
 
@@ -5031,7 +4932,7 @@ public class ChatActivityEnterView extends FrameLayout implements
             }
             ClipDescription description = inputContentInfo.getDescription();
             if (description.hasMimeType("image/gif")) {
-                SendMessagesHelper.prepareSendingDocument(accountInstance, null, null, inputContentInfo.getContentUri(), null, "image/gif", dialog_id, replyingMessageObject, getThreadMessage(), null, replyingQuote, null, notify, 0, inputContentInfo, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, false);
+                SendMessagesHelper.prepareSendingDocument(accountInstance, null, null, inputContentInfo.getContentUri(), null, "image/gif", dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, null, notify, 0, inputContentInfo, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, false);
             } else {
                 SendMessagesHelper.prepareSendingPhoto(accountInstance, null, inputContentInfo.getContentUri(), dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, null, null, null, inputContentInfo, 0, null, notify, 0, parentFragment == null ? 0 : parentFragment.getChatMode(), parentFragment != null ? parentFragment.getMessageChatSendParams() : null);
             }
@@ -5047,15 +4948,8 @@ public class ChatActivityEnterView extends FrameLayout implements
                 return null;
             }
             try {
-                if (isLiveComment) {
-                    EditorInfoCompat.setContentMimeTypes(editorInfo, null);
-                } else {
-                    EditorInfoCompat.setContentMimeTypes(editorInfo, new String[]{"image/gif", "image/*", "image/jpg", "image/png", "image/webp"});
-                }
+                EditorInfoCompat.setContentMimeTypes(editorInfo, new String[]{"image/gif", "image/*", "image/jpg", "image/png", "image/webp"});
                 final InputConnectionCompat.OnCommitContentListener callback = (inputContentInfo, flags, opts) -> {
-                    if (isLiveComment) {
-                        return true;
-                    }
                     if (BuildCompat.isAtLeastNMR1() && (flags & InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION) != 0) {
                         try {
                             inputContentInfo.requestPermission();
@@ -5292,7 +5186,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                     photoEntry.reset();
                     sending = true;
                     boolean updateStickersOrder = SendMessagesHelper.checkUpdateStickersOrder(info.caption);
-                    SendMessagesHelper.prepareSendingMedia(accountInstance, photos, dialog_id, replyingMessageObject, getThreadMessage(), null, replyingQuote, false, false, editingMessageObject, notify, scheduleDate, scheduleRepeatPeriod, parentFragment == null ? 0 : parentFragment.getChatMode(), updateStickersOrder, null, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, 0, false, getSendMonoForumPeerId(), parentFragment != null ? parentFragment.messageSuggestionParams : null);
+                    SendMessagesHelper.prepareSendingMedia(accountInstance, photos, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, false, false, editingMessageObject, notify, scheduleDate, scheduleRepeatPeriod, parentFragment == null ? 0 : parentFragment.getChatMode(), updateStickersOrder, null, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, 0, false, getSendMonoForumPeerId(), parentFragment != null ? parentFragment.messageSuggestionParams : null);
                     if (delegate != null) {
                         delegate.onMessageSend(null, true, scheduleDate, scheduleRepeatPeriod);
                     }
@@ -5649,7 +5543,6 @@ public class ChatActivityEnterView extends FrameLayout implements
                         delegate.needSendTyping();
                     }
                 }
-                updateSendButtonPaid();
             }
 
             @Override
@@ -5682,7 +5575,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                 int beforeLimit;
                 codePointCount = Character.codePointCount(editable, 0, editable.length());
                 boolean doneButtonEnabledLocal = true;
-                if (currentLimit > 0 && (beforeLimit = currentLimit - codePointCount) <= (isLiveComment ? 5 : 100)) {
+                if (currentLimit > 0 && (beforeLimit = currentLimit - codePointCount) <= 100) {
                     if (beforeLimit < -9999) {
                         beforeLimit = -9999;
                     }
@@ -6423,7 +6316,6 @@ public class ChatActivityEnterView extends FrameLayout implements
                 messageEditText.setInputType(commonInputType);
             }
         }
-        updateSendButtonPaid();
         final boolean isPostSuggestions = parentFragment != null && parentFragment.getChatMode() == ChatActivity.MODE_SUGGESTIONS && parentFragment.isSubscriberSuggestions;
 
         final int chatActivityMode = parentFragment != null ? parentFragment.getChatMode() : -1;
@@ -6515,8 +6407,7 @@ public class ChatActivityEnterView extends FrameLayout implements
 
         checkIsEphemeralMessage(true);
 
-        TL_stories.StoryItem storyItem = delegate != null ? delegate.getReplyToStory() : null;
-        MediaController.getInstance().setReplyingMessage(messageObject, getThreadMessage(), storyItem);
+        MediaController.getInstance().setReplyingMessage(messageObject, getThreadMessage());
         updateFieldHint(animated);
     }
 
@@ -6934,7 +6825,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                     sendAnimationData.fromPreview = System.currentTimeMillis() - sentFromPreview < 200;
                     params.sendAnimationData = sendAnimationData;
                 }
-                applyStoryToSendMessageParams(params);
+                applyReplyQuoteToSendMessageParams(params);
                 SendMessagesHelper.getInstance(currentAccount).sendMessage(params);
                 if (delegate != null) {
                     delegate.onMessageSend(null, notify, scheduleDate, scheduleRepeatPeriod);
@@ -6996,7 +6887,6 @@ public class ChatActivityEnterView extends FrameLayout implements
                     delegate.onMessageSend(null, notify, scheduleDate, scheduleRepeatPeriod);
                 }
             }
-            updateSendButtonPaid();
         };
         // LoogriGram: with allowConfirm the send went through the paid-message
         // confirmation first, pausing any recording while it asked. With no
@@ -7351,7 +7241,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                 params.monoForumPeer = getSendMonoForumPeerId();
                 params.suggestionParams = getSendMessageSuggestionParams();
                 sendButton.setEffect(effectId = 0);
-                applyStoryToSendMessageParams(params);
+                applyReplyQuoteToSendMessageParams(params);
                 params.invert_media = parentFragment != null && parentFragment.messagePreviewParams != null && parentFragment.messagePreviewParams.webpageTop;
                 if (parentFragment != null && parentFragment.getCurrentChat() != null && !ChatObject.canSendEmbed(parentFragment.getCurrentChat())) {
                     params.searchLinks = false;
@@ -7390,9 +7280,8 @@ public class ChatActivityEnterView extends FrameLayout implements
         return parentFragment != null ? parentFragment.getSendMessageSuggestionParams() : null;
     }
 
-    private void applyStoryToSendMessageParams(SendMessagesHelper.SendMessageParams params) {
+    private void applyReplyQuoteToSendMessageParams(SendMessagesHelper.SendMessageParams params) {
         if (delegate != null) {
-            params.replyToStoryItem = delegate.getReplyToStory();
             params.replyQuote = delegate.getReplyQuote();
         }
     }
@@ -7413,7 +7302,6 @@ public class ChatActivityEnterView extends FrameLayout implements
         if (isPaused) {
             animated = false;
         }
-        updateSendButtonPaid();
         final CharSequence message = messageEditText == null ? "" : AndroidUtilities.getTrimmedString(messageEditText.getTextToUse());
         boolean shownSendButton = false;
         if (slowModeTimer > 0 && slowModeTimer != Integer.MAX_VALUE && !isSlowModeIgnored()) {
@@ -7856,7 +7744,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                     }
                 }
             }
-        } else if (emojiView != null && emojiViewVisible && (stickersTabOpen || emojiTabOpen && searchingType == 2) && !AndroidUtilities.isInMultiwindow && !isLiveComment) {
+        } else if (emojiView != null && emojiViewVisible && (stickersTabOpen || emojiTabOpen && searchingType == 2) && !AndroidUtilities.isInMultiwindow) {
             if (animated) {
                 if (runningAnimationType == 4) {
                     return;
@@ -8238,13 +8126,6 @@ public class ChatActivityEnterView extends FrameLayout implements
                 }
             }
         }
-        if (isStories && suggestButton != null) {
-            if (animated) {
-                suggestButton.animate().translationX(shownSendButton ? -Math.max(0, sendButton.width() - dp(64)) : dp(42)).setDuration(320).setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT).start();
-            } else {
-                suggestButton.setTranslationX(shownSendButton ? -Math.max(0, sendButton.width() - dp(64)) : dp(42));
-            }
-        }
     }
 
     private void setSlowModeButtonVisible(boolean visible) {
@@ -8263,9 +8144,7 @@ public class ChatActivityEnterView extends FrameLayout implements
         }
         FrameLayout.LayoutParams layoutParams = (FrameLayout.LayoutParams) messageEditText.getLayoutParams();
         int oldRightMargin = layoutParams.rightMargin;
-        if (isStories && isLiveComment) {
-            layoutParams.rightMargin = dp(suggestButtonVisible ? 50 : 2) + Math.max(0, sendButton.width() - dp(DEFAULT_HEIGHT));
-        } else if (attachVisible == 1 || attachVisible == 2/* && layoutParams.rightMargin != dp(2)*/) {
+        if (attachVisible == 1 || attachVisible == 2/* && layoutParams.rightMargin != dp(2)*/) {
             if (botButton != null && botButton.getVisibility() == VISIBLE && scheduledButton != null && scheduledButton.getVisibility() == VISIBLE && attachButton != null && attachButton.getVisibility() == VISIBLE) {
                 layoutParams.rightMargin = dp(146);
             } else if (botButton != null && botButton.getVisibility() == VISIBLE || notifyButton != null && notifyButton.getVisibility() == VISIBLE || scheduledButton != null && scheduledButton.getTag() != null) {
@@ -9311,7 +9190,7 @@ public class ChatActivityEnterView extends FrameLayout implements
             sendMessageParams.sendMessageChatArguments = parentFragment != null ? parentFragment.getMessageChatSendParams() : null;
             sendMessageParams.effect_id = effectId;
             sendButton.setEffect(effectId = 0);
-            applyStoryToSendMessageParams(sendMessageParams);
+            applyReplyQuoteToSendMessageParams(sendMessageParams);
             SendMessagesHelper.getInstance(currentAccount).sendMessage(sendMessageParams);
         }
     }
@@ -9885,8 +9764,7 @@ public class ChatActivityEnterView extends FrameLayout implements
         if (controlsView != null) {
             controlsView.periodDrawable.setValue(1, voiceOnce, true);
         }
-        TL_stories.StoryItem storyItem = delegate != null ? delegate.getReplyToStory() : null;
-        MediaController.getInstance().prepareResumedRecording(currentAccount, draft, dialog_id, replyingMessageObject, getThreadMessage(), storyItem, recordingGuid, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, getSendMonoForumPeerId(), getSendMessageSuggestionParams());
+        MediaController.getInstance().prepareResumedRecording(currentAccount, draft, dialog_id, replyingMessageObject, getThreadMessage(), recordingGuid, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, getSendMonoForumPeerId(), getSendMessageSuggestionParams());
     }
 
     public void setSelection(int start) {
@@ -10460,16 +10338,9 @@ public class ChatActivityEnterView extends FrameLayout implements
             return;
         }
         createMessageEditText();
-        TLRPC.Chat chat;
-        TLRPC.Peer defPeer;
-        if (isLiveComment) {
-            chat = null;
-            defPeer = delegate.getDefaultSendAs();
-        } else {
-            chat = MessagesController.getInstance(currentAccount).getChat(-dialog_id);
-            TLRPC.ChatFull full = MessagesController.getInstance(currentAccount).getChatFull(-dialog_id);
-            defPeer = full != null ? full.default_send_as : null;
-        }
+        TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-dialog_id);
+        TLRPC.ChatFull full = MessagesController.getInstance(currentAccount).getChatFull(-dialog_id);
+        TLRPC.Peer defPeer = full != null ? full.default_send_as : null;
         if (defPeer == null && delegate.getSendAsPeers() != null && !delegate.getSendAsPeers().peers.isEmpty()) {
             defPeer = delegate.getSendAsPeers().peers.get(0).peer;
         }
@@ -10477,7 +10348,7 @@ public class ChatActivityEnterView extends FrameLayout implements
             && (delegate.getSendAsPeers() == null || delegate.getSendAsPeers().peers.size() > 1)
             && !isEditingMessage() && !isRecordingAudioVideo()
             && (recordedAudioPanel == null || recordedAudioPanel.getVisibility() != View.VISIBLE)
-            && (isLiveComment || (!ChatObject.isChannelAndNotMegaGroup(chat) || ChatObject.canSendAsPeers(chat)) && !ChatObject.isMonoForum(chat))
+            && (!ChatObject.isChannelAndNotMegaGroup(chat) || ChatObject.canSendAsPeers(chat)) && !ChatObject.isMonoForum(chat)
             && (parentFragment == null || parentFragment.getChatMode() != ChatActivity.MODE_WELCOME_MESSAGES);
         if (isVisible) {
             createSenderSelectView();
@@ -10520,7 +10391,7 @@ public class ChatActivityEnterView extends FrameLayout implements
             senderSelectView.setTag(null);
         }
 
-        if ((isLiveComment || parentFragment != null && parentFragment.getOtherSameChatsDiff() == 0 && parentFragment.fragmentOpened) && animated) {
+        if (parentFragment != null && parentFragment.getOtherSameChatsDiff() == 0 && parentFragment.fragmentOpened && animated) {
             ValueAnimator anim = ValueAnimator.ofFloat(0, 1).setDuration(150);
             if (senderSelectView != null) {
                 senderSelectView.setTranslationX(startX);
@@ -11245,7 +11116,6 @@ public class ChatActivityEnterView extends FrameLayout implements
 
             @Override
             public void onStickerSelected(View view, TLRPC.Document sticker, String query, Object parent, MessageObject.SendAnimationData sendAnimationData, boolean notify, int scheduleDate, int scheduleRepeatPeriod) {
-                if (isLiveComment) return;
                 if (trendingStickersAlert != null) {
                     trendingStickersAlert.dismiss();
                     trendingStickersAlert = null;
@@ -11559,7 +11429,6 @@ public class ChatActivityEnterView extends FrameLayout implements
                             }
                             setStickersExpanded(false, true, false);
                         }
-                        TL_stories.StoryItem storyItem = delegate != null ? delegate.getReplyToStory() : null;
                         if (gif instanceof TLRPC.Document) {
                             TLRPC.Document document = (TLRPC.Document) gif;
                             boolean applyEdit = false;
@@ -11602,9 +11471,9 @@ public class ChatActivityEnterView extends FrameLayout implements
                                 photos.add(info);
                                 entry.reset();
 
-                                SendMessagesHelper.prepareSendingMedia(AccountInstance.getInstance(currentAccount), photos, dialog_id, replyingMessageObject, getThreadMessage(), null, replyingQuote, false, false, editingMessageObject, notify, scheduleDate, scheduleRepeatPeriod, 0, false, null, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, effectId, invertMedia, getSendMonoForumPeerId(),  getSendMessageSuggestionParams());
+                                SendMessagesHelper.prepareSendingMedia(AccountInstance.getInstance(currentAccount), photos, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, false, false, editingMessageObject, notify, scheduleDate, scheduleRepeatPeriod, 0, false, null, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, effectId, invertMedia, getSendMonoForumPeerId(),  getSendMessageSuggestionParams());
                             } else {
-                                SendMessagesHelper.getInstance(currentAccount).sendSticker(document, query, dialog_id, entry != null ? entry.caption : null, videoEditedInfo, replyingMessageObject, getThreadMessage(), storyItem, replyingQuote, null, notify, scheduleDate, scheduleRepeatPeriod, false, parent, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, getSendMonoForumPeerId(), getSendMessageSuggestionParams(), invertMedia);
+                                SendMessagesHelper.getInstance(currentAccount).sendSticker(document, query, dialog_id, entry != null ? entry.caption : null, videoEditedInfo, replyingMessageObject, getThreadMessage(), replyingQuote, null, notify, scheduleDate, scheduleRepeatPeriod, false, parent, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, getSendMonoForumPeerId(), getSendMessageSuggestionParams(), invertMedia);
                                 MediaDataController.getInstance(currentAccount).addRecentGif(document, (int) (System.currentTimeMillis() / 1000), true);
                                 if (DialogObject.isEncryptedDialog(dialog_id)) {
                                     accountInstance.getMessagesController().saveGif(parent, document);
@@ -11627,11 +11496,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                             params.put("query_id", "" + result.query_id);
                             params.put("force_gif", "1");
 
-                            if (storyItem == null) {
-                                SendMessagesHelper.prepareSendingBotContextResult(parentFragment, accountInstance, result, params, dialog_id, replyingMessageObject, getThreadMessage(), null, replyingQuote, notify, scheduleDate, 0, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, getSendMonoForumPeerId());
-                            } else {
-                                SendMessagesHelper.getInstance(currentAccount).sendSticker(result.document, query, dialog_id, replyingMessageObject, getThreadMessage(), storyItem, replyingQuote, null, notify, scheduleDate, scheduleRepeatPeriod, false, parent, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, getSendMonoForumPeerId(), getSendMessageSuggestionParams());
-                            }
+                            SendMessagesHelper.prepareSendingBotContextResult(parentFragment, accountInstance, result, params, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, notify, scheduleDate, 0, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, getSendMonoForumPeerId());
                             if (searchingType != 0) {
                                 setSearchingTypeInternal(0, true);
                                 emojiView.closeSearch(true);
@@ -11883,7 +11748,6 @@ public class ChatActivityEnterView extends FrameLayout implements
 
     @Override
     public void onStickerSelected(TLRPC.Document sticker, String query, Object parent, MessageObject.SendAnimationData sendAnimationData, boolean clearsInputField, boolean notify, int scheduleDate, int scheduleRepeatPeriod) {
-        if (isLiveComment) return;
         if (replyingQuote != null && parentFragment != null && replyingQuote.outdated) {
             parentFragment.showQuoteMessageUpdate();
             return;
@@ -11904,8 +11768,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                     emojiView.hideSearchKeyboard();
                 }
                 setStickersExpanded(false, true, false);
-                final TL_stories.StoryItem storyItem = delegate != null ? delegate.getReplyToStory() : null;
-                SendMessagesHelper.getInstance(currentAccount).sendSticker(sticker, query, dialog_id, replyingMessageObject, getThreadMessage(), storyItem, replyingQuote, sendAnimationData, notify, scheduleDate, scheduleRepeatPeriod, parent instanceof TLRPC.TL_messages_stickerSet, parent, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, getSendMonoForumPeerId(), getSendMessageSuggestionParams());
+                SendMessagesHelper.getInstance(currentAccount).sendSticker(sticker, query, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, sendAnimationData, notify, scheduleDate, scheduleRepeatPeriod, parent instanceof TLRPC.TL_messages_stickerSet, parent, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, getSendMonoForumPeerId(), getSendMessageSuggestionParams());
                 if (delegate != null) {
                     delegate.onMessageSend(null, true, scheduleDate, 0);
                 }
@@ -14036,9 +13899,6 @@ public class ChatActivityEnterView extends FrameLayout implements
             attachLayout.setTranslationX(attachLayoutPaddingTranslationX + attachLayoutTranslationX);
             attachLayout.setAlpha(attachLayoutAlpha * attachLayoutPaddingAlpha);
             attachLayout.setVisibility(attachLayout.getAlpha() > 0 ? View.VISIBLE : View.GONE);
-            if (attachButton != null && isStories) {
-                attachButton.setAlpha(attachButtonAlpha * attachLayoutPaddingAlpha);
-            }
         }
         if (scheduledButton != null) {
             scheduledButton.setTranslationX(scheduledButton.getTranslationX());
@@ -14873,55 +14733,7 @@ public class ChatActivityEnterView extends FrameLayout implements
 
     }
 
-    private boolean isLiveComment;
-    public void setLiveComment(boolean isLiveComment, boolean isAdmin) {
-        if (this.isLiveComment == isLiveComment) return;
-        this.isLiveComment = isLiveComment;
-        attachButton.setVisibility(isLiveComment ? View.GONE : View.VISIBLE);
-        if (isLiveComment) {
-            AndroidUtilities.removeFromParent(notifyButton);
-        }
-        if (isLiveComment) {
-            audioVideoSendButton.setVisibility(View.GONE);
-        } else {
-            reset();
-        }
-        if (!isLiveComment) {
-            currentLimit = -1;
-            if (captionLimitView != null) {
-                captionLimitView.setVisibility(View.GONE);
-            }
-        }
-        updateFieldRight(lastAttachVisible);
-        checkSendButton(false);
-    }
-
-    public static void disableNewLines(EditText editText) {
-        InputFilter noNewLinesFilter = (source, start, end, dest, dstart, dend) -> {
-            for (int i = start; i < end; i++) {
-                char c = source.charAt(i);
-                if (c == '\n' || c == '\r') {
-                    StringBuilder result = new StringBuilder(end - start);
-                    for (int j = start; j < end; j++) {
-                        char ch = source.charAt(j);
-                        if (ch != '\n' && ch != '\r') {
-                            result.append(ch);
-                        }
-                    }
-                    return result;
-                }
-            }
-            return null;
-        };
-
-        InputFilter[] oldFilters = editText.getFilters();
-        if (oldFilters == null) {
-            editText.setFilters(new InputFilter[] {noNewLinesFilter});
-            return;
-        }
-
-        InputFilter[] newFilters = Arrays.copyOf(oldFilters, oldFilters.length + 1);
-        newFilters[oldFilters.length] = noNewLinesFilter;
-        editText.setFilters(newFilters);
-    }
+    // LoogriGram: setLiveComment turned this field into a live story's comment
+    // box (no attachments, voice or stickers, paid length tiers, a sender menu
+    // of its own); disableNewLines served it. Stories are removed, as on desktop.
 }

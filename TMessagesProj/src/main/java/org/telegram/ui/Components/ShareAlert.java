@@ -92,7 +92,6 @@ import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.NativeByteBuffer;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenuSubItem;
 import org.telegram.ui.ActionBar.ActionBarPopupWindow;
@@ -223,11 +222,8 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
     private SizeNotifierFrameLayout sizeNotifierFrameLayout;
     private ArrayList<DialogsSearchAdapter.RecentSearchObject> recentSearchObjects = new ArrayList<>();
     private LongSparseArray<DialogsSearchAdapter.RecentSearchObject> recentSearchObjectsById = new LongSparseArray<>();
-    TL_stories.StoryItem storyItem;
-
-    public void setStoryToShare(TL_stories.StoryItem storyItem) {
-        this.storyItem = storyItem;
-    }
+    // LoogriGram: setStoryToShare made this sheet send a story, from the story
+    // viewer's share button. Stories are removed, as on desktop.
 
     public interface ShareAlertDelegate {
         default void didShare() {
@@ -2428,32 +2424,7 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
             } else {
                 num = 0;
             }
-            if (storyItem != null) {
-                for (int a = 0; a < selectedDialogs.size(); a++) {
-                    long key = selectedDialogs.keyAt(a);
-                    boolean isMonoForum = MessagesController.getInstance(currentAccount).isMonoForum(key);
-                    TLRPC.TL_forumTopic topic = selectedDialogTopics.get(selectedDialogs.get(key));
-                    long monoForumPeerId = topic != null && isMonoForum ? DialogObject.getPeerDialogId(topic.from_id) : 0;
-                    MessageObject replyTopMsg = topic != null && !isMonoForum ? new MessageObject(currentAccount, topic.topicStartMessage, false, false) : null;
-
-                    SendMessagesHelper.SendMessageParams params;
-                    if (storyItem == null) {
-                        if (frameLayout2.getTag() != null && commentTextView.length() > 0) {
-                            params = SendMessagesHelper.SendMessageParams.of(text[0] == null ? null : text[0].toString(), key, replyTopMsg, replyTopMsg, null, true, entities, null, null, withSound, 0, 0, null, false);
-                        } else {
-                            params = SendMessagesHelper.SendMessageParams.of(sendingText[num], key, replyTopMsg, replyTopMsg, null, true, null, null, null, withSound, 0, 0, null, false);
-                        }
-                    } else {
-                        if (frameLayout2.getTag() != null && commentTextView.length() > 0 && text[0] != null) {
-                            SendMessagesHelper.getInstance(currentAccount).sendMessage(SendMessagesHelper.SendMessageParams.of(text[0].toString(), key, null, replyTopMsg, null, true, null, null, null, withSound, 0, 0, null, false));
-                        }
-                        params = SendMessagesHelper.SendMessageParams.of(null, key, replyTopMsg, replyTopMsg, null, true, null, null, null, withSound, 0, 0, null, false);
-                        params.sendingStory = storyItem;
-                    }
-                    params.monoForumPeer = monoForumPeerId;
-                    SendMessagesHelper.getInstance(currentAccount).sendMessage(params);
-                }
-            } else if (sendingText[num] != null) {
+            if (sendingText[num] != null) {
                 for (int a = 0; a < selectedDialogs.size(); a++) {
                     long key = selectedDialogs.keyAt(a);
                     boolean isMonoForum = MessagesController.getInstance(currentAccount).isMonoForum(key);

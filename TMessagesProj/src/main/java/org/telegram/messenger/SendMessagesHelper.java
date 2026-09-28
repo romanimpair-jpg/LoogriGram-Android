@@ -66,7 +66,6 @@ import org.telegram.tgnet.tl.TL_account;
 import org.telegram.tgnet.tl.TL_keyboard;
 import org.telegram.tgnet.tl.TL_ephemeral;
 import org.telegram.tgnet.tl.TL_iv;
-import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.tgnet.tl.TL_update;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
@@ -93,7 +92,6 @@ import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.Premium.LimitReachedBottomSheet;
 import org.telegram.ui.Components.Reactions.ReactionsLayoutInBubble;
 import org.telegram.ui.Components.Reactions.ReactionsUtils;
-import org.telegram.ui.Stories.MessageMediaStoryFull;
 import org.telegram.ui.TwoStepVerificationActivity;
 import org.telegram.ui.TwoStepVerificationSetupActivity;
 
@@ -123,7 +121,8 @@ import java.util.zip.ZipInputStream;
 public class SendMessagesHelper extends BaseController implements NotificationCenter.NotificationCenterDelegate {
 
     public static final int MEDIA_TYPE_DICE = 11;
-    public static final int MEDIA_TYPE_STORY = 12;
+    // LoogriGram: 12 was MEDIA_TYPE_STORY, a story shared into a chat from the
+    // story viewer. Stories are removed, as on desktop.
     public static final int MEDIA_TYPE_RICH = 13;
     private final HashMap<String, ArrayList<DelayedMessage>> delayedMessages = new HashMap<>();
     private final SparseArray<MessageObject> unsentMessages = new SparseArray<>();
@@ -153,13 +152,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             }
         }
         return false;
-    }
-
-    public TLRPC.InputReplyTo createReplyInput(TL_stories.StoryItem storyItem) {
-        TLRPC.TL_inputReplyToStory replyTo = new TLRPC.TL_inputReplyToStory();
-        replyTo.story_id = storyItem.id;
-        replyTo.peer = getMessagesController().getInputPeer(storyItem.dialogId);
-        return replyTo;
     }
 
     public TLRPC.InputReplyTo createReplyInput(int replyToMsgId) {
@@ -1859,15 +1851,15 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         performSendMessageRequest(req, newMsgObj, null, null, null, null, false);
     }
 
-    public void sendSticker(TLRPC.Document document, String query, long peer, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, MessageObject.SendAnimationData sendAnimationData, boolean notify, int scheduleDate, int scheduleRepeatPeriod, boolean updateStickersOrder, Object parentObject, SendMessageChatArguments sendMessageChatArguments, long monoForumPeerId, MessageSuggestionParams suggestionParams) {
-        sendSticker(document, query, peer, null, null, replyToMsg, replyToTopMsg, storyItem, quote, sendAnimationData, notify, scheduleDate, scheduleRepeatPeriod, updateStickersOrder, parentObject, sendMessageChatArguments, monoForumPeerId, suggestionParams);
+    public void sendSticker(TLRPC.Document document, String query, long peer, MessageObject replyToMsg, MessageObject replyToTopMsg, ChatActivity.ReplyQuote quote, MessageObject.SendAnimationData sendAnimationData, boolean notify, int scheduleDate, int scheduleRepeatPeriod, boolean updateStickersOrder, Object parentObject, SendMessageChatArguments sendMessageChatArguments, long monoForumPeerId, MessageSuggestionParams suggestionParams) {
+        sendSticker(document, query, peer, null, null, replyToMsg, replyToTopMsg, quote, sendAnimationData, notify, scheduleDate, scheduleRepeatPeriod, updateStickersOrder, parentObject, sendMessageChatArguments, monoForumPeerId, suggestionParams);
     }
 
-    public void sendSticker(TLRPC.Document document, String query, long peer, CharSequence caption, VideoEditedInfo videoEditedInfo, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, MessageObject.SendAnimationData sendAnimationData, boolean notify, int scheduleDate, int scheduleRepeatPeriod, boolean updateStickersOrder, Object parentObject, SendMessageChatArguments sendMessageChatArguments, long monoForumPeerId, MessageSuggestionParams suggestionParams) {
-        sendSticker(document, query, peer, caption, videoEditedInfo, replyToMsg, replyToTopMsg, storyItem, quote, sendAnimationData, notify, scheduleDate, scheduleRepeatPeriod, updateStickersOrder, parentObject, sendMessageChatArguments, monoForumPeerId, suggestionParams, false);
+    public void sendSticker(TLRPC.Document document, String query, long peer, CharSequence caption, VideoEditedInfo videoEditedInfo, MessageObject replyToMsg, MessageObject replyToTopMsg, ChatActivity.ReplyQuote quote, MessageObject.SendAnimationData sendAnimationData, boolean notify, int scheduleDate, int scheduleRepeatPeriod, boolean updateStickersOrder, Object parentObject, SendMessageChatArguments sendMessageChatArguments, long monoForumPeerId, MessageSuggestionParams suggestionParams) {
+        sendSticker(document, query, peer, caption, videoEditedInfo, replyToMsg, replyToTopMsg, quote, sendAnimationData, notify, scheduleDate, scheduleRepeatPeriod, updateStickersOrder, parentObject, sendMessageChatArguments, monoForumPeerId, suggestionParams, false);
     }
 
-    public void sendSticker(TLRPC.Document document, String query, long peer, CharSequence caption, VideoEditedInfo videoEditedInfo, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, MessageObject.SendAnimationData sendAnimationData, boolean notify, int scheduleDate, int scheduleRepeatPeriod, boolean updateStickersOrder, Object parentObject, SendMessageChatArguments sendMessageChatArguments, long monoForumPeerId, MessageSuggestionParams suggestionParams, boolean invertMedia) {
+    public void sendSticker(TLRPC.Document document, String query, long peer, CharSequence caption, VideoEditedInfo videoEditedInfo, MessageObject replyToMsg, MessageObject replyToTopMsg, ChatActivity.ReplyQuote quote, MessageObject.SendAnimationData sendAnimationData, boolean notify, int scheduleDate, int scheduleRepeatPeriod, boolean updateStickersOrder, Object parentObject, SendMessageChatArguments sendMessageChatArguments, long monoForumPeerId, MessageSuggestionParams suggestionParams, boolean invertMedia) {
         if (document == null) {
             return;
         }
@@ -1981,7 +1973,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         ImageLoader.getInstance().putImageToCache(new BitmapDrawable(bitmapFinal[0]), keyFinal[0], false);
                     }
                     SendMessageParams sendMessageParams = SendMessageParams.of((TLRPC.TL_document) finalDocument, videoEditedInfo, null, peer, replyToMsg, replyToTopMsg, null, null, null, null, notify, scheduleDate, scheduleRepeatPeriod, 0, parentObject, sendAnimationData, false);
-                    sendMessageParams.replyToStoryItem = storyItem;
                     sendMessageParams.replyQuote = quote;
                     sendMessageParams.sendMessageChatArguments = sendMessageChatArguments;
                     sendMessageParams.monoForumPeer = monoForumPeerId;
@@ -2000,7 +1991,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 params = null;
             }
             SendMessageParams sendMessageParams = SendMessageParams.of((TLRPC.TL_document) finalDocument, null, null, peer, replyToMsg, replyToTopMsg, null, null, null, params, notify, scheduleDate, scheduleRepeatPeriod, 0, parentObject, sendAnimationData, updateStickersOrder);
-            sendMessageParams.replyToStoryItem = storyItem;
             sendMessageParams.replyQuote = quote;
             sendMessageParams.sendMessageChatArguments = sendMessageChatArguments;
             sendMessageParams.monoForumPeer = monoForumPeerId;
@@ -3516,8 +3506,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             PollAttachedMediaGallery pollAttachedMediaGallery = (PollAttachedMediaGallery) attachedMedia;
             ArrayList<SendingMediaInfo> infos = new ArrayList<>(1);
             infos.add(pollAttachedMediaGallery.sendingMediaInfo);
-            prepareSendingMedia(getAccountInstance(), infos, peer, null, null,
-                    null, null, false, false, messageObject,
+            prepareSendingMedia(getAccountInstance(), infos, peer, null, null, null, false, false, messageObject,
                     inputPollAnswer,
                     false, 0, 0, 0, false,
                     null, null, 0,
@@ -4148,8 +4137,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         MessageObject.SendAnimationData sendAnimationData = sendMessageParams.sendAnimationData;
         boolean updateStickersOrder = sendMessageParams.updateStickersOrder;
         boolean hasMediaSpoilers = sendMessageParams.hasMediaSpoilers;
-        TL_stories.StoryItem replyToStoryItem = sendMessageParams.replyToStoryItem;
-        TL_stories.StoryItem sendingStory = sendMessageParams.sendingStory;
         ChatActivity.ReplyQuote replyQuote = sendMessageParams.replyQuote;
         boolean invert_media = sendMessageParams.invert_media;
 
@@ -4612,19 +4599,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 
                         newMsg.media = mediaPhoto;
                     }
-                } else if (sendingStory != null) {
-                    if (encryptedChat != null) {
-                        newMsg = new TLRPC.TL_message_secret();
-                    } else {
-                        newMsg = new TLRPC.TL_message();
-                    }
-                    TLRPC.TL_messageMediaStory mediaStory = new MessageMediaStoryFull();
-                    mediaStory.id = sendingStory.id;
-                    mediaStory.user_id = sendingStory.dialogId;
-                    mediaStory.peer = getMessagesController().getPeer(sendingStory.dialogId);
-                    mediaStory.storyItem = sendingStory;
-                    newMsg.media = mediaStory;
-                    type = MEDIA_TYPE_STORY;
                 }
                 if (entities != null && !entities.isEmpty()) {
                     newMsg.entities = entities;
@@ -4715,13 +4689,9 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             newMsg.flags |= TLRPC.MESSAGE_FLAG_HAS_MEDIA;
             newMsg.dialog_id = peer;
             newMsg.invert_media = invert_media;
-            if (replyToStoryItem != null) {
-                newMsg.reply_to = new TLRPC.TL_messageReplyStoryHeader();
-                newMsg.reply_to.story_id = replyToStoryItem.id;
-                newMsg.reply_to.peer = getMessagesController().getPeer(replyToStoryItem.dialogId);
-                newMsg.replyStory = replyToStoryItem;
-                newMsg.flags |= TLRPC.MESSAGE_FLAG_REPLY;
-            } else if (replyToMsg != null && (replyToTopMsg == null || replyToMsg != replyToTopMsg || replyToTopMsg.getId() != 1)) {
+            // LoogriGram: a reply to a story, typed in the story viewer, was built
+            // here and sent with the story as its reply_to. Stories are removed.
+            if (replyToMsg != null && (replyToTopMsg == null || replyToMsg != replyToTopMsg || replyToTopMsg.getId() != 1)) {
                 newMsg.reply_to = new TLRPC.TL_messageReplyHeader();
                 if (encryptedChat != null && replyToMsg.messageOwner.random_id != 0) {
                     newMsg.reply_to.reply_to_random_id = replyToMsg.messageOwner.random_id;
@@ -4833,7 +4803,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 }
             }
             boolean destroyReply = false;
-            if (replyToMsg != null && replyToStoryItem == null && newMsg.reply_to != null && !DialogObject.isEncryptedDialog(replyToMsg.getDialogId())) {
+            if (replyToMsg != null && newMsg.reply_to != null && !DialogObject.isEncryptedDialog(replyToMsg.getDialogId())) {
                 boolean convertToQuote = false;
                 TLRPC.Peer peer2 = getMessagesController().getPeer(replyToMsg.getDialogId() == getUserConfig().getClientUserId() ? replyToMsg.getSenderId() : replyToMsg.getDialogId());
                 boolean anotherChat = peer2 != null && !MessageObject.peersEqual(getMessagesController().getPeer(replyToMsg.getDialogId()), newMsg.peer_id);
@@ -5021,10 +4991,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         inputWebPage.force_small_media = mediaWebPage.force_small_media;
                         inputWebPage.optional = true;
                         reqSend.media = inputWebPage;
-                        if (replyToStoryItem != null) {
-                            reqSend.reply_to = createReplyInput(replyToStoryItem);
-                            reqSend.flags |= 1;
-                        } else if (newMsg.reply_to instanceof TLRPC.TL_messageReplyHeader) {
+                        if (newMsg.reply_to instanceof TLRPC.TL_messageReplyHeader) {
                             reqSend.reply_to = createReplyInput((TLRPC.TL_messageReplyHeader) newMsg.reply_to);
                             reqSend.flags |= 1;
                         }
@@ -5071,10 +5038,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         reqSend.silent = newMsg.silent;
                         reqSend.peer = sendToPeer;
                         reqSend.random_id = newMsg.random_id;
-                        if (replyToStoryItem != null) {
-                            reqSend.reply_to = createReplyInput(replyToStoryItem);
-                            reqSend.flags |= 1;
-                        } else if (newMsg.reply_to instanceof TLRPC.TL_messageReplyHeader) {
+                        if (newMsg.reply_to instanceof TLRPC.TL_messageReplyHeader) {
                             reqSend.reply_to = createReplyInput((TLRPC.TL_messageReplyHeader) newMsg.reply_to);
                             reqSend.flags |= 1;
                         }
@@ -5159,10 +5123,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 reqSend.random_id = newMsg.random_id;
                 reqSend.no_webpage = true;
                 reqSend.rich_message = richMessageToInputRichMessage(newMsg.rich_message, sendMessageParams.richMessageInputUsers);
-                if (replyToStoryItem != null) {
-                    reqSend.reply_to = createReplyInput(replyToStoryItem);
-                    reqSend.flags |= 1;
-                } else if (newMsg.reply_to instanceof TLRPC.TL_messageReplyHeader) {
+                if (newMsg.reply_to instanceof TLRPC.TL_messageReplyHeader) {
                     reqSend.reply_to = createReplyInput((TLRPC.TL_messageReplyHeader) newMsg.reply_to);
                     reqSend.flags |= 1;
                 }
@@ -5192,7 +5153,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 if (retryMessageObject == null) {
                     getMediaDataController().cleanDraft(peer, replyToTopMsg != null ? replyToTopMsg.getId() : 0, false);
                 }
-            } else if (type >= 1 && type <= 3 || type >= 5 && type <= 8 || type == 9 && encryptedChat != null || type == 10 || type == MEDIA_TYPE_DICE || type == MEDIA_TYPE_STORY) {
+            } else if (type >= 1 && type <= 3 || type >= 5 && type <= 8 || type == 9 && encryptedChat != null || type == 10 || type == MEDIA_TYPE_DICE) {
                 if (encryptedChat == null) {
                     TLRPC.InputMedia inputMedia = null;
                     if (type == 1) {
@@ -5458,11 +5419,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         TLRPC.TL_inputMediaDice inputMediaDice = new TLRPC.TL_inputMediaDice();
                         inputMediaDice.emoticon = message;
                         inputMedia = inputMediaDice;
-                    } else if (type == MEDIA_TYPE_STORY) {
-                        TLRPC.TL_inputMediaStory inputMediaStory = new TLRPC.TL_inputMediaStory();
-                        inputMediaStory.id = sendingStory.id;
-                        inputMediaStory.peer = MessagesController.getInstance(currentAccount).getInputPeer(sendingStory.dialogId);
-                        inputMedia = inputMediaStory;
                     }
 
                     TLObject reqSend;
@@ -5482,10 +5438,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                                 req.flags |= 8;
                             }
 
-                            if (newMsg.replyStory != null) {
-                                req.flags |= 1;
-                                req.reply_to = createReplyInput(replyToStoryItem);
-                            } else if (newMsg.reply_to instanceof TLRPC.TL_messageReplyHeader) {
+                            if (newMsg.reply_to instanceof TLRPC.TL_messageReplyHeader) {
                                 req.flags |= 1;
                                 req.reply_to = createReplyInput((TLRPC.TL_messageReplyHeader) newMsg.reply_to);
                             }
@@ -5519,10 +5472,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                             req.peer = sendToPeer;
                             req.silent = newMsg.silent;
 
-                            if (newMsg.replyStory != null) {
-                                req.flags |= 1;
-                                req.reply_to = createReplyInput(replyToStoryItem);
-                            } else if (newMsg.reply_to instanceof TLRPC.TL_messageReplyHeader) {
+                            if (newMsg.reply_to instanceof TLRPC.TL_messageReplyHeader) {
                                 req.flags |= 1;
                                 req.reply_to = createReplyInput((TLRPC.TL_messageReplyHeader) newMsg.reply_to);
                             }
@@ -5586,10 +5536,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         if (replyToTopMsg != null) {
                             replyToTopMsgInt = replyToTopMsg.getId();
                         }
-                        if (replyToStoryItem != null) {
-                            request.reply_to = createReplyInput(replyToStoryItem);
-                            request.flags |= 1;
-                        } else if (newMsg.reply_to instanceof TLRPC.TL_messageReplyHeader) {
+                        if (newMsg.reply_to instanceof TLRPC.TL_messageReplyHeader) {
                             request.flags |= 1;
                             request.reply_to = createReplyInput((TLRPC.TL_messageReplyHeader) newMsg.reply_to);
                         }
@@ -5663,7 +5610,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         } else {
                             performSendMessageRequest(reqSend, newMsgObj, originalPath, delayedMessage, parentObject, params, scheduleDate != 0);
                         }
-                    } else if (type == 10 || type == MEDIA_TYPE_DICE || type == MEDIA_TYPE_STORY) {
+                    } else if (type == 10 || type == MEDIA_TYPE_DICE) {
                         performSendMessageRequest(reqSend, newMsgObj, originalPath, delayedMessage, parentObject, params, scheduleDate != 0);
                     }
                 } else {
@@ -6017,10 +5964,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                     reqSend.send_as = getMessagesController().getInputPeer(newMsg.from_id);
                 }
                 reqSend.hide_via = !params.containsKey("bot");
-                if (replyToStoryItem != null) {
-                    reqSend.reply_to = createReplyInput(replyToStoryItem);
-                    reqSend.flags |= 1;
-                } else if (newMsg.reply_to instanceof TLRPC.TL_messageReplyHeader) {
+                if (newMsg.reply_to instanceof TLRPC.TL_messageReplyHeader) {
                     reqSend.flags |= 1;
                     reqSend.reply_to = createReplyInput((TLRPC.TL_messageReplyHeader) newMsg.reply_to);
                 }
@@ -8794,7 +8738,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
     private final static int ERROR_TYPE_UNSUPPORTED = 1;
     private final static int ERROR_TYPE_FILE_TOO_LARGE = 2;
 
-    private static int prepareSendingDocumentInternal(AccountInstance accountInstance, String path, String originalPath, Uri uri, String mime, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, final ArrayList<TLRPC.MessageEntity> entities, final MessageObject editingMessageObject, long[] groupId, boolean isGroupFinal, CharSequence caption, boolean notify, int scheduleDate, int scheduleRepeatPeriod, Integer[] docType, boolean forceDocument, SendMessageChatArguments sendMessageChatArguments, long effectId, boolean invertMedia, long monoForumPeerId, MessageSuggestionParams suggestionParams, PollSendParams pollSendParams, int pollIndex) {
+    private static int prepareSendingDocumentInternal(AccountInstance accountInstance, String path, String originalPath, Uri uri, String mime, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, ChatActivity.ReplyQuote quote, final ArrayList<TLRPC.MessageEntity> entities, final MessageObject editingMessageObject, long[] groupId, boolean isGroupFinal, CharSequence caption, boolean notify, int scheduleDate, int scheduleRepeatPeriod, Integer[] docType, boolean forceDocument, SendMessageChatArguments sendMessageChatArguments, long effectId, boolean invertMedia, long monoForumPeerId, MessageSuggestionParams suggestionParams, PollSendParams pollSendParams, int pollIndex) {
         final long forcedPollGroupId = pollSendParams != null ? pollSendParams.groupId : 0;
 
         if ((path == null || path.length() == 0) && uri == null) {
@@ -9096,7 +9040,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 accountInstance.getSendMessagesHelper().editMessage(editingMessageObject, null, null, documentFinal, pathFinal, null, params, false, false, parentFinal);
             } else {
                 SendMessageParams sendMessageParams = SendMessagesHelper.SendMessageParams.of(documentFinal, null, pathFinal, dialogId, replyToMsg, replyToTopMsg, captionFinal, entities, null, params, notify, scheduleDate, scheduleRepeatPeriod, 0, parentFinal, null, false);
-                sendMessageParams.replyToStoryItem = storyItem;
                 sendMessageParams.replyQuote = quote;
                 sendMessageParams.sendMessageChatArguments = sendMessageChatArguments;
                 sendMessageParams.effect_id = effectId;
@@ -9319,7 +9262,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
     }
 
     @UiThread
-    public static void prepareSendingDocument(AccountInstance accountInstance, String path, String originalPath, Uri uri, String caption, String mine, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, MessageObject editingMessageObject, boolean notify, int scheduleDate, InputContentInfoCompat inputContent, SendMessageChatArguments sendMessageChatArguments, boolean invertMedia) {
+    public static void prepareSendingDocument(AccountInstance accountInstance, String path, String originalPath, Uri uri, String caption, String mine, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, ChatActivity.ReplyQuote quote, MessageObject editingMessageObject, boolean notify, int scheduleDate, InputContentInfoCompat inputContent, SendMessageChatArguments sendMessageChatArguments, boolean invertMedia) {
         if ((path == null || originalPath == null) && uri == null) {
             return;
         }
@@ -9334,16 +9277,16 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             paths.add(path);
             originalPaths.add(originalPath);
         }
-        prepareSendingDocuments(accountInstance, paths, originalPaths, uris, caption, mine, dialogId, replyToMsg, replyToTopMsg, storyItem, quote, editingMessageObject, notify, scheduleDate, inputContent, sendMessageChatArguments, 0, invertMedia);
+        prepareSendingDocuments(accountInstance, paths, originalPaths, uris, caption, mine, dialogId, replyToMsg, replyToTopMsg, quote, editingMessageObject, notify, scheduleDate, inputContent, sendMessageChatArguments, 0, invertMedia);
     }
 
     @UiThread
-    public static void prepareSendingAudioDocuments(AccountInstance accountInstance, ArrayList<MessageObject> messageObjects, CharSequence caption, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, boolean notify, int scheduleDate, int scheduledRepeatPeriod, MessageObject editingMessageObject, SendMessageChatArguments sendMessageChatArguments, long effectId, boolean invertMedia) {
-        prepareSendingAudioDocuments(accountInstance, messageObjects, caption, dialogId, replyToMsg, replyToTopMsg, storyItem, notify, scheduleDate, scheduledRepeatPeriod, editingMessageObject, sendMessageChatArguments, effectId, invertMedia, null, null, false, null);
+    public static void prepareSendingAudioDocuments(AccountInstance accountInstance, ArrayList<MessageObject> messageObjects, CharSequence caption, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, boolean notify, int scheduleDate, int scheduledRepeatPeriod, MessageObject editingMessageObject, SendMessageChatArguments sendMessageChatArguments, long effectId, boolean invertMedia) {
+        prepareSendingAudioDocuments(accountInstance, messageObjects, caption, dialogId, replyToMsg, replyToTopMsg, notify, scheduleDate, scheduledRepeatPeriod, editingMessageObject, sendMessageChatArguments, effectId, invertMedia, null, null, false, null);
     }
 
     @UiThread
-    public static void prepareSendingAudioDocuments(AccountInstance accountInstance, ArrayList<MessageObject> messageObjects, CharSequence caption, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, boolean notify, int scheduleDate, int scheduledRepeatPeriod, MessageObject editingMessageObject, SendMessageChatArguments sendMessageChatArguments, long effectId, boolean invertMedia, PollSendParams pollSendParams, ArrayList<Integer> pollSendIndexes, boolean forcedPollDoNotSendFinal, Runnable afterCommandsDone) {
+    public static void prepareSendingAudioDocuments(AccountInstance accountInstance, ArrayList<MessageObject> messageObjects, CharSequence caption, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, boolean notify, int scheduleDate, int scheduledRepeatPeriod, MessageObject editingMessageObject, SendMessageChatArguments sendMessageChatArguments, long effectId, boolean invertMedia, PollSendParams pollSendParams, ArrayList<Integer> pollSendIndexes, boolean forcedPollDoNotSendFinal, Runnable afterCommandsDone) {
         new Thread(() -> {
             final long forcedPollGroupId = pollSendParams != null ? pollSendParams.groupId : 0;
             final boolean forceDisableCheckSentMedia = pollSendParams != null;
@@ -9429,7 +9372,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         accountInstance.getSendMessagesHelper().editMessage(editingMessageObject, null, null, documentFinal, messageObject.messageOwner.attachPath, null, params, false, false, parentFinal);
                     } else {
                         SendMessageParams sendMessageParams = SendMessageParams.of(documentFinal, null, messageObject.messageOwner.attachPath, dialogId, replyToMsg, replyToTopMsg, captionFinal, entities, null, params, notify, scheduleDate, scheduledRepeatPeriod, 0, parentFinal, null, false, false);
-                        sendMessageParams.replyToStoryItem = storyItem;
                         sendMessageParams.sendMessageChatArguments = sendMessageChatArguments;
                         sendMessageParams.effect_id = effectId;
                         sendMessageParams.invert_media = invertMedia;
@@ -9468,12 +9410,12 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
     }
 
     @UiThread
-    public static void prepareSendingDocuments(AccountInstance accountInstance, ArrayList<String> paths, ArrayList<String> originalPaths, ArrayList<Uri> uris, String caption, String mime, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, MessageObject editingMessageObject, boolean notify, int scheduleDate, InputContentInfoCompat inputContent, SendMessageChatArguments sendMessageChatArguments, long effectId, boolean invertMedia) {
-        prepareSendingDocuments(accountInstance, paths, originalPaths, uris, caption, null, mime, dialogId, replyToMsg, replyToTopMsg, storyItem, quote, editingMessageObject, notify, scheduleDate, 0, inputContent, sendMessageChatArguments, effectId, invertMedia, 0, null);
+    public static void prepareSendingDocuments(AccountInstance accountInstance, ArrayList<String> paths, ArrayList<String> originalPaths, ArrayList<Uri> uris, String caption, String mime, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, ChatActivity.ReplyQuote quote, MessageObject editingMessageObject, boolean notify, int scheduleDate, InputContentInfoCompat inputContent, SendMessageChatArguments sendMessageChatArguments, long effectId, boolean invertMedia) {
+        prepareSendingDocuments(accountInstance, paths, originalPaths, uris, caption, null, mime, dialogId, replyToMsg, replyToTopMsg, quote, editingMessageObject, notify, scheduleDate, 0, inputContent, sendMessageChatArguments, effectId, invertMedia, 0, null);
     }
 
     @UiThread
-    public static void prepareSendingDocuments(AccountInstance accountInstance, ArrayList<String> paths, ArrayList<String> originalPaths, ArrayList<Uri> uris, CharSequence caption, String mime, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, MessageObject editingMessageObject, boolean notify, int scheduleDate, InputContentInfoCompat inputContent, SendMessageChatArguments sendMessageChatArguments, long effectId, boolean invertMedia) {
+    public static void prepareSendingDocuments(AccountInstance accountInstance, ArrayList<String> paths, ArrayList<String> originalPaths, ArrayList<Uri> uris, CharSequence caption, String mime, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, ChatActivity.ReplyQuote quote, MessageObject editingMessageObject, boolean notify, int scheduleDate, InputContentInfoCompat inputContent, SendMessageChatArguments sendMessageChatArguments, long effectId, boolean invertMedia) {
         final ArrayList<TLRPC.MessageEntity> entities;
         if (caption != null) {
             final CharSequence[] cs = new CharSequence[] { caption };
@@ -9482,16 +9424,16 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         } else {
             entities = null;
         }
-        prepareSendingDocuments(accountInstance, paths, originalPaths, uris, caption == null ? null : caption.toString(), entities, mime, dialogId, replyToMsg, replyToTopMsg, storyItem, quote, editingMessageObject, notify, scheduleDate, 0, inputContent, sendMessageChatArguments, effectId, invertMedia, 0, null);
+        prepareSendingDocuments(accountInstance, paths, originalPaths, uris, caption == null ? null : caption.toString(), entities, mime, dialogId, replyToMsg, replyToTopMsg, quote, editingMessageObject, notify, scheduleDate, 0, inputContent, sendMessageChatArguments, effectId, invertMedia, 0, null);
     }
 
     @UiThread
-    public static void prepareSendingDocuments(AccountInstance accountInstance, ArrayList<String> paths, ArrayList<String> originalPaths, ArrayList<Uri> uris, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, String mime, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, MessageObject editingMessageObject, boolean notify, int scheduleDate, int scheduleRepeatPeriod, InputContentInfoCompat inputContent, SendMessageChatArguments sendMessageChatArguments, long effectId, boolean invertMedia, long monoForumPeerId, MessageSuggestionParams suggestionParams) {
-        prepareSendingDocuments(accountInstance, paths, originalPaths, uris, caption, captionEntities, mime, dialogId, replyToMsg, replyToTopMsg, storyItem, quote, editingMessageObject, notify, scheduleDate, scheduleRepeatPeriod, inputContent, sendMessageChatArguments, effectId, invertMedia, monoForumPeerId, suggestionParams, null, null, null, false);
+    public static void prepareSendingDocuments(AccountInstance accountInstance, ArrayList<String> paths, ArrayList<String> originalPaths, ArrayList<Uri> uris, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, String mime, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, ChatActivity.ReplyQuote quote, MessageObject editingMessageObject, boolean notify, int scheduleDate, int scheduleRepeatPeriod, InputContentInfoCompat inputContent, SendMessageChatArguments sendMessageChatArguments, long effectId, boolean invertMedia, long monoForumPeerId, MessageSuggestionParams suggestionParams) {
+        prepareSendingDocuments(accountInstance, paths, originalPaths, uris, caption, captionEntities, mime, dialogId, replyToMsg, replyToTopMsg, quote, editingMessageObject, notify, scheduleDate, scheduleRepeatPeriod, inputContent, sendMessageChatArguments, effectId, invertMedia, monoForumPeerId, suggestionParams, null, null, null, false);
     }
 
     @UiThread
-    public static void prepareSendingDocuments(AccountInstance accountInstance, ArrayList<String> paths, ArrayList<String> originalPaths, ArrayList<Uri> uris, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, String mime, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, MessageObject editingMessageObject, boolean notify, int scheduleDate, int scheduleRepeatPeriod, InputContentInfoCompat inputContent, SendMessageChatArguments sendMessageChatArguments, long effectId, boolean invertMedia, long monoForumPeerId, MessageSuggestionParams suggestionParams, PollSendParams pollSendParams, ArrayList<Integer> pollSendIndexes, ArrayList<Integer> pollSendUriIndexes, boolean forcedPollDoNotSendFinal) {
+    public static void prepareSendingDocuments(AccountInstance accountInstance, ArrayList<String> paths, ArrayList<String> originalPaths, ArrayList<Uri> uris, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, String mime, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, ChatActivity.ReplyQuote quote, MessageObject editingMessageObject, boolean notify, int scheduleDate, int scheduleRepeatPeriod, InputContentInfoCompat inputContent, SendMessageChatArguments sendMessageChatArguments, long effectId, boolean invertMedia, long monoForumPeerId, MessageSuggestionParams suggestionParams, PollSendParams pollSendParams, ArrayList<Integer> pollSendIndexes, ArrayList<Integer> pollSendUriIndexes, boolean forcedPollDoNotSendFinal) {
         if (paths == null && originalPaths == null && uris == null || paths != null && originalPaths != null && paths.size() != originalPaths.size()) {
             return;
         }
@@ -9516,7 +9458,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                     }
                     mediaCount++;
                     long prevGroupId = groupId[0];
-                    error = prepareSendingDocumentInternal(accountInstance, paths.get(a), originalPaths.get(a), null, mime, dialogId, replyToMsg, replyToTopMsg, storyItem, quote, a == 0 ? captionEntities : null, editingMessageObject, groupId, !forcedPollDoNotSendFinal && (pollSendParams == null && mediaCount == 10 || a == count - 1), captionFinal, notify, scheduleDate, scheduleRepeatPeriod, docType, inputContent == null, sendMessageChatArguments, first ? effectId : 0, invertMedia, monoForumPeerId, suggestionParams, pollSendParams, pollSendIndexes!= null ? pollSendIndexes.get(a) : -1);
+                    error = prepareSendingDocumentInternal(accountInstance, paths.get(a), originalPaths.get(a), null, mime, dialogId, replyToMsg, replyToTopMsg, quote, a == 0 ? captionEntities : null, editingMessageObject, groupId, !forcedPollDoNotSendFinal && (pollSendParams == null && mediaCount == 10 || a == count - 1), captionFinal, notify, scheduleDate, scheduleRepeatPeriod, docType, inputContent == null, sendMessageChatArguments, first ? effectId : 0, invertMedia, monoForumPeerId, suggestionParams, pollSendParams, pollSendIndexes!= null ? pollSendIndexes.get(a) : -1);
                     first = false;
                     if (prevGroupId != groupId[0] || groupId[0] == -1) {
                         mediaCount = 1;
@@ -9539,7 +9481,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                     }
                     mediaCount++;
                     long prevGroupId = groupId[0];
-                    error = prepareSendingDocumentInternal(accountInstance, null, null, uris.get(a), mime, dialogId, replyToMsg, replyToTopMsg, storyItem, quote, captionEntitiesFinal, editingMessageObject, groupId, !forcedPollDoNotSendFinal && (pollSendParams == null && mediaCount == 10 || a == count - 1), captionFinal, notify, scheduleDate, scheduleRepeatPeriod, docType, inputContent == null, sendMessageChatArguments, first ? effectId : 0, invertMedia, monoForumPeerId, suggestionParams, pollSendParams, pollSendUriIndexes != null ? pollSendUriIndexes.get(a) : -1);
+                    error = prepareSendingDocumentInternal(accountInstance, null, null, uris.get(a), mime, dialogId, replyToMsg, replyToTopMsg, quote, captionEntitiesFinal, editingMessageObject, groupId, !forcedPollDoNotSendFinal && (pollSendParams == null && mediaCount == 10 || a == count - 1), captionFinal, notify, scheduleDate, scheduleRepeatPeriod, docType, inputContent == null, sendMessageChatArguments, first ? effectId : 0, invertMedia, monoForumPeerId, suggestionParams, pollSendParams, pollSendUriIndexes != null ? pollSendUriIndexes.get(a) : -1);
                     first = false;
                     if (prevGroupId != groupId[0] || groupId[0] == -1) {
                         mediaCount = 1;
@@ -9572,16 +9514,16 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 
     @UiThread
     public static void prepareSendingPhoto(AccountInstance accountInstance, String imageFilePath, Uri imageUri, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, ChatActivity.ReplyQuote quote, CharSequence caption, ArrayList<TLRPC.MessageEntity> entities, ArrayList<TLRPC.InputDocument> stickers, InputContentInfoCompat inputContent, int ttl, MessageObject editingMessageObject, boolean notify, int scheduleDate, int mode, SendMessageChatArguments sendMessageChatArguments) {
-        prepareSendingPhoto(accountInstance, imageFilePath, null, imageUri, dialogId, replyToMsg, replyToTopMsg, null, null, entities, stickers, inputContent, ttl, editingMessageObject, null, notify, scheduleDate, 0, mode, false, caption, sendMessageChatArguments, 0, 0, null);
+        prepareSendingPhoto(accountInstance, imageFilePath, null, imageUri, dialogId, replyToMsg, replyToTopMsg, null, entities, stickers, inputContent, ttl, editingMessageObject, null, notify, scheduleDate, 0, mode, false, caption, sendMessageChatArguments, 0, 0, null);
     }
 
     @UiThread
-    public static void prepareSendingPhoto(AccountInstance accountInstance, String imageFilePath, String thumbFilePath, Uri imageUri, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, ArrayList<TLRPC.MessageEntity> entities, ArrayList<TLRPC.InputDocument> stickers, InputContentInfoCompat inputContent, int ttl, MessageObject editingMessageObject, VideoEditedInfo videoEditedInfo, boolean notify, int scheduleDate, int mode, boolean forceDocument, CharSequence caption, SendMessageChatArguments sendMessageChatArguments, long effectId) {
-        prepareSendingPhoto(accountInstance, imageFilePath, thumbFilePath, imageUri, dialogId, replyToMsg, replyToTopMsg, storyItem, quote, entities, stickers, inputContent, ttl, editingMessageObject, videoEditedInfo, notify, scheduleDate, 0, mode, forceDocument, caption, sendMessageChatArguments, effectId, 0, null);
+    public static void prepareSendingPhoto(AccountInstance accountInstance, String imageFilePath, String thumbFilePath, Uri imageUri, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, ChatActivity.ReplyQuote quote, ArrayList<TLRPC.MessageEntity> entities, ArrayList<TLRPC.InputDocument> stickers, InputContentInfoCompat inputContent, int ttl, MessageObject editingMessageObject, VideoEditedInfo videoEditedInfo, boolean notify, int scheduleDate, int mode, boolean forceDocument, CharSequence caption, SendMessageChatArguments sendMessageChatArguments, long effectId) {
+        prepareSendingPhoto(accountInstance, imageFilePath, thumbFilePath, imageUri, dialogId, replyToMsg, replyToTopMsg, quote, entities, stickers, inputContent, ttl, editingMessageObject, videoEditedInfo, notify, scheduleDate, 0, mode, forceDocument, caption, sendMessageChatArguments, effectId, 0, null);
     }
 
     @UiThread
-    public static void prepareSendingPhoto(AccountInstance accountInstance, String imageFilePath, String thumbFilePath, Uri imageUri, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, ArrayList<TLRPC.MessageEntity> entities, ArrayList<TLRPC.InputDocument> stickers, InputContentInfoCompat inputContent, int ttl, MessageObject editingMessageObject, VideoEditedInfo videoEditedInfo, boolean notify, int scheduleDate, int scheduleRepeatPeriod, int mode, boolean forceDocument, CharSequence caption, SendMessageChatArguments sendMessageChatArguments, long effectId, long monoForumPeerId, MessageSuggestionParams suggestionParams) {
+    public static void prepareSendingPhoto(AccountInstance accountInstance, String imageFilePath, String thumbFilePath, Uri imageUri, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, ChatActivity.ReplyQuote quote, ArrayList<TLRPC.MessageEntity> entities, ArrayList<TLRPC.InputDocument> stickers, InputContentInfoCompat inputContent, int ttl, MessageObject editingMessageObject, VideoEditedInfo videoEditedInfo, boolean notify, int scheduleDate, int scheduleRepeatPeriod, int mode, boolean forceDocument, CharSequence caption, SendMessageChatArguments sendMessageChatArguments, long effectId, long monoForumPeerId, MessageSuggestionParams suggestionParams) {
         SendingMediaInfo info = new SendingMediaInfo();
         info.path = imageFilePath;
         info.thumbPath = thumbFilePath;
@@ -9597,16 +9539,16 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         info.videoEditedInfo = videoEditedInfo;
         ArrayList<SendingMediaInfo> infos = new ArrayList<>();
         infos.add(info);
-        prepareSendingMedia(accountInstance, infos, dialogId, replyToMsg, replyToTopMsg, null, quote, forceDocument, false, editingMessageObject, notify, scheduleDate, 0, mode, false, inputContent, sendMessageChatArguments, effectId, false, monoForumPeerId, suggestionParams);
+        prepareSendingMedia(accountInstance, infos, dialogId, replyToMsg, replyToTopMsg, quote, forceDocument, false, editingMessageObject, notify, scheduleDate, 0, mode, false, inputContent, sendMessageChatArguments, effectId, false, monoForumPeerId, suggestionParams);
     }
 
     @UiThread
-    public static void prepareSendingBotContextResult(BaseFragment fragment, AccountInstance accountInstance, TLRPC.BotInlineResult result, HashMap<String, String> params, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, boolean notify, int scheduleDate, int scheduleRepeatPeriod, SendMessageChatArguments sendMessageChatArguments) {
-        prepareSendingBotContextResult(fragment, accountInstance, result, params, dialogId, replyToMsg, replyToTopMsg, storyItem, quote, notify, scheduleDate, scheduleRepeatPeriod, sendMessageChatArguments, 0);
+    public static void prepareSendingBotContextResult(BaseFragment fragment, AccountInstance accountInstance, TLRPC.BotInlineResult result, HashMap<String, String> params, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, ChatActivity.ReplyQuote quote, boolean notify, int scheduleDate, int scheduleRepeatPeriod, SendMessageChatArguments sendMessageChatArguments) {
+        prepareSendingBotContextResult(fragment, accountInstance, result, params, dialogId, replyToMsg, replyToTopMsg, quote, notify, scheduleDate, scheduleRepeatPeriod, sendMessageChatArguments, 0);
     }
 
     @UiThread
-    public static void prepareSendingBotContextResult(BaseFragment fragment, AccountInstance accountInstance, TLRPC.BotInlineResult result, HashMap<String, String> params, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, boolean notify, int scheduleDate, int scheduleRepeatPeriod, SendMessageChatArguments sendMessageChatArguments, long monoForumPeerId) {
+    public static void prepareSendingBotContextResult(BaseFragment fragment, AccountInstance accountInstance, TLRPC.BotInlineResult result, HashMap<String, String> params, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, ChatActivity.ReplyQuote quote, boolean notify, int scheduleDate, int scheduleRepeatPeriod, SendMessageChatArguments sendMessageChatArguments, long monoForumPeerId) {
         if (result == null) {
             return;
         }
@@ -9904,7 +9846,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                     }
                     if (params2 != null) {
                         params2.sendMessageChatArguments = sendMessageChatArguments;
-                        params2.replyToStoryItem = storyItem;
                         params2.replyQuote = quote;
                         params2.monoForumPeer = monoForumPeerId;
                         accountInstance.getSendMessagesHelper().sendMessage(params2);
@@ -10199,17 +10140,17 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
     }
 
     @UiThread
-    public static void prepareSendingMedia(AccountInstance accountInstance, ArrayList<SendingMediaInfo> media, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, boolean forceDocument, boolean groupMedia, MessageObject editingMessageObject, boolean notify, int scheduleDate, int scheduleRepeatPeriod, int mode, boolean updateStikcersOrder, InputContentInfoCompat inputContent, SendMessageChatArguments sendMessageChatArguments, long effectId, boolean invertMedia, long monoForumPeerId, MessageSuggestionParams suggestionParams) {
-        prepareSendingMedia(accountInstance, media, dialogId, replyToMsg, replyToTopMsg, storyItem, quote, forceDocument, groupMedia, editingMessageObject, null, notify, scheduleDate, scheduleRepeatPeriod, mode, updateStikcersOrder, inputContent, sendMessageChatArguments, effectId, invertMedia, monoForumPeerId, suggestionParams);
+    public static void prepareSendingMedia(AccountInstance accountInstance, ArrayList<SendingMediaInfo> media, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, ChatActivity.ReplyQuote quote, boolean forceDocument, boolean groupMedia, MessageObject editingMessageObject, boolean notify, int scheduleDate, int scheduleRepeatPeriod, int mode, boolean updateStikcersOrder, InputContentInfoCompat inputContent, SendMessageChatArguments sendMessageChatArguments, long effectId, boolean invertMedia, long monoForumPeerId, MessageSuggestionParams suggestionParams) {
+        prepareSendingMedia(accountInstance, media, dialogId, replyToMsg, replyToTopMsg, quote, forceDocument, groupMedia, editingMessageObject, null, notify, scheduleDate, scheduleRepeatPeriod, mode, updateStikcersOrder, inputContent, sendMessageChatArguments, effectId, invertMedia, monoForumPeerId, suggestionParams);
     }
 
     @UiThread
-    public static void prepareSendingMedia(AccountInstance accountInstance, ArrayList<SendingMediaInfo> media, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, boolean forceDocument, boolean groupMedia, MessageObject editingMessageObject, TLRPC.TL_inputPollAnswer pollToAddOptionMessageObject, boolean notify, int scheduleDate, int scheduleRepeatPeriod, int mode, boolean updateStikcersOrder, InputContentInfoCompat inputContent, SendMessageChatArguments sendMessageChatArguments, long effectId, boolean invertMedia, long monoForumPeerId, MessageSuggestionParams suggestionParams) {
-        prepareSendingMedia(accountInstance, media, dialogId, replyToMsg, replyToTopMsg, storyItem, quote, forceDocument, groupMedia, editingMessageObject, pollToAddOptionMessageObject, notify, scheduleDate, scheduleRepeatPeriod, mode, updateStikcersOrder, inputContent, sendMessageChatArguments, effectId, invertMedia, monoForumPeerId, suggestionParams, null, false);
+    public static void prepareSendingMedia(AccountInstance accountInstance, ArrayList<SendingMediaInfo> media, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, ChatActivity.ReplyQuote quote, boolean forceDocument, boolean groupMedia, MessageObject editingMessageObject, TLRPC.TL_inputPollAnswer pollToAddOptionMessageObject, boolean notify, int scheduleDate, int scheduleRepeatPeriod, int mode, boolean updateStikcersOrder, InputContentInfoCompat inputContent, SendMessageChatArguments sendMessageChatArguments, long effectId, boolean invertMedia, long monoForumPeerId, MessageSuggestionParams suggestionParams) {
+        prepareSendingMedia(accountInstance, media, dialogId, replyToMsg, replyToTopMsg, quote, forceDocument, groupMedia, editingMessageObject, pollToAddOptionMessageObject, notify, scheduleDate, scheduleRepeatPeriod, mode, updateStikcersOrder, inputContent, sendMessageChatArguments, effectId, invertMedia, monoForumPeerId, suggestionParams, null, false);
     }
 
     @UiThread
-    public static void prepareSendingMedia(AccountInstance accountInstance, ArrayList<SendingMediaInfo> media, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, boolean forceDocument, boolean groupMedia, MessageObject editingMessageObject, TLRPC.TL_inputPollAnswer pollToAddOptionMessageObject, boolean notify, int scheduleDate, int scheduleRepeatPeriod, int mode, boolean updateStikcersOrder, InputContentInfoCompat inputContent, SendMessageChatArguments sendMessageChatArguments, long effectId, boolean invertMedia, long monoForumPeerId, MessageSuggestionParams suggestionParams, PollSendParams pollSendParams, boolean forcedPollDoNotSendFinal) {
+    public static void prepareSendingMedia(AccountInstance accountInstance, ArrayList<SendingMediaInfo> media, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, ChatActivity.ReplyQuote quote, boolean forceDocument, boolean groupMedia, MessageObject editingMessageObject, TLRPC.TL_inputPollAnswer pollToAddOptionMessageObject, boolean notify, int scheduleDate, int scheduleRepeatPeriod, int mode, boolean updateStikcersOrder, InputContentInfoCompat inputContent, SendMessageChatArguments sendMessageChatArguments, long effectId, boolean invertMedia, long monoForumPeerId, MessageSuggestionParams suggestionParams, PollSendParams pollSendParams, boolean forcedPollDoNotSendFinal) {
         if (media.isEmpty()) {
             return;
         }
@@ -10472,7 +10413,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                                 accountInstance.getSendMessagesHelper().editMessage(editingMessageObject, pollToAddOptionMessageObject, null, null, documentFinal, pathFinal, null, params, false, info.hasMediaSpoilers, parentFinal);
                             } else {
                                 SendMessageParams sendMessageParams = SendMessageParams.of(documentFinal, null, pathFinal, dialogId, replyToMsg, replyToTopMsg, info.caption, info.entities, null, params, notify, scheduleDate, scheduleRepeatPeriod, 0, parentFinal, null, false, info.hasMediaSpoilers);
-                                sendMessageParams.replyToStoryItem = storyItem;
                                 sendMessageParams.replyQuote = quote;
                                 sendMessageParams.sendMessageChatArguments = sendMessageChatArguments;
                                 if (last) {
@@ -10555,7 +10495,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                                     accountInstance.getSendMessagesHelper().editMessage(editingMessageObject, pollToAddOptionMessageObject, photoFinal, null, null, needDownloadHttpFinal ? info.searchImage.imageUrl : null, null, params, false, info.hasMediaSpoilers, parentFinal);
                                 } else {
                                     SendMessageParams sendMessageParams = SendMessageParams.of(photoFinal, needDownloadHttpFinal ? info.searchImage.imageUrl : null, dialogId, replyToMsg, replyToTopMsg, info.caption, info.entities, null, params, notify, scheduleDate, scheduleRepeatPeriod, info.ttl, parentFinal, false, info.hasMediaSpoilers);
-                                    sendMessageParams.replyToStoryItem = storyItem;
                                     sendMessageParams.replyQuote = quote;
                                     sendMessageParams.sendMessageChatArguments = sendMessageChatArguments;
                                     sendMessageParams.effect_id = effectId;
@@ -10824,7 +10763,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                                     accountInstance.getSendMessagesHelper().editMessage(editingMessageObject, pollToAddOptionMessageObject, null, videoEditedInfo, videoFinal, finalPath, null, params, false, info.hasMediaSpoilers, parentFinal);
                                 } else {
                                     SendMessageParams sendMessageParams = SendMessageParams.of(videoFinal, videoEditedInfo, finalPath, dialogId, replyToMsg, replyToTopMsg, info.caption, info.entities, null, params, notify, scheduleDate, scheduleRepeatPeriod, info.ttl, parentFinal, null, false, info.hasMediaSpoilers);
-                                    sendMessageParams.replyToStoryItem = storyItem;
                                     sendMessageParams.replyQuote = quote;
                                     sendMessageParams.sendMessageChatArguments = sendMessageChatArguments;
                                     sendMessageParams.effect_id = effectId;
@@ -11036,7 +10974,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                                         accountInstance.getSendMessagesHelper().editMessage(editingMessageObject, pollToAddOptionMessageObject, photoFinal, null, null, null, null, params, false, info.hasMediaSpoilers, parentFinal);
                                     } else {
                                         SendMessageParams sendMessageParams = SendMessageParams.of(photoFinal, null, dialogId, replyToMsg, replyToTopMsg, info.caption, info.entities, null, params, notify, scheduleDate, scheduleRepeatPeriod, info.ttl, parentFinal, updateStikcersOrder, info.hasMediaSpoilers);
-                                        sendMessageParams.replyToStoryItem = storyItem;
                                         sendMessageParams.replyQuote = quote;
                                         sendMessageParams.sendMessageChatArguments = sendMessageChatArguments;
                                         sendMessageParams.effect_id = effectId;
@@ -11082,7 +11019,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         mediaCount = 0;
                     }
                     mediaCount++;
-                    int error = prepareSendingDocumentInternal(accountInstance, sendAsDocuments.get(a), sendAsDocumentsOriginal.get(a), sendAsDocumentsUri.get(a), extension, dialogId, replyToMsg, replyToTopMsg, storyItem, quote, sendAsDocumentsEntities.get(a), editingMessageObject, groupId2, mediaCount == 10 || a == documentsCount - 1, sendAsDocumentsCaptions.get(a), notify, scheduleDate, 0, null, forceDocument, sendMessageChatArguments, effectId, invertMedia, monoForumPeerId, suggestionParams, null, -1);
+                    int error = prepareSendingDocumentInternal(accountInstance, sendAsDocuments.get(a), sendAsDocumentsOriginal.get(a), sendAsDocumentsUri.get(a), extension, dialogId, replyToMsg, replyToTopMsg, quote, sendAsDocumentsEntities.get(a), editingMessageObject, groupId2, mediaCount == 10 || a == documentsCount - 1, sendAsDocumentsCaptions.get(a), notify, scheduleDate, 0, null, forceDocument, sendMessageChatArguments, effectId, invertMedia, monoForumPeerId, suggestionParams, null, -1);
                     handleError(error, accountInstance);
                 }
             }
@@ -11094,7 +11031,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 
 
     @UiThread
-    public static void prepareSendingPoll(AccountInstance accountInstance, @NonNull PollSendParams pollSendParams, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, boolean notify, int scheduleDate, SendMessageChatArguments sendMessageChatArguments, long monoForumPeerId, MessageSuggestionParams suggestionParams) {
+    public static void prepareSendingPoll(AccountInstance accountInstance, @NonNull PollSendParams pollSendParams, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, ChatActivity.ReplyQuote quote, boolean notify, int scheduleDate, SendMessageChatArguments sendMessageChatArguments, long monoForumPeerId, MessageSuggestionParams suggestionParams) {
         if (pollSendParams.mediaPack != null) {
             ArrayList<SendMessagesHelper.SendingMediaInfo> mediaInfos = new ArrayList<>();
 
@@ -11151,7 +11088,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 
             final Runnable afterMediaSendPrepared = () -> {
                 if (!documentInfos.isEmpty() || !documentUris.isEmpty()) {
-                    SendMessagesHelper.prepareSendingDocuments(accountInstance, documentInfos, originalPaths, documentUris, null, null, null, dialogId, replyToMsg, replyToTopMsg, storyItem, quote, null, notify, scheduleDate, 0, null, sendMessageChatArguments, 0, false, monoForumPeerId, suggestionParams, pollSendParams, documentPollIndex, documentUrisPollIndex, false);
+                    SendMessagesHelper.prepareSendingDocuments(accountInstance, documentInfos, originalPaths, documentUris, null, null, null, dialogId, replyToMsg, replyToTopMsg, quote, null, notify, scheduleDate, 0, null, sendMessageChatArguments, 0, false, monoForumPeerId, suggestionParams, pollSendParams, documentPollIndex, documentUrisPollIndex, false);
                 }
                 // done;
             };
@@ -11159,7 +11096,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             final Runnable afterMusicSendPrepared = () -> {
                 if (!mediaInfos.isEmpty()) {
                     counter[0]--;
-                    SendMessagesHelper.prepareSendingMedia(accountInstance, mediaInfos, dialogId, replyToMsg, replyToTopMsg, storyItem, quote, false, true, null, null, notify, scheduleDate, 0, 0, false, null, sendMessageChatArguments, 0, false, monoForumPeerId, suggestionParams, pollSendParams, counter[0] > 0);
+                    SendMessagesHelper.prepareSendingMedia(accountInstance, mediaInfos, dialogId, replyToMsg, replyToTopMsg, quote, false, true, null, null, notify, scheduleDate, 0, 0, false, null, sendMessageChatArguments, 0, false, monoForumPeerId, suggestionParams, pollSendParams, counter[0] > 0);
                     mediaSendQueue.postRunnable(() -> AndroidUtilities.runOnUIThread(afterMediaSendPrepared));
                 } else {
                     afterMediaSendPrepared.run();
@@ -11168,7 +11105,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 
             if (!musicMessageObjects.isEmpty()) {
                 counter[0]--;
-                SendMessagesHelper.prepareSendingAudioDocuments(accountInstance, musicMessageObjects, "", dialogId, replyToMsg, replyToTopMsg, storyItem, notify, scheduleDate, 0, null, sendMessageChatArguments, 0, false, pollSendParams, musicPollIndex, counter[0] > 0, afterMusicSendPrepared);
+                SendMessagesHelper.prepareSendingAudioDocuments(accountInstance, musicMessageObjects, "", dialogId, replyToMsg, replyToTopMsg, notify, scheduleDate, 0, null, sendMessageChatArguments, 0, false, pollSendParams, musicPollIndex, counter[0] > 0, afterMusicSendPrepared);
             } else {
                 afterMusicSendPrepared.run();
             }
@@ -11408,15 +11345,15 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
     }
 
     @UiThread
-    public static void prepareSendingVideo(AccountInstance accountInstance, String videoPath, VideoEditedInfo info, String coverPath, TLRPC.Photo coverPhoto, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, ArrayList<TLRPC.MessageEntity> entities, int ttl, MessageObject editingMessageObject, boolean notify, int scheduleDate, int scheduleRepeatPeriod, boolean forceDocument, boolean hasMediaSpoilers, CharSequence caption, SendMessageChatArguments sendMessageChatArguments, long effectId) {
-        prepareSendingVideo(accountInstance, videoPath, info, coverPath, coverPhoto, dialogId, replyToMsg, replyToTopMsg, storyItem, quote, entities, ttl, editingMessageObject, notify, scheduleDate, scheduleRepeatPeriod, forceDocument, hasMediaSpoilers, caption, sendMessageChatArguments, effectId, 0, null);
+    public static void prepareSendingVideo(AccountInstance accountInstance, String videoPath, VideoEditedInfo info, String coverPath, TLRPC.Photo coverPhoto, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, ChatActivity.ReplyQuote quote, ArrayList<TLRPC.MessageEntity> entities, int ttl, MessageObject editingMessageObject, boolean notify, int scheduleDate, int scheduleRepeatPeriod, boolean forceDocument, boolean hasMediaSpoilers, CharSequence caption, SendMessageChatArguments sendMessageChatArguments, long effectId) {
+        prepareSendingVideo(accountInstance, videoPath, info, coverPath, coverPhoto, dialogId, replyToMsg, replyToTopMsg, quote, entities, ttl, editingMessageObject, notify, scheduleDate, scheduleRepeatPeriod, forceDocument, hasMediaSpoilers, caption, sendMessageChatArguments, effectId, 0, null);
     }
 
-    public static void prepareSendingVideo(AccountInstance accountInstance, String videoPath, VideoEditedInfo info, String coverPath, TLRPC.Photo coverPhoto, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, ArrayList<TLRPC.MessageEntity> entities, int ttl, MessageObject editingMessageObject, boolean notify, int scheduleDate, int scheduleRepeatPeriod, boolean forceDocument, boolean hasMediaSpoilers, CharSequence caption, SendMessageChatArguments sendMessageChatArguments, long effectId, long monoForumPeerId, MessageSuggestionParams suggestionParams) {
-        prepareSendingVideo(accountInstance, videoPath, info, coverPath, coverPhoto, dialogId, replyToMsg, replyToTopMsg, storyItem, quote, entities, ttl, editingMessageObject, notify, scheduleDate, scheduleRepeatPeriod, forceDocument, hasMediaSpoilers, caption, sendMessageChatArguments, effectId, monoForumPeerId, suggestionParams, false);
+    public static void prepareSendingVideo(AccountInstance accountInstance, String videoPath, VideoEditedInfo info, String coverPath, TLRPC.Photo coverPhoto, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, ChatActivity.ReplyQuote quote, ArrayList<TLRPC.MessageEntity> entities, int ttl, MessageObject editingMessageObject, boolean notify, int scheduleDate, int scheduleRepeatPeriod, boolean forceDocument, boolean hasMediaSpoilers, CharSequence caption, SendMessageChatArguments sendMessageChatArguments, long effectId, long monoForumPeerId, MessageSuggestionParams suggestionParams) {
+        prepareSendingVideo(accountInstance, videoPath, info, coverPath, coverPhoto, dialogId, replyToMsg, replyToTopMsg, quote, entities, ttl, editingMessageObject, notify, scheduleDate, scheduleRepeatPeriod, forceDocument, hasMediaSpoilers, caption, sendMessageChatArguments, effectId, monoForumPeerId, suggestionParams, false);
     }
 
-    public static void prepareSendingVideo(AccountInstance accountInstance, String videoPath, VideoEditedInfo info, String coverPath, TLRPC.Photo coverPhoto, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, ArrayList<TLRPC.MessageEntity> entities, int ttl, MessageObject editingMessageObject, boolean notify, int scheduleDate, int scheduleRepeatPeriod, boolean forceDocument, boolean hasMediaSpoilers, CharSequence caption, SendMessageChatArguments sendMessageChatArguments, long effectId, long monoForumPeerId, MessageSuggestionParams suggestionParams, boolean invertMedia) {
+    public static void prepareSendingVideo(AccountInstance accountInstance, String videoPath, VideoEditedInfo info, String coverPath, TLRPC.Photo coverPhoto, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, ChatActivity.ReplyQuote quote, ArrayList<TLRPC.MessageEntity> entities, int ttl, MessageObject editingMessageObject, boolean notify, int scheduleDate, int scheduleRepeatPeriod, boolean forceDocument, boolean hasMediaSpoilers, CharSequence caption, SendMessageChatArguments sendMessageChatArguments, long effectId, long monoForumPeerId, MessageSuggestionParams suggestionParams, boolean invertMedia) {
         if (videoPath == null || videoPath.length() == 0) {
             return;
         }
@@ -11614,7 +11551,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         accountInstance.getSendMessagesHelper().editMessage(editingMessageObject, null, videoEditedInfo, videoFinal, finalPath, coverFinal, params, false, hasMediaSpoilers, parentFinal);
                     } else {
                         SendMessageParams sendMessageParams = SendMessageParams.of(videoFinal, videoEditedInfo, finalPath, dialogId, replyToMsg, replyToTopMsg, captionFinal, entities, null, params, notify, scheduleDate, scheduleRepeatPeriod, ttl, parentFinal, null, false, hasMediaSpoilers);
-                        sendMessageParams.replyToStoryItem = storyItem;
                         sendMessageParams.replyQuote = quote;
                         sendMessageParams.sendMessageChatArguments = sendMessageChatArguments;
                         sendMessageParams.effect_id = effectId;
@@ -11626,7 +11562,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                     }
                 });
             } else {
-                prepareSendingDocumentInternal(accountInstance, videoPath, videoPath, null, null, dialogId, replyToMsg, replyToTopMsg, storyItem, quote, entities, editingMessageObject, null, false, caption, notify, scheduleDate, scheduleRepeatPeriod, null, forceDocument, sendMessageChatArguments, 0, invertMedia, monoForumPeerId, suggestionParams, null, -1);
+                prepareSendingDocumentInternal(accountInstance, videoPath, videoPath, null, null, dialogId, replyToMsg, replyToTopMsg, quote, entities, editingMessageObject, null, false, caption, notify, scheduleDate, scheduleRepeatPeriod, null, forceDocument, sendMessageChatArguments, 0, invertMedia, monoForumPeerId, suggestionParams, null, -1);
             }
         }).start();
     }
@@ -11665,8 +11601,8 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         public MessageObject.SendAnimationData sendAnimationData;
         public boolean updateStickersOrder;
         public boolean hasMediaSpoilers;
-        public TL_stories.StoryItem replyToStoryItem;
-        public TL_stories.StoryItem sendingStory;
+        // LoogriGram: replyToStoryItem and sendingStory carried a reply to a story
+        // and a story shared into a chat, both sent from the story viewer.
         public ChatActivity.ReplyQuote replyQuote;
         public SendMessageChatArguments sendMessageChatArguments;
         public boolean invert_media;
