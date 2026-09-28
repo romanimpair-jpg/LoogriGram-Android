@@ -26,7 +26,6 @@ import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Bundle;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
@@ -87,7 +86,6 @@ import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.FillLastLinearLayoutManager;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Components.MediaActivity;
 import org.telegram.ui.Components.Premium.AboutPremiumView;
 import org.telegram.ui.Components.Premium.GLIcon.GLIconRenderer;
 import org.telegram.ui.Components.Premium.GLIcon.GLIconTextureView;
@@ -825,12 +823,9 @@ public class PremiumPreviewFragment extends BaseFragment implements Notification
                     // LoogriGram: the Business features' own screens opened from
                     // here (hours, location, quick replies, greeting and away
                     // messages, chatbots, chat links, intro). All are gone.
-                    if (cell.data.type == PREMIUM_FEATURE_STORIES) {
-                        Bundle args = new Bundle();
-                        args.putLong("dialog_id", UserConfig.getInstance(currentAccount).getClientUserId());
-                        args.putInt("type", MediaActivity.TYPE_STORIES);
-                        presentFragment(new MediaActivity(args, null));
-                    } else if (cell.data.type == PREMIUM_FEATURE_EMOJI_STATUS) {
+                    // LoogriGram: the Stories feature opened our stories. Stories
+                    // are removed, as on desktop.
+                    if (cell.data.type == PREMIUM_FEATURE_EMOJI_STATUS) {
                         showSelectStatusDialog(cell, UserObject.getEmojiStatusDocumentId(getUserConfig().getCurrentUser()), (documentId, until) -> {
                             final TLRPC.EmojiStatus emojiStatus;
                             if (documentId == null) {

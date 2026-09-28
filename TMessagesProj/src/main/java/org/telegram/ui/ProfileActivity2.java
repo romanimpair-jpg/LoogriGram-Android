@@ -245,7 +245,6 @@ public class ProfileActivity2 extends BaseFragment implements
             chatInfo,
             userInfo,
             -1,
-            -1,
             this, this,
             SharedMediaLayout.VIEW_TYPE_PROFILE_ACTIVITY,
             resourceProvider,
@@ -257,10 +256,6 @@ public class ProfileActivity2 extends BaseFragment implements
             }
             @Override
             protected boolean isSelf() {
-                return ProfileActivity2.this.isSelf();
-            }
-            @Override
-            protected boolean isStoriesView() {
                 return ProfileActivity2.this.isSelf();
             }
         };

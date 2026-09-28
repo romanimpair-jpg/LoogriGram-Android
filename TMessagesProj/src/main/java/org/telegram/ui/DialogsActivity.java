@@ -7045,7 +7045,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             if (dialogId == getUserConfig().getClientUserId() && getMessagesController().savedViewAsChats) {
                 args = new Bundle();
                 args.putLong("dialog_id", UserConfig.getInstance(currentAccount).getClientUserId());
-                args.putInt("type", MediaActivity.TYPE_MEDIA);
                 args.putInt("start_from", SharedMediaLayout.TAB_SAVED_DIALOGS);
                 if (sharedMediaPreloader == null) {
                     sharedMediaPreloader = new SharedMediaLayout.SharedMediaPreloader(this);

@@ -385,7 +385,8 @@ public class ProfileMetaballView extends View {
 
         float scaledRadius;
 
-        if (!isBackward && !imageView.hasStories) {
+        // LoogriGram: an avatar with stories kept its radius here (hasStories).
+        if (!isBackward) {
             imageView.setRoundRadiusCollapse(lerp(dp(22), radius, Utilities.clamp01((vr - dp(34)) / dp(6))));
             scaledRadius = vr / dp(22) * imageView.roundRadiusCollapse;
         } else {

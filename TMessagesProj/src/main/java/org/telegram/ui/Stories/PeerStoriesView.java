@@ -150,7 +150,6 @@ import org.telegram.ui.Components.InstantCameraView;
 import org.telegram.ui.Components.ItemOptions;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.LoadingDrawable;
-import org.telegram.ui.Components.MediaActivity;
 import org.telegram.ui.Components.MentionsContainerView;
 import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.Components.RLottieDrawable;
@@ -1206,13 +1205,7 @@ public class PeerStoriesView extends SizeNotifierFrameLayout implements Notifica
         addView(storyContainer);
         headerView = new PeerHeaderView(context);
         headerView.setOnClickListener(v -> {
-            if (UserConfig.getInstance(currentAccount).clientUserId == dialogId) {
-                Bundle args = new Bundle();
-                args.putInt("type", MediaActivity.TYPE_STORIES);
-                args.putLong("dialog_id", dialogId);
-                MediaActivity mediaActivity = new MediaActivity(args, null);
-                storyViewer.presentFragment(mediaActivity);
-            } else {
+            {
                 if (dialogId > 0) {
                     storyViewer.presentFragment(ProfileActivity.of(dialogId));
                 } else {
