@@ -4484,6 +4484,7 @@
     <string name="VoipChatDisplayedAs">You will be displayed as:</string>
     <string name="VoipChatStreamSettings">Stream settings</string>
     <string name="VoipChatStreamWithAnotherApp">You can also stream with **another app >**</string>
+    <string name="VoipChatStreamWithAnotherAppDescription">Once you start broadcasting in your streaming app, tap Start Streaming below.</string>
     <string name="VoipChatStreamServerUrl">Server URL</string>
     <string name="VoipChatStreamKey">Stream Key</string>
     <string name="VoipGroupStartVoiceChat">Start Voice Chat</string>

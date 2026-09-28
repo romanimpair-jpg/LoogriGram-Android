@@ -58,10 +58,10 @@ public class CreateRtmpStreamBottomSheet extends BottomSheetWithRecyclerListView
     private SpannableStringBuilder rtmpKeySpoiled;
     private UniversalAdapter adapter;
 
+    private boolean hasButton;
+
     // LoogriGram: a second constructor showed the RTMP settings of a live
-    // story being set up, with a start button (hasButton) and the note
-    // under the key that went with it. Live stories are removed, as on
-    // desktop.
+    // story being set up. Live stories are removed, as on desktop.
 
     public CreateRtmpStreamBottomSheet(BaseFragment fragment, TLRPC.Peer selectedPeer, long dialogId, boolean hasFewPeers, JoinCallAlert.JoinCallAlertDelegate joinCallDelegate) {
         super(fragment, false, false);
@@ -187,7 +187,7 @@ public class CreateRtmpStreamBottomSheet extends BottomSheetWithRecyclerListView
         items.add(UItem.asHeader(getString(R.string.VoipChatStreamSettings)));
         items.add(TextDetailCellFactory.of(rtmpUrl, getString(R.string.VoipChatStreamServerUrl), true));
         items.add(TextDetailCellFactory.of(rtmpKeySpoiled, getString(R.string.VoipChatStreamKey), false));
-        items.add(UItem.asShadow(null));
+        items.add(UItem.asShadow(hasButton ? getString(R.string.VoipChatStreamWithAnotherAppDescription) : null));
     }
 
     private static class TopCell extends LinearLayout {
