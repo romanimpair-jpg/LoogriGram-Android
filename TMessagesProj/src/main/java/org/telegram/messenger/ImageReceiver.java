@@ -292,7 +292,6 @@ public class ImageReceiver implements NotificationCenter.NotificationCenterDeleg
 
     private long currentSize;
     private int currentCacheType;
-    private boolean allowLottieVibration = true;
     private boolean allowStartAnimation = true;
     private boolean allowStartLottieAnimation = true;
     public boolean useSharedAnimationQueue;
@@ -943,9 +942,6 @@ public class ImageReceiver implements NotificationCenter.NotificationCenterDeleg
             if (attachedToWindow) {
                 fileDrawable.addParentView(this);
             }
-            if (fileDrawable != null) {
-                fileDrawable.setAllowVibration(allowLottieVibration);
-            }
             if (allowStartLottieAnimation && (!fileDrawable.isHeavyDrawable() || currentOpenedLayerFlags == 0)) {
                 fileDrawable.start();
             }
@@ -1173,9 +1169,6 @@ public class ImageReceiver implements NotificationCenter.NotificationCenterDeleg
             temp.clear();
             setImageBackup = temp;
             RLottieDrawable lottieDrawable = getLottieAnimation();
-            if (lottieDrawable != null) {
-                lottieDrawable.setAllowVibration(allowLottieVibration);
-            }
             if (lottieDrawable != null && allowStartLottieAnimation && (!lottieDrawable.isHeavyDrawable() || currentOpenedLayerFlags == 0)) {
                 lottieDrawable.start();
             }
@@ -1202,7 +1195,6 @@ public class ImageReceiver implements NotificationCenter.NotificationCenterDeleg
         final RLottieDrawable lottieDrawable = getLottieAnimation();
         if (lottieDrawable != null) {
             lottieDrawable.addParentView(this);
-            lottieDrawable.setAllowVibration(allowLottieVibration);
         }
         if (lottieDrawable != null && allowStartLottieAnimation && (!lottieDrawable.isHeavyDrawable() || currentOpenedLayerFlags == 0)) {
             lottieDrawable.start();
@@ -2653,10 +2645,6 @@ public class ImageReceiver implements NotificationCenter.NotificationCenterDeleg
         allowStartAnimation = value;
     }
 
-    public void setAllowLottieVibration(boolean allow) {
-        allowLottieVibration = allow;
-    }
-
     public boolean getAllowStartAnimation() {
         return allowStartAnimation;
     }
@@ -3171,9 +3159,6 @@ public class ImageReceiver implements NotificationCenter.NotificationCenterDeleg
             currentOpenedLayerFlags &= ~layer;
             if (currentOpenedLayerFlags == 0) {
                 RLottieDrawable lottieDrawable = getLottieAnimation();
-                if (lottieDrawable != null) {
-                    lottieDrawable.setAllowVibration(allowLottieVibration);
-                }
                 if (allowStartLottieAnimation && lottieDrawable != null && lottieDrawable.isHeavyDrawable()) {
                     lottieDrawable.start();
                 }

@@ -184,10 +184,6 @@ public class RLottieDiceDrawable extends RLottieDrawable {
                         if (secondNativePtr != null) {
                             isDice = 2;
                         }
-                        if (resetVibrationAfterRestart) {
-                            vibrationPattern = null;
-                            resetVibrationAfterRestart = false;
-                        }
                     }
                 } else if (isDice == 2) {
                     if (currentFrame + framesPerUpdates < secondFramesCount) {

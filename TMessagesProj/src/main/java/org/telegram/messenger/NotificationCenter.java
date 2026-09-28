@@ -144,7 +144,6 @@ public class NotificationCenter {
     public static final int dialogDeleted = totalEvents++;
     public static final int webViewResultSent = totalEvents++;
     public static final int voiceTranscriptionUpdate = totalEvents++;
-    public static final int animatedEmojiDocumentLoaded = totalEvents++;
     public static final int recentEmojiStatusesUpdate = totalEvents++;
     public static final int updateSearchSettings = totalEvents++;
     public static final int updateTranscriptionLock = totalEvents++;

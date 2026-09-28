@@ -10,7 +10,6 @@ package org.telegram.ui.Components;
 
 import static org.telegram.messenger.AndroidUtilities.readRes;
 
-import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -25,7 +24,6 @@ import android.graphics.drawable.Animatable;
 import android.graphics.drawable.BitmapDrawable;
 import android.text.TextUtils;
 import android.util.JsonReader;
-import android.view.HapticFeedbackConstants;
 import android.view.View;
 
 import androidx.annotation.AnyThread;
@@ -43,8 +41,6 @@ import org.telegram.messenger.ResLottieMeta;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.utils.BitmapsCache;
 import org.telegram.messenger.utils.Choreographer60FpsContent;
-import org.telegram.ui.BubbleActivity;
-import org.telegram.ui.LaunchActivity;
 
 import java.io.File;
 import java.io.FileReader;
@@ -71,9 +67,9 @@ public class RLottieDrawable extends BitmapDrawable implements Animatable, Bitma
     private final HashMap<String, Integer> newColorUpdates = new HashMap<>();
     private final HashMap<String, Integer> pendingColorUpdates = new HashMap<>();
     private final HashMap<String, Integer> layerColors = new HashMap<>();
-    protected HashMap<Integer, Integer> vibrationPattern;
-    protected boolean resetVibrationAfterRestart = false;
-    private boolean allowVibration = true;
+    // LoogriGram: vibrationPattern, a haptic per frame, was set only for a
+    // tapped animated emoji (large emoji, removed as on desktop), with its
+    // reset-after-restart flag and the allowVibration switch over it.
     private float speedMultiply = 1f;
     private final boolean isSingleChannel;
 
@@ -413,10 +409,6 @@ public class RLottieDrawable extends BitmapDrawable implements Animatable, Bitma
                     } else if (autoRepeat == 1) {
                         currentFrame = 0;
                         nextFrameIsLast = false;
-                        if (resetVibrationAfterRestart) {
-                            vibrationPattern = null;
-                            resetVibrationAfterRestart = false;
-                        }
                         if (autoRepeatCount > 0) {
                             autoRepeatCount--;
                         }
@@ -424,10 +416,6 @@ public class RLottieDrawable extends BitmapDrawable implements Animatable, Bitma
                         currentFrame = 0;
                         nextFrameIsLast = true;
                         autoRepeatPlayCount++;
-                        if (resetVibrationAfterRestart) {
-                            vibrationPattern = null;
-                            resetVibrationAfterRestart = false;
-                        }
                     } else {
                         nextFrameIsLast = true;
                         checkDispatchOnAnimationEnd();
@@ -802,14 +790,6 @@ public class RLottieDrawable extends BitmapDrawable implements Animatable, Bitma
         return true;
     }
 
-    public final void setVibrationPattern(HashMap<Integer, Integer> pattern) {
-        vibrationPattern = pattern;
-    }
-
-    public final boolean hasVibrationPattern() {
-        return vibrationPattern != null;
-    }
-
     public final void beginApplyLayerColors() {
         applyingLayerColors = true;
     }
@@ -1134,34 +1114,11 @@ public class RLottieDrawable extends BitmapDrawable implements Animatable, Bitma
             if (renderingBitmap == null && nextRenderingBitmap == null) {
                 scheduleNextGetFrame();
             } else if (nextRenderingBitmap != null && (renderingBitmap == null || (canSwapBuffers && !skipFrameUpdate))) {
-                performVibration();
                 setCurrentFrame(now, false);
             }
         } else if ((forceFrameRedraw || decodeSingleFrame && canSwapBuffers) && nextRenderingBitmap != null) {
             setCurrentFrame(now, true);
         }
-    }
-
-    @UiThread
-    private void performVibration() {
-        if (vibrationPattern != null && allowVibration) {
-            Integer force = vibrationPattern.get(currentFrame - 1);
-            if (force != null) {
-                try {
-                    Activity activity = LaunchActivity.instance;
-                    if (activity == null) activity = BubbleActivity.instance;
-                    activity.getWindow().getDecorView().performHapticFeedback(force == 1 ? HapticFeedbackConstants.LONG_PRESS : HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
-                } catch (Exception ignored) {}
-            }
-        }
-    }
-
-    public final void setAllowVibration(boolean allow) {
-        allowVibration = allow;
-    }
-
-    public final void resetVibrationAfterRestart(boolean value) {
-        resetVibrationAfterRestart = value;
     }
 
     @Override

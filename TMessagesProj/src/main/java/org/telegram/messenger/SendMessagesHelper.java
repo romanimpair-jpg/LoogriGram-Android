@@ -4253,7 +4253,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         type = MEDIA_TYPE_DICE;
                         message = retryMessageObject.getDiceEmoji();
                         caption = "";
-                    } else if (retryMessageObject.type == MessageObject.TYPE_TEXT || retryMessageObject.isAnimatedEmoji()) {
+                    } else if (retryMessageObject.type == MessageObject.TYPE_TEXT) {
                         if (retryMessageObject.messageOwner.media instanceof TLRPC.TL_messageMediaGame) {
                             //game = retryMessageObject.messageOwner.media.game;
                         } else {

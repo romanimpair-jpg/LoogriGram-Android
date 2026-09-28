@@ -147,7 +147,6 @@ import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.DownloadController;
 import org.telegram.messenger.Emoji;
-import org.telegram.messenger.EmojiData;
 import org.telegram.messenger.FactCheckController;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
@@ -2807,7 +2806,6 @@ public class ChatActivity extends BaseFragment implements
             .add(NotificationCenter.messagePlayingDidStart)
             .add(NotificationCenter.updateMessageMedia)
             .add(NotificationCenter.voiceTranscriptionUpdate)
-            .add(NotificationCenter.animatedEmojiDocumentLoaded)
             .add(NotificationCenter.replaceMessagesObjects)
             .add(NotificationCenter.notificationsSettingsUpdated)
             .add(NotificationCenter.replyMessagesDidLoad)
@@ -13907,7 +13905,7 @@ public class ChatActivity extends BaseFragment implements
                     }
                 }
 
-                int type = object.isAnimatedEmoji() || object.isDice() ? 0 : object.type;
+                int type = object.isDice() ? 0 : object.type;
                 for (int a = 1; a < messageObjectsToForward.size(); a++) {
                     object = messageObjectsToForward.get(a);
                     long uid;
@@ -14793,11 +14791,9 @@ public class ChatActivity extends BaseFragment implements
                     updateReactionsMentionButton(true);
                 }
                 getDownloadController().checkUnviewedDownloads(messageCell.getId(), dialog_id);
-                boolean allowPlayEffect = messageObject.getEffect() != null || ((messageObject.messageOwner.media != null && !messageObject.messageOwner.media.nopremium) || (messageObject.isAnimatedEmojiStickerSingle() && dialog_id > 0));
-                if ((chatListItemAnimator == null || !chatListItemAnimator.isRunning()) && (!messageObject.isOutOwner() || messageObject.forcePlayEffect) && allowPlayEffect && !messageObject.messageOwner.premiumEffectWasPlayed && (messageObject.isPremiumSticker() || messageCell.getEffect() != null || messageObject.isAnimatedEmojiStickerSingle()) && emojiAnimationsOverlay.isIdle() && emojiAnimationsOverlay.checkPosition(messageCell, chatListViewPaddingTop, chatListView.getMeasuredHeight() - blurredViewBottomOffset)) {
+                boolean allowPlayEffect = messageObject.getEffect() != null || (messageObject.messageOwner.media != null && !messageObject.messageOwner.media.nopremium);
+                if ((chatListItemAnimator == null || !chatListItemAnimator.isRunning()) && (!messageObject.isOutOwner() || messageObject.forcePlayEffect) && allowPlayEffect && !messageObject.messageOwner.premiumEffectWasPlayed && (messageObject.isPremiumSticker() || messageCell.getEffect() != null) && emojiAnimationsOverlay.isIdle() && emojiAnimationsOverlay.checkPosition(messageCell, chatListViewPaddingTop, chatListView.getMeasuredHeight() - blurredViewBottomOffset)) {
                     emojiAnimationsOverlay.onTapItem(messageCell, ChatActivity.this, false);
-                } else if (messageObject.isAnimatedAnimatedEmoji()) {
-                    emojiAnimationsOverlay.preloadAnimation(messageCell);
                 }
             } else if (view instanceof ChatActionCell) {
                 ChatActionCell cell = (ChatActionCell) view;
@@ -17590,9 +17586,7 @@ public class ChatActivity extends BaseFragment implements
                     return -1;
                 }
             } else {
-                if (messageObject.isAnimatedEmoji()) {
-                    return 2;
-                } else if (messageObject.type == MessageObject.TYPE_LOADING) {
+                if (messageObject.type == MessageObject.TYPE_LOADING) {
                     return -1;
                 } else if (messageObject.type == MessageObject.TYPE_DATE || messageObject.type == MessageObject.TYPE_GIFT_THEME_UPDATE || messageObject.type == MessageObject.TYPE_ACTION_PHOTO || messageObject.type == MessageObject.TYPE_SUGGEST_PHOTO || messageObject.isWallpaperAction()) {
                     if (messageObject.getId() == 0) {
@@ -17654,9 +17648,7 @@ public class ChatActivity extends BaseFragment implements
             if (messageObject.isSending()) {
                 return -1;
             }
-            if (messageObject.isAnimatedEmoji()) {
-                return 2;
-            } else if (messageObject.type == 6) {
+            if (messageObject.type == 6) {
                 return -1;
             } else if (messageObject.isSendError()) {
                 if (!messageObject.isMediaEmpty()) {
@@ -17673,7 +17665,7 @@ public class ChatActivity extends BaseFragment implements
             } else {
                 if (messageObject.isVoice()) {
                     return 2;
-                } else if (!messageObject.isAnimatedEmoji() && (messageObject.isSticker() || messageObject.isAnimatedSticker())) {
+                } else if (messageObject.isSticker() || messageObject.isAnimatedSticker()) {
                     TLRPC.InputStickerSet inputStickerSet = messageObject.getInputStickerSet();
                     if (inputStickerSet instanceof TLRPC.TL_inputStickerSetShortName) {
                         if (!getMediaDataController().isStickerPackInstalled(inputStickerSet.short_name)) {
@@ -17759,10 +17751,10 @@ public class ChatActivity extends BaseFragment implements
             if (selectedMessagesIds[index].indexOfKey(messageObject.getId()) >= 0) {
                 selectedMessagesIds[index].remove(messageObject.getId());
                 if (!isReport()) {
-                    if ((messageObject.type == MessageObject.TYPE_TEXT || messageObject.isAnimatedEmoji() || messageObject.caption != null) && !(messageObject.messageOwner != null && messageObject.messageOwner.noforwards)) {
+                    if ((messageObject.type == MessageObject.TYPE_TEXT || messageObject.caption != null) && !(messageObject.messageOwner != null && messageObject.messageOwner.noforwards)) {
                         selectedMessagesCanCopyIds[index].remove(messageObject.getId());
                     }
-                    if (!messageObject.isAnimatedEmoji() && (messageObject.isSticker() || messageObject.isAnimatedSticker()) && MessageObject.isStickerHasSet(messageObject.getDocument())) {
+                    if ((messageObject.isSticker() || messageObject.isAnimatedSticker()) && MessageObject.isStickerHasSet(messageObject.getDocument())) {
                         selectedMessagesCanStarIds[index].remove(messageObject.getId());
                     }
                     if (messageObject.canEditMessage(currentChat)) {
@@ -17796,10 +17788,10 @@ public class ChatActivity extends BaseFragment implements
                 }
                 selectedMessagesIds[index].put(messageObject.getId(), messageObject);
                 if (!isReport()) {
-                    if ((messageObject.type == MessageObject.TYPE_TEXT || messageObject.isAnimatedEmoji() || messageObject.caption != null) && !(messageObject.messageOwner != null && messageObject.messageOwner.noforwards)) {
+                    if ((messageObject.type == MessageObject.TYPE_TEXT || messageObject.caption != null) && !(messageObject.messageOwner != null && messageObject.messageOwner.noforwards)) {
                         selectedMessagesCanCopyIds[index].put(messageObject.getId(), messageObject);
                     }
-                    if (!messageObject.isAnimatedEmoji() && (messageObject.isSticker() || messageObject.isAnimatedSticker()) && MessageObject.isStickerHasSet(messageObject.getDocument())) {
+                    if ((messageObject.isSticker() || messageObject.isAnimatedSticker()) && MessageObject.isStickerHasSet(messageObject.getDocument())) {
                         selectedMessagesCanStarIds[index].put(messageObject.getId(), messageObject);
                     }
                     if (messageObject.canEditMessage(currentChat)) {
@@ -21818,23 +21810,6 @@ public class ChatActivity extends BaseFragment implements
                     });
                 }
             }
-        } else if (id == NotificationCenter.animatedEmojiDocumentLoaded) {
-            if (chatAdapter != null) {
-                MessageObject messageObject = (MessageObject) args[0];
-                if (messageObject != null) {
-                    final ArrayList<MessageObject> messages;
-                    if (chatAdapter.isFrozen) {
-                        messages = chatAdapter.frozenMessages;
-                    } else {
-                        messages = ChatActivity.this.messages;
-                    }
-                    int index = messages.indexOf(messageObject);
-                    if (index >= 0 && index < messages.size()) {
-                        int position = index + chatAdapter.messagesStartRow;
-                        chatAdapter.updateRowAtPosition(position);
-                    }
-                }
-            }
         } else if (id == NotificationCenter.replaceMessagesObjects) {
             long did = (long) args[0];
             final ArrayList<MessageObject> messageObjects = (ArrayList<MessageObject>) args[1];
@@ -23821,7 +23796,7 @@ public class ChatActivity extends BaseFragment implements
                         }
                     }
                 }
-                if (messageObject.wasJustSent && (getUserConfig().isPremium() || messageObject.isAnimatedAnimatedEmoji() || messageObject.getEffect() != null) && !(SharedConfig.getDevicePerformanceClass() == SharedConfig.PERFORMANCE_CLASS_LOW || !LiteMode.isEnabled(messageObject.isAnimatedAnimatedEmoji() ? LiteMode.FLAG_ANIMATED_EMOJI_CHAT : LiteMode.FLAG_ANIMATED_STICKERS_CHAT))) {
+                if (messageObject.wasJustSent && (getUserConfig().isPremium() || messageObject.getEffect() != null) && !(SharedConfig.getDevicePerformanceClass() == SharedConfig.PERFORMANCE_CLASS_LOW || !LiteMode.isEnabled(LiteMode.FLAG_ANIMATED_STICKERS_CHAT))) {
                     messageObject.forcePlayEffect = true;
                 }
             }
@@ -30509,57 +30484,13 @@ public class ChatActivity extends BaseFragment implements
         }
     }
 
-    public void setupStickerVibrationAndSound(ChatMessageCell cell) {
-        MessageObject message = cell.getMessageObject();
-        TLRPC.Document document = message.getDocument();
-        boolean isEmoji;
-        if ((isEmoji = message.isAnimatedEmoji()) || MessageObject.isAnimatedStickerDocument(document, currentEncryptedChat == null || message.isOut()) && !SharedConfig.loopStickers()) {
-            ImageReceiver imageReceiver = cell.getPhotoImage();
-            RLottieDrawable drawable = imageReceiver.getLottieAnimation();
-            if (drawable != null) {
-                if (isEmoji) {
-                    String emoji = message.getStickerEmoji();
-                    emoji = EmojiAnimationsOverlay.unwrapEmoji(emoji);
-                    if (EmojiData.isHeartEmoji(emoji)) {
-                        HashMap<Integer, Integer> pattern = new HashMap<>();
-                        pattern.put(1, 1);
-                        pattern.put(13, 0);
-                        pattern.put(59, 1);
-                        pattern.put(71, 0);
-                        pattern.put(128, 1);
-                        pattern.put(140, 0);
-                        drawable.setVibrationPattern(pattern);
-                    } else if (EmojiData.isPeachEmoji(emoji)) {
-                        HashMap<Integer, Integer> pattern = new HashMap<>();
-                        pattern.put(34, 1);
-                        drawable.setVibrationPattern(pattern);
-                    } else if (EmojiData.isCofinEmoji(emoji)) {
-                        HashMap<Integer, Integer> pattern = new HashMap<>();
-                        pattern.put(24, 0);
-                        pattern.put(36, 0);
-                        drawable.setVibrationPattern(pattern);
-                    }
-                    if (message.isAnimatedAnimatedEmoji()) {
-                        drawable.resetVibrationAfterRestart(true);
-                    }
-                    if (!drawable.isRunning() && emoji != null) {
-                        MessagesController.EmojiSound sound = getMessagesController().emojiSounds.get(emoji.replace("\uFE0F", ""));
-                        if (sound != null) {
-                            getMediaController().playEmojiSound(getAccountInstance(), emoji, sound, false);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
+    // LoogriGram: an animated emoji also restarted here, first given its
+    // vibration pattern and sound (setupStickerVibrationAndSound). That was
+    // large emoji, removed as on desktop.
     public void restartSticker(ChatMessageCell cell) {
         MessageObject message = cell.getMessageObject();
         TLRPC.Document document = message.getDocument();
-        if (!message.isAnimatedAnimatedEmoji()) {
-            setupStickerVibrationAndSound(cell);
-        }
-        if ((message.isAnimatedEmoji()) || MessageObject.isAnimatedStickerDocument(document, currentEncryptedChat == null || message.isOut()) && !SharedConfig.loopStickers()) {
+        if (MessageObject.isAnimatedStickerDocument(document, currentEncryptedChat == null || message.isOut()) && !SharedConfig.loopStickers()) {
             ImageReceiver imageReceiver = cell.getPhotoImage();
             RLottieDrawable drawable = imageReceiver.getLottieAnimation();
             if (drawable != null) {
@@ -35081,15 +35012,6 @@ public class ChatActivity extends BaseFragment implements
                 if (hintMessageObject != null && hintMessageObject.equals(message)) {
                     messageCell.showHintButton(false, false, hintMessageType);
                 }
-                if (message.isAnimatedEmoji()) {
-                    String emoji = message.getStickerEmoji();
-                    if (emoji != null) {
-                        MessagesController.EmojiSound sound = getMessagesController().emojiSounds.get(emoji.replace("\uFE0F", ""));
-                        if (sound != null) {
-                            getMediaController().playEmojiSound(getAccountInstance(), emoji, sound, true);
-                        }
-                    }
-                }
                 if (message.updateTranslation(false)) {
                     messageCell.setMessageObject(message, messageCell.getCurrentMessagesGroup(), messageCell.isPinnedBottom(), messageCell.isPinnedTop(), messageCell.isFirstInChat(), messageCell.isLastInChatList());
                 } else {
@@ -38120,7 +38042,7 @@ public class ChatActivity extends BaseFragment implements
                 // on the outcome, through StakedDiceSheet. It is gambling with money; the
                 // plain "roll one too" toast is all that is offered.
                 toastForNotStackedDice.run();
-            } else if (message.isAnimatedEmoji() && (!message.isAnimatedAnimatedEmoji() || emojiAnimationsOverlay.supports(MessageObject.findAnimatedEmojiEmoticon(message.getDocument())) && currentUser != null) || message.isPremiumSticker()) {
+            } else if (message.isPremiumSticker()) {
                 restartSticker(cell);
                 emojiAnimationsOverlay.onTapItem(cell, ChatActivity.this, true);
                 chatListView.cancelClickRunnables(false);
@@ -41973,7 +41895,7 @@ public class ChatActivity extends BaseFragment implements
         }
 
         if (type == -1) {
-            if ((selectedObject.type == MessageObject.TYPE_TEXT || selectedObject.type == MessageObject.TYPE_ARTICLE || selectedObject.isAnimatedEmoji() || getMessageCaption(selectedObject, selectedObjectGroup) != null) && (!noforwards || isEphemeral)) {
+            if ((selectedObject.type == MessageObject.TYPE_TEXT || selectedObject.type == MessageObject.TYPE_ARTICLE || getMessageCaption(selectedObject, selectedObjectGroup) != null) && (!noforwards || isEphemeral)) {
                 items.add(LocaleController.getString(R.string.Copy));
                 options.add(OPTION_COPY);
                 icons.add(R.drawable.msg_copy);
@@ -42015,7 +41937,7 @@ public class ChatActivity extends BaseFragment implements
                     options.add(OPTION_PIN);
                     icons.add(R.drawable.msg_pin);
                 }
-                if (selectedObject != null && !selectedObject.isEphemeral() && selectedObject.contentType == 0 && ((!TextUtils.isEmpty(selectedObject.getMessageTextToTranslate(groupedMessages, null)) && !selectedObject.isAnimatedEmoji() && !selectedObject.isDice()) || (selectedObject.type == MessageObject.TYPE_ARTICLE && selectedObject.messageOwner != null && selectedObject.messageOwner.rich_message != null && !selectedObject.translated))) {
+                if (selectedObject != null && !selectedObject.isEphemeral() && selectedObject.contentType == 0 && ((!TextUtils.isEmpty(selectedObject.getMessageTextToTranslate(groupedMessages, null)) && !selectedObject.isDice()) || (selectedObject.type == MessageObject.TYPE_ARTICLE && selectedObject.messageOwner != null && selectedObject.messageOwner.rich_message != null && !selectedObject.translated))) {
                     items.add(LocaleController.getString(R.string.TranslateMessage));
                     options.add(OPTION_TRANSLATE);
                     icons.add(R.drawable.msg_translate);
@@ -42090,7 +42012,7 @@ public class ChatActivity extends BaseFragment implements
                     options.add(OPTION_REPLY);
                     icons.add(R.drawable.menu_reply);
                 }
-                if ((selectedObject.type == MessageObject.TYPE_TEXT || selectedObject.type == MessageObject.TYPE_ARTICLE || selectedObject.isDice() || selectedObject.isAnimatedEmoji() || getMessageCaption(selectedObject, selectedObjectGroup) != null) && (!noforwards || isEphemeral)) {
+                if ((selectedObject.type == MessageObject.TYPE_TEXT || selectedObject.type == MessageObject.TYPE_ARTICLE || selectedObject.isDice() || getMessageCaption(selectedObject, selectedObjectGroup) != null) && (!noforwards || isEphemeral)) {
                     items.add(LocaleController.getString(R.string.Copy));
                     options.add(OPTION_COPY);
                     icons.add(R.drawable.msg_copy);
@@ -42346,7 +42268,7 @@ public class ChatActivity extends BaseFragment implements
                     options.add(OPTION_PIN);
                     icons.add(R.drawable.msg_pin);
                 }
-                if (selectedObject != null && !selectedObject.isEphemeral() && selectedObject.contentType == 0 && ((!TextUtils.isEmpty(selectedObject.getMessageTextToTranslate(selectedObjectGroup, null)) && !selectedObject.isAnimatedEmoji() && !selectedObject.isDice()) || (selectedObject.type == MessageObject.TYPE_ARTICLE && selectedObject.messageOwner != null && selectedObject.messageOwner.rich_message != null && !selectedObject.translated))) {
+                if (selectedObject != null && !selectedObject.isEphemeral() && selectedObject.contentType == 0 && ((!TextUtils.isEmpty(selectedObject.getMessageTextToTranslate(selectedObjectGroup, null)) && !selectedObject.isDice()) || (selectedObject.type == MessageObject.TYPE_ARTICLE && selectedObject.messageOwner != null && selectedObject.messageOwner.rich_message != null && !selectedObject.translated))) {
                     items.add(LocaleController.getString(R.string.TranslateMessage));
                     options.add(OPTION_TRANSLATE);
                     icons.add(R.drawable.msg_translate);
@@ -42394,7 +42316,7 @@ public class ChatActivity extends BaseFragment implements
                     options.add(OPTION_REPLY);
                     icons.add(R.drawable.menu_reply);
                 }
-                if ((selectedObject.type == MessageObject.TYPE_TEXT || selectedObject.type == MessageObject.TYPE_ARTICLE || selectedObject.isAnimatedEmoji() || getMessageCaption(selectedObject, selectedObjectGroup) != null) && (!noforwards || isEphemeral)) {
+                if ((selectedObject.type == MessageObject.TYPE_TEXT || selectedObject.type == MessageObject.TYPE_ARTICLE || getMessageCaption(selectedObject, selectedObjectGroup) != null) && (!noforwards || isEphemeral)) {
                     items.add(LocaleController.getString(R.string.Copy));
                     options.add(OPTION_COPY);
                     icons.add(R.drawable.msg_copy);

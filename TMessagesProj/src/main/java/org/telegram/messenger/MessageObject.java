@@ -63,7 +63,6 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.ChatActivity;
 import org.telegram.ui.MultiLayoutTypingAnimator;
-import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.AnimatedEmojiSpan;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.ButtonBounce;
@@ -180,14 +179,13 @@ public class MessageObject {
     // came from and a constructor of its own - fed the viewer and the story
     // lists. Stories are removed, as on desktop.
     public TLRPC.Message messageOwner;
-    public TLRPC.Document emojiAnimatedSticker;
-    public Long emojiAnimatedStickerId;
+    // LoogriGram: emojiAnimatedSticker, emojiAnimatedStickerId, their colour
+    // suffix and loading flag held the animated sticker a message of one emoji
+    // was drawn as. That was large emoji, removed as on desktop.
     public boolean isTopicMainMessage;
     public boolean settingAvatar;
     public boolean flickerLoading;
     public TLRPC.VideoSize emojiMarkup;
-    private boolean emojiAnimatedStickerLoading;
-    public String emojiAnimatedStickerColor;
     public CharSequence messageText;
     public CharSequence messageTextShort;
     public CharSequence messageTextForReply;
@@ -3664,7 +3662,7 @@ public class MessageObject {
                 messageText = replaceWithLink(getString(R.string.ActionPinnedVoice), "un1", fromUser != null ? fromUser : chat);
             } else if (replyMessageObject.isRoundVideo()) {
                 messageText = replaceWithLink(getString(R.string.ActionPinnedRound), "un1", fromUser != null ? fromUser : chat);
-            } else if ((replyMessageObject.isSticker() || replyMessageObject.isAnimatedSticker()) && !replyMessageObject.isAnimatedEmoji()) {
+            } else if ((replyMessageObject.isSticker() || replyMessageObject.isAnimatedSticker())) {
                 messageText = replaceWithLink(getString(R.string.ActionPinnedSticker), "un1", fromUser != null ? fromUser : chat);
             } else if (getMedia(replyMessageObject) instanceof TLRPC.TL_messageMediaDocument) {
                 messageText = replaceWithLink(getString(R.string.ActionPinnedFile), "un1", fromUser != null ? fromUser : chat);
@@ -3828,19 +3826,6 @@ public class MessageObject {
             media.results.has_unread_votes = results.has_unread_votes;
             media.results.can_view_stats = results.can_view_stats;
         }
-    }
-
-    public void loadAnimatedEmojiDocument() {
-        if (emojiAnimatedSticker != null || emojiAnimatedStickerId == null || emojiAnimatedStickerLoading) {
-            return;
-        }
-        emojiAnimatedStickerLoading = true;
-        AnimatedEmojiDrawable.getDocumentFetcher(currentAccount).fetchDocument(emojiAnimatedStickerId, document -> {
-            AndroidUtilities.runOnUIThread(() -> {
-                this.emojiAnimatedSticker = document;
-                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.animatedEmojiDocumentLoaded, this);
-            });
-        });
     }
 
     public boolean isPollClosed() {
@@ -6299,12 +6284,6 @@ public class MessageObject {
             } else if (messageOwner.rich_message != null) {
                 type = TYPE_ARTICLE;
 //                contentType = 9;
-            } else if (emojiAnimatedSticker != null || emojiAnimatedStickerId != null) {
-                if (isSticker()) {
-                    type = TYPE_STICKER;
-                } else {
-                    type = TYPE_ANIMATED_STICKER;
-                }
             } else if (isMediaEmpty()) {
                 type = TYPE_TEXT;
                 if (TextUtils.isEmpty(messageText) && eventId == 0) {
@@ -6657,16 +6636,6 @@ public class MessageObject {
                     }
                 }
                 photoThumbsObject = messageOwner.action.photo;
-            }
-        } else if (emojiAnimatedSticker != null || emojiAnimatedStickerId != null) {
-            if (TextUtils.isEmpty(emojiAnimatedStickerColor) && isDocumentHasThumb(emojiAnimatedSticker)) {
-                if (!update || photoThumbs == null) {
-                    photoThumbs = new ArrayList<>();
-                    photoThumbs.addAll(emojiAnimatedSticker.thumbs);
-                } else if (!photoThumbs.isEmpty()) {
-                    updatePhotoSizeLocations(photoThumbs, emojiAnimatedSticker.thumbs);
-                }
-                photoThumbsObject = emojiAnimatedSticker;
             }
         } else if (getMedia(messageOwner) != null && !(getMedia(messageOwner) instanceof TLRPC.TL_messageMediaEmpty)) {
             if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaPhoto) {
@@ -9986,9 +9955,6 @@ public class MessageObject {
     }
 
     public TLRPC.Document getDocument() {
-        if (emojiAnimatedSticker != null) {
-            return emojiAnimatedSticker;
-        }
         if (hasVideoQualities() && highestQuality != null) {
             return highestQuality.document;
         }
@@ -9996,9 +9962,6 @@ public class MessageObject {
     }
 
     public TLRPC.Document getDocumentFast() {
-        if (emojiAnimatedSticker != null) {
-            return emojiAnimatedSticker;
-        }
         return getDocument(messageOwner);
     }
 
@@ -10551,14 +10514,6 @@ public class MessageObject {
         );
     }
 
-    public boolean isAnimatedEmoji() {
-        return emojiAnimatedSticker != null || emojiAnimatedStickerId != null;
-    }
-
-    public boolean isAnimatedAnimatedEmoji() {
-        return isAnimatedEmoji() && isAnimatedEmoji(getDocument());
-    }
-
     public boolean isDice() {
         return getMedia(messageOwner) instanceof TLRPC.TL_messageMediaDice;
     }
@@ -10609,10 +10564,7 @@ public class MessageObject {
         if (isSecretChat && messageOwner.stickerVerified != 1) {
             return false;
         }
-        if (emojiAnimatedStickerId != null && emojiAnimatedSticker == null) {
-            return true;
-        }
-        return isAnimatedStickerDocument(getDocument(), emojiAnimatedSticker != null || !isSecretChat || isOut());
+        return isAnimatedStickerDocument(getDocument(), !isSecretChat || isOut());
     }
 
     public boolean isAnyKindOfSticker() {
@@ -10621,10 +10573,6 @@ public class MessageObject {
 
     public boolean shouldDrawWithoutBackground() {
         return type == TYPE_STICKER || type == TYPE_ANIMATED_STICKER || type == TYPE_ROUND_VIDEO;
-    }
-
-    public boolean isAnimatedEmojiStickerSingle() {
-        return emojiAnimatedStickerId != null;
     }
 
     public boolean isLocation() {

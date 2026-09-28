@@ -999,8 +999,6 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
     private boolean isPaused = false;
     private boolean wasPlayingAudioBeforePause = false;
     private VideoPlayer audioPlayer = null;
-    private VideoPlayer emojiSoundPlayer = null;
-    private int emojiSoundPlayerNum = 0;
     private boolean isStreamingCurrentAudio;
     private int playerNum;
     private String shouldSavePositionForCurrentAudio;
@@ -3461,81 +3459,6 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
             NotificationCenter.getInstance(messageObject.currentAccount).postNotificationName(NotificationCenter.messagePlayingProgressDidChanged, playingMessageObject.getId(), 0);
             FileLog.e(e2);
         }*/
-    }
-
-    public void playEmojiSound(AccountInstance accountInstance, String emoji, MessagesController.EmojiSound sound, boolean loadOnly) {
-        if (sound == null) {
-            return;
-        }
-        Utilities.stageQueue.postRunnable(() -> {
-            TLRPC.Document document = new TLRPC.TL_document();
-            document.access_hash = sound.accessHash;
-            document.id = sound.id;
-            document.mime_type = "sound/ogg";
-            document.file_reference = sound.fileReference;
-            document.dc_id = accountInstance.getConnectionsManager().getCurrentDatacenterId();
-            File file = FileLoader.getInstance(accountInstance.getCurrentAccount()).getPathToAttach(document, true);
-            if (file.exists()) {
-                if (loadOnly) {
-                    return;
-                }
-                AndroidUtilities.runOnUIThread(() -> {
-                    try {
-                        int tag = ++emojiSoundPlayerNum;
-                        if (emojiSoundPlayer != null) {
-                            emojiSoundPlayer.releasePlayer(true);
-                        }
-                        emojiSoundPlayer = new VideoPlayer(false, false);
-                        emojiSoundPlayer.setDelegate(new VideoPlayer.VideoPlayerDelegate() {
-                            @Override
-                            public void onStateChanged(boolean playWhenReady, int playbackState) {
-                                AndroidUtilities.runOnUIThread(() -> {
-                                    if (tag != emojiSoundPlayerNum) {
-                                        return;
-                                    }
-                                    if (playbackState == ExoPlayer.STATE_ENDED) {
-                                        if (emojiSoundPlayer != null) {
-                                            try {
-                                                emojiSoundPlayer.releasePlayer(true);
-                                                emojiSoundPlayer = null;
-                                            } catch (Exception e) {
-                                                FileLog.e(e);
-                                            }
-                                        }
-                                    }
-                                });
-                            }
-
-                            @Override
-                            public void onError(VideoPlayer player, Exception e) {
-
-                            }
-
-                            @Override
-                            public void onVideoSizeChanged(int width, int height, int unappliedRotationDegrees, float pixelWidthHeightRatio) {
-
-                            }
-
-                            @Override
-                            public void onRenderedFirstFrame() {
-
-                            }
-                        });
-                        emojiSoundPlayer.preparePlayer(Uri.fromFile(file), "other");
-                        emojiSoundPlayer.setStreamType(AudioManager.STREAM_MUSIC);
-                        emojiSoundPlayer.play();
-                    } catch (Exception e) {
-                        FileLog.e(e);
-                        if (emojiSoundPlayer != null) {
-                            emojiSoundPlayer.releasePlayer(true);
-                            emojiSoundPlayer = null;
-                        }
-                    }
-                });
-            } else {
-                AndroidUtilities.runOnUIThread(() -> accountInstance.getFileLoader().loadFile(document, null, FileLoader.PRIORITY_NORMAL, 1));
-            }
-        });
     }
 
     private static long volumeBarLastTimeShown;

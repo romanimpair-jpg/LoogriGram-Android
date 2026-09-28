@@ -538,7 +538,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public Set<String> authDomains;
     public String autologinToken;
     public HashMap<String, DiceFrameSuccess> diceSuccess = new HashMap<>();
-    public HashMap<String, EmojiSound> emojiSounds = new HashMap<>();
     public HashMap<Long, ArrayList<TLRPC.TL_sendMessageEmojiInteraction>> emojiInteractions = new HashMap<>();
     public boolean remoteConfigLoaded;
     public int ringtoneDurationMax;
@@ -1061,33 +1060,6 @@ public class MessagesController extends BaseController implements NotificationCe
             }
             data.writeString(url);
             return Utilities.bytesToHex(data.toByteArray());
-        }
-    }
-
-    public static class EmojiSound {
-        public long id;
-        public long accessHash;
-        public byte[] fileReference;
-
-        public EmojiSound(long i, long ah, String fr) {
-            id = i;
-            accessHash = ah;
-            fileReference = Base64.decode(fr, Base64.URL_SAFE);
-        }
-
-        public EmojiSound(long i, long ah, byte[] fr) {
-            id = i;
-            accessHash = ah;
-            fileReference = fr;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (!(obj instanceof EmojiSound)) {
-                return false;
-            }
-            EmojiSound emojiSound = (EmojiSound) obj;
-            return id == emojiSound.id && accessHash == emojiSound.accessHash && Arrays.equals(fileReference, emojiSound.fileReference);
         }
     }
 
@@ -1745,23 +1717,6 @@ public class MessagesController extends BaseController implements NotificationCe
                     int count = data.readInt32(true);
                     for (int a = 0; a < count; a++) {
                         diceSuccess.put(data.readString(true), new DiceFrameSuccess(data.readInt32(true), data.readInt32(true)));
-                    }
-                    data.cleanup();
-                }
-            } catch (Exception e) {
-                FileLog.e(e);
-            }
-        }
-
-        text = mainPreferences.getString("emojiSounds", null);
-        if (text != null) {
-            try {
-                byte[] bytes = Base64.decode(text, Base64.DEFAULT);
-                if (bytes != null) {
-                    SerializedData data = new SerializedData(bytes);
-                    int count = data.readInt32(true);
-                    for (int a = 0; a < count; a++) {
-                        emojiSounds.put(data.readString(true), new EmojiSound(data.readInt64(true), data.readInt64(true), data.readByteArray(true)));
                     }
                     data.cleanup();
                 }
@@ -3100,56 +3055,9 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
-                case "emojies_sounds": {
-                    try {
-                        HashMap<String, EmojiSound> newEmojies = new HashMap<>();
-                        if (value.value instanceof TLRPC.TL_jsonObject) {
-                            TLRPC.TL_jsonObject jsonObject = (TLRPC.TL_jsonObject) value.value;
-                            for (int b = 0, N2 = jsonObject.value.size(); b < N2; b++) {
-                                TLRPC.TL_jsonObjectValue val = jsonObject.value.get(b);
-                                if (val.value instanceof TLRPC.TL_jsonObject) {
-                                    TLRPC.TL_jsonObject jsonObject2 = (TLRPC.TL_jsonObject) val.value;
-                                    long i = 0;
-                                    long ah = 0;
-                                    String fr = null;
-                                    for (int c = 0, N3 = jsonObject2.value.size(); c < N3; c++) {
-                                        TLRPC.TL_jsonObjectValue val2 = jsonObject2.value.get(c);
-                                        if (val2.value instanceof TLRPC.TL_jsonString) {
-                                            if ("id".equals(val2.key)) {
-                                                i = Utilities.parseLong(((TLRPC.TL_jsonString) val2.value).value);
-                                            } else if ("access_hash".equals(val2.key)) {
-                                                ah = Utilities.parseLong(((TLRPC.TL_jsonString) val2.value).value);
-                                            } else if ("file_reference_base64".equals(val2.key)) {
-                                                fr = ((TLRPC.TL_jsonString) val2.value).value;
-                                            }
-                                        }
-                                    }
-                                    if (i != 0 && ah != 0 && fr != null) {
-                                        newEmojies.put(val.key.replace("\uFE0F", ""), new EmojiSound(i, ah, fr));
-                                    }
-                                }
-                            }
-                        }
-                        if (!emojiSounds.equals(newEmojies)) {
-                            emojiSounds = newEmojies;
-                            SerializedData serializedData = new SerializedData();
-                            serializedData.writeInt32(emojiSounds.size());
-                            for (HashMap.Entry<String, EmojiSound> entry : emojiSounds.entrySet()) {
-                                serializedData.writeString(entry.getKey());
-                                EmojiSound emojiSound = entry.getValue();
-                                serializedData.writeInt64(emojiSound.id);
-                                serializedData.writeInt64(emojiSound.accessHash);
-                                serializedData.writeByteArray(emojiSound.fileReference);
-                            }
-                            editor.putString("emojiSounds", Base64.encodeToString(serializedData.toByteArray(), Base64.DEFAULT));
-                            serializedData.cleanup();
-                            changed = true;
-                        }
-                    } catch (Exception e) {
-                        FileLog.e(e);
-                    }
-                    break;
-                }
+                // LoogriGram: emojies_sounds, the sounds a tapped animated emoji
+                // played, went with animated single emoji (large emoji, removed
+                // as on desktop). The stored "emojiSounds" copy is not read.
                 case "ringtone_size_max": {
                     if (value.value instanceof TLRPC.TL_jsonNumber) {
                         TLRPC.TL_jsonNumber number = (TLRPC.TL_jsonNumber) value.value;
@@ -20643,7 +20551,7 @@ public class MessagesController extends BaseController implements NotificationCe
                         if (save) {
                             getMediaDataController().addRecentGif(message.messageOwner.media.document, message.messageOwner.date, message.wasJustSent);
                         }
-                    } else if (!message.isAnimatedEmoji() && (message.isSticker() || message.isAnimatedSticker())) {
+                    } else if (message.isSticker() || message.isAnimatedSticker()) {
                         getMediaDataController().addRecentSticker(MediaDataController.TYPE_IMAGE, message, message.messageOwner.media.document, message.messageOwner.date, false);
                     }
                 }
