@@ -7987,9 +7987,9 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         if (newMsg.media != null) {
             TLRPC.PhotoSize strippedOld = null;
             TLObject photoObject = null;
-            if (newMsg.media.storyItem != null) {
-                sentMessage.media = newMsg.media;
-            } else if (newMsgObj.isLiveLocation() && sentMessage.media instanceof TLRPC.TL_messageMediaGeoLive) {
+            // LoogriGram: a story we shared kept our copy of its media here.
+            // Stories are removed, and nothing sends one.
+            if (newMsgObj.isLiveLocation() && sentMessage.media instanceof TLRPC.TL_messageMediaGeoLive) {
                 newMsg.media.period = sentMessage.media.period;
             } else if (newMsgObj.isDice()) {
                 TLRPC.TL_messageMediaDice mediaDice = (TLRPC.TL_messageMediaDice) newMsg.media;

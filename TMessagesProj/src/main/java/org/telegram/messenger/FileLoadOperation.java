@@ -14,7 +14,6 @@ import org.telegram.tgnet.NativeByteBuffer;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.Vector;
-import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.Storage.CacheModel;
 
@@ -46,7 +45,9 @@ public class FileLoadOperation {
     public static ImmutableByteArrayOutputStream filesQueueByteBuffer;
     private boolean forceSmallChunk;
     private Runnable fileWriteRunnable;
-    public boolean isStory;
+    // LoogriGram: isStory marked a story's file: bigger chunks and all its
+    // requests at once, a pause that dropped them, and a finish once the
+    // video's preload prefix was in. Stories are removed, as on desktop.
 
     public void setStream(FileLoadOperationStream stream, boolean streamPriority, long streamOffset) {
 //        FileLog.e("FileLoadOperation " + getFileName() + " setStream(" + stream + ")");
@@ -299,7 +300,6 @@ public class FileLoadOperation {
     public FileLoadOperation(ImageLocation imageLocation, Object parent, String extension, long size) {
         updateParams();
         parentObject = parent;
-        isStory = parentObject instanceof TL_stories.TL_storyItem;
         fileMetadata = FileLoader.getFileMetadataFromParent(currentAccount, parentObject);
         isStream = imageLocation.imageType == FileLoader.IMAGE_TYPE_ANIMATION;
         if (imageLocation.isEncrypted()) {
@@ -407,7 +407,6 @@ public class FileLoadOperation {
         updateParams();
         try {
             parentObject = parent;
-            isStory = parentObject instanceof TL_stories.TL_storyItem;
             fileMetadata = FileLoader.getFileMetadataFromParent(currentAccount, parentObject);
             if (documentLocation instanceof TLRPC.TL_documentEncrypted) {
                 location = new TLRPC.TL_inputEncryptedFileLocation();
@@ -805,15 +804,8 @@ public class FileLoadOperation {
         }
         paused = true;
         Utilities.stageQueue.postRunnable(() -> {
-            if (isStory) {
-                if (BuildVars.LOGS_ENABLED) {
-                    FileLog.d("debug_loading: " + cacheFileFinal.getName() + " pause operation, clear requests");
-                }
-                clearOperation(null, false, true);
-            } else {
-                for (int i = 0; i < requestInfos.size(); i++) {
-                    ConnectionsManager.getInstance(currentAccount).failNotRunningRequest(requestInfos.get(i).requestToken);
-                }
+            for (int i = 0; i < requestInfos.size(); i++) {
+                ConnectionsManager.getInstance(currentAccount).failNotRunningRequest(requestInfos.get(i).requestToken);
             }
         });
     }
@@ -832,9 +824,6 @@ public class FileLoadOperation {
                 }
                 currentDownloadChunkSize =  1024 * 32;
                 currentMaxDownloadRequests = 4;
-            } else if (isStory) {
-                currentDownloadChunkSize = downloadChunkSizeBig;
-                currentMaxDownloadRequests = maxDownloadRequestsBig;
             } else if (isStream) {
                 currentDownloadChunkSize = downloadChunkSizeAnimation;
                 currentMaxDownloadRequests = maxDownloadRequestsAnimation;
@@ -1254,8 +1243,7 @@ public class FileLoadOperation {
             started = true;
             Utilities.stageQueue.postRunnable(() -> {
                 boolean videoPreloaded = isPreloadVideoOperation && preloaded[0];
-                boolean preloadedByPrefixSize = preloadPrefixSize > 0 && downloadedBytes >= preloadPrefixSize && canFinishPreload();
-                if (totalBytesCount != 0 && (videoPreloaded || downloadedBytes == totalBytesCount || preloadedByPrefixSize)) {
+                if (totalBytesCount != 0 && (videoPreloaded || downloadedBytes == totalBytesCount)) {
                     try {
                         onFinishLoadingFile(false, FINISH_CODE_FILE_ALREADY_EXIST, true);
                     } catch (Exception e) {
@@ -1850,7 +1838,6 @@ public class FileLoadOperation {
                 }
 
                 boolean finishedDownloading;
-                boolean finishPreload = false;
                 if (isPreloadVideoOperation) {
                     preloadStream.writeLong(requestInfo.offset);
                     preloadStream.writeLong(currentBytesSize);
@@ -1900,15 +1887,12 @@ public class FileLoadOperation {
                 } else {
                     downloadedBytes += currentBytesSize;
                     if (totalBytesCount > 0) {
-                        finishedDownloading = downloadedBytes >= totalBytesCount || (preloadPrefixSize > 0 && downloadedBytes >= preloadPrefixSize && canFinishPreload() && requestInfos.isEmpty());
-                        if (downloadedBytes < totalBytesCount) {
-                            finishPreload = true;
-                        }
+                        finishedDownloading = downloadedBytes >= totalBytesCount;
                     } else {
                         finishedDownloading = currentBytesSize != currentDownloadChunkSize || (totalBytesCount == downloadedBytes || downloadedBytes % currentDownloadChunkSize != 0) && (totalBytesCount <= 0 || totalBytesCount <= downloadedBytes);
                     }
                     if (BuildVars.LOGS_ENABLED && FULL_LOGS) {
-                        FileLog.d(cacheFileFinal.getName() + " downloadedBytes=" + downloadedBytes + " total=" + totalBytesCount + " " + finishedDownloading + " " + finishPreload);
+                        FileLog.d(cacheFileFinal.getName() + " downloadedBytes=" + downloadedBytes + " total=" + totalBytesCount + " " + finishedDownloading);
                     }
                     if (key != null) {
                         Utilities.aesIgeEncryption(bytes.buffer, key, iv, false, true, 0, bytes.limit());
@@ -2028,7 +2012,7 @@ public class FileLoadOperation {
                 }
 
                 if (finishedDownloading) {
-                    onFinishLoadingFile(true, FINISH_CODE_DEFAULT, finishPreload);
+                    onFinishLoadingFile(true, FINISH_CODE_DEFAULT, false);
                 } else if (state != stateCanceled && state != stateCancelling) {
                     startDownloadRequest(requestInfo.connectionType);
                 }
@@ -2101,10 +2085,6 @@ public class FileLoadOperation {
             }
         }
         return false;
-    }
-
-    private boolean canFinishPreload() {
-        return isStory && priority < FileLoader.PRIORITY_HIGH;
     }
 
     protected void onFail(boolean thread, final int reason) {
@@ -2216,7 +2196,6 @@ public class FileLoadOperation {
             MessageObject messageObject = (MessageObject) parentObject;
             if (messageObject.getId() < 0 && messageObject.messageOwner != null && messageObject.messageOwner.media != null && messageObject.messageOwner.media.webpage != null) {
                 parentObject = messageObject.messageOwner.media.webpage;
-                isStory = false;
             }
         }
         if (BuildVars.LOGS_ENABLED) {
@@ -2238,7 +2217,7 @@ public class FileLoadOperation {
             state = stateDownloading;
         }
         if (paused || reuploadingCdn || state != stateDownloading || requestingReference ||
-                (!isStory && streamPriorityStartOffset == 0 && (!nextPartWasPreloaded && (requestInfos.size() + delayedRequestInfos.size() >= currentMaxDownloadRequests))) ||
+                (streamPriorityStartOffset == 0 && (!nextPartWasPreloaded && (requestInfos.size() + delayedRequestInfos.size() >= currentMaxDownloadRequests))) ||
                 (isPreloadVideoOperation && (requestedBytesCount > preloadMaxBytes || moovFound != 0 && requestInfos.size() > 0))) {
             if (BuildVars.LOGS_ENABLED && FULL_LOGS) {
                 FileLog.d(fileName + " can't start request wrong state: paused=" + paused + " reuploadingCdn=" + reuploadingCdn + " state=" + state + " requestingReference=" + requestingReference);
@@ -2246,12 +2225,8 @@ public class FileLoadOperation {
             return;
         }
         int count = 1;
-        if (isStory) {
+        if (streamPriorityStartOffset == 0 && !nextPartWasPreloaded && (!isPreloadVideoOperation || moovFound != 0) && totalBytesCount > 0) {
             count = Math.max(0, currentMaxDownloadRequests - requestInfos.size());
-        } else {
-            if (streamPriorityStartOffset == 0 && !nextPartWasPreloaded && (!isPreloadVideoOperation || moovFound != 0) && totalBytesCount > 0) {
-                count = Math.max(0, currentMaxDownloadRequests - requestInfos.size());
-            }
         }
 
         if (!requestedReference) {
@@ -2334,12 +2309,6 @@ public class FileLoadOperation {
                 } else {
                     downloadOffset = requestedBytesCount;
                 }
-            }
-            if (preloadPrefixSize > 0 && downloadOffset >= preloadPrefixSize && canFinishPreload()) {
-                if (BuildVars.LOGS_ENABLED && FULL_LOGS) {
-                    FileLog.d(fileName + " can't start request: preload finished");
-                }
-                break;
             }
             if (totalBytesCount > 0 && downloadOffset > 0 && downloadOffset >= totalBytesCount) {
                 if (BuildVars.LOGS_ENABLED && FULL_LOGS) {

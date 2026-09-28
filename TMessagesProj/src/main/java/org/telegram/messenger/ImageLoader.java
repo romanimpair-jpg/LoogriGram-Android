@@ -2548,8 +2548,10 @@ public class ImageLoader {
                     }
 
                     try {
+                        // LoogriGram: mapped only if it exists from before, and no
+                        // longer created - stories are removed, and Storage only
+                        // needs it to clear what is left.
                         File normalNamesPath = new File(telegramPath, "Telegram Stories");
-                        normalNamesPath.mkdir();
                         if (normalNamesPath.isDirectory() && canMoveFiles(cachePath, normalNamesPath, FileLoader.MEDIA_DIR_STORIES)) {
                             AndroidUtilities.createEmptyFile(new File(normalNamesPath, ".nomedia"));
                             mediaDirs.put(FileLoader.MEDIA_DIR_STORIES, normalNamesPath);

@@ -150,8 +150,9 @@ public class MessageObject {
     public static final int TYPE_ACTION_WALLPAPER = 22;
     // LoogriGram: no message is given TYPE_STORY any more - a forwarded story
     // is held unshown (LoogriGramHidden). The number stays because the file
-    // cache still tags the viewer's story files with it. 24 was
-    // TYPE_STORY_MENTION, held the same way.
+    // database tagged story files with it, and AutoDeleteMediaTask still
+    // finds the ones left by that tag. 24 was TYPE_STORY_MENTION, held the
+    // same way.
     public static final int TYPE_STORY = 23;
     // LoogriGram: 26 and 28 were TYPE_GIVEAWAY and TYPE_GIVEAWAY_RESULTS; a
     // giveaway is held unshown, so neither was assigned any more.

@@ -68,16 +68,9 @@ public class FileLoaderPriorityQueue {
         }
     }
 
+    // LoogriGram: a story being watched ran the check at once instead of in
+    // 20 ms. Stories are removed.
     public void checkLoadingOperations() {
-        checkLoadingOperations(false);
-    }
-
-    public void checkLoadingOperations(boolean immediate) {
-        if (immediate) {
-            workerQueue.cancelRunnable(checkOperationsRunnable);
-            checkOperationsRunnable.run();
-            return;
-        }
         if (checkOperationsScheduled) {
             return;
         }
@@ -93,14 +86,10 @@ public class FileLoaderPriorityQueue {
         int max = type == TYPE_LARGE ? MessagesController.getInstance(currentAccount).largeQueueMaxActiveOperations : MessagesController.getInstance(currentAccount).smallQueueMaxActiveOperations;
         tmpListOperations.clear();
         for (int i = 0; i < allOperations.size(); i++) {
-            FileLoadOperation prevOperation = i > 0 ? allOperations.get(i - 1) : null;
             FileLoadOperation operation = allOperations.get(i);
             if (i > 0 && !pauseAllNextOperations) {
-                if (type == TYPE_LARGE) {
-                    if (prevOperation != null && prevOperation.isStory && prevOperation.getPriority() >= PRIORITY_VALUE_MAX && operation.getPriority() <= PRIORITY_VALUE_LOW) {
-                        pauseAllNextOperations = true;
-                    }
-                }
+                // LoogriGram: a story being watched also paused every large
+                // download behind it. Stories are removed.
                 if (lastPriority > PRIORITY_VALUE_LOW && operation.getPriority() == PRIORITY_VALUE_LOW) {
                     pauseAllNextOperations = true;
                 }

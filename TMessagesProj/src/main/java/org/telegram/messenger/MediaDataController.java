@@ -7613,19 +7613,16 @@ public class MediaDataController extends BaseController {
             }
             return a.reply_to_msg_id == b.reply_to_msg_id;
         }
-        if (a instanceof TLRPC.TL_inputReplyToStory) {
-            return MessageObject.peersEqual(a.peer, b.peer) && a.story_id == b.story_id;
-        }
+        // LoogriGram: two replies to a story were compared by story here.
+        // Stories are removed, as on desktop: ours never reply to one, and a
+        // cloud draft that does loads as a plain draft.
         return true;
     }
 
     private static TLRPC.InputReplyTo toInputReplyTo(int currentAccount, TLRPC.MessageReplyHeader reply_to) {
-        if (reply_to instanceof TLRPC.TL_messageReplyStoryHeader) {
-            TLRPC.TL_inputReplyToStory inputReplyTo = new TLRPC.TL_inputReplyToStory();
-            inputReplyTo.peer = MessagesController.getInstance(currentAccount).getInputPeer(reply_to.peer);
-            inputReplyTo.story_id = reply_to.story_id;
-            return inputReplyTo;
-        } else if (reply_to instanceof TLRPC.TL_messageReplyHeader) {
+        // LoogriGram: a reply to a story was turned into one here. Stories are
+        // removed, as on desktop.
+        if (reply_to instanceof TLRPC.TL_messageReplyHeader) {
             TLRPC.TL_inputReplyToMessage inputReplyTo = new TLRPC.TL_inputReplyToMessage();
             inputReplyTo.reply_to_msg_id = reply_to.reply_to_msg_id;
             if ((reply_to.flags & 1) != 0) {

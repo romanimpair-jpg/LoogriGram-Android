@@ -14,7 +14,6 @@ import android.util.SparseArray;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.LaunchActivity;
 
 import java.io.File;
@@ -71,13 +70,10 @@ public class FileLoader extends BaseController {
             fileMeta.messageType = messageObject.type;
             fileMeta.messageSize = messageObject.getSize();
             return fileMeta;
-        } else if (parentObject instanceof TL_stories.StoryItem) {
-            TL_stories.StoryItem storyItem = (TL_stories.StoryItem) parentObject;
-            FilePathDatabase.FileMeta fileMeta = new FilePathDatabase.FileMeta();
-            fileMeta.dialogId = storyItem.dialogId;
-            fileMeta.messageType = MessageObject.TYPE_STORY;
-            return fileMeta;
         }
+        // LoogriGram: a story's file was tagged here with its peer and
+        // MessageObject.TYPE_STORY. Stories are removed and nothing loads one;
+        // the tags already written still let AutoDeleteMediaTask find them.
         return null;
     }
 
@@ -179,6 +175,9 @@ public class FileLoader extends BaseController {
     public static final int MEDIA_DIR_DOCUMENT = 3;
     public static final int MEDIA_DIR_CACHE = 4;
     public static final int MEDIA_DIR_FILES = 5;
+    // LoogriGram: nothing is saved here any more - stories are removed, as on
+    // desktop. The directory is still mapped if it exists, so Storage can
+    // count and clear the story files left from before.
     public static final int MEDIA_DIR_STORIES = 6;
 
     public static final int MEDIA_DIR_IMAGE_PUBLIC = 100;
@@ -882,8 +881,9 @@ public class FileLoader extends BaseController {
 
         FileLoaderPriorityQueue loaderQueue;
         int index = Utilities.clamp(operation.getDatacenterId() - 1, 4, 0);
-        boolean isStory = parentObject instanceof TL_stories.StoryItem;
-        if (operation.totalBytesCount > 20 * 1024 * 1024 || isStory) {
+        // LoogriGram: a story's file also went to the large queue, and to the
+        // stories directory below. Stories are removed.
+        if (operation.totalBytesCount > 20 * 1024 * 1024) {
             loaderQueue = largeFilesQueue[index];
         } else {
             loaderQueue = smallFilesQueue[index];
@@ -891,7 +891,7 @@ public class FileLoader extends BaseController {
 
         String storeFileName = fileName;
 
-        if (cacheType == 0 || cacheType == 10 || isStory) {
+        if (cacheType == 0 || cacheType == 10) {
             if (documentId != 0) {
                 String path = getFileDatabase().getPath(documentId, dcId, type, true);
                 boolean customPath = false;
@@ -908,13 +908,7 @@ public class FileLoader extends BaseController {
                     storeDir = getDirectory(type);
                     boolean saveCustomPath = false;
 
-                    if (isStory) {
-                        File newDir = getDirectory(MEDIA_DIR_STORIES);
-                        if (newDir != null) {
-                            storeDir = newDir;
-                            saveCustomPath = true;
-                        }
-                    } else if ((type == MEDIA_DIR_IMAGE || type == MEDIA_DIR_VIDEO) && canSaveToPublicStorage(parentObject)) {
+                    if ((type == MEDIA_DIR_IMAGE || type == MEDIA_DIR_VIDEO) && canSaveToPublicStorage(parentObject)) {
                         File newDir;
                         if (type == MEDIA_DIR_IMAGE) {
                             newDir = getDirectory(MEDIA_DIR_IMAGE_PUBLIC);
@@ -1038,7 +1032,7 @@ public class FileLoader extends BaseController {
         }
 
         loaderQueue.add(operation);
-        loaderQueue.checkLoadingOperations(operation.isStory && priority >= FileLoaderPriorityQueue.PRIORITY_VALUE_MAX);
+        loaderQueue.checkLoadingOperations();
 
         if (BuildVars.LOGS_ENABLED) {
             FileLog.d("create load operation fileName=" + finalFileName + " documentName=" + getDocumentFileName(document) + " size=" + AndroidUtilities.formatFileSize(operation.totalBytesCount) + " position in queue " + operation.getPositionInQueue() + " account=" + currentAccount + " cacheType=" + cacheType + " priority=" + operation.getPriority() + " stream=" + stream);
@@ -1171,7 +1165,7 @@ public class FileLoader extends BaseController {
         fileLoaderQueue.postRunnable(() -> {
             if (queue.remove(operation)) {
                 loadOperationPaths.remove(operation.getFileName());
-                queue.checkLoadingOperations(operation.isStory);
+                queue.checkLoadingOperations();
             }
         }, delay);
     }
