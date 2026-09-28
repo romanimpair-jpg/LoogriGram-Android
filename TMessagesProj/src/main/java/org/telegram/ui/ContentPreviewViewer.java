@@ -100,7 +100,6 @@ import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.ScrimOptions;
 import org.telegram.ui.Components.StickersAlert;
 import org.telegram.ui.Components.StickersDialogs;
-import org.telegram.ui.Components.SuggestEmojiView;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
 import org.telegram.ui.Components.blur3.drawable.color.impl.BlurredBackgroundProviderImpl;
 import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceBitmap;
@@ -1409,17 +1408,6 @@ public class ContentPreviewViewer {
                                 } else {
                                     return false;
                                 }
-                            } else if (currentPreviewCell instanceof SuggestEmojiView.EmojiImageView) {
-                                SuggestEmojiView.EmojiImageView emojiImageView = (SuggestEmojiView.EmojiImageView) currentPreviewCell;
-                                Drawable drawable = emojiImageView.drawable;
-                                TLRPC.Document document = null;
-                                if (drawable instanceof AnimatedEmojiDrawable) {
-                                    document = ((AnimatedEmojiDrawable) drawable).getDocument();
-                                }
-                                if (document == null) {
-                                    return false;
-                                }
-                                open(document, null, MessageObject.findAnimatedEmojiEmoticon(document, null, currentAccount), null, null, contentType, false, null, resourcesProvider);
                             }
                             runSmoothHaptic();
 
@@ -1513,13 +1501,6 @@ public class ContentPreviewViewer {
                 } else if (view instanceof EmojiView.ImageViewEmoji && ((EmojiView.ImageViewEmoji) view).getSpan() != null) {
                     contentType = CONTENT_TYPE_EMOJI;
                     centerImage.setRoundRadius(0);
-                } else if (view instanceof SuggestEmojiView.EmojiImageView) {
-                    SuggestEmojiView.EmojiImageView emojiImageView = (SuggestEmojiView.EmojiImageView) view;
-                    Drawable drawable = emojiImageView.drawable;
-                    if (drawable instanceof AnimatedEmojiDrawable) {
-                        contentType = CONTENT_TYPE_EMOJI;
-                        centerImage.setRoundRadius(0);
-                    }
                 }
                 if (contentType == CONTENT_TYPE_NONE) {
                     return false;
@@ -1573,17 +1554,6 @@ public class ContentPreviewViewer {
                             if (document == null) {
                                 document = AnimatedEmojiDrawable.findDocument(currentAccount, span.getDocumentId());
                             }
-                        }
-                        if (document != null) {
-                            open(document, null, MessageObject.findAnimatedEmojiEmoticon(document, null, currentAccount), null, null, contentTypeFinal, false, null, resourcesProvider);
-                            opened = true;
-                        }
-                    } else if (currentPreviewCell instanceof SuggestEmojiView.EmojiImageView) {
-                        SuggestEmojiView.EmojiImageView emojiImageView = (SuggestEmojiView.EmojiImageView) currentPreviewCell;
-                        Drawable drawable = emojiImageView.drawable;
-                        TLRPC.Document document = null;
-                        if (drawable instanceof AnimatedEmojiDrawable) {
-                            document = ((AnimatedEmojiDrawable) drawable).getDocument();
                         }
                         if (document != null) {
                             open(document, null, MessageObject.findAnimatedEmojiEmoticon(document, null, currentAccount), null, null, contentTypeFinal, false, null, resourcesProvider);

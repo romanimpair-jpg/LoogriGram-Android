@@ -566,10 +566,6 @@ public class CaptionContainerView extends FrameLayout {
             public void replaceText(int start, int len, CharSequence replacingString, boolean allowShort) {
                 replaceWithText(start, len, replacingString, allowShort);
             }
-            @Override
-            public Paint.FontMetricsInt getFontMetrics() {
-                return editText.getEditText().getPaint().getFontMetricsInt();
-            }
         });
         if (factoryForMentions != null) {
             mentionContainer.setBackgroundDrawable(factoryForMentions.create(mentionContainer).setColorProvider(BlurredBackgroundProviderImpl.photoViewer(resourcesProvider)));

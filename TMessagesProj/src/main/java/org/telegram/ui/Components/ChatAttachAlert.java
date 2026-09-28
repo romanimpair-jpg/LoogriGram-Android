@@ -6471,10 +6471,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             public void replaceText(int start, int len, CharSequence replacingString, boolean allowShort) {
                 replaceWithText(start, len, replacingString, allowShort);
             }
-            @Override
-            public Paint.FontMetricsInt getFontMetrics() {
-                return commentTextView.getEditText().getPaint().getFontMetricsInt();
-            }
         });
         containerView.addView(mentionContainer, containerView.indexOfChild(frameLayout2), LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.LEFT | Gravity.BOTTOM));
         setupMentionContainer(mentionContainer);

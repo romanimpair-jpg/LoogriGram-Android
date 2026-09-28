@@ -20,7 +20,6 @@ import android.text.Spanned;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.text.style.ImageSpan;
 import android.view.ActionMode;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -73,7 +72,6 @@ import org.telegram.ui.Components.HintView;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.SizeNotifierFrameLayout;
-import org.telegram.ui.Components.SuggestEmojiView;
 import org.telegram.ui.Stories.recorder.KeyboardNotifier;
 
 import java.util.ArrayList;
@@ -117,7 +115,9 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
 
     public boolean emojiViewVisible, emojiViewWasVisible;
 
-    private SuggestEmojiView suggestEmojiPanel;
+    // LoogriGram: suggestEmojiPanel offered emoji for a word typed into a
+    // question or answer (Premium only). The suggestion popups are gone, as
+    // on desktop; with them the emoji swap its text watchers made for it.
     private EmojiView emojiView;
     private KeyboardNotifier keyboardNotifier;
     private boolean waitingForKeyboardOpen;
@@ -687,9 +687,6 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
                 TextCheckCell cell = (TextCheckCell) view;
                 boolean checked;
                 boolean wasChecksBefore = quizPoll;
-                if (suggestEmojiPanel != null) {
-                    suggestEmojiPanel.forceClose();
-                }
                 if (onlyAdding) {
                     AndroidUtilities.shakeViewSpring(cell, shiftDp = -shiftDp);
                     BotWebViewVibrationEffect.APP_ERROR.vibrate();
@@ -786,27 +783,6 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
                 if (dy != 0 && hintView != null) {
                     hintView.hide();
                 }
-                if (suggestEmojiPanel != null && suggestEmojiPanel.isShown()) {
-                    SuggestEmojiView.AnchorViewDelegate emojiDelegate = suggestEmojiPanel.getDelegate();
-                    if (emojiDelegate instanceof PollEditTextCell) {
-                        PollEditTextCell cell = (PollEditTextCell) emojiDelegate;
-                        RecyclerView.ViewHolder holder = listView.findContainingViewHolder(cell);
-                        if (holder != null) {
-                            if (suggestEmojiPanel.getDirection() == SuggestEmojiView.DIRECTION_TO_BOTTOM) {
-                                suggestEmojiPanel.setTranslationY(holder.itemView.getY() - AndroidUtilities.dp(166) + holder.itemView.getMeasuredHeight());
-                            } else {
-                                suggestEmojiPanel.setTranslationY(holder.itemView.getY());
-                            }
-                            if (!layoutManager.isViewPartiallyVisible(holder.itemView, true, true)) {
-                                suggestEmojiPanel.forceClose();
-                            }
-                        } else {
-                            suggestEmojiPanel.forceClose();
-                        }
-                    } else {
-                        suggestEmojiPanel.forceClose();
-                    }
-                }
             }
         });
 
@@ -818,11 +794,6 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
 
         if (isPremium) {
             NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.emojiLoaded);
-            suggestEmojiPanel = new SuggestEmojiView(context, currentAccount, null, resourceProvider);
-            suggestEmojiPanel.forbidCopy();
-            suggestEmojiPanel.forbidSetAsStatus();
-            suggestEmojiPanel.setHorizontalPadding(AndroidUtilities.dp(24));
-            frameLayout.addView(suggestEmojiPanel, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 160, Gravity.LEFT | Gravity.TOP));
         }
         keyboardNotifier = new KeyboardNotifier(sizeNotifierFrameLayout, null);
 
@@ -836,9 +807,6 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
         super.onPause();
         if (isPremium) {
             hideEmojiPopup(false);
-            if (suggestEmojiPanel != null) {
-                suggestEmojiPanel.forceClose();
-            }
             if (currentCell != null) {
                 currentCell.setEmojiButtonVisibility(false);
                 currentCell.getTextView().clearFocus();
@@ -1078,7 +1046,6 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
     }
 
     private void addNewField() {
-        resetSuggestEmojiPanel();
         answersChecks[answersCount] = false;
         answersCount++;
         if (answerIds != null) {
@@ -1096,22 +1063,6 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
         firstRequestField = false;
         requestFieldFocusAtPosition = answerStartRow + answersCount - 1;
         listAdapter.notifyItemChanged(answerSectionRow);
-    }
-
-    private void updateSuggestEmojiPanelDelegate(RecyclerView.ViewHolder holder) {
-        if (suggestEmojiPanel != null ) {
-            suggestEmojiPanel.forceClose();
-            if (suggestEmojiPanel != null && holder != null && holder.itemView instanceof PollEditTextCell && suggestEmojiPanel.getDelegate() != holder.itemView) {
-                suggestEmojiPanel.setDelegate((PollEditTextCell) holder.itemView);
-            }
-        }
-    }
-
-    private void resetSuggestEmojiPanel() {
-        if (suggestEmojiPanel != null) {
-            suggestEmojiPanel.setDelegate(null);
-            suggestEmojiPanel.forceClose();
-        }
     }
 
     @Override
@@ -1330,7 +1281,6 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
             currentCell = cell;
             cell.setEmojiButtonVisibility(true);
             cell.getEmojiButton().setState(ChatActivityEnterViewAnimatedIconView.State.SMILE, false);
-            updateSuggestEmojiPanelDelegate(listView.findContainingViewHolder(cell));
             if (prevCell != null && prevCell != cell) {
                 if (emojiViewVisible) {
                     collapseSearchEmojiView();
@@ -1652,9 +1602,6 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
                 EditTextBoldCursor editText = editTextCell.getTextView();
                 if (editText.isFocused()) {
                     if (isPremium) {
-                        if (suggestEmojiPanel != null) {
-                            suggestEmojiPanel.forceClose();
-                        }
                         hideEmojiPopup(true);
                     }
                     currentCell = null;
@@ -1758,20 +1705,6 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
                                 return;
                             }
                             RecyclerView.ViewHolder holder = listView.findViewHolderForAdapterPosition(questionRow);
-                            if (holder != null) {
-                                if (suggestEmojiPanel != null) {
-                                    ImageSpan[] spans = s.getSpans(0, s.length(), ImageSpan.class);
-                                    for (ImageSpan span : spans) {
-                                        s.removeSpan(span);
-                                    }
-                                    Emoji.replaceEmoji(s, cell.getEditField().getPaint().getFontMetricsInt(), false);
-
-                                    suggestEmojiPanel.setDirection(SuggestEmojiView.DIRECTION_TO_TOP);
-                                    suggestEmojiPanel.setDelegate(cell);
-                                    suggestEmojiPanel.setTranslationY(holder.itemView.getY());
-                                    suggestEmojiPanel.fireUpdate();
-                                }
-                            }
                             questionString = s;
                             if (holder != null) {
                                 setTextLeft(holder.itemView, questionRow);
@@ -1828,20 +1761,6 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
                                 return;
                             }
                             RecyclerView.ViewHolder holder = listView.findViewHolderForAdapterPosition(questionRow);
-                            if (holder != null) {
-                                if (suggestEmojiPanel != null) {
-                                    ImageSpan[] spans = s.getSpans(0, s.length(), ImageSpan.class);
-                                    for (ImageSpan span : spans) {
-                                        s.removeSpan(span);
-                                    }
-                                    Emoji.replaceEmoji(s, cell.getEditField().getPaint().getFontMetricsInt(), false);
-
-                                    suggestEmojiPanel.setDirection(SuggestEmojiView.DIRECTION_TO_TOP);
-                                    suggestEmojiPanel.setDelegate(cell);
-                                    suggestEmojiPanel.setTranslationY(holder.itemView.getY());
-                                    suggestEmojiPanel.fireUpdate();
-                                }
-                            }
                             solutionString = s;
                             if (holder != null) {
                                 setTextLeft(holder.itemView, solutionRow);
@@ -1972,23 +1891,6 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
                                 int index = position - answerStartRow;
                                 if (index < 0 || index >= answers.length) {
                                     return;
-                                }
-                                if (suggestEmojiPanel != null) {
-                                    ImageSpan[] spans = s.getSpans(0, s.length(), ImageSpan.class);
-                                    for (ImageSpan span : spans) {
-                                        s.removeSpan(span);
-                                    }
-                                    Emoji.replaceEmoji(s, cell.getEditField().getPaint().getFontMetricsInt(), false);
-                                    float y = holder.itemView.getY() - AndroidUtilities.dp(166) + holder.itemView.getMeasuredHeight();
-                                    if (y > 0) {
-                                        suggestEmojiPanel.setDirection(SuggestEmojiView.DIRECTION_TO_BOTTOM);
-                                        suggestEmojiPanel.setTranslationY(y);
-                                    } else {
-                                        suggestEmojiPanel.setDirection(SuggestEmojiView.DIRECTION_TO_TOP);
-                                        suggestEmojiPanel.setTranslationY(holder.itemView.getY());
-                                    }
-                                    suggestEmojiPanel.setDelegate(cell);
-                                    suggestEmojiPanel.fireUpdate();
                                 }
 
                                 answers[index] = s;
@@ -2177,10 +2079,6 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
                 editText.clearFocus();
                 checkDoneButton();
                 updateRows();
-                if (suggestEmojiPanel != null) {
-                    suggestEmojiPanel.forceClose();
-                    suggestEmojiPanel.setDelegate(null);
-                }
                 listAdapter.notifyItemChanged(answerSectionRow);
             }
         }

@@ -21,7 +21,6 @@ import android.graphics.Canvas;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
-import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.TypedValue;
@@ -40,7 +39,6 @@ import androidx.annotation.NonNull;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
-import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
@@ -51,7 +49,6 @@ import org.telegram.ui.Components.EditTextBoldCursor;
 import org.telegram.ui.Components.EditTextCaption;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.ScaleStateListAnimator;
-import org.telegram.ui.Components.SuggestEmojiView;
 import org.telegram.ui.Components.poll.PollAttachButton;
 
 import java.util.ArrayList;
@@ -60,7 +57,7 @@ import me.vkryl.android.animator.BoolAnimator;
 import me.vkryl.android.animator.FactorAnimator;
 
 @SuppressLint("ViewConstructor")
-public class PollEditTextCell extends FrameLayout implements SuggestEmojiView.AnchorViewDelegate, FactorAnimator.Target {
+public class PollEditTextCell extends FrameLayout implements FactorAnimator.Target {
     private static final int ANIMATOR_ID_CHECKBOX_MULTISELECT = 0;
     private static final int ANIMATOR_ID_EMOJI_BUTTON_VISIBLE = 1;
 
@@ -508,37 +505,11 @@ public class PollEditTextCell extends FrameLayout implements SuggestEmojiView.An
         }
     }
 
-    @Override
-    public BaseFragment getParentFragment() {
-        return null;
-    }
-
-    @Override
-    public void setFieldText(CharSequence text) {
-        textView.setText(text);
-    }
-
-    @Override
-    public void addTextChangedListener(TextWatcher watcher) {
-        textView.addTextChangedListener(watcher);
-    }
-
-    @Override
+    // LoogriGram: this and four more (the parent fragment, the field text and
+    // its watcher) were SuggestEmojiView.AnchorViewDelegate; only this one
+    // has other callers.
     public EditTextBoldCursor getEditField() {
         return textView;
-    }
-
-    @Override
-    public CharSequence getFieldText() {
-        if (textView.length() > 0) {
-            return textView.getText();
-        }
-        return null;
-    }
-
-    @Override
-    public Editable getEditText() {
-        return textView.getText();
     }
 
 

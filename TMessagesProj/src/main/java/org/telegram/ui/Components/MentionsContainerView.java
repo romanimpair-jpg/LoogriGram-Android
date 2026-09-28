@@ -32,12 +32,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.FileLoader;
-import org.telegram.messenger.FileLog;
 import org.telegram.messenger.ImageReceiver;
-import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.NotificationCenter;
-import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.VideoEditedInfo;
 import org.telegram.tgnet.TLRPC;
@@ -649,36 +646,6 @@ public class MentionsContainerView extends FrameLayout implements NotificationCe
                 }
             } else if (object instanceof String) {
                 delegate.replaceText(start, len, object + " ", false);
-            } else if (object instanceof MediaDataController.KeywordResult) {
-                String code = ((MediaDataController.KeywordResult) object).emoji;
-                delegate.addEmojiToRecent(code);
-                if (code != null && code.startsWith("animated_")) {
-                    try {
-                        Paint.FontMetricsInt fontMetrics = null;
-                        try {
-                            fontMetrics = delegate.getFontMetrics();
-                           // chatActivityEnterView.getEditField().getPaint().getFontMetricsInt();
-                        } catch (Exception e) {
-                            FileLog.e(e, false);
-                        }
-                        long documentId = Long.parseLong(code.substring(9));
-                        TLRPC.Document document = AnimatedEmojiDrawable.findDocument(UserConfig.selectedAccount, documentId);
-                        SpannableString emoji = new SpannableString(MessageObject.findAnimatedEmojiEmoticon(document));
-                        AnimatedEmojiSpan span;
-                        if (document != null) {
-                            span = new AnimatedEmojiSpan(document, fontMetrics);
-                        } else {
-                            span = new AnimatedEmojiSpan(documentId, fontMetrics);
-                        }
-                        emoji.setSpan(span, 0, emoji.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        delegate.replaceText(start, len, emoji, false);
-                    } catch (Exception ignore) {
-                        delegate.replaceText(start, len, code, true);
-                    }
-                } else {
-                    delegate.replaceText(start, len, code, true);
-                }
-                updateVisibility(false);
             } if (object instanceof TLRPC.BotInlineResult) {
                 TLRPC.BotInlineResult result = (TLRPC.BotInlineResult) object;
                 if ((result.type.equals("photo") && (result.photo != null || result.content != null) ||
@@ -874,13 +841,7 @@ public class MentionsContainerView extends FrameLayout implements NotificationCe
 
         void replaceText(int start, int len, CharSequence replacingString, boolean allowShort);
 
-        Paint.FontMetricsInt getFontMetrics();
-
         default void onStickerSelected(TLRPC.TL_document document, String query, Object parent) {
-
-        }
-
-        default void addEmojiToRecent(String code) {
 
         }
 

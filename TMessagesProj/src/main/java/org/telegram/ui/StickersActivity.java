@@ -131,8 +131,6 @@ public class StickersActivity extends BaseFragment implements NotificationCenter
     private int dynamicPackOrderInfo;
     @Keep
     private int suggestRow;
-    private int suggestAnimatedEmojiRow;
-    private int suggestAnimatedEmojiInfoRow;
     private int loopRow;
     private int loopInfoRow;
     private int reactionsDoubleTapRow;
@@ -322,7 +320,7 @@ public class StickersActivity extends BaseFragment implements NotificationCenter
     // LoogriGram: 6 was ID_LARGE_EMOJI, the Large Emoji switch.
     private static final int ID_DYNAMIC_PACK_ORDER = 7;
     private static final int ID_SHOW_MORE_FEATURED = 8;
-    private static final int ID_SUGGEST_EMOJI = 9;
+    // LoogriGram: 9 was ID_SUGGEST_EMOJI, the Suggest Animated Emoji switch.
 
     private void fillItems(ArrayList<UItem> items, UniversalAdapter adapter) {
         MediaDataController mediaDataController = MediaDataController.getInstance(currentAccount);
@@ -388,11 +386,6 @@ public class StickersActivity extends BaseFragment implements NotificationCenter
             dynamicPackOrder = items.size();
             items.add(UItem.asCheck(ID_DYNAMIC_PACK_ORDER, getString(R.string.DynamicPackOrder)).setChecked(SharedConfig.updateStickersOrderOnSend));
             items.add(UItem.asShadow(getString(R.string.DynamicPackOrderInfo)));
-        }
-
-        if (currentType == TYPE_EMOJIPACKS) {
-            items.add(UItem.asCheck(ID_SUGGEST_EMOJI, getString(R.string.SuggestAnimatedEmoji)).setChecked(SharedConfig.suggestAnimatedEmoji));
-            items.add(UItem.asShadow(getString(R.string.SuggestAnimatedEmojiInfo)));
         }
 
         if (sets.size() > 0) {
@@ -499,10 +492,6 @@ public class StickersActivity extends BaseFragment implements NotificationCenter
             case ID_DYNAMIC_PACK_ORDER:
                 SharedConfig.toggleUpdateStickersOrderOnSend();
                 ((TextCheckCell) view).setChecked(SharedConfig.updateStickersOrderOnSend);
-                break;
-            case ID_SUGGEST_EMOJI:
-                SharedConfig.toggleSuggestAnimatedEmoji();
-                ((TextCheckCell) view).setChecked(SharedConfig.suggestAnimatedEmoji);
                 break;
             case ID_SUGGEST_STICKERS:
                 ItemOptions.makeOptions(this, view)

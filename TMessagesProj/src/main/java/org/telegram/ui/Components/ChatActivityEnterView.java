@@ -223,7 +223,6 @@ public class ChatActivityEnterView extends FrameLayout implements
     NotificationCenter.NotificationCenterDelegate,
     SizeNotifierFrameLayout.SizeNotifierFrameLayoutDelegate,
     StickersAlert.StickersAlertDelegate,
-    SuggestEmojiView.AnchorViewDelegate,
     FactorAnimator.Target, Theme.Colorable
 {
 
@@ -276,11 +275,8 @@ public class ChatActivityEnterView extends FrameLayout implements
 
     public interface ChatActivityEnterViewDelegate {
 
-        default void onEditTextScroll() {}
-        
-        default void onContextMenuOpen() {}
-
-        default void onContextMenuClose() {}
+        // LoogriGram: onEditTextScroll, onContextMenuOpen and onContextMenuClose
+        // told ChatActivity to close or refresh the emoji suggestion popup.
 
         void onMessageSend(CharSequence message, boolean notify, int scheduleDate, int scheduleRepeatPeriod);
 
@@ -4899,28 +4895,6 @@ public class ChatActivityEnterView extends FrameLayout implements
 
         CanvasButton canvasButton;
 
-        @Override
-        protected void onScrollChanged(int horiz, int vert, int oldHoriz, int oldVert) {
-            super.onScrollChanged(horiz, vert, oldHoriz, oldVert);
-            if (delegate != null) {
-                delegate.onEditTextScroll();
-            }
-        }
-
-        @Override
-        protected void onContextMenuOpen() {
-            if (delegate != null) {
-                delegate.onContextMenuOpen();
-            }
-        }
-
-        @Override
-        protected void onContextMenuClose() {
-            if (delegate != null) {
-                delegate.onContextMenuClose();
-            }
-        }
-
         private void send(InputContentInfoCompat inputContentInfo, boolean notify, int scheduleDate, int scheduleRepeatPeriod) {
             if (messageSendPreview != null) {
                 messageSendPreview.dismiss(true);
@@ -5818,11 +5792,6 @@ public class ChatActivityEnterView extends FrameLayout implements
             emojiView.setAllow(allowStickers, allowGifs, true);
         }
         setEmojiButtonImage(false, !isPaused);
-    }
-
-    public void addEmojiToRecent(String code) {
-        createEmojiView();
-        emojiView.addEmojiToRecent(code);
     }
 
     public void setOpenGifsTabFirst() {

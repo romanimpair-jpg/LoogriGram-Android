@@ -7846,50 +7846,51 @@ public class EmojiView extends FrameLayout implements
                                             resultPre.addAll(param);
 
                                             next.run();
-                                        }, null, SharedConfig.suggestAnimatedEmoji || UserConfig.getInstance(currentAccount).isPremium(), false, true, 25);
+                                        }, null, true, false, true, 25);
                                 },
                                 next -> {
-                                    if (SharedConfig.suggestAnimatedEmoji || UserConfig.getInstance(currentAccount).isPremium()) {
-                                        final String q = translitSafe((query + "").toLowerCase());
-                                        final ArrayList<TLRPC.TL_messages_stickerSet> sets = MediaDataController.getInstance(currentAccount).getStickerSets(MediaDataController.TYPE_EMOJIPACKS);
+                                    // LoogriGram: packs were searched only with Suggest Animated
+                                    // Emoji on (the default) or Premium. The switch went with the
+                                    // suggestion popups, so the default holds for everyone.
+                                    final String q = translitSafe((query + "").toLowerCase());
+                                    final ArrayList<TLRPC.TL_messages_stickerSet> sets = MediaDataController.getInstance(currentAccount).getStickerSets(MediaDataController.TYPE_EMOJIPACKS);
 
-                                        final HashSet<Long> addedSets = new HashSet<>();
-                                        if (sets != null) {
-                                            for (int i = 0; i < sets.size(); ++i) {
-                                                TLRPC.TL_messages_stickerSet set = sets.get(i);
-                                                if (set == null || set.set == null || set.set.title == null || set.documents == null || set.documents.isEmpty() || addedSets.contains(set.set.id)) {
-                                                    continue;
-                                                }
-                                                final String title = translitSafe(set.set.title.toLowerCase());
-                                                if (title.startsWith(q) || title.contains(" " + q)) {
-                                                    packsResult.add(new EmojiPackInfo(set, set.documents));
-                                                    addedSets.add(set.set.id);
-                                                }
+                                    final HashSet<Long> addedSets = new HashSet<>();
+                                    if (sets != null) {
+                                        for (int i = 0; i < sets.size(); ++i) {
+                                            TLRPC.TL_messages_stickerSet set = sets.get(i);
+                                            if (set == null || set.set == null || set.set.title == null || set.documents == null || set.documents.isEmpty() || addedSets.contains(set.set.id)) {
+                                                continue;
+                                            }
+                                            final String title = translitSafe(set.set.title.toLowerCase());
+                                            if (title.startsWith(q) || title.contains(" " + q)) {
+                                                packsResult.add(new EmojiPackInfo(set, set.documents));
+                                                addedSets.add(set.set.id);
                                             }
                                         }
+                                    }
 
-                                        final ArrayList<TLRPC.StickerSetCovered> favs = MediaDataController.getInstance(currentAccount).getFeaturedEmojiSets();
-                                        if (favs != null) {
-                                            for (int i = 0; i < favs.size(); ++i) {
-                                                TLRPC.StickerSetCovered fav = favs.get(i);
-                                                if (fav == null || fav.set == null || fav.set.title == null || addedSets.contains(fav.set.id)) continue;
-                                                final String title = translitSafe(fav.set.title.toLowerCase());
-                                                if (title.startsWith(q) || title.contains(" " + q)) {
-                                                    ArrayList<TLRPC.Document> documents = null;
-                                                    if (fav instanceof TLRPC.TL_stickerSetFullCovered) {
-                                                        documents = ((TLRPC.TL_stickerSetFullCovered) fav).documents;
-                                                    } else if (fav instanceof TLRPC.TL_stickerSetNoCovered) {
-                                                        TLRPC.TL_messages_stickerSet set = MediaDataController.getInstance(currentAccount).getStickerSet(MediaDataController.getInputStickerSet(fav.set), fav.set.hash, true);
-                                                        if (set != null) {
-                                                            documents = set.documents;
-                                                        }
-                                                    } else {
-                                                        documents = fav.covers;
+                                    final ArrayList<TLRPC.StickerSetCovered> favs = MediaDataController.getInstance(currentAccount).getFeaturedEmojiSets();
+                                    if (favs != null) {
+                                        for (int i = 0; i < favs.size(); ++i) {
+                                            TLRPC.StickerSetCovered fav = favs.get(i);
+                                            if (fav == null || fav.set == null || fav.set.title == null || addedSets.contains(fav.set.id)) continue;
+                                            final String title = translitSafe(fav.set.title.toLowerCase());
+                                            if (title.startsWith(q) || title.contains(" " + q)) {
+                                                ArrayList<TLRPC.Document> documents = null;
+                                                if (fav instanceof TLRPC.TL_stickerSetFullCovered) {
+                                                    documents = ((TLRPC.TL_stickerSetFullCovered) fav).documents;
+                                                } else if (fav instanceof TLRPC.TL_stickerSetNoCovered) {
+                                                    TLRPC.TL_messages_stickerSet set = MediaDataController.getInstance(currentAccount).getStickerSet(MediaDataController.getInputStickerSet(fav.set), fav.set.hash, true);
+                                                    if (set != null) {
+                                                        documents = set.documents;
                                                     }
-                                                    if (documents != null && !documents.isEmpty()) {
-                                                        packsResult.add(new EmojiPackInfo(fav, documents));
-                                                        addedSets.add(fav.set.id);
-                                                    }
+                                                } else {
+                                                    documents = fav.covers;
+                                                }
+                                                if (documents != null && !documents.isEmpty()) {
+                                                    packsResult.add(new EmojiPackInfo(fav, documents));
+                                                    addedSets.add(fav.set.id);
                                                 }
                                             }
                                         }

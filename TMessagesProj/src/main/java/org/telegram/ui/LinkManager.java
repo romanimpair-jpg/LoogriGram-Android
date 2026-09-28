@@ -1038,9 +1038,9 @@ public class LinkManager {
                         return true;
                     }
 
+                    // LoogriGram: .../emoji/suggest scrolled to Suggest Animated Emoji,
+                    // which is gone; the link opens the screen.
                     presentFragment(new StickersActivity(MediaDataController.TYPE_EMOJIPACKS, null));
-                    if ("suggest".equalsIgnoreCase(fourth))
-                        scrollTo("suggestRow");
 
                     return true;
                 }

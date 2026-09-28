@@ -706,20 +706,13 @@ public class EditTextCaption extends EditTextBoldCursor implements FloatingToolb
         }
     }
 
-    protected void onContextMenuOpen() {
-
-    }
-
-    protected void onContextMenuClose() {
-
-    }
-
+    // LoogriGram: onContextMenuOpen / onContextMenuClose were hooks for the
+    // chat field, which closed the emoji suggestion popup from them.
     private ActionMode.Callback overrideCallback(final ActionMode.Callback callback) {
         ActionMode.Callback wrap = new ActionMode.Callback() {
             @Override
             public boolean onCreateActionMode(ActionMode mode, Menu menu) {
                 copyPasteShowed = true;
-                onContextMenuOpen();
                 return callback.onCreateActionMode(mode, menu);
             }
 
@@ -745,7 +738,6 @@ public class EditTextCaption extends EditTextBoldCursor implements FloatingToolb
             @Override
             public void onDestroyActionMode(ActionMode mode) {
                 copyPasteShowed = false;
-                onContextMenuClose();
                 callback.onDestroyActionMode(mode);
             }
         };

@@ -452,7 +452,9 @@ public class ChatActivity extends BaseFragment implements
     public ChatAvatarContainer avatarContainer;
     private AnimatedTextView selectedMessagesCountTextView;
     private RecyclerListView.OnItemClickListener mentionsOnItemClickListener;
-    private SuggestEmojiView suggestEmojiPanel;
+    // LoogriGram: suggestEmojiPanel, the emoji suggestions above the field
+    // (a word's emoji, and :shortcode:), is gone with its settings, as on
+    // desktop.
     private ActionBarMenuItem.Item muteItem;
     private ActionBarMenuItem.Item muteItemGap;
     private ChatNotificationsPopupWrapper chatNotificationsPopupWrapper;
@@ -1958,27 +1960,6 @@ public class ChatActivity extends BaseFragment implements
         }
 
         @Override
-        public void onEditTextScroll() {
-            if (suggestEmojiPanel != null) {
-                suggestEmojiPanel.forceClose();
-            }
-        }
-
-        @Override
-        public void onContextMenuOpen() {
-            if (suggestEmojiPanel != null) {
-                suggestEmojiPanel.forceClose();
-            }
-        }
-
-        @Override
-        public void onContextMenuClose() {
-            if (suggestEmojiPanel != null) {
-                suggestEmojiPanel.fireUpdate();
-            }
-        }
-
-        @Override
         public void onSwitchRecordMode(boolean video) {
             showVoiceHint(false, video);
         }
@@ -2008,9 +1989,6 @@ public class ChatActivity extends BaseFragment implements
                 return;
             }
             ActionBarMenu menu = actionBar.createMenu();
-            if (suggestEmojiPanel != null) {
-                suggestEmojiPanel.onTextSelectionChanged(start, end);
-            }
             if (end - start > 0) {
                 if (editTextItem.getTag() == null) {
                     editTextItem.setTag(1);
@@ -2236,14 +2214,8 @@ public class ChatActivity extends BaseFragment implements
         public void onWindowSizeChanged(int size) {
             if (size < AndroidUtilities.dp(72) + ActionBar.getCurrentActionBarHeight()) {
                 allowStickersPanel = false;
-                if (suggestEmojiPanel.getVisibility() == View.VISIBLE) {
-                    suggestEmojiPanel.setVisibility(View.INVISIBLE);
-                }
             } else {
                 allowStickersPanel = true;
-                if (suggestEmojiPanel.getVisibility() == View.INVISIBLE && !isInPreviewMode()) {
-                    suggestEmojiPanel.setVisibility(View.VISIBLE);
-                }
             }
 
             allowContextBotPanel = !chatActivityEnterView.isPopupShowing();
@@ -2351,14 +2323,6 @@ public class ChatActivity extends BaseFragment implements
             }
             if (mentionContainer != null) {
                 mentionContainer.animate().alpha(isExpanded || isInPreviewMode() ? 0 : 1f).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
-            }
-            if (suggestEmojiPanel != null) {
-                suggestEmojiPanel.setVisibility(View.VISIBLE);
-                suggestEmojiPanel.animate().alpha(isExpanded || isInPreviewMode() ? 0 : 1f).setInterpolator(CubicBezierInterpolator.DEFAULT).withEndAction(() -> {
-                    if (suggestEmojiPanel != null && isExpanded) {
-                        suggestEmojiPanel.setVisibility(View.GONE);
-                    }
-                }).start();
             }
         }
 
@@ -6915,15 +6879,6 @@ public class ChatActivity extends BaseFragment implements
                 }
             }
 
-            private boolean wasAtTop = true;
-            @Override
-            protected void onScrolled(boolean atTop, boolean atBottom) {
-                if (wasAtTop != atTop) {
-                    AndroidUtilities.updateViewShow(suggestEmojiPanel, !isInPreviewMode() && atTop, false, true);
-                    wasAtTop = atTop;
-                }
-            }
-
             @Override
             public boolean dispatchTouchEvent(MotionEvent ev) {
                 if (getAlpha() <= 0f) return false;
@@ -7129,35 +7084,6 @@ public class ChatActivity extends BaseFragment implements
                 processInlineBotWebView((TLRPC.TL_inlineBotWebView) object);
             } else if (object instanceof TLRPC.TL_inlineBotSwitchPM) {
                 processInlineBotContextPM((TLRPC.TL_inlineBotSwitchPM) object);
-            } else if (object instanceof MediaDataController.KeywordResult) {
-                String code = ((MediaDataController.KeywordResult) object).emoji;
-                chatActivityEnterView.addEmojiToRecent(code);
-                if (code != null && code.startsWith("animated_")) {
-                    try {
-                        Paint.FontMetricsInt fontMetrics = null;
-                        try {
-                            fontMetrics = chatActivityEnterView.getEditField().getPaint().getFontMetricsInt();
-                        } catch (Exception e) {
-                            FileLog.e(e, false);
-                        }
-                        long documentId = Long.parseLong(code.substring(9));
-                        TLRPC.Document document = AnimatedEmojiDrawable.findDocument(currentAccount, documentId);
-                        SpannableString emoji = new SpannableString(MessageObject.findAnimatedEmojiEmoticon(document));
-                        AnimatedEmojiSpan span;
-                        if (document != null) {
-                            span = new AnimatedEmojiSpan(document, fontMetrics);
-                        } else {
-                            span = new AnimatedEmojiSpan(documentId, fontMetrics);
-                        }
-                        emoji.setSpan(span, 0, emoji.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        chatActivityEnterView.replaceWithText(start, len, emoji, false);
-                    } catch (Exception ignore) {
-                        chatActivityEnterView.replaceWithText(start, len, code, true);
-                    }
-                } else {
-                    chatActivityEnterView.replaceWithText(start, len, code, true);
-                }
-                mentionContainer.updateVisibility(false);
             }
         });
         mentionContainer.getListView().setOnItemLongClickListener((view, position) -> {
@@ -7815,12 +7741,6 @@ public class ChatActivity extends BaseFragment implements
                 showFieldPanel(false, null, null, null, null, true, 0, null, true, true);
             }
         });
-
-        contentView.addView(
-            suggestEmojiPanel = new SuggestEmojiView(context, currentAccount, chatActivityEnterView, themeDelegate),
-            LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 160, Gravity.LEFT | Gravity.BOTTOM, 7, 0, 7, 0)
-        );
-        suggestEmojiPanel.setVisibility(allowStickersPanel && !isInPreviewMode() && (chatActivityEnterView == null || !chatActivityEnterView.isStickersExpanded()) ? View.VISIBLE : View.GONE);
 
         final ChatActivityEnterTopView.EditView editView = new ChatActivityEnterTopView.EditView(context);
         editView.setMotionEventSplittingEnabled(false);
@@ -9748,12 +9668,6 @@ public class ChatActivity extends BaseFragment implements
                 - getTopicTabsSideSize(TopicsTabsView.Position.BOTTOM)
                 - dp(ChatInputViewsContainer.INPUT_BUBBLE_BOTTOM + 4);
             sideControlsButtonsLayout.setTranslationY(baseTranslationY2);
-        }
-
-        if (suggestEmojiPanel != null) {
-            float baseTranslationY2 = -windowInsetsStateHolder.getAnimatedMaxBottomInset()
-                - dp(ChatInputViewsContainer.INPUT_BUBBLE_BOTTOM + 7);
-            suggestEmojiPanel.setTranslationY(baseTranslationY2);
         }
     }
 
@@ -17393,9 +17307,6 @@ public class ChatActivity extends BaseFragment implements
             mentionContainer.setTag(null);
             updateMessageListAccessibilityVisibility();
             hideKeyboard = true;
-            if (suggestEmojiPanel != null) {
-                suggestEmojiPanel.forceClose();
-            }
         } else if (currentChat != null && !ChatObject.canSendMessages(currentChat) && !ChatObject.canSendAnyMedia(currentChat) && !currentChat.gigagroup && (!ChatObject.isChannel(currentChat) || currentChat.megagroup)) {
             if (currentChat.default_banned_rights != null && currentChat.default_banned_rights.send_messages) {
                 // LoogriGram: a group that lets boosters skip its restrictions
@@ -17415,16 +17326,10 @@ public class ChatActivity extends BaseFragment implements
             mentionContainer.setTag(null);
             updateMessageListAccessibilityVisibility();
             hideKeyboard = true;
-            if (suggestEmojiPanel != null) {
-                suggestEmojiPanel.forceClose();
-            }
         } else {
             createEmptyView(false);
             if (currentEncryptedChat == null || bigEmptyView == null) {
                 bottomOverlay.setVisibility(View.INVISIBLE);
-                if (suggestEmojiPanel != null && chatActivityEnterView != null && chatActivityEnterView.hasText()) {
-                    suggestEmojiPanel.fireUpdate();
-                }
                 return;
             }
             if (currentEncryptedChat instanceof TLRPC.TL_encryptedChatRequested) {
@@ -21261,9 +21166,6 @@ public class ChatActivity extends BaseFragment implements
                 currentEncryptedChat = chat;
                 updateTopPanel(true);
                 updateSecretStatus();
-                if (suggestEmojiPanel != null) {
-                    suggestEmojiPanel.fireUpdate();
-                }
                 if (chatActivityEnterView != null) {
                     chatActivityEnterView.setAllowStickersAndGifs(true, true, true);
                     chatActivityEnterView.checkRoundVideo();
@@ -26140,9 +26042,6 @@ public class ChatActivity extends BaseFragment implements
                     chatActivityEnterView.setFieldFocused(false);
                     chatActivityEnterView.setVisibility(View.INVISIBLE);
                     chatActivityEnterView.closeKeyboard();
-                    if (suggestEmojiPanel != null) {
-                        suggestEmojiPanel.forceClose();
-                    }
                 }
                 if (attachItem != null) {
                     attachItem.setVisibility(View.GONE);
@@ -27490,9 +27389,6 @@ public class ChatActivity extends BaseFragment implements
         }
         if (chatActivityEnterView != null) {
             chatActivityEnterView.setVisibility(!value ? View.VISIBLE : View.INVISIBLE);
-        }
-        if (suggestEmojiPanel != null) {
-            suggestEmojiPanel.setVisibility(allowStickersPanel && !value && (chatActivityEnterView == null || !chatActivityEnterView.isStickersExpanded()) ? View.VISIBLE : View.GONE);
         }
         if (mentionContainer != null) {
             mentionContainer.animate().alpha(chatActivityEnterView.isStickersExpanded() || isInPreviewMode() ? 0 : 1f).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
@@ -29934,9 +29830,6 @@ public class ChatActivity extends BaseFragment implements
             //views.add(chatActivityEnterView);
             if (mentionContainer != null && mentionContainer.getVisibility() == View.VISIBLE) {
                 views.add(mentionContainer);
-            }
-            if (suggestEmojiPanel != null && suggestEmojiPanel.getVisibility() == View.VISIBLE) {
-                views.add(suggestEmojiPanel);
             }
             actionBar.showActionMode(true, null, null, views.toArray(new View[0]), new boolean[]{false, true, true}, null, 0);
             if (getParentActivity() instanceof LaunchActivity) {
@@ -39006,9 +38899,6 @@ public class ChatActivity extends BaseFragment implements
             }
             if (topPanelLayout != null) {
                 topPanelLayout.updateColors();
-            }
-            if (suggestEmojiPanel != null) {
-                suggestEmojiPanel.updateColors();
             }
             if (avatarContainer != null && avatarContainer.getTimeItem() != null) {
                 avatarContainer.getTimeItem().invalidate();

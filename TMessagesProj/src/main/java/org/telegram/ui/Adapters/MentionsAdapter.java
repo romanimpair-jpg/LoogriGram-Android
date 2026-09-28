@@ -70,7 +70,6 @@ import org.telegram.ui.Components.RecyclerListView;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -108,8 +107,8 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
     private ArrayList<String> searchResultHashtags;
     private ArrayList<String> searchResultCommands;
     private ArrayList<String> searchResultCommandsHelp;
-    private ArrayList<MediaDataController.KeywordResult> searchResultSuggestions;
-    private String[] lastSearchKeyboardLanguage;
+    // LoogriGram: searchResultSuggestions held the emoji offered for a
+    // ":word" in the field. Emoji suggestions are gone, as on desktop.
     private ArrayList<TLRPC.User> searchResultCommandsUsers;
     private ArrayList<Boolean> searchResultCommandsEphemeral;
     private ArrayList<TLRPC.BotInlineResult> searchResultBotContext;
@@ -142,7 +141,6 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
 
     private boolean visibleByStickersSearch;
 
-    private final static String punctuationsChars = " !\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~\n";
 
     private Runnable cancelDelayRunnable;
 
@@ -421,11 +419,6 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             return true;
         }
         if (a instanceof String && b instanceof String && a.equals(b)) {
-            return true;
-        }
-        if (a instanceof MediaDataController.KeywordResult && b instanceof MediaDataController.KeywordResult &&
-            ((MediaDataController.KeywordResult) a).keyword != null && ((MediaDataController.KeywordResult) a).keyword.equals(((MediaDataController.KeywordResult) b).keyword) &&
-            ((MediaDataController.KeywordResult) a).emoji != null && ((MediaDataController.KeywordResult) a).emoji.equals(((MediaDataController.KeywordResult) b).emoji)) {
             return true;
         }
         return false;
@@ -881,7 +874,6 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                 searchResultUsernamesMap = null;
                 searchResultCommands = null;
                 searchResultCommandsEphemeral = null;
-                searchResultSuggestions = null;
                 searchResultCommandsHelp = null;
                 searchResultCommandsUsers = null;
                 visibleByStickersSearch = false;
@@ -1209,14 +1201,6 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                         resultStartPosition = a;
                         resultLength = result.length() + 1;
                         break;
-                    } else if (ch == ':' && result.length() > 0) {
-                        boolean isNextPunctiationChar = punctuationsChars.indexOf(result.charAt(0)) >= 0;
-                        if (!isNextPunctiationChar || result.length() > 1) {
-                            foundType = 3;
-                            resultStartPosition = a;
-                            resultLength = result.length() + 1;
-                            break;
-                        }
                     }
                 }
                 result.insert(0, ch);
@@ -1445,7 +1429,6 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             searchResultCommandsEphemeral = null;
             searchResultCommandsHelp = null;
             searchResultCommandsUsers = null;
-            searchResultSuggestions = null;
             if ((chat != null && chat.megagroup || searchInDialogs) && usernameString.length() > 0) {
                 if (newResult.size() < 5) {
                     AndroidUtilities.runOnUIThread(cancelDelayRunnable = () -> {
@@ -1535,7 +1518,6 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             searchResultCommandsEphemeral = null;
             searchResultCommandsHelp = null;
             searchResultCommandsUsers = null;
-            searchResultSuggestions = null;
             contextMedia = false;
             searchResultBotContext = null;
             notifyDataSetChanged();
@@ -1564,7 +1546,6 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             stickers = null;
             searchResultUsernames = null;
             searchResultUsernamesMap = null;
-            searchResultSuggestions = null;
             searchResultCommands = newResult;
             searchResultCommandsHelp = newResultHelp;
             searchResultCommandsUsers = newResultUsers;
@@ -1573,30 +1554,10 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             searchResultBotContext = null;
             notifyDataSetChanged();
             delegate.needChangePanelVisibility(!newResult.isEmpty());
-        } else if (foundType == 3) {
-            String[] newLanguage = AndroidUtilities.getCurrentKeyboardLanguage();
-            if (!Arrays.equals(newLanguage, lastSearchKeyboardLanguage)) {
-                MediaDataController.getInstance(currentAccount).fetchNewEmojiKeywords(newLanguage);
-            }
-            lastSearchKeyboardLanguage = newLanguage;
-            MediaDataController.getInstance(currentAccount).getEmojiSuggestions(lastSearchKeyboardLanguage, result.toString(), false, (param, alias) -> {
-                searchResultSuggestions = param;
-                searchResultHashtags = null;
-                stickers = null;
-                searchResultUsernames = null;
-                searchResultUsernamesMap = null;
-                searchResultCommands = null;
-                searchResultCommandsEphemeral = null;
-                searchResultCommandsHelp = null;
-                searchResultCommandsUsers = null;
-                notifyDataSetChanged();
-                delegate.needChangePanelVisibility(searchResultSuggestions != null && !searchResultSuggestions.isEmpty());
-            }, SharedConfig.suggestAnimatedEmoji && UserConfig.getInstance(currentAccount).isPremium());
         } else if (foundType == 4) {
             searchResultHashtags = null;
             searchResultUsernames = null;
             searchResultUsernamesMap = null;
-            searchResultSuggestions = null;
             searchResultCommands = null;
             searchResultCommandsEphemeral = null;
             searchResultCommandsHelp = null;
@@ -1685,8 +1646,6 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
             count += searchResultHashtags.size();
         } else if (searchResultCommands != null) {
             count += searchResultCommands.size();
-        } else if (searchResultSuggestions != null) {
-            count += searchResultSuggestions.size();
         }
         return count;
     }
@@ -1713,9 +1672,6 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
         }
         if (searchResultCommands != null) {
             searchResultCommands.clear();
-        }
-        if (searchResultSuggestions != null) {
-            searchResultSuggestions.clear();
         }
         notifyDataSetChanged();
     }
@@ -1806,11 +1762,6 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                 return null;
             }
             return searchResultHashtags.get(i);
-        } else if (searchResultSuggestions != null) {
-            if (i < 0 || i >= searchResultSuggestions.size()) {
-                return null;
-            }
-            return searchResultSuggestions.get(i);
         } else if (searchResultCommands != null) {
             if (i < 0 || i >= searchResultCommands.size()) {
                 return null;
@@ -1982,8 +1933,6 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter implement
                 }
             } else if (searchResultHashtags != null && position >= 0 && position < searchResultHashtags.size()) {
                 cell.setText(searchResultHashtags.get(position));
-            } else if (searchResultSuggestions != null && position >= 0 && position < searchResultSuggestions.size()) {
-                cell.setEmojiSuggestion(searchResultSuggestions.get(position));
             } else if (searchResultCommands != null && position >= 0 && position < searchResultCommands.size()) {
                 final String help = searchResultCommandsHelp != null && position >= 0 && position < searchResultCommandsHelp.size() ? searchResultCommandsHelp.get(position) : null;
                 final TLRPC.User user = searchResultCommandsUsers != null && position >= 0 && position < searchResultCommandsUsers.size() ? searchResultCommandsUsers.get(position) : null;

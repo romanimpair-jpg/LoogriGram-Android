@@ -28,7 +28,6 @@ import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.text.style.ImageSpan;
 import android.view.ActionMode;
 import android.view.Gravity;
 import android.view.KeyEvent;
@@ -106,7 +105,9 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
     private final RecyclerListView listView;
     private final DefaultItemAnimator itemAnimator;
     private final FillLastLinearLayoutManager layoutManager;
-    private SuggestEmojiView suggestEmojiPanel;
+    // LoogriGram: suggestEmojiPanel offered emoji for a word typed into a
+    // question or answer (Premium only). The suggestion popups are gone, as
+    // on desktop; with them the emoji swap its text watchers made for it.
     private HintView hintView;
     public EmojiView emojiView;
     private final KeyboardNotifier keyboardNotifier;
@@ -443,9 +444,6 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
             } else if (view instanceof TextCheckCell || view instanceof PollCreateCheckCell) {
                 boolean checked = false;
                 boolean wasChecksBefore = quizPoll;
-                if (suggestEmojiPanel != null) {
-                    suggestEmojiPanel.forceClose();
-                }
 
                 boolean done = false;
                 for (ToggleRow row : toggleRows) {
@@ -624,28 +622,6 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
                 parentAlert.updateLayout(ChatAttachAlertPollLayout.this, true, dy);
-                if (suggestEmojiPanel != null && suggestEmojiPanel.isShown()) {
-                    SuggestEmojiView.AnchorViewDelegate emojiDelegate = suggestEmojiPanel.getDelegate();
-                    if (emojiDelegate instanceof PollEditTextCell) {
-                        PollEditTextCell cell = (PollEditTextCell) emojiDelegate;
-                        RecyclerView.ViewHolder holder = listView.findContainingViewHolder(cell);
-                        if (holder != null) {
-                            int position = holder.getAdapterPosition();
-                            if (suggestEmojiPanel.getDirection() == SuggestEmojiView.DIRECTION_TO_BOTTOM) {
-                                suggestEmojiPanel.setTranslationY(holder.itemView.getY() - AndroidUtilities.dp(166) + holder.itemView.getMeasuredHeight());
-                            } else {
-                                suggestEmojiPanel.setTranslationY(holder.itemView.getY());
-                            }
-                            if (position < layoutManager.findFirstVisibleItemPosition() || position > layoutManager.findLastVisibleItemPosition()) {
-                                suggestEmojiPanel.forceClose();
-                            }
-                        } else {
-                            suggestEmojiPanel.forceClose();
-                        }
-                    } else {
-                        suggestEmojiPanel.forceClose();
-                    }
-                }
                 if (dy != 0 && hintView != null) {
                     hintView.hide();
                 }
@@ -686,16 +662,6 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
         NotificationCenter.getInstance(parentAlert.currentAccount).addObserver(this, NotificationCenter.didReceivedWebpagesInUpdates);
         if (isPremium) {
             NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.emojiLoaded);
-            suggestEmojiPanel = new SuggestEmojiView(context, parentAlert.currentAccount, null, resourcesProvider) {
-                @Override
-                protected int emojiCacheType() {
-                    return AnimatedEmojiDrawable.CACHE_TYPE_ALERT_PREVIEW;
-                }
-            };
-            suggestEmojiPanel.forbidCopy();
-            suggestEmojiPanel.forbidSetAsStatus();
-            suggestEmojiPanel.setHorizontalPadding(AndroidUtilities.dp(24));
-            addView(suggestEmojiPanel, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 160, Gravity.LEFT | Gravity.TOP));
         }
         keyboardNotifier = new KeyboardNotifier(parentAlert.sizeNotifierFrameLayout, null);
         checkDoneButton();
@@ -735,9 +701,6 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
         }
         if (isPremium) {
             hideEmojiPopup(false);
-            if (suggestEmojiPanel != null) {
-                suggestEmojiPanel.forceClose();
-            }
             if (currentCell != null) {
                 currentCell.setEmojiButtonVisibility(false);
                 currentCell.getTextView().clearFocus();
@@ -1074,9 +1037,6 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
         if (holder != null && holder.itemView instanceof PollEditTextCell) {
             PollEditTextCell pollEditTextCell = (PollEditTextCell) holder.itemView;
             if (pollEditTextCell.getTop() > AndroidUtilities.dp(40)) {
-                if (suggestEmojiPanel != null) {
-                    suggestEmojiPanel.forceClose();
-                }
                 hintView.setText(getString(R.string.PollAddTextOrRemoveMedia));
                 hintView.showForView(pollEditTextCell.getCheckBox(), true);
                 hintView.arrowImageView.setTranslationX(hintView.arrowImageView.getTranslationX() + dp(48));
@@ -1091,9 +1051,6 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
             if (holder != null && holder.itemView instanceof PollEditTextCell) {
                 PollEditTextCell pollEditTextCell = (PollEditTextCell) holder.itemView;
                 if (pollEditTextCell.getTop() > AndroidUtilities.dp(40)) {
-                    if (suggestEmojiPanel != null) {
-                        suggestEmojiPanel.forceClose();
-                    }
                     hintView.setText(getString(R.string.PollTapToSelect));
                     hintView.showForView(pollEditTextCell.getCheckBox(), true);
                     break;
@@ -1373,7 +1330,6 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
     }
 
     private void addNewField() {
-        resetSuggestEmojiPanel();
         listView.setItemAnimator(itemAnimator);
         answersChecks[answersCount] = false;
         answersCount++;
@@ -1385,22 +1341,6 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
         requestFieldFocusAtPosition = answerStartRow + answersCount - 1;
         listAdapter.notifyItemChanged(answerSectionRow);
         listAdapter.notifyItemChanged(emptyRow);
-    }
-
-    private void updateSuggestEmojiPanelDelegate(RecyclerView.ViewHolder holder) {
-        if (suggestEmojiPanel != null) {
-            suggestEmojiPanel.forceClose();
-            if (suggestEmojiPanel != null && holder != null && holder.itemView instanceof PollEditTextCell && suggestEmojiPanel.getDelegate() != holder.itemView) {
-                suggestEmojiPanel.setDelegate((PollEditTextCell) holder.itemView);
-            }
-        }
-    }
-
-    private void resetSuggestEmojiPanel() {
-        if (suggestEmojiPanel != null) {
-            suggestEmojiPanel.setDelegate(null);
-            suggestEmojiPanel.forceClose();
-        }
     }
 
     private int lastSizeChangeValue1;
@@ -1610,7 +1550,6 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
             currentCell = cell;
             cell.setEmojiButtonVisibility(true);
             cell.getEmojiButton().setState(ChatActivityEnterViewAnimatedIconView.State.SMILE, false);
-            updateSuggestEmojiPanelDelegate(listView.findContainingViewHolder(cell));
             if (prevCell != null && prevCell != cell) {
                 if (emojiViewVisible) {
                     collapseSearchEmojiView();
@@ -1910,10 +1849,6 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
         editText.clearFocus();
         checkDoneButton();
         updateRows();
-        if (suggestEmojiPanel != null) {
-            suggestEmojiPanel.forceClose();
-            suggestEmojiPanel.setDelegate(null);
-        }
         listAdapter.notifyItemChanged(answerSectionRow);
         listAdapter.notifyItemChanged(emptyRow);
     }
@@ -2147,9 +2082,6 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
                 EditTextBoldCursor editText = editTextCell.getTextView();
                 if (editText.isFocused()) {
                     if (isPremium) {
-                        if (suggestEmojiPanel != null) {
-                            suggestEmojiPanel.forceClose();
-                        }
                         hideEmojiPopup(true);
                     }
                     currentCell = null;
@@ -2276,20 +2208,6 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
 
                             final int index = viewType == VIEW_TYPE_INPUT_DESCRIPTION ? descriptionRow : questionRow;
                             RecyclerView.ViewHolder holder = listView.findViewHolderForAdapterPosition(index);
-                            if (holder != null) {
-                                if (suggestEmojiPanel != null) {
-                                    ImageSpan[] spans = s.getSpans(0, s.length(), ImageSpan.class);
-                                    for (ImageSpan span : spans) {
-                                        s.removeSpan(span);
-                                    }
-                                    Emoji.replaceEmoji(s, cell.getEditField().getPaint().getFontMetricsInt(), false);
-
-                                    suggestEmojiPanel.setDirection(SuggestEmojiView.DIRECTION_TO_TOP);
-                                    suggestEmojiPanel.setDelegate(cell);
-                                    suggestEmojiPanel.setTranslationY(holder.itemView.getY());
-                                    suggestEmojiPanel.fireUpdate();
-                                }
-                            }
                             if (viewType == VIEW_TYPE_INPUT_DESCRIPTION) {
                                 descriptionString = s;
                             } else {
@@ -2360,20 +2278,6 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
                                 return;
                             }
                             RecyclerView.ViewHolder holder = listView.findViewHolderForAdapterPosition(solutionRow);
-                            if (holder != null) {
-                                if (suggestEmojiPanel != null) {
-                                    ImageSpan[] spans = s.getSpans(0, s.length(), ImageSpan.class);
-                                    for (ImageSpan span : spans) {
-                                        s.removeSpan(span);
-                                    }
-                                    Emoji.replaceEmoji(s, cell.getEditField().getPaint().getFontMetricsInt(), false);
-
-                                    suggestEmojiPanel.setDirection(SuggestEmojiView.DIRECTION_TO_TOP);
-                                    suggestEmojiPanel.setDelegate(cell);
-                                    suggestEmojiPanel.setTranslationY(holder.itemView.getY());
-                                    suggestEmojiPanel.fireUpdate();
-                                }
-                            }
                             solutionString = s;
                             if (holder != null) {
                                 setTextLeft(holder.itemView, solutionRow);
@@ -2556,23 +2460,6 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
                                 int index = position - answerStartRow;
                                 if (index < 0 || index >= answers.length) {
                                     return;
-                                }
-                                if (suggestEmojiPanel != null) {
-                                    ImageSpan[] spans = s.getSpans(0, s.length(), ImageSpan.class);
-                                    for (ImageSpan span : spans) {
-                                        s.removeSpan(span);
-                                    }
-                                    Emoji.replaceEmoji(s, cell.getEditField().getPaint().getFontMetricsInt(), false);
-                                    float y = holder.itemView.getY() - AndroidUtilities.dp(166) + holder.itemView.getMeasuredHeight();
-                                    if (y > 0) {
-                                        suggestEmojiPanel.setDirection(SuggestEmojiView.DIRECTION_TO_BOTTOM);
-                                        suggestEmojiPanel.setTranslationY(y);
-                                    } else {
-                                        suggestEmojiPanel.setDirection(SuggestEmojiView.DIRECTION_TO_TOP);
-                                        suggestEmojiPanel.setTranslationY(holder.itemView.getY());
-                                    }
-                                    suggestEmojiPanel.setDelegate(cell);
-                                    suggestEmojiPanel.fireUpdate();
                                 }
 
                                 answers[index] = s;
