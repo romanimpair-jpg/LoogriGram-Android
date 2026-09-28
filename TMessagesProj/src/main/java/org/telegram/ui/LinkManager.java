@@ -912,8 +912,8 @@ public class LinkManager {
                         scrollTo("usageProgressRow");
                     if ("photos".equalsIgnoreCase(fourth))
                         scrollTo("photosRow");
-                    if ("stories".equalsIgnoreCase(fourth))
-                        scrollTo("storiesRow");
+                    // LoogriGram: .../stories scrolled to the Stories row, which is
+                    // gone; the link opens the screen.
                     if ("videos".equalsIgnoreCase(fourth))
                         scrollTo("videosRow");
                     if ("files".equalsIgnoreCase(fourth))

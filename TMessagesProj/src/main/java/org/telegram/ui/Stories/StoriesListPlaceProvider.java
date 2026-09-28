@@ -6,7 +6,6 @@ import android.graphics.Paint;
 import android.view.View;
 import android.view.ViewGroup;
 
-import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.tl.TL_stories;
@@ -14,7 +13,6 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.ChatActionCell;
 import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.Cells.ReactedUserHolderView;
-import org.telegram.ui.Cells.SharedPhotoVideoCell2;
 import org.telegram.ui.Components.BlurredRecyclerView;
 import org.telegram.ui.Components.RecyclerListView;
 
@@ -107,36 +105,6 @@ public class StoriesListPlaceProvider implements StoryViewer.PlaceProvider {
                     } else {
                         holder.storyImage = cell.getPhotoImage();
                     }
-                    holder.clipParent = (View) cell.getParent();
-                    holder.alpha = 1;
-                    updateClip(holder);
-                    return true;
-                }
-            } else if (child instanceof SharedPhotoVideoCell2 && recyclerListView != null) {
-                SharedPhotoVideoCell2 cell = (SharedPhotoVideoCell2) child;
-                MessageObject msg = cell.getMessageObject();
-                if (
-                    cell.getStyle() == SharedPhotoVideoCell2.STYLE_CACHE && cell.storyId == storyId ||
-                    msg != null && msg.isStory() && msg.getId() == storyId && msg.storyItem.dialogId == dialogId
-                ) {
-                    final RecyclerListView.FastScroll fastScroll = recyclerListView.getFastScroll();
-                    final int[] loc = new int[2];
-                    if (fastScroll != null) {
-                        fastScroll.getLocationInWindow(loc);
-                    }
-                    holder.view = child;
-                    holder.storyImage = cell.imageReceiver;
-                    holder.drawAbove = (canvas, bounds, alpha, opening) -> {
-                        cell.drawDuration(canvas, bounds, alpha);
-                        cell.drawViews(canvas, bounds, alpha);
-                        cell.drawPrivacy(canvas, bounds, alpha);
-                        if (fastScroll != null && fastScroll.isVisible && fastScroll.getVisibility() == View.VISIBLE) {
-                            canvas.saveLayerAlpha(0, 0, canvas.getWidth(), canvas.getHeight(), (int) (0xFF * alpha), Canvas.ALL_SAVE_FLAG);
-                            canvas.translate(loc[0], loc[1]);
-                            fastScroll.draw(canvas);
-                            canvas.restore();
-                        }
-                    };
                     holder.clipParent = (View) cell.getParent();
                     holder.alpha = 1;
                     updateClip(holder);

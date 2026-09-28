@@ -17,19 +17,21 @@ public class CacheByChatsController {
     public static int KEEP_MEDIA_ONE_DAY = 3;
     public static int KEEP_MEDIA_ONE_WEEK = 0;
     public static int KEEP_MEDIA_ONE_MONTH = 1;
-    public static int KEEP_MEDIA_TWO_DAY = 6;
+    // LoogriGram: 6 was two days, offered only for stories.
     //TEST VALUE
     public static int KEEP_MEDIA_ONE_MINUTE = 5;
 
     public static final int KEEP_MEDIA_TYPE_USER = 0;
     public static final int KEEP_MEDIA_TYPE_GROUP = 1;
     public static final int KEEP_MEDIA_TYPE_CHANNEL = 2;
-    public static final int KEEP_MEDIA_TYPE_STORIES = 3;
+    // LoogriGram: 3 was "Keep media: Stories". Stories are removed; its saved
+    // value (keep_media_type_3) is no longer read.
+    public static final int KEEP_MEDIA_TYPES = 3;
 
     private final int currentAccount;
 
     private boolean gotKeepMediaByTypes = false;
-    private final int[] keepMediaByTypes = { -1, -1, -1, -1 };
+    private final int[] keepMediaByTypes = { -1, -1, -1 };
 
     public CacheByChatsController(int currentAccount) {
         this.currentAccount = currentAccount;
@@ -42,8 +44,6 @@ public class CacheByChatsController {
             return KEEP_MEDIA_ONE_MONTH;
         } else if (type == KEEP_MEDIA_TYPE_CHANNEL) {
             return KEEP_MEDIA_ONE_WEEK;
-        } else if (type == KEEP_MEDIA_TYPE_STORIES) {
-            return KEEP_MEDIA_TWO_DAY;
         }
         return SharedConfig.keepMedia;
     }
@@ -53,8 +53,6 @@ public class CacheByChatsController {
             return LocaleController.formatPluralString("Minutes", 1);
         } else if (keepMedia == KEEP_MEDIA_ONE_DAY) {
             return LocaleController.formatPluralString("Days", 1);
-        } else if (keepMedia == KEEP_MEDIA_TWO_DAY) {
-            return LocaleController.formatPluralString("Days", 2);
         } else if (keepMedia == KEEP_MEDIA_ONE_WEEK) {
             return LocaleController.formatPluralString("Weeks", 1);
         } else if (keepMedia == KEEP_MEDIA_ONE_MONTH) {
@@ -71,9 +69,7 @@ public class CacheByChatsController {
             seconds = 60L * 60L * 24L * 30L;
         } else if (keepMedia == CacheByChatsController.KEEP_MEDIA_ONE_DAY) {
             seconds = 60L * 60L * 24L;
-        } else if (keepMedia == CacheByChatsController.KEEP_MEDIA_TWO_DAY) {
-            seconds = 60L * 60L * 24L * 2;
-        }else if (keepMedia == CacheByChatsController.KEEP_MEDIA_ONE_MINUTE && BuildVars.DEBUG_PRIVATE_VERSION) { //one min
+        } else if (keepMedia == CacheByChatsController.KEEP_MEDIA_ONE_MINUTE && BuildVars.DEBUG_PRIVATE_VERSION) { //one min
             seconds = 60L;
         } else {
             seconds = Long.MAX_VALUE;
@@ -122,7 +118,7 @@ public class CacheByChatsController {
     public int getKeepMedia(int type) {
         if (!gotKeepMediaByTypes) {
             gotKeepMediaByTypes = true;
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < KEEP_MEDIA_TYPES; i++) {
                 keepMediaByTypes[i] = SharedConfig.getPreferences().getInt("keep_media_type_" + i, getDefault(i));
             }
         }
@@ -135,7 +131,7 @@ public class CacheByChatsController {
     public void setKeepMedia(int type, int keepMedia) {
         if (!gotKeepMediaByTypes) {
             gotKeepMediaByTypes = true;
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < KEEP_MEDIA_TYPES; i++) {
                 keepMediaByTypes[i] = SharedConfig.getPreferences().getInt("keep_media_type_" + i, getDefault(i));
             }
         }

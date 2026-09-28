@@ -131,7 +131,9 @@ public class DialogCacheBottomSheet extends BottomSheetWithRecyclerListView {
         }
         linearLayout.addView(circleDiagramView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 0, 16, 0, 16));
         CheckBoxCell lastCreatedCheckbox = null;
-        for (int a = 0; a < 8; a++) {
+        // LoogriGram: 7 was a chat's stories; their files left on disk are
+        // miscellaneous (TYPE_OTHER).
+        for (int a = 0; a < 7; a++) {
             long size = 0;
             String name;
             int color;
@@ -154,9 +156,6 @@ public class DialogCacheBottomSheet extends BottomSheetWithRecyclerListView {
             } else if (a == CacheControlActivity.TYPE_ANIMATED_STICKERS_CACHE) {
                 name = LocaleController.getString(R.string.LocalStickersCache);
                 color = Theme.key_statisticChartLine_orange;
-            } else if (a == CacheControlActivity.TYPE_STORIES) {
-                name = LocaleController.getString(R.string.LocalStoriesCache);
-                color = Theme.key_statisticChartLine_indigo;
             } else {
                 name = LocaleController.getString(R.string.LocalMiscellaneousCache);
                 color = Theme.key_statisticChartLine_purple;

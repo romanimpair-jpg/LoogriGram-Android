@@ -1,6 +1,5 @@
 package org.telegram.messenger;
 
-import static org.telegram.messenger.CacheByChatsController.KEEP_MEDIA_TYPE_STORIES;
 
 import android.util.SparseArray;
 
@@ -41,10 +40,13 @@ public class AutoDeleteMediaTask {
                 }
             }
 
-            int[] keepMediaByTypes = new int[4];
+            // LoogriGram: a fourth type, stories (two days by default), took part
+            // here, so files of no known chat were also kept no longer than the
+            // stories were. Stories are removed; the shortest chat setting counts.
+            int[] keepMediaByTypes = new int[CacheByChatsController.KEEP_MEDIA_TYPES];
             boolean allKeepMediaTypesForever = true;
             long keepMediaMinSeconds = Long.MAX_VALUE;
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < CacheByChatsController.KEEP_MEDIA_TYPES; i++) {
                 keepMediaByTypes[i] = SharedConfig.getPreferences().getInt("keep_media_type_" + i, CacheByChatsController.getDefault(i));
                 if (keepMediaByTypes[i] != CacheByChatsController.KEEP_MEDIA_FOREVER) {
                     allKeepMediaTypesForever = false;
@@ -94,8 +96,10 @@ public class AutoDeleteMediaTask {
                             CacheByChatsController.KeepMediaFile file = keepMediaFiles.get(i);
                             long timeLocal;
                             if (file.isStory) {
-                                long seconds = CacheByChatsController.getDaysInSeconds(keepMediaByTypes[KEEP_MEDIA_TYPE_STORIES]);
-                                timeLocal = time - seconds;
+                                // LoogriGram: kept for "Keep media: Stories" before.
+                                // Stories are removed and nothing can show the file,
+                                // so it goes on this pass.
+                                timeLocal = time;
                             } else {
                                 if (file.keepMedia == CacheByChatsController.KEEP_MEDIA_FOREVER) {
                                     continue;

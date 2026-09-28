@@ -63,7 +63,6 @@ import org.telegram.messenger.FilesMigrationService;
 import org.telegram.messenger.ImageLoader;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaDataController;
-import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
@@ -140,7 +139,6 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
     public static final int KEEP_MEDIA_TYPE_USER = 0;
     public static final int KEEP_MEDIA_TYPE_GROUP = 1;
     public static final int KEEP_MEDIA_TYPE_CHANNEL = 2;
-    public static final int KEEP_MEDIA_TYPE_STORIES = 3;
 
     public static final long UNKNOWN_CHATS_DIALOG_ID = Long.MAX_VALUE;
 
@@ -156,7 +154,6 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
     private long cacheSize = -1, cacheEmojiSize = -1, cacheTempSize = -1;
     private long documentsSize = -1;
     private long audioSize = -1;
-    private long storiesSize = -1;
     private long musicSize = -1;
     private long photoSize = -1;
     private long videoSize = -1;
@@ -196,7 +193,8 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
     public final static int TYPE_VOICE = 4;
     public final static int TYPE_ANIMATED_STICKERS_CACHE = 5;
     public final static int TYPE_OTHER = 6;
-    public final static int TYPE_STORIES = 7;
+    // LoogriGram: 7 was TYPE_STORIES, a chat's story files. Stories are
+    // removed; story files left on disk count as miscellaneous (TYPE_OTHER).
 
     private static final int delete_id = 1;
     private static final int other_id = 2;
@@ -248,12 +246,13 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
             long stickersCacheSize = getDirectorySize(new File(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_CACHE), "acache"), 0);
             stickersCacheSize += getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_CACHE), 3);
             long audioSize = getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_AUDIO), 0);
-            long storiesSize = getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_STORIES), 0);
+            // LoogriGram: story files left on disk count as miscellaneous.
+            cacheTempSize += getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_STORIES), 0);
             long logsSize = getDirectorySize(AndroidUtilities.getLogsDir(), 1);
             if (!BuildVars.DEBUG_VERSION && logsSize < 1024 * 1024 * 256) {
                 logsSize = 0;
             }
-            final long totalSize = lastTotalSizeCalculated = cacheSize + cacheTempSize + videoSize + audioSize + photoSize + documentsSize + musicSize + stickersCacheSize + storiesSize + logsSize;
+            final long totalSize = lastTotalSizeCalculated = cacheSize + cacheTempSize + videoSize + audioSize + photoSize + documentsSize + musicSize + stickersCacheSize + logsSize;
             lastTotalSizeCalculatedTime = System.currentTimeMillis();
             if (!canceled) {
                 AndroidUtilities.runOnUIThread(() -> {
@@ -362,11 +361,12 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
             }
             stickersCacheSize += cacheEmojiSize;
             audioSize = getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_AUDIO), 0);
-            storiesSize = getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_STORIES), 0);
+            // LoogriGram: story files left on disk count as miscellaneous.
+            cacheTempSize += getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_STORIES), 0);
             if (canceled) {
                 return;
             }
-            totalSize = lastTotalSizeCalculated = cacheSize + cacheTempSize + videoSize + logsSize + audioSize + photoSize + documentsSize + musicSize + storiesSize + stickersCacheSize;
+            totalSize = lastTotalSizeCalculated = cacheSize + cacheTempSize + videoSize + logsSize + audioSize + photoSize + documentsSize + musicSize + stickersCacheSize;
             lastTotalSizeCalculatedTime = System.currentTimeMillis();
 
             File path;
@@ -591,9 +591,6 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
                     fileInfo.dialogId = fileMetadata.dialogId;
                     fileInfo.messageId = fileMetadata.messageId;
                     fileInfo.messageType = fileMetadata.messageType;
-                    if (fileInfo.messageType == MessageObject.TYPE_STORY && fileInfo.size > 0) {
-                        addToType = TYPE_STORIES;
-                    }
                 }
                 fileInfo.type = addToType;
 
@@ -693,9 +690,8 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
             if (audioSize > 0) {
                 sections.add(ItemInner.asCheckBox(LocaleController.getString(R.string.LocalAudioCache), 4, audioSize, Theme.key_statisticChartLine_lightgreen));
             }
-            if (storiesSize > 0) {
-                sections.add(ItemInner.asCheckBox(LocaleController.getString(R.string.LocalStoriesCache), 5, storiesSize, Theme.key_statisticChartLine_red));
-            }
+            // LoogriGram: section 5 was Stories. The index stays unused, so the
+            // others keep theirs; story files are in Miscellaneous (8).
             if (stickersCacheSize > 0) {
                 sections.add(ItemInner.asCheckBox(LocaleController.getString(R.string.LocalStickersCache), 6, stickersCacheSize, Theme.key_statisticChartLine_orange));
             }
@@ -757,7 +753,7 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
         itemInners.add(new ItemInner(VIEW_TYPE_KEEP_MEDIA_CELL, KEEP_MEDIA_TYPE_USER));
         itemInners.add(new ItemInner(VIEW_TYPE_KEEP_MEDIA_CELL, KEEP_MEDIA_TYPE_GROUP));
         itemInners.add(new ItemInner(VIEW_TYPE_KEEP_MEDIA_CELL, KEEP_MEDIA_TYPE_CHANNEL));
-        itemInners.add(new ItemInner(VIEW_TYPE_KEEP_MEDIA_CELL, KEEP_MEDIA_TYPE_STORIES));
+        // LoogriGram: a "Stories" row followed. Stories are removed, as on desktop.
         itemInners.add(ItemInner.asInfo(LocaleController.getString(R.string.KeepMediaInfoPart)));
 
         if (totalDeviceSize > 0) {
@@ -942,7 +938,7 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
         long clearedSize = 0;
         boolean allItemsClear = true;
         final int[] clearDirI = new int[] { 0 };
-        int clearDirCount = (selected[0] ? 2 : 0) + (selected[1] ? 2 : 0) + (selected[2] ? 2 : 0) + (selected[3] ? 2 : 0) + (selected[4] ? 1 : 0) + (selected[5] ? 2 : 0) + (selected[6] ? 1 : 0) + (selected[7] ? 1 : 0) + (selected[8] ? 1 : 0) + (selected[9] ? 1 : 0);
+        int clearDirCount = (selected[0] ? 2 : 0) + (selected[1] ? 2 : 0) + (selected[2] ? 2 : 0) + (selected[3] ? 2 : 0) + (selected[4] ? 1 : 0) + (selected[6] ? 1 : 0) + (selected[7] ? 1 : 0) + (selected[8] ? 1 : 0) + (selected[9] ? 1 : 0);
         long time = System.currentTimeMillis();
         Utilities.Callback<Float> updateProgress = t -> {
             onProgress.run(clearDirI[0] / (float) clearDirCount + (1f / clearDirCount) * MathUtils.clamp(t, 0, 1), false);
@@ -975,9 +971,6 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
             } else if (a == 4) {
                 type = FileLoader.MEDIA_DIR_AUDIO;
                 clearedSize += audioSize;
-            } else if (a == 5) {
-                type = FileLoader.MEDIA_DIR_STORIES;
-                clearedSize += storiesSize;
             } else if (a == 6) {
                 type = 100;
                 clearedSize += stickersCacheSize;
@@ -1048,17 +1041,24 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
                 clearDirI[0]++;
                 next.run();
             }
+            if (a == 8) {
+                // LoogriGram: story files left on disk are miscellaneous; they
+                // had a Stories section of their own.
+                file = FileLoader.checkDirectory(FileLoader.MEDIA_DIR_STORIES);
+                if (file != null) {
+                    cleanDirJava(file.getAbsolutePath(), 0, null, updateProgress);
+                }
+            }
 
             if (a == 9) {
                 logsSize = getDirectorySize(AndroidUtilities.getLogsDir(), 1);
             } else if (type == FileLoader.MEDIA_DIR_CACHE) {
                 cacheSize = getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_CACHE), 5);
                 cacheTempSize = getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_CACHE), 4);
+                cacheTempSize += getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_STORIES), 0);
                 imagesCleared = true;
             } else if (type == FileLoader.MEDIA_DIR_AUDIO) {
                 audioSize = getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_AUDIO), documentsMusicType);
-            } else if (type == FileLoader.MEDIA_DIR_STORIES) {
-                storiesSize = getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_STORIES), documentsMusicType);
             } else if (type == FileLoader.MEDIA_DIR_DOCUMENT) {
                 if (documentsMusicType == 1) {
                     documentsSize = getDirectorySize(FileLoader.checkDirectory(FileLoader.MEDIA_DIR_DOCUMENT), documentsMusicType);
@@ -1082,7 +1082,7 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
             }
         }
         final boolean imagesClearedFinal = imagesCleared;
-        totalSize = lastTotalSizeCalculated = cacheSize + cacheTempSize + logsSize + videoSize + audioSize + photoSize + documentsSize + musicSize + stickersCacheSize + storiesSize;
+        totalSize = lastTotalSizeCalculated = cacheSize + cacheTempSize + logsSize + videoSize + audioSize + photoSize + documentsSize + musicSize + stickersCacheSize;
         lastTotalSizeCalculatedTime = System.currentTimeMillis();
         Arrays.fill(selected, true);
 
@@ -1156,7 +1156,6 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
             case 2: return documentsSize;
             case 3: return musicSize;
             case 4: return audioSize;
-            case 5: return storiesSize;
             case 6: return stickersCacheSize;
             case 7: return cacheSize;
             case 8: return cacheTempSize;
@@ -1451,7 +1450,7 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
 
         HashSet<CacheModel.FileInfo> filesToRemove = new HashSet<>();
         long totalSizeBefore = totalSize;
-        for (int a = 0; a < 8; a++) {
+        for (int a = 0; a < 7; a++) {
             if (clearViewData != null) {
                 if (clearViewData[a] == null || !clearViewData[a].clear) {
                     continue;
@@ -1478,22 +1477,7 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
                 audioSize -= entitiesToDelete.totalSize;
             } else if (a == TYPE_ANIMATED_STICKERS_CACHE) {
                 stickersCacheSize -= entitiesToDelete.totalSize;
-            } else if (a == TYPE_STORIES) {
-                for (int i = 0; i < entitiesToDelete.files.size(); i++) {
-                    CacheModel.FileInfo fileInfo = entitiesToDelete.files.get(i);
-                    int type = getTypeByPath(entitiesToDelete.files.get(i).file.getAbsolutePath());
-                    if (type == TYPE_STORIES) {
-                        storiesSize -= fileInfo.size;
-                    } else if (type == TYPE_PHOTOS) {
-                        photoSize -= fileInfo.size;
-                    } else if (type == TYPE_VIDEOS) {
-                        videoSize -= fileInfo.size;
-                    } else {
-                        cacheSize -= fileInfo.size;
-                    }
-                }
-              //  cacheSize -= entitiesToDelete.totalSize;
-            }else {
+            } else {
                 cacheSize -= entitiesToDelete.totalSize;
             }
         }
@@ -1547,32 +1531,6 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
                 }
             });
         });
-    }
-
-    private int getTypeByPath(String absolutePath) {
-        if (pathContains(absolutePath, FileLoader.MEDIA_DIR_STORIES)) {
-            return TYPE_STORIES;
-        }
-        if (pathContains(absolutePath, FileLoader.MEDIA_DIR_IMAGE)) {
-            return TYPE_PHOTOS;
-        }
-        if (pathContains(absolutePath, FileLoader.MEDIA_DIR_IMAGE_PUBLIC)) {
-            return TYPE_PHOTOS;
-        }
-        if (pathContains(absolutePath, FileLoader.MEDIA_DIR_VIDEO)) {
-            return TYPE_VIDEOS;
-        }
-        if (pathContains(absolutePath, FileLoader.MEDIA_DIR_VIDEO_PUBLIC)) {
-            return TYPE_VIDEOS;
-        }
-        return TYPE_OTHER;
-    }
-
-    private boolean pathContains(String path, int mediaDirType) {
-        if (path == null || FileLoader.checkDirectory(mediaDirType) == null) {
-            return false;
-        }
-        return path.contains(FileLoader.checkDirectory(mediaDirType).getAbsolutePath());
     }
 
     @RequiresApi(api = Build.VERSION_CODES.R)
@@ -2014,7 +1972,6 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
                 (selected[2] ? documentsSize : 0) +
                 (selected[3] ? musicSize : 0) +
                 (selected[4] ? audioSize : 0) +
-                (selected[5] ? storiesSize : 0) +
                 (selected[6] ? stickersCacheSize : 0) +
                 (selected[7] ? cacheSize : 0) +
                 (selected[8] ? cacheTempSize : 0) +
@@ -2570,9 +2527,7 @@ public class CacheControlActivity extends BaseFragment implements NotificationCe
                     } else if (itemInners.get(position).keepMediaType == KEEP_MEDIA_TYPE_GROUP) {
                         textCell2.setTextAndValueAndColorfulIcon(LocaleController.getString(R.string.GroupChats), value, true, R.drawable.msg_filled_menu_groups, 0xFF55CA47, 0xFF27B434, true);
                     } else if (itemInners.get(position).keepMediaType == KEEP_MEDIA_TYPE_CHANNEL) {
-                        textCell2.setTextAndValueAndColorfulIcon(LocaleController.getString(R.string.CacheChannels), value, true, R.drawable.msg_filled_menu_channels, 0xFFF09F1B, 0xFFE18A11, true);
-                    } else if (itemInners.get(position).keepMediaType == KEEP_MEDIA_TYPE_STORIES) {
-                        textCell2.setTextAndValueAndColorfulIcon(LocaleController.getString(R.string.CacheStories), value, false, R.drawable.msg_filled_stories, 0xFFF45255, 0xFFDF3955, false);
+                        textCell2.setTextAndValueAndColorfulIcon(LocaleController.getString(R.string.CacheChannels), value, true, R.drawable.msg_filled_menu_channels, 0xFFF09F1B, 0xFFE18A11, false);
                     }
                     textCell2.setSubtitle(subtitle);
                     break;

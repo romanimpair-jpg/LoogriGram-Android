@@ -19,10 +19,7 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.DialogObject;
-import org.telegram.messenger.DownloadController;
-import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
-import org.telegram.messenger.ImageLocation;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
@@ -44,7 +41,6 @@ import org.telegram.tgnet.tl.TL_bots;
 import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.Components.BulletinFactory;
-import org.telegram.ui.Components.Reactions.ReactionImageHolder;
 import org.telegram.ui.Components.Reactions.ReactionsLayoutInBubble;
 import org.telegram.ui.LaunchActivity;
 
@@ -456,7 +452,6 @@ public class StoriesController {
                         addUserToHiddenList(userStories);
                     } else {
                         dialogListStories.add(userStories);
-                        preloadUserStories(userStories);
                     }
                 } else {
                     TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
@@ -467,7 +462,6 @@ public class StoriesController {
                         addUserToHiddenList(userStories);
                     } else {
                         dialogListStories.add(userStories);
-                        preloadUserStories(userStories);
                     }
                 }
             } else {
@@ -512,58 +506,6 @@ public class StoriesController {
         sortStoriesRunnable.run();
     }
 
-    public void preloadUserStories(TL_stories.PeerStories userStories) {
-        int preloadPosition = 0;
-        for (int i = 0; i < userStories.stories.size(); i++) {
-            if (userStories.stories.get(i).id > userStories.max_read_id) {
-                preloadPosition = i;
-                break;
-            }
-        }
-        if (userStories.stories.isEmpty()) {
-            return;
-        }
-        long dialogId = DialogObject.getPeerDialogId(userStories.peer);
-        preloadStory(dialogId, userStories.stories.get(preloadPosition));
-        if (preloadPosition > 0) {
-            preloadStory(dialogId, userStories.stories.get(preloadPosition - 1));
-        }
-        if (preloadPosition < userStories.stories.size() - 1) {
-            preloadStory(dialogId, userStories.stories.get(preloadPosition + 1));
-        }
-    }
-
-    private void preloadStory(long dialogId, TL_stories.StoryItem storyItem) {
-        if (storyItem.attachPath != null) {
-            return;
-        }
-        boolean canPreloadStories = DownloadController.getInstance(currentAccount).canPreloadStories();
-        if (!canPreloadStories) {
-            return;
-        }
-        boolean isVideo = storyItem.media != null && MessageObject.isVideoDocument(storyItem.media.getDocument());
-        storyItem.dialogId = dialogId;
-        if (isVideo) {
-            TLRPC.PhotoSize size = FileLoader.getClosestPhotoSizeWithSize(storyItem.media.getDocument().thumbs, 1000);
-            FileLoader.getInstance(currentAccount).loadFile(storyItem.media.getDocument(), storyItem, FileLoader.PRIORITY_LOW, 1);
-            FileLoader.getInstance(currentAccount).loadFile(ImageLocation.getForDocument(size, storyItem.media.getDocument()), storyItem, "jpg", FileLoader.PRIORITY_LOW, 1);
-        } else {
-            TLRPC.Photo photo = storyItem.media == null ? null : storyItem.media.photo;
-            if (photo != null && photo.sizes != null) {
-                TLRPC.PhotoSize size = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, Integer.MAX_VALUE);
-                FileLoader.getInstance(currentAccount).loadFile(ImageLocation.getForPhoto(size, photo), storyItem, "jpg", FileLoader.PRIORITY_LOW, 1);
-            }
-        }
-        if (storyItem.media_areas != null) {
-            for (int i = 0; i < Math.min(2, storyItem.media_areas.size()); ++i) {
-                if (storyItem.media_areas.get(i) instanceof TL_stories.TL_mediaAreaSuggestedReaction) {
-                    TL_stories.TL_mediaAreaSuggestedReaction r = (TL_stories.TL_mediaAreaSuggestedReaction) storyItem.media_areas.get(i);
-                    ReactionImageHolder.preload(currentAccount, ReactionsLayoutInBubble.VisibleReaction.fromTL(r.reaction));
-                }
-            }
-        }
-    }
-
     public ArrayList<TL_stories.PeerStories> getDialogListStories() {
         return dialogListStories;
     }
@@ -576,11 +518,7 @@ public class StoriesController {
         long dialogId = DialogObject.getPeerDialogId(stories.peer);
         putToAllStories(dialogId, stories);
         if (dialogId != UserConfig.getInstance(UserConfig.selectedAccount).clientUserId) {
-            TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(dialogId);
             applyToList(stories);
-            if (user != null && !user.stories_hidden) {
-                preloadUserStories(stories);
-            }
         }
         FileLog.d("StoriesController applyNewStories " + dialogId);
         updateStoriesInLists(dialogId, stories.stories);
@@ -709,7 +647,6 @@ public class StoriesController {
                     changed = true;
                     currentUserStory.stories.add(newStory);
                     FileLog.d("StoriesController add new story id=" + newStory.id + " total stories count " + currentUserStory.stories.size());
-                    preloadStory(dialogId, newStory);
                     notify = true;
                     applyToList(currentUserStory);
                 }
@@ -1326,7 +1263,6 @@ public class StoriesController {
                             for (int j = 0; j < userStories2.stories.size(); j++) {
                                 if (userStories2.stories.get(j).id == res.stories.get(i).id) {
                                     userStories2.stories.set(j, res.stories.get(i));
-                                    preloadStory(dialogId, res.stories.get(i));
                                 }
                             }
                         }

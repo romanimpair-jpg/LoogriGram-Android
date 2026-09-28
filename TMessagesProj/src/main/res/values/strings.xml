@@ -4955,10 +4955,8 @@
     <string name="AccDescrSentDate">Sent %s</string>
     <string name="AccDescrReceivedDate">Received %s</string>
     <string name="AccDescrScheduledDate">Scheduled for %s</string>
-    <string name="AccDescrPostedDate">Posted %s</string>
     <string name="AccDescrLivePhoto">Live Photo</string>
     <string name="AccDescrRoundVideo">Video message</string>
-    <string name="AccDescrStoryPinned">Pinned</string>
     <string name="AccDescrGoBack">Go back</string>
     <string name="AccDescrOpenMenu">Open navigation menu</string>
     <string name="AccDescrOpenMenu2">Open menu</string>
@@ -6552,8 +6550,6 @@
     <string name="StoryNotFound">This story is no longer available</string>
     <string name="StoryUnavailable">Story unavailable</string>
     <string name="StoryExpiredSubtitle">This story has expired</string>
-    <string name="AutoDownloadStories">Stories</string>
-    <string name="AutoDownloadOn">On</string>
     <string name="HiddenStories">Hidden Stories</string>
     <string name="NoViewsStub">No one has viewed this story so far.</string>
     <string name="NoReactionsStub">No one has reacted to this story so far.</string>
@@ -6571,9 +6567,7 @@
     <string name="StoryKeepGroupInfo_other">Keep this story on the group page even after it expires in %d hours.</string>
     <string name="StoryKeepChannelInfo_one">Keep this story on the channel page even after it expires in %d hour.</string>
     <string name="StoryKeepChannelInfo_other">Keep this story on the channel page even after it expires in %d hours.</string>
-    <string name="FilterStories">Stories</string>
     <string name="CachedStory">cached story</string>
-    <string name="LocalStoriesCache">Stories</string>
     <string name="StoryNoSound">This video has no sound</string>
     <string name="StoryTapToSound">Tap here to enable sound</string>
     <string name="TextPlaceholder">Add text</string>
@@ -6585,7 +6579,6 @@
     <string name="StoryContainsStickersEmoji_one">This story contains emoji and stickers from **%d pack**.</string>
     <string name="StoryContainsStickersEmoji_other">This story contains emoji and stickers from **%d packs**.</string>
     <string name="StoryContainsStickersEmojiFrom">This story contains emoji and stickers from %s.</string>
-    <string name="CacheStories">Stories</string>
     <string name="UnlockPremium">Subscribe to **Telegram Premium** to unlock this and many other features.</string>
     <string name="ArchiveSettingUnmutedFolders">Unmuted chats</string>
     <string name="ArchiveSettingUnmutedFoldersCheck">Always keep archived</string>

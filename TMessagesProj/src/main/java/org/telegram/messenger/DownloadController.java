@@ -88,12 +88,15 @@ public class DownloadController extends BaseController implements NotificationCe
         public long[] sizes = new long[4];
         public boolean preloadVideo;
         public boolean preloadMusic;
-        public boolean preloadStories;
+        // LoogriGram: preloadStories, the auto-download "Stories" switch, sat
+        // here. Stories are removed, as on desktop. A saved preset still has
+        // it as its 14th field, which is read past; new ones are written
+        // without it.
         public boolean lessCallData;
         public boolean enabled;
         public int maxVideoBitrate;
 
-        public Preset(int[] m, long p, long v, long f, boolean pv, boolean pm, boolean e, boolean l, int bitrate, boolean preloadStories) {
+        public Preset(int[] m, long p, long v, long f, boolean pv, boolean pm, boolean e, boolean l, int bitrate) {
             System.arraycopy(m, 0, mask, 0, Math.max(m.length, mask.length));
             sizes[PRESET_SIZE_NUM_PHOTO] = p;
             sizes[PRESET_SIZE_NUM_VIDEO] = v;
@@ -104,7 +107,6 @@ public class DownloadController extends BaseController implements NotificationCe
             lessCallData = l;
             maxVideoBitrate = bitrate;
             enabled = e;
-            this.preloadStories = preloadStories;
         }
 
         public Preset(String str, String deafultValue) {
@@ -137,15 +139,6 @@ public class DownloadController extends BaseController implements NotificationCe
                     }
                     maxVideoBitrate = Utilities.parseInt(defaultArgs[12]);
                 }
-
-                if (args.length >= 14) {
-                    preloadStories = Utilities.parseInt(args[13]) == 1;
-                } else {
-                    if (defaultArgs == null) {
-                        defaultArgs = deafultValue.split("_");
-                    }
-                    preloadStories = Utilities.parseInt(defaultArgs[13]) == 1;
-                }
             }
         }
 
@@ -156,7 +149,6 @@ public class DownloadController extends BaseController implements NotificationCe
             preloadMusic = preset.preloadMusic;
             lessCallData = preset.lessCallData;
             maxVideoBitrate = preset.maxVideoBitrate;
-            preloadStories = preset.preloadStories;
         }
 
         public void set(TLRPC.TL_autoDownloadSettings settings) {
@@ -184,9 +176,6 @@ public class DownloadController extends BaseController implements NotificationCe
                     mask[a] &=~ AUTODOWNLOAD_TYPE_DOCUMENT;
                 }
             }
-            //TODO stories
-            // fill flag from server
-            preloadStories = true;
         }
 
         @Override
@@ -200,8 +189,7 @@ public class DownloadController extends BaseController implements NotificationCe
                     "_" + (preloadMusic ? 1 : 0) +
                     "_" + (enabled ? 1 : 0) +
                     "_" + (lessCallData ? 1 : 0) +
-                    "_" + maxVideoBitrate +
-                    "_" + (preloadStories ? 1 : 0);
+                    "_" + maxVideoBitrate;
         }
 
         public boolean equals(Preset obj) {
@@ -215,8 +203,7 @@ public class DownloadController extends BaseController implements NotificationCe
                     sizes[3] == obj.sizes[3] &&
                     preloadVideo == obj.preloadVideo &&
                     preloadMusic == obj.preloadMusic &&
-                    maxVideoBitrate == obj.maxVideoBitrate &&
-                    preloadStories == obj.preloadStories;
+                    maxVideoBitrate == obj.maxVideoBitrate;
         }
 
         public boolean isEnabled() {
@@ -257,11 +244,10 @@ public class DownloadController extends BaseController implements NotificationCe
     public DownloadController(int instance) {
         super(instance);
         SharedPreferences preferences = MessagesController.getMainSettings(currentAccount);
-        String defaultLow = "1_1_1_1_1048576_512000_512000_524288_0_0_1_1_50_0";
-        String defaultMedium = "13_13_13_13_1048576_10485760_1048576_524288_1_1_1_0_100_1";
-        String defaultHigh = "13_13_13_13_1048576_15728640_3145728_524288_1_1_1_0_100_1";
+        String defaultLow = "1_1_1_1_1048576_512000_512000_524288_0_0_1_1_50";
+        String defaultMedium = "13_13_13_13_1048576_10485760_1048576_524288_1_1_1_0_100";
+        String defaultHigh = "13_13_13_13_1048576_15728640_3145728_524288_1_1_1_0_100";
         lowPreset = new Preset(preferences.getString("preset0", defaultLow), defaultLow);
-        lowPreset.preloadStories = false;
         mediumPreset = new Preset(preferences.getString("preset1", defaultMedium), defaultMedium);
         highPreset = new Preset(preferences.getString("preset2", defaultHigh), defaultHigh);
         boolean newConfig;
@@ -304,9 +290,9 @@ public class DownloadController extends BaseController implements NotificationCe
             roamingMaxFileSize[3] = preferences.getLong("roamingMaxDownloadSize" + 3, lowPreset.sizes[PRESET_SIZE_NUM_DOCUMENT]);
 
             boolean globalAutodownloadEnabled = preferences.getBoolean("globalAutodownloadEnabled", true);
-            mobilePreset = new Preset(mobileDataDownloadMask, mediumPreset.sizes[PRESET_SIZE_NUM_PHOTO], mobileMaxFileSize[2], mobileMaxFileSize[3], true, true, globalAutodownloadEnabled, false, 100, false);
-            wifiPreset = new Preset(wifiDownloadMask, highPreset.sizes[PRESET_SIZE_NUM_PHOTO], wifiMaxFileSize[2], wifiMaxFileSize[3], true, true, globalAutodownloadEnabled, false, 100, true);
-            roamingPreset = new Preset(roamingDownloadMask, lowPreset.sizes[PRESET_SIZE_NUM_PHOTO], roamingMaxFileSize[2], roamingMaxFileSize[3], false, false, globalAutodownloadEnabled, true, 50, true);
+            mobilePreset = new Preset(mobileDataDownloadMask, mediumPreset.sizes[PRESET_SIZE_NUM_PHOTO], mobileMaxFileSize[2], mobileMaxFileSize[3], true, true, globalAutodownloadEnabled, false, 100);
+            wifiPreset = new Preset(wifiDownloadMask, highPreset.sizes[PRESET_SIZE_NUM_PHOTO], wifiMaxFileSize[2], wifiMaxFileSize[3], true, true, globalAutodownloadEnabled, false, 100);
+            roamingPreset = new Preset(roamingDownloadMask, lowPreset.sizes[PRESET_SIZE_NUM_PHOTO], roamingMaxFileSize[2], roamingMaxFileSize[3], false, false, globalAutodownloadEnabled, true, 50);
 
             SharedPreferences.Editor editor = preferences.edit();
             editor.putBoolean("newConfig", true);
@@ -360,7 +346,6 @@ public class DownloadController extends BaseController implements NotificationCe
             if (response != null) {
                 TL_account.autoDownloadSettings res = (TL_account.autoDownloadSettings) response;
                 lowPreset.set(res.low);
-                lowPreset.preloadStories = false;
                 mediumPreset.set(res.medium);
                 highPreset.set(res.high);
                 for (int a = 0; a < 3; a++) {
@@ -374,7 +359,6 @@ public class DownloadController extends BaseController implements NotificationCe
                     }
                     if (preset.equals(lowPreset)) {
                         preset.set(res.low);
-                        preset.preloadStories = false;
                     } else if (preset.equals(mediumPreset)) {
                         preset.set(res.medium);
                     } else if (preset.equals(highPreset)) {
@@ -1746,26 +1730,4 @@ public class DownloadController extends BaseController implements NotificationCe
         return false;
     }
 
-    public boolean canPreloadStories() {
-        Preset preset;
-        int networkType = ApplicationLoader.getAutodownloadNetworkType();
-        if (networkType == StatsController.TYPE_WIFI) {
-            if (!wifiPreset.enabled) {
-                return false;
-            }
-            preset = getCurrentWiFiPreset();
-
-        } else if (networkType == StatsController.TYPE_ROAMING) {
-            if (!roamingPreset.enabled) {
-                return false;
-            }
-            preset = getCurrentRoamingPreset();
-        } else {
-            if (!mobilePreset.enabled) {
-                return false;
-            }
-            preset = getCurrentMobilePreset();
-        }
-        return preset.preloadStories;
-    }
 }
