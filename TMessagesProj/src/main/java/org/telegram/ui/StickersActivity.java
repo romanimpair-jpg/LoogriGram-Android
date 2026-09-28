@@ -135,8 +135,6 @@ public class StickersActivity extends BaseFragment implements NotificationCenter
     private int suggestAnimatedEmojiInfoRow;
     private int loopRow;
     private int loopInfoRow;
-    @Keep
-    private int largeEmojiRow;
     private int reactionsDoubleTapRow;
     private int stickersBotInfo;
     @Keep
@@ -321,7 +319,7 @@ public class StickersActivity extends BaseFragment implements NotificationCenter
     private static final int ID_EMOJI = 3;
     private static final int ID_QUICK_REACTION = 4;
     private static final int ID_SUGGEST_STICKERS = 5;
-    private static final int ID_LARGE_EMOJI = 6;
+    // LoogriGram: 6 was ID_LARGE_EMOJI, the Large Emoji switch.
     private static final int ID_DYNAMIC_PACK_ORDER = 7;
     private static final int ID_SHOW_MORE_FEATURED = 8;
     private static final int ID_SUGGEST_EMOJI = 9;
@@ -387,8 +385,6 @@ public class StickersActivity extends BaseFragment implements NotificationCenter
             items.add(UItem.asHeader(getString(R.string.StickersSettings)));
             suggestRow = items.size();
             items.add(UItem.asSettingsCell(ID_SUGGEST_STICKERS, getString(R.string.SuggestStickers), suggestStickersName()));
-            largeEmojiRow = items.size();
-            items.add(UItem.asCheck(ID_LARGE_EMOJI, getString(R.string.LargeEmoji)).setChecked(SharedConfig.allowBigEmoji));
             dynamicPackOrder = items.size();
             items.add(UItem.asCheck(ID_DYNAMIC_PACK_ORDER, getString(R.string.DynamicPackOrder)).setChecked(SharedConfig.updateStickersOrderOnSend));
             items.add(UItem.asShadow(getString(R.string.DynamicPackOrderInfo)));
@@ -507,10 +503,6 @@ public class StickersActivity extends BaseFragment implements NotificationCenter
             case ID_SUGGEST_EMOJI:
                 SharedConfig.toggleSuggestAnimatedEmoji();
                 ((TextCheckCell) view).setChecked(SharedConfig.suggestAnimatedEmoji);
-                break;
-            case ID_LARGE_EMOJI:
-                SharedConfig.toggleBigEmoji();
-                ((TextCheckCell) view).setChecked(SharedConfig.allowBigEmoji);
                 break;
             case ID_SUGGEST_STICKERS:
                 ItemOptions.makeOptions(this, view)

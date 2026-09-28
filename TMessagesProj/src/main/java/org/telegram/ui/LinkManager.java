@@ -1051,9 +1051,9 @@ public class LinkManager {
                     scrollTo("featuredRow");
                 if ("archived".equalsIgnoreCase(third))
                     scrollTo("archivedRow");
-                if ("emoji".equalsIgnoreCase(third) && "large".equalsIgnoreCase(fourth))
-                    scrollTo("largeEmojiRow");
-                else if ("emoji".equalsIgnoreCase(third) && "dynamic-order".equalsIgnoreCase(fourth))
+                // LoogriGram: emoji/large scrolled to the Large Emoji row, which is
+                // gone with large emoji; it lands on the emoji packs as emoji does.
+                if ("emoji".equalsIgnoreCase(third) && "dynamic-order".equalsIgnoreCase(fourth))
                     scrollTo("dynamicPackOrder");
                 else if ("emoji".equalsIgnoreCase(third))
                     scrollTo("emojiPacksRow");

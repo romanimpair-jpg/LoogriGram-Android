@@ -12895,7 +12895,7 @@ public class ChatActivity extends BaseFragment implements
 
     public void checkEditLinkRemoved(final CharSequence charSequence) {
         final boolean manual = editingMessageObject != null && editingMessageObject.messageOwner != null && editingMessageObject.messageOwner.media != null && editingMessageObject.messageOwner.media.webpage != null && !(editingMessageObject.messageOwner.media.webpage instanceof TLRPC.TL_webPageEmpty) && editingMessageObject.messageOwner.media.manual;
-        if (messagePreviewParams != null && editingMessageObject != null && (editingMessageObject.type == MessageObject.TYPE_TEXT || editingMessageObject.type == MessageObject.TYPE_EMOJIS) && foundWebPage != null) {
+        if (messagePreviewParams != null && editingMessageObject != null && editingMessageObject.type == MessageObject.TYPE_TEXT && foundWebPage != null) {
             if (messagePreviewParams.hasLink(charSequence, foundWebPage.url)) {
                 return;
             }
@@ -13974,7 +13974,7 @@ public class ChatActivity extends BaseFragment implements
                 }
                 formwardingNameText = userNames;
                 CharSequence text = "";
-                if (type == -1 || type == MessageObject.TYPE_TEXT || type == MessageObject.TYPE_ARTICLE || type == MessageObject.TYPE_DATE || type == MessageObject.TYPE_ACTION_PHOTO || type == MessageObject.TYPE_EMOJIS) {
+                if (type == -1 || type == MessageObject.TYPE_TEXT || type == MessageObject.TYPE_ARTICLE || type == MessageObject.TYPE_DATE || type == MessageObject.TYPE_ACTION_PHOTO) {
                     text = LocaleController.formatPluralString("PreviewForwardMessagesCount", messageObjectsToForward.size());
                 } else if (type == MessageObject.TYPE_PHOTO) {
                     text = LocaleController.formatPluralString("PreviewForwardPhoto", messageObjectsToForward.size());
@@ -14015,7 +14015,7 @@ public class ChatActivity extends BaseFragment implements
                 if (messagePreviewParams != null && messagePreviewParams.hideForwardSendersName) {
                     replyObjectTextView.setText(LocaleController.getString(R.string.HiddenSendersNameDescription));
                 } else {
-                    if ((type == -1 || type == MessageObject.TYPE_TEXT || type == MessageObject.TYPE_DATE || type == MessageObject.TYPE_ACTION_PHOTO || type == MessageObject.TYPE_EMOJIS) && (messageObjectsToForward.size() == 1 && messageObjectsToForward.get(0).messageText != null)) {
+                    if ((type == -1 || type == MessageObject.TYPE_TEXT || type == MessageObject.TYPE_DATE || type == MessageObject.TYPE_ACTION_PHOTO) && (messageObjectsToForward.size() == 1 && messageObjectsToForward.get(0).messageText != null)) {
                         MessageObject messageObject = messageObjectsToForward.get(0);
                         CharSequence mess = new SpannableStringBuilder(messageObject.messageText.toString());
                         if (mess.length() > 150) {
@@ -34848,7 +34848,7 @@ public class ChatActivity extends BaseFragment implements
                                     return true;
                                 }
                             });
-                        } else if (message.isAnyKindOfSticker() && !message.isAnimatedEmojiStickers() || message.sendAnimationData != null && message.sendAnimationData.fromPreview) {
+                        } else if (message.isAnyKindOfSticker() || message.sendAnimationData != null && message.sendAnimationData.fromPreview) {
                             applyAnimation = true;
                             if (message.sendAnimationData.fromPreview && chatActivityEnterView != null && chatActivityEnterView.messageSendPreview != null) {
                                 final int actionBarBottom = actionBar.getVisibility() == View.VISIBLE ? (int) actionBar.getTranslationY() + actionBar.getMeasuredHeight() + (hashtagSearchTabs != null ? hashtagSearchTabs.getCurrentHeight() : 0) + (inPreviewMode ? AndroidUtilities.statusBarHeight : 0) : 0;
@@ -41973,7 +41973,7 @@ public class ChatActivity extends BaseFragment implements
         }
 
         if (type == -1) {
-            if ((selectedObject.type == MessageObject.TYPE_TEXT || selectedObject.type == MessageObject.TYPE_ARTICLE || selectedObject.isAnimatedEmoji() || selectedObject.isAnimatedEmojiStickers() || getMessageCaption(selectedObject, selectedObjectGroup) != null) && (!noforwards || isEphemeral)) {
+            if ((selectedObject.type == MessageObject.TYPE_TEXT || selectedObject.type == MessageObject.TYPE_ARTICLE || selectedObject.isAnimatedEmoji() || getMessageCaption(selectedObject, selectedObjectGroup) != null) && (!noforwards || isEphemeral)) {
                 items.add(LocaleController.getString(R.string.Copy));
                 options.add(OPTION_COPY);
                 icons.add(R.drawable.msg_copy);
@@ -42090,7 +42090,7 @@ public class ChatActivity extends BaseFragment implements
                     options.add(OPTION_REPLY);
                     icons.add(R.drawable.menu_reply);
                 }
-                if ((selectedObject.type == MessageObject.TYPE_TEXT || selectedObject.type == MessageObject.TYPE_ARTICLE || selectedObject.isDice() || selectedObject.isAnimatedEmoji() || selectedObject.isAnimatedEmojiStickers() || getMessageCaption(selectedObject, selectedObjectGroup) != null) && (!noforwards || isEphemeral)) {
+                if ((selectedObject.type == MessageObject.TYPE_TEXT || selectedObject.type == MessageObject.TYPE_ARTICLE || selectedObject.isDice() || selectedObject.isAnimatedEmoji() || getMessageCaption(selectedObject, selectedObjectGroup) != null) && (!noforwards || isEphemeral)) {
                     items.add(LocaleController.getString(R.string.Copy));
                     options.add(OPTION_COPY);
                     icons.add(R.drawable.msg_copy);
@@ -42394,7 +42394,7 @@ public class ChatActivity extends BaseFragment implements
                     options.add(OPTION_REPLY);
                     icons.add(R.drawable.menu_reply);
                 }
-                if ((selectedObject.type == MessageObject.TYPE_TEXT || selectedObject.type == MessageObject.TYPE_ARTICLE || selectedObject.isAnimatedEmoji() || selectedObject.isAnimatedEmojiStickers() || getMessageCaption(selectedObject, selectedObjectGroup) != null) && (!noforwards || isEphemeral)) {
+                if ((selectedObject.type == MessageObject.TYPE_TEXT || selectedObject.type == MessageObject.TYPE_ARTICLE || selectedObject.isAnimatedEmoji() || getMessageCaption(selectedObject, selectedObjectGroup) != null) && (!noforwards || isEphemeral)) {
                     items.add(LocaleController.getString(R.string.Copy));
                     options.add(OPTION_COPY);
                     icons.add(R.drawable.msg_copy);

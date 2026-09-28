@@ -2379,9 +2379,6 @@ public class Theme {
     public static TextPaint chat_msgBotButtonPaint;
     public static TextPaint chat_msgGameTextPaint;
     public static TextPaint[] chat_msgTextPaintEmoji;
-    public static TextPaint chat_msgTextPaintOneEmoji;
-    public static TextPaint chat_msgTextPaintTwoEmoji;
-    public static TextPaint chat_msgTextPaintThreeEmoji;
     public static TextPaint chat_infoPaint;
     public static TextPaint chat_infoBoldPaint;
     public static TextPaint chat_stickerCommentCountPaint;
@@ -7983,9 +7980,6 @@ public class Theme {
                 chat_msgTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
                 chat_msgGameTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
                 chat_msgTextPaintEmoji = new TextPaint[6];
-                chat_msgTextPaintOneEmoji = new TextPaint(Paint.ANTI_ALIAS_FLAG);
-                chat_msgTextPaintTwoEmoji = new TextPaint(Paint.ANTI_ALIAS_FLAG);
-                chat_msgTextPaintThreeEmoji = new TextPaint(Paint.ANTI_ALIAS_FLAG);
                 chat_msgBotButtonPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
                 chat_msgBotButtonPaint.setTypeface(AndroidUtilities.bold());
                 chat_namePaint = new TextPaint(TextPaint.ANTI_ALIAS_FLAG);
@@ -8016,9 +8010,6 @@ public class Theme {
                 chat_msgTextPaintEmoji[i] = new TextPaint(Paint.ANTI_ALIAS_FLAG);
                 chat_msgTextPaintEmoji[i].setTextSize(dp(emojiSizePercents[i] * 120f));
             }
-            chat_msgTextPaintOneEmoji.setTextSize(dp(28 + 18));
-            chat_msgTextPaintTwoEmoji.setTextSize(dp(24 + 14));
-            chat_msgTextPaintThreeEmoji.setTextSize(dp(20 + 10));
             chat_msgTextPaint.setTextSize(dp(SharedConfig.fontSize));
             chat_msgGameTextPaint.setTextSize(dp(14));
             chat_msgBotButtonPaint.setTextSize(dp(15));

@@ -7061,9 +7061,7 @@ public class ChatActivityEnterView extends FrameLayout implements
             }
         }
         CharSequence text = messageEditText == null ? "" : messageEditText.getTextToUse();
-        if (editingMessageObject == null || editingMessageObject.type != MessageObject.TYPE_EMOJIS) {
-            text = AndroidUtilities.getTrimmedString(text);
-        }
+        text = AndroidUtilities.getTrimmedString(text);
         CharSequence[] message = new CharSequence[]{text};
         if (TextUtils.isEmpty(message[0]) && (editingMessageObject.messageOwner.media instanceof TLRPC.TL_messageMediaWebPage || editingMessageObject.messageOwner.media instanceof TLRPC.TL_messageMediaEmpty || editingMessageObject.messageOwner.media == null)) {
             AndroidUtilities.shakeViewSpring(messageEditText, -3);
@@ -7075,14 +7073,14 @@ public class ChatActivityEnterView extends FrameLayout implements
             editingMessageObject.editingMessage = message[0];
             editingMessageObject.editingMessageEntities = entities;
             editingMessageObject.editingMessageSearchWebPage = messageWebPageSearch;
-            if (parentFragment != null && parentFragment.getCurrentChat() != null && (editingMessageObject.type == MessageObject.TYPE_TEXT || editingMessageObject.type == MessageObject.TYPE_EMOJIS) && !ChatObject.canSendEmbed(parentFragment.getCurrentChat())) {
+            if (parentFragment != null && parentFragment.getCurrentChat() != null && editingMessageObject.type == MessageObject.TYPE_TEXT && !ChatObject.canSendEmbed(parentFragment.getCurrentChat())) {
                 editingMessageObject.editingMessageSearchWebPage = false;
                 editingMessageObject.messageOwner.flags &=~ 512;
                 editingMessageObject.messageOwner.media = null;
             } else if (parentFragment != null && parentFragment.messagePreviewParams != null) {
                 if (parentFragment.foundWebPage instanceof TLRPC.TL_webPagePending) {
                     editingMessageObject.editingMessageSearchWebPage = false;
-                    if (editingMessageObject.type == MessageObject.TYPE_TEXT || editingMessageObject.type == MessageObject.TYPE_EMOJIS) {
+                    if (editingMessageObject.type == MessageObject.TYPE_TEXT) {
                         editingMessageObject.messageOwner.media = new TLRPC.TL_messageMediaEmpty();
                         editingMessageObject.messageOwner.flags |= 512;
                     }
@@ -7093,7 +7091,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                     editingMessageObject.messageOwner.media.webpage = parentFragment.messagePreviewParams.webpage;
                 } else {
                     editingMessageObject.editingMessageSearchWebPage = false;
-                    if (editingMessageObject.type == MessageObject.TYPE_TEXT || editingMessageObject.type == MessageObject.TYPE_EMOJIS) {
+                    if (editingMessageObject.type == MessageObject.TYPE_TEXT) {
                         editingMessageObject.messageOwner.flags |= 512;
                         editingMessageObject.messageOwner.media = new TLRPC.TL_messageMediaEmpty();
                     }
@@ -7105,7 +7103,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                 }
             } else {
                 editingMessageObject.editingMessageSearchWebPage = false;
-                if (editingMessageObject.type == MessageObject.TYPE_TEXT || editingMessageObject.type == MessageObject.TYPE_EMOJIS) {
+                if (editingMessageObject.type == MessageObject.TYPE_TEXT) {
                     editingMessageObject.messageOwner.flags |= 512;
                     editingMessageObject.messageOwner.media = new TLRPC.TL_messageMediaEmpty();
                 }
@@ -9349,7 +9347,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                 draftMessage = messageEditText != null && messageEditText.length() > 0 ? messageEditText.getText() : null;
                 draftSearchWebpage = messageWebPageSearch;
             }
-            messageWebPageSearch = !(editingMessageObject.messageOwner.media instanceof TLRPC.TL_messageMediaWebPage && editingMessageObject.messageOwner.media.manual) && (editingMessageObject.type == MessageObject.TYPE_TEXT || editingMessageObject.type == MessageObject.TYPE_EMOJIS);
+            messageWebPageSearch = !(editingMessageObject.messageOwner.media instanceof TLRPC.TL_messageMediaWebPage && editingMessageObject.messageOwner.media.manual) && editingMessageObject.type == MessageObject.TYPE_TEXT;
             if (!keyboardVisible) {
                 final CharSequence textToSetWithKeyboardFinal = textToSetWithKeyboard;
                 AndroidUtilities.runOnUIThread(setTextFieldRunnable = () -> {

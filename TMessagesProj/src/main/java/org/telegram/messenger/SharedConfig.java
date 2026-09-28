@@ -303,7 +303,8 @@ public class SharedConfig {
     public static boolean showNotificationsForAllAccounts = true;
     public static boolean debugVideoQualities = false;
     public static int repeatMode;
-    public static boolean allowBigEmoji;
+    // LoogriGram: allowBigEmoji, the Large Emoji switch, is gone with large
+    // emoji, as on desktop. Its stored "allowBigEmoji" key is no longer read.
     public static boolean useSystemEmoji;
     public static boolean useSystemBoldFont;
     public static int fontSize = 16;
@@ -599,7 +600,6 @@ public class SharedConfig {
             fontSizeIsDefault = !preferences.contains("fons_size");
             bubbleRadius = preferences.getInt("bubbleRadius", 17);
             ivFontSize = preferences.getInt("iv_font_size", fontSize);
-            allowBigEmoji = preferences.getBoolean("allowBigEmoji", true);
             useSystemEmoji = preferences.getBoolean("useSystemEmoji", false);
             useSystemBoldFont = preferences.getBoolean("useSystemBoldFont", false);
             forceForumTabs = preferences.getBoolean("forceForumTabs", false);
@@ -1084,14 +1084,6 @@ public class SharedConfig {
 
     public static void toggleLoopStickers() {
         LiteMode.toggleFlag(LiteMode.FLAG_ANIMATED_STICKERS_CHAT);
-    }
-
-    public static void toggleBigEmoji() {
-        allowBigEmoji = !allowBigEmoji;
-        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean("allowBigEmoji", allowBigEmoji);
-        editor.apply();
     }
 
     public static void toggleUseSystemBoldFont() {

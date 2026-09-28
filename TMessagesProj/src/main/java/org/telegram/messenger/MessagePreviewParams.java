@@ -120,7 +120,7 @@ public class MessagePreviewParams {
                 hasText = group.findCaptionMessageObject() != null;
             } else if (messages.size() == 1) {
                 MessageObject msg = messages.get(0);
-                if (msg.type == MessageObject.TYPE_TEXT || msg.type == MessageObject.TYPE_EMOJIS) {
+                if (msg.type == MessageObject.TYPE_TEXT) {
                     hasText = !TextUtils.isEmpty(msg.messageText);
                 } else {
                     hasText = !TextUtils.isEmpty(msg.caption);

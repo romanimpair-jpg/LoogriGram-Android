@@ -145,7 +145,8 @@ public class MessageObject {
     public static final int TYPE_ANIMATED_STICKER = 15;
     public static final int TYPE_PHONE_CALL = 16;
     public static final int TYPE_POLL = 17; // polls and todos
-    public static final int TYPE_EMOJIS = 19;
+    // LoogriGram: 19 was TYPE_EMOJIS, a message of only emoji drawn large
+    // without a bubble. Large emoji is removed, as on desktop.
     public static final int TYPE_SUGGEST_PHOTO = 21;
     public static final int TYPE_ACTION_WALLPAPER = 22;
     // LoogriGram: no message is given TYPE_STORY any more - a forwarded story
@@ -326,8 +327,6 @@ public class MessageObject {
 
     public SendAnimationData sendAnimationData;
 
-    private boolean hasUnwrappedEmoji;
-    public int emojiOnlyCount, animatedEmojiCount;
     public int totalAnimatedEmojiCount;
     private boolean layoutCreated;
     private int generatedWithMinSize;
@@ -614,10 +613,6 @@ public class MessageObject {
         if (userFull == null || userFull.wallpaper == null || !userFull.wallpaper_overridden)
             return false;
         return messageOwner.action.wallpaper.id == userFull.wallpaper.id;
-    }
-
-    public int getEmojiOnlyCount() {
-        return emojiOnlyCount;
     }
 
     public boolean hasMediaSpoilers() {
@@ -1906,14 +1901,10 @@ public class MessageObject {
             } else {
                 paint = Theme.chat_msgTextPaint;
             }
-            int[] emojiOnly = allowsBigEmoji() ? new int[1] : null;
-            messageText = Emoji.replaceEmoji(messageText, paint.getFontMetricsInt(), false, emojiOnly);
+            messageText = Emoji.replaceEmoji(messageText, paint.getFontMetricsInt(), false);
             messageText = replaceAnimatedEmoji(messageText, paint.getFontMetricsInt());
-            if (emojiOnly != null && emojiOnly[0] > 1) {
-                replaceEmojiToLottieFrame(messageText, emojiOnly);
-            }
-            checkEmojiOnly(emojiOnly);
-            checkBigAnimatedEmoji();
+            fitAnimatedEmojiToText();
+            generateLayout(null);
             setType();
             createPathThumb();
         }
@@ -1924,61 +1915,10 @@ public class MessageObject {
         }
     }
 
-    protected void checkBigAnimatedEmoji() {
-        emojiAnimatedSticker = null;
-        emojiAnimatedStickerId = null;
-        if (emojiOnlyCount == 1 && !(getMedia(messageOwner) instanceof TLRPC.TL_messageMediaWebPage) && !(getMedia(messageOwner) instanceof TLRPC.TL_messageMediaInvoice) && (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaEmpty || getMedia(messageOwner) == null) && this.messageOwner.grouped_id == 0) {
-            if (messageOwner.entities.isEmpty()) {
-                CharSequence emoji = messageText;
-                int index;
-                if ((index = TextUtils.indexOf(emoji, "\uD83C\uDFFB")) >= 0) {
-                    emojiAnimatedStickerColor = "_c1";
-                    emoji = emoji.subSequence(0, index);
-                } else if ((index = TextUtils.indexOf(emoji, "\uD83C\uDFFC")) >= 0) {
-                    emojiAnimatedStickerColor = "_c2";
-                    emoji = emoji.subSequence(0, index);
-                } else if ((index = TextUtils.indexOf(emoji, "\uD83C\uDFFD")) >= 0) {
-                    emojiAnimatedStickerColor = "_c3";
-                    emoji = emoji.subSequence(0, index);
-                } else if ((index = TextUtils.indexOf(emoji, "\uD83C\uDFFE")) >= 0) {
-                    emojiAnimatedStickerColor = "_c4";
-                    emoji = emoji.subSequence(0, index);
-                } else if ((index = TextUtils.indexOf(emoji, "\uD83C\uDFFF")) >= 0) {
-                    emojiAnimatedStickerColor = "_c5";
-                    emoji = emoji.subSequence(0, index);
-                } else {
-                    emojiAnimatedStickerColor = "";
-                }
-                if (!TextUtils.isEmpty(emojiAnimatedStickerColor) && index + 2 < messageText.length()) {
-                    emoji = emoji.toString() + messageText.subSequence(index + 2, messageText.length()).toString();
-                }
-                if (TextUtils.isEmpty(emojiAnimatedStickerColor) || EmojiData.emojiColoredMap.contains(emoji.toString())) {
-                    emojiAnimatedSticker = MediaDataController.getInstance(currentAccount).getEmojiAnimatedSticker(emoji);
-                }
-            } else if (messageOwner.entities.size() == 1 && messageOwner.entities.get(0) instanceof TLRPC.TL_messageEntityCustomEmoji) {
-                try {
-                    emojiAnimatedStickerId = ((TLRPC.TL_messageEntityCustomEmoji) messageOwner.entities.get(0)).document_id;
-                    emojiAnimatedSticker = AnimatedEmojiDrawable.findDocument(currentAccount, emojiAnimatedStickerId);
-                    if (emojiAnimatedSticker == null && messageText instanceof Spanned) {
-                        AnimatedEmojiSpan[] animatedEmojiSpans = ((Spanned) messageText).getSpans(0, messageText.length(), AnimatedEmojiSpan.class);
-                        if (animatedEmojiSpans != null && animatedEmojiSpans.length == 1) {
-                            emojiAnimatedSticker = animatedEmojiSpans[0].document;
-                        }
-                    }
-                } catch (Exception ignore) {
-                }
-            }
-        }
-        if (emojiAnimatedSticker == null && emojiAnimatedStickerId == null) {
-            generateLayout(null);
-        } else if (isSticker()) {
-            type = TYPE_STICKER;
-        } else if (isAnimatedSticker()) {
-            type = TYPE_ANIMATED_STICKER;
-        } else {
-            type = 1000;
-        }
-    }
+    // LoogriGram: checkBigAnimatedEmoji stood here. A message of one emoji
+    // became the matching animated sticker (emojiAnimatedSticker), and one of
+    // a single custom emoji became that emoji drawn large. Both were large
+    // emoji, as on desktop, and are gone; such a message is text.
 
     private void createPathThumb() {
         TLRPC.Document document = getDocument();
@@ -2034,120 +1974,20 @@ public class MessageObject {
 
     }
 
-    private void checkEmojiOnly(int[] emojiOnly) {
-        checkEmojiOnly(emojiOnly == null ? null : emojiOnly[0]);
-    }
-
-    private void checkEmojiOnly(Integer emojiOnly) {
-        if (emojiOnly != null && emojiOnly >= 1 && messageOwner != null && !hasNonEmojiEntities()) {
-            Emoji.EmojiSpan[] spans = ((Spannable) messageText).getSpans(0, messageText.length(), Emoji.EmojiSpan.class);
-            AnimatedEmojiSpan[] aspans = ((Spannable) messageText).getSpans(0, messageText.length(), AnimatedEmojiSpan.class);
-            emojiOnlyCount = Math.max(emojiOnly, (spans == null ? 0 : spans.length) + (aspans == null ? 0 : aspans.length));
-            totalAnimatedEmojiCount = aspans == null ? 0 : aspans.length;
-            animatedEmojiCount = 0;
-            if (aspans != null) {
-                for (int i = 0; i < aspans.length; ++i) {
-                    if (!aspans[i].standard) {
-                        animatedEmojiCount++;
-                    }
-                }
-            }
-            hasUnwrappedEmoji = emojiOnlyCount - (spans == null ? 0 : spans.length) - (aspans == null ? 0 : aspans.length) > 0;
-            if (emojiOnlyCount == 0 || hasUnwrappedEmoji) {
-                if (aspans != null && aspans.length > 0) {
-                    for (int a = 0; a < aspans.length; a++) {
-                        aspans[a].replaceFontMetrics(Theme.chat_msgTextPaint.getFontMetricsInt(), (int) (Theme.chat_msgTextPaint.getTextSize() + dp(4)), -1);
-                        aspans[a].full = false;
-                    }
-                }
-                return;
-            }
-            boolean large = emojiOnlyCount == animatedEmojiCount;
-            int cacheType = -1;
-            TextPaint emojiPaint;
-            switch (Math.max(emojiOnlyCount, animatedEmojiCount)) {
-                case 0:
-                case 1:
-                case 2:
-                    cacheType = AnimatedEmojiDrawable.CACHE_TYPE_MESSAGES_LARGE;
-                    emojiPaint = large ? Theme.chat_msgTextPaintEmoji[0] : Theme.chat_msgTextPaintEmoji[2];
-                    break;
-                case 3:
-                    cacheType = AnimatedEmojiDrawable.CACHE_TYPE_MESSAGES_LARGE;
-                    emojiPaint = large ? Theme.chat_msgTextPaintEmoji[1] : Theme.chat_msgTextPaintEmoji[3];
-                    break;
-                case 4:
-                    cacheType = AnimatedEmojiDrawable.CACHE_TYPE_MESSAGES_LARGE;
-                    emojiPaint = large ? Theme.chat_msgTextPaintEmoji[2] : Theme.chat_msgTextPaintEmoji[4];
-                    break;
-                case 5:
-                    cacheType = AnimatedEmojiDrawable.CACHE_TYPE_KEYBOARD;
-                    emojiPaint = large ? Theme.chat_msgTextPaintEmoji[3] : Theme.chat_msgTextPaintEmoji[5];
-                    break;
-                case 6:
-                    cacheType = AnimatedEmojiDrawable.CACHE_TYPE_KEYBOARD;
-                    emojiPaint = large ? Theme.chat_msgTextPaintEmoji[4] : Theme.chat_msgTextPaintEmoji[5];
-                    break;
-                case 7:
-                case 8:
-                case 9:
-                default:
-                    if (emojiOnlyCount > 9) {
-                        cacheType = AnimatedEmojiDrawable.CACHE_TYPE_MESSAGES;
-                    }
-                    emojiPaint = Theme.chat_msgTextPaintEmoji[5];
-                    break;
-            }
-            int size = (int) (emojiPaint.getTextSize() + dp(large ? 4 : 4));
-            if (spans != null && spans.length > 0) {
-                for (int a = 0; a < spans.length; a++) {
-                    spans[a].replaceFontMetrics(emojiPaint.getFontMetricsInt(), size);
-                }
-            }
-            if (aspans != null && aspans.length > 0) {
-                for (int a = 0; a < aspans.length; a++) {
-                    aspans[a].replaceFontMetrics(emojiPaint.getFontMetricsInt(), size, cacheType);
-                    aspans[a].full = true;
-                }
+    // LoogriGram: this was checkEmojiOnly. For a message of up to nine emoji
+    // it also counted them (emojiOnlyCount) and resized every emoji to one of
+    // six larger text sizes; large emoji is removed, as on desktop, so every
+    // custom emoji is fitted to the text it sits in.
+    private void fitAnimatedEmojiToText() {
+        AnimatedEmojiSpan[] aspans = ((Spannable) messageText).getSpans(0, messageText.length(), AnimatedEmojiSpan.class);
+        if (aspans != null && aspans.length > 0) {
+            totalAnimatedEmojiCount = aspans.length;
+            for (int a = 0; a < aspans.length; a++) {
+                aspans[a].replaceFontMetrics(Theme.chat_msgTextPaint.getFontMetricsInt(), (int) (Theme.chat_msgTextPaint.getTextSize() + dp(4)), -1);
+                aspans[a].full = false;
             }
         } else {
-            AnimatedEmojiSpan[] aspans = ((Spannable) messageText).getSpans(0, messageText.length(), AnimatedEmojiSpan.class);
-            if (aspans != null && aspans.length > 0) {
-                totalAnimatedEmojiCount = aspans.length;
-                for (int a = 0; a < aspans.length; a++) {
-                    aspans[a].replaceFontMetrics(Theme.chat_msgTextPaint.getFontMetricsInt(), (int) (Theme.chat_msgTextPaint.getTextSize() + dp(4)), -1);
-                    aspans[a].full = false;
-                }
-            } else {
-                totalAnimatedEmojiCount = 0;
-            }
-        }
-    }
-
-    public TextPaint getTextPaint() {
-        if (emojiOnlyCount >= 1 && messageOwner != null && !hasNonEmojiEntities()) {
-            boolean large = emojiOnlyCount == animatedEmojiCount;
-            switch (Math.max(emojiOnlyCount, animatedEmojiCount)) {
-                case 0:
-                case 1:
-                case 2:
-                    return large ? Theme.chat_msgTextPaintEmoji[0] : Theme.chat_msgTextPaintEmoji[2];
-                case 3:
-                    return large ? Theme.chat_msgTextPaintEmoji[1] : Theme.chat_msgTextPaintEmoji[3];
-                case 4:
-                    return large ? Theme.chat_msgTextPaintEmoji[2] : Theme.chat_msgTextPaintEmoji[4];
-                case 5:
-                    return large ? Theme.chat_msgTextPaintEmoji[3] : Theme.chat_msgTextPaintEmoji[5];
-                case 6:
-                    return large ? Theme.chat_msgTextPaintEmoji[4] : Theme.chat_msgTextPaintEmoji[5];
-                case 7:
-                case 8:
-                case 9:
-                default:
-                    return Theme.chat_msgTextPaintEmoji[5];
-            }
-        } else {
-            return Theme.chat_msgTextPaint;
+            totalAnimatedEmojiCount = 0;
         }
     }
 
@@ -3484,13 +3324,9 @@ public class MessageObject {
             paint = Theme.chat_msgTextPaint;
         }
 
-        int[] emojiOnly = allowsBigEmoji() ? new int[1] : null;
-        messageText = Emoji.replaceEmoji(messageText, paint.getFontMetricsInt(), false, emojiOnly);
+        messageText = Emoji.replaceEmoji(messageText, paint.getFontMetricsInt(), false);
         messageText = replaceAnimatedEmoji(messageText, paint.getFontMetricsInt());
-        if (emojiOnly != null && emojiOnly[0] > 1) {
-            replaceEmojiToLottieFrame(messageText, emojiOnly);
-        }
-        checkEmojiOnly(emojiOnly);
+        fitAnimatedEmojiToText();
 
         setType();
         measureInlineBotButtons();
@@ -3710,26 +3546,11 @@ public class MessageObject {
         } else {
             paint = Theme.chat_msgTextPaint;
         }
-        int[] emojiOnly = allowsBigEmoji() ? new int[1] : null;
-        messageText = Emoji.replaceEmoji(messageText, paint.getFontMetricsInt(), false, emojiOnly);
+        messageText = Emoji.replaceEmoji(messageText, paint.getFontMetricsInt(), false);
         messageText = replaceAnimatedEmoji(messageText, entities, paint.getFontMetricsInt());
-        if (emojiOnly != null && emojiOnly[0] > 1) {
-            replaceEmojiToLottieFrame(messageText, emojiOnly);
-        }
-        checkEmojiOnly(emojiOnly);
+        fitAnimatedEmojiToText();
         generateLayout(fromUser);
         setType();
-    }
-
-    private boolean allowsBigEmoji() {
-        if (!SharedConfig.allowBigEmoji) {
-            return false;
-        }
-        if (messageOwner == null || messageOwner.peer_id == null || messageOwner.peer_id.channel_id == 0 && messageOwner.peer_id.chat_id == 0) {
-            return true;
-        }
-        TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(messageOwner.peer_id.channel_id != 0 ? messageOwner.peer_id.channel_id : messageOwner.peer_id.chat_id);
-        return chat != null && chat.gigagroup || (!ChatObject.isActionBanned(chat, ChatObject.ACTION_SEND_STICKERS) || ChatObject.hasAdminRights(chat));
     }
 
     public void generateGameMessageText(TLRPC.User fromUser) {
@@ -6448,15 +6269,6 @@ public class MessageObject {
     // carries extended_media, both are held unshown (LoogriGramHidden), so
     // for every message that is shown all four were false.
 
-    private boolean hasNonEmojiEntities() {
-        if (messageOwner == null || messageOwner.entities == null)
-            return false;
-        for (int i = 0; i < messageOwner.entities.size(); ++i)
-            if (!(messageOwner.entities.get(i) instanceof TLRPC.TL_messageEntityCustomEmoji))
-                return true;
-        return false;
-    }
-
     public void setType() {
         int oldType = type;
         type = 1000;
@@ -6493,8 +6305,6 @@ public class MessageObject {
                 } else {
                     type = TYPE_ANIMATED_STICKER;
                 }
-            } else if (isMediaEmpty(false) && !isDice() && emojiOnlyCount >= 1 && !hasUnwrappedEmoji && messageOwner != null && !hasNonEmojiEntities()) {
-                type = TYPE_EMOJIS;
             } else if (isMediaEmpty()) {
                 type = TYPE_TEXT;
                 if (TextUtils.isEmpty(messageText) && eventId == 0) {
@@ -6622,14 +6432,14 @@ public class MessageObject {
                 type = TYPE_DATE;
             }
         }
-        if (oldType != 1000 && oldType != type && type != TYPE_EMOJIS) {
+        if (oldType != 1000 && oldType != type) {
             updateMessageText(MessagesController.getInstance(currentAccount).getUsers(), MessagesController.getInstance(currentAccount).getChats(), null, null);
             generateThumbs(false);
         }
     }
 
     public boolean checkLayout() {
-        if (type != TYPE_TEXT && type != TYPE_EMOJIS && type != TYPE_ARTICLE || messageOwner.peer_id == null || messageText == null || messageText.length() == 0 && !isBotPendingDraft) {
+        if (type != TYPE_TEXT && type != TYPE_ARTICLE || messageOwner.peer_id == null || messageText == null || messageText.length() == 0 && !isBotPendingDraft) {
             return false;
         }
         if (layoutCreated) {
@@ -6651,14 +6461,10 @@ public class MessageObject {
             } else {
                 paint = Theme.chat_msgTextPaint;
             }
-            int[] emojiOnly = allowsBigEmoji() ? new int[1] : null;
-            messageText = Emoji.replaceEmoji(messageText, paint.getFontMetricsInt(), false, emojiOnly);
+            messageText = Emoji.replaceEmoji(messageText, paint.getFontMetricsInt(), false);
             messageText = replaceAnimatedEmoji(messageText, paint.getFontMetricsInt());
-            if (emojiOnly != null && emojiOnly[0] > 1) {
-                replaceEmojiToLottieFrame(messageText, emojiOnly);
-            }
-            checkEmojiOnly(emojiOnly);
-            checkBigAnimatedEmoji();
+            fitAnimatedEmojiToText();
+            generateLayout(null);
             setType();
             generateLayout(fromUser);
             if (caption != null) {
@@ -7700,37 +7506,6 @@ public class MessageObject {
         }
     }
 
-    public void replaceEmojiToLottieFrame(CharSequence text, int[] emojiOnly) {
-        if (!(text instanceof Spannable)) {
-            return;
-        }
-        Spannable spannable = (Spannable) text;
-        Emoji.EmojiSpan[] spans = spannable.getSpans(0, spannable.length(), Emoji.EmojiSpan.class);
-        AnimatedEmojiSpan[] aspans = spannable.getSpans(0, spannable.length(), AnimatedEmojiSpan.class);
-
-        if (spans == null || (emojiOnly == null ? 0 : emojiOnly[0]) - spans.length - (aspans == null ? 0 : aspans.length) > 0) {
-            return;
-        }
-        for (int i = 0; i < spans.length; ++i) {
-            CharSequence emoji = spans[i].emoji;
-            boolean invert = false;
-            if (Emoji.endsWithRightArrow(emoji)) {
-                emoji = emoji.subSequence(0, emoji.length() - 2);
-                invert = true;
-            }
-            TLRPC.Document lottieDocument = MediaDataController.getInstance(currentAccount).getEmojiAnimatedSticker(emoji);
-            if (lottieDocument != null) {
-                int start = spannable.getSpanStart(spans[i]);
-                int end = spannable.getSpanEnd(spans[i]);
-                spannable.removeSpan(spans[i]);
-                AnimatedEmojiSpan span = new AnimatedEmojiSpan(lottieDocument, spans[i].fontMetrics);
-                span.standard = true;
-                span.invert = invert;
-                spannable.setSpan(span, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            }
-        }
-    }
-
     public ArrayList<TLRPC.MessageEntity> getEntities() {
         if (messageOwner == null) return null;
         if (summarized) {
@@ -8159,7 +7934,7 @@ public class MessageObject {
             return false;
         } else if (messageOwner.fwd_from != null && !isOutOwner() && messageOwner.fwd_from.saved_from_peer != null && getDialogId() == UserConfig.getInstance(currentAccount).getClientUserId()) {
             return true;
-        } else if (type == TYPE_STICKER || type == TYPE_ANIMATED_STICKER || type == TYPE_EMOJIS) {
+        } else if (type == TYPE_STICKER || type == TYPE_ANIMATED_STICKER) {
             return false;
         } else if (messageOwner.fwd_from != null && messageOwner.fwd_from.from_id instanceof TLRPC.TL_peerChannel && !isOutOwner()) {
             return true;
@@ -8261,9 +8036,6 @@ public class MessageObject {
             if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaGame) {
                 maxWidth -= dp(10);
             }
-        }
-        if (emojiOnlyCount >= 1 && totalAnimatedEmojiCount <= 100 && (emojiOnlyCount - totalAnimatedEmojiCount) < (SharedConfig.getDevicePerformanceClass() >= SharedConfig.PERFORMANCE_CLASS_HIGH ? 100 : 50) && (hasValidReplyMessageObject() || isForwarded())) {
-            maxWidth = Math.min(maxWidth, (int) (generatedWithMinSize * .65f));
         }
         return maxWidth;
     }
@@ -8422,7 +8194,7 @@ public class MessageObject {
             }
             return;
         }
-        if (type != TYPE_TEXT && type != TYPE_EMOJIS || messageOwner.peer_id == null || TextUtils.isEmpty(messageText) && !isBotPendingDraft) {
+        if (type != TYPE_TEXT || messageOwner.peer_id == null || TextUtils.isEmpty(messageText) && !isBotPendingDraft) {
             return;
         }
         boolean hasUrls = applyEntities();
@@ -8478,7 +8250,7 @@ public class MessageObject {
         CharSequence text = messageText;
         try {
             textLayoutOriginalWidth = maxWidth;
-            textLayout = makeStaticLayout(text, paint, maxWidth, 1f, totalAnimatedEmojiCount >= 4 ? -1 : 0, emojiOnlyCount > 0);
+            textLayout = makeStaticLayout(text, paint, maxWidth, 1f, totalAnimatedEmojiCount >= 4 ? -1 : 0, false);
         } catch (Exception e) {
             FileLog.e(e);
             return;
@@ -8524,7 +8296,7 @@ public class MessageObject {
 
                 try {
                     textLayoutOriginalWidth = maxWidth;
-                    textLayout = makeStaticLayout(text, paint, maxWidth, 1f, totalAnimatedEmojiCount >= 4 ? -1 : 0, emojiOnlyCount > 0);
+                    textLayout = makeStaticLayout(text, paint, maxWidth, 1f, totalAnimatedEmojiCount >= 4 ? -1 : 0, false);
                 } catch (Exception e) {
                     FileLog.e(e);
                     return;
@@ -8657,7 +8429,7 @@ public class MessageObject {
                         sb = new SpannableString(blockText.toString());
                     }
                     block.originalWidth = textLayoutOriginalWidth = blockMaxWidth;
-                    textLayout = makeStaticLayout(sb, layoutPaint, blockMaxWidth, 1f, totalAnimatedEmojiCount >= 4 ? -1 : 0, emojiOnlyCount > 0);
+                    textLayout = makeStaticLayout(sb, layoutPaint, blockMaxWidth, 1f, totalAnimatedEmojiCount >= 4 ? -1 : 0, false);
                 } else {
                     block.originalWidth = textLayoutOriginalWidth;
                 }
@@ -8668,19 +8440,6 @@ public class MessageObject {
 
                 block.height = textLayout.getHeight();
                 block.collapsedHeight = (int) Math.min(paint.getTextSize() * 1.4f * 3, block.height);
-                if (emojiOnlyCount != 0) {
-                    switch (emojiOnlyCount) {
-                        case 1:
-                            block.padTop -= dp(5.3f);
-                            break;
-                        case 2:
-                            block.padTop -= dp(4.5f);
-                            break;
-                        case 3:
-                            block.padTop -= dp(4.2f);
-                            break;
-                    }
-                }
             } else {
                 int startCharacter = range.start;
                 int endCharacter = range.end;
@@ -10674,8 +10433,6 @@ public class MessageObject {
             return dp(50);
         } else if (type == TYPE_ROUND_VIDEO) {
             return AndroidUtilities.roundMessageSize;
-        } else if (type == TYPE_EMOJIS) {
-            return (fast ? textHeightCached() : textHeight()) + dp(30);
         } else if (type == TYPE_STICKER || type == TYPE_ANIMATED_STICKER) {
             float maxHeight = AndroidUtilities.displaySize.y * 0.4f;
             float maxWidth;
@@ -10859,15 +10616,11 @@ public class MessageObject {
     }
 
     public boolean isAnyKindOfSticker() {
-        return type == TYPE_STICKER || type == TYPE_ANIMATED_STICKER || type == TYPE_EMOJIS;
+        return type == TYPE_STICKER || type == TYPE_ANIMATED_STICKER;
     }
 
     public boolean shouldDrawWithoutBackground() {
-        return type == TYPE_STICKER || type == TYPE_ANIMATED_STICKER || type == TYPE_ROUND_VIDEO || type == TYPE_EMOJIS;
-    }
-
-    public boolean isAnimatedEmojiStickers() {
-        return type == TYPE_EMOJIS;
+        return type == TYPE_STICKER || type == TYPE_ANIMATED_STICKER || type == TYPE_ROUND_VIDEO;
     }
 
     public boolean isAnimatedEmojiStickerSingle() {
@@ -12873,7 +12626,7 @@ public class MessageObject {
             return messageText;
         }
         CharSequence messageTextToTranslate = null;
-        if (type != MessageObject.TYPE_EMOJIS && type != MessageObject.TYPE_ANIMATED_STICKER && type != MessageObject.TYPE_STICKER) {
+        if (type != MessageObject.TYPE_ANIMATED_STICKER && type != MessageObject.TYPE_STICKER) {
             messageTextToTranslate = ChatActivity.getMessageCaption(this, groupedMessages, messageIdToTranslate);
             if (messageTextToTranslate == null && isPoll()) {
                 try {

@@ -549,7 +549,6 @@
     <string name="DirectShare">Direct Share</string>
     <string name="DirectShareInfo">Chats recientes al compartir en Android</string>
     <string name="Emoji">Emojis</string>
-    <string name="LargeEmoji">Emojis grandes</string>
     <string name="TelegramVersion">Telegram para Android %1$s</string>
     <string name="ChangeLanguageLater">Puedes cambiar el idioma más tarde en Ajustes.</string>
     <string name="ChooseYourLanguage">Elige tu idioma</string>

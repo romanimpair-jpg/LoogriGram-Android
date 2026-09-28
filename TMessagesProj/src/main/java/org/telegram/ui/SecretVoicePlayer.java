@@ -403,7 +403,7 @@ public class SecretVoicePlayer extends Dialog {
                 public void drawTime(Canvas canvas, float alpha, boolean fromParent) {
                     canvas.save();
                     if (isRound) {
-                        final float timeWidth = this.timeWidth + AndroidUtilities.dp(8 + (messageObject != null && messageObject.isOutOwner() ? 20 + (messageObject != null && messageObject.type == MessageObject.TYPE_EMOJIS ? 4 : 0) : 0));
+                        final float timeWidth = this.timeWidth + AndroidUtilities.dp(8 + (messageObject != null && messageObject.isOutOwner() ? 20 : 0));
                         canvas.translate((toRect.right - timeWidth - timeX) * openProgress, 0);
                     }
                     super.drawTime(canvas, alpha, fromParent);

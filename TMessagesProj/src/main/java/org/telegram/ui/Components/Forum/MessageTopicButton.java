@@ -331,11 +331,9 @@ public class MessageTopicButton {
         }
         topicWidth = (int) (padleft + padright - AndroidUtilities.dp(1) + textWidth);
         int occupingHeight = 0;
-        if (!messageObject.isAnyKindOfSticker() && messageObject.type != MessageObject.TYPE_ROUND_VIDEO || messageObject.type == MessageObject.TYPE_EMOJIS) {
+        if (!messageObject.isAnyKindOfSticker() && messageObject.type != MessageObject.TYPE_ROUND_VIDEO) {
             occupingHeight += AndroidUtilities.dp(6) + topicHeight;
-            if (messageObject.type == MessageObject.TYPE_EMOJIS) {
-                occupingHeight += AndroidUtilities.dp(16);
-            } else if (messageObject.type != MessageObject.TYPE_TEXT) {
+            if (messageObject.type != MessageObject.TYPE_TEXT) {
                 occupingHeight += AndroidUtilities.dp(9);
             }
         }

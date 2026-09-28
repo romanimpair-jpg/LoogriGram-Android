@@ -454,7 +454,7 @@ public class RichHtml {
             if (urls.length > 0) url = urls[0].getURL();
             long emojiId = 0;
             AnimatedEmojiSpan[] emoji = sp.getSpans(pos, next, AnimatedEmojiSpan.class);
-            if (emoji.length > 0 && !emoji[0].standard) emojiId = emoji[0].getDocumentId();
+            if (emoji.length > 0) emojiId = emoji[0].getDocumentId();
 
             openInline(out, flags, url, emojiId);
             escape(out, cs, pos, next);

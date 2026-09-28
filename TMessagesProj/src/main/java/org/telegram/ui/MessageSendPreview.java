@@ -249,7 +249,7 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
                     final float textY = isSticker ? mainMessageCell.getPhotoImage().getImageY() : mainMessageCell.getTextY();
                     final float messageCellTextX = chatListView.getX() + mainMessageCell.getX() + textX;
                     final float messageCellTextY = chatListView.getY() + mainMessageCell.getY() + textY;
-                    final float messageCellTextSize = (mainMessageCell.getMessageObject() != null ? mainMessageCell.getMessageObject().getTextPaint() : Theme.chat_msgTextPaint).getTextSize();
+                    final float messageCellTextSize = Theme.chat_msgTextPaint.getTextSize();
 
                     float top, bottom;
                     float x, y, ts;

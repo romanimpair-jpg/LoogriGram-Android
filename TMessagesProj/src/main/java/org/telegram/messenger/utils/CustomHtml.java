@@ -236,7 +236,7 @@ public class CustomHtml {
             if (spans != null) {
                 for (int j = 0; j < spans.length; ++j) {
                     AnimatedEmojiSpan span = spans[j];
-                    if (span != null && !span.standard) {
+                    if (span != null) {
                         out.append("<animated-emoji data-document-id=\"" + span.documentId + "\">");
                     }
                 }
@@ -247,7 +247,7 @@ public class CustomHtml {
             if (spans != null) {
                 for (int j = 0; j < spans.length; ++j) {
                     AnimatedEmojiSpan span = spans[j];
-                    if (span != null && !span.standard) {
+                    if (span != null) {
                         out.append("</animated-emoji>");
                     }
                 }

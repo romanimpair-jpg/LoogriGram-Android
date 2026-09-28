@@ -3205,7 +3205,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         inputMedia = inputTodo;
                     }
                 }
-                if (inputMedia instanceof TLRPC.TL_inputMediaEmpty && (messageObject.type == MessageObject.TYPE_TEXT || messageObject.type == MessageObject.TYPE_EMOJIS)) {
+                if (inputMedia instanceof TLRPC.TL_inputMediaEmpty && messageObject.type == MessageObject.TYPE_TEXT) {
                     inputMedia = null;
                 }
 

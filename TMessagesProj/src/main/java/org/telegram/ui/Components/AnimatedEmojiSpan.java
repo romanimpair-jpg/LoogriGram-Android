@@ -51,10 +51,11 @@ public class AnimatedEmojiSpan extends ReplacementSpan {
     public String emoji;
     private float scale;
     public float extraScale = 1f;
-    public boolean standard;
+    // LoogriGram: standard and invert marked a plain emoji swapped for its
+    // animated sticker's first frame (mirrored for a right-facing one) in a
+    // message of only emoji. That was large emoji, removed as on desktop.
     public boolean full = false;
     public boolean top = false;
-    public boolean invert = false;
 
     private Paint.FontMetricsInt fontMetrics;
     private boolean preserveFontMetrics;
@@ -479,9 +480,9 @@ public class AnimatedEmojiSpan extends ReplacementSpan {
                     float scale = span.getExtraScale();
                     thumbDrawable.setAlpha((int) (0xFF * alpha * this.alpha));
                     thumbDrawable.setBounds(drawableBounds);
-                    if (scale != 1f || span.invert) {
+                    if (scale != 1f) {
                         canvas.save();
-                        canvas.scale(scale * (span.invert ? -1 : 1), scale, drawableBounds.centerX(), drawableBounds.centerY());
+                        canvas.scale(scale, scale, drawableBounds.centerX(), drawableBounds.centerY());
                         thumbDrawable.draw(canvas);
                         canvas.restore();
                     } else {
@@ -494,9 +495,9 @@ public class AnimatedEmojiSpan extends ReplacementSpan {
                 drawable.setColorFilter(colorFilter == null ? Theme.chat_animatedEmojiTextColorFilter : colorFilter);
                 drawable.setTime(time);
                 float scale = span.getExtraScale();
-                if (scale != 1f || span.invert) {
+                if (scale != 1f) {
                     canvas.save();
-                    canvas.scale(scale * (span.invert ? -1 : 1), scale, drawableBounds.centerX(), drawableBounds.centerY());
+                    canvas.scale(scale, scale, drawableBounds.centerX(), drawableBounds.centerY());
                     drawable.draw(canvas, drawableBounds, alpha * this.alpha);
                     canvas.restore();
                 } else {
@@ -590,7 +591,7 @@ public class AnimatedEmojiSpan extends ReplacementSpan {
                     if (holder == null) {
                         holder = new AnimatedEmojiHolder(view, invalidateParent);
                         holder.layout = textLayout;
-                        int localCacheType = span.standard ? AnimatedEmojiDrawable.STANDARD_LOTTIE_FRAME : (span.cacheType < 0 ? cacheType : span.cacheType);
+                        int localCacheType = span.cacheType < 0 ? cacheType : span.cacheType;
                         if (span.documentAbsolutePath != null) {
                             holder.drawable = AnimatedEmojiDrawable.make(UserConfig.selectedAccount, localCacheType, span.getDocumentId(), span.documentAbsolutePath);
                         } else if (span.document != null) {
@@ -699,7 +700,7 @@ public class AnimatedEmojiSpan extends ReplacementSpan {
             if (span != null) {
                 if (prev.get(span.getDocumentId()) == null) {
                     AnimatedEmojiDrawable drawable;
-                    int localCacheType = span.standard ? AnimatedEmojiDrawable.STANDARD_LOTTIE_FRAME : (span.cacheType < 0 ? cacheType : span.cacheType);
+                    int localCacheType = span.cacheType < 0 ? cacheType : span.cacheType;
                     if (span.document != null) {
                         drawable = AnimatedEmojiDrawable.make(UserConfig.selectedAccount, localCacheType, span.document);
                     } else {
@@ -755,7 +756,7 @@ public class AnimatedEmojiSpan extends ReplacementSpan {
             if (span != null) {
                 if (prev.get(span.getDocumentId()) == null) {
                     AnimatedEmojiDrawable drawable;
-                    int localCacheType = span.standard ? AnimatedEmojiDrawable.STANDARD_LOTTIE_FRAME : (span.cacheType < 0 ? cacheType : span.cacheType);
+                    int localCacheType = span.cacheType < 0 ? cacheType : span.cacheType;
                     drawable = AnimatedEmojiDrawable.make(UserConfig.selectedAccount, localCacheType, span.documentId);
                     drawable.addView(holder);
                     prev.put(span.getDocumentId(), drawable);

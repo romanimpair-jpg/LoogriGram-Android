@@ -159,37 +159,6 @@ public class TextMessageEnterTransition implements MessageEnterTransitionContain
         int layoutH = chatActivityEnterView.getEditField().getLayout().getHeight();
         TextPaint textPaint = Theme.chat_msgTextPaint;
         int emojiSize = dp(20);
-        if (messageView.getMessageObject().getEmojiOnlyCount() != 0) {
-            boolean large = messageView.getMessageObject().emojiOnlyCount == messageView.getMessageObject().animatedEmojiCount;
-            switch (Math.max(messageView.getMessageObject().emojiOnlyCount, messageView.getMessageObject().animatedEmojiCount)) {
-                case 0:
-                case 1:
-                case 2:
-                    textPaint = large ? Theme.chat_msgTextPaintEmoji[0] : Theme.chat_msgTextPaintEmoji[2];
-                    break;
-                case 3:
-                    textPaint = large ? Theme.chat_msgTextPaintEmoji[1] : Theme.chat_msgTextPaintEmoji[3];
-                    break;
-                case 4:
-                    textPaint = large ? Theme.chat_msgTextPaintEmoji[2] : Theme.chat_msgTextPaintEmoji[4];
-                    break;
-                case 5:
-                    textPaint = large ? Theme.chat_msgTextPaintEmoji[3] : Theme.chat_msgTextPaintEmoji[5];
-                    break;
-                case 6:
-                    textPaint = large ? Theme.chat_msgTextPaintEmoji[4] : Theme.chat_msgTextPaintEmoji[5];
-                    break;
-                case 7:
-                case 8:
-                case 9:
-                default:
-                    textPaint = Theme.chat_msgTextPaintEmoji[5];
-                    break;
-            }
-            if (textPaint != null) {
-                emojiSize = (int) (textPaint.getTextSize() + dp(4));
-            }
-        }
         boolean containsSpans = false;
         if (text instanceof Spannable) {
             Spannable spannable = (Spannable) text;
@@ -493,10 +462,7 @@ public class TextMessageEnterTransition implements MessageEnterTransitionContain
         float drawableH = messageView.getBackgroundDrawableBottom() - messageView.getBackgroundDrawableTop();
         float drawableBottom = (drawableFromBottom - container.getY()) * (1f - progress) + (drawableToTop + drawableH) * progress;
         int drawableRight = (int) (messageViewX + messageView.getBackgroundDrawableRight() + dp(4) * (1f - progressX));
-        MessageDrawable drawable = null;
-        if (!currentMessageObject.isAnimatedEmojiStickers()) {
-            drawable = messageView.getCurrentBackgroundDrawable(true);
-        }
+        MessageDrawable drawable = messageView.getCurrentBackgroundDrawable(true);
 
 
         if (drawable != null) {
@@ -749,9 +715,7 @@ public class TextMessageEnterTransition implements MessageEnterTransitionContain
 
         canvas.save();
 
-        if (messageView.getMessageObject() == null || messageView.getMessageObject().type != MessageObject.TYPE_EMOJIS) {
-            canvas.clipRect(drawableX + dp(4), drawableTop + dp(4), drawableRight - dp(4), drawableBottom - dp(4));
-        }
+        canvas.clipRect(drawableX + dp(4), drawableTop + dp(4), drawableRight - dp(4), drawableBottom - dp(4));
 
         float scale = progressX + scaleFrom * (1f - progressX);
         float scale2;
