@@ -45,7 +45,6 @@ import org.telegram.tgnet.tl.TL_account;
 import org.telegram.tgnet.tl.TL_bots;
 import org.telegram.tgnet.tl.TL_communities;
 import org.telegram.tgnet.tl.TL_ephemeral;
-import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.tgnet.tl.TL_update;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Adapters.DialogsSearchAdapter;
@@ -722,6 +721,10 @@ public class MessagesStorage extends BaseController {
         database.executeFast("CREATE TABLE web_browser_settings(data BLOB)").stepThis().dispose();
         database.executeFast("CREATE TABLE effects(data BLOB)").stepThis().dispose();
 
+        // LoogriGram: stories, stories_counter, profile_stories and its album
+        // tables and story_drafts held the story lists, their read state, the
+        // profiles' stories and our drafts. Stories are removed, as on desktop;
+        // the tables stay in the schema but are no longer written or read.
         database.executeFast("CREATE TABLE stories (dialog_id INTEGER, story_id INTEGER, data BLOB, custom_params BLOB, PRIMARY KEY (dialog_id, story_id));").stepThis().dispose();
         database.executeFast("CREATE TABLE stories_counter (dialog_id INTEGER PRIMARY KEY, count INTEGER, max_read INTEGER);").stepThis().dispose();
 
@@ -1382,6 +1385,11 @@ public class MessagesStorage extends BaseController {
                 database.executeFast("DELETE FROM profile_stories_albums").stepThis().dispose();
                 database.executeFast("DELETE FROM profile_stories_albums_links").stepThis().dispose();
                 database.executeFast("DELETE FROM story_pushes").stepThis().dispose();
+                // LoogriGram: what the story tables still held from before goes too;
+                // nothing else would ever clear it.
+                database.executeFast("DELETE FROM stories").stepThis().dispose();
+                database.executeFast("DELETE FROM stories_counter").stepThis().dispose();
+                database.executeFast("DELETE FROM story_drafts").stepThis().dispose();
                 database.executeFast("DELETE FROM dialog_photos").stepThis().dispose();
                 database.executeFast("DELETE FROM dialog_photos_count").stepThis().dispose();
                 database.executeFast("DELETE FROM saved_reaction_tags").stepThis().dispose();
@@ -4684,14 +4692,9 @@ public class MessagesStorage extends BaseController {
                         } else {
                             state.bindInteger(9, getMessageMediaType(message));
                         }
-                        NativeByteBuffer storyData = null;
-                        if (message.replyStory != null) {
-                            storyData = new NativeByteBuffer(message.replyStory.getObjectSize());
-                            message.replyStory.serializeToStream(storyData);
-                            state.bindByteBuffer(10, storyData);
-                        } else {
-                            state.bindNull(10);
-                        }
+                        // LoogriGram: a reply to a story kept the story in replydata. Stories are
+                        // removed; the reply keeps its text and loses the quote, as on desktop.
+                        state.bindNull(10);
                         int flags = 0;
                         if (message.stickerVerified == 0) {
                             flags |= 1;
@@ -4726,11 +4729,8 @@ public class MessagesStorage extends BaseController {
                         } else {
                             state.bindNull(18);
                         }
-                        if (message.reply_to != null) {
-                            state.bindInteger(19, message.reply_to.story_id);
-                        } else {
-                            state.bindInteger(19, 0);
-                        }
+                        // LoogriGram: reply_to_story_id stays in the schema, unused.
+                        state.bindInteger(19, 0);
                         state.step();
                         data.reuse();
                         if (repliesData != null) {
@@ -4738,9 +4738,6 @@ public class MessagesStorage extends BaseController {
                         }
                         if (customParams != null) {
                             customParams.reuse();
-                        }
-                        if (storyData != null) {
-                            storyData.reuse();
                         }
                     }
                     if (state != null) {
@@ -8986,17 +8983,6 @@ public class MessagesStorage extends BaseController {
                                         }
                                     }
                                 }
-                            } else if (message.reply_to.story_id != 0) {
-                                if (!cursor.isNull(6)) {
-                                    data = cursor.byteBufferValue(6);
-                                    if (data != null) {
-                                        message.replyStory = TL_stories.StoryItem.TLdeserialize(data, data.readInt32(false), false);
-                                        if (message.replyStory != null && message.replyStory.fwd_from != null) {
-                                            addLoadPeerInfo(message.replyStory.fwd_from.from, usersToLoad, chatsToLoad);
-                                        }
-                                        data.reuse();
-                                    }
-                                }
                             }
                             if (message.replyMessage == null) {
                                 if (message.reply_to.reply_to_msg_id != 0) {
@@ -11901,14 +11887,9 @@ public class MessagesStorage extends BaseController {
                         } else {
                             statement.bindInteger(pointer++, getMessageMediaType(message));
                         }
-                        NativeByteBuffer storyData = null;
-                        if (message.replyStory != null) {
-                            storyData = new NativeByteBuffer(message.replyStory.getObjectSize());
-                            message.replyStory.serializeToStream(storyData);
-                            statement.bindByteBuffer(pointer++, storyData);
-                        } else {
-                            statement.bindNull(pointer++);
-                        }
+                        // LoogriGram: a reply to a story kept the story in replydata. Stories are
+                        // removed; the reply keeps its text and loses the quote, as on desktop.
+                        statement.bindNull(pointer++);
                         int flags = 0;
                         if (message.stickerVerified == 0) {
                             flags |= 1;
@@ -11945,11 +11926,8 @@ public class MessagesStorage extends BaseController {
                                 statement.bindNull(pointer++);
                             }
                         }
-                        if (message.reply_to != null) {
-                            statement.bindInteger(pointer++, message.reply_to.story_id);
-                        } else {
-                            statement.bindInteger(pointer++, 0);
-                        }
+                        // LoogriGram: reply_to_story_id stays in the schema, unused.
+                        statement.bindInteger(pointer++, 0);
                         statement.step();
 
                         if (repliesData != null) {
@@ -11957,9 +11935,6 @@ public class MessagesStorage extends BaseController {
                         }
                         if (customParams != null) {
                             customParams.reuse();
-                        }
-                        if (storyData != null) {
-                            storyData.reuse();
                         }
                     }
 
@@ -15007,14 +14982,9 @@ public class MessagesStorage extends BaseController {
                     } else {
                         state.bindInteger(pointer++, getMessageMediaType(message));
                     }
-                    NativeByteBuffer storyData = null;
-                    if (message.replyStory != null) {
-                        storyData = new NativeByteBuffer(message.replyStory.getObjectSize());
-                        message.replyStory.serializeToStream(storyData);
-                        state.bindByteBuffer(pointer++, storyData);
-                    } else {
-                        state.bindNull(pointer++);
-                    }
+                    // LoogriGram: a reply to a story kept the story in replydata. Stories are
+                    // removed; the reply keeps its text and loses the quote, as on desktop.
+                    state.bindNull(pointer++);
                     int flags = 0;
                     if (message.stickerVerified == 0) {
                         flags |= 1;
@@ -15050,19 +15020,13 @@ public class MessagesStorage extends BaseController {
                             state.bindNull(pointer++);
                         }
                     }
-                    if (message.reply_to != null) {
-                        state.bindInteger(pointer++, message.reply_to.story_id);
-                    } else {
-                        state.bindInteger(pointer++, 0);
-                    }
+                    // LoogriGram: reply_to_story_id stays in the schema, unused.
+                    state.bindInteger(pointer++, 0);
                     state.step();
                     state.dispose();
                     state = null;
                     if (repliesData != null) {
                         repliesData.reuse();
-                    }
-                    if (storyData != null) {
-                        storyData.reuse();
                     }
 
                     if (removeSavedPeerIdLater) {
@@ -15494,14 +15458,9 @@ public class MessagesStorage extends BaseController {
                             } else {
                                 currentState.bindInteger(pointer++, getMessageMediaType(message));
                             }
-                            NativeByteBuffer storyData = null;
-                            if (message.replyStory != null) {
-                                storyData = new NativeByteBuffer(message.replyStory.getObjectSize());
-                                message.replyStory.serializeToStream(storyData);
-                                currentState.bindByteBuffer(pointer++, storyData);
-                            } else {
-                                currentState.bindNull(pointer++);
-                            }
+                            // LoogriGram: a reply to a story kept the story in replydata. Stories are
+                            // removed; the reply keeps its text and loses the quote, as on desktop.
+                            currentState.bindNull(pointer++);
                             int flags = 0;
                             if (message.stickerVerified == 0) {
                                 flags |= 1;
@@ -15538,11 +15497,8 @@ public class MessagesStorage extends BaseController {
                                     currentState.bindNull(pointer++);
                                 }
                             }
-                            if (message.reply_to != null) {
-                                currentState.bindInteger(pointer++, message.reply_to.story_id);
-                            } else {
-                                currentState.bindInteger(pointer++, 0);
-                            }
+                            // LoogriGram: reply_to_story_id stays in the schema, unused.
+                            currentState.bindInteger(pointer++, 0);
                             currentState.step();
 
                             if (repliesData != null) {
@@ -15550,9 +15506,6 @@ public class MessagesStorage extends BaseController {
                             }
                             if (customParams != null) {
                                 customParams.reuse();
-                            }
-                            if (storyData != null) {
-                                storyData.reuse();
                             }
 
                             if (removeSavedPeerIdLater) {
@@ -16440,11 +16393,8 @@ public class MessagesStorage extends BaseController {
                         } else {
                             state_messages.bindNull(16);
                         }
-                        if (message.reply_to != null) {
-                            state_messages.bindInteger(17, message.reply_to.story_id);
-                        } else {
-                            state_messages.bindInteger(17, 0);
-                        }
+                        // LoogriGram: reply_to_story_id stays in the schema, unused.
+                        state_messages.bindInteger(17, 0);
                         state_messages.step();
 
                         if (MediaDataController.canAddMessageToMedia(message)) {
