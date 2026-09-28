@@ -28,7 +28,6 @@ import org.telegram.messenger.FileLog;
 import org.telegram.messenger.ImageLoader;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
-import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.SvgHelper;
 import org.telegram.messenger.TranslateController;
 import org.telegram.messenger.Utilities;
@@ -57325,13 +57324,8 @@ public class TLRPC {
             }
             return result;
         }
-
-        public Document getDocument() {
-            if (!alt_documents.isEmpty() && !MessagesController.isStoryQualityFull()) {
-                return alt_documents.get(0);
-            }
-            return document;
-        }
+        // LoogriGram: getDocument() gave a story's lower-quality video unless the
+        // viewer was set to full quality (Premium). Stories are removed.
     }
     //MessageMedia end
 

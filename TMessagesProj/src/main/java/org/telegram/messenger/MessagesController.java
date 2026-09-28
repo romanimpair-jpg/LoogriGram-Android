@@ -178,14 +178,15 @@ public class MessagesController extends BaseController implements NotificationCe
     private SparseArray<ChatlistUpdatesStat> chatlistFoldersUpdates = new SparseArray<>();
     public int largeQueueMaxActiveOperations = 2;
     public int smallQueueMaxActiveOperations = 5;
-    public int stealthModeFuture;
-    public int stealthModePast;
-    public int stealthModeCooldown;
     public SavedMessagesController savedMessagesController;
     public UnconfirmedAuthController unconfirmedAuthController;
     private boolean hasArchivedChats;
-    private boolean hasStories;
-    public long storiesChangelogUserId = 777000;
+    // LoogriGram: the story config sat here and below - stealth mode's
+    // periods (stories_stealth_*), the changelog account whose captions were
+    // always formatted (stories_changelog_user_id), the venue and weather
+    // bots for story stickers, export without a public link, the pinned-story
+    // limit and the story video quality. Stories are removed, as on desktop,
+    // and the keys are no longer read.
 
     public static TLRPC.Peer getPeerFromInputPeer(TLRPC.InputPeer peer) {
         if (peer.chat_id != 0) {
@@ -290,7 +291,6 @@ public class MessagesController extends BaseController implements NotificationCe
     private SparseIntArray migratedChats = new SparseIntArray();
 
     private LongSparseArray<SendAsPeersInfo> sendAsPeers = new LongSparseArray<>();
-    private LongSparseArray<SendAsPeersInfo> sendAsPeersLiveStories = new LongSparseArray<>();
 
     private HashMap<String, ArrayList<MessageObject>> reloadingWebpages = new HashMap<>();
     private LongSparseArray<ArrayList<MessageObject>> reloadingWebpagesPending = new LongSparseArray<>();
@@ -516,7 +516,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public boolean collectDeviceStats;
     public boolean showFiltersTooltip;
     public String venueSearchBot;
-    public String storyVenueSearchBot;
     public String gifSearchBot;
     public String imageSearchBot;
     public String dcDomainName;
@@ -544,7 +543,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public boolean remoteConfigLoaded;
     public int ringtoneDurationMax;
     public int ringtoneSizeMax;
-    public boolean storiesExportNopublicLink;
     public int authorizationAutoconfirmPeriod;
     public int quoteLengthMax;
     public PeerColors peerColors;
@@ -597,22 +595,18 @@ public class MessagesController extends BaseController implements NotificationCe
     public int reactionsUniqMax;
     public String premiumManageSubscriptionUrl;
     public boolean androidDisableRoundCamera2;
-    public int storiesPinnedToTopCountMax;
     public boolean showAnnualPerMonth = false;
     public boolean canEditFactcheck;
     public int factcheckLengthLimit;
     // LoogriGram: botPreviewMediasMax (bot_preview_medias_max) sat here; bot
     // previews are removed, as on desktop, and the key is no longer read.
     public String tonProxyAddress;
-    public String weatherSearchUsername;
-    public boolean storyWeatherPreload;
     public boolean stargiftsBlocked;
     public float starsUsdSellRate1000;
     public int botVerificationDescriptionLengthLimit;
     public int savedDialogsPinnedLimitDefault;
     public int savedDialogsPinnedLimitPremium;
     public boolean savedViewAsChats;
-    public boolean storyQualityFull;
     public int uploadMaxFileParts;
     public int uploadMaxFilePartsPremium;
     public String premiumBotUsername;
@@ -1525,7 +1519,6 @@ public class MessagesController extends BaseController implements NotificationCe
         promoPsaType = mainPreferences.getString("promo_psa_type", null);
         proxyDialogAddress = mainPreferences.getString("proxyDialogAddress", null);
         venueSearchBot = mainPreferences.getString("venueSearchBot", "foursquare");
-        storyVenueSearchBot = mainPreferences.getString("storyVenueSearchBot", "foursquare");
         gifSearchBot = mainPreferences.getString("gifSearchBot", "gif");
         imageSearchBot = mainPreferences.getString("imageSearchBot", "pic");
         blockedCountry = mainPreferences.getBoolean("blockedCountry", false);
@@ -1595,10 +1588,6 @@ public class MessagesController extends BaseController implements NotificationCe
         checkResetLangpack = mainPreferences.getInt("checkResetLangpack", 0);
         smallQueueMaxActiveOperations = mainPreferences.getInt("smallQueueMaxActiveOperations", 5);
         largeQueueMaxActiveOperations = mainPreferences.getInt("largeQueueMaxActiveOperations", 2);
-        stealthModeFuture = mainPreferences.getInt("stories_stealth_future_period", 25 * 60);
-        storiesChangelogUserId = mainPreferences.getLong("stories_changelog_user_id", 777000);
-        stealthModePast = mainPreferences.getInt("stories_stealth_past_period", 5 * 60);
-        stealthModeCooldown = mainPreferences.getInt("stories_stealth_cooldown_period", 60 * 60);
         boolean isTest = ConnectionsManager.native_isTestBackend(currentAccount) != 0;
         chatlistInvitesLimitDefault = mainPreferences.getInt("chatlistInvitesLimitDefault", 3);
         groupTranscribeLevelMin = mainPreferences.getInt("groupTranscribeLevelMin", 1);
@@ -1624,7 +1613,6 @@ public class MessagesController extends BaseController implements NotificationCe
         freezeAppealUrl = mainPreferences.getString("freezeAppealUrl", "t.me/spambot");
         enableGiftsInProfile = mainPreferences.getBoolean("enableGiftsInProfile", true);
         storiesEntities = mainPreferences.getString("storiesEntities", "premium");
-        storiesExportNopublicLink = mainPreferences.getBoolean("storiesExportNopublicLink", false);
         authorizationAutoconfirmPeriod = mainPreferences.getInt("authorization_autoconfirm_period", 604800);
         quoteLengthMax = mainPreferences.getInt("quoteLengthMax", 1024);
         peerColors = PeerColors.fromString(PeerColors.TYPE_NAME, mainPreferences.getString("peerColors", ""));
@@ -1638,7 +1626,6 @@ public class MessagesController extends BaseController implements NotificationCe
         channelRestrictSponsoredLevelMin = mainPreferences.getInt("channelRestrictSponsoredLevelMin", 30);
         savedDialogsPinnedLimitDefault = mainPreferences.getInt("savedDialogsPinnedLimitDefault", 4);
         savedDialogsPinnedLimitPremium = mainPreferences.getInt("savedDialogsPinnedLimitPremium", 6);
-        storyQualityFull = mainPreferences.getBoolean("storyQualityFull", true);
         savedViewAsChats = mainPreferences.getBoolean("savedViewAsChats", false);
         folderTags = mainPreferences.getBoolean("folderTags", false);
         introTitleLengthLimit = mainPreferences.getInt("introTitleLengthLimit", 32);
@@ -1647,15 +1634,12 @@ public class MessagesController extends BaseController implements NotificationCe
         reactionsUniqMax = mainPreferences.getInt("reactionsUniqMax", 11);
         premiumManageSubscriptionUrl = mainPreferences.getString("premiumManageSubscriptionUrl", ApplicationLoader.isStandaloneBuild() ? "https://t.me/premiumbot?start=status" : "https://play.google.com/store/account/subscriptions?sku=telegram_premium&package=org.telegram.messenger");
         androidDisableRoundCamera2 = mainPreferences.getBoolean("androidDisableRoundCamera2", true);
-        storiesPinnedToTopCountMax = mainPreferences.getInt("storiesPinnedToTopCountMax", 3);
         showAnnualPerMonth = mainPreferences.getBoolean("showAnnualPerMonth", false);
         canEditFactcheck = mainPreferences.getBoolean("canEditFactcheck", false);
         factcheckLengthLimit = mainPreferences.getInt("factcheckLengthLimit", 1024);
         webAppAllowedProtocols = mainPreferences.getStringSet("webAppAllowedProtocols", new HashSet<>(Arrays.asList("http", "https")));
         ignoreRestrictionReasons = mainPreferences.getStringSet("ignoreRestrictionReasons", new HashSet<>(Arrays.asList()));
         tonProxyAddress = mainPreferences.getString("tonProxyAddress", "magic.org");
-        weatherSearchUsername = mainPreferences.getString("weatherSearchUsername", "izweatherbot");
-        storyWeatherPreload = mainPreferences.getBoolean("storyWeatherPreload", true);
         stargiftsBlocked = mainPreferences.getBoolean("stargiftsBlocked", true); // !BuildVars.DEBUG_VERSION);
         starsUsdSellRate1000 = mainPreferences.getFloat("starsUsdSellRate1000", 2000);
         botVerificationDescriptionLengthLimit = mainPreferences.getInt("botVerificationDescriptionLengthLimit", 70);
@@ -2516,34 +2500,6 @@ public class MessagesController extends BaseController implements NotificationCe
         for (int a = 0, N = object.value.size(); a < N; a++) {
             TLRPC.TL_jsonObjectValue value = object.value.get(a);
             switch (value.key) {
-                case "stories_changelog_user_id": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        storiesChangelogUserId = (long) ((TLRPC.TL_jsonNumber) value.value).value;
-                        editor.putLong("stories_changelog_user_id", storiesChangelogUserId);
-                    }
-                    break;
-                }
-                case "stories_stealth_future_period": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        stealthModeFuture = (int) ((TLRPC.TL_jsonNumber) value.value).value;
-                        editor.putInt("stories_stealth_future_period", stealthModeFuture);
-                    }
-                    break;
-                }
-                case "stories_stealth_past_period": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        stealthModePast = (int) ((TLRPC.TL_jsonNumber) value.value).value;
-                        editor.putInt("stories_stealth_past_period", stealthModePast);
-                    }
-                    break;
-                }
-                case "stories_stealth_cooldown_period": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        stealthModeCooldown = (int) ((TLRPC.TL_jsonNumber) value.value).value;
-                        editor.putInt("stories_stealth_cooldown_period", stealthModeCooldown);
-                    }
-                    break;
-                }
                 case "large_queue_max_active_operations_count": {
                     if (value.value instanceof TLRPC.TL_jsonNumber) {
                         largeQueueMaxActiveOperations = (int) ((TLRPC.TL_jsonNumber) value.value).value;
@@ -3716,28 +3672,6 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
-                case "stories_export_nopublic_link": {
-                    if (value.value instanceof TLRPC.TL_jsonBool) {
-                        TLRPC.TL_jsonBool bool = (TLRPC.TL_jsonBool) value.value;
-                        if (storiesExportNopublicLink != bool.value) {
-                            storiesExportNopublicLink = bool.value;
-                            editor.putBoolean("storiesExportNopublicLink", storiesExportNopublicLink);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "stories_venue_search_username": {
-                    if (value.value instanceof TLRPC.TL_jsonString) {
-                        TLRPC.TL_jsonString str = (TLRPC.TL_jsonString) value.value;
-                        if (!TextUtils.equals(storyVenueSearchBot, str.value)) {
-                            storyVenueSearchBot = str.value;
-                            editor.putString("storyVenueSearchBot", storyVenueSearchBot);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
                 case "authorization_autoconfirm_period": {
                     if (value.value instanceof TLRPC.TL_jsonNumber) {
                         TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
@@ -3917,17 +3851,6 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
-                case "stories_pinned_to_top_count_max": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != storiesPinnedToTopCountMax) {
-                            storiesPinnedToTopCountMax = (int) num.value;
-                            editor.putInt("storiesPinnedToTopCountMax", storiesPinnedToTopCountMax);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
                 case "show_annual_per_month": {
                     if (value.value instanceof TLRPC.TL_jsonBool) {
                         TLRPC.TL_jsonBool bool = (TLRPC.TL_jsonBool) value.value;
@@ -3988,28 +3911,6 @@ public class MessagesController extends BaseController implements NotificationCe
                         webAppAllowedProtocols = newProtocols;
                         editor.putStringSet("webAppAllowedProtocols", webAppAllowedProtocols);
                         changed = true;
-                    }
-                    break;
-                }
-                case "weather_search_username": {
-                    if (value.value instanceof TLRPC.TL_jsonString) {
-                        TLRPC.TL_jsonString str = (TLRPC.TL_jsonString) value.value;
-                        if (!TextUtils.equals(str.value, weatherSearchUsername)) {
-                            weatherSearchUsername = str.value;
-                            editor.putString("weatherSearchUsername", weatherSearchUsername);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "story_weather_preload": {
-                    if (value.value instanceof TLRPC.TL_jsonBool) {
-                        TLRPC.TL_jsonBool bool = (TLRPC.TL_jsonBool) value.value;
-                        if (bool.value != storyWeatherPreload) {
-                            storyWeatherPreload = bool.value;
-                            editor.putBoolean("storyWeatherPreload", storyWeatherPreload);
-                            changed = true;
-                        }
                     }
                     break;
                 }
@@ -5631,9 +5532,6 @@ public class MessagesController extends BaseController implements NotificationCe
         } else if (id == NotificationCenter.currentUserPremiumStatusChanged) {
             loadAppConfig(false);
             getContactsController().reloadContactsStatusesMaybe(true);
-            if (storyQualityFull && !getUserConfig().isPremium() || getUserConfig().isPremium()) {
-                getNotificationCenter().postNotificationName(NotificationCenter.storyQualityUpdate);
-            }
         }
     }
 
@@ -5719,7 +5617,6 @@ public class MessagesController extends BaseController implements NotificationCe
         reloadingSavedWebpages.clear();
         reloadingSavedWebpagesPending.clear();
         sendAsPeers.clear();
-        sendAsPeersLiveStories.clear();
         dialogs_dict.clear();
         dialogs_read_inbox_max.clear();
         loadingPinnedDialogs.clear();
@@ -6289,9 +6186,8 @@ public class MessagesController extends BaseController implements NotificationCe
                     } else {
                         oldChat.flags |= 16384;
                     }
-                    if (chat.stories_hidden_min) {
-                        chat.stories_hidden = oldChat.stories_hidden;
-                    }
+                    // LoogriGram: a min chat also kept the full one's stories_hidden
+                    // here. Stories are removed, and nothing reads it.
                     if (oldFlags != newFlags || oldFlags2 != newFlags2) {
                         AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.channelRightsUpdated, chat));
                     }
@@ -9198,7 +9094,6 @@ public class MessagesController extends BaseController implements NotificationCe
             }
         }
         sendAsPeers.remove(did);
-        sendAsPeersLiveStories.remove(did);
         if (first == 1 && max_id == 0) {
             TLRPC.InputPeer peerFinal = peer;
             getMessagesStorage().getDialogMaxMessageId(did, (param) -> {
@@ -20562,23 +20457,19 @@ public class MessagesController extends BaseController implements NotificationCe
 
     public void clearSendAsPeers() {
         sendAsPeers.clear();
-        sendAsPeersLiveStories.clear();
     }
 
+    // LoogriGram: a second cache held the peers a live story could be
+    // commented as (for_live_stories). Live stories are removed, as on desktop.
     public TLRPC.TL_channels_sendAsPeers getSendAsPeers(long dialogId) {
-        return getSendAsPeers(dialogId, false);
-    }
-    public TLRPC.TL_channels_sendAsPeers getSendAsPeers(long dialogId, boolean live_stories) {
-        final LongSparseArray<SendAsPeersInfo> array = live_stories ? sendAsPeersLiveStories : sendAsPeers;
+        final LongSparseArray<SendAsPeersInfo> array = sendAsPeers;
         SendAsPeersInfo info = array.get(dialogId);
         if (info != null && (info.loading || Math.abs(SystemClock.elapsedRealtime() - info.loadTime) <= 5 * 60 * 1000)) {
             return info.sendAsPeers;
         }
-        if (!live_stories) {
-            final TLRPC.Chat chat = getChat(-dialogId);
-            if (chat == null || !ChatObject.canSendAsPeers(chat)) {
-                return null;
-            }
+        final TLRPC.Chat chat = getChat(-dialogId);
+        if (chat == null || !ChatObject.canSendAsPeers(chat)) {
+            return null;
         }
         info = new SendAsPeersInfo();
         info.loading = true;
@@ -20586,7 +20477,6 @@ public class MessagesController extends BaseController implements NotificationCe
         SendAsPeersInfo infoFinal = info;
         final TLRPC.TL_channels_getSendAs req = new TLRPC.TL_channels_getSendAs();
         req.peer = getInputPeer(dialogId);
-        req.for_live_stories = live_stories;
         getConnectionsManager().sendRequest(req, (response, error) -> {
             TLRPC.TL_channels_sendAsPeers result;
             if (response != null) {
@@ -20609,7 +20499,7 @@ public class MessagesController extends BaseController implements NotificationCe
                 } else {
                     infoFinal.loadTime = SystemClock.elapsedRealtime();
                     infoFinal.sendAsPeers = result;
-                    getNotificationCenter().postNotificationName(NotificationCenter.didLoadSendAsPeers, dialogId, result, live_stories);
+                    getNotificationCenter().postNotificationName(NotificationCenter.didLoadSendAsPeers, dialogId, result);
                 }
             });
         });
@@ -22518,18 +22408,11 @@ public class MessagesController extends BaseController implements NotificationCe
         }
     }
 
-    // LoogriGram: "premium" answers false, for our captions and other people's
-    // alike - Premium is honoured for nobody - so a story caption is formatted
-    // only where the server allows it for everyone.
+    // LoogriGram: "premium" answers false - Premium is honoured for nobody.
+    // Stories are removed; stories_entities is still read because the attach
+    // menu's article button takes its Premium badge from it (ChatAttachAlert).
     public boolean storyEntitiesAllowed() {
         return "enabled".equals(storiesEntities);
-    }
-
-    public boolean storyEntitiesAllowed(TLRPC.User user) {
-        if (user != null && user.id == storiesChangelogUserId) {
-            return true;
-        }
-        return storyEntitiesAllowed();
     }
 
     public static class ChannelRecommendations {
@@ -22660,13 +22543,6 @@ public class MessagesController extends BaseController implements NotificationCe
         }
     }
 
-    public void setStoryQuality(boolean full) {
-        if (storyQualityFull != full) {
-            mainPreferences.edit().putBoolean("storyQualityFull", storyQualityFull = full).apply();
-            getNotificationCenter().postNotificationName(NotificationCenter.storyQualityUpdate);
-        }
-    }
-
     public void setSavedViewAs(boolean chats) {
         if (savedViewAsChats != chats) {
             mainPreferences.edit().putBoolean("savedViewAsChats", savedViewAsChats = chats).apply();
@@ -22675,14 +22551,6 @@ public class MessagesController extends BaseController implements NotificationCe
 
     public void setFolderTags(boolean value) {
         mainPreferences.edit().putBoolean("folderTags", folderTags = value).apply();
-    }
-
-    public boolean isStoryQualityFullOnAccount() {
-        return getUserConfig().isPremium() && storyQualityFull;
-    }
-
-    public static boolean isStoryQualityFull() {
-        return MessagesController.getInstance(UserConfig.selectedAccount).isStoryQualityFullOnAccount();
     }
 
     private final LongSparseArray<TL_account.RequirementToContact> cachedIsUserContactBlocked = new LongSparseArray<>();
