@@ -1265,7 +1265,7 @@ public class DatabaseMigrationHelper {
             database.executeFast("CREATE TABLE stories (dialog_id INTEGER, story_id INTEGER, data BLOB, local_path TEXT, local_thumb_path TEXT, PRIMARY KEY (dialog_id, story_id));").stepThis().dispose();
             database.executeFast("CREATE TABLE stories_counter (dialog_id INTEGER PRIMARY KEY, count INTEGER, max_read INTEGER);").stepThis().dispose();
             database.executeFast("PRAGMA user_version = 119").stepThis().dispose();
-            messagesStorage.getMessagesController().getStoriesController().cleanup();
+            // LoogriGram: the story lists were also reset and reloaded here.
             version = 119;
         }
 

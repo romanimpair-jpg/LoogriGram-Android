@@ -214,13 +214,11 @@ public class NotificationCenter {
     public static final int didUpdatePremiumGiftStickers = totalEvents++;
     public static final int didUpdateTonGiftStickers = totalEvents++;
     public static final int didUpdatePremiumGiftFieldIcon = totalEvents++;
-    public static final int storiesBlocklistUpdate = totalEvents++;
     public static final int unconfirmedAuthUpdate = totalEvents++;
     public static final int dialogPhotosUpdate = totalEvents++;
     public static final int channelRecommendationsLoaded = totalEvents++;
     public static final int savedMessagesDialogsUpdate = totalEvents++;
     public static final int userIsPremiumBlockedUpadted = totalEvents++;
-    public static final int storyAlbumsCollectionsUpdate = totalEvents++;
     public static final int emojiKeywordsLoaded = totalEvents++;
     public static final int smsJobStatusUpdate = totalEvents++;
     public static final int storyQualityUpdate = totalEvents++;
@@ -238,7 +236,6 @@ public class NotificationCenter {
     public static final int starUserGiftsLoaded = totalEvents++;
     public static final int starUserGiftCollectionsLoaded = totalEvents++;
     public static final int starGiftSoldOut = totalEvents++;
-    public static final int updateStories = totalEvents++;
     public static final int botDownloadsUpdate = totalEvents++;
     public static final int commonChatsLoaded = totalEvents++;
     public static final int appConfigUpdated = totalEvents++;
@@ -323,14 +320,9 @@ public class NotificationCenter {
     public static final int didUpdateGlobalAutoDeleteTimer = totalEvents++;
     public static final int onDatabaseReset = totalEvents++;
     public static final int wallpaperSettedToUser = totalEvents++;
-    public static final int storiesUpdated = totalEvents++;
-    public static final int storyDeleted = totalEvents++;
-    public static final int storiesListUpdated = totalEvents++;
     public static final int chatlistFolderUpdate = totalEvents++;
     public static final int customTypefacesLoaded = totalEvents++;
-    public static final int stealthModeChanged = totalEvents++;
     public static final int onReceivedChannelDifference = totalEvents++;
-    public static final int storiesReadUpdated = totalEvents++;
     public static final int nearEarEvent = totalEvents++;
     public static final int translationModelDownloading = totalEvents++;
     public static final int translationModelDownloaded = totalEvents++;

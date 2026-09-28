@@ -59,7 +59,6 @@ import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_iv;
-import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.ChatActivity;
@@ -94,7 +93,6 @@ import org.telegram.ui.Components.poll.PollAttachedMediaPack;
 import org.telegram.ui.Components.spoilers.SpoilerEffect;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PhotoViewer;
-import org.telegram.ui.Stories.StoriesController;
 import org.telegram.ui.community.CommunityUtils;
 import org.telegram.ui.web.BotWebViewContainer;
 
@@ -176,9 +174,10 @@ public class MessageObject {
     public boolean localSupergroup;
     public Boolean cachedIsSupergroup;
     public boolean localEdit;
-    public StoriesController.StoriesList parentStoriesList;
+    // LoogriGram: a story wrapped as a message - storyItem, the story list it
+    // came from and a constructor of its own - fed the viewer and the story
+    // lists. Stories are removed, as on desktop.
     public TLRPC.Message messageOwner;
-    public TL_stories.StoryItem storyItem;
     public TLRPC.Document emojiAnimatedSticker;
     public Long emojiAnimatedStickerId;
     public boolean isTopicMainMessage;
@@ -1805,24 +1804,6 @@ public class MessageObject {
     public boolean hasSingleQuote;
     public boolean hasSingleCode;
     public boolean hasQuoteAtBottom;
-
-    public MessageObject(int accountNum, TL_stories.StoryItem storyItem) {
-        currentAccount = accountNum;
-        this.storyItem = storyItem;
-        if (storyItem != null) {
-            messageOwner = new TLRPC.TL_message();
-            messageOwner.id = storyItem.messageId;
-            messageOwner.realId = storyItem.id;
-            messageOwner.date = storyItem.date;
-            messageOwner.dialog_id = storyItem.dialogId;
-            messageOwner.message = storyItem.caption;
-            messageOwner.entities = storyItem.entities;
-            messageOwner.media = storyItem.media;
-            messageOwner.attachPath = storyItem.attachPath;
-        }
-        photoThumbs = new ArrayList<>();
-        photoThumbs2 = new ArrayList<>();
-    }
 
     public MessageObject(int accountNum, TLRPC.Message message, String formattedMessage, String name, String userName, boolean localMessage, boolean isChannel, boolean supergroup, boolean edit) {
         localType = localMessage ? 2 : 1;
@@ -10929,18 +10910,6 @@ public class MessageObject {
         return media != null && media.live_photo;
     }
 
-    public boolean isVideoStory() {
-        TLRPC.MessageMedia media = MessageObject.getMedia(messageOwner);
-        if (media == null) {
-            return false;
-        }
-        TL_stories.StoryItem storyItem = media.storyItem;
-        if (storyItem == null || storyItem.media == null) {
-            return false;
-        }
-        return MessageObject.isVideoDocument(storyItem.media.document);
-    }
-
     public boolean isPhoto() {
         return isPhoto(messageOwner);
     }
@@ -11463,10 +11432,8 @@ public class MessageObject {
     }
 
     public boolean canDeleteMessage(boolean inScheduleMode, TLRPC.Chat chat) {
-        return (
-            isStory() && messageOwner != null && messageOwner.dialog_id == UserConfig.getInstance(currentAccount).getClientUserId() ||
-            eventId == 0 && canDeleteMessage(currentAccount, inScheduleMode, messageOwner, chat) || isEphemeral()
-        );
+        // LoogriGram: one of our own stories, shown as a message, was deletable too.
+        return eventId == 0 && canDeleteMessage(currentAccount, inScheduleMode, messageOwner, chat) || isEphemeral();
     }
 
     public static boolean canDeleteMessage(int currentAccount, boolean inScheduleMode, TLRPC.Message message, TLRPC.Chat chat) {
@@ -12112,10 +12079,6 @@ public class MessageObject {
             return randomWaveform;
         }
         return null;
-    }
-
-    public boolean isStory() {
-        return storyItem != null;
     }
 
     private static CharSequence[] userSpan;

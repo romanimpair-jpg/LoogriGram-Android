@@ -103,7 +103,6 @@ import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.ProfileActivity;
 import org.telegram.ui.SecretMediaViewer;
 import org.telegram.ui.Gifts.GiftsController;
-import org.telegram.ui.Stories.StoriesController;
 import org.telegram.ui.ThemeActivity;
 import org.telegram.ui.TopicsFragment;
 import org.telegram.ui.bots.BotWebViewAttachedSheet;
@@ -182,7 +181,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public int stealthModeFuture;
     public int stealthModePast;
     public int stealthModeCooldown;
-    public StoriesController storiesController;
     public SavedMessagesController savedMessagesController;
     public UnconfirmedAuthController unconfirmedAuthController;
     private boolean hasArchivedChats;
@@ -5650,9 +5648,6 @@ public class MessagesController extends BaseController implements NotificationCe
         getColorPalette().cleanup();
         getTranslateController().cleanup();
         getSavedMessagesController().cleanup();
-        if (storiesController != null) {
-            storiesController.cleanup();
-        }
         if (unconfirmedAuthController != null) {
             unconfirmedAuthController.cleanup();
         }
@@ -6852,7 +6847,8 @@ public class MessagesController extends BaseController implements NotificationCe
                 TLRPC.TL_messages_chatFull res = (TLRPC.TL_messages_chatFull) response;
                 getMessagesStorage().putUsersAndChats(res.users, res.chats, true, true);
                 getMessagesStorage().updateChatInfo(res.full_chat, false);
-                getStoriesController().updateStoriesFromFullPeer(dialogId, res.full_chat.stories);
+                // LoogriGram: the chat's active stories were merged into the story
+                // lists here. Stories are removed, as on desktop.
                 ChatThemeController.getInstance(currentAccount).saveChatWallpaper(-chatId, res.full_chat.wallpaper);
                 if (ChatObject.isChannel(chat)) {
                     Integer value = dialogs_read_inbox_max.get(dialogId);
@@ -6978,7 +6974,8 @@ public class MessagesController extends BaseController implements NotificationCe
                 putChats(res.chats, false);
                 res.full_user.user = getUser(res.full_user.id);
                 getMessagesStorage().updateUserInfo(userFull, false);
-                getStoriesController().updateStoriesFromFullPeer(dialogId, userFull.stories);
+                // LoogriGram: the user's active stories were merged into the story
+                // lists here. Stories are removed, as on desktop.
                 ChatThemeController.getInstance(currentAccount).saveChatWallpaper(res.full_user.id, res.full_user.wallpaper);
 
                 if (whenReceivedFullUser != null) {
@@ -11404,7 +11401,8 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public void checkArchiveFolder() {
-        if (!hasArchivedChats && !getStoriesController().hasHiddenStories()) {
+        // LoogriGram: the folder also stayed while it held hidden stories.
+        if (!hasArchivedChats) {
             removeFolder(1);
         } else {
             boolean[] created = new boolean[]{false};
@@ -15971,7 +15969,7 @@ public class MessagesController extends BaseController implements NotificationCe
                         loadedFullUsers.clear();
                         loadedFullChats.clear();
                         resetDialogs(true, getMessagesStorage().getLastSeqValue(), res.pts, date, qts);
-                        getStoriesController().cleanup();
+                        // LoogriGram: the story lists were reset and reloaded here.
                     });
                 } else {
                     if (res instanceof TLRPC.TL_updates_differenceSlice) {
@@ -22472,18 +22470,10 @@ public class MessagesController extends BaseController implements NotificationCe
         }
     }
 
-    public StoriesController getStoriesController() {
-        if (storiesController != null) {
-            return storiesController;
-        }
-        synchronized (lockObjects[currentAccount]) {
-            if (storiesController != null) {
-                return storiesController;
-            }
-            storiesController = new StoriesController(currentAccount);
-        }
-        return storiesController;
-    }
+    // LoogriGram: getStoriesController() created the StoriesController here,
+    // which loaded, cached and tracked every story, its read state, the
+    // hidden list, stealth mode and albums. Stories are removed, as on
+    // desktop, and nothing asks the server for one.
 
     public SavedMessagesController getSavedMessagesController() {
         if (savedMessagesController != null) {

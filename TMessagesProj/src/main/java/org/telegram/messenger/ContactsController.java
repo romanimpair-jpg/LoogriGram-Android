@@ -1018,7 +1018,8 @@ public class ContactsController extends BaseController {
         final ArrayList<Long> uids = new ArrayList<>();
         for (int a = 0, N = users.size(); a < N; a++) {
             TLRPC.User user = users.get(a);
-            getMessagesController().getStoriesController().removeContact(user.id);
+            // LoogriGram: the contact's stories were dropped from the story lists
+            // here. Stories are removed, as on desktop.
             TLRPC.InputUser inputUser = getMessagesController().getInputUser(user);
             if (inputUser == null) {
                 continue;

@@ -11,7 +11,6 @@ import org.telegram.tgnet.tl.TL_account;
 import org.telegram.tgnet.tl.TL_bots;
 import org.telegram.tgnet.tl.TL_ephemeral;
 import org.telegram.tgnet.tl.TL_iv;
-import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.Theme;
 
 import java.util.ArrayList;
@@ -75,16 +74,9 @@ public class FileRefController extends BaseController {
     }
 
     public static String getKeyForParentObject(Object parentObject) {
-        // LoogriGram: a bot's preview media had its own keys here. Bot previews
-        // are removed, as on desktop.
-        if (parentObject instanceof TL_stories.StoryItem) {
-            TL_stories.StoryItem storyItem = (TL_stories.StoryItem) parentObject;
-            if (storyItem.dialogId == 0) {
-                FileLog.d("failed request reference can't find dialogId");
-                return null;
-            }
-            return "story_" + storyItem.dialogId + "_" + storyItem.id;
-        } else if (parentObject instanceof TLRPC.TL_help_premiumPromo) {
+        // LoogriGram: a bot's preview media and a story had their own keys here.
+        // Both are removed, as on desktop.
+        if (parentObject instanceof TLRPC.TL_help_premiumPromo) {
             return "premium_promo";
         } else if (parentObject instanceof TLRPC.TL_availableReaction) {
             return "available_reaction_" + ((TLRPC.TL_availableReaction) parentObject).reaction;
@@ -146,12 +138,8 @@ public class FileRefController extends BaseController {
         } else if (args[0] instanceof TL_ephemeral.TL_sendMessage && ((TL_ephemeral.TL_sendMessage) args[0]).media instanceof TLRPC.TL_inputMediaPoll && parentObject instanceof ArrayList) {
             return null;
         }
-        if (args[0] instanceof TL_stories.TL_storyItem) {
-            TL_stories.TL_storyItem storyItem = (TL_stories.TL_storyItem) args[0];
-            final TLRPC.InputFileLocation location = new TLRPC.TL_inputDocumentFileLocation();
-            location.id = storyItem.media.document.id;
-            return new Pair<>(location, "story_" + storyItem.id);
-        } else if (args[0] instanceof TLRPC.TL_inputSingleMedia) {
+        // LoogriGram: a story being edited was keyed here. Stories are removed.
+        if (args[0] instanceof TLRPC.TL_inputSingleMedia) {
             TLRPC.TL_inputSingleMedia req = (TLRPC.TL_inputSingleMedia) args[0];
             if (req.media instanceof TLRPC.TL_inputMediaDocument) {
                 TLRPC.TL_inputMediaDocument mediaDocument = (TLRPC.TL_inputMediaDocument) req.media;
@@ -455,10 +443,6 @@ public class FileRefController extends BaseController {
         if (parentObject instanceof String) {
             return (String) parentObject;
         }
-        if (parentObject instanceof TL_stories.StoryItem) {
-            TL_stories.StoryItem storyItem = (TL_stories.StoryItem) parentObject;
-            return "story(dialogId=" + storyItem.dialogId + " id=" + storyItem.id + ")";
-        }
         if (parentObject instanceof MessageObject) {
             MessageObject messageObject = (MessageObject) parentObject;
             return "message(dialogId=" + messageObject.getDialogId() + "messageId" + messageObject.getId() + ")";
@@ -478,15 +462,10 @@ public class FileRefController extends BaseController {
     }
 
     private void requestReferenceFromServer(Object parentObject, String locationKey, String parentKey, Object[] args) {
-        if (parentObject instanceof TL_stories.StoryItem) {
-            TL_stories.StoryItem storyItem = (TL_stories.StoryItem) parentObject;
-            TL_stories.TL_stories_getStoriesByID req = new TL_stories.TL_stories_getStoriesByID();
-            req.peer = getMessagesController().getInputPeer(storyItem.dialogId);
-            req.id.add(storyItem.id);
-            getConnectionsManager().sendRequest(req, (response, error) -> {
-                onRequestComplete(locationKey, parentKey, response, error, true, false);
-            });
-        } else if (parentObject instanceof TLRPC.TL_help_premiumPromo) {
+        // LoogriGram: a story's media refreshed its reference with
+        // stories.getStoriesByID here, and the answer updated the story. Stories
+        // are removed, as on desktop; nothing loads a story's media now.
+        if (parentObject instanceof TLRPC.TL_help_premiumPromo) {
             TLRPC.TL_help_getPremiumPromo req = new TLRPC.TL_help_getPremiumPromo();
             getConnectionsManager().sendRequest(req, (response, error) -> {
                 int date = (int) (System.currentTimeMillis() / 1000);
@@ -681,11 +660,7 @@ public class FileRefController extends BaseController {
         if (BuildVars.DEBUG_VERSION) {
             FileLog.d("fileref updated for " + requester.args[0] + " " + requester.locationKey);
         }
-        if (requester.args[0] instanceof TL_stories.TL_storyItem) {
-            TL_stories.TL_storyItem storyItem = (TL_stories.TL_storyItem) requester.args[0];
-            storyItem.media.document.file_reference = file_reference;
-            return true;
-        } else if (requester.args[0] instanceof TLRPC.TL_inputSingleMedia) {
+        if (requester.args[0] instanceof TLRPC.TL_inputSingleMedia) {
             TLRPC.TL_messages_sendMultiMedia multiMedia = (TLRPC.TL_messages_sendMultiMedia) requester.args[1];
             Object[] objects = multiMediaCache.get(multiMedia);
             if (objects == null) {
@@ -1378,56 +1353,6 @@ public class FileRefController extends BaseController {
                         break;
                     }
                 }
-            } else if (response instanceof TL_stories.TL_stories_stories) {
-                TL_stories.TL_stories_stories stories = (TL_stories.TL_stories_stories) response;
-                TL_stories.StoryItem newStoryItem = null;
-                if (!stories.stories.isEmpty()) {
-                    TL_stories.StoryItem storyItem = stories.stories.get(0);
-                    if (result == null && storyItem.music != null) {
-                        result = getFileReference(storyItem.music, null, requester.location, needReplacement, locationReplacement);
-                    }
-                    if (storyItem.media != null) {
-                        newStoryItem = storyItem;
-                        if (result == null && storyItem.media.photo != null) {
-                            result = getFileReference(storyItem.media.photo, requester.location, needReplacement, locationReplacement);
-                        }
-                        if (result == null && storyItem.media.video_cover != null) {
-                            result = getFileReference(storyItem.media.video_cover, requester.location, needReplacement, locationReplacement);
-                        }
-                        if (result == null && storyItem.media.document != null) {
-                            result = getFileReference(storyItem.media.document, storyItem.media.alt_documents, requester.location, needReplacement, locationReplacement);
-                        }
-                    }
-                }
-                Object arg = requester.args[1];
-                if (arg instanceof FileLoadOperation) {
-                    FileLoadOperation operation = (FileLoadOperation) requester.args[1];
-                    if (operation.parentObject instanceof TL_stories.StoryItem) {
-                        TL_stories.StoryItem storyItem = (TL_stories.StoryItem) operation.parentObject;
-                        if (newStoryItem == null) {
-                            TL_stories.TL_updateStory story = new TL_stories.TL_updateStory();
-                            story.peer = getMessagesController().getPeer(storyItem.dialogId);
-                            story.story = new TL_stories.TL_storyItemDeleted();
-                            story.story.id = storyItem.id;
-                            ArrayList<TLRPC.Update> updates = new ArrayList<>();
-                            updates.add(story);
-                            getMessagesController().processUpdateArray(updates, null, null, false, 0);
-                        } else {
-                            TLRPC.User user = getMessagesController().getUser(storyItem.dialogId);
-                            if (user != null && user.contact) {
-                                MessagesController.getInstance(currentAccount).getStoriesController().getStoriesStorage().updateStoryItem(storyItem.dialogId, newStoryItem);
-                            }
-                        }
-                        if (newStoryItem != null && result == null) {
-                            TL_stories.TL_updateStory updateStory = new TL_stories.TL_updateStory();
-                            updateStory.peer = MessagesController.getInstance(currentAccount).getPeer(storyItem.dialogId);
-                            updateStory.story = newStoryItem;
-                            ArrayList<TLRPC.Update> updates = new ArrayList<>();
-                            updates.add(updateStory);
-                            MessagesController.getInstance(currentAccount).processUpdateArray(updates, null, null, false, 0);
-                        }
-                    }
-                }
             }
             if (result != null) {
                 if (onUpdateObjectReference(requester, result, locationReplacement != null ? locationReplacement[0] : null, fromCache)) {
@@ -1689,53 +1614,6 @@ public class FileRefController extends BaseController {
                     break;
                 }
             }
-        } else if (response instanceof TL_stories.TL_stories_stories) {
-            TL_stories.TL_stories_stories stories = (TL_stories.TL_stories_stories) response;
-            TL_stories.StoryItem newStoryItem = null;
-            if (!stories.stories.isEmpty()) {
-                TL_stories.StoryItem storyItem = stories.stories.get(0);
-                if (storyItem.media != null) {
-                    newStoryItem = storyItem;
-                    if (result == null && storyItem.media.photo != null) {
-                        result = getFileReference(storyItem.media.photo, location, needReplacement, locationReplacement);
-                    }
-                    if (result == null && storyItem.media.video_cover != null) {
-                        result = getFileReference(storyItem.media.video_cover, location, needReplacement, locationReplacement);
-                    }
-                    if (result == null && storyItem.media.document != null) {
-                        result = getFileReference(storyItem.media.document, storyItem.media.alt_documents, location, needReplacement, locationReplacement);
-                    }
-                }
-            }
-            Object arg = args[1];
-            if (arg instanceof FileLoadOperation) {
-                FileLoadOperation operation = (FileLoadOperation) args[1];
-                if (operation.parentObject instanceof TL_stories.StoryItem) {
-                    TL_stories.StoryItem storyItem = (TL_stories.StoryItem) operation.parentObject;
-                    if (newStoryItem == null) {
-                        TL_stories.TL_updateStory story = new TL_stories.TL_updateStory();
-                        story.peer = getMessagesController().getPeer(storyItem.dialogId);
-                        story.story = new TL_stories.TL_storyItemDeleted();
-                        story.story.id = storyItem.id;
-                        ArrayList<TLRPC.Update> updates = new ArrayList<>();
-                        updates.add(story);
-                        getMessagesController().processUpdateArray(updates, null, null, false, 0);
-                    } else {
-                        TLRPC.User user = getMessagesController().getUser(storyItem.dialogId);
-                        if (user != null && user.contact) {
-                            MessagesController.getInstance(currentAccount).getStoriesController().getStoriesStorage().updateStoryItem(storyItem.dialogId, newStoryItem);
-                        }
-                    }
-                    if (newStoryItem != null && result == null) {
-                        TL_stories.TL_updateStory updateStory = new TL_stories.TL_updateStory();
-                        updateStory.peer = MessagesController.getInstance(currentAccount).getPeer(storyItem.dialogId);
-                        updateStory.story = newStoryItem;
-                        ArrayList<TLRPC.Update> updates = new ArrayList<>();
-                        updates.add(updateStory);
-                        MessagesController.getInstance(currentAccount).processUpdateArray(updates, null, null, false, 0);
-                    }
-                }
-            }
         }
         if (result == null) {
             return null;
@@ -1805,11 +1683,7 @@ public class FileRefController extends BaseController {
 
     @SuppressWarnings("unchecked")
     private boolean updateFileReferenceFromCache(byte[] file_reference, TLRPC.InputFileLocation locationReplacement, TLRPC.InputFileLocation location, String locationKey, Object... args) {
-        if (args[0] instanceof TL_stories.TL_storyItem) {
-            TL_stories.TL_storyItem storyItem = (TL_stories.TL_storyItem) args[0];
-            storyItem.media.document.file_reference = file_reference;
-            return true;
-        } else if (args[0] instanceof TLRPC.TL_inputSingleMedia) {
+        if (args[0] instanceof TLRPC.TL_inputSingleMedia) {
             return false;
         } else if (args.length >= 2 && args[1] instanceof TLRPC.TL_messages_sendMedia && ((TLRPC.TL_messages_sendMedia) args[1]).media instanceof TLRPC.TL_inputMediaPaidMedia && (args[0] instanceof TLRPC.TL_inputMediaPhoto || args[0] instanceof TLRPC.TL_inputMediaDocument)) {
             return false;

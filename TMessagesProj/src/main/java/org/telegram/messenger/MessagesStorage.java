@@ -55,7 +55,6 @@ import org.telegram.ui.Components.Reactions.ReactionsUtils;
 import org.telegram.ui.Components.VideoPlayer;
 import org.telegram.ui.DialogsActivity;
 import org.telegram.ui.EditWidgetActivity;
-import org.telegram.ui.Stories.StoriesController;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -2181,8 +2180,8 @@ public class MessagesStorage extends BaseController {
             getNotificationCenter().postNotificationName(NotificationCenter.didClearDatabase);
             getMediaDataController().loadAttachMenuBots(false, true);
             getNotificationCenter().postNotificationName(NotificationCenter.onDatabaseReset);
-            
-            getMessagesController().getStoriesController().cleanup();
+            // LoogriGram: the story lists were reset and reloaded here. Stories
+            // are removed, as on desktop.
         });
     }
 
@@ -17892,76 +17891,6 @@ public class MessagesStorage extends BaseController {
         }
     }
 
-
-    public void saveStoryAlbumsCache(long dialog_id, List<StoriesController.StoryAlbum> albums) {
-        storageQueue.postRunnable(() -> saveStoryAlbumsCacheInternal(dialog_id, albums));
-    }
-
-    private void saveStoryAlbumsCacheInternal(long dialogId, List<StoriesController.StoryAlbum> albums) {
-        SQLitePreparedStatement state = null;
-        try {
-            database.beginTransaction();
-            database.executeFast("DELETE FROM profile_stories_albums WHERE dialog_id = " + dialogId).stepThis().dispose();
-
-            state = database.executeFast("REPLACE INTO profile_stories_albums VALUES(?, ?, ?, ?)");
-            for (int i = 0; i < albums.size(); i++) {
-                StoriesController.StoryAlbum album = albums.get(i);
-
-                state.requery();
-                state.bindLong(1, dialogId);
-                state.bindInteger(2, album.album_id);
-                state.bindInteger(3, i);
-
-                TL_stories.TL_storyAlbum tl = album.toTl();
-                NativeByteBuffer data = new NativeByteBuffer(tl.getObjectSize());
-                tl.serializeToStream(data);
-
-                state.bindByteBuffer(4, data);
-                state.step();
-                data.reuse();
-            }
-        } catch (Exception e) {
-            checkSQLException(e);
-        } finally {
-            if (state != null) {
-                state.dispose();
-            }
-            database.commitTransaction();
-        }
-    }
-
-    public void loadStoryAlbumsCache(long dialogId, Consumer<List<StoriesController.StoryAlbum>> callback) {
-        storageQueue.postRunnable(() -> {
-            ArrayList<StoriesController.StoryAlbum> albums = new ArrayList<>();
-            SQLiteCursor cursor = null;
-            try {
-                cursor = database.queryFinalized(String.format(Locale.US, "SELECT data FROM profile_stories_albums WHERE dialog_id = %d ORDER BY order_index ASC", dialogId));
-                while (cursor.next()) {
-                    final NativeByteBuffer data = cursor.byteBufferValue(0);
-                    if (data != null) {
-                        final TL_stories.TL_storyAlbum album = TL_stories.TL_storyAlbum.TLdeserialize(data, data.readInt32(false), false);
-                        data.reuse();
-                        if (album == null) {
-                            continue;
-                        }
-
-                        albums.add(StoriesController.StoryAlbum.from(album));
-                    }
-                }
-            } catch (Exception e) {
-                checkSQLException(e);
-            } finally {
-                if (cursor != null) {
-                    cursor.dispose();
-                }
-            }
-            callback.accept(albums);
-        });
-    }
-
-    public SQLiteCursor createLoadStoriesCursor(long dialogId, int albumId, int type) throws SQLiteException {
-        return database.queryFinalized(String.format(Locale.US, "SELECT data, seen, pin FROM profile_stories JOIN profile_stories_albums_links ON profile_stories.story_id = profile_stories_albums_links.story_id WHERE profile_stories.dialog_id = %d AND profile_stories_albums_links.dialog_id = %d  AND profile_stories_albums_links.album_id = %d AND profile_stories.type = %d ORDER BY profile_stories_albums_links.order_index ASC;", dialogId, dialogId, albumId, type));
-    }
 
     public boolean isMonoForum(long dialogId) {
         // todo: inline

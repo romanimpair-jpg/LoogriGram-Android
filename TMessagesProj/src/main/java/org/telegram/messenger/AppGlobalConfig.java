@@ -38,8 +38,8 @@ public class AppGlobalConfig {
 
     public final ConfigInt stargiftsCollectionsLimit = ofInt("stargifts_collections_limit", 100);
     public final ConfigInt stargiftsCollectionGiftsLimit = ofInt("stargifts_collection_gifts_limit", 100);
-    public final ConfigInt storiesAlbumsLimit = ofInt("stories_albums_limit", 100);
-    public final ConfigInt storiesAlbumStoriesLimit = ofInt("stories_album_stories_limit", 100);
+    // LoogriGram: stories_albums_limit and stories_album_stories_limit sat here.
+    // Story albums are removed, as on desktop; the keys are no longer read.
 
     public final ConfigTime messageTypingDraftTtl = ofTime("message_typing_draft_ttl", 30, TimeUnit.SECONDS);
 
