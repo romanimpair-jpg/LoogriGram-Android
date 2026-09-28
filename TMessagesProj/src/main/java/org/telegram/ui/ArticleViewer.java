@@ -15856,11 +15856,6 @@ public class ArticleViewer extends IArticleViewer implements NotificationCenter.
         }
 
         @Override
-        public void setKeyboardHeightFromParent(int keyboardHeight) {
-
-        }
-
-        @Override
         public int getNavigationBarColor(int color) {
             final float open = dismissingIntoTabs ? 0f : Math.min(openProgress, 1f - dismissProgress) * (1f - backProgress);
             int bgColor = getBackgroundColor();

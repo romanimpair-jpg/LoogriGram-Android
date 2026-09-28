@@ -205,15 +205,10 @@ public final class BulletinFactory {
     private final Theme.ResourcesProvider resourcesProvider;
 
     private BulletinFactory(BaseFragment fragment) {
-        if (fragment != null && fragment.getLastStoryViewer() != null && fragment.getLastStoryViewer().attachedToParent()) {
-            this.fragment = null;
-            this.containerLayout = fragment.getLastStoryViewer().getContainerForBulletin();
-            this.resourcesProvider = fragment.getLastStoryViewer().getResourceProvider();
-        } else {
-            this.fragment = fragment;
-            this.containerLayout = null;
-            this.resourcesProvider = fragment == null ? null : fragment.getResourceProvider();
-        }
+        // LoogriGram: an open story viewer took a fragment's bulletins.
+        this.fragment = fragment;
+        this.containerLayout = null;
+        this.resourcesProvider = fragment == null ? null : fragment.getResourceProvider();
     }
 
     private BulletinFactory(FrameLayout containerLayout, Theme.ResourcesProvider resourcesProvider) {

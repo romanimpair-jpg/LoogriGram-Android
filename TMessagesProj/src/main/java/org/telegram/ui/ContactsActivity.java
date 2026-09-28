@@ -637,17 +637,6 @@ public class ContactsActivity extends BaseFragment implements FactorAnimator.Tar
                     return;
                 }
 
-//                if (listViewAdapter.hasStories && section == 1) {
-//                    if (!(view instanceof UserCell)) {
-//                        return;
-//                    }
-//                    UserCell userCell = (UserCell) view;
-//                    long dialogId = userCell.getDialogId();
-//                    getOrCreateStoryViewer().open(getContext(), dialogId, StoriesListPlaceProvider.of(listView));
-//                    return;
-//                } else if (listViewAdapter.hasStories && section > 1) {
-//                    section--;
-//                }
                 if ((!onlyUsers || inviteViaLink != 0) && section == 0) {
                     // LoogriGram: the first two rows used to be "Invite Friends"
                     // (which opened the phonebook picker) and "Recent Calls".
@@ -723,70 +712,6 @@ public class ContactsActivity extends BaseFragment implements FactorAnimator.Tar
                 if (row < 0 || section < 0) {
                     return false;
                 }
-//                if (listViewAdapter.hasStories && section == 1 && view instanceof UserCell) {
-//                    UserCell userCell = (UserCell) view;
-//                    long dialogId = userCell.getDialogId();
-//                    TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(dialogId);
-//                    final String key = NotificationsController.getSharedPrefKey(dialogId, 0);
-//                    boolean muted = !NotificationsCustomSettingsActivity.areStoriesNotMuted(currentAccount, dialogId);
-//                    ItemOptions filterOptions = ItemOptions.makeOptions(ContactsActivity.this, view)
-//                            //.setViewAdditionalOffsets(0, dp(8), 0, 0)
-//                            .setScrimViewBackground(Theme.createRoundRectDrawable(0, 0, getThemedColor(Theme.key_windowBackgroundWhite)))
-//                            .add(R.drawable.msg_discussion, getString(R.string.SendMessage), () -> presentFragment(ChatActivity.of(dialogId)))
-//                            .add(R.drawable.msg_openprofile, getString(R.string.OpenProfile), () -> presentFragment(ProfileActivity.of(dialogId)))
-//                            .addIf(!muted, R.drawable.msg_mute, getString(R.string.NotificationsStoryMute), () -> {
-//                                MessagesController.getNotificationsSettings(currentAccount).edit().putBoolean("stories_" + key, false).apply();
-//                                getNotificationsController().updateServerNotificationsSettings(dialogId, 0);
-//                                String name = user == null ? "" : user.first_name.trim();
-//                                int index = name.indexOf(" ");
-//                                if (index > 0) {
-//                                   name = name.substring(0, index);
-//                               }
-//                                BulletinFactory.of(ContactsActivity.this).createUsersBulletin(Arrays.asList(user), AndroidUtilities.replaceTags(LocaleController.formatString("NotificationsStoryMutedHint", R.string.NotificationsStoryMutedHint, name))).show();
-//                            })
-//                            .addIf(muted, R.drawable.msg_unmute, getString(R.string.NotificationsStoryUnmute), () -> {
-//                                MessagesController.getNotificationsSettings(currentAccount).edit().putBoolean("stories_" + key, true).apply();
-//                                getNotificationsController().updateServerNotificationsSettings(dialogId, 0);
-//                                String name = user == null ? "" : user.first_name.trim();
-//                                int index = name.indexOf(" ");
-//                                if (index > 0) {
-//                                    name = name.substring(0, index);
-//                                }
-//                                BulletinFactory.of(ContactsActivity.this).createUsersBulletin(Arrays.asList(user), AndroidUtilities.replaceTags(LocaleController.formatString("NotificationsStoryUnmutedHint", R.string.NotificationsStoryUnmutedHint, name))).show();
-//                            });
-//                    // if (user.stories_hidden) {
-//                    filterOptions.add(R.drawable.msg_viewintopic, getString(R.string.ShowInChats), () -> {
-//                        // listViewAdapter.removeStory(dialogId);
-//                        getMessagesController().getStoriesController().toggleHidden(dialogId, false, false, true);
-//                        BulletinFactory.UndoObject undoObject = new BulletinFactory.UndoObject();
-//                        undoObject.onUndo = () -> getMessagesController().getStoriesController().toggleHidden(dialogId, true, false, true);
-//                        undoObject.onAction = () -> getMessagesController().getStoriesController().toggleHidden(dialogId, false, true, true);
-//                        BulletinFactory.global().createUsersBulletin(
-//                            Arrays.asList(user),
-//                            AndroidUtilities.replaceTags(LocaleController.formatString("StoriesMovedToDialogs", R.string.StoriesMovedToDialogs, ContactsController.formatName(user.first_name, null, 20))),
-//                            null,
-//                            undoObject
-//                        ).show();
-//
-//                    });
-//                    } else {
-//                        filterOptions.add(R.drawable.msg_cancel, LocaleController.getString(R.string.Hide), () -> {
-//                            BulletinFactory.global().createUndoBulletin(
-//                                    AndroidUtilities.replaceTags(LocaleController.formatString("StoriesMovedToContacts", R.string.StoriesMovedToContacts, user.first_name)),
-//                                    () -> {
-//                                        //undo
-//                                        getMessagesController().getStoriesController().toggleHidden(dialogId, false, false, true);
-//                                    }, () -> {
-//                                        //action
-//                                        getMessagesController().getStoriesController().toggleHidden(dialogId, true, true, true);
-//                                    }).show();
-//                        });
-//                    }
-//
-//                    filterOptions.setGravity(Gravity.RIGHT)
-//                            .show();
-//                    return true;
-//                }
             }
 
             if (!returnAsResult && !createSecretChat && view instanceof UserCell) {

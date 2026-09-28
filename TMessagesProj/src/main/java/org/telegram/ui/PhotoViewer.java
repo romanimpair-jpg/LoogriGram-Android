@@ -7309,9 +7309,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         pickerViewSendButton.setOnLongClickListener(view -> {
             if (placeProvider != null && !placeProvider.allowSendingSubmenu()) return false;
             if (sendPhotoType == SELECT_TYPE_STICKER) return false;
-            final boolean isStoryViewer = parentFragment != null && parentFragment.getLastStoryViewer() != null;
             if (parentChatActivity != null && parentChatActivity.isInScheduleMode()) return false;
-            if (parentChatActivity == null && !isStoryViewer && placeProvider == null) return false;
+            if (parentChatActivity == null && placeProvider == null) return false;
             if (captionEdit.isCaptionOverLimit()) return false;
             final TLRPC.User user;
             final boolean canScheduleMessage;

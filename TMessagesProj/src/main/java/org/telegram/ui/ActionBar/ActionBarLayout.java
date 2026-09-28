@@ -86,7 +86,6 @@ import org.telegram.ui.Components.FloatingDebug.FloatingDebugProvider;
 import org.telegram.ui.Components.GroupCallPip;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.LaunchActivity;
-import org.telegram.ui.Stories.StoryViewer;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -102,14 +101,6 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
     @Override
     public void setHighlightActionButtons(boolean highlightActionButtons) {
         this.highlightActionButtons = highlightActionButtons;
-    }
-
-    public boolean storyViewerAttached() {
-        BaseFragment lastFragment = null;
-        if (!fragmentsStack.isEmpty()) {
-            lastFragment = fragmentsStack.get(fragmentsStack.size() - 1);
-        }
-        return lastFragment != null && lastFragment.getLastStoryViewer() != null && lastFragment.getLastStoryViewer().attachedToParent();
     }
 
     public class LayoutContainer extends FrameLayout {
@@ -829,17 +820,8 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
     private int[] measureSpec = new int[2];
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        BaseFragment lastFragment = null;
-        if (!fragmentsStack.isEmpty()) {
-            lastFragment = fragmentsStack.get(fragmentsStack.size() - 1);
-        }
-        if (lastFragment != null && !lastFragment.isSupportEdgeToEdge() && storyViewerAttached()) {
-            //remeasure only storyViewer if keyboard visibility changed
-            int keyboardHeight = measureKeyboardHeight();
-            lastFragment.setKeyboardHeightFromParent(keyboardHeight);
-            super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(heightMeasureSpec) + keyboardHeight, MeasureSpec.EXACTLY));
-            return;
-        }
+        // LoogriGram: an open story viewer was measured here with the keyboard's
+        // height added. Stories are removed, as on desktop.
         if (delegate != null) {
             measureSpec[0] = widthMeasureSpec;
             measureSpec[1] = heightMeasureSpec;
@@ -1676,7 +1658,7 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
         if (GroupCallPip.onBackPressed()) {
             return;
         }
-        if (!storyViewerAttached() && currentActionBar != null && !currentActionBar.isActionModeShowed() && currentActionBar.isSearchFieldVisible) {
+        if (currentActionBar != null && !currentActionBar.isActionModeShowed() && currentActionBar.isSearchFieldVisible) {
             currentActionBar.closeSearchField();
             return;
         }
@@ -1971,7 +1953,6 @@ public class ActionBarLayout extends FrameLayout implements INavigationLayout, F
         if (BuildVars.LOGS_ENABLED) {
             FileLog.d("present fragment " + fragment.getClass().getSimpleName() + " args=" + fragment.getArguments());
         }
-        StoryViewer.closeGlobalInstances();
         if (bottomSheetTabs != null && !bottomSheetTabs.doNotDismiss) {
             LaunchActivity.dismissAllWeb();
         }

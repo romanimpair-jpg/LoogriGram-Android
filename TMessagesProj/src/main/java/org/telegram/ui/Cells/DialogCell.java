@@ -131,7 +131,6 @@ import org.telegram.ui.Components.spoilers.SpoilerEffect;
 import org.telegram.ui.DialogsActivity;
 import org.telegram.ui.FilterCreateActivity;
 import org.telegram.ui.RightSlidingDialogContainer;
-import org.telegram.ui.Stories.StoryViewer;
 import org.telegram.ui.community.CommunityArrowDrawable;
 import org.telegram.ui.community.CommunitySheet;
 
@@ -6061,21 +6060,8 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
         }
     }
 
-    @Override
-    public void invalidate() {
-        if (StoryViewer.animationInProgress) {
-            return;
-        }
-        super.invalidate();
-    }
-
-    @Override
-    public void invalidate(int l, int t, int r, int b) {
-        if (StoryViewer.animationInProgress) {
-            return;
-        }
-        super.invalidate(l, t, r, b);
-    }
+    // LoogriGram: invalidate() did nothing while the story viewer was opening
+    // or closing. Stories are removed, as on desktop.
 
     private static class ForumFormattedNames {
         private final DialogCell parent;

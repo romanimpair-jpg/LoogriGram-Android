@@ -126,13 +126,6 @@ public class DrawerLayoutContainer extends FrameLayout {
             } else {
                 contentHeightSpec = MeasureSpec.makeMeasureSpec(heightSize - lp.topMargin - lp.bottomMargin, MeasureSpec.EXACTLY);
             }
-            if (child instanceof ActionBarLayout) {
-                ActionBarLayout actionBarLayout = (ActionBarLayout) child;
-                //fix keyboard measuring
-                if (actionBarLayout.storyViewerAttached()) {
-                    child.forceLayout();
-                }
-            }
             child.measure(contentWidthSpec, contentHeightSpec);
         }
     }

@@ -184,8 +184,6 @@ import org.telegram.ui.Components.UndoView;
 import org.telegram.ui.Components.spoilers.SpoilersTextView;
 import org.telegram.ui.DebugRecordingCanvasReplayFragment;
 import org.telegram.ui.LaunchActivity;
-import org.telegram.ui.Stories.PeerStoriesView;
-import org.telegram.ui.Stories.StoryMediaAreasView;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 import org.telegram.ui.ThemePreviewActivity;
 import org.telegram.ui.WallpapersListActivity;
@@ -954,14 +952,10 @@ public class AndroidUtilities {
         }
         for (int i = 0; i < container.getChildCount(); i++) {
             View child = container.getChildAt(i);
-            if (child.getVisibility() != View.VISIBLE || child instanceof PeerStoriesView && child != onlyThisView) {
+            // LoogriGram: a story page other than onlyThisView, and a story's
+            // media areas, were skipped here. Stories are removed, as on desktop.
+            if (child.getVisibility() != View.VISIBLE) {
                 continue;
-            }
-            if (child instanceof StoryMediaAreasView.AreaView) {
-                StoryMediaAreasView areasView = (StoryMediaAreasView) container;
-                if (!(areasView.hasSelected() && (x < dp(60) || x > container.getWidth() - dp(60))) && !areasView.hasAreaAboveAt(x, y)) {
-                    continue;
-                }
             }
             child.getHitRect(AndroidUtilities.rectTmp2);
             if (AndroidUtilities.rectTmp2.contains((int) x, (int) y) && child.isClickable()) {

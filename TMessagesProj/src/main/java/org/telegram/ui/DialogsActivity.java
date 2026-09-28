@@ -239,7 +239,6 @@ import org.telegram.ui.Components.StickersAlert;
 import org.telegram.ui.Components.SwipeGestureSettingsView;
 import org.telegram.ui.Components.UndoView;
 import org.telegram.ui.Components.ViewPagerFixed;
-import org.telegram.ui.Stories.StoriesListPlaceProvider;
 import org.telegram.ui.community.CommunityChatType;
 import org.telegram.ui.community.CommunityEditActivity;
 import org.telegram.ui.community.CommunityPendingRequestsActivity;
@@ -1556,7 +1555,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
     public static float viewOffset = 0.0f;
 
-    public class DialogsRecyclerView extends BlurredRecyclerView implements StoriesListPlaceProvider.ClippedView {
+    public class DialogsRecyclerView extends BlurredRecyclerView {
 
         public boolean updateDialogsOnNextDraw;
         private boolean firstLayout = true;
@@ -2225,13 +2224,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     }
                // }
             }
-        }
-
-        @Override
-        public void updateClip(int[] clip) {
-            int y = (int) (getPaddingTop() + scrollYOffset);
-            clip[0] = y;
-            clip[1] = y + getMeasuredHeight();
         }
     }
 

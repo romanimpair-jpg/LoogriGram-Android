@@ -1369,7 +1369,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 BuildVars.DEBUG_PRIVATE_VERSION ? "Force performance class" : null,
                 BuildVars.DEBUG_PRIVATE_VERSION && !InstantCameraView.allowBigSizeCameraDebug() ? !SharedConfig.bigCameraForRound ? "Force big camera for round" : "Disable big camera for round" : null,
                 null, // LoogriGram: 23 switched the story camera's dual view.
-                BuildVars.DEBUG_VERSION ? SharedConfig.useSurfaceInStories ? "back to TextureView in stories" : "use SurfaceView in stories" : null,
+                null, // LoogriGram: 24 switched the story viewer's videos to SurfaceView.
                 BuildVars.DEBUG_PRIVATE_VERSION ? SharedConfig.photoViewerBlur ? "do not blur in photoviewer" : "blur in photoviewer" : null,
                 !SharedConfig.payByInvoice ? "Enable Invoice Payment" : "Disable Invoice Payment",
                 BuildVars.DEBUG_PRIVATE_VERSION ? "Update Attach Bots" : null,
@@ -1429,10 +1429,6 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 SharedConfig.emojiInteractionsHintCount = 3;
                 SharedConfig.dayNightThemeSwitchHintCount = 3;
                 SharedConfig.fastScrollHintCount = 3;
-                SharedConfig.stealthModeSendMessageConfirm = 2;
-                SharedConfig.updateStealthModeSendMessageConfirm(2);
-                SharedConfig.setStoriesReactionsLongPressHintUsed(false);
-                SharedConfig.setStoriesIntroShown(false);
                 SharedConfig.setMultipleReactionsPromoShowed(false);
                 ChatThemeController.getInstance(currentAccount).clearCache();
                 getNotificationCenter().postNotificationName(NotificationCenter.newSuggestionsAvailable);
@@ -1637,11 +1633,6 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 builder2.show();
             } else if (which == 22) {
                 SharedConfig.toggleRoundCamera();
-            } else if (which == 24) {
-                SharedConfig.toggleSurfaceInStories();
-                for (int i = 0; i < getParentLayout().getFragmentStack().size(); i++) {
-                    getParentLayout().getFragmentStack().get(i).clearSheets();
-                }
             } else if (which == 25) {
                 SharedConfig.togglePhotoViewerBlur();
             } else if (which == 26) {

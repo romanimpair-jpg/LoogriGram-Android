@@ -396,9 +396,6 @@ public class PremiumFeatureBottomSheet extends BottomSheet implements Notificati
             BaseFragment mainFragment = LaunchActivity.getLastFragment();
             for (int i = 0; i < 2; i++) {
                 BaseFragment currentFragment = i == 0 ? fragment : mainFragment;
-                if (currentFragment != null && currentFragment.getLastStoryViewer() != null) {
-                    currentFragment.getLastStoryViewer().dismissVisibleDialogs();
-                }
                 if (currentFragment != null && currentFragment.getVisibleDialog() != null) {
                     currentFragment.getVisibleDialog().dismiss();
                 }
@@ -523,9 +520,6 @@ public class PremiumFeatureBottomSheet extends BottomSheet implements Notificati
 
     private static Theme.ResourcesProvider getResourceProvider(BaseFragment fragment) {
         if (fragment != null) {
-            if (fragment.getLastStoryViewer() != null && fragment.getLastStoryViewer().isShown()) {
-                return fragment.getLastStoryViewer().getResourceProvider();
-            }
             return fragment.getResourceProvider();
         }
         return null;

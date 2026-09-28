@@ -588,9 +588,6 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
 
     @Override
     public boolean isLightStatusBar() {
-        if (getLastStoryViewer() != null && getLastStoryViewer().isShown()) {
-            return false;
-        }
         int color = Theme.getColor(Theme.key_windowBackgroundWhite);
         if (actionBar.isActionModeShowed()) {
             color = Theme.getColor(Theme.key_actionBarActionModeDefault);
@@ -612,11 +609,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
 
     @Override
     public int getNavigationBarColor() {
-        int color = getThemedColor(Theme.key_windowBackgroundWhite);
-        if (getLastStoryViewer() != null && getLastStoryViewer().attachedToParent()) {
-            return getLastStoryViewer().getNavigationBarColor(color);
-        }
-        return color;
+        return getThemedColor(Theme.key_windowBackgroundWhite);
     }
 
     @Override

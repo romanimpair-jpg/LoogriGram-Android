@@ -197,7 +197,6 @@ import org.telegram.ui.Components.voip.VoIPHelper;
 import org.telegram.ui.Components.ISuperRipple;
 import org.telegram.ui.Stars.StarGiftSheet;
 import org.telegram.ui.Components.SuperRipple;
-import org.telegram.ui.Stories.LiveStoryPipOverlay;
 import org.telegram.ui.bots.BotWebViewAttachedSheet;
 import org.telegram.ui.bots.BotWebViewSheet;
 import org.telegram.ui.bots.WebViewRequestProps;
@@ -507,9 +506,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         actionBarLayout.setFragmentStack(mainFragmentsStack);
         actionBarLayout.setFragmentStackChangedListener(() -> {
             checkSystemBarColors(true, false);
-            if (getLastFragment() != null && getLastFragment().getLastStoryViewer() != null) {
-                getLastFragment().getLastStoryViewer().updatePlayingMode();
-            }
         });
         actionBarLayout.setDelegate(this);
         Theme.loadWallpaper(true);
@@ -3869,11 +3865,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                         final TL_stars.TL_starGiftUnique gift = (TL_stars.TL_starGiftUnique) r.gift;
                         final StarGiftSheet sheet = new StarGiftSheet(this, intentAccount, 0, null).set(uniqueGiftSlug, gift, null);
                         if (lastFragment != null) {
-                            if (lastFragment.getLastStoryViewer() != null && lastFragment.getLastStoryViewer().isFullyVisible()) {
-                                lastFragment.getLastStoryViewer().showDialog(sheet);
-                            } else {
-                                lastFragment.showDialog(sheet);
-                            }
+                            lastFragment.showDialog(sheet);
                         } else {
                             sheet.show();
                         }
@@ -6005,9 +5997,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             if (actionBarLayout != null && actionBarLayout.getFragmentStack().size() != 0) {
                 BaseFragment fragment = actionBarLayout.getFragmentStack().get(actionBarLayout.getFragmentStack().size() - 1);
                 fragment.onActivityResultFragment(requestCode, resultCode, data);
-                if (fragment.getLastStoryViewer() != null) {
-                    fragment.getLastStoryViewer().onActivityResult(requestCode, resultCode, data);
-                }
             }
             if (AndroidUtilities.isTablet()) {
                 if (rightActionBarLayout != null && rightActionBarLayout.getFragmentStack().size() != 0) {
@@ -6171,9 +6160,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         if (!isInPictureInPictureMode && !isStarted) {
             if (RTMPStreamPipOverlay.isVisible()) {
                 RTMPStreamPipOverlay.dismiss();
-            }
-            if (LiveStoryPipOverlay.isVisible()) {
-                LiveStoryPipOverlay.dismiss();
             }
             if (PipVideoOverlay.isVisible()) {
                 PipVideoOverlay.dismiss();
@@ -7714,13 +7700,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         int keyCode = event.getKeyCode();
-        if (event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_UP || event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_DOWN) {
-            BaseFragment baseFragment = getLastFragment();
-            if (baseFragment != null && baseFragment.getLastStoryViewer() != null) {
-                baseFragment.getLastStoryViewer().dispatchKeyEvent(event);
-                return true;
-            }
-        }
         if (event.getAction() == KeyEvent.ACTION_DOWN && (event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_UP || event.getKeyCode() == KeyEvent.KEYCODE_VOLUME_DOWN)) {
             if (VoIPService.getSharedInstance() != null) {
                 if (Build.VERSION.SDK_INT >= 32) {

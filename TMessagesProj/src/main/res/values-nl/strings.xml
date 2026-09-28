@@ -529,7 +529,6 @@
     <string name="AutoplayVideo">Video\'s</string>
     <string name="AutoplayVideoInfo">Gebruik de volumeknoppen voor geluid.</string>
     <string name="HidAccount">Account verborgen door gebruiker</string>
-    <string name="StoryHidAccount">Dit account is door de gebruiker verborgen</string>
     <string name="AutoplayMedia">Media automatisch afspelen</string>
     <string name="RaiseToSpeak">Houd bij oor om te spreken</string>
     <string name="RaiseToSpeakInfo">Neem spraakberichten op door de telefoon naar je oor te brengen</string>

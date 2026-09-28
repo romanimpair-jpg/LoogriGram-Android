@@ -475,7 +475,6 @@
     <string name="AutoplayVideo">Videos</string>
     <string name="AutoplayVideoInfo">Lautstärketasten drücken,\num Ton einzuschalten.</string>
     <string name="HidAccount">Das Konto wurde vom Nutzer ausgeblendet</string>
-    <string name="StoryHidAccount">Das Konto wurde vom Nutzer versteckt</string>
     <string name="AutoplayMedia">Automatische Medienwiedergabe</string>
     <string name="RaiseToSpeak">Zum Sprechen ans Ohr</string>
     <string name="RaiseToSpeakInfo">Nimmt Sprachnachrichten auf, wenn du das Telefon an dein Ohr hältst</string>
@@ -801,12 +800,6 @@
     <string name="SpeedNormal">Normal</string>
     <string name="SpeedMedium">Mittel</string>
     <string name="SpeedSuperFast">Rasend schnell</string>
-    <string name="VideoSpeedVeryFast">Noch schneller</string>
-    <string name="VideoSpeedFast">Schnell</string>
-    <string name="VideoSpeedCustom">Angepasst %s</string>
-    <string name="VideoSpeedNormal">Normal</string>
-    <string name="VideoSpeedSlow">Langsam</string>
-    <string name="VideoSpeedVerySlow">Sehr langsam</string>
     <string name="SpeedHint">Halten, für mehr Geschwindigkeiten.</string>
     <string name="ShowAsList">Als Liste</string>
     <string name="ShowAsGrid">Als Gitter</string>

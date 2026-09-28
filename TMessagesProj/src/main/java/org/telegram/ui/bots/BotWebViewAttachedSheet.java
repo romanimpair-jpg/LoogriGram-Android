@@ -1411,11 +1411,6 @@ public class BotWebViewAttachedSheet implements NotificationCenter.NotificationC
     }
 
     @Override
-    public void setKeyboardHeightFromParent(int keyboardHeight) {
-        // TODO
-    }
-
-    @Override
     public int getNavigationBarColor(int color) {
         return ColorUtils.blendARGB(color, navBarColor, shown);
     }

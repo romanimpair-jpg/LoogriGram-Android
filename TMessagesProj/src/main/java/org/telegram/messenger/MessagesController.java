@@ -607,7 +607,8 @@ public class MessagesController extends BaseController implements NotificationCe
     public boolean showAnnualPerMonth = false;
     public boolean canEditFactcheck;
     public int factcheckLengthLimit;
-    public int botPreviewMediasMax;
+    // LoogriGram: botPreviewMediasMax (bot_preview_medias_max) sat here; bot
+    // previews are removed, as on desktop, and the key is no longer read.
     public String tonProxyAddress;
     public String weatherSearchUsername;
     public boolean storyWeatherPreload;
@@ -812,7 +813,6 @@ public class MessagesController extends BaseController implements NotificationCe
 
         getMessagesStorage().saveDialogFiltersOrder();
         getNotificationCenter().postNotificationName(NotificationCenter.dialogFiltersUpdated);
-        getStoriesController().onPremiumChanged();
     }
 
     public void lockFiltersInternal() {
@@ -1656,7 +1656,6 @@ public class MessagesController extends BaseController implements NotificationCe
         showAnnualPerMonth = mainPreferences.getBoolean("showAnnualPerMonth", false);
         canEditFactcheck = mainPreferences.getBoolean("canEditFactcheck", false);
         factcheckLengthLimit = mainPreferences.getInt("factcheckLengthLimit", 1024);
-        botPreviewMediasMax = mainPreferences.getInt("botPreviewMediasMax", 10);
         webAppAllowedProtocols = mainPreferences.getStringSet("webAppAllowedProtocols", new HashSet<>(Arrays.asList("http", "https")));
         ignoreRestrictionReasons = mainPreferences.getStringSet("ignoreRestrictionReasons", new HashSet<>(Arrays.asList()));
         tonProxyAddress = mainPreferences.getString("tonProxyAddress", "magic.org");
@@ -3962,17 +3961,6 @@ public class MessagesController extends BaseController implements NotificationCe
                         if ((int) num.value != factcheckLengthLimit) {
                             factcheckLengthLimit = (int) num.value;
                             editor.putInt("factcheckLengthLimit", factcheckLengthLimit);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "bot_preview_medias_max": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if ((int) num.value != botPreviewMediasMax) {
-                            botPreviewMediasMax = (int) num.value;
-                            editor.putInt("botPreviewMediasMax", botPreviewMediasMax);
                             changed = true;
                         }
                     }
@@ -21787,10 +21775,7 @@ public class MessagesController extends BaseController implements NotificationCe
             reason = getRestrictionReason(user.restriction_reason);
             if (type != 3 && user.bot) {
                 type = 1;
-                BaseFragment lastFragment = LaunchActivity.getLastFragment();
-                if (lastFragment.getLastStoryViewer() == null) {
-                    closeLast = true;
-                }
+                closeLast = true;
             }
         }
         boolean doNotCloseLast = false;

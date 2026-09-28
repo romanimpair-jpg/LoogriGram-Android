@@ -524,7 +524,6 @@
     <string name="AutoplayVideo">동영상</string>
     <string name="AutoplayVideoInfo">소리를 켜려면 음량 버튼을 누르세요.</string>
     <string name="HidAccount">사용자가 계정을 숨겼습니다</string>
-    <string name="StoryHidAccount">이 계정은 사용자에 의해 숨겨졌습니다</string>
     <string name="AutoplayMedia">미디어 자동 재생</string>
     <string name="RaiseToSpeak">기기를 들어서 말하기</string>
     <string name="RaiseToSpeakInfo">전화기를 귀에 대고 음성 메시지를 녹음하세요.</string>

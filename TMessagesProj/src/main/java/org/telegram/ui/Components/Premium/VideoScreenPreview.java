@@ -41,7 +41,6 @@ import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.VideoPlayer;
 import org.telegram.ui.Components.voip.CellFlickerDrawable;
 import org.telegram.ui.PremiumPreviewFragment;
-import org.telegram.ui.Stories.StoryViewer;
 
 import java.io.File;
 import java.net.URLEncoder;

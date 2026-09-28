@@ -19,7 +19,6 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.telegram.ui.Stories.LivePlayer;
 import org.webrtc.CameraEnumerationAndroid.CaptureFormat;
 
 @SuppressWarnings("deprecation")
@@ -333,7 +332,8 @@ class Camera1Session implements CameraSession {
   }
 
   private int getFrameOrientation() {
-    int rotation = LivePlayer.recording != null ? 0 : orientationHelper.getOrientation();
+    // LoogriGram: a live story being broadcast kept the frame unrotated.
+    int rotation = orientationHelper.getOrientation();
     OrientationHelper.cameraOrientation = rotation;
     if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
       rotation = 360 - rotation;

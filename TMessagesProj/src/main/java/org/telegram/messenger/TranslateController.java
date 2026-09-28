@@ -30,7 +30,6 @@ import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.Vector;
 import org.telegram.tgnet.tl.TL_iv;
-import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.TranslateAlert2;
 import org.telegram.ui.RestrictedLanguagesSelectActivity;
@@ -1863,125 +1862,8 @@ public class TranslateController extends BaseController {
         MessagesController.getMainSettings(currentAccount).edit().remove("translating_dialog_languages2").remove("hidden_translation_at").apply();
     }
 
-    private final HashSet<StoryKey> detectingStories = new HashSet<>();
-    private final HashSet<StoryKey> translatingStories = new HashSet<>();
-
-    // ensure dialogId in storyItem is valid
-    public void detectStoryLanguage(TL_stories.StoryItem storyItem) {
-        if (storyItem == null || storyItem.detectedLng != null || storyItem.caption == null || storyItem.caption.length() == 0 || !LanguageDetector.hasSupport()) {
-            return;
-        }
-
-        final StoryKey key = new StoryKey(storyItem);
-        if (detectingStories.contains(key)) {
-            return;
-        }
-        detectingStories.add(key);
-
-        LanguageDetector.detectLanguage(storyItem.caption, lng -> AndroidUtilities.runOnUIThread(() -> {
-            storyItem.detectedLng = lng;
-            getMessagesController().getStoriesController().getStoriesStorage().putStoryInternal(storyItem.dialogId, storyItem);
-            detectingStories.remove(key);
-        }), err -> AndroidUtilities.runOnUIThread(() -> {
-            storyItem.detectedLng = UNKNOWN_LANGUAGE;
-            getMessagesController().getStoriesController().getStoriesStorage().putStoryInternal(storyItem.dialogId, storyItem);
-            detectingStories.remove(key);
-        }));
-    }
-
-    public boolean canTranslateStory(TL_stories.StoryItem storyItem) {
-        return storyItem != null && !TextUtils.isEmpty(storyItem.caption) && !Emoji.fullyConsistsOfEmojis(storyItem.caption) && (
-            storyItem.detectedLng == null && storyItem.translatedText != null && TextUtils.equals(storyItem.translatedLng, TranslateAlert2.getToLanguage()) ||
-            storyItem.detectedLng != null && !isLanguageRestricted(storyItem.detectedLng)
-        );
-    }
-
-    public void translateStory(TL_stories.StoryItem storyItem, Runnable done) {
-        if (storyItem == null) {
-            return;
-        }
-
-        final StoryKey key = new StoryKey(storyItem);
-
-        String toLang = TranslateAlert2.getToLanguage();
-
-        if (storyItem.translatedText != null && TextUtils.equals(storyItem.translatedLng, toLang)) {
-            if (done != null) {
-                done.run();
-            }
-            return;
-        }
-        if (translatingStories.contains(key)) {
-            if (done != null) {
-                done.run();
-            }
-            return;
-        }
-
-        translatingStories.add(key);
-
-        final TLRPC.TL_messages_translateText req = new TLRPC.TL_messages_translateText();
-        req.flags |= 2;
-        final TLRPC.TL_textWithEntities text = new TLRPC.TL_textWithEntities();
-        text.text = storyItem.caption;
-        text.entities = storyItem.entities;
-        req.text.add(text);
-        req.to_lang = normalizeLanguage(toLang);
-        getConnectionsManager().sendRequest(req, (res, err) -> {
-            if (res instanceof TLRPC.TL_messages_translateResult) {
-                ArrayList<TLRPC.TL_textWithEntities> result = ((TLRPC.TL_messages_translateResult) res).result;
-                if (result.size() <= 0) {
-                    AndroidUtilities.runOnUIThread(() -> {
-                        storyItem.translatedLng = toLang;
-                        storyItem.translatedText = null;
-                        getMessagesController().getStoriesController().getStoriesStorage().putStoryInternal(storyItem.dialogId, storyItem);
-                        translatingStories.remove(key);
-                        if (done != null) {
-                            done.run();
-                        }
-                    });
-                    return;
-                }
-                final TLRPC.TL_textWithEntities textWithEntities = result.get(0);
-                AndroidUtilities.runOnUIThread(() -> {
-                    storyItem.translatedLng = toLang;
-                    storyItem.translatedText = TranslateAlert2.preprocess(text, textWithEntities);
-                    getMessagesController().getStoriesController().getStoriesStorage().putStoryInternal(storyItem.dialogId, storyItem);
-                    translatingStories.remove(key);
-                    if (done != null) {
-                        done.run();
-                    }
-                });
-            } else {
-                AndroidUtilities.runOnUIThread(() -> {
-                    storyItem.translatedLng = toLang;
-                    storyItem.translatedText = null;
-                    getMessagesController().getStoriesController().getStoriesStorage().putStoryInternal(storyItem.dialogId, storyItem);
-                    translatingStories.remove(key);
-                    if (done != null) {
-                        done.run();
-                    }
-                });
-            }
-        });
-    }
-
-    public boolean isTranslatingStory(TL_stories.StoryItem storyItem) {
-        if (storyItem == null) {
-            return false;
-        }
-        return translatingStories.contains(new StoryKey(storyItem));
-    }
-
-    private static class StoryKey {
-        public long dialogId;
-        public int storyId;
-
-        public StoryKey(TL_stories.StoryItem storyItem) {
-            dialogId = storyItem.dialogId;
-            storyId = storyItem.id;
-        }
-    }
+    // LoogriGram: a story's caption was detected and translated here, for the
+    // story viewer. Stories are removed, as on desktop.
 
     private final HashSet<MessageKey> detectingPhotos = new HashSet<>();
     private final HashSet<MessageKey> translatingPhotos = new HashSet<>();

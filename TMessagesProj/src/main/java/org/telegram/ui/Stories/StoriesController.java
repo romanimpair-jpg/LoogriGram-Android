@@ -4,7 +4,6 @@ import static org.telegram.messenger.LocaleController.getString;
 
 import android.content.SharedPreferences;
 import android.text.TextUtils;
-import android.util.SparseArray;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -36,8 +35,6 @@ import org.telegram.tgnet.RequestDelegate;
 import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.tgnet.Vector;
-import org.telegram.tgnet.tl.TL_bots;
 import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.Components.BulletinFactory;
@@ -80,7 +77,6 @@ public class StoriesController {
     private LongSparseIntArray loadingDialogsStories = new LongSparseIntArray();
     StoriesStorage storiesStorage;
     SharedPreferences mainSettings;
-    final LongSparseArray<ViewsForPeerStoriesRequester> pollingViewsForSelfStoriesRequester = new LongSparseArray<>();
 
     public final static Comparator<TL_stories.StoryItem> storiesComparator = Comparator.comparingInt(o -> o.date);
 
@@ -99,7 +95,6 @@ public class StoriesController {
     private int totalStoriesCountHidden;
 
 
-    public LongSparseArray<SparseArray<SelfStoryViewsPage.ViewsModel>> selfViewsModel = new LongSparseArray<>();
     private String stateHidden;
     private boolean hasMoreHidden = true;
     private boolean firstLoad = true;
@@ -1197,21 +1192,6 @@ public class StoriesController {
         loadStoriesRead();
     }
 
-    public void pollViewsForSelfStories(long dialogId, boolean start) {
-        ViewsForPeerStoriesRequester requester = pollingViewsForSelfStoriesRequester.get(dialogId);
-        if (requester == null) {
-            requester = new ViewsForPeerStoriesRequester(this, dialogId, currentAccount);
-            pollingViewsForSelfStoriesRequester.put(dialogId, requester);
-        }
-        requester.start(start);
-    }
-
-    public void stopAllPollers() {
-        for (int i = 0; i < pollingViewsForSelfStoriesRequester.size(); i++) {
-            pollingViewsForSelfStoriesRequester.valueAt(i).start(false);
-        }
-    }
-
     HashSet<Long> loadingAllStories = new HashSet<>();
 
     void loadSkippedStories(long dialogId) {
@@ -1604,10 +1584,6 @@ public class StoriesController {
         return null;
     }
 
-    public void onPremiumChanged() {
-        selfViewsModel.clear();
-    }
-
     public void updateStoriesFromFullPeer(long dialogId, TL_stories.PeerStories stories) {
         if (stories == null) {
             return;
@@ -1687,11 +1663,7 @@ public class StoriesController {
         }
         StoriesList list = storiesLists[type].get(dialogId);
         if (list == null && createIfNotExist) {
-            if (type == StoriesList.TYPE_BOTS) {
-                storiesLists[type].put(dialogId, list = new BotPreviewsList(currentAccount, dialogId, null, this::destroyStoryList));
-            } else {
-                storiesLists[type].put(dialogId, list = new StoriesList(currentAccount, dialogId, type, albumId, this::destroyStoryList));
-            }
+            storiesLists[type].put(dialogId, list = new StoriesList(currentAccount, dialogId, type, albumId, this::destroyStoryList));
         }
         return list;
     }
@@ -1800,257 +1772,9 @@ public class StoriesController {
         }
     }
 
-    public static class BotPreview extends TL_stories.StoryItem {
-        public final BotPreviewsList list;
-        public BotPreview(BotPreviewsList parentList, long dialogId, TL_bots.botPreviewMedia media) {
-            this.list = parentList;
-            this.dialogId = dialogId;
-            this.media = media.media;
-            if (this.media.document != null) {
-                this.media.document.date = media.date;
-            } else if (this.media.photo != null) {
-                this.media.photo.date = media.date;
-            }
-        }
-    }
-
-    public static class BotPreviewsList extends StoriesList {
-
-        public BotPreviewsList(int currentAccount, long botId, String lang_code, Utilities.Callback<StoriesList> destroy) {
-            super(currentAccount, botId, TYPE_BOTS, -1, destroy);
-            this.lang_code = lang_code;
-        }
-
-        @Override
-        public boolean isOnlyCache() {
-            return false;
-        }
-        @Override
-        protected void invalidateCache() {}
-        @Override
-        protected void preloadCache() {}
-        @Override
-        protected void saveCache() {}
-
-        @Override
-        protected boolean markAsRead(int storyId) {
-            return false;
-        }
-
-        private boolean loading, loaded;
-        public final String lang_code;
-        private int reqId;
-
-        private final ArrayList<ArrayList<Integer>> fakeDays = new ArrayList<>();
-        private int lastId = 0;
-
-        @Override
-        public boolean load(boolean force, int count, List<Integer> ids) {
-            return loadInternal(null);
-        }
-
-        public boolean loadInternal(Runnable callback) {
-            if (loading || loaded) return false;
-
-            TLObject reqObj;
-            if (lang_code != null) {
-                TL_bots.getPreviewInfo req = new TL_bots.getPreviewInfo();
-                req.bot = MessagesController.getInstance(currentAccount).getInputUser(dialogId);
-                req.lang_code = lang_code;
-                reqObj = req;
-            } else {
-                TL_bots.getPreviewMedias req = new TL_bots.getPreviewMedias();
-                req.bot = MessagesController.getInstance(currentAccount).getInputUser(dialogId);
-                reqObj = req;
-            }
-
-            loading = true;
-
-            this.reqId = ConnectionsManager.getInstance(currentAccount).sendRequest(reqObj, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
-                this.reqId = 0;
-                this.loading = false;
-                this.loaded = true;
-                this.done = true;
-
-                final ArrayList<TL_bots.botPreviewMedia> medias = new ArrayList<>();
-                if (res instanceof Vector) {
-                    ArrayList<Object> objects = ((Vector) res).objects;
-                    for (Object o : objects) {
-                        TL_bots.botPreviewMedia media = (TL_bots.botPreviewMedia) o;
-                        medias.add(media);
-                    }
-                } else if (res instanceof TL_bots.previewInfo) {
-                    TL_bots.previewInfo info = (TL_bots.previewInfo) res;
-                    medias.addAll(info.media);
-                } else {
-                    return;
-                }
-
-                ArrayList<MessageObject> oldMessageObjects = new ArrayList<>(messageObjects);
-                messageObjects.clear();
-                fakeDays.clear();
-
-                for (TL_bots.botPreviewMedia media : medias) {
-                    MessageObject msg = new MessageObject(currentAccount, new BotPreview(this, dialogId, media));
-
-                    MessageObject old = null;
-                    for (int i = 0; i < oldMessageObjects.size(); ++i) {
-                        if (MessagesController.equals(oldMessageObjects.get(i).storyItem.media, media.media)) {
-                            old = oldMessageObjects.get(i);
-                            break;
-                        }
-                    }
-
-                    msg.storyItem.id = msg.messageOwner.id = old == null ? lastId++ : old.getId();
-                    msg.parentStoriesList = this;
-                    msg.generateThumbs(false);
-                    if (fakeDays.isEmpty()) {
-                        fakeDays.add(new ArrayList<>());
-                    }
-                    fakeDays.get(0).add(msg.getId());
-                    messageObjects.add(msg);
-                }
-
-                AndroidUtilities.cancelRunOnUIThread(super.notify);
-                AndroidUtilities.runOnUIThread(super.notify);
-
-                if (callback != null) {
-                    AndroidUtilities.runOnUIThread(callback);
-                }
-            }));
-
-            return true;
-        }
-
-        public void notifyUpdate() {
-            AndroidUtilities.cancelRunOnUIThread(super.notify);
-            AndroidUtilities.runOnUIThread(super.notify);
-        }
-
-        public void reload(Runnable callback) {
-            if (this.reqId != 0) {
-                ConnectionsManager.getInstance(currentAccount).cancelRequest(this.reqId, true);
-                this.reqId = 0;
-            }
-            loading = false;
-            loaded = false;
-            loadInternal(callback);
-        }
-
-        public void requestReference(BotPreview story, Utilities.Callback<BotPreview> whenUpdated) {
-            reload(() -> {
-                for (int i = 0; i < messageObjects.size(); ++i) {
-                    MessageObject msg = messageObjects.get(i);
-                    if (msg == null || msg.storyItem == null || msg.storyItem.media == null) continue;
-                    if (story.media.document != null) {
-                        if (msg.storyItem.media.document == null) continue;
-                        if (msg.storyItem.media.document.id == story.media.document.id) {
-                            whenUpdated.run((BotPreview) msg.storyItem);
-                            return;
-                        }
-                    }
-                    if (story.media.photo != null) {
-                        if (msg.storyItem.media.photo == null) continue;
-                        if (msg.storyItem.media.photo.id == story.media.photo.id) {
-                            whenUpdated.run((BotPreview) msg.storyItem);
-                            return;
-                        }
-                    }
-                }
-                whenUpdated.run(null);
-            });
-        }
-
-        @Override
-        public int getCount() {
-            return messageObjects.size();
-        }
-
-        @Override
-        public int getLoadedCount() {
-            return messageObjects.size();
-        }
-
-        @Override
-        public boolean isLoading() {
-            return loading;
-        }
-
-        @Override
-        protected ArrayList<ArrayList<Integer>> getDays() {
-            return fakeDays;
-        }
-
-        @Override
-        public MessageObject findMessageObject(int id) {
-            for (int i = 0; i < messageObjects.size(); ++i) {
-                if (messageObjects.get(i).getId() == id) {
-                    return messageObjects.get(i);
-                }
-            }
-            return null;
-        }
-
-        @Override
-        public void updatePinnedOrder(ArrayList<Integer> ids, boolean apply) {
-            final ArrayList<MessageObject> newOrder = new ArrayList<>();
-            final ArrayList<Integer> newOrderIds = new ArrayList<>();
-            TL_bots.reorderPreviewMedias req = new TL_bots.reorderPreviewMedias();
-            req.bot = MessagesController.getInstance(currentAccount).getInputUser(dialogId);
-            req.lang_code = lang_code;
-            for (int id : ids) {
-                MessageObject msg = findMessageObject(id);
-                if (msg == null) continue;
-                req.order.add(MessagesController.toInputMedia(msg.storyItem.media));
-                newOrder.add(msg);
-                newOrderIds.add(id);
-            }
-            ConnectionsManager.getInstance(currentAccount).sendRequest(req, null);
-
-            if (fakeDays.isEmpty()) {
-                fakeDays.add(new ArrayList<>());
-            }
-            fakeDays.get(0).clear();
-            fakeDays.get(0).addAll(newOrderIds);
-            messageObjects.clear();
-            messageObjects.addAll(newOrder);
-        }
-
-        public void delete(ArrayList<TLRPC.MessageMedia> medias) {
-            if (medias == null) return;
-            for (int i = 0; i < messageObjects.size(); ++i) {
-                MessageObject msg = messageObjects.get(i);
-                boolean contains = false;
-                for (int j = 0; j < medias.size(); ++j) {
-                    if (MessagesController.equals(msg.storyItem.media, medias.get(j))) {
-                        contains = true;
-                        break;
-                    }
-                }
-                if (contains) {
-                    messageObjects.remove(i);
-                    if (!fakeDays.isEmpty() && msg.getId() < fakeDays.get(0).size()) {
-                        fakeDays.get(0).remove(msg.getId());
-                    }
-                    i--;
-                }
-            }
-            TL_bots.deletePreviewMedia req = new TL_bots.deletePreviewMedia();
-            req.bot = MessagesController.getInstance(currentAccount).getInputUser(dialogId);
-            for (int i = 0; i < medias.size(); ++i) {
-                req.media.add(MessagesController.toInputMedia(medias.get(i)));
-            }
-            ConnectionsManager.getInstance(currentAccount).sendRequest(req, null);
-
-            AndroidUtilities.cancelRunOnUIThread(super.notify);
-            AndroidUtilities.runOnUIThread(super.notify);
-        }
-
-        public void delete(TLRPC.MessageMedia media) {
-            delete(new ArrayList<>(Arrays.asList(media)));
-        }
-
-    }
+    // LoogriGram: BotPreview and BotPreviewsList held a bot's preview media, shown
+    // in its profile's stories tab. Bot previews are removed for every bot, as
+    // on desktop, which has none.
 
     public static class SearchStoriesList extends StoriesList {
 
@@ -2310,7 +2034,7 @@ public class StoriesController {
         public static final int TYPE_ARCHIVE = 1;
         public static final int TYPE_STATISTICS = 2;
         public static final int TYPE_SEARCH = 3;
-        public static final int TYPE_BOTS = 4;
+        // LoogriGram: 4 was TYPE_BOTS, a bot's previews.
         public static final int TYPE_ALBUMS = TYPE_PINNED; // todo: separate types: 5;
 
         public final int currentAccount;

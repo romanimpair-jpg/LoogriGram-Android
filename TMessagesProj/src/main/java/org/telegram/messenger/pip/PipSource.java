@@ -19,7 +19,6 @@ import org.telegram.messenger.pip.source.PipSourceHandlerState2;
 import org.telegram.messenger.pip.utils.PipPositionObserver;
 import org.telegram.messenger.pip.utils.PipSourceParams;
 import org.telegram.messenger.pip.utils.PipUtils;
-import org.telegram.ui.Stories.LiveStoryPipOverlay;
 import org.webrtc.TextureViewRenderer;
 
 import java.util.ArrayList;

@@ -512,7 +512,6 @@
     <string name="AutoplayVideo">Vídeos</string>
     <string name="AutoplayVideoInfo">"Use os botões de volume para ativar o som. "</string>
     <string name="HidAccount">O usuário ocultou a conta</string>
-    <string name="StoryHidAccount">Esta conta foi ocultada pelo usuário</string>
     <string name="AutoplayMedia">Reproduzir automaticamente</string>
     <string name="RaiseToSpeak">Levantar para Falar</string>
     <string name="RaiseToSpeakInfo">Grava mensagens de voz ao levar o telefone à orelha.</string>

@@ -78,7 +78,6 @@ import org.telegram.ui.Components.AnimatedFloat;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.InstantCameraView;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Stories.LivePlayer;
 
 import java.io.File;
 import java.io.IOException;
@@ -390,9 +389,7 @@ public class CameraView extends FrameLayout implements TextureView.SurfaceTextur
         if (voip != null && voip.hasVideoCapturer()) {
             return false;
         }
-        if (LivePlayer.recording != null) {
-            return false;
-        }
+        // LoogriGram: a live story being broadcast held the camera too.
         return true;
     }
 

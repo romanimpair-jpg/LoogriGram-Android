@@ -529,7 +529,6 @@
     <string name="AutoplayVideo">Video</string>
     <string name="AutoplayVideoInfo">Premi i tasti del volume per attivare il suono.</string>
     <string name="HidAccount">Il mittente ha nascosto il suo account</string>
-    <string name="StoryHidAccount">L\'account è stato nascosto dall\'utente</string>
     <string name="AutoplayMedia">Autoriproduzione media</string>
     <string name="RaiseToSpeak">Alza per parlare</string>
     <string name="RaiseToSpeakInfo">Registra i messaggi vocali avvicinando il telefono al tuo orecchio</string>
@@ -802,12 +801,6 @@
     <string name="SpeedNormal">Normale</string>
     <string name="SpeedMedium">Media</string>
     <string name="SpeedSuperFast">Super veloce</string>
-    <string name="VideoSpeedVeryFast">Molto veloce</string>
-    <string name="VideoSpeedFast">Veloce</string>
-    <string name="VideoSpeedCustom">Personalizzata %s</string>
-    <string name="VideoSpeedNormal">Normale</string>
-    <string name="VideoSpeedSlow">Lenta</string>
-    <string name="VideoSpeedVerySlow">Molto lenta</string>
     <string name="SpeedHint">Tieni premuto per altre velocità.</string>
     <string name="ShowAsList">Mostra come lista</string>
     <string name="ShowAsGrid">Mostra come griglia</string>

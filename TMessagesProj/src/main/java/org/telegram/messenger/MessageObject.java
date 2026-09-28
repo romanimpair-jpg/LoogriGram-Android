@@ -12118,10 +12118,6 @@ public class MessageObject {
         return storyItem != null;
     }
 
-    public boolean isBotPreview() {
-        return storyItem instanceof StoriesController.BotPreview;
-    }
-
     private static CharSequence[] userSpan;
     public static CharSequence userSpan() {
         return userSpan(0);

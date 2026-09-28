@@ -55,7 +55,6 @@ import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.NotificationsController;
@@ -92,8 +91,6 @@ import org.telegram.ui.Components.ListView.AdapterWithDiffUtils;
 import org.telegram.ui.Components.RecyclerListView;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -148,32 +145,6 @@ public class NotificationsCustomSettingsActivity extends BaseFragment implements
     public boolean onFragmentCreate() {
         updateRows(true);
         return super.onFragmentCreate();
-    }
-
-    // LoogriGram: the stories strip's "mute" item (DialogsActivity) and the viewer
-    // still ask this; both go with the viewer.
-    private static boolean isTop5Peer(int currentAccount, long did) {
-        ArrayList<TLRPC.TL_topPeer> topPeers = new ArrayList<>(MediaDataController.getInstance(currentAccount).hints);
-        Collections.sort(topPeers, Comparator.comparingDouble(a -> a.rating));
-        int index = -1;
-        for (int i = 0; i < topPeers.size(); ++i) {
-            long did2 = DialogObject.getPeerDialogId(topPeers.get(i).peer);
-            if (did2 == did) {
-                index = i;
-            }
-        }
-        return index >= 0 && index >= topPeers.size() - 5;
-    }
-
-    public static boolean areStoriesNotMuted(int currentAccount, long did) {
-        SharedPreferences prefs = MessagesController.getNotificationsSettings(currentAccount);
-        if (prefs.contains("stories_" + did)) {
-            return prefs.getBoolean("stories_" + did, true);
-        }
-        if (prefs.contains("EnableAllStories")) {
-            return prefs.getBoolean("EnableAllStories", true);
-        }
-        return isTop5Peer(currentAccount, did);
     }
 
     private int getLedColor() {

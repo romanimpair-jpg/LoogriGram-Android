@@ -493,7 +493,6 @@
     <string name="AutoplayVideo">المقاطع المرئية</string>
     <string name="AutoplayVideoInfo">اضغط على أزرار الصوت لتشغيله.</string>
     <string name="HidAccount">تم إخفاء الحساب من قِبل المستخدم.</string>
-    <string name="StoryHidAccount">تم إخفاء هذا الحساب من قبل المستخدم</string>
     <string name="AutoplayMedia">تشغيل الوسائط تلقائيًا</string>
     <string name="RaiseToSpeak">الرفع للتحدث</string>
     <string name="RaiseToSpeakInfo">تسجيل الرسائل الصوتية برفع الهاتف إلى أذنك</string>

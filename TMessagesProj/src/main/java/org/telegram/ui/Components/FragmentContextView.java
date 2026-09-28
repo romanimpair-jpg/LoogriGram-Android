@@ -33,7 +33,6 @@ import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.text.SpannableStringBuilder;
@@ -79,7 +78,6 @@ import org.telegram.messenger.voip.VoIPService;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_phone;
-import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.ActionBarMenuItem;
 import org.telegram.ui.ActionBar.ActionBarMenuSlider;
 import org.telegram.ui.ActionBar.AlertDialog;
@@ -92,7 +90,6 @@ import org.telegram.ui.Components.voip.VoIPHelper;
 import org.telegram.ui.DialogsActivity;
 import org.telegram.ui.GroupCallActivity;
 import org.telegram.ui.LaunchActivity;
-import org.telegram.ui.Stories.LivePlayer;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -109,8 +106,9 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
             STYLE_LIVE_LOCATION = 2,
             STYLE_ACTIVE_GROUP_CALL = 3,
             STYLE_INACTIVE_GROUP_CALL = 4,
-            STYLE_IMPORTING_MESSAGES = 5,
-            STYLE_LIVE_STORY = 6;
+            STYLE_IMPORTING_MESSAGES = 5;
+    // LoogriGram: 6 was STYLE_LIVE_STORY, the bar of a live story we were
+    // broadcasting. Stories are removed, as on desktop.
 
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({
@@ -120,8 +118,7 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
             STYLE_LIVE_LOCATION,
             STYLE_ACTIVE_GROUP_CALL,
             STYLE_INACTIVE_GROUP_CALL,
-            STYLE_IMPORTING_MESSAGES,
-            STYLE_LIVE_STORY
+            STYLE_IMPORTING_MESSAGES
     })
     public @interface Style {}
 
@@ -229,7 +226,6 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
 
 
     private boolean checkCallAfterAnimation;
-    private boolean checkLiveStoryAfterAnimation;
     private boolean checkPlayerAfterAnimation;
     private boolean checkImportAfterAnimation;
 
@@ -745,21 +741,7 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
         addView(groupCallMessagesContainer, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP, 96, 3, 96, 0));
 
         setOnClickListener(v -> {
-            if (currentStyle == STYLE_LIVE_STORY) {
-                final LivePlayer player = LivePlayer.recording;
-                if (player == null) return;
-                if (player.currentAccount != UserConfig.selectedAccount) {
-                    if (LaunchActivity.instance == null) return;
-                    LaunchActivity.instance.switchToAccount(player.currentAccount, true);
-                }
-                final BaseFragment lastFragment = LaunchActivity.getSafeLastFragment();
-                if (lastFragment == null) return;
-                final TL_stories.StoryItem story = MessagesController.getInstance(player.currentAccount).getStoriesController().findStory(player.dialogId, player.storyId);
-                if (story != null) {
-                    story.dialogId = player.dialogId;
-                    lastFragment.getOrCreateStoryViewer(player.currentAccount).open(player.currentAccount, getContext(), story, null);
-                }
-            } else if (currentStyle == STYLE_AUDIO_PLAYER) {
+            if (currentStyle == STYLE_AUDIO_PLAYER) {
                 MessageObject messageObject = MediaController.getInstance().getPlayingMessageObject();
                 if (fragment != null && messageObject != null) {
                     if (messageObject.isMusic()) {
@@ -1168,33 +1150,7 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
         if (topPadding > 0 && topPadding != AndroidUtilities.dp2(getStyleHeight())) {
             setTopPadding(AndroidUtilities.dp2(getStyleHeight()));
         }
-        if (style == STYLE_LIVE_STORY) {
-            selector.setBackground(Theme.getSelectorDrawable(false));
-            frameLayout.setBackground(new GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, new int[] { getThemedColor(Theme.key_stories_circle_live1), getThemedColor(Theme.key_stories_circle_live2) }));
-            frameLayout.setTag(null);
-
-            subtitleTextView.setVisibility(GONE);
-            joinButton.setVisibility(GONE);
-            closeButton.setVisibility(GONE);
-            playButton.setVisibility(GONE);
-            muteButton.setVisibility(GONE);
-            importingImageView.setVisibility(GONE);
-            importingImageView.stopAnimation();
-            avatars.setVisibility(GONE);
-            titleTextView.setTag(Theme.key_returnToCallText);
-            for (int i = 0; i < 2; i++) {
-                TextView textView = i == 0 ? titleTextView.getTextView() : titleTextView.getNextTextView();
-                if (textView == null) {
-                    continue;
-                }
-                textView.setGravity(Gravity.CENTER_VERTICAL | Gravity.LEFT);
-                textView.setTextColor(getThemedColor(Theme.key_returnToCallText));
-                textView.setTypeface(AndroidUtilities.bold());
-                textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
-            }
-
-            titleTextView.setLayoutParams(LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 0, -1, (isSideMenued ? 64 : 0), 0));
-        } else if (style == STYLE_IMPORTING_MESSAGES) {
+        if (style == STYLE_IMPORTING_MESSAGES) {
             selector.setBackground(Theme.getSelectorDrawable(false));
             frameLayout.setBackgroundColor(0);
             frameLayout.setTag(Theme.key_inappPlayerBackground);
@@ -1248,11 +1204,7 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                 textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15);
             }
             titleTextView.setTag(Theme.key_inappPlayerTitle);
-            if (style == STYLE_LIVE_STORY) {
-                playButton.setLayoutParams(LayoutHelper.createFrame(36, 36, Gravity.TOP | Gravity.LEFT, 8, 0, 0, 0));
-                titleTextView.setLayoutParams(LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 36, Gravity.LEFT | Gravity.TOP, 35 + 16, 0, (isSideMenued ? 64 : 0) + 36, 0));
-                closeButton.setVisibility(GONE);
-            } else if (style == STYLE_AUDIO_PLAYER) {
+            if (style == STYLE_AUDIO_PLAYER) {
                 playButton.setLayoutParams(LayoutHelper.createFrame(36, 36, Gravity.TOP | Gravity.LEFT, 3, 0, 0, 0));
                 titleTextView.setLayoutParams(LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 36, Gravity.LEFT | Gravity.TOP, 37, 0, (isSideMenued ? 64 : 0) + 36, 0));
                 createPlaybackSpeedButton();
@@ -1389,7 +1341,6 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                 NotificationCenter.getInstance(a).removeObserver(this, NotificationCenter.groupCallUpdated);
                 NotificationCenter.getInstance(a).removeObserver(this, NotificationCenter.groupCallTypingsUpdated);
                 NotificationCenter.getInstance(a).removeObserver(this, NotificationCenter.historyImportProgressChanged);
-                NotificationCenter.getInstance(a).removeObserver(this, NotificationCenter.liveStoryUpdated);
                 NotificationCenter.getInstance(a).removeObserver(this, NotificationCenter.messagePlayingProgressDidChanged);
                 GroupCallMessagesController.getInstance(a).unsubscribeFromCallMessages(0, this);
             }
@@ -1426,7 +1377,6 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                 NotificationCenter.getInstance(a).addObserver(this, NotificationCenter.groupCallUpdated);
                 NotificationCenter.getInstance(a).addObserver(this, NotificationCenter.groupCallTypingsUpdated);
                 NotificationCenter.getInstance(a).addObserver(this, NotificationCenter.historyImportProgressChanged);
-                NotificationCenter.getInstance(a).addObserver(this, NotificationCenter.liveStoryUpdated);
                 NotificationCenter.getInstance(a).addObserver(this, NotificationCenter.messagePlayingProgressDidChanged);
                 GroupCallMessagesController.getInstance(a).subscribeToCallMessages(0, this);
             }
@@ -1437,9 +1387,7 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
             NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.webRtcMicAmplitudeEvent);
             NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.groupCallVisibilityChanged);
 
-            if (LivePlayer.recording != null) {
-                checkLiveStory(true);
-            } else if (VoIPService.getSharedInstance() != null && !VoIPService.getSharedInstance().isHangingUp() && VoIPService.getSharedInstance().getCallState() != VoIPService.STATE_WAITING_INCOMING && !GroupCallPip.isShowing()) {
+            if (VoIPService.getSharedInstance() != null && !VoIPService.getSharedInstance().isHangingUp() && VoIPService.getSharedInstance().getCallState() != VoIPService.STATE_WAITING_INCOMING && !GroupCallPip.isShowing()) {
                 checkCall(true);
             } else if (chatActivity != null && fragment.getSendMessagesHelper().getImportingHistory(chatActivity.getDialogId()) != null && !isPlayingVoice()) {
                 checkImport(true);
@@ -1489,8 +1437,6 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
     public void didReceivedNotification(int id, int account, Object... args) {
         if (id == NotificationCenter.liveLocationsChanged) {
             checkLiveLocation(false);
-        } else if (id == NotificationCenter.liveStoryUpdated) {
-            checkLiveStory(false);
         } else if (id == NotificationCenter.liveLocationsCacheChanged) {
             if (chatActivity != null) {
                 long did = (Long) args[0];
@@ -1845,16 +1791,13 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                                     delegate.onAnimation(false, false);
                                 }
                                 animatorSet = null;
-                                if (checkLiveStoryAfterAnimation) {
-                                    checkLiveStory(false);
-                                } else if (checkCallAfterAnimation) {
+                                if (checkCallAfterAnimation) {
                                     checkCall(false);
                                 } else if (checkPlayerAfterAnimation) {
                                     checkPlayer(false);
                                 } else if (checkImportAfterAnimation) {
                                     checkImport(false);
                                 }
-                                checkLiveStoryAfterAnimation = false;
                                 checkCallAfterAnimation = false;
                                 checkPlayerAfterAnimation = false;
                                 checkImportAfterAnimation = false;
@@ -1903,16 +1846,13 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                                     delegate.onAnimation(false, true);
                                 }
                                 animatorSet = null;
-                                if (checkLiveStoryAfterAnimation) {
-                                    checkLiveStory(false);
-                                } else if (checkCallAfterAnimation) {
+                                if (checkCallAfterAnimation) {
                                     checkCall(false);
                                 } else if (checkPlayerAfterAnimation) {
                                     checkPlayer(false);
                                 } else if (checkImportAfterAnimation) {
                                     checkImport(false);
                                 }
-                                checkLiveStoryAfterAnimation = false;
                                 checkCallAfterAnimation = false;
                                 checkPlayerAfterAnimation = false;
                                 checkImportAfterAnimation = false;
@@ -2028,16 +1968,13 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                             if (animatorSet != null && animatorSet.equals(animation)) {
                                 setVisibility(GONE);
                                 animatorSet = null;
-                                if (checkLiveStoryAfterAnimation) {
-                                    checkLiveStory(false);
-                                } else if (checkCallAfterAnimation) {
+                                if (checkCallAfterAnimation) {
                                     checkCall(false);
                                 } else if (checkPlayerAfterAnimation) {
                                     checkPlayer(false);
                                 } else if (checkImportAfterAnimation) {
                                     checkImport(false);
                                 }
-                                checkLiveStoryAfterAnimation = false;
                                 checkCallAfterAnimation = false;
                                 checkPlayerAfterAnimation = false;
                                 checkImportAfterAnimation = false;
@@ -2085,16 +2022,13 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                                     delegate.onAnimation(false, true);
                                 }
                                 animatorSet = null;
-                                if (checkLiveStoryAfterAnimation) {
-                                    checkLiveStory(false);
-                                } else if (checkCallAfterAnimation) {
+                                if (checkCallAfterAnimation) {
                                     checkCall(false);
                                 } else if (checkPlayerAfterAnimation) {
                                     checkPlayer(false);
                                 } else if (checkImportAfterAnimation) {
                                     checkImport(false);
                                 }
-                                checkLiveStoryAfterAnimation = false;
                                 checkCallAfterAnimation = false;
                                 checkPlayerAfterAnimation = false;
                                 checkImportAfterAnimation = false;
@@ -2116,149 +2050,6 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
     private boolean isPlayingVoice() {
         MessageObject messageObject = MediaController.getInstance().getPlayingMessageObject();
         return messageObject != null && messageObject.isVoice();
-    }
-
-    private void checkLiveStory(boolean create) {
-        View fragmentView = fragment.getFragmentView();
-        if (!create && fragmentView != null) {
-            if (fragmentView.getParent() == null || ((View) fragmentView.getParent()).getVisibility() != VISIBLE) {
-                create = true;
-            }
-        }
-        final boolean active = LivePlayer.recording != null;
-
-        if (!active) {
-            if (visible && (create && currentStyle == STYLE_NOT_SET || currentStyle == STYLE_LIVE_STORY)) {
-                visible = false;
-                if (create) {
-                    if (getVisibility() != GONE) {
-                        setVisibility(GONE);
-                    }
-                    setTopPadding(0);
-                } else {
-                    if (animatorSet != null) {
-                        animatorSet.cancel();
-                        animatorSet = null;
-                    }
-                    final int currentAccount = account;
-                    notificationsLocker.lock();
-                    animatorSet = new AnimatorSet();
-                    animatorSet.playTogether(ObjectAnimator.ofFloat(this, "topPadding", 0));
-                    animatorSet.setDuration(220);
-                    animatorSet.setInterpolator(CubicBezierInterpolator.DEFAULT);
-                    animatorSet.addListener(new AnimatorListenerAdapter() {
-                        @Override
-                        public void onAnimationEnd(Animator animation) {
-                            notificationsLocker.unlock();
-                            if (animatorSet != null && animatorSet.equals(animation)) {
-                                setVisibility(GONE);
-                                animatorSet = null;
-                                if (checkLiveStoryAfterAnimation) {
-                                    checkLiveStory(false);
-                                } else if (checkCallAfterAnimation) {
-                                    checkCall(false);
-                                } else if (checkPlayerAfterAnimation) {
-                                    checkPlayer(false);
-                                } else if (checkImportAfterAnimation) {
-                                    checkImport(false);
-                                }
-                                checkLiveStoryAfterAnimation = false;
-                                checkCallAfterAnimation = false;
-                                checkPlayerAfterAnimation = false;
-                                checkImportAfterAnimation = false;
-                            }
-                        }
-                    });
-                    animatorSet.start();
-                }
-            } else if (visible && currentStyle == STYLE_NOT_SET) {
-                visible = false;
-                setVisibility(GONE);
-            }
-        } else {
-            checkCreateView();
-            int newStyle = STYLE_LIVE_STORY;
-            if (newStyle != currentStyle && animatorSet != null && !create) {
-                checkLiveStoryAfterAnimation = true;
-                return;
-            }
-            if (newStyle != currentStyle && visible && !create) {
-                if (animatorSet != null) {
-                    animatorSet.cancel();
-                    animatorSet = null;
-                }
-                final int currentAccount = account;
-                notificationsLocker.lock();
-                animatorSet = new AnimatorSet();
-                animatorSet.playTogether(ObjectAnimator.ofFloat(this, "topPadding", 0));
-                animatorSet.setDuration(220);
-                animatorSet.setInterpolator(CubicBezierInterpolator.DEFAULT);
-                animatorSet.addListener(new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        notificationsLocker.unlock();
-                        if (animatorSet != null && animatorSet.equals(animation)) {
-                            visible = false;
-                            animatorSet = null;
-                            checkLiveStory(false);
-                        }
-                    }
-                });
-                animatorSet.start();
-                return;
-            }
-            updateStyle(STYLE_LIVE_STORY);
-            if (!visible) {
-                if (!create) {
-                    if (animatorSet != null) {
-                        animatorSet.cancel();
-                        animatorSet = null;
-                    }
-                    animatorSet = new AnimatorSet();
-                    final int currentAccount = account;
-                    notificationsLocker2.lock();
-                    animatorSet.playTogether(ObjectAnimator.ofFloat(this, "topPadding", AndroidUtilities.dp2(getStyleHeight())));
-                    animatorSet.setDuration(220);
-                    animatorSet.setInterpolator(CubicBezierInterpolator.DEFAULT);
-                    animatorSet.addListener(new AnimatorListenerAdapter() {
-                        @Override
-                        public void onAnimationEnd(Animator animation) {
-                            notificationsLocker2.unlock();
-                            if (animatorSet != null && animatorSet.equals(animation)) {
-                                animatorSet = null;
-                            }
-                            if (checkLiveStoryAfterAnimation) {
-                                checkLiveStory(false);
-                            } else if (checkCallAfterAnimation) {
-                                checkCall(false);
-                            } else if (checkPlayerAfterAnimation) {
-                                checkPlayer(false);
-                            } else if (checkImportAfterAnimation) {
-                                checkImport(false);
-                            }
-                            checkLiveStoryAfterAnimation = false;
-                            checkCallAfterAnimation = false;
-                            checkPlayerAfterAnimation = false;
-                            checkImportAfterAnimation = false;
-
-                            startJoinFlickerAnimation();
-                        }
-                    });
-                    animatorSet.start();
-                } else {
-                    setTopPadding(AndroidUtilities.dp2(getStyleHeight()));
-                    startJoinFlickerAnimation();
-                }
-                visible = true;
-                setVisibility(VISIBLE);
-            } else {
-                setTopPadding(AndroidUtilities.dp2(getStyleHeight()));
-                setVisibility(VISIBLE);
-            }
-        }
-        if (LivePlayer.recording != null && currentStyle == STYLE_LIVE_STORY) {
-            titleTextView.setText(LocaleController.formatPluralStringComma("LiveStoryTopPanelWatching", LivePlayer.recording.getWatchersCount()));
-        }
     }
 
     public void checkCall(boolean create) {
@@ -2318,16 +2109,13 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                             if (animatorSet != null && animatorSet.equals(animation)) {
                                 setVisibility(GONE);
                                 animatorSet = null;
-                                if (checkLiveStoryAfterAnimation) {
-                                    checkLiveStory(false);
-                                } else if (checkCallAfterAnimation) {
+                                if (checkCallAfterAnimation) {
                                     checkCall(false);
                                 } else if (checkPlayerAfterAnimation) {
                                     checkPlayer(false);
                                 } else if (checkImportAfterAnimation) {
                                     checkImport(false);
                                 }
-                                checkLiveStoryAfterAnimation = false;
                                 checkCallAfterAnimation = false;
                                 checkPlayerAfterAnimation = false;
                                 checkImportAfterAnimation = false;
@@ -2469,16 +2257,13 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                             if (animatorSet != null && animatorSet.equals(animation)) {
                                 animatorSet = null;
                             }
-                            if (checkLiveStoryAfterAnimation) {
-                                checkLiveStory(false);
-                            } else if (checkCallAfterAnimation) {
+                            if (checkCallAfterAnimation) {
                                 checkCall(false);
                             } else if (checkPlayerAfterAnimation) {
                                 checkPlayer(false);
                             } else if (checkImportAfterAnimation) {
                                 checkImport(false);
                             }
-                            checkLiveStoryAfterAnimation = false;
                             checkCallAfterAnimation = false;
                             checkPlayerAfterAnimation = false;
                             checkImportAfterAnimation = false;

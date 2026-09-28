@@ -493,7 +493,6 @@
     <string name="AutoplayVideo">Videos</string>
     <string name="AutoplayVideoInfo">Presiona los botones de volumen para escucharlo.</string>
     <string name="HidAccount">Cuenta oculta para mensajes reenviados</string>
-    <string name="StoryHidAccount">Cuenta oculta para historias republicadas</string>
     <string name="AutoplayMedia">Reproducción automática</string>
     <string name="RaiseToSpeak">Levantar para hablar</string>
     <string name="RaiseToSpeakInfo">Graba mensajes de voz acercando el teléfono a tu oído</string>

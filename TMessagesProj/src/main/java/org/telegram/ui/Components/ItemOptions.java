@@ -47,7 +47,6 @@ import org.telegram.messenger.BotWebViewVibrationEffect;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.DocumentObject;
 import org.telegram.messenger.Emoji;
-import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.ImageLocation;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaDataController;
@@ -56,7 +55,6 @@ import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
-import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -80,11 +78,9 @@ import org.telegram.ui.Gifts.GiftViews;
 import org.telegram.ui.MainTabsActivity;
 import org.telegram.ui.ProfileActivity;
 import org.telegram.ui.SettingsActivity;
-import org.telegram.ui.Stories.StoriesController;
 import org.telegram.ui.Stories.recorder.HintView2;
 
 import java.lang.ref.WeakReference;
-import java.util.HashSet;
 
 public class ItemOptions {
 
@@ -2203,68 +2199,4 @@ public class ItemOptions {
     }
 
 
-    public static void addAlbumsItemOptions(ItemOptions options, StoriesController.StoriesCollections collections, HashSet<Integer> checkedSet, boolean canAddNewAlbum, Runnable onAlbumAdd, Utilities.Callback<StoriesController.StoryAlbum> onChange) {
-        final ScrollView collectionsScrollView = new ScrollView(options.getContext()) {
-            @Override
-            protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-                super.onMeasure(
-                        widthMeasureSpec,
-                        MeasureSpec.makeMeasureSpec(Math.min(dp(260), MeasureSpec.getSize(heightMeasureSpec)), MeasureSpec.getMode(heightMeasureSpec))
-                );
-            }
-        };
-        final LinearLayout collectionsLayout = new LinearLayout(options.getContext());
-        collectionsScrollView.addView(collectionsLayout);
-        collectionsLayout.setOrientation(LinearLayout.VERTICAL);
-        options.addView(collectionsScrollView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
-
-        if (canAddNewAlbum && onAlbumAdd != null) {
-            final ActionBarMenuSubItem subitem = new ActionBarMenuSubItem(options.getContext(), 2, false, false, options.resourcesProvider);
-            subitem.setPadding(dp(18), 0, dp(18), 0);
-            subitem.setColors(Theme.getColor(Theme.key_actionBarDefaultSubmenuItem, options.resourcesProvider), Theme.getColor(Theme.key_actionBarDefaultSubmenuItemIcon, options.resourcesProvider));
-            subitem.setSelectorColor(Theme.multAlpha(Theme.getColor(Theme.key_actionBarDefaultSubmenuItem, options.resourcesProvider), .12f));
-            subitem.setTextAndIcon(getString(R.string.StoriesAlbumNewAlbum), R.drawable.menu_album_add);
-            subitem.setOnClickListener(v -> {
-                onAlbumAdd.run();
-            });
-            collectionsLayout.addView(subitem, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
-        }
-
-        for (StoriesController.StoryAlbum album: collections.collections) {
-            final int albumId = album.album_id;
-            final boolean checked = checkedSet.contains(albumId);
-
-            final ActionBarMenuSubItem subitem = new ActionBarMenuSubItem(options.getContext(), 2, false, false, options.resourcesProvider);
-            subitem.setChecked(checked);
-            subitem.setPadding(dp(18), 0, dp(18), 0);
-            subitem.setColors(Theme.getColor(Theme.key_actionBarDefaultSubmenuItem, options.resourcesProvider), Theme.getColor(Theme.key_actionBarDefaultSubmenuItemIcon, options.resourcesProvider));
-            subitem.setSelectorColor(Theme.multAlpha(Theme.getColor(Theme.key_actionBarDefaultSubmenuItem, options.resourcesProvider), .12f));
-            if (album.icon_photo != null && album.icon_photo.sizes != null) {
-                TLRPC.PhotoSize currentPhotoObjectThumb = FileLoader.getClosestPhotoSizeWithSize(album.icon_photo.sizes, 50);
-                TLRPC.PhotoSize currentPhotoObject = FileLoader.getClosestPhotoSizeWithSize(album.icon_photo.sizes, dp(24), false, currentPhotoObjectThumb, true);
-                if (currentPhotoObject == currentPhotoObjectThumb) {
-                    currentPhotoObjectThumb = null;
-                }
-                /*if (messageObject.strippedThumb != null) {
-                    imageReceiver.setImage(ImageLocation.getForObject(currentPhotoObject, messageObject.photoThumbsObject), imageFilter, null, null, messageObject.strippedThumb, currentPhotoObject != null ? currentPhotoObject.size : 0, null, parentObject, messageObject.shouldEncryptPhotoOrVideo() ? 2 : 1);
-                } else {
-                    imageReceiver.setImage(ImageLocation.getForObject(currentPhotoObject, messageObject.photoThumbsObject), imageFilter, fullSize ? null : ImageLocation.getForObject(currentPhotoObjectThumb, messageObject.photoThumbsObject), imageFilter + "_b", currentPhotoObject != null ? currentPhotoObject.size : 0, null, parentObject, messageObject.shouldEncryptPhotoOrVideo() ? 2 : 1);
-                }*/
-
-                subitem.setTextAndIcon(album.title, ImageLocation.getForObject(currentPhotoObject, album.icon_photo), "50_50", null, null);
-            } else {
-                subitem.setTextAndIcon(album.title, R.drawable.msg_folders);
-            }
-
-            subitem.setOnClickListener(v -> {
-                if (checked) {
-                    checkedSet.remove(albumId);
-                } else {
-                    checkedSet.add(albumId);
-                }
-                onChange.run(album);
-            });
-            collectionsLayout.addView(subitem, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
-        }
-    }
 }

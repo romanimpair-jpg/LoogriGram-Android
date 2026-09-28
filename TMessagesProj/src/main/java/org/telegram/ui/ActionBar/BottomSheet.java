@@ -2115,11 +2115,6 @@ public class BottomSheet extends Dialog implements BaseFragment.AttachedSheet {
         return false;
     }
 
-    @Override
-    public void setKeyboardHeightFromParent(int keyboardHeight) {
-
-    }
-
     protected void onContainerViewTranslation() {
 
     }

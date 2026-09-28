@@ -163,9 +163,6 @@ public class PollCreateActivity extends BaseFragment implements NotificationCent
 
     @Override
     public boolean isLightStatusBar() {
-        if (getLastStoryViewer() != null && getLastStoryViewer().isShown()) {
-            return false;
-        }
         int color = Theme.getColor(Theme.key_windowBackgroundWhite);
         if (actionBar.isActionModeShowed()) {
             color = Theme.getColor(Theme.key_actionBarActionModeDefault);

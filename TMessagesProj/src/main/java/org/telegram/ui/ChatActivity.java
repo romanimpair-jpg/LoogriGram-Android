@@ -281,7 +281,6 @@ import org.telegram.ui.Components.voip.CellFlickerDrawable;
 import org.telegram.ui.Components.voip.VoIPHelper;
 import org.telegram.ui.Delegates.ChatActivityMemberRequestsDelegate;
 import org.telegram.ui.Stars.MessageSuggestionOfferSheet;
-import org.telegram.ui.Stories.StoriesListPlaceProvider;
 import org.telegram.ui.Stories.recorder.HintView2;
 import org.telegram.ui.Stories.recorder.PreviewView;
 import org.telegram.ui.bots.BotCommandsMenuContainer;
@@ -2837,7 +2836,6 @@ public class ChatActivity extends BaseFragment implements
             .add(NotificationCenter.messageTranslated)
             .add(NotificationCenter.messageTranslating)
             .add(NotificationCenter.onReceivedChannelDifference)
-            .add(NotificationCenter.storiesUpdated)
             .add(NotificationCenter.channelRecommendationsLoaded)
             .add(NotificationCenter.updateTranscriptionLock)
             .add(NotificationCenter.savedMessagesDialogsUpdate)
@@ -22843,10 +22841,6 @@ public class ChatActivity extends BaseFragment implements
                 waitingForGetDifference = false;
                 firstLoadMessages();
             }
-        } else if (id == NotificationCenter.storiesUpdated) {
-            if (avatarContainer != null) {
-                avatarContainer.avatarImageView.invalidate();
-            }
         } else if (id == NotificationCenter.channelRecommendationsLoaded) {
             final long dialogId = (long) args[0];
             if (chatListView != null) {
@@ -40822,17 +40816,8 @@ public class ChatActivity extends BaseFragment implements
         int lastBottom;
     }
 
-    private class RecyclerListViewInternal extends RecyclerListView implements StoriesListPlaceProvider.ClippedView {
-        public RecyclerListViewInternal(Context context, ThemeDelegate themeDelegate) {
-            super(context, themeDelegate);
-        }
-
-        @Override
-        public void updateClip(int[] clip) {
-            clip[0] = (int) chatListViewPaddingTop - AndroidUtilities.dp(4);
-            clip[1] = chatListView.getMeasuredHeight() - (chatListView.getPaddingBottom() - AndroidUtilities.dp(3));
-        }
-    }
+    // LoogriGram: RecyclerListViewInternal told the story viewer how far the chat
+    // list could be drawn into. Stories are removed, as on desktop.
 
     private void updateVisibleWallpaperActions() {
         if (chatListView != null && chatAdapter != null) {
@@ -43442,7 +43427,7 @@ public class ChatActivity extends BaseFragment implements
             true, 0, 0, null, 0, getSendMonoForumPeerId());
     }
 
-    private abstract class ChatListRecyclerView extends RecyclerListViewInternal {
+    private abstract class ChatListRecyclerView extends RecyclerListView {
 
         public ChatListRecyclerView(Context context, ThemeDelegate themeDelegate) {
             super(context, themeDelegate);
