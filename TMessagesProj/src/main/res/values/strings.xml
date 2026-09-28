@@ -4484,8 +4484,6 @@
     <string name="VoipChatDisplayedAs">You will be displayed as:</string>
     <string name="VoipChatStreamSettings">Stream settings</string>
     <string name="VoipChatStreamWithAnotherApp">You can also stream with **another app >**</string>
-    <string name="VoipChatStreamWithAnotherAppDescription">Once you start broadcasting in your streaming app, tap Start Streaming below.</string>
-    <string name="VoipChatStreamWithAnotherAppDescriptionStory">Once you start broadcasting in your streaming app, tap Connect Stream below.</string>
     <string name="VoipChatStreamServerUrl">Server URL</string>
     <string name="VoipChatStreamKey">Stream Key</string>
     <string name="VoipGroupStartVoiceChat">Start Voice Chat</string>
@@ -6454,7 +6452,6 @@
     <string name="NewStories_other">%d new stories</string>
     <string name="Story">Story</string>
     <string name="PostStatistics">Post Statistics</string>
-    <string name="RightNow">Just now</string>
     <string name="MyProfile">My Profile</string>
     <string name="MessagesSelected_one">%d Selected</string>
     <string name="MessagesSelected_other">%d Selected</string>
@@ -9487,13 +9484,8 @@
     <string name="StarRatingTitle3">Refunds and Conversions</string>
     <string name="StarRatingDescription3" formatted="false">%s 10x of refunded Stars and 85% of bought gifts converted to Stars.</string>
     <string name="StarRatingButtonUnderstood">Understood</string>
-    <string name="StoriesAlbumCreateNew">Create a New Album</string>
-    <string name="StoriesAlbumRename">Rename an Album</string>
     <string name="StoriesAlbumBottomButtonRemoveStoriesFromAlbum">Remove from album</string>
     <string name="StoriesAlbumMenuEdit">Edit</string>
-    <string name="StoriesAlbumTitleInputHint">Title</string>
-    <string name="StoriesAlbumAddHint">Choose a name for your album and start adding your stories there.</string>
-    <string name="StoriesAlbumRenameHint">Choose a new name for your album.</string>
     <string name="SearchCountriesTitle">Global Search</string>
     <string name="SearchCountriesSelect">Select</string>
     <string name="SearchPostsTitle">Global Search</string>
@@ -9658,7 +9650,6 @@
     <string name="LiveStoryHighlightFeaturePin">pin in chat</string>
     <string name="LiveStoryHighlightFeatureLength">characters</string>
     <string name="LiveStoryHighlightFeatureEmoji">emoji</string>
-    <string name="LiveStoryRTMPEnable">Connect Stream</string>
     <string name="LiveStoryRTMPRevoke">Revoke Stream Key</string>
     <string name="LiveStoryRTMPRevokeTitle">Revoke Stream Key</string>
     <string name="LiveStoryRTMPRevokeText">Are you sure you want to regenerate your stream key?</string>

@@ -67,7 +67,6 @@ import org.telegram.messenger.SvgHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
@@ -1125,14 +1124,6 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
                 }
             }
         }
-    }
-
-    public void setStoryItem(TL_stories.StoryItem storyItem) {
-        selectedReactions.clear();
-        if (storyItem != null && storyItem.sent_reaction != null) {
-            selectedReactions.add(ReactionsLayoutInBubble.VisibleReaction.fromTL(storyItem.sent_reaction));
-        }
-        listAdapter.notifyDataSetChanged();
     }
 
 

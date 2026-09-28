@@ -22,13 +22,10 @@ import androidx.recyclerview.widget.DefaultItemAnimator;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ChatObject;
-import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
-import org.telegram.messenger.Utilities;
-import org.telegram.messenger.browser.Browser;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_phone;
@@ -53,7 +50,6 @@ public class CreateRtmpStreamBottomSheet extends BottomSheetWithRecyclerListView
         }
     }
 
-    private final boolean story;
     private final JoinCallAlert.JoinCallAlertDelegate joinCallDelegate;
     private TLRPC.InputPeer selectAfterDismiss;
     private final boolean hasFewPeers;
@@ -62,100 +58,13 @@ public class CreateRtmpStreamBottomSheet extends BottomSheetWithRecyclerListView
     private SpannableStringBuilder rtmpKeySpoiled;
     private UniversalAdapter adapter;
 
-    private boolean hasButton;
-    private boolean hasRevokeButton;
-
-    public CreateRtmpStreamBottomSheet(
-        Context context,
-        int currentAccount,
-        TL_phone.getGroupCallStreamRtmpUrl request,
-        TL_phone.groupCallStreamRtmpUrl config,
-        Utilities.Callback<Browser.Progress> start,
-        Theme.ResourcesProvider resourcesProvider
-    ) {
-        super(context, null, false, false, false, resourcesProvider);
-        this.story = true;
-        this.topPadding = 0.126f;
-        this.joinCallDelegate = null;
-        this.hasFewPeers = false;
-
-        final long dialogId = DialogObject.getPeerDialogId(request.peer);
-        hasRevokeButton = request != null && start != null && (dialogId >= 0 || ChatObject.isCreator(MessagesController.getInstance(currentAccount).getChat(-dialogId)));
-        if (start != null) {
-            hasButton = true;
-
-            final ButtonWithCounterView startBtn = new ButtonWithCounterView(context, resourcesProvider);
-            startBtn.setText(getString(R.string.LiveStoryRTMPEnable), false);
-            containerView.addView(startBtn, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.BOTTOM, 16, 0, 16, (hasRevokeButton ? 52 : 0) + 12));
-            startBtn.setOnClickListener(view -> {
-                start.run(new Browser.Progress(() -> {
-                    startBtn.setLoading(true);
-                }, () -> {
-                    startBtn.setLoading(false);
-                    dismiss();
-                }));
-            });
-
-            if (hasRevokeButton) {
-                final ButtonWithCounterView revokeBtn = new ButtonWithCounterView(context, false, resourcesProvider);
-                revokeBtn.setColor(Theme.getColor(Theme.key_fill_RedNormal));
-                revokeBtn.text.setTypeface(AndroidUtilities.bold());
-                revokeBtn.setText(getString(R.string.LiveStoryRTMPRevoke), false);
-                revokeBtn.setOnClickListener(v -> {
-                    new AlertDialog.Builder(context, resourcesProvider)
-                        .setTitle(getString(R.string.LiveStoryRTMPRevokeTitle))
-                        .setMessage(getString(R.string.LiveStoryRTMPRevokeText))
-                        .setPositiveButton(getString(R.string.RevokeButton), (di, w) -> {
-                            if (revokeBtn.isLoading()) return;
-                            revokeBtn.setLoading(true);
-                            request.revoke = true;
-                            ConnectionsManager.getInstance(currentAccount).sendRequest(request, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
-                                revokeBtn.setLoading(false);
-                                if (res instanceof TL_phone.groupCallStreamRtmpUrl) {
-                                    TL_phone.groupCallStreamRtmpUrl rtmpUrl = (TL_phone.groupCallStreamRtmpUrl) res;
-                                    this.rtmpUrl = rtmpUrl.url;
-                                    this.rtmpKey = rtmpUrl.key;
-                                    this.rtmpKeySpoiled = new SpannableStringBuilder(rtmpKey);
-                                    adapter.update(true);
-                                }
-                            }));
-                        })
-                        .setNegativeButton(getString(R.string.Cancel), null)
-                        .makeRed(AlertDialog.BUTTON_POSITIVE)
-                        .show();
-                });
-
-                containerView.addView(revokeBtn, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.BOTTOM, 16, 0, 16, 12));
-            }
-        }
-
-        final DefaultItemAnimator itemAnimator = new DefaultItemAnimator();
-        itemAnimator.setSupportsChangeAnimations(false);
-        itemAnimator.setDelayAnimations(false);
-        itemAnimator.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
-        itemAnimator.setDurations(350);
-        recyclerListView.setItemAnimator(itemAnimator);
-
-        recyclerListView.setPadding(backgroundPaddingLeft, 0, backgroundPaddingLeft, hasButton ? dp(hasRevokeButton ? 72 + 52 : 72) : 0);
-        fixNavigationBar();
-        updateTitle();
-
-        this.rtmpUrl = config.url;
-        this.rtmpKey = config.key;
-
-        this.rtmpKeySpoiled = new SpannableStringBuilder(rtmpKey);
-        TextStyleSpan.TextStyleRun run = new TextStyleSpan.TextStyleRun();
-        run.flags |= TextStyleSpan.FLAG_STYLE_SPOILER;
-        run.start = 0;
-        run.end = rtmpKeySpoiled.length();
-        rtmpKeySpoiled.setSpan(new TextStyleSpan(run), 0, rtmpKeySpoiled.length(), 0);
-
-        adapter.update(false);
-    }
+    // LoogriGram: a second constructor showed the RTMP settings of a live
+    // story being set up, with a start button (hasButton) and the note
+    // under the key that went with it. Live stories are removed, as on
+    // desktop.
 
     public CreateRtmpStreamBottomSheet(BaseFragment fragment, TLRPC.Peer selectedPeer, long dialogId, boolean hasFewPeers, JoinCallAlert.JoinCallAlertDelegate joinCallDelegate) {
         super(fragment, false, false);
-        this.story = false;
         this.topPadding = 0.26f;
         this.joinCallDelegate = joinCallDelegate;
         this.hasFewPeers = hasFewPeers;
@@ -278,7 +187,7 @@ public class CreateRtmpStreamBottomSheet extends BottomSheetWithRecyclerListView
         items.add(UItem.asHeader(getString(R.string.VoipChatStreamSettings)));
         items.add(TextDetailCellFactory.of(rtmpUrl, getString(R.string.VoipChatStreamServerUrl), true));
         items.add(TextDetailCellFactory.of(rtmpKeySpoiled, getString(R.string.VoipChatStreamKey), false));
-        items.add(UItem.asShadow(hasButton ? getString(story ? R.string.VoipChatStreamWithAnotherAppDescriptionStory : R.string.VoipChatStreamWithAnotherAppDescription) : null));
+        items.add(UItem.asShadow(null));
     }
 
     private static class TopCell extends LinearLayout {

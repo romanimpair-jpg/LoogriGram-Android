@@ -840,18 +840,6 @@ public class AlertsCreator {
         return builder;
     }
 
-    public static void createStoriesAlbumEnterNameForCreate(Context context, BaseFragment fragment, Theme.ResourcesProvider resourcesProvider, MessagesStorage.StringCallback whenDone) {
-        createStoriesAlbumEnterName(context, fragment, getString(R.string.StoriesAlbumCreateNew), getString(R.string.StoriesAlbumAddHint), getString(R.string.StoriesAlbumTitleInputHint), null, getString(R.string.Create), resourcesProvider, whenDone);
-    }
-
-    public static void createStoriesAlbumEnterNameForRename(Context context, BaseFragment fragment, String oldName, Theme.ResourcesProvider resourcesProvider, MessagesStorage.StringCallback whenDone) {
-        createStoriesAlbumEnterName(context, fragment, getString(R.string.StoriesAlbumRename), getString(R.string.StoriesAlbumRenameHint), getString(R.string.StoriesAlbumTitleInputHint), oldName, getString(R.string.Rename), resourcesProvider, whenDone);
-    }
-
-    public static void createStoriesAlbumEnterName(Context context, BaseFragment fragment, final String title, final String info, final String hint, final String name, String positiveButton, Theme.ResourcesProvider resourcesProvider, MessagesStorage.StringCallback whenDone) {
-        createSimpleTextInputAlert(context, fragment, title, info, hint, name, 12, positiveButton, resourcesProvider, whenDone);
-    }
-
     public static void createSimpleTextInputAlert(Context context, BaseFragment fragment, final String title, final String info, final String hint, final String name, int maxLength, String positiveButton, Theme.ResourcesProvider resourcesProvider, MessagesStorage.StringCallback whenDone) {
         final Activity activity = AndroidUtilities.findActivity(context);
         final View currentFocus = activity != null ? activity.getCurrentFocus() : null;

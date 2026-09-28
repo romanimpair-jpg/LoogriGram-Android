@@ -14,7 +14,6 @@ import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.AnimatedEmojiSpan;
 import org.telegram.ui.Components.EditTextCaption;
@@ -73,38 +72,6 @@ public class ReactionsUtils {
             return spannableStringBuilder;
         }
         return "";
-    }
-
-    public static void applyForStoryViews(TLRPC.Reaction oldReaction, TLRPC.Reaction newReaction, TL_stories.StoryViews views) {
-        boolean found = false;
-        if (views == null) {
-            return;
-        }
-        for (int i = 0; i < views.reactions.size(); i++) {
-            TLRPC.ReactionCount reactionCount = views.reactions.get(i);
-            if (oldReaction != null) {
-                if (compare(reactionCount.reaction, oldReaction)) {
-                    reactionCount.count--;
-                    if (reactionCount.count <= 0) {
-                        views.reactions.remove(i);
-                        i--;
-                        continue;
-                    }
-                }
-            }
-            if (newReaction != null) {
-                if (compare(reactionCount.reaction, newReaction)) {
-                    reactionCount.count++;
-                    found = true;
-                }
-            }
-        }
-        if (!found) {
-            TLRPC.ReactionCount reactionCount = new TLRPC.TL_reactionCount();
-            reactionCount.count = 1;
-            reactionCount.reaction = newReaction;
-            views.reactions.add(reactionCount);
-        }
     }
 
     public static SpannableString createSpannableText(AnimatedEmojiSpan span, String key) {

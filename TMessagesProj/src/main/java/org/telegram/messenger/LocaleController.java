@@ -2509,37 +2509,6 @@ public class LocaleController {
         return "LOC_ERR";
     }
 
-    public static String formatStoryDate(long date) {
-        try {
-            date *= 1000;
-            Calendar rightNow = Calendar.getInstance();
-            int day = rightNow.get(Calendar.DAY_OF_YEAR);
-            int year = rightNow.get(Calendar.YEAR);
-            long timeInMillis = rightNow.getTimeInMillis();
-            rightNow.setTimeInMillis(date);
-            int dateDay = rightNow.get(Calendar.DAY_OF_YEAR);
-            int dateYear = rightNow.get(Calendar.YEAR);
-
-            if (timeInMillis - date < 1000 * 60) {
-                return LocaleController.getString(R.string.RightNow);
-            } else if (timeInMillis - date < 1000 * 60 * 60) {
-                int minutesAgo = (int) ((timeInMillis - date) / (1000 * 60));
-                return LocaleController.formatPluralString("MinutesAgo", minutesAgo, minutesAgo);
-            } else if (dateDay == day && year == dateYear) {
-                return LocaleController.formatString(R.string.TodayAtFormattedWithToday, getInstance().getFormatterDay().format(new Date(date)));
-            } else if (dateDay + 1 == day && year == dateYear) {
-                return LocaleController.formatString(R.string.YesterdayAtFormatted, getInstance().getFormatterDay().format(new Date(date)));
-            } else if (Math.abs(System.currentTimeMillis() - date) < 31536000000L) {
-                return LocaleController.formatString(R.string.formatDateAtTime, getInstance().getFormatterDayMonth().format(new Date(date)), getInstance().getFormatterDay().format(new Date(date)));
-            } else {
-                return LocaleController.formatString(R.string.formatDateAtTime, getInstance().getFormatterYear().format(new Date(date)), getInstance().getFormatterDay().format(new Date(date)));
-            }
-        } catch (Exception e) {
-            FileLog.e(e);
-        }
-        return "LOC_ERR";
-    }
-
     public static String formatRelativeDate(long dateDiffSeconds) {
         try {
             final long min = dateDiffSeconds / 60;
