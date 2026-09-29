@@ -19,7 +19,7 @@ depends on.
 | Fork, CI, degoogling | Done. No Google bytecode in the APK, verified in the dex. The last Google-shaped code went on 2026-09-23/24: the Play install referrer and the four Chromecast stubs |
 | Installed on the phone | **Yes.** `gf20af361`, installed 2026-09-22 over `adb` (`adb install -r` succeeded, so the key matched); launches clean. Not rechecked since: the phone was not on USB on 2026-09-24. `gaf5d70a5` built green on 2026-09-22 but was never installed |
 | Latest release | `g20294896` (full build run 36232289359, green, 2026-09-26). Not installed: the phone was not on USB. Before it: `gb81ce49d`, `gf2478ebb` (which superseded the crashing `g1ec92ae0`, trap 0e) - a buggy Latest is superseded by the next build, never deleted, the user's rule |
-| Pending build | None. Nothing after `20294896` is in a build: Business and Stories stages 1-2 (below) are compile-checked only |
+| Pending build | None. Nothing after `20294896` is in a build: Business, all of Stories, the smaller parity removals, telemetry and defaults are compile-checked only, and the pushed head does not compile (article editor mid-pass, see "Start here") |
 | Premium pass | Nearly done outside the parity passes. 15 Premium-screen entry points remain of ~100 (2026-09-27): 5 in the story viewer, 6 in the article editor, 4 in the Premium sheets themselves; emoji statuses, Premium stars and bot icons are drawn for nobody. See "Remaining work" |
 | App name | Done — launcher, in-app strings, and the two wordmark screens |
 | Phone contacts | **Never touched.** Permissions, account and sync adapter all gone |
@@ -62,34 +62,95 @@ The installed APK: ~44.5 MB, `lib/arm64-v8a/libtmessages.49.so` only, signed
 fingerprint is how to confirm a later build carries the same key - and it must,
 because Android will refuse an update signed with any other.
 
-### Start here next session (written 2026-09-27, work frozen mid-Stories)
+### Start here next session (written 2026-09-30, work frozen mid-article-editor)
 
-The user froze the session on 2026-09-27 mid-way through Stories stage 2.
-**Resume exactly here:**
+The user froze the session on 2026-09-30 mid-way through the article
+editor pass. **Resume exactly here:**
 
-1. **Uncommitted in the working tree:** `ChatRightsEditActivity.java`
-   (+12/-98): the "Manage stories" rows are out of the admin rights
-   editor; the story rights are carried from the admin's existing rights
-   (or ours for a new admin) and saved unchanged; `hasAllAdminRights` no
-   longer requires story rights (as desktop), so "Transfer ownership"
-   still appears. **The checkers have not been run on it.** Run them all,
-   read the joins, then commit it as the settings-rows commit.
-2. **The committed head compiles**: `6e806af0` green (run 36328263281),
-   `346c9ce1` green before it (36326226194). Every stage-2 commit is
-   pushed; only the file in item 1 is not.
-3. **Finish Stories stage 2** (settings rows, round-tripped - see
-   "Stories" under Remaining work for the stage plan and what is left).
-   Then stages 3 and 4. Each stage went to a subagent with a full brief
-   (rules, checkers, desktop's decisions) and was reviewed here after:
-   re-run every checker over the stage's whole range (`git reset --soft
-   <base>`, run, `reset --soft` back) and read the riskiest joins.
-4. **The phone**: `g20294896` is Latest and not installed; nothing after it
+1. **The pushed head does NOT compile.** `8807747d` (Stop offering the
+   article editor) removed what the editor's own files still call; the
+   next commit is meant to delete those files. `68996905` (copying an
+   article needs nothing from the editor) is on top. Last green head:
+   `27d50187` (run 36601169745).
+2. **Uncommitted in the working tree - step 3, "Delete the article
+   editor", finished, every checker clean per its agent, not yet
+   reviewed here, measured, committed or compiled**: 126 files, about
+   -27,978/+183. The 100 deletions are **staged**, the 26 edits are not.
+   It deletes 41 editor files in `ui/iv`, 76 strings and 59 drawables;
+   cuts `RichHtml`, `RichMessageConvert`, `RichTextStyle`,
+   `RichInlineButtonSpan` and `MathSpan` down to display; removes sending
+   and editing an article (SendMessagesHelper, FileRefController,
+   EphemeralMessagesHelper, AppGlobalConfig) and ~39 editor-only public
+   hooks in 17 surviving classes (ItemOptions, AlertDialog,
+   TextSelectionHelper, ChatAttachAlert...). `git add -A` it, re-run
+   every checker, read the joins, commit as "Delete the article editor"
+   and push.
+3. **Step 4, not started:** AIEditorAlert (holds the last 2 Premium-screen
+   entry points outside Premium's own screens, now unreachable),
+   AiButtonDrawable, AiTonesController; `TL_updateAiComposeTones`
+   consumed and dropped; `RichMessageLayout.PreviewView`'s draft-preview
+   setters. Then compile until green - the first run covers all of it.
+   Joins its agent flagged: ChatActivityEnterView ~13871 (a bare block
+   kept to avoid a name clash), ~6594 `sendMessage`, ~6702
+   `sendMessageInternal`; SendMessagesHelper ~4230 (resending our own
+   article fails at once) and ~4250; MediaDataController ~7559 (a cloud
+   draft holding an article becomes its text, also at startup);
+   RichMessageLayout ~9517; ItemOptions ~1368/1399; AlertDialog ~908;
+   UniversalRecyclerView ~101; TextSelectionHelper ~3201. Kept on
+   purpose: rescheduling an article (Android only changes the date, it
+   does not re-send as desktop's does); the Premium screen's rich/AI
+   editor feature entries.
+4. **Then the GIF default - the user's decision, 2026-09-29: GIFs follow
+   Photos.** Android files GIFs under Video for auto-download, so
+   `c3a60aa7` (videos and files off by default, as desktop) turned GIFs
+   off too. Move `isGifMessage` from the video branch to the photo
+   branch at `DownloadController` ~668, ~755, ~836 and `MessagesStorage`
+   ~4237, ~12032 (all five together - the queue and the check must
+   agree); round videos and games stay Video. GIFs then use the photo
+   size cap (the server's `photo_size_max`, often ~1 MB), so bigger ones
+   still need a tap - the user accepted that.
+5. **Then** the Premium screens themselves (see "Remaining work").
+6. **The phone**: `g20294896` is Latest and not installed; nothing after it
    is in any build. When the user asks for a full build (pack everything,
    head must compile), install it and walk the checklists below, newest
    first. `adb` is at `C:\Users\Loogris\platform-tools\adb.exe`.
 
+Each pass since 2026-09-26 went to a subagent with a full brief (rules,
+every checker, desktop's decisions quoted) and was reviewed here after:
+every checker over the pass's whole range (`git reset --soft <base>`,
+run, `reset --soft` back), then the riskiest joins, and for dropped
+positional parameters `argcheck_all.py` (the dropped values must be null
+or the removed variable). If the user needs to leave, send the agent
+FREEZE rather than let a permission prompt be declined.
+
 **Look first where a mistake would be silent** - a compile draws
-nothing. From 2026-09-27, Stories stages 1-2 (unbuilt):
+nothing. From 2026-09-28/29 (unbuilt):
+   - the chat list: no story strip or rings, avatar taps work; the
+     archive folder appears and goes correctly; unread counts and read
+     positions sync with another device;
+   - profiles: no story, archive, album or bot-preview tabs; shared
+     media, calendar and gifts still work;
+   - sending in chats and topics, with reply and quote: text, sticker,
+     GIF, inline result, photo, video, file, poll, voice (the story
+     parameter left ~22 send methods); a resumed voice draft;
+   - Storage clears old story files under Miscellaneous; "Clear local
+     database" completes (it now also empties the story tables);
+   - blocking and unblocking; the send-as picker in a channel;
+   - a message of only emoji, or one custom emoji, is ordinary text in
+     a bubble; dice and premium sticker effects still play;
+   - typing a word or `:word` shows no emoji strip, a lone emoji offers
+     no stickers; @mentions, #hashtags, /commands, @bot inline work;
+     emoji and sticker search work;
+   - an empty chat shows "No messages here yet"; a business intro still
+     shows and its sticker sends;
+   - Settings > Help: only Privacy Policy and the update check; no
+     phone-number banner; the password reminder can still appear; the
+     log-out screen has no Contact Support;
+   - channel posts show views and comment buttons (counts now update
+     only from the server); Reset in Data settings leaves only Photos
+     on; Pinned Messages notifications keep their state.
+
+   From 2026-09-27, Stories stages 1-2 (unbuilt):
    - the chat photo editor: stickers, and the sticker sheet's Photo
      widget; choosing a video cover (GallerySheet, TimelineView); the
      round-video camera and the in-chat camera's flash;
@@ -224,8 +285,7 @@ nothing. From 2026-09-27, Stories stages 1-2 (unbuilt):
      pages; a collectible's (`telegram_nft`) preview and button remain;
    - **limit sheets** (LimitPreviewView lost its dark-gradient paths): the
      bars and counters look as before.
-After Stories - see "Remaining work": the article editor, greeting
-   stickers, suggestion popups, nags and help, then the Premium screens
+After the article editor - see "Remaining work": the Premium screens
    themselves. **When a decision is needed, first check
    what the desktop fork decided** (its `LOOGRIGRAM.md` and `LoogriGram:`
    comments) and copy it - the user's rule, 2026-09-25.
@@ -1015,10 +1075,11 @@ In rough order of how much is left behind:
   profile colour (`e53ce275`); Privacy's Voice Messages, Messages and
   Gifts screens and the Premium-users / Mini-apps exceptions; the
   private-chat sharing toggle (re-enable only); the Business greeting's
-  "how?". Business done 2026-09-26/27 (see the record below). Stories in
-  progress, see the next bullet. Still to do after it: the article
-  editor, greeting stickers, suggestion popups, nags and help. AI
-  compose's second half is
+  "how?". Business done 2026-09-26/27, Stories 2026-09-26..28, large
+  emoji, suggestion popups, greeting stickers, nags and help, reading
+  telemetry, view-count contributions and the changed defaults
+  2026-09-29 (see the record below). The article editor is mid-pass
+  (see "Start here"). AI compose's second half is
   the article editor - `ui/iv`, ~27,000
   lines, which shares classes with the rendering of received rich
   messages, so split display from editor first (as GiftViews was split
@@ -1035,9 +1096,11 @@ In rough order of how much is left behind:
   Shared widgets in `ui/Stories/recorder/` stay in that package (moving
   them would churn ~100 imports and every rebase).
   1. **Posting - done** (`cdca4e1c..cf493c29`, ~44,500 lines).
-  2. **Messages, links, statistics, settings - frozen mid-way**
-     (`7f098cd6..6e806af0` pushed; the admin-rights file uncommitted, see
-     "Start here"). Left of it: notification settings - the Stories row
+  **All four stages done** (2026-09-28: stage 2 `7f098cd6..3d24fec0`,
+  stage 3 `eea37f6f..19badd2d` + `a2692980`, stage 4 `599ffe0b..4e66e2f6`;
+  the plan below is kept for the record).
+  2. **Messages, links, statistics, settings** (was frozen mid-way on
+     2026-09-27; the notes that follow were its plan). Left of it: notification settings - the Stories row
      and exceptions, NotificationsCustomSettingsActivity's stories screen,
      the story-reactions row, the per-chat stories switch, LinkManager's
      `notifications/stories` links; NotificationsSettingsActivity's
@@ -1235,6 +1298,30 @@ In rough order of how much is left behind:
   `freed_res.py`, `removed_decls.py`, `keep_members.py`,
   `ed.cut_else_if`. Lesson: a file due for deletion in a *later* commit
   still compiles in this one - grep it too (two failed compiles).
+
+- **Done on 2026-09-28/29, for the record** (all compile-checked, none
+  built): Stories finished - stage 2's settings rows (`a7a57485`,
+  `3d24fec0`: admin story rights and the story notification settings,
+  `stories_sound` included, round-tripped unchanged); stage 3, the viewer
+  and every way into it (`eea37f6f..19badd2d`, ~38,600 lines: the viewer,
+  strip, rings, profile tabs, bot previews, story notifications, replies,
+  shares, reports, hashtag story search, the preload and keep-media rows;
+  old story files cleared under Storage's Miscellaneous); stage 4, the
+  data layer (`599ffe0b..4e66e2f6`, ~5,900: StoriesController,
+  StoriesStorage, story updates ignored, no story request can reach the
+  server, "Clear local database" also empties the story tables). Then the
+  smaller desktop removals (`efedb453..4caec8fd`, ~4,800): story UI modes,
+  large emoji and a single emoji drawn as its animated sticker (desktop
+  took both, `fcde819440`), emoji/sticker suggestions and their two
+  settings, the greeting sticker, Ask a Question/FAQ/Features and the
+  phone-number nag (the password reminder stays). Then reading telemetry
+  (`a72f6144`, `reportReadMetrics`) and view-count contributions
+  (`63d84bb0`, `getMessagesViews` - counts now come only from the server,
+  as desktop), and the defaults (`c3a60aa7` videos and files off,
+  `27d50187` pinned-message notifications off; muted chats were already
+  out of the badge). New local checkers: `argcheck.py`,
+  `argcheck_all.py`, `decl_ctx.py`, `all_checks.py`, `orphan_public.py`;
+  `removed_decls.py` now sees declarations with modifiers.
 
 ### Then
 
