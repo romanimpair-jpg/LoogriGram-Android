@@ -272,7 +272,6 @@
     <string name="ResetCustomNotificationsAlertTitle">إعادة تعيين الإشعارات</string>
     <string name="ResetCustomNotificationsAlert">هل تريدون فعلًا إعادة تعيين إعدادات الإشعارات إلى الافتراضية؟</string>
     <string name="TextSizeHeader">حجم خط الرسائل</string>
-    <string name="AskAQuestion">اسأل سؤالًا</string>
     <string name="AddAnExplanation">إضافة شرح</string>
     <string name="AddAnExplanationInfo">سيرى المستخدمون هذا النص بعد اختيار الإجابة الخاطئة وهذا جيد للأغراض التعليمية.</string>
     <string name="EnableAnimations">تفعيل المؤثرات البصرية</string>
@@ -400,12 +399,7 @@
     <string name="LanguageUnsupportedError">تعذر العثور على اللغة.</string>
     <string name="LanguageSame">أنت تستخدم حزمة اللغة (**%1$s**) بالفعل، يمكنك تغيير لغتك في أي وقت عبر الإعدادات.</string>
     <string name="LanguageUnknownCustomAlert">للأسف، لا تحتوي حزمة اللغة المخصصةُ هذه (**%1$s **) على بيانات لتيليجرام للأندرويد.</string>
-    <string name="AskAQuestionInfo">الدعم الفني في تيليجرام يقوم به متطوعون يحاولون الرد سريعًا قدر الإمكان، لكن ذلك قد يستغرق بعض الوقت.\n\nيرجى الاطلاع على<![CDATA[<a href=\"https://telegram.org/faq/ar#a\"> الأسئلة الشائعة عن تيليجرام</a>]]> فهي تحوي إجابات لمعظم الأسئلة  <![CDATA[<a href=\"https://telegram.org/faq/ar#j\">وحلولًا للعديد من المشاكل.</a>]]></string>
-    <string name="AskButton">اسأل متطوعًا</string>
-    <string name="TelegramFAQ">الأسئلة الشائعة</string>
     <string name="TelegramFaq">الأسئلة الشائعة</string>
-    <string name="TelegramFeatures">ميزات تيليجرام</string>
-    <string name="TelegramFeaturesUrl">https://t.me/TelegramTipsAR/128</string>
     <string name="AddAccount">إضافة حساب</string>
     <string name="SelectAccount">اختيار حساب</string>
     <string name="TelegramFaqUrl">https://telegram.org/faq/ar</string>
@@ -631,8 +625,6 @@
     <string name="ChangePhoneNumber">تغيير رقم الهاتف</string>
     <string name="ChangePhoneNumberInfo">نقلُ حسابك مع ما يحويه من محادثات ووسائطَ لرقمٍ آخر.</string>
     <string name="ChangePhoneNumberSuccessWithPhone">تم تغيير رقم هاتفك بنجاح إلى %1$s.</string>
-    <string name="ContactSupport">التواصل مع الدعم</string>
-    <string name="ContactSupportInfo">أخبرنا عن أي مشاكلَ تواجهك؛ تسجيل الخروج ليس حلا ناجحا في العادة.</string>
     <string name="LogOutTitle">تسجيل الخروج</string>
     <string name="LogOutInfo">تسجيل الخروج سيلغي كل المحادثات السرية.</string>
     <string name="SearchInSettings">بحث الإعدادات والأسئلة الشائعة</string>
@@ -693,11 +685,7 @@
     <string name="YourNameChanged">تم تحديث الاسم.</string>
     <string name="ChannelTitleChanged">تم تحديث اسم القناة.</string>
     <string name="ChannelDescriptionChanged">تم تحديث وصف القناة.</string>
-    <string name="CheckPhoneNumber">هل لا يزال %1$s رقمك؟</string>
-    <string name="CheckPhoneNumberInfo">يرجى إبقاء رقم هاتفك محدّثًا؛ لضمان قدرتك على تسجيل الدخول إلى تيليجرام. **معرفة المزيد**</string>
-    <string name="CheckPhoneNumberLearnMoreUrl">https://telegram.org/faq/ar#g2</string>
     <string name="CheckPhoneNumberYes">نعم</string>
-    <string name="CheckPhoneNumberNo">لا</string>
     <!--permissions-->
     <string name="PermissionStorageWithHint">يحتاج تيليجرام الوصول إلى التخزين للتمكّن من إرسال وحفظ: الصور، الفيديو، الوسائط والمستندات. يرجى تمكين **الملفات والوسائط** في إعدادات الهاتف &gt; الأذونات.</string>
     <string name="PermissionNoAudioWithHint">يحتاج تيليجرام الوصول إلى المايكروفون لتتمكنوا من إرسال الرسائل الصوتية. يرجى تمكين **المايكروفون** في إعدادات الهاتف &gt; الأذونات.</string>

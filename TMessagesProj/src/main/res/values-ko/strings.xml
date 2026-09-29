@@ -304,7 +304,6 @@
     <string name="ResetCustomNotificationsAlertTitle">알림 초기화</string>
     <string name="ResetCustomNotificationsAlert">정말 알림 설정을 기본값으로 초기화하겠습니까?</string>
     <string name="TextSizeHeader">메시지 글자 크기</string>
-    <string name="AskAQuestion">질문하기</string>
     <string name="AddAnExplanation">설명 추가</string>
     <string name="AddAnExplanationInfo">사용자가 틀린 답을 선택하면 이 설명이 나타납니다. 교육용으로 활용하기 좋습니다.</string>
     <string name="EnableAnimations">화면 전환 효과 사용</string>
@@ -431,12 +430,7 @@
     <string name="LanguageUnsupportedError">해당 언어가 없습니다.</string>
     <string name="LanguageSame">이 언어 묶음(**%1$s**)을 이미 사용하고 계십니다. 설정에서 언제든지 언어를 되돌리실 수 있습니다.</string>
     <string name="LanguageUnknownCustomAlert">안타깝게도 이 맞춤 언어 묶음(**%1$s**)에는 Android 텔레그램용 데이터가 들어 있지 않습니다.</string>
-    <string name="AskAQuestionInfo">텔레그램 지원은 자원봉사자들이 처리합니다. 신속하게 응답해 드리고자 노력하지만, 다소 시간이 걸릴 수 있습니다.\n\n<![CDATA[<a href=\"https://telegram.org/faq/ko#325188137\"> 자주 묻는 질문</a>]]>을 확인해 보세요. 잦은 질문에 대한 답과 <![CDATA[<a href=\"https://telegram.org/faq/ko#1478791328\">문제 해결</a>]]>을 위한 중요한 조언이 있습니다.</string>
-    <string name="AskButton">봉사자에게 질문하기</string>
-    <string name="TelegramFAQ">자주 묻는 질문</string>
     <string name="TelegramFaq">자주 묻는 질문</string>
-    <string name="TelegramFeatures">텔레그램 기능 소개</string>
-    <string name="TelegramFeaturesUrl">https://t.me/TelegramTipsKo</string>
     <string name="AddAccount">계정 추가</string>
     <string name="SelectAccount">계정을 선택하세요</string>
     <string name="TelegramFaqUrl">https://telegram.org/faq/ko</string>
@@ -685,8 +679,6 @@
     <string name="ChangePhoneNumber">전화번호 변경</string>
     <string name="ChangePhoneNumberInfo">계정과 대화, 미디어를 새 번호로 옮기세요.</string>
     <string name="ChangePhoneNumberSuccessWithPhone">전화번호가 성공적으로 %1$s으로 변경되었습니다.</string>
-    <string name="ContactSupport">문의하기</string>
-    <string name="ContactSupportInfo">문제가 있으면 알려 주세요. 로그아웃은 대개 도움이 되지 않습니다.</string>
     <string name="LogOutTitle">로그아웃</string>
     <string name="LogOutInfo">로그아웃하시면 비밀 대화가 모두 사라집니다.</string>
     <string name="SearchInSettings">설정과 자주 묻는 질문 검색</string>
@@ -747,11 +739,7 @@
     <string name="YourNameChanged">이름 업데이트됨.</string>
     <string name="ChannelTitleChanged">채널 이름이 업데이트 되었습니다.</string>
     <string name="ChannelDescriptionChanged">채널 설명 업데이트됨.</string>
-    <string name="CheckPhoneNumber">지금도 %1$s 번호를 사용하시나요?</string>
-    <string name="CheckPhoneNumberInfo">언제든지 텔레그램에 로그인할 수 있도록 전화번호를 최신으로 유지하세요. **더 알아보기**</string>
-    <string name="CheckPhoneNumberLearnMoreUrl">https://telegram.org/faq#q-i-have-a-new-phone-number-what-do-i-do</string>
     <string name="CheckPhoneNumberYes">네</string>
-    <string name="CheckPhoneNumberNo">아니요</string>
     <!--passcode view-->
     <string name="Passcode">암호 잠금</string>
     <string name="ChangePasscode">암호 변경</string>

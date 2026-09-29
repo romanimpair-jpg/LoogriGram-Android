@@ -1,8 +1,6 @@
 package org.telegram.ui.Cells;
 
 import android.content.Context;
-import android.text.SpannableStringBuilder;
-import android.text.Spanned;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -10,23 +8,18 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.FileLog;
 import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
-import org.telegram.messenger.UserConfig;
-import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.LinkSpanDrawable;
 import org.telegram.ui.Components.ScaleStateListAnimator;
-import org.telegram.ui.Components.URLSpanNoUnderline;
 
 public class SettingsSuggestionCell extends LinearLayout {
 
-    public final static int TYPE_PHONE = 0;
+    // LoogriGram: 0 was TYPE_PHONE, "is this still your number?". Gone, as on
+    // desktop.
     public final static int TYPE_PASSWORD = 1;
     public final static int TYPE_GRACE = 2;
 
@@ -38,7 +31,6 @@ public class SettingsSuggestionCell extends LinearLayout {
 
     private int currentType;
 
-    private int currentAccount = UserConfig.selectedAccount;
 
     public SettingsSuggestionCell(Context context, Theme.ResourcesProvider resourcesProvider) {
         super(context);
@@ -91,27 +83,7 @@ public class SettingsSuggestionCell extends LinearLayout {
 
     public void setType(int type) {
         currentType = type;
-        if (type == TYPE_PHONE) {
-            final TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(UserConfig.getInstance(currentAccount).clientUserId);
-            textView.setText(LocaleController.formatString(R.string.CheckPhoneNumber, PhoneFormat.getInstance().format("+" + user.phone)));
-            String text = LocaleController.getString(R.string.CheckPhoneNumberInfo);
-            SpannableStringBuilder builder = new SpannableStringBuilder(text);
-            int index1 = text.indexOf("**");
-            int index2 = text.lastIndexOf("**");
-            if (index1 >= 0 && index2 >= 0 && index1 != index2) {
-                builder.replace(index2, index2 + 2, "");
-                builder.replace(index1, index1 + 2, "");
-                try {
-                    builder.setSpan(new URLSpanNoUnderline(LocaleController.getString(R.string.CheckPhoneNumberLearnMoreUrl)), index1, index2 - 2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                } catch (Exception e) {
-                    FileLog.e(e);
-                }
-            }
-            detailTextView.setText(builder);
-            yesButton.setText(LocaleController.getString(R.string.CheckPhoneNumberYes));
-            noButton.setVisibility(View.VISIBLE);
-            noButton.setText(LocaleController.getString(R.string.CheckPhoneNumberNo));
-        } else if (type == TYPE_PASSWORD) {
+        if (type == TYPE_PASSWORD) {
             textView.setText(LocaleController.getString(R.string.YourPasswordHeader));
             detailTextView.setText(LocaleController.getString(R.string.YourPasswordRemember));
             yesButton.setText(LocaleController.getString(R.string.YourPasswordRememberYes));

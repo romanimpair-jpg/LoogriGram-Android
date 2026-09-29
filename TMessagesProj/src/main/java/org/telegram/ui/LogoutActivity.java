@@ -40,7 +40,6 @@ import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.TextDetailSettingsCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.TextSettingsCell;
-import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.Premium.LimitReachedBottomSheet;
 import org.telegram.ui.Components.RecyclerListView;
@@ -58,7 +57,8 @@ public class LogoutActivity extends BaseFragment {
     private int passcodeRow;
     private int cacheRow;
     private int phoneRow;
-    private int supportRow;
+    // LoogriGram: supportRow, "Contact Support" among the alternatives to
+    // logging out, opened the same Ask a Question dialog as Settings did.
     private int alternativeSectionRow;
     private int logoutRow;
     private int logoutSectionRow;
@@ -82,7 +82,6 @@ public class LogoutActivity extends BaseFragment {
         }
         cacheRow = rowCount++;
         phoneRow = rowCount++;
-        supportRow = rowCount++;
         alternativeSectionRow = rowCount++;
         logoutRow = rowCount++;
         logoutSectionRow = rowCount++;
@@ -145,8 +144,6 @@ public class LogoutActivity extends BaseFragment {
                 presentFragment(new CacheControlActivity());
             } else if (position == phoneRow) {
                 presentFragment(new ActionIntroActivity(ActionIntroActivity.ACTION_TYPE_CHANGE_PHONE_NUMBER));
-            } else if (position == supportRow) {
-                showDialog(AlertsCreator.createSupportAlert(LogoutActivity.this, null));
             } else if (position == logoutRow) {
                 if (getParentActivity() == null) {
                     return;
@@ -219,9 +216,7 @@ public class LogoutActivity extends BaseFragment {
                     } else if (position == cacheRow) {
                         view.setTextAndValueAndIcon(LocaleController.getString(R.string.ClearCache), LocaleController.getString(R.string.ClearCacheInfo), R.drawable.msg_clearcache, true);
                     } else if (position == phoneRow) {
-                        view.setTextAndValueAndIcon(LocaleController.getString(R.string.ChangePhoneNumber), LocaleController.getString(R.string.ChangePhoneNumberInfo), R.drawable.msg_newphone, true);
-                    } else if (position == supportRow) {
-                        view.setTextAndValueAndIcon(LocaleController.getString(R.string.ContactSupport), LocaleController.getString(R.string.ContactSupportInfo), R.drawable.msg_help, false);
+                        view.setTextAndValueAndIcon(LocaleController.getString(R.string.ChangePhoneNumber), LocaleController.getString(R.string.ChangePhoneNumberInfo), R.drawable.msg_newphone, false);
                     }
                     break;
                 }
@@ -246,7 +241,7 @@ public class LogoutActivity extends BaseFragment {
         @Override
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             int position = holder.getAdapterPosition();
-            return position == addAccountRow || position == passcodeRow || position == cacheRow || position == phoneRow || position == supportRow || position == logoutRow;
+            return position == addAccountRow || position == passcodeRow || position == cacheRow || position == phoneRow || position == logoutRow;
         }
 
         @Override
@@ -289,7 +284,7 @@ public class LogoutActivity extends BaseFragment {
         public int getItemViewType(int position) {
             if (position == alternativeHeaderRow) {
                 return 0;
-            } else if (position == addAccountRow || position == passcodeRow || position == cacheRow || position == phoneRow || position == supportRow) {
+            } else if (position == addAccountRow || position == passcodeRow || position == cacheRow || position == phoneRow) {
                 return 1;
             } else if (position == alternativeSectionRow) {
                 return 2;

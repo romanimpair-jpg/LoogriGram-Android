@@ -2,10 +2,8 @@ package org.telegram.ui;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.AndroidUtilities.lerp;
-import static org.telegram.messenger.AndroidUtilities.replaceSingleTag;
 import static org.telegram.messenger.LocaleController.formatString;
 import static org.telegram.messenger.LocaleController.getString;
-import static org.telegram.messenger.AndroidUtilities.replaceUnderstood;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -97,7 +95,6 @@ import org.telegram.ui.ActionBar.INavigationLayout;
 import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.SettingsSearchCell;
-import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.messenger.LoogriGramUpdate;
@@ -634,6 +631,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         });
 
         final Set<String> suggestions = getMessagesController().pendingSuggestions;
+        // LoogriGram: no "is this still your number?" prompt
+        // (VALIDATE_PHONE_NUMBER), as on desktop. The two-step password
+        // reminder stays: losing that password locks you out.
         if (suggestions.contains("PREMIUM_GRACE")) {
             items.add(SuggestionCell.Factory.of(
                 getString(R.string.GraceSuggestionTitle),
@@ -642,20 +642,6 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 getString(R.string.GraceSuggestionButton), v -> {
                     Browser.openUrl(getContext(), getMessagesController().premiumManageSubscriptionUrl);
                     getMessagesController().removeSuggestion(0, "PREMIUM_GRACE");
-                }
-            ));
-            items.add(UItem.asShadow(null));
-        } else if (suggestions.contains("VALIDATE_PHONE_NUMBER") && getUserConfig().getCurrentUser() != null) {
-            items.add(SuggestionCell.Factory.of(
-                formatString(R.string.CheckPhoneNumber, PhoneFormat.getInstance().format("+" + getUserConfig().getCurrentUser().phone)),
-                replaceSingleTag(getString(R.string.CheckPhoneNumberInfo), () -> {
-                    Browser.openUrl(getContext(), getString(R.string.CheckPhoneNumberLearnMoreUrl));
-                }),
-                getString(R.string.CheckPhoneNumberNo), v -> {
-                    presentFragment(new ActionIntroActivity(ActionIntroActivity.ACTION_TYPE_CHANGE_PHONE_NUMBER));
-                },
-                replaceUnderstood(getString(R.string.CheckPhoneNumberYes2)), v -> {
-                    getMessagesController().removeSuggestion(0, "VALIDATE_PHONE_NUMBER");
                 }
             ));
             items.add(UItem.asShadow(null));
@@ -699,9 +685,10 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         // that opened them. The shadow above is now the separator before the help
         // section, which is why the conditional one that used to follow is gone too.
         items.add(UItem.asHeader(getString(R.string.SettingsHelp)));
-        items.add(SettingCell.Factory.of(17, IconBackgroundColors.ORANGE.top, IconBackgroundColors.ORANGE.bottom, R.drawable.settings_ask, getString(R.string.AskAQuestion)));
-        items.add(SettingCell.Factory.of(18, IconBackgroundColors.BLUE_LIGHT.top, IconBackgroundColors.BLUE_LIGHT.bottom, R.drawable.settings_faq, getString(R.string.TelegramFAQ)));
-        items.add(SettingCell.Factory.of(23, IconBackgroundColors.PURPLE.top, IconBackgroundColors.PURPLE.bottom, R.drawable.settings_features, getString(R.string.TelegramFeatures)));
+        // LoogriGram: no Ask a Question (17), Telegram FAQ (18) or Telegram
+        // Features (23) rows, as on desktop. They open Telegram's own support
+        // surfaces, which cannot help with this build and would put its users
+        // in front of Telegram's support volunteers.
         items.add(SettingCell.Factory.of(19, IconBackgroundColors.GREEN.top, IconBackgroundColors.GREEN.bottom, R.drawable.settings_policy, getString(R.string.PrivacyPolicy)));
         // LoogriGram: a manual update check. The only other way to ask was
         // item 9 of upstream's hidden debug menu. The subtitle is this build's
@@ -805,12 +792,6 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 presentSettingFragment(new LanguageSelectActivity());
                 break;
 
-            case 17:
-                showDialog(AlertsCreator.createSupportAlert(this, resourceProvider));
-                break;
-            case 18:
-                Browser.openUrl(getParentActivity(), LocaleController.getString(R.string.TelegramFaqUrl));
-                break;
             case 19:
                 Browser.openUrl(getParentActivity(), LocaleController.getString(R.string.PrivacyPolicyUrl));
                 break;
@@ -836,14 +817,6 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
             case 22:
                 FileLog.cleanupLogs();
                 break;
-            case 23: {
-                if (MessagesController.getInstance(currentAccount).isFrozen()) {
-                    AccountFrozenAlert.show(currentAccount);
-                } else {
-                    Browser.openUrl(getContext(), LocaleController.getString(R.string.TelegramFeaturesUrl));
-                }
-                break;
-            }
         }
     }
 
@@ -1466,7 +1439,6 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.appUpdateAvailable);
             } else if (which == 13) { // Reset suggestions
                 Set<String> suggestions = getMessagesController().pendingSuggestions;
-                suggestions.add("VALIDATE_PHONE_NUMBER");
                 suggestions.add("VALIDATE_PASSWORD");
                 getNotificationCenter().postNotificationName(NotificationCenter.newSuggestionsAvailable);
             } else if (which == 14) { // WebView Cache

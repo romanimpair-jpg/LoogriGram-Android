@@ -2326,7 +2326,6 @@
     <string name="ResetCustomNotificationsAlertTitle">Reset notifications</string>
     <string name="ResetCustomNotificationsAlert">Are you sure you want to reset notification settings to default?</string>
     <string name="TextSizeHeader">Message text size</string>
-    <string name="AskAQuestion">Ask a Question</string>
     <string name="QuizExplanationTitle">Explanation</string>
     <string name="AddAnExplanationHeader">Explanation</string>
     <string name="AddAnExplanation">Add an explanation</string>
@@ -2459,12 +2458,7 @@
     <string name="LanguageUnsupportedError">There is no such language.</string>
     <string name="LanguageSame">You are already using this language pack (**%1$s**). You can change your language at any time in Settings.</string>
     <string name="LanguageUnknownCustomAlert">Unfortunately, this custom language pack (**%1$s**) doesn\'t contain data for Telegram Android.</string>
-    <string name="AskAQuestionInfo">Please note that Telegram Support is done by volunteers. We try to respond as quickly as possible, but it may take a while.\n\nPlease take a look at the <![CDATA[<a href=\"https://telegram.org/faq#general-questions\">Telegram FAQ</a>]]>: it has answers to most questions and important tips for <![CDATA[<a href=\"https://telegram.org/faq#troubleshooting\">troubleshooting</a>]]>.</string>
-    <string name="AskButton">Ask a volunteer</string>
-    <string name="TelegramFAQ">Telegram FAQ</string>
     <string name="TelegramFaq">Telegram FAQ</string>
-    <string name="TelegramFeatures">Telegram Features</string>
-    <string name="TelegramFeaturesUrl">https://t.me/TelegramTips</string>
     <string name="AddAccount">Add Account</string>
     <string name="SwitchAccountHint">"Long tap to switch accounts"</string>
     <string name="SelectAccount">Select Account</string>
@@ -2717,8 +2711,6 @@
     <string name="ChangePhoneNumber">Change Phone Number</string>
     <string name="ChangePhoneNumberInfo">Move your account, chats and media to a new number.</string>
     <string name="ChangePhoneNumberSuccessWithPhone">Your phone number has been successfully changed to %1$s.</string>
-    <string name="ContactSupport">Contact Support</string>
-    <string name="ContactSupportInfo">Tell us about any issues; logging out doesn\'t usually help.</string>
     <string name="LogOutTitle">Log Out</string>
     <string name="LogOutInfo">Logging out deactivates all Secret Chats.</string>
     <string name="SearchInSettings">Search Settings and FAQ</string>
@@ -2782,12 +2774,7 @@
     <string name="YourNameChanged">Name updated.</string>
     <string name="ChannelTitleChanged">Channel title updated.</string>
     <string name="ChannelDescriptionChanged">Channel description updated.</string>
-    <string name="CheckPhoneNumber">Is %1$s still your number?</string>
-    <string name="CheckPhoneNumberInfo">Keep your number up to date to ensure you can always log into Telegram. **Learn more**</string>
-    <string name="CheckPhoneNumberLearnMoreUrl">https://telegram.org/faq#q-i-have-a-new-phone-number-what-do-i-do</string>
     <string name="CheckPhoneNumberYes">Yes</string>
-    <string name="CheckPhoneNumberYes2">👍 Yes</string>
-    <string name="CheckPhoneNumberNo">No</string>
     <!--cache view-->
     <string name="LocalDatabase">Local Database</string>
     <string name="LocalDatabaseClearTextTitle">Clear local database</string>

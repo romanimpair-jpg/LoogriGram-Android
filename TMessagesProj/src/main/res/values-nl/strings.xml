@@ -308,7 +308,6 @@
     <string name="ResetCustomNotificationsAlertTitle">Meldingen resetten</string>
     <string name="ResetCustomNotificationsAlert">Weet je zeker dat je de meldingsinstellingen wilt resetten?</string>
     <string name="TextSizeHeader">Tekstgrootte bij berichten</string>
-    <string name="AskAQuestion">Stel een vraag</string>
     <string name="AddAnExplanation">Uitleg toevoegen</string>
     <string name="AddAnExplanationInfo">Gebruikers zien deze uitleg nadat ze een verkeerd antwoord hebben gekozen, goed voor educatieve doeleinden.</string>
     <string name="EnableAnimations">Animaties</string>
@@ -436,12 +435,7 @@
     <string name="LanguageUnsupportedError">Taal niet gevonden.</string>
     <string name="LanguageSame">Je maakt al gebruik van dit taalbestand (**%1$s**). Je kunt je taal op elk moment aanpassen via de instellingen.</string>
     <string name="LanguageUnknownCustomAlert">Helaas bevat dit aangepaste taalbestand (**%1$s**) geen informatie voor Telegram Android.</string>
-    <string name="AskAQuestionInfo">Houd er rekening mee dat de ondersteuning van Telegram door vrijwilligers wordt gedaan. We proberen zo snel mogelijk te reageren, maar soms kan het even duren.\n\nBekijk ook de <![CDATA[<a href=\"https://telegram.org/faq#general-questions\">veelgestelde vragen</a>]]> van Telegram: daar vind je antwoorden op de meestgestelde vragen en belangrijke tips voor <![CDATA[<a href=\"https://telegram.org/faq#troubleshooting\">probleemoplossing</a>]]>.</string>
-    <string name="AskButton">Vraag een vrijwilliger</string>
-    <string name="TelegramFAQ">Veelgestelde vragen</string>
     <string name="TelegramFaq">Veelgestelde vragen</string>
-    <string name="TelegramFeatures">Telegram-functies</string>
-    <string name="TelegramFeaturesUrl">https://t.me/TelegramTips</string>
     <string name="AddAccount">Account toevoegen</string>
     <string name="SelectAccount">Account kiezen</string>
     <string name="TelegramFaqUrl">https://telegram.org/faq</string>
@@ -667,8 +661,6 @@
     <string name="ChangePhoneNumber">Telefoonnummer wijzigen</string>
     <string name="ChangePhoneNumberInfo">Verplaats je account, chats en media naar een nieuw nummer.</string>
     <string name="ChangePhoneNumberSuccessWithPhone">Je telefoonnummer is met succes gewijzigd naar %1$s.</string>
-    <string name="ContactSupport">Om hulp vragen</string>
-    <string name="ContactSupportInfo">Vertel ons wat het probleem is; uitloggen helpt meestal niet.</string>
     <string name="LogOutTitle">Uitloggen</string>
     <string name="LogOutInfo">Uitloggen deactiveert al je geheime chats.</string>
     <string name="SearchInSettings">Instellingen en veelgestelde vragen zoeken</string>
@@ -729,11 +721,7 @@
     <string name="YourNameChanged">Naam bijgewerkt</string>
     <string name="ChannelTitleChanged">Kanaaltitel bijgewerkt.</string>
     <string name="ChannelDescriptionChanged">Kanaalbeschrijving bijgewerkt</string>
-    <string name="CheckPhoneNumber">Is %1$s nog steeds je nummer?</string>
-    <string name="CheckPhoneNumberInfo">Houd je nummer actueel zodat je altijd op Telegram kunt inloggen. **Lees meer**</string>
-    <string name="CheckPhoneNumberLearnMoreUrl">https://telegram.org/faq#q-i-have-a-new-phone-number-what-do-i-do</string>
     <string name="CheckPhoneNumberYes">Ja</string>
-    <string name="CheckPhoneNumberNo">Nee</string>
     <!--password view-->
     <string name="TwoStepVerification">Tweestapsverificatie</string>
     <string name="TwoStepVerificationTitle">Tweestapsverificatie</string>

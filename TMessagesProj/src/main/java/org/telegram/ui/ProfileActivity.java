@@ -563,10 +563,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     public int birthdayRow;
     private int setUsernameRow;
     private int bioRow;
-    private int phoneSuggestionSectionRow;
     private int graceSuggestionRow;
     private int graceSuggestionSectionRow;
-    private int phoneSuggestionRow;
     private int passwordSuggestionSectionRow;
     private int passwordSuggestionRow;
     private int settingsSectionRow;
@@ -582,8 +580,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private int devicesRow;
     private int devicesSectionRow;
     private int helpHeaderRow;
-    private int questionRow;
-    private int faqRow;
+    // LoogriGram: questionRow and faqRow (Ask a Question, Telegram FAQ) and
+    // phoneSuggestionRow ("is this still your number?") are gone, as on
+    // desktop; the password reminder and Privacy Policy stay.
     private int policyRow;
     private int helpSectionCell;
     private int debugHeaderRow;
@@ -4066,10 +4065,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 presentFragment(new LiteModeSettingsActivity());
             } else if (position == devicesRow) {
                 presentFragment(new SessionsActivity(0));
-            } else if (position == questionRow) {
-                showDialog(AlertsCreator.createSupportAlert(ProfileActivity.this, resourcesProvider));
-            } else if (position == faqRow) {
-                Browser.openUrl(getParentActivity(), LocaleController.getString(R.string.TelegramFaqUrl));
             } else if (position == policyRow) {
                 Browser.openUrl(getParentActivity(), LocaleController.getString(R.string.PrivacyPolicyUrl));
             } else if (position == sendLogsRow) {
@@ -4277,7 +4272,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                                 NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.appUpdateAvailable);
                             } else if (which == 13) { // Reset suggestions
                                 Set<String> suggestions = getMessagesController().pendingSuggestions;
-                                suggestions.add("VALIDATE_PHONE_NUMBER");
                                 suggestions.add("VALIDATE_PASSWORD");
                                 getNotificationCenter().postNotificationName(NotificationCenter.newSuggestionsAvailable);
                             } else if (which == 14) { // WebView Cache
@@ -8429,10 +8423,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             updateListAnimated(false);
         } else if (id == NotificationCenter.newSuggestionsAvailable) {
             final int prevRow1 = passwordSuggestionRow;
-            final int prevRow2 = phoneSuggestionRow;
             final int prevRow3 = graceSuggestionRow;
             updateRowsIds();
-            if (listAdapter != null && (prevRow1 != passwordSuggestionRow || prevRow2 != phoneSuggestionRow || prevRow3 != graceSuggestionRow)) {
+            if (listAdapter != null && (prevRow1 != passwordSuggestionRow || prevRow3 != graceSuggestionRow)) {
                 listAdapter.notifyDataSetChanged();
             }
         } else if (id == NotificationCenter.topicsDidLoaded) {
@@ -9499,8 +9492,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         bioRow = -1;
         channelRow = -1;
         channelDividerRow = -1;
-        phoneSuggestionSectionRow = -1;
-        phoneSuggestionRow = -1;
         passwordSuggestionSectionRow = -1;
         graceSuggestionRow = -1;
         graceSuggestionSectionRow = -1;
@@ -9518,8 +9509,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         devicesRow = -1;
         devicesSectionRow = -1;
         helpHeaderRow = -1;
-        questionRow = -1;
-        faqRow = -1;
         policyRow = -1;
         helpSectionCell = -1;
         debugHeaderRow = -1;
@@ -9646,9 +9635,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 if (suggestions.contains("PREMIUM_GRACE")) {
                     graceSuggestionRow = rowCount++;
                     graceSuggestionSectionRow = rowCount++;
-                } else if (suggestions.contains("VALIDATE_PHONE_NUMBER")) {
-                    phoneSuggestionRow = rowCount++;
-                    phoneSuggestionSectionRow = rowCount++;
                 } else if (suggestions.contains("VALIDATE_PASSWORD")) {
                     passwordSuggestionRow = rowCount++;
                     passwordSuggestionSectionRow = rowCount++;
@@ -9668,8 +9654,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 languageRow = rowCount++;
                 devicesSectionRow = rowCount++;
                 helpHeaderRow = rowCount++;
-                questionRow = rowCount++;
-                faqRow = rowCount++;
                 policyRow = rowCount++;
                 if (BuildVars.LOGS_ENABLED || BuildVars.DEBUG_PRIVATE_VERSION) {
                     helpSectionCell = rowCount++;
@@ -12015,7 +11999,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                                     getMessagesController().removeSuggestion(0, "PREMIUM_GRACE");
                                     Browser.openUrl(getContext(), getMessagesController().premiumManageSubscriptionUrl);
                                 } else {
-                                    getMessagesController().removeSuggestion(0, type == SettingsSuggestionCell.TYPE_PHONE ? "VALIDATE_PHONE_NUMBER" : "VALIDATE_PASSWORD");
+                                    getMessagesController().removeSuggestion(0, "VALIDATE_PASSWORD");
                                 }
                                 getNotificationCenter().addObserver(ProfileActivity.this, NotificationCenter.newSuggestionsAvailable);
                                 updateListAnimated(false);
@@ -12024,11 +12008,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
                         @Override
                         protected void onNoClick(int type) {
-                            if (type == SettingsSuggestionCell.TYPE_PHONE) {
-                                presentFragment(new ActionIntroActivity(ActionIntroActivity.ACTION_TYPE_CHANGE_PHONE_NUMBER));
-                            } else {
-                                presentFragment(new TwoStepVerificationSetupActivity(TwoStepVerificationSetupActivity.TYPE_VERIFY, null));
-                            }
+                            presentFragment(new TwoStepVerificationSetupActivity(TwoStepVerificationSetupActivity.TYPE_VERIFY, null));
                         }
                     };
                     break;
@@ -12467,10 +12447,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         textCell.setTextAndIcon(LocaleController.getString(R.string.StickersName), R.drawable.msg2_sticker, true);
                     } else if (position == liteModeRow) {
                         textCell.setTextAndIcon(LocaleController.getString(R.string.PowerUsage), R.drawable.msg2_battery, true);
-                    } else if (position == questionRow) {
-                        textCell.setTextAndIcon(LocaleController.getString(R.string.AskAQuestion), R.drawable.msg2_ask_question, true);
-                    } else if (position == faqRow) {
-                        textCell.setTextAndIcon(LocaleController.getString(R.string.TelegramFAQ), R.drawable.msg2_help, true);
                     } else if (position == policyRow) {
                         textCell.setTextAndIcon(LocaleController.getString(R.string.PrivacyPolicy), R.drawable.msg2_policy, false);
                     } else if (position == sendLogsRow) {
@@ -12680,8 +12656,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     SettingsSuggestionCell suggestionCell = (SettingsSuggestionCell) holder.itemView;
                     if (position == passwordSuggestionRow) {
                         suggestionCell.setType(SettingsSuggestionCell.TYPE_PASSWORD);
-                    } else if (position == phoneSuggestionRow) {
-                        suggestionCell.setType(SettingsSuggestionCell.TYPE_PHONE);
                     } else if (position == graceSuggestionRow) {
                         suggestionCell.setType(SettingsSuggestionCell.TYPE_GRACE);
                     }
@@ -12833,8 +12807,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 return position == notificationRow || position == numberRow || position == privacyRow ||
                         position == languageRow || position == setUsernameRow || position == bioRow ||
                         position == versionRow || position == dataRow || position == chatRow ||
-                        position == questionRow || position == devicesRow || position == filtersRow || position == stickersRow ||
-                        position == faqRow || position == policyRow || position == sendLogsRow || position == sendLastLogsRow ||
+                        position == devicesRow || position == filtersRow || position == stickersRow ||
+                        position == policyRow || position == sendLogsRow || position == sendLastLogsRow ||
                         position == clearLogsRow || position == switchBackendRow || position == setAvatarRow ||
                         position == addToGroupButtonRow ||
                         position == liteModeRow || position == birthdayRow || position == channelRow ||
@@ -12879,8 +12853,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     position == addMemberRow || position == joinRow || position == unblockRow ||
                     position == sendMessageRow || position == notificationRow || position == privacyRow ||
                     position == languageRow || position == dataRow || position == chatRow ||
-                    position == questionRow || position == devicesRow || position == filtersRow || position == stickersRow ||
-                    position == faqRow || position == policyRow || position == sendLogsRow || position == sendLastLogsRow ||
+                    position == devicesRow || position == filtersRow || position == stickersRow ||
+                    position == policyRow || position == sendLogsRow || position == sendLastLogsRow ||
                     position == clearLogsRow || position == switchBackendRow || position == setAvatarRow || position == addToGroupButtonRow ||
                     position == addToContactsRow || position == liteModeRow ||
                     position == botPermissionLocation ||
@@ -12896,7 +12870,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             } else if (position == lastSectionRow || position == membersSectionRow || position == linkedCommunityDividerRow ||
                     position == secretSettingsSectionRow || position == settingsSectionRow || position == devicesSectionRow ||
                     position == helpSectionCell || position == setAvatarSectionRow || position == passwordSuggestionSectionRow ||
-                    position == phoneSuggestionSectionRow || position == reportDividerRow ||
+                    position == reportDividerRow ||
                     position == channelDividerRow || position == graceSuggestionSectionRow ||
                     position == botPermissionsDivider || position == channelBalanceSectionRow || position == unofficialSecurityRiskDividerRow
             ) {
@@ -12913,7 +12887,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 return VIEW_TYPE_SHARED_MEDIA;
             } else if (position == versionRow) {
                 return VIEW_TYPE_VERSION;
-            } else if (position == passwordSuggestionRow || position == phoneSuggestionRow || position == graceSuggestionRow) {
+            } else if (position == passwordSuggestionRow || position == graceSuggestionRow) {
                 return VIEW_TYPE_SUGGESTION;
             } else if (position == addToGroupInfoRow) {
                 return VIEW_TYPE_ADDTOGROUP_INFO;
@@ -13315,8 +13289,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     new SearchResult(405, getString(R.string.ShowTranslateButton), getString(R.string.Language), R.drawable.msg2_language, () -> f.presentFragment(new LanguageSelectActivity())).withLink("tg://settings/language/show-button"),
                     MessagesController.getInstance(currentAccount).getTranslateController().isContextTranslateEnabled() ? new SearchResult(406, getString(R.string.DoNotTranslate), getString(R.string.Language), R.drawable.msg2_language, () -> f.presentFragment(new LanguageSelectActivity())).withLink("tg://settings/language/do-not-translate") : null,
 
-                    new SearchResult(402, getString(R.string.AskAQuestion), getString(R.string.SettingsHelp), R.drawable.msg2_help, () -> f.showDialog(AlertsCreator.createSupportAlert(f, null))).withLink("tg://settings/ask-question"),
-                    new SearchResult(403, getString(R.string.TelegramFAQ), getString(R.string.SettingsHelp), R.drawable.msg2_help, () -> Browser.openUrl(f.getParentActivity(), getString(R.string.TelegramFaqUrl))).withLink("tg://settings/faq"),
                     new SearchResult(404, getString(R.string.PrivacyPolicy), getString(R.string.SettingsHelp), R.drawable.msg2_help, () -> Browser.openUrl(f.getParentActivity(), getString(R.string.PrivacyPolicyUrl))).withLink("tg://settings/privacy-policy"),
             };
         }
@@ -14175,8 +14147,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             put(++pointer, numberRow, sparseIntArray);
             put(++pointer, setUsernameRow, sparseIntArray);
             put(++pointer, bioRow, sparseIntArray);
-            put(++pointer, phoneSuggestionRow, sparseIntArray);
-            put(++pointer, phoneSuggestionSectionRow, sparseIntArray);
             put(++pointer, passwordSuggestionRow, sparseIntArray);
             put(++pointer, passwordSuggestionSectionRow, sparseIntArray);
             put(++pointer, graceSuggestionRow, sparseIntArray);
@@ -14194,8 +14164,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             put(++pointer, devicesRow, sparseIntArray);
             put(++pointer, devicesSectionRow, sparseIntArray);
             put(++pointer, helpHeaderRow, sparseIntArray);
-            put(++pointer, questionRow, sparseIntArray);
-            put(++pointer, faqRow, sparseIntArray);
             put(++pointer, policyRow, sparseIntArray);
             put(++pointer, helpSectionCell, sparseIntArray);
             put(++pointer, debugHeaderRow, sparseIntArray);

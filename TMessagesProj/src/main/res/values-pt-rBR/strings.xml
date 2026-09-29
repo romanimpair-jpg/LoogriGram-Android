@@ -291,7 +291,6 @@
     <string name="ResetCustomNotificationsAlertTitle">Redefinir notificações</string>
     <string name="ResetCustomNotificationsAlert">Deseja mesmo redefinir as configurações de notificação para o padrão?</string>
     <string name="TextSizeHeader">Tamanho do texto das mensagens</string>
-    <string name="AskAQuestion">Fazer uma Pergunta</string>
     <string name="AddAnExplanation">Adicionar uma explicação</string>
     <string name="AddAnExplanationInfo">Participantes do quiz irão ler esse texto após escolherem a opção incorreta – útil para fins educacionais.</string>
     <string name="EnableAnimations">Ativar Animações no App</string>
@@ -419,12 +418,7 @@
     <string name="LanguageUnsupportedError">Idioma não encontrado.</string>
     <string name="LanguageSame">Você já está usando esse pacote de idiomas (**%1$s**). Você pode alterar seu idioma a qualquer momento em Configurações.</string>
     <string name="LanguageUnknownCustomAlert">Infelizmente esse pacote de idiomas personalizado (**%1$s**) não contém dados para o Telegram no Android.</string>
-    <string name="AskAQuestionInfo">Por favor, note que o Suporte do Telegram é feito por voluntários. Tentaremos responder o mais rápido possível, mas pode levar um tempo.\n\nDê uma olhada na página de <![CDATA[<a href=\"https://telegram.org/faq/pt-br#questoes-gerais\">Perguntas Frequentes</a>]]>: há dicas e soluções para a maioria dos <![CDATA[<a href=\"https://telegram.org/faq/pt-br#solucao-de-problemas\">problemas</a>]]>.</string>
-    <string name="AskButton">Perguntar</string>
-    <string name="TelegramFAQ">Perguntas Frequentes</string>
     <string name="TelegramFaq">Perguntas Frequentes</string>
-    <string name="TelegramFeatures">Recursos do Telegram</string>
-    <string name="TelegramFeaturesUrl">https://t.me/TelegramTipsBR</string>
     <string name="AddAccount">Adicionar&#160;Conta</string>
     <string name="SelectAccount">Selecionar Conta</string>
     <string name="TelegramFaqUrl">https://telegram.org/faq/pt-br</string>
@@ -673,8 +667,6 @@
     <string name="ChangePhoneNumber">Alterar Número de Telefone</string>
     <string name="ChangePhoneNumberInfo">Mova sua conta, chats e mídias para um novo número.</string>
     <string name="ChangePhoneNumberSuccessWithPhone">Seu número de telefone foi alterado para %1$s.</string>
-    <string name="ContactSupport">Contatar Suporte</string>
-    <string name="ContactSupportInfo">Conte-nos sobre quaisquer problemas; sair geralmente não ajuda.</string>
     <string name="LogOutTitle">Sair</string>
     <string name="LogOutInfo">Sair encerrará todos os Chats Secretos.</string>
     <string name="SearchInSettings">Buscar Configurações e FAQ</string>
@@ -735,11 +727,7 @@
     <string name="YourNameChanged">Nome atualizado.</string>
     <string name="ChannelTitleChanged">Nome do canal atualizado.</string>
     <string name="ChannelDescriptionChanged">Descrição do canal atualizada.</string>
-    <string name="CheckPhoneNumber">%1$s ainda é o seu número?</string>
-    <string name="CheckPhoneNumberInfo">Mantenha seu número atualizado para garantir que você sempre consiga fazer login no Telegram. **Saiba mais.**</string>
-    <string name="CheckPhoneNumberLearnMoreUrl">https://telegram.org/faq/pt-br#p-tenho-um-numero-novo-o-que-devo-fazer</string>
     <string name="CheckPhoneNumberYes">Sim</string>
-    <string name="CheckPhoneNumberNo">Não</string>
     <!--password view-->
     <string name="TwoStepVerification">Verificação em Duas Etapas</string>
     <string name="TwoStepVerificationTitle">Verificação em Duas Etapas</string>

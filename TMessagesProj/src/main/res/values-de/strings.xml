@@ -254,7 +254,6 @@
     <string name="ResetCustomNotificationsAlertTitle">Benachrichtigungen zurücksetzen</string>
     <string name="ResetCustomNotificationsAlert">Wirklich die Benachrichtigungseinstellungen auf die Standardwerte zurücksetzen?</string>
     <string name="TextSizeHeader">Textgröße für Nachrichten</string>
-    <string name="AskAQuestion">Eine Frage stellen</string>
     <string name="AddAnExplanation">Eine Erklärung hinzufügen</string>
     <string name="AddAnExplanationInfo">Nutzer sehen diesen Text, nachdem sie eine falsche Antwort gewählt haben. Gut für Lehrzwecke.</string>
     <string name="EnableAnimations">Animationen aktivieren</string>
@@ -382,12 +381,7 @@
     <string name="LanguageUnsupportedError">Sprache nicht gefunden.</string>
     <string name="LanguageSame">Du benutzt bereits das Sprachpaket (**%1$s**). In den Einstellungen kannst du die Sprache jederzeit wieder ändern.</string>
     <string name="LanguageUnknownCustomAlert">Leider enthält das benutzerdefinierte Sprachpaket (**%1$s**) keine Daten für Telegram Android.</string>
-    <string name="AskAQuestionInfo">Bedenke bitte, dass der Telegram Support von Freiwilligen betreut wird. Alle versuchen so schnell wie möglich zu antworten, dies kann jedoch manchmal ein bisschen dauern.\n\nBitte schau auch in den <![CDATA[<a href=\"https://telegram.org/faq/de#allgemeine-fragen\">Telegram FAQ</a>]]> nach. Dort findest du Antworten auf die meisten Fragen und wichtige Tipps zur <![CDATA[<a href=\"https://telegram.org/faq/de#problembehandlung\">Problembehandlung</a>]]>.</string>
-    <string name="AskButton">Eine Frage stellen</string>
-    <string name="TelegramFAQ">Telegram FAQ</string>
     <string name="TelegramFaq">Telegram FAQ</string>
-    <string name="TelegramFeatures">Telegram Funktionen</string>
-    <string name="TelegramFeaturesUrl">https://t.me/TelegramTipsDE</string>
     <string name="AddAccount">Konto hinzufügen</string>
     <string name="SelectAccount">Konto auswählen</string>
     <string name="TelegramFaqUrl">https://telegram.org/faq/de</string>
@@ -613,8 +607,6 @@
     <string name="ChangePhoneNumber">Nummer ändern</string>
     <string name="ChangePhoneNumberInfo">Verschiebe deine Kontakte, Gruppen, Nachrichten und Medien auf eine neue Nummer.</string>
     <string name="ChangePhoneNumberSuccessWithPhone">Deine Nummer wurde erfolgreich in %1$s geändert.</string>
-    <string name="ContactSupport">Support kontaktieren</string>
-    <string name="ContactSupportInfo">Melde uns jederzeit Probleme. Die Abmeldung löst sie normalerweise nicht.</string>
     <string name="LogOutTitle">Abmelden</string>
     <string name="LogOutInfo">Wichtig: Die Abmeldung in der App beendet alle deine Geheimen Chats.</string>
     <string name="SearchInSettings">Einstellungen durchsuchen</string>
@@ -675,11 +667,7 @@
     <string name="YourNameChanged">Name aktualisiert.</string>
     <string name="ChannelTitleChanged">Kanalname geändert.</string>
     <string name="ChannelDescriptionChanged">Kanalbeschreibung aktualisiert.</string>
-    <string name="CheckPhoneNumber">Ist %1$s noch deine Nummer?</string>
-    <string name="CheckPhoneNumberInfo">Halte deine Nummer stets auf dem aktuellsten Stand, damit du dich immer bei Telegram anmelden kannst. **Mehr dazu hier**</string>
-    <string name="CheckPhoneNumberLearnMoreUrl">https://telegram.org/faq/de#f-ich-habe-eine-neue-nummer-was-soll-ich-tun</string>
     <string name="CheckPhoneNumberYes">Ja</string>
-    <string name="CheckPhoneNumberNo">Nein</string>
     <!--filters-->
     <string name="Filters">Ordner</string>
     <string name="CreateNewFilter">Neuen Ordner erstellen</string>
