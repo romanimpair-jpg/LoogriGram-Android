@@ -252,7 +252,6 @@ import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceWrapped;
 import org.telegram.ui.Components.blur3.utils.Blur3Utils;
 import org.telegram.ui.Components.chat.ChatActivityBottomViewsVisibilityController;
 import org.telegram.ui.Components.chat.ChatActivityDraftMessageMeasureController;
-import org.telegram.ui.Components.chat.ChatActivityMessageMetricsView;
 import org.telegram.ui.Components.chat.ChatActivitySearchContainer;
 import org.telegram.ui.Components.chat.layouts.ChatActivityActionsButtonsLayout;
 import org.telegram.ui.Components.chat.layouts.ChatActivityChannelButtonsLayout;
@@ -603,7 +602,6 @@ public class ChatActivity extends BaseFragment implements
     private ChatActivitySearchContainer messagesSearchListContainer;
     public RecyclerListView messagesSearchListView;
     private MessagesSearchAdapter messagesSearchAdapter;
-    private ChatActivityMessageMetricsView messageMetricsView;
 
     public static final int MODE_DEFAULT = 0;
     public static final int MODE_SCHEDULED = 1;
@@ -3163,9 +3161,6 @@ public class ChatActivity extends BaseFragment implements
     @Override
     public void onFragmentDestroy() {
         super.onFragmentDestroy();
-        if (messageMetricsView != null) {
-            messageMetricsView.finish();
-        }
         if (chatActivityEnterView != null) {
             chatActivityEnterView.onDestroy();
         }
@@ -8116,13 +8111,13 @@ public class ChatActivity extends BaseFragment implements
 
         contentView.addView(fireworksOverlay = new FireworksOverlay(context), LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
 
-        if (getDialogId() < 0 && chatMode == MODE_DEFAULT && !isInsideContainer && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            messageMetricsView = new ChatActivityMessageMetricsView(context);
-            messageMetricsView.init(currentAccount, getDialogId(), contentView, chatListView);
-            messageMetricsView.setIsUserActive();
-            contentView.addView(messageMetricsView);
-        }
-
+        // LoogriGram: a group's or channel's chat carried an invisible overlay,
+        // ChatActivityMessageMetricsView, that timed how long each message
+        // stayed in the viewport, how much of that time the user was touching
+        // the screen and how much of the message was scrolled past, and sent
+        // it as messages.reportReadMetrics. Deleted outright, as on desktop -
+        // reading telemetry, not tied to ghost mode. Read receipts are
+        // untouched.
         checkInstantSearch();
         if (replyingMessageObject != null) {
             chatActivityEnterView.setReplyingMessageObject(replyingMessageObject, replyingQuote);
@@ -10742,14 +10737,6 @@ public class ChatActivity extends BaseFragment implements
             topicsTabs.setSideMenuBackgroundMarginTop(0);//Math.max(0, paddingTop - blurredViewTopOffset - dp(5)));
         }
         chatListViewPaddingsAnimator.setPaddings(paddingTop, paddingBottom, !chatListView.fastScrollAnimationRunning);
-        if (messageMetricsView != null) {
-            messageMetricsView.setViewportPadding(
-                getTopicTabsSideSize(TopicsTabsView.Position.LEFT),
-                paddingTop - recommendedAdditionalSizeY,
-                0,
-                paddingBottom - blurredViewBottomOffset
-            );
-        }
     }
 
 
@@ -15946,10 +15933,6 @@ public class ChatActivity extends BaseFragment implements
 
         @Override
         public boolean dispatchTouchEvent(MotionEvent ev) {
-            if (messageMetricsView != null) {
-                messageMetricsView.setIsUserActive();
-            }
-
             float expandY;
             if (AndroidUtilities.isInMultiwindow || isInBubbleMode()) {
                 expandY = chatActivityEnterView.getEmojiView() != null ? chatActivityEnterView.getEmojiView().getY() : chatActivityEnterView.getY();
@@ -17128,7 +17111,7 @@ public class ChatActivity extends BaseFragment implements
                     childTop = 0;
                 } else if (child instanceof MessagePreviewView) {
                     childTop = AndroidUtilities.statusBarHeight;
-                } else if (child == roundVideoRecordBackground || child == messageMetricsView || child == pollAddOptionFieldLayout) {
+                } else if (child == roundVideoRecordBackground || child == pollAddOptionFieldLayout) {
                     childTop = 0;
                 }
                 child.layout(childLeft, childTop, childLeft + width, childTop + height);

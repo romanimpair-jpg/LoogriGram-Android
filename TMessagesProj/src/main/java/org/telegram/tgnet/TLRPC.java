@@ -69153,62 +69153,6 @@ public class TLRPC {
         }
     }
 
-    public static class TL_inputMessageReadMetric extends TLObject {
-        public static final int constructor = 0x402b4495;
-
-        public int msg_id;
-        public long view_id;
-        public int time_in_view_ms;
-        public int active_time_in_view_ms;
-        public int height_to_viewport_ratio_permille;
-        public int seen_range_ratio_permille;
-
-        public static TL_inputMessageReadMetric TLdeserialize(InputSerializedData stream, int constructor, boolean exception) {
-            final TL_inputMessageReadMetric result = constructor != TL_inputMessageReadMetric.constructor ? null : new TL_inputMessageReadMetric();
-            return TLdeserialize(TL_inputMessageReadMetric.class, result, stream, constructor, exception);
-        }
-
-        @Override
-        public void serializeToStream(OutputSerializedData stream) {
-            stream.writeInt32(constructor);
-            stream.writeInt32(msg_id);
-            stream.writeInt64(view_id);
-            stream.writeInt32(time_in_view_ms);
-            stream.writeInt32(active_time_in_view_ms);
-            stream.writeInt32(height_to_viewport_ratio_permille);
-            stream.writeInt32(seen_range_ratio_permille);
-        }
-
-        @Override
-        public void readParams(InputSerializedData stream, boolean exception) {
-            msg_id = stream.readInt32(exception);
-            view_id = stream.readInt64(exception);
-            time_in_view_ms = stream.readInt32(exception);
-            active_time_in_view_ms = stream.readInt32(exception);
-            height_to_viewport_ratio_permille = stream.readInt32(exception);
-            seen_range_ratio_permille = stream.readInt32(exception);
-        }
-    }
-
-    public static class TL_messages_reportReadMetrics extends TLMethod<Bool> {
-        public static final int constructor = 0x4067c5e6;
-
-        public InputPeer peer;
-        public ArrayList<TL_inputMessageReadMetric> metrics;
-
-        @Override
-        public void serializeToStream(OutputSerializedData stream) {
-            stream.writeInt32(constructor);
-            peer.serializeToStream(stream);
-            Vector.serialize(stream, metrics);
-        }
-
-        @Override
-        public Bool deserializeResponseT(InputSerializedData stream, int constructor, boolean exception) {
-            return Bool.TLdeserialize(stream, constructor, exception);
-        }
-    }
-
     public static class TL_messages_reportMusicListen extends TLMethod<Bool> {
         public static final int constructor = 0xddbcd819;
 
