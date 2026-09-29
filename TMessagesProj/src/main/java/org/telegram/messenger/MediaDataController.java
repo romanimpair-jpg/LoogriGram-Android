@@ -245,7 +245,9 @@ public class MediaDataController extends BaseController {
     public static final int TYPE_FEATURED_EMOJIPACKS = 6;
     public static final int TYPE_PREMIUM_STICKERS = 7;
 
-    public static final int TYPE_GREETINGS = 3;
+    // LoogriGram: 3 was TYPE_GREETINGS, the server's greeting stickers
+    // ("👋⭐"), fetched only to offer one at random in an empty chat. That
+    // offer is gone, as on desktop; old cached rows (type 6) are not read.
 
     private long menuBotsUpdateHash;
     private TLRPC.TL_attachMenuBots attachMenuBots = new TLRPC.TL_attachMenuBots();
@@ -327,7 +329,6 @@ public class MediaDataController extends BaseController {
     private boolean loadingFeaturedStickers[] = new boolean[2];
     private boolean featuredStickersLoaded[] = new boolean[2];
 
-    private TLRPC.Document greetingsSticker;
     public final RingtoneDataStore ringtoneDataStore;
     public final ArrayList<ChatThemeBottomSheet.ChatThemeItem> defaultEmojiThemes = new ArrayList<>();
 
@@ -888,7 +889,7 @@ public class MediaDataController extends BaseController {
     }
 
     public void addRecentSticker(int type, Object parentObject, TLRPC.Document document, int date, boolean remove) {
-        if (type == TYPE_GREETINGS || !MessageObject.isStickerDocument(document) && !MessageObject.isAnimatedStickerDocument(document, true)) {
+        if (!MessageObject.isStickerDocument(document) && !MessageObject.isAnimatedStickerDocument(document, true)) {
             return;
         }
         boolean found = false;
@@ -1867,8 +1868,6 @@ public class MediaDataController extends BaseController {
                         cacheType = 3;
                     } else if (type == TYPE_MASK) {
                         cacheType = 4;
-                    } else if (type == TYPE_GREETINGS) {
-                        cacheType = 6;
                     } else if (type == TYPE_EMOJIPACKS) {
                         cacheType = 7;
                     } else if (type == TYPE_PREMIUM_STICKERS) {
@@ -1901,9 +1900,6 @@ public class MediaDataController extends BaseController {
                             loadingRecentStickers[type] = false;
                             recentStickersLoaded[type] = true;
                         }
-                        if (type == TYPE_GREETINGS) {
-                            preloadNextGreetingsSticker();
-                        }
                         getNotificationCenter().postNotificationName(NotificationCenter.recentDocumentsDidLoad, gif, type);
                         loadRecents(type, gif, false, false);
                     });
@@ -1921,8 +1917,6 @@ public class MediaDataController extends BaseController {
                     lastLoadTime = preferences.getLong("lastStickersLoadTime", 0);
                 } else if (type == TYPE_MASK) {
                     lastLoadTime = preferences.getLong("lastStickersLoadTimeMask", 0);
-                } else if (type == TYPE_GREETINGS) {
-                    lastLoadTime = preferences.getLong("lastStickersLoadTimeGreet", 0);
                 } else if (type == TYPE_EMOJIPACKS) {
                     lastLoadTime = preferences.getLong("lastStickersLoadTimeEmojiPacks", 0);
                 } else if (type == TYPE_PREMIUM_STICKERS) {
@@ -1956,11 +1950,6 @@ public class MediaDataController extends BaseController {
                     TLRPC.TL_messages_getFavedStickers req = new TLRPC.TL_messages_getFavedStickers();
                     req.hash = calcDocumentsHash(recentStickers[type]);
                     request = req;
-                } else if (type == TYPE_GREETINGS) {
-                    TLRPC.TL_messages_getStickers req = new TLRPC.TL_messages_getStickers();
-                    req.emoticon = "\uD83D\uDC4B" + Emoji.fixEmoji("⭐");
-                    req.hash = calcDocumentsHash(recentStickers[type]);
-                    request = req;
                 } else if (type == TYPE_PREMIUM_STICKERS) {
                     TLRPC.TL_messages_getStickers req = new TLRPC.TL_messages_getStickers();
                     req.emoticon = "\uD83D\uDCC2" + Emoji.fixEmoji("⭐");
@@ -1974,7 +1963,7 @@ public class MediaDataController extends BaseController {
                 }
                 getConnectionsManager().sendRequest(request, (response, error) -> {
                     ArrayList<TLRPC.Document> arrayList = null;
-                    if (type == TYPE_GREETINGS || type == TYPE_PREMIUM_STICKERS) {
+                    if (type == TYPE_PREMIUM_STICKERS) {
                         if (response instanceof TLRPC.TL_messages_stickers) {
                             TLRPC.TL_messages_stickers res = (TLRPC.TL_messages_stickers) response;
                             arrayList = res.stickers;
@@ -1996,20 +1985,6 @@ public class MediaDataController extends BaseController {
         }
     }
 
-    private void preloadNextGreetingsSticker() {
-        if (recentStickers[TYPE_GREETINGS].isEmpty()) {
-            return;
-        }
-        greetingsSticker = recentStickers[TYPE_GREETINGS].get(Utilities.random.nextInt(recentStickers[TYPE_GREETINGS].size()));
-        getFileLoader().loadFile(ImageLocation.getForDocument(greetingsSticker), greetingsSticker, null, 0, 1);
-    }
-
-    public TLRPC.Document getGreetingsSticker() {
-        TLRPC.Document result = greetingsSticker;
-        preloadNextGreetingsSticker();
-        return result;
-    }
-
     protected void processLoadedRecentDocuments(int type, ArrayList<TLRPC.Document> documents, boolean gif, int date, boolean replace) {
         if (documents != null) {
             getMessagesStorage().getStorageQueue().postRunnable(() -> {
@@ -2019,7 +1994,7 @@ public class MediaDataController extends BaseController {
                     if (gif) {
                         maxCount = getMessagesController().maxRecentGifsCount;
                     } else {
-                        if (type == TYPE_GREETINGS || type == TYPE_PREMIUM_STICKERS) {
+                        if (type == TYPE_PREMIUM_STICKERS) {
                             maxCount = 200;
                         } else if (type == TYPE_FAVE) {
                             maxCount = getMessagesController().maxFaveStickersCount;
@@ -2038,8 +2013,6 @@ public class MediaDataController extends BaseController {
                         cacheType = 3;
                     } else if (type == TYPE_MASK) {
                         cacheType = 4;
-                    } else if (type == TYPE_GREETINGS) {
-                        cacheType = 6;
                     } else if (type == TYPE_EMOJIPACKS) {
                         cacheType = 7;
                     } else if (type == TYPE_PREMIUM_STICKERS) {
@@ -2099,8 +2072,6 @@ public class MediaDataController extends BaseController {
                         editor.putLong("lastStickersLoadTime", System.currentTimeMillis()).apply();
                     } else if (type == TYPE_MASK) {
                         editor.putLong("lastStickersLoadTimeMask", System.currentTimeMillis()).apply();
-                    } else if (type == TYPE_GREETINGS) {
-                        editor.putLong("lastStickersLoadTimeGreet", System.currentTimeMillis()).apply();
                     } else if (type == TYPE_EMOJIPACKS) {
                         editor.putLong("lastStickersLoadTimeEmojiPacks", System.currentTimeMillis()).apply();
                     } else if (type == TYPE_PREMIUM_STICKERS) {
@@ -2115,9 +2086,6 @@ public class MediaDataController extends BaseController {
                         recentGifs = documents;
                     } else {
                         recentStickers[type] = documents;
-                    }
-                    if (type == TYPE_GREETINGS) {
-                        preloadNextGreetingsSticker();
                     }
                     getNotificationCenter().postNotificationName(NotificationCenter.recentDocumentsDidLoad, gif, type);
                 } else {
@@ -8310,7 +8278,6 @@ public class MediaDataController extends BaseController {
             loadFeaturedDate[1] = 0;
         }
         loadRecents(MediaDataController.TYPE_FAVE, false, true, false);
-        loadRecents(MediaDataController.TYPE_GREETINGS, false, true, false);
         loadRecents(MediaDataController.TYPE_PREMIUM_STICKERS, false, false, true);
         checkFeaturedStickers();
         checkFeaturedEmoji();

@@ -1077,7 +1077,6 @@ public class ChatActivity extends BaseFragment implements
     private float floatingDateViewOffset;
     private float floatingTopicViewOffset;
     private float topViewOffset;
-    private TLRPC.Document preloadedGreetingsSticker;
     private boolean forceHistoryEmpty;
     private boolean invalidateChatListViewTopPadding;
     private long activityResumeTime;
@@ -22221,6 +22220,9 @@ public class ChatActivity extends BaseFragment implements
             Long uid = (Long) args[0];
             if (currentUser != null && currentUser.id == uid) {
                 userInfo = (TLRPC.UserFull) args[1];
+                if (plainLineForGreetings && needGreetingsView()) {
+                    createEmptyView(true);
+                }
                 updateGreetingLock();
                 updateGreetInfo();
                 updateBottomOverlay();
@@ -29809,10 +29811,29 @@ public class ChatActivity extends BaseFragment implements
         return false;
     }
 
+    // LoogriGram: an empty chat with a person always showed ChatGreetingsView,
+    // with a random greeting sticker to send. It now shows the plain "No
+    // messages here yet" line unless the peer set a chat intro of their own
+    // or there is a lock to explain, as on desktop; plainLineForGreetings
+    // marks that line, so an intro or lock arriving later rebuilds the view.
+    private boolean plainLineForGreetings;
+
+    private boolean needGreetingsView() {
+        if (getDialogId() != getUserConfig().getClientUserId() && userInfo != null && userInfo.business_intro != null) {
+            return true;
+        }
+        if (ChatObject.isMonoForum(currentChat)) {
+            TLRPC.Chat mfChat = getLinkedMonoForumChat();
+            return mfChat != null && currentChat != null && !ChatObject.canManageMonoForum(currentAccount, currentChat) && currentChat.send_paid_messages_stars <= 0;
+        }
+        return getDialogId() != getUserConfig().getClientUserId() && userInfo != null && userInfo.contact_require_premium && !getUserConfig().isPremium();
+    }
+
     private void createEmptyView(boolean recreate) {
         if (emptyViewContainer != null && !recreate || getContext() == null) {
             return;
         }
+        plainLineForGreetings = false;
 
         if (emptyViewContainer == null) {
             emptyViewContainer = new FrameLayout(getContext());
@@ -29829,8 +29850,8 @@ public class ChatActivity extends BaseFragment implements
             welcomeMessagesEmptyView.setBackground(Theme.createServiceDrawable(AndroidUtilities.dp(24), welcomeMessagesEmptyView, contentView, getThemedPaint(Theme.key_paint_chatActionBackground)));
             emptyViewContainer.addView(welcomeMessagesEmptyView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER));
             viewPositionWatcher.subscribe(welcomeMessagesEmptyView, contentView, (v, r) -> v.invalidate());
-        } else if (preloadedGreetingsSticker != null && currentUser != null && !userBlocked || userInfo != null && getDialogId() != getUserConfig().getClientUserId() && userInfo.contact_require_premium && !getUserConfig().isPremium()) {
-            greetingsViewContainer = new ChatGreetingsView(getContext(), currentUser, currentAccount, preloadedGreetingsSticker, themeDelegate) {
+        } else if (userInfo != null && getDialogId() != getUserConfig().getClientUserId() && userInfo.contact_require_premium && !getUserConfig().isPremium()) {
+            greetingsViewContainer = new ChatGreetingsView(getContext(), currentUser, currentAccount, themeDelegate) {
                 @Override
                 protected void onLayout(boolean changed, int l, int t, int r, int b) {
                     super.onLayout(changed, l, t, r, b);
@@ -29877,9 +29898,12 @@ public class ChatActivity extends BaseFragment implements
                     emptyMessage = LocaleController.getString(R.string.GotAQuestion);
                 } else if (chatMode != MODE_SUGGESTIONS && (currentUser == null || currentUser.self || currentUser.deleted || userBlocked)) {
                     emptyMessage = LocaleController.getString(R.string.NoMessages);
+                } else if (!needGreetingsView()) {
+                    emptyMessage = LocaleController.getString(R.string.NoMessages);
+                    plainLineForGreetings = true;
                 }
                 if (emptyMessage == null) {
-                    greetingsViewContainer = new ChatGreetingsView(getContext(), currentUser, currentAccount, preloadedGreetingsSticker, themeDelegate) {
+                    greetingsViewContainer = new ChatGreetingsView(getContext(), currentUser, currentAccount, themeDelegate) {
                         @Override
                         protected void onLayout(boolean changed, int l, int t, int r, int b) {
                             super.onLayout(changed, l, t, r, b);
@@ -38686,9 +38710,11 @@ public class ChatActivity extends BaseFragment implements
         }
     }
 
-    public void setPreloadedSticker(TLRPC.Document preloadedSticker, boolean historyEmpty) {
-        preloadedGreetingsSticker = preloadedSticker;
-        forceHistoryEmpty = historyEmpty;
+    // LoogriGram: this was setPreloadedSticker(sticker, historyEmpty), handing
+    // over the random greeting sticker too. The empty-history shortcut for a
+    // chat not in the dialog list is what is left.
+    public void setForceHistoryEmpty() {
+        forceHistoryEmpty = true;
     }
 
     public class ChatScrollCallback extends RecyclerAnimationScrollHelper.AnimationCallback {

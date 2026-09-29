@@ -6218,7 +6218,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 args.putInt("nearby_distance", distance);
             }
             ChatActivity chatActivity = new ChatActivity(args);
-            chatActivity.setPreloadedSticker(getMediaDataController().getGreetingsSticker(), false);
             presentFragment(chatActivity, removeFragment);
             if (AndroidUtilities.isTablet() && !hasMainTabs) {
                 finishFragment();

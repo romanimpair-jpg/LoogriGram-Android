@@ -7127,10 +7127,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                             ForumUtilities.applyTopic(chatActivity, MessagesStorage.TopicKey.of(dialogId, topicId));
                         }
                         if (adapter instanceof DialogsAdapter && DialogObject.isUserDialog(dialogId) && (getMessagesController().dialogs_dict.get(dialogId) == null)) {
-                            TLRPC.Document sticker = getMediaDataController().getGreetingsSticker();
-                            if (sticker != null) {
-                                chatActivity.setPreloadedSticker(sticker, true);
-                            }
+                            chatActivity.setForceHistoryEmpty();
                         }
                         if (AndroidUtilities.isTablet()) {
                             if (rightSlidingDialogContainer.currentFragment != null) {

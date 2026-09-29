@@ -4,10 +4,6 @@ import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.LocaleController.formatString;
 import static org.telegram.messenger.LocaleController.getString;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.AnimatorSet;
-import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -28,9 +24,7 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DocumentObject;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.ImageLocation;
-import org.telegram.messenger.ImageReceiver;
 import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
@@ -45,7 +39,6 @@ import java.util.Locale;
 
 public class ChatGreetingsView extends LinearLayout {
 
-    private TLRPC.Document preloadedGreetingsSticker;
     private TextView titleView;
     private TextView descriptionView;
     private Listener listener;
@@ -54,11 +47,10 @@ public class ChatGreetingsView extends LinearLayout {
 
     public FrameLayout stickerContainer;
     public BackupImageView stickerToSendView;
-    public BackupImageView nextStickerToSendView;
     private final Theme.ResourcesProvider resourcesProvider;
-    boolean wasDraw;
+    private boolean hasSticker;
 
-    public ChatGreetingsView(Context context, TLRPC.User user, int currentAccount, TLRPC.Document sticker, Theme.ResourcesProvider resourcesProvider) {
+    public ChatGreetingsView(Context context, TLRPC.User user, int currentAccount, Theme.ResourcesProvider resourcesProvider) {
         super(context);
         setOrientation(VERTICAL);
         this.currentAccount = currentAccount;
@@ -84,22 +76,11 @@ public class ChatGreetingsView extends LinearLayout {
         stickerContainer.addView(stickerToSendView, LayoutHelper.createFrame(112, 112));
         ScaleStateListAnimator.apply(stickerToSendView);
 
-        nextStickerToSendView = new BackupImageView(context);
-        nextStickerToSendView.getImageReceiver().setAspectFit(true);
-        stickerContainer.addView(nextStickerToSendView, LayoutHelper.createFrame(112, 112));
-        nextStickerToSendView.setVisibility(View.GONE);
-        nextStickerToSendView.setAlpha(0f);
-        ScaleStateListAnimator.apply(nextStickerToSendView);
         updateLayout();
 
         updateColors();
 
         setText(getString(R.string.NoMessages), getString(R.string.NoMessagesGreetingsDescription));
-
-        preloadedGreetingsSticker = sticker;
-        if (preloadedGreetingsSticker == null) {
-            preloadedGreetingsSticker = MediaDataController.getInstance(currentAccount).getGreetingsSticker();
-        }
     }
 
     public void setText(CharSequence title, CharSequence description) {
@@ -167,7 +148,12 @@ public class ChatGreetingsView extends LinearLayout {
         } else {
             addView(titleView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 20, 6, 20, 6));
             addView(descriptionView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL, 20, 6, 20, 6));
-            addView(stickerContainer, LayoutHelper.createLinear(112, 112, Gravity.CENTER_HORIZONTAL, 16, 10, 16, 16));
+            // LoogriGram: the sticker here was a random one from the server's
+            // greeting set (MediaDataController.getGreetingsSticker), offered to
+            // send. Only a chat intro's own sticker is shown now, as on desktop.
+            if (hasSticker) {
+                addView(stickerContainer, LayoutHelper.createLinear(112, 112, Gravity.CENTER_HORIZONTAL, 16, 10, 16, 16));
+            }
         }
     }
 
@@ -175,8 +161,10 @@ public class ChatGreetingsView extends LinearLayout {
         if (sticker == null) {
             return;
         }
-        wasDraw = true;
-        nextStickerToSendView.clearImage();
+        if (!hasSticker) {
+            hasSticker = true;
+            updateLayout();
+        }
         SvgHelper.SvgDrawable svgThumb = DocumentObject.getSvgThumb(sticker, Theme.key_chat_serviceBackground, 1.0f);
         if (svgThumb != null) {
             stickerToSendView.setImage(ImageLocation.getForDocument(sticker), createFilter(sticker), svgThumb, 0, sticker);
@@ -189,111 +177,6 @@ public class ChatGreetingsView extends LinearLayout {
                 listener.onGreetings(sticker);
             }
         });
-    }
-
-    public void setSticker(String stickerPath) {
-        if (stickerPath == null) {
-            return;
-        }
-        wasDraw = true;
-        nextStickerToSendView.clearImage();
-        stickerToSendView.setImage(ImageLocation.getForPath(stickerPath), "256_256", null, null, 0, null);
-    }
-
-    public void setNextSticker(TLRPC.Document sticker, Runnable whenDone) {
-        if (sticker == null) {
-            return;
-        }
-        if (togglingStickersAnimator != null) {
-            togglingStickersAnimator.cancel();
-        }
-        nextStickerToSendView.getImageReceiver().setDelegate(new ImageReceiver.ImageReceiverDelegate() {
-            private boolean waited;
-            @Override
-            public void didSetImageBitmap(int type, String key, Drawable drawable) {
-                if (waited) {
-                    return;
-                }
-                if ((type == ImageReceiver.TYPE_IMAGE || type == ImageReceiver.TYPE_MEDIA) && drawable != null) {
-                    waited = true;
-                    if (drawable instanceof RLottieDrawable && ((RLottieDrawable) drawable).bitmapsCache != null && ((RLottieDrawable) drawable).bitmapsCache.needGenCache()) {
-                        ((RLottieDrawable) drawable).whenCacheDone = () -> {
-                            toggleToNextSticker();
-                            if (whenDone != null) {
-                                whenDone.run();
-                            }
-                        };
-                    } else {
-                        toggleToNextSticker();
-                        if (whenDone != null) {
-                            whenDone.run();
-                        }
-                    }
-                }
-            }
-
-            @Override
-            public void didSetImage(ImageReceiver imageReceiver, boolean set, boolean thumb, boolean memCache) {}
-        });
-        SvgHelper.SvgDrawable svgThumb = DocumentObject.getSvgThumb(sticker, Theme.key_chat_serviceBackground, 1.0f);
-        if (svgThumb != null) {
-            nextStickerToSendView.setImage(ImageLocation.getForDocument(sticker), createFilter(sticker), svgThumb, 0, sticker);
-        } else {
-            TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(sticker.thumbs, 90);
-            nextStickerToSendView.setImage(ImageLocation.getForDocument(sticker), createFilter(sticker), ImageLocation.getForDocument(thumb, sticker), null, 0, sticker);
-        }
-        nextStickerToSendView.setOnClickListener(v -> {
-            if (listener != null) {
-                listener.onGreetings(sticker);
-            }
-        });
-    }
-
-    private AnimatorSet togglingStickersAnimator;
-    private void toggleToNextSticker() {
-        if (togglingStickersAnimator != null) {
-            togglingStickersAnimator.cancel();
-        }
-
-        nextStickerToSendView.setVisibility(View.VISIBLE);
-        stickerToSendView.setVisibility(View.VISIBLE);
-
-        togglingStickersAnimator = new AnimatorSet();
-        togglingStickersAnimator.setDuration(420);
-        togglingStickersAnimator.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
-        togglingStickersAnimator.addListener(new AnimatorListenerAdapter() {
-            private boolean cancelled;
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                if (cancelled) return;
-
-                BackupImageView temp = stickerToSendView;
-                stickerToSendView = nextStickerToSendView;
-                nextStickerToSendView = temp;
-
-                nextStickerToSendView.setVisibility(View.GONE);
-                nextStickerToSendView.setAlpha(0f);
-                stickerToSendView.setVisibility(View.VISIBLE);
-                stickerToSendView.setAlpha(1f);
-            }
-
-            @Override
-            public void onAnimationCancel(Animator animation) {
-                cancelled = true;
-            }
-        });
-        togglingStickersAnimator.playTogether(
-            ObjectAnimator.ofFloat(nextStickerToSendView, View.ALPHA, 0f, 1f),
-            ObjectAnimator.ofFloat(nextStickerToSendView, View.SCALE_X, .7f, 1f),
-            ObjectAnimator.ofFloat(nextStickerToSendView, View.SCALE_Y, .7f, 1f),
-            ObjectAnimator.ofFloat(nextStickerToSendView, View.TRANSLATION_Y, -dp(24), 0),
-
-            ObjectAnimator.ofFloat(stickerToSendView, View.ALPHA, 1f, 0f),
-            ObjectAnimator.ofFloat(stickerToSendView, View.SCALE_X, 1f, .7f),
-            ObjectAnimator.ofFloat(stickerToSendView, View.SCALE_Y, 1f, .7f),
-            ObjectAnimator.ofFloat(stickerToSendView, View.TRANSLATION_Y, 0, dp(24))
-        );
-        togglingStickersAnimator.start();
     }
 
     public static String createFilter(TLRPC.Document document) {
@@ -408,10 +291,6 @@ public class ChatGreetingsView extends LinearLayout {
                 canvas.drawRoundRect(0, 0, getWidth(), getHeight(), dp(16), dp(16), Theme.getThemePaint(Theme.key_paint_chatActionBackground, resourcesProvider));
             }
         }
-        if (!wasDraw) {
-            wasDraw = true;
-            setSticker(preloadedGreetingsSticker);
-        }
         super.dispatchDraw(canvas);
     }
 
@@ -424,23 +303,8 @@ public class ChatGreetingsView extends LinearLayout {
     }
 
     @Override
-    protected void onAttachedToWindow() {
-        super.onAttachedToWindow();
-        fetchSticker();
-    }
-
-    @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-    }
-
-    private void fetchSticker() {
-        if (preloadedGreetingsSticker == null) {
-            preloadedGreetingsSticker = MediaDataController.getInstance(currentAccount).getGreetingsSticker();
-            if (wasDraw) {
-                setSticker(preloadedGreetingsSticker);
-            }
-        }
     }
 
     @Override
