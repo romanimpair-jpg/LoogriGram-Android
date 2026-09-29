@@ -252,9 +252,11 @@ public class DownloadController extends BaseController implements NotificationCe
         highPreset = new Preset(preferences.getString("preset2", defaultHigh), defaultHigh);
         boolean newConfig;
         if ((newConfig = preferences.contains("newConfig")) || !getUserConfig().isClientActivated()) {
-            mobilePreset = new Preset(preferences.getString("mobilePreset", defaultMedium), defaultMedium);
-            wifiPreset = new Preset(preferences.getString("wifiPreset", defaultHigh), defaultHigh);
-            roamingPreset = new Preset(preferences.getString("roamingPreset", defaultLow), defaultLow);
+            // LoogriGram: nothing stored starts from getDefaultPreset, not
+            // from the whole upstream preset. A stored preset reads as before.
+            mobilePreset = new Preset(preferences.getString("mobilePreset", getDefaultPreset(0).toString()), defaultMedium);
+            wifiPreset = new Preset(preferences.getString("wifiPreset", getDefaultPreset(1).toString()), defaultHigh);
+            roamingPreset = new Preset(preferences.getString("roamingPreset", getDefaultPreset(2).toString()), defaultLow);
             currentMobilePreset = preferences.getInt("currentMobilePreset", 3);
             currentWifiPreset = preferences.getInt("currentWifiPreset", 3);
             currentRoamingPreset = preferences.getInt("currentRoamingPreset", 3);
@@ -272,8 +274,10 @@ public class DownloadController extends BaseController implements NotificationCe
             for (int a = 0; a < 4; a++) {
                 String key = "mobileDataDownloadMask" + (a == 0 ? "" : a);
                 if (a == 0 || preferences.contains(key)) {
-                    mobileDataDownloadMask[a] = preferences.getInt(key, AUTODOWNLOAD_TYPE_PHOTO | AUTODOWNLOAD_TYPE_VIDEO | AUTODOWNLOAD_TYPE_DOCUMENT);
-                    wifiDownloadMask[a] = preferences.getInt("wifiDownloadMask" + (a == 0 ? "" : a), AUTODOWNLOAD_TYPE_PHOTO | AUTODOWNLOAD_TYPE_VIDEO | AUTODOWNLOAD_TYPE_DOCUMENT);
+                    // LoogriGram: photos only when nothing was stored, as in
+                    // getDefaultPreset.
+                    mobileDataDownloadMask[a] = preferences.getInt(key, AUTODOWNLOAD_TYPE_PHOTO);
+                    wifiDownloadMask[a] = preferences.getInt("wifiDownloadMask" + (a == 0 ? "" : a), AUTODOWNLOAD_TYPE_PHOTO);
                     roamingDownloadMask[a] = preferences.getInt("roamingDownloadMask" + (a == 0 ? "" : a), AUTODOWNLOAD_TYPE_PHOTO);
                 } else {
                     mobileDataDownloadMask[a] = mobileDataDownloadMask[0];
@@ -380,6 +384,26 @@ public class DownloadController extends BaseController implements NotificationCe
                 checkAutodownloadSettings();
             }
         }));
+    }
+
+    // LoogriGram: desktop's auto-download defaults - photos on, videos and
+    // files off, in every kind of chat. Android files GIFs and round videos
+    // under videos and music under files, so those follow them; desktop
+    // keeps GIFs on, which cannot be had here without videos. The network's
+    // upstream preset (medium on mobile data, high on Wi-Fi, low roaming)
+    // still supplies the size limits, preloading and bitrate, so a type
+    // switched on gets upstream's limit, and voice messages, which download
+    // whatever the switches say up to the file limit, are unchanged. This is
+    // what a fresh install starts with, what Reset restores and what
+    // switching auto-download on from nothing fills in. type: 0 mobile data,
+    // 1 Wi-Fi, 2 roaming.
+    public Preset getDefaultPreset(int type) {
+        final String base = (type == 0 ? mediumPreset : type == 1 ? highPreset : lowPreset).toString();
+        final Preset preset = new Preset(base, base);
+        for (int a = 0; a < preset.mask.length; a++) {
+            preset.mask[a] &= ~(AUTODOWNLOAD_TYPE_VIDEO | AUTODOWNLOAD_TYPE_DOCUMENT);
+        }
+        return preset;
     }
 
     public Preset getCurrentMobilePreset() {

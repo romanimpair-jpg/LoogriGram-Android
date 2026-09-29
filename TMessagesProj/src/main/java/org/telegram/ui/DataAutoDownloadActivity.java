@@ -108,19 +108,20 @@ public class DataAutoDownloadActivity extends BaseFragment {
         if (currentType == 0) {
             currentPresetNum = DownloadController.getInstance(currentAccount).currentMobilePreset;
             typePreset = DownloadController.getInstance(currentAccount).mobilePreset;
-            defaultPreset = mediumPreset;
+            // LoogriGram: our defaults, as in DataSettingsActivity.
+            defaultPreset = DownloadController.getInstance(currentAccount).getDefaultPreset(0);
             key = "mobilePreset";
             key2 = "currentMobilePreset";
         } else if (currentType == 1) {
             currentPresetNum = DownloadController.getInstance(currentAccount).currentWifiPreset;
             typePreset = DownloadController.getInstance(currentAccount).wifiPreset;
-            defaultPreset = highPreset;
+            defaultPreset = DownloadController.getInstance(currentAccount).getDefaultPreset(1);
             key = "wifiPreset";
             key2 = "currentWifiPreset";
         } else {
             currentPresetNum = DownloadController.getInstance(currentAccount).currentRoamingPreset;
             typePreset = DownloadController.getInstance(currentAccount).roamingPreset;
-            defaultPreset = lowPreset;
+            defaultPreset = DownloadController.getInstance(currentAccount).getDefaultPreset(2);
             key = "roamingPreset";
             key2 = "currentRoamingPreset";
         }

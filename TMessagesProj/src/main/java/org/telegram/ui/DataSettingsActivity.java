@@ -148,10 +148,15 @@ public class DataSettingsActivity extends BaseFragment {
         wifiRow = rowCount++;
         roamingRow = rowCount++;
         DownloadController dc = getDownloadController();
+        // LoogriGram: compared with our defaults (getDefaultPreset), not with
+        // upstream's whole presets, here, in the row switch and in Reset.
+        final DownloadController.Preset defaultMobile = dc.getDefaultPreset(0);
+        final DownloadController.Preset defaultWifi = dc.getDefaultPreset(1);
+        final DownloadController.Preset defaultRoaming = dc.getDefaultPreset(2);
         boolean isDefault = !(
-            !dc.lowPreset.equals(dc.getCurrentRoamingPreset()) || dc.lowPreset.isEnabled() != dc.roamingPreset.enabled ||
-            !dc.mediumPreset.equals(dc.getCurrentMobilePreset()) || dc.mediumPreset.isEnabled() != dc.mobilePreset.enabled ||
-            !dc.highPreset.equals(dc.getCurrentWiFiPreset()) || dc.highPreset.isEnabled() != dc.wifiPreset.enabled
+            !defaultRoaming.equals(dc.getCurrentRoamingPreset()) || defaultRoaming.isEnabled() != dc.roamingPreset.enabled ||
+            !defaultMobile.equals(dc.getCurrentMobilePreset()) || defaultMobile.isEnabled() != dc.mobilePreset.enabled ||
+            !defaultWifi.equals(dc.getCurrentWiFiPreset()) || defaultWifi.isEnabled() != dc.wifiPreset.enabled
         );
         int wasResetDownloadRow = resetDownloadRow;
         resetDownloadRow = isDefault ? -1 : rowCount++;
@@ -331,19 +336,19 @@ public class DataSettingsActivity extends BaseFragment {
                     int num;
                     if (position == mobileRow) {
                         preset = DownloadController.getInstance(currentAccount).mobilePreset;
-                        defaultPreset = DownloadController.getInstance(currentAccount).mediumPreset;
+                        defaultPreset = DownloadController.getInstance(currentAccount).getDefaultPreset(0);
                         key = "mobilePreset";
                         key2 = "currentMobilePreset";
                         num = 0;
                     } else if (position == wifiRow) {
                         preset = DownloadController.getInstance(currentAccount).wifiPreset;
-                        defaultPreset = DownloadController.getInstance(currentAccount).highPreset;
+                        defaultPreset = DownloadController.getInstance(currentAccount).getDefaultPreset(1);
                         key = "wifiPreset";
                         key2 = "currentWifiPreset";
                         num = 1;
                     } else {
                         preset = DownloadController.getInstance(currentAccount).roamingPreset;
-                        defaultPreset = DownloadController.getInstance(currentAccount).lowPreset;
+                        defaultPreset = DownloadController.getInstance(currentAccount).getDefaultPreset(2);
                         key = "roamingPreset";
                         key2 = "currentRoamingPreset";
                         num = 2;
@@ -393,15 +398,15 @@ public class DataSettingsActivity extends BaseFragment {
                     for (int a = 0; a < 3; a++) {
                         if (a == 0) {
                             preset = DownloadController.getInstance(currentAccount).mobilePreset;
-                            defaultPreset = DownloadController.getInstance(currentAccount).mediumPreset;
+                            defaultPreset = DownloadController.getInstance(currentAccount).getDefaultPreset(0);
                             key = "mobilePreset";
                         } else if (a == 1) {
                             preset = DownloadController.getInstance(currentAccount).wifiPreset;
-                            defaultPreset = DownloadController.getInstance(currentAccount).highPreset;
+                            defaultPreset = DownloadController.getInstance(currentAccount).getDefaultPreset(1);
                             key = "wifiPreset";
                         } else {
                             preset = DownloadController.getInstance(currentAccount).roamingPreset;
-                            defaultPreset = DownloadController.getInstance(currentAccount).lowPreset;
+                            defaultPreset = DownloadController.getInstance(currentAccount).getDefaultPreset(2);
                             key = "roamingPreset";
                         }
                         preset.set(defaultPreset);
