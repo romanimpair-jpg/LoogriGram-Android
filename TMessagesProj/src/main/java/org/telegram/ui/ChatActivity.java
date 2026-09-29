@@ -285,8 +285,6 @@ import org.telegram.ui.bots.BotCommandsMenuView;
 import org.telegram.ui.bots.BotWebViewSheet;
 import org.telegram.ui.bots.WebViewRequestProps;
 import org.telegram.ui.community.CommunitySheet;
-import org.telegram.ui.iv.BlockRow;
-import org.telegram.ui.iv.RichEditorListView;
 import org.telegram.ui.iv.RichHtml;
 
 import java.io.BufferedReader;
@@ -30491,12 +30489,11 @@ public class ChatActivity extends BaseFragment implements
                 } else if (copyRichMessage != null) {
                     String html = null;
                     try {
-                        final java.util.HashMap<Long, TL_iv.RichText> quoteAuthors = new java.util.HashMap<>();
-                        ArrayList<BlockRow> flat = RichEditorListView.flattenForCopy(copyRichMessage, quoteAuthors);
-                        if (!flat.isEmpty()) {
-                            html = RichHtml.serialize(flat, 0, flat.size() - 1, 0, Integer.MAX_VALUE, quoteAuthors);
-                            org.telegram.ui.iv.RichMediaClipboard.set(copyRichMessage.photos, copyRichMessage.documents);
-                        }
+                        // LoogriGram: the article's photos and files also went on the
+                        // article editor's own clipboard, so it could paste them back
+                        // as blocks. The editor is deleted; text and html are what
+                        // anything else reads, as on desktop.
+                        html = RichHtml.toHtml(copyRichMessage);
                     } catch (Exception e) {
                         FileLog.e(e);
                     }

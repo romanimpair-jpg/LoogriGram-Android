@@ -796,16 +796,6 @@ public class RichEditorListView extends UniversalRecyclerView {
         return concat;
     }
 
-    public static ArrayList<BlockRow> flattenForCopy(TL_iv.RichMessage msg) {
-        return flattenForCopy(msg, null);
-    }
-
-    public static ArrayList<BlockRow> flattenForCopy(TL_iv.RichMessage msg, Map<Long, TL_iv.RichText> authors) {
-        final ArrayList<BlockRow> out = new ArrayList<>();
-        if (msg != null) flattenBlocks(out, msg.blocks, authors);
-        return out;
-    }
-
     private static void flattenDetails(ArrayList<BlockRow> out, TL_iv.pageBlockDetails details,
                                        Map<Long, TL_iv.RichText> authors) {
         if (details.title == null) details.title = new TL_iv.textEmpty();

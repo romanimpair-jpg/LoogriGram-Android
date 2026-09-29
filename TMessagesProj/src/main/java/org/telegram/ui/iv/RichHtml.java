@@ -22,6 +22,146 @@ import java.util.Map;
 
 public class RichHtml {
 
+    // LoogriGram: the html a copied article puts on the clipboard beside its
+    // text. Copying built it from the article editor's rows
+    // (RichEditorListView.flattenForCopy); the article is flattened here now,
+    // with the editor's flattening copied below, so displaying and copying a
+    // received article need nothing from the editor, which is deleted, as on
+    // desktop.
+    public static String toHtml(TL_iv.RichMessage msg) {
+        if (msg == null) return null;
+        final HashMap<Long, TL_iv.RichText> authors = new HashMap<>();
+        final ArrayList<BlockRow> rows = new ArrayList<>();
+        flattenBlocks(rows, msg.blocks, authors);
+        if (rows.isEmpty()) return null;
+        return serialize(rows, 0, rows.size() - 1, 0, Integer.MAX_VALUE, authors);
+    }
+
+    private static long lastQuoteId;
+
+    private static void flattenBlocks(ArrayList<BlockRow> out, ArrayList<TL_iv.PageBlock> blocks, Map<Long, TL_iv.RichText> authors) {
+        if (blocks == null) return;
+        for (TL_iv.PageBlock block : blocks) {
+            if (block instanceof TL_iv.pageBlockList || block instanceof TL_iv.pageBlockOrderedList) {
+                expandListBlock(out, block, 1);
+            } else if (block instanceof TL_iv.pageBlockDetails) {
+                flattenDetails(out, (TL_iv.pageBlockDetails) block, authors);
+            } else if (block instanceof TL_iv.pageBlockBlockquoteBlocks) {
+                expandBlockquoteBlocks(out, (TL_iv.pageBlockBlockquoteBlocks) block, authors);
+            } else {
+                out.add(new BlockRow(block));
+            }
+        }
+    }
+
+    private static void expandBlockquoteBlocks(ArrayList<BlockRow> out, TL_iv.pageBlockBlockquoteBlocks src, Map<Long, TL_iv.RichText> authors) {
+        final long qid = ++lastQuoteId;
+        final int start = out.size();
+        flattenBlocks(out, src.blocks, authors);
+        for (int i = start; i < out.size(); i++) {
+            out.get(i).quoteIds.add(0, qid);
+        }
+        if (authors != null && src.caption != null && !(src.caption instanceof TL_iv.textEmpty)) {
+            authors.put(qid, src.caption);
+        }
+    }
+
+    private static void flattenDetails(ArrayList<BlockRow> out, TL_iv.pageBlockDetails details,
+                                       Map<Long, TL_iv.RichText> authors) {
+        if (details.title == null) details.title = new TL_iv.textEmpty();
+        out.add(new BlockRow(details));
+        final int childStart = out.size();
+        flattenBlocks(out, details.blocks, authors);
+        if (out.size() == childStart) {
+            out.add(new BlockRow(new TL_iv.pageBlockParagraph()));
+        }
+        final BlockRow end = new BlockRow(new TL_iv.pageBlockParagraph());
+        end.detailsEnd = true;
+        out.add(end);
+    }
+
+    private static void expandListBlock(ArrayList<BlockRow> out, TL_iv.PageBlock listBlock, int level) {
+        final boolean ordered = listBlock instanceof TL_iv.pageBlockOrderedList;
+        int counter = 1;
+        if (ordered) {
+            for (TL_iv.PageListOrderedItem item : ((TL_iv.pageBlockOrderedList) listBlock).items) {
+                if (item instanceof TL_iv.TL_pageListOrderedItemText) {
+                    addListItemRow(out, ((TL_iv.TL_pageListOrderedItemText) item).text, level, counter, item.checkbox, item.checked);
+                } else if (item instanceof TL_iv.TL_pageListOrderedItemBlocks) {
+                    expandItemBlocks(out, ((TL_iv.TL_pageListOrderedItemBlocks) item).blocks, level, true, counter, item.checkbox, item.checked);
+                } else {
+                    continue;
+                }
+                counter++;
+            }
+        } else {
+            for (TL_iv.PageListItem item : ((TL_iv.pageBlockList) listBlock).items) {
+                if (item instanceof TL_iv.TL_pageListItemText) {
+                    addListItemRow(out, ((TL_iv.TL_pageListItemText) item).text, level, 0, item.checkbox, item.checked);
+                } else if (item instanceof TL_iv.TL_pageListItemBlocks) {
+                    expandItemBlocks(out, ((TL_iv.TL_pageListItemBlocks) item).blocks, level, false, 0, item.checkbox, item.checked);
+                }
+            }
+        }
+    }
+
+    private static void addListItemRow(ArrayList<BlockRow> out, TL_iv.RichText text, int level, int num, boolean checkbox, boolean checked) {
+        TL_iv.pageBlockParagraph para = new TL_iv.pageBlockParagraph();
+        para.text = text != null ? text : new TL_iv.textEmpty();
+        BlockRow row = new BlockRow(para, level, num);
+        row.checkbox = checkbox;
+        row.checked = checked;
+        out.add(row);
+    }
+
+    private static void expandItemBlocks(ArrayList<BlockRow> out, ArrayList<TL_iv.PageBlock> blocks,
+                                         int level, boolean ordered, int num, boolean checkbox, boolean checked) {
+        boolean started = false;
+        if (blocks != null) {
+            for (int i = 0; i < blocks.size(); i++) {
+                final TL_iv.PageBlock b = blocks.get(i);
+                if (b instanceof TL_iv.pageBlockList || b instanceof TL_iv.pageBlockOrderedList) {
+                    if (!started) {
+                        addListItemRow(out, null, level, num, checkbox, checked);
+                        started = true;
+                    }
+                    expandListBlock(out, b, level + 1);
+                    continue;
+                }
+                if (!started) {
+                    if (b instanceof TL_iv.pageBlockParagraph) {
+                        addListItemRow(out, ((TL_iv.pageBlockParagraph) b).text, level, num, checkbox, checked);
+                    } else {
+                        final BlockRow row = new BlockRow(b, level, num);
+                        row.checkbox = checkbox;
+                        row.checked = checked;
+                        out.add(row);
+                    }
+                    started = true;
+                } else {
+                    out.add(new BlockRow(b, level, ordered ? 1 : 0));
+                }
+            }
+        }
+        if (!started) {
+            addListItemRow(out, null, level, num, checkbox, checked);
+        }
+    }
+
+    private static boolean isDetailsHeader(BlockRow row) {
+        return row != null && row.block instanceof TL_iv.pageBlockDetails;
+    }
+
+    private static boolean isGallery(TL_iv.PageBlock b) {
+        return b instanceof TL_iv.pageBlockCollage || b instanceof TL_iv.pageBlockSlideshow;
+    }
+
+    private static ArrayList<TL_iv.PageBlock> galleryItems(TL_iv.PageBlock b) {
+        if (b instanceof TL_iv.pageBlockCollage) return ((TL_iv.pageBlockCollage) b).items;
+        if (b instanceof TL_iv.pageBlockSlideshow) return ((TL_iv.pageBlockSlideshow) b).items;
+        return null;
+    }
+
     public static String serialize(List<BlockRow> rows, int from, int to, int sOff, int eOff) {
         return serialize(rows, from, to, sOff, eOff, null);
     }
@@ -84,7 +224,7 @@ public class RichHtml {
                 serializeQuote(out, rows, i, end, selFrom, selTo, sOff, eOff, inDetails, quoteDepth, authors);
                 continue;
             }
-            if (RichEditorListView.isDetailsHeader(row)) {
+            if (isDetailsHeader(row)) {
                 ls.closeAll(out);
                 serializeDetails(out, rows, i, end, selFrom, selTo, sOff, eOff, quoteDepth, authors);
                 continue;
@@ -184,7 +324,7 @@ public class RichHtml {
             serializeSingleMedia(out, "document", ((TL_iv.pageBlockDocument) b).document_id, row.media, b);
             return;
         }
-        if (RichEditorListView.isGallery(b)) {
+        if (isGallery(b)) {
             serializeGallery(out, b, row);
             return;
         }
@@ -238,10 +378,10 @@ public class RichHtml {
 
     private static CharSequence slicedStyled(BlockRow row, int index, int selFrom, int selTo, int sOff, int eOff) {
         CharSequence styled;
-        if (RichEditorListView.isDetailsHeader(row)) {
+        if (isDetailsHeader(row)) {
             styled = RichTextStyle.toSpannable(((TL_iv.pageBlockDetails) row.block).title);
         } else {
-            styled = RichTextCell.readStyledText(row.block);
+            styled = row.block == null ? null : RichTextStyle.toSpannable(row.block.text, row.block);
         }
         if (styled == null) styled = "";
         int len = styled.length();
@@ -311,7 +451,7 @@ public class RichHtml {
                         String va = c.valign_bottom ? "bottom" : (c.valign_middle ? "middle" : null);
                         if (va != null) out.append(" valign=\"").append(va).append('"');
                         out.append('>');
-                        appendInline(out, TableModel.readStyledText(c));
+                        appendInline(out, c.text == null ? "" : RichTextStyle.toSpannable(c.text));
                         out.append("</").append(tag).append('>');
                     }
                 }
@@ -348,7 +488,7 @@ public class RichHtml {
     private static void serializeGallery(StringBuilder out, TL_iv.PageBlock b, BlockRow row) {
         String cls = b instanceof TL_iv.pageBlockSlideshow ? "slideshow" : "collage";
         out.append("<div class=\"").append(cls).append("\">");
-        ArrayList<TL_iv.PageBlock> items = RichEditorListView.galleryItems(b);
+        ArrayList<TL_iv.PageBlock> items = galleryItems(b);
         if (items != null) {
             for (int i = 0; i < items.size(); i++) {
                 TL_iv.PageBlock item = items.get(i);
