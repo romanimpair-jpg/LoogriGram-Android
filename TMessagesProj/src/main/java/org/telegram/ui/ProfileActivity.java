@@ -13203,7 +13203,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     new SearchResult(318, getString(R.string.DistanceUnits), "distanceRow", getString(R.string.ChatSettings), R.drawable.msg2_discussion, () -> f.presentFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC))),
 
                     new SearchResult(600, getString(R.string.StickersName), R.drawable.msg2_sticker, () -> f.presentFragment(new StickersActivity(MediaDataController.TYPE_IMAGE, null))).withLink("tg://settings/appearance/stickers-and-emoji"),
-                    new SearchResult(601, getString(R.string.SuggestStickers), "suggestRow", getString(R.string.StickersName), R.drawable.msg2_sticker, () -> f.presentFragment(new StickersActivity(MediaDataController.TYPE_IMAGE, null))),
                     new SearchResult(602, getString(R.string.FeaturedStickers), "featuredStickersHeaderRow", getString(R.string.StickersName), R.drawable.msg2_sticker, () -> f.presentFragment(new StickersActivity(MediaDataController.TYPE_IMAGE, null))),
                     new SearchResult(603, getString(R.string.Masks), null, getString(R.string.StickersName), R.drawable.msg2_sticker, () -> f.presentFragment(new StickersActivity(MediaDataController.TYPE_MASK, null))),
                     new SearchResult(604, getString(R.string.ArchivedStickers), null, getString(R.string.StickersName), R.drawable.msg2_sticker, () -> f.presentFragment(new ArchivedStickersActivity(MediaDataController.TYPE_IMAGE))).withLink("tg://settings/appearance/stickers-and-emoji/archived"),

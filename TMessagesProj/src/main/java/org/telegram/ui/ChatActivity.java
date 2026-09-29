@@ -235,7 +235,6 @@ import org.telegram.ui.Cells.DialogCell;
 import org.telegram.ui.Cells.IMessageCell;
 import org.telegram.ui.Cells.MentionCell;
 import org.telegram.ui.Cells.ProfileChannelCell;
-import org.telegram.ui.Cells.StickerCell;
 import org.telegram.ui.Cells.TextSelectionHelper;
 import org.telegram.ui.Cells.UserInfoCell;
 import org.telegram.ui.Components.*;
@@ -1053,7 +1052,6 @@ public class ChatActivity extends BaseFragment implements
     private TextSelectionHint textSelectionHint;
     private boolean textSelectionHintWasShowed;
     private float lastTouchY;
-    ContentPreviewViewer.ContentPreviewViewerDelegate contentPreviewViewerDelegate;
 
     private ChatMessageCell dummyMessageCell;
     protected FireworksOverlay fireworksOverlay;
@@ -3181,7 +3179,6 @@ public class ChatActivity extends BaseFragment implements
         if (chatAttachAlert != null) {
             chatAttachAlert.dismissInternal();
         }
-        ContentPreviewViewer.getInstance().clearDelegate(contentPreviewViewerDelegate);
         getNotificationCenter().onAnimationFinish(transitionAnimationIndex);
         NotificationCenter.getGlobalInstance().onAnimationFinish(transitionAnimationGlobalIndex);
         getNotificationCenter().onAnimationFinish(scrollAnimationIndex);
@@ -6894,47 +6891,10 @@ public class ChatActivity extends BaseFragment implements
             final int indexToAdd = chatActivityFadeView != null ? contentView.indexOfChild(chatActivityFadeView) : -1;
             contentView.addView(mentionContainer, indexToAdd, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 110, Gravity.LEFT | Gravity.BOTTOM));
         }
-        contentPreviewViewerDelegate = new ContentPreviewViewer.ContentPreviewViewerDelegate() {
-            @Override
-            public void sendSticker(TLRPC.Document sticker, String query, Object parent, boolean notify, int scheduleDate, int scheduleRepeatPeriod) {
-                chatActivityEnterView.onStickerSelected(sticker, query, parent, null, true, notify, scheduleDate, scheduleRepeatPeriod);
-            }
-
-            @Override
-            public boolean needSend(int contentType) {
-                return true;
-            }
-
-            @Override
-            public boolean canSchedule() {
-                return ChatActivity.this.canScheduleMessage();
-            }
-
-            @Override
-            public boolean isInScheduleMode() {
-                return chatMode == MODE_SCHEDULED;
-            }
-
-            @Override
-            public void openSet(TLRPC.InputStickerSet set, boolean clearsInputField) {
-                if (set == null || getParentActivity() == null) {
-                    return;
-                }
-                TLRPC.TL_inputStickerSetID inputStickerSet = new TLRPC.TL_inputStickerSetID();
-                inputStickerSet.access_hash = set.access_hash;
-                inputStickerSet.id = set.id;
-                StickersAlert alert = new StickersAlert(getParentActivity(), ChatActivity.this, inputStickerSet, null, chatActivityEnterView, themeDelegate, false);
-                alert.setCalcMandatoryInsets(isKeyboardVisible());
-                alert.setClearsInputField(clearsInputField);
-                showDialog(alert);
-            }
-
-            @Override
-            public long getDialogId() {
-                return dialog_id;
-            }
-        };
-        mentionContainer.getListView().setOnTouchListener((v, event) -> ContentPreviewViewer.getInstance().onTouch(event, mentionContainer.getListView(), 0, mentionsOnItemClickListener, mentionContainer.getAdapter().isStickers() ? contentPreviewViewerDelegate : null, themeDelegate));
+        // LoogriGram: contentPreviewViewerDelegate let a long press on a sticker
+        // suggested for a lone emoji preview it, send it or open its set. The
+        // sticker suggestions are gone, as on desktop.
+        mentionContainer.getListView().setOnTouchListener((v, event) -> ContentPreviewViewer.getInstance().onTouch(event, mentionContainer.getListView(), 0, mentionsOnItemClickListener, null, themeDelegate));
         if (!ChatObject.isChannel(currentChat) || currentChat.megagroup) {
             mentionContainer.getAdapter().setBotInfo(botInfo);
         }
@@ -6958,28 +6918,7 @@ public class ChatActivity extends BaseFragment implements
                 chatActivityEnterView.replaceWithText(start, len, mentionContainer.getAdapter().getHashtagHint() + " ", false);
                 return;
             }
-            if (object instanceof TLRPC.TL_document) {
-                if (chatMode == 0 && checkSlowMode(view)) {
-                    return;
-                }
-                MessageObject.SendAnimationData sendAnimationData;
-                if (view instanceof StickerCell) {
-                    sendAnimationData = ((StickerCell) view).getSendAnimationData();
-                } else {
-                    sendAnimationData = null;
-                }
-                TLRPC.TL_document document = (TLRPC.TL_document) object;
-                Object parent = mentionContainer.getAdapter().getItemParent(position);
-                String query = MessageObject.findAnimatedEmojiEmoticon(document);
-                if (chatMode == MODE_SCHEDULED) {
-                    AlertsCreator.createScheduleDatePickerDialog(getParentActivity(), dialog_id, (notify, scheduleDate, scheduleRepeatPeriod) -> SendMessagesHelper.getInstance(currentAccount).sendSticker(document, query, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, null, notify, scheduleDate, 0, false, parent, getMessageChatSendParams(), getSendMonoForumPeerId(), getSendMessageSuggestionParams()), themeDelegate);
-                } else {
-                    getSendMessagesHelper().sendSticker(document, query, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, sendAnimationData, true, 0, 0, false, parent, getMessageChatSendParams(), getSendMonoForumPeerId(), getSendMessageSuggestionParams());
-                }
-                hideFieldPanel(false);
-                chatActivityEnterView.addStickerToRecent(document);
-                chatActivityEnterView.setFieldText("");
-            } else if (object instanceof TLRPC.Chat) {
+            if (object instanceof TLRPC.Chat) {
                 TLRPC.Chat chat = (TLRPC.Chat) object;
                 if (searchingForUser && searchContainer != null && searchContainer.getVisibility() == View.VISIBLE) {
                     searchUserMessages(null, chat);
@@ -13403,10 +13342,6 @@ public class ChatActivity extends BaseFragment implements
         }
 
         chatActivityEnterView.setSuggestionButtonVisible(!show && ChatObject.isMonoForum(currentChat), animated);
-
-        if (mentionContainer != null) {
-            mentionContainer.getAdapter().setAllowStickers(!show || messageObjectToEdit == null);
-        }
 
         final int oldFieldPanelShown = fieldPanelShown;
         boolean showHint = false;

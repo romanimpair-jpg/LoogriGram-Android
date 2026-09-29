@@ -531,7 +531,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public Set<String> exportPrivateUri;
     public boolean autoarchiveAvailable;
     public int groupCallVideoMaxParticipants;
-    public boolean suggestStickersApiOnly;
     public ArrayList<String> gifSearchEmojies = new ArrayList<>();
     public HashSet<String> diceEmojies;
     public Set<String> autologinDomains;
@@ -1509,7 +1508,6 @@ public class MessagesController extends BaseController implements NotificationCe
         ringtoneDurationMax = mainPreferences.getInt("ringtoneDurationMax", 5);
         ringtoneSizeMax = mainPreferences.getInt("ringtoneSizeMax", 1024_00);
         pmReadDateExpirePeriod = mainPreferences.getInt("pmReadDateExpirePeriod", 7 * 86400);
-        suggestStickersApiOnly = mainPreferences.getBoolean("suggestStickersApiOnly", false);
         roundVideoSize = mainPreferences.getInt("roundVideoSize", 384);
         roundVideoBitrate = mainPreferences.getInt("roundVideoBitrate", 1000);
         roundAudioBitrate = mainPreferences.getInt("roundAudioBitrate", 64);
@@ -2987,17 +2985,8 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
-                case "stickers_emoji_suggest_only_api": {
-                    if (value.value instanceof TLRPC.TL_jsonBool) {
-                        TLRPC.TL_jsonBool bool = (TLRPC.TL_jsonBool) value.value;
-                        if (bool.value != suggestStickersApiOnly) {
-                            suggestStickersApiOnly = bool.value;
-                            editor.putBoolean("suggestStickersApiOnly", suggestStickersApiOnly);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
+                // LoogriGram: stickers_emoji_suggest_only_api told the field's sticker
+                // suggestions to ask the server only. They are gone, as on desktop.
                 case "export_regex": {
                     HashSet<String> newExport = new HashSet<>();
                     if (value.value instanceof TLRPC.TL_jsonArray) {

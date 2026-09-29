@@ -6776,7 +6776,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
 
             @Override
             protected void setupMentionContainer() {
-                mentionContainer.getAdapter().setAllowStickers(false);
                 mentionContainer.getAdapter().setAllowBots(false);
                 mentionContainer.getAdapter().setAllowChats(false);
                 if (parentChatActivity != null) {
@@ -6919,7 +6918,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             @Override
             protected void setupMentionContainer() {
                 mentionContainer.setReversed(true);
-                mentionContainer.getAdapter().setAllowStickers(false);
                 mentionContainer.getAdapter().setAllowBots(false);
                 mentionContainer.getAdapter().setAllowChats(false);
                 if (parentChatActivity != null) {

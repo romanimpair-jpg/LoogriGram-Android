@@ -82,7 +82,6 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.ContextLinkCell;
-import org.telegram.ui.Cells.StickerCell;
 import org.telegram.ui.Cells.StickerEmojiCell;
 import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
@@ -841,8 +840,6 @@ public class ContentPreviewViewer {
                         if (currentPreviewCell != null) {
                             if (currentPreviewCell instanceof StickerEmojiCell) {
                                 ((StickerEmojiCell) currentPreviewCell).setScaled(false);
-                            } else if (currentPreviewCell instanceof StickerCell) {
-                                ((StickerCell) currentPreviewCell).setScaled(false);
                             } else if (currentPreviewCell instanceof ContextLinkCell) {
                                 ((ContextLinkCell) currentPreviewCell).setScaled(false);
                             }
@@ -1243,8 +1240,6 @@ public class ContentPreviewViewer {
         if (currentPreviewCell != null) {
             if (currentPreviewCell instanceof StickerEmojiCell) {
                 ((StickerEmojiCell) currentPreviewCell).setScaled(false);
-            } else if (currentPreviewCell instanceof StickerCell) {
-                ((StickerCell) currentPreviewCell).setScaled(false);
             } else if (currentPreviewCell instanceof ContextLinkCell) {
                 ((ContextLinkCell) currentPreviewCell).setScaled(false);
             }
@@ -1276,8 +1271,6 @@ public class ContentPreviewViewer {
                     if (currentPreviewCell != null) {
                         if (currentPreviewCell instanceof StickerEmojiCell) {
                             ((StickerEmojiCell) currentPreviewCell).setScaled(false);
-                        } else if (currentPreviewCell instanceof StickerCell) {
-                            ((StickerCell) currentPreviewCell).setScaled(false);
                         } else if (currentPreviewCell instanceof ContextLinkCell) {
                             ((ContextLinkCell) currentPreviewCell).setScaled(false);
                         }
@@ -1335,9 +1328,6 @@ public class ContentPreviewViewer {
                             if (view instanceof StickerEmojiCell) {
                                 contentType = CONTENT_TYPE_STICKER;
                                 centerImage.setRoundRadius(0);
-                            } else if (view instanceof StickerCell) {
-                                contentType = CONTENT_TYPE_STICKER;
-                                centerImage.setRoundRadius(0);
                             } else if (view instanceof ContextLinkCell) {
                                 ContextLinkCell cell = (ContextLinkCell) view;
                                 if (cell.isSticker()) {
@@ -1362,8 +1352,6 @@ public class ContentPreviewViewer {
                             }
                             if (currentPreviewCell instanceof StickerEmojiCell) {
                                 ((StickerEmojiCell) currentPreviewCell).setScaled(false);
-                            } else if (currentPreviewCell instanceof StickerCell) {
-                                ((StickerCell) currentPreviewCell).setScaled(false);
                             } else if (currentPreviewCell instanceof ContextLinkCell) {
                                 ((ContextLinkCell) currentPreviewCell).setScaled(false);
                             }
@@ -1376,11 +1364,6 @@ public class ContentPreviewViewer {
                                 StickerEmojiCell stickerEmojiCell = (StickerEmojiCell) currentPreviewCell;
                                 open(stickerEmojiCell.getSticker(), stickerEmojiCell.getStickerPath(), MessageObject.findAnimatedEmojiEmoticon(stickerEmojiCell.getSticker(), null, currentAccount), delegate != null ? delegate.getQuery(false) : null, null, contentType, stickerEmojiCell.isRecent(), stickerEmojiCell.getParentObject(), resourcesProvider);
                                 stickerEmojiCell.setScaled(true);
-                            } else if (currentPreviewCell instanceof StickerCell) {
-                                StickerCell stickerCell = (StickerCell) currentPreviewCell;
-                                open(stickerCell.getSticker(), null, MessageObject.findAnimatedEmojiEmoticon(stickerCell.getSticker(), null, currentAccount), delegate != null ? delegate.getQuery(false) : null, null, contentType, false, stickerCell.getParentObject(), resourcesProvider);
-                                stickerCell.setScaled(true);
-                                clearsInputField = stickerCell.isClearsInputField();
                             } else if (currentPreviewCell instanceof ContextLinkCell) {
                                 ContextLinkCell contextLinkCell = (ContextLinkCell) currentPreviewCell;
                                 open(contextLinkCell.getDocument(), null, null, delegate != null ? delegate.getQuery(true) : null, contextLinkCell.getBotInlineResult(), contentType, false, contextLinkCell.getBotInlineResult() != null ? contextLinkCell.getInlineBot() : contextLinkCell.getParentObject(), resourcesProvider);
@@ -1479,11 +1462,6 @@ public class ContentPreviewViewer {
                         contentType = CONTENT_TYPE_STICKER;
                         centerImage.setRoundRadius(0);
                     }
-                } else if (view instanceof StickerCell) {
-                    if (((StickerCell) view).showingBitmap()) {
-                        contentType = CONTENT_TYPE_STICKER;
-                        centerImage.setRoundRadius(0);
-                    }
                 } else if (view instanceof ContextLinkCell) {
                     ContextLinkCell cell = (ContextLinkCell) view;
                     if (cell.showingBitmap()) {
@@ -1525,12 +1503,6 @@ public class ContentPreviewViewer {
                         open(stickerEmojiCell.getSticker(), stickerEmojiCell.getStickerPath(), MessageObject.findAnimatedEmojiEmoticon(stickerEmojiCell.getSticker(), null, currentAccount), delegate != null ? delegate.getQuery(false) : null, null, contentTypeFinal, stickerEmojiCell.isRecent(), stickerEmojiCell.getParentObject(), this.resourcesProvider);
                         opened = true;
                         stickerEmojiCell.setScaled(true);
-                    } else if (currentPreviewCell instanceof StickerCell) {
-                        StickerCell stickerCell = (StickerCell) currentPreviewCell;
-                        open(stickerCell.getSticker(), null, null, delegate != null ? delegate.getQuery(false) : null, null, contentTypeFinal, false, stickerCell.getParentObject(), resourcesProvider);
-                        opened = true;
-                        stickerCell.setScaled(true);
-                        clearsInputField = stickerCell.isClearsInputField();
                     } else if (currentPreviewCell instanceof ContextLinkCell) {
                         ContextLinkCell contextLinkCell = (ContextLinkCell) currentPreviewCell;
                         open(contextLinkCell.getDocument(), null, null, delegate != null ? delegate.getQuery(true) : null, contextLinkCell.getBotInlineResult(), contentTypeFinal, false, contextLinkCell.getBotInlineResult() != null ? contextLinkCell.getInlineBot() : contextLinkCell.getParentObject(), resourcesProvider);
@@ -2155,8 +2127,6 @@ public class ContentPreviewViewer {
             StickerEmojiCell stickerEmojiCell = (StickerEmojiCell) view;
             if (currentPreviewCell instanceof StickerEmojiCell) {
                 ((StickerEmojiCell) currentPreviewCell).setScaled(false);
-            } else if (currentPreviewCell instanceof StickerCell) {
-                ((StickerCell) currentPreviewCell).setScaled(false);
             } else if (currentPreviewCell instanceof ContextLinkCell) {
                 ((ContextLinkCell) currentPreviewCell).setScaled(false);
             }

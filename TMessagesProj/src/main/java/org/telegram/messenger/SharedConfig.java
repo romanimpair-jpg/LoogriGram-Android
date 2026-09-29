@@ -229,7 +229,8 @@ public class SharedConfig {
     public static boolean isWaitingForPasscodeEnter;
     public static boolean useFingerprintLock = true;
     public static boolean useFaceLock = true;
-    public static int suggestStickers;
+    // LoogriGram: suggestStickers ("Suggest stickers by emoji": all, installed
+    // or none) is gone with the suggestions; its stored key is not read.
     // LoogriGram: suggestAnimatedEmoji ("Suggest Animated Emoji") is gone with
     // the suggestion popups, as on desktop; its stored key is not read.
     public static int keepMedia = CacheByChatsController.KEEP_MEDIA_ONE_MONTH; //deprecated
@@ -616,7 +617,6 @@ public class SharedConfig {
             forceDisableTabletMode = preferences.getBoolean("forceDisableTabletMode", false);
             streamAllVideo = preferences.getBoolean("streamAllVideo", BuildVars.DEBUG_VERSION);
             streamMkv = preferences.getBoolean("streamMkv", false);
-            suggestStickers = preferences.getInt("suggestStickers", 0);
             overrideDevicePerformanceClass = preferences.getInt("overrideDevicePerformanceClass", -1);
             devicePerformanceClass = preferences.getInt("devicePerformanceClass", -1);
             sortContactsByName = preferences.getBoolean("sortContactsByName", false);
@@ -884,14 +884,6 @@ public class SharedConfig {
         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean("multipleReactionsPromoShowed", multipleReactionsPromoShowed);
-        editor.apply();
-    }
-
-    public static void setSuggestStickers(int type) {
-        suggestStickers = type;
-        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putInt("suggestStickers", suggestStickers);
         editor.apply();
     }
 

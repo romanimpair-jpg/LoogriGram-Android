@@ -129,8 +129,6 @@ public class StickersActivity extends BaseFragment implements NotificationCenter
     @Keep
     private int dynamicPackOrder;
     private int dynamicPackOrderInfo;
-    @Keep
-    private int suggestRow;
     private int loopRow;
     private int loopInfoRow;
     private int reactionsDoubleTapRow;
@@ -301,22 +299,13 @@ public class StickersActivity extends BaseFragment implements NotificationCenter
         }
     }
 
-    private String suggestStickersName() {
-        switch (SharedConfig.suggestStickers) {
-            case 0: return getString(R.string.SuggestStickersAll);
-            case 1: return getString(R.string.SuggestStickersInstalled);
-            default:
-            case 2: return getString(R.string.SuggestStickersNone);
-        }
-    }
-
     private final HashSet<Long> selectedSets = new HashSet<>();
 
     private static final int ID_FEATURED = 1;
     private static final int ID_ARCHIVED = 2;
     private static final int ID_EMOJI = 3;
     private static final int ID_QUICK_REACTION = 4;
-    private static final int ID_SUGGEST_STICKERS = 5;
+    // LoogriGram: 5 was ID_SUGGEST_STICKERS, "Suggest stickers by emoji".
     // LoogriGram: 6 was ID_LARGE_EMOJI, the Large Emoji switch.
     private static final int ID_DYNAMIC_PACK_ORDER = 7;
     private static final int ID_SHOW_MORE_FEATURED = 8;
@@ -381,8 +370,6 @@ public class StickersActivity extends BaseFragment implements NotificationCenter
             items.add(UItem.asShadow(addStickersBotSpan(getString(currentType == TYPE_EMOJIPACKS ? R.string.EmojiBotInfo : R.string.StickersBotInfo))));
 
             items.add(UItem.asHeader(getString(R.string.StickersSettings)));
-            suggestRow = items.size();
-            items.add(UItem.asSettingsCell(ID_SUGGEST_STICKERS, getString(R.string.SuggestStickers), suggestStickersName()));
             dynamicPackOrder = items.size();
             items.add(UItem.asCheck(ID_DYNAMIC_PACK_ORDER, getString(R.string.DynamicPackOrder)).setChecked(SharedConfig.updateStickersOrderOnSend));
             items.add(UItem.asShadow(getString(R.string.DynamicPackOrderInfo)));
@@ -492,13 +479,6 @@ public class StickersActivity extends BaseFragment implements NotificationCenter
             case ID_DYNAMIC_PACK_ORDER:
                 SharedConfig.toggleUpdateStickersOrderOnSend();
                 ((TextCheckCell) view).setChecked(SharedConfig.updateStickersOrderOnSend);
-                break;
-            case ID_SUGGEST_STICKERS:
-                ItemOptions.makeOptions(this, view)
-                    .addChecked(SharedConfig.suggestStickers == 0, getString(R.string.SuggestStickersAll),       () -> { SharedConfig.setSuggestStickers(0); ((TextSettingsCell) view).setValue(getString(R.string.SuggestStickersAll), true); })
-                    .addChecked(SharedConfig.suggestStickers == 1, getString(R.string.SuggestStickersInstalled), () -> { SharedConfig.setSuggestStickers(1); ((TextSettingsCell) view).setValue(getString(R.string.SuggestStickersInstalled), true); })
-                    .addChecked(SharedConfig.suggestStickers == 2, getString(R.string.SuggestStickersNone),      () -> { SharedConfig.setSuggestStickers(2); ((TextSettingsCell) view).setValue(getString(R.string.SuggestStickersNone), true); })
-                    .show();
                 break;
             case ID_FEATURED:
             case ID_SHOW_MORE_FEATURED:

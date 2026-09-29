@@ -6478,7 +6478,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     }
 
     protected void setupMentionContainer(MentionsContainerView mentionContainer) {
-        mentionContainer.getAdapter().setAllowStickers(false);
         mentionContainer.getAdapter().setAllowBots(false);
         mentionContainer.getAdapter().setAllowChats(false);
         if (baseFragment instanceof ChatActivity) {

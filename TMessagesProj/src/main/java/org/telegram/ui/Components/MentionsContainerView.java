@@ -44,7 +44,6 @@ import org.telegram.ui.Adapters.MentionsAdapter;
 import org.telegram.ui.Adapters.PaddedListAdapter;
 import org.telegram.ui.Cells.ContextLinkCell;
 import org.telegram.ui.Cells.MentionCell;
-import org.telegram.ui.Cells.StickerCell;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
 import org.telegram.ui.ContentPreviewViewer;
 import org.telegram.ui.PhotoViewer;
@@ -298,7 +297,7 @@ public class MentionsContainerView extends FrameLayout implements NotificationCe
     }
 
     public LinearLayoutManager getNeededLayoutManager() {
-        return (adapter.isStickers() || adapter.isBotContext()) && adapter.isMediaLayout() ? gridLayoutManager : linearLayoutManager;
+        return adapter.isBotContext() && adapter.isMediaLayout() ? gridLayoutManager : linearLayoutManager;
     }
 
     private Rect rect = new Rect();
@@ -332,7 +331,7 @@ public class MentionsContainerView extends FrameLayout implements NotificationCe
 
 
         boolean reversed = isReversed();
-        boolean topPadding = (adapter.isStickers() || adapter.isBotContext()) && adapter.isMediaLayout() && adapter.getBotContextSwitch() == null && adapter.getBotWebViewSwitch() == null;
+        boolean topPadding = adapter.isBotContext() && adapter.isMediaLayout() && adapter.getBotContextSwitch() == null && adapter.getBotWebViewSwitch() == null;
         containerPadding = AndroidUtilities.dp(2 + (topPadding ? 2 : 0));
         canvas.save();
 
@@ -618,16 +617,7 @@ public class MentionsContainerView extends FrameLayout implements NotificationCe
                 delegate.replaceText(start, len, getAdapter().getHashtagHint() + " ", false);
                 return;
             }
-            if (object instanceof TLRPC.TL_document) {
-                MessageObject.SendAnimationData sendAnimationData = null;
-                if (view instanceof StickerCell) {
-                    sendAnimationData = ((StickerCell) view).getSendAnimationData();
-                }
-                TLRPC.TL_document document = (TLRPC.TL_document) object;
-                Object parent = getAdapter().getItemParent(position);
-                String query = MessageObject.findAnimatedEmojiEmoticon(document);
-                delegate.onStickerSelected(document, query, parent);
-            } else if (object instanceof TLRPC.Chat) {
+            if (object instanceof TLRPC.Chat) {
                 TLRPC.Chat chat = (TLRPC.Chat) object;
                 String username = ChatObject.getPublicUsername(chat);
                 if (username != null) {
@@ -706,9 +696,7 @@ public class MentionsContainerView extends FrameLayout implements NotificationCe
                         if (position == 0) {
                             return;
                         }
-                        if (adapter.isStickers()) {
-                            return;
-                        } else if (adapter.getBotContextSwitch() != null || adapter.getBotWebViewSwitch() != null) {
+                        if (adapter.getBotContextSwitch() != null || adapter.getBotWebViewSwitch() != null) {
                             if (position == 0) {
                                 return;
                             }
@@ -737,9 +725,6 @@ public class MentionsContainerView extends FrameLayout implements NotificationCe
                 }
             }
             boolean result = !isScrolling && ContentPreviewViewer.getInstance().onInterceptTouchEvent(event, listView, 0, null, resourcesProvider);
-            if (adapter.isStickers() && event.getAction() == MotionEvent.ACTION_DOWN || event.getAction() == MotionEvent.ACTION_MOVE) {
-                adapter.doSomeStickersAction();
-            }
             return super.onInterceptTouchEvent(event) || result;
         }
 
@@ -840,10 +825,6 @@ public class MentionsContainerView extends FrameLayout implements NotificationCe
     public interface Delegate {
 
         void replaceText(int start, int len, CharSequence replacingString, boolean allowShort);
-
-        default void onStickerSelected(TLRPC.TL_document document, String query, Object parent) {
-
-        }
 
         default void sendBotInlineResult(TLRPC.BotInlineResult botInlineResult, boolean notify, int scheduleDate) {}
 

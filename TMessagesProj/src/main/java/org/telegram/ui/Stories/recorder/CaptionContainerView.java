@@ -575,7 +575,6 @@ public class CaptionContainerView extends FrameLayout {
     }
 
     protected void setupMentionContainer() {
-        mentionContainer.getAdapter().setAllowStickers(false);
         mentionContainer.getAdapter().setAllowBots(false);
         mentionContainer.getAdapter().setAllowChats(false);
         mentionContainer.getAdapter().setSearchInDialogs(false);
