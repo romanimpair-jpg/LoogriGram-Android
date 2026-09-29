@@ -7286,8 +7286,8 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         getMessagesStorage().putEphemeralMessages(ephemeralMessages, true);
                     }
                     if (channelReplies != null) {
-                        getMessagesStorage().putChannelViews(null, null, channelReplies, true);
-                        getNotificationCenter().postNotificationName(NotificationCenter.didUpdateMessagesViews, null, null, channelReplies, true);
+                        getMessagesStorage().putChannelViews(null, null, channelReplies);
+                        getNotificationCenter().postNotificationName(NotificationCenter.didUpdateMessagesViews, null, null, channelReplies);
                     }
 
                     final int[] totalSent = new int[1];
@@ -7771,8 +7771,8 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                                 getMessagesStorage().putEphemeralMessages(ephemeralMessages, true);
                             }
                             if (channelReplies != null) {
-                                getMessagesStorage().putChannelViews(null, null, channelReplies, true);
-                                getNotificationCenter().postNotificationName(NotificationCenter.didUpdateMessagesViews, null, null, channelReplies, true);
+                                getMessagesStorage().putChannelViews(null, null, channelReplies);
+                                getNotificationCenter().postNotificationName(NotificationCenter.didUpdateMessagesViews, null, null, channelReplies);
                             }
                             if (message != null) {
                                 MessageObject.getDialogId(message);

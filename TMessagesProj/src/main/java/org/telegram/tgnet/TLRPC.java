@@ -10013,47 +10013,6 @@ public class TLRPC {
         }
     }
 
-    public static class TL_messageViews extends TLObject {
-        public static final int constructor = 0x455b853d;
-
-        public int flags;
-        public int views;
-        public int forwards;
-        public MessageReplies replies;
-
-        public static TL_messageViews TLdeserialize(InputSerializedData stream, int constructor, boolean exception) {
-            final TL_messageViews result = TL_messageViews.constructor != constructor ? null : new TL_messageViews();
-            return TLdeserialize(TL_messageViews.class, result, stream, constructor, exception);
-        }
-
-        public void readParams(InputSerializedData stream, boolean exception) {
-            flags = stream.readInt32(exception);
-            if (hasFlag(flags, FLAG_0)) {
-                views = stream.readInt32(exception);
-            }
-            if (hasFlag(flags, FLAG_1)) {
-                forwards = stream.readInt32(exception);
-            }
-            if (hasFlag(flags, FLAG_2)) {
-                replies = MessageReplies.TLdeserialize(stream, stream.readInt32(exception), exception);
-            }
-        }
-
-        public void serializeToStream(OutputSerializedData stream) {
-            stream.writeInt32(constructor);
-            stream.writeInt32(flags);
-            if (hasFlag(flags, FLAG_0)) {
-                stream.writeInt32(views);
-            }
-            if (hasFlag(flags, FLAG_1)) {
-                stream.writeInt32(forwards);
-            }
-            if (hasFlag(flags, FLAG_2)) {
-                replies.serializeToStream(stream);
-            }
-        }
-    }
-
     public static abstract class ReplyMarkup extends TLObject {
         public int flags;
         public boolean resize;
@@ -31048,32 +31007,6 @@ public class TLRPC {
 
         public void serializeToStream(OutputSerializedData stream) {
             stream.writeInt32(constructor);
-        }
-    }
-
-    public static class TL_messages_messageViews extends TLObject {
-        public static final int constructor = 0xb6c4f543;
-
-        public ArrayList<TL_messageViews> views = new ArrayList<>();
-        public ArrayList<Chat> chats = new ArrayList<>();
-        public ArrayList<User> users = new ArrayList<>();
-
-        public static TL_messages_messageViews TLdeserialize(InputSerializedData stream, int constructor, boolean exception) {
-            final TL_messages_messageViews result = TL_messages_messageViews.constructor != constructor ? null : new TL_messages_messageViews();
-            return TLdeserialize(TL_messages_messageViews.class, result, stream, constructor, exception);
-        }
-
-        public void readParams(InputSerializedData stream, boolean exception) {
-            views = Vector.deserialize(stream, TL_messageViews::TLdeserialize, exception);
-            chats = Vector.deserialize(stream, Chat::TLdeserialize, exception);
-            users = Vector.deserialize(stream, User::TLdeserialize, exception);
-        }
-
-        public void serializeToStream(OutputSerializedData stream) {
-            stream.writeInt32(constructor);
-            Vector.serialize(stream, views);
-            Vector.serialize(stream, chats);
-            Vector.serialize(stream, users);
         }
     }
 
@@ -52825,25 +52758,6 @@ public class TLRPC {
             peer.serializeToStream(stream);
             stream.writeInt64(random_id);
             stream.writeString(start_param);
-        }
-    }
-
-    public static class TL_messages_getMessagesViews extends TLObject {
-        public static final int constructor = 0x5784d3e1;
-
-        public InputPeer peer;
-        public ArrayList<Integer> id = new ArrayList<>();
-        public boolean increment;
-
-        public TLObject deserializeResponse(InputSerializedData stream, int constructor, boolean exception) {
-            return TL_messages_messageViews.TLdeserialize(stream, constructor, exception);
-        }
-
-        public void serializeToStream(OutputSerializedData stream) {
-            stream.writeInt32(constructor);
-            peer.serializeToStream(stream);
-            Vector.serializeInt(stream, id);
-            stream.writeBool(increment);
         }
     }
 

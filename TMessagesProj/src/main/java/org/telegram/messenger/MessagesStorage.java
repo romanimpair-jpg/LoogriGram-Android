@@ -10735,7 +10735,11 @@ public class MessagesStorage extends BaseController {
         });
     }
 
-    public void putChannelViews(LongSparseArray<SparseIntArray> channelViews, LongSparseArray<SparseIntArray> channelForwards, LongSparseArray<SparseArray<TLRPC.MessageReplies>> channelReplies, boolean addReply) {
+    // LoogriGram: an addReply flag chose between adding new comments to the
+    // stored comment info (updates, our own sends) and replacing it with the
+    // server's (messages.getMessagesViews' answer). That request is gone (see
+    // MessagesController.updateTimerProc), so this only adds.
+    public void putChannelViews(LongSparseArray<SparseIntArray> channelViews, LongSparseArray<SparseIntArray> channelForwards, LongSparseArray<SparseArray<TLRPC.MessageReplies>> channelReplies) {
         if (isEmpty(channelViews) && isEmpty(channelForwards) && isEmpty(channelReplies)) {
             return;
         }
@@ -10809,35 +10813,27 @@ public class MessagesStorage extends BaseController {
                                 continue;
                             }
                             TLRPC.MessageReplies replies = messages.get(messages.keyAt(b));
-                            if (!addReply && currentReplies != null && currentReplies.replies_pts != 0 && replies.replies_pts <= currentReplies.replies_pts && replies.read_max_id <= currentReplies.read_max_id && replies.max_id <= currentReplies.max_id) {
-                                continue;
+                            if (currentReplies == null) {
+                                currentReplies = new TLRPC.TL_messageReplies();
+                                currentReplies.flags |= 2;
                             }
-                            if (addReply) {
-                                if (currentReplies == null) {
-                                    currentReplies = new TLRPC.TL_messageReplies();
-                                    currentReplies.flags |= 2;
-                                }
-                                currentReplies.replies += replies.replies;
-                                for (int c = 0, N = replies.recent_repliers.size(); c < N; c++) {
-                                    long id = MessageObject.getPeerId(replies.recent_repliers.get(c));
-                                    for (int d = 0, N2 = currentReplies.recent_repliers.size(); d < N2; d++) {
-                                        long id2 = MessageObject.getPeerId(currentReplies.recent_repliers.get(d));
-                                        if (id == id2) {
-                                            currentReplies.recent_repliers.remove(d);
-                                            d--;
-                                            N2--;
-                                        }
+                            currentReplies.replies += replies.replies;
+                            for (int c = 0, N = replies.recent_repliers.size(); c < N; c++) {
+                                long id = MessageObject.getPeerId(replies.recent_repliers.get(c));
+                                for (int d = 0, N2 = currentReplies.recent_repliers.size(); d < N2; d++) {
+                                    long id2 = MessageObject.getPeerId(currentReplies.recent_repliers.get(d));
+                                    if (id == id2) {
+                                        currentReplies.recent_repliers.remove(d);
+                                        d--;
+                                        N2--;
                                     }
                                 }
-                                currentReplies.recent_repliers.addAll(0, replies.recent_repliers);
-                                while (currentReplies.recent_repliers.size() > 3) {
-                                    currentReplies.recent_repliers.remove(0);
-                                }
-                                replies = currentReplies;
                             }
-                            if (currentReplies != null && currentReplies.read_max_id > replies.read_max_id) {
-                                replies.read_max_id = currentReplies.read_max_id;
+                            currentReplies.recent_repliers.addAll(0, replies.recent_repliers);
+                            while (currentReplies.recent_repliers.size() > 3) {
+                                currentReplies.recent_repliers.remove(0);
                             }
+                            replies = currentReplies;
                             state.requery();
                             NativeByteBuffer data = new NativeByteBuffer(replies.getObjectSize());
                             replies.serializeToStream(data);

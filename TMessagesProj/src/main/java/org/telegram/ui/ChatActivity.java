@@ -21123,7 +21123,8 @@ public class ChatActivity extends BaseFragment implements
                     if (chatAdapter != null) {
                         chatAdapter.notifyDataSetChanged(true);
                     }
-                    getMessagesController().addToViewsQueue(threadMessageObject);
+                    // LoogriGram: the thread's root was queued here for a views
+                    // refresh; see MessagesController.updateTimerProc.
                 } else {
                     clearHistory((Boolean) args[1], (TLRPC.TL_updates_channelDifferenceTooLong) args[2]);
                 }
@@ -22001,7 +22002,9 @@ public class ChatActivity extends BaseFragment implements
             LongSparseArray<SparseIntArray> channelViews = (LongSparseArray<SparseIntArray>) args[0];
             LongSparseArray<SparseIntArray> channelForwards = (LongSparseArray<SparseIntArray>) args[1];
             LongSparseArray<SparseArray<TLRPC.MessageReplies>> channelReplies = (LongSparseArray<SparseArray<TLRPC.MessageReplies>>) args[2];
-            boolean addingReplies = (Boolean) args[3];
+            // LoogriGram: a fourth argument told apart new comments to add
+            // (updates, our own sends) from messages.getMessagesViews' answer
+            // to replace them with. That request is gone, so this only adds.
             boolean updated = false;
             LongSparseArray<MessageObject.GroupedMessages> newGroups = null;
             ArrayList<Integer> updatedRows = null;
@@ -22068,28 +22071,21 @@ public class ChatActivity extends BaseFragment implements
                         MessageObject messageObject = messagesDict[0].get(messageId);
                         if (messageObject != null && messageObject != threadMessageObject) {
                             TLRPC.MessageReplies newValue = array.get(messageId);
-                            if (newValue == null || !addingReplies && messageObject.messageOwner.replies != null && newValue.replies_pts <= messageObject.messageOwner.replies.replies_pts && newValue.read_max_id <= messageObject.messageOwner.replies.read_max_id && newValue.max_id <= messageObject.messageOwner.replies.max_id) {
+                            if (newValue == null) {
                                 continue;
                             }
-                            if (addingReplies) {
-                                if (!hasChatInBack) {
-                                    if (messageObject.messageOwner.replies == null) {
-                                        messageObject.messageOwner.replies = new TLRPC.TL_messageReplies();
-                                    }
-                                    messageObject.messageOwner.replies.replies += newValue.replies;
-                                    for (int c = 0, N = newValue.recent_repliers.size(); c < N; c++) {
-                                        messageObject.messageOwner.replies.recent_repliers.remove(newValue.recent_repliers.get(c));
-                                    }
-                                    messageObject.messageOwner.replies.recent_repliers.addAll(0, newValue.recent_repliers);
-                                    while (messageObject.messageOwner.replies.recent_repliers.size() > 3) {
-                                        messageObject.messageOwner.replies.recent_repliers.remove(0);
-                                    }
+                            if (!hasChatInBack) {
+                                if (messageObject.messageOwner.replies == null) {
+                                    messageObject.messageOwner.replies = new TLRPC.TL_messageReplies();
                                 }
-                            } else {
-                                if (messageObject.messageOwner.replies != null && messageObject.messageOwner.replies.read_max_id > newValue.read_max_id) {
-                                    newValue.read_max_id = messageObject.messageOwner.replies.read_max_id;
+                                messageObject.messageOwner.replies.replies += newValue.replies;
+                                for (int c = 0, N = newValue.recent_repliers.size(); c < N; c++) {
+                                    messageObject.messageOwner.replies.recent_repliers.remove(newValue.recent_repliers.get(c));
                                 }
-                                messageObject.messageOwner.replies = newValue;
+                                messageObject.messageOwner.replies.recent_repliers.addAll(0, newValue.recent_repliers);
+                                while (messageObject.messageOwner.replies.recent_repliers.size() > 3) {
+                                    messageObject.messageOwner.replies.recent_repliers.remove(0);
+                                }
                             }
                             if (messageObject.hasValidGroupId()) {
                                 MessageObject.GroupedMessages groupedMessages = groupedMessagesMap.get(messageObject.getGroupId());
@@ -24451,7 +24447,6 @@ public class ChatActivity extends BaseFragment implements
                         MessageObject replyObject = messagesDict[loadIndex].get(replyId);
                         if (replyObject != null && replyObject.hasReplies()) {
                             replyObject.messageOwner.replies.replies--;
-                            replyObject.viewsReloaded = false;
                         }
                     }
                 }

@@ -240,7 +240,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public int totalBlockedCount = -1;
     public boolean blockedEndReached;
 
-    private LongSparseArray<ArrayList<Integer>> channelViewsToSend = new LongSparseArray<>();
     private LongSparseArray<SparseArray<MessageObject>> pollsToCheck = new LongSparseArray<>();
     private int pollsToCheckSize;
     private long lastViewsCheckTime;
@@ -5533,7 +5532,6 @@ public class MessagesController extends BaseController implements NotificationCe
         unreadUnmutedDialogs = 0;
         joiningToChannels.clear();
         migratedChats.clear();
-        channelViewsToSend.clear();
         pollsToCheck.clear();
         pollsToCheckSize = 0;
         dialogsServerOnly.clear();
@@ -9441,7 +9439,7 @@ public class MessagesController extends BaseController implements NotificationCe
             // LoogriGram: ghost mode never asserts online. Only this condition
             // is changed, so control falls to the offline branch below, which
             // sends offline once and latches offlineSent - and the rest of
-            // updateTimerProc, the updates queues and the view counter check,
+            // updateTimerProc, the updates queues and the poll refresh,
             // still runs. Gating the flag itself would have fought the several
             // places that reset ignoreSetOnline after a call.
             if (!ignoreSetOnline && !SharedConfig.ghostMode && getConnectionsManager().getPauseTime() == 0 && ApplicationLoader.isScreenOn && !ApplicationLoader.mainInterfacePausedStageQueue) {
@@ -9513,62 +9511,14 @@ public class MessagesController extends BaseController implements NotificationCe
         int currentServerTime = getConnectionsManager().getCurrentTime();
         if (Math.abs(System.currentTimeMillis() - lastViewsCheckTime) >= 5000) {
             lastViewsCheckTime = System.currentTimeMillis();
-            if (channelViewsToSend.size() != 0) {
-                for (int a = 0; a < channelViewsToSend.size(); a++) {
-                    long key = channelViewsToSend.keyAt(a);
-                    TLRPC.TL_messages_getMessagesViews req = new TLRPC.TL_messages_getMessagesViews();
-                    req.peer = getInputPeer(key);
-                    req.id = channelViewsToSend.valueAt(a);
-                    req.increment = a == 0;
-                    getConnectionsManager().sendRequest(req, (response, error) -> {
-                        if (response != null) {
-                            TLRPC.TL_messages_messageViews res = (TLRPC.TL_messages_messageViews) response;
-                            LongSparseArray<SparseIntArray> channelViews = new LongSparseArray<>();
-                            LongSparseArray<SparseIntArray> channelForwards = new LongSparseArray<>();
-                            LongSparseArray<SparseArray<TLRPC.MessageReplies>> channelReplies = new LongSparseArray<>();
-                            SparseIntArray views = channelViews.get(key);
-                            SparseIntArray forwards = channelForwards.get(key);
-                            SparseArray<TLRPC.MessageReplies> replies = channelReplies.get(key);
-
-                            for (int a1 = 0; a1 < req.id.size(); a1++) {
-                                if (a1 >= res.views.size()) {
-                                    break;
-                                }
-                                TLRPC.TL_messageViews messageViews = res.views.get(a1);
-                                if ((messageViews.flags & 1) != 0) {
-                                    if (views == null) {
-                                        views = new SparseIntArray();
-                                        channelViews.put(key, views);
-                                    }
-                                    views.put(req.id.get(a1), messageViews.views);
-                                }
-                                if ((messageViews.flags & 2) != 0) {
-                                    if (forwards == null) {
-                                        forwards = new SparseIntArray();
-                                        channelForwards.put(key, forwards);
-                                    }
-                                    forwards.put(req.id.get(a1), messageViews.forwards);
-                                }
-                                if ((messageViews.flags & 4) != 0) {
-                                    if (replies == null) {
-                                        replies = new SparseArray<>();
-                                        channelReplies.put(key, replies);
-                                    }
-                                    replies.put(req.id.get(a1), messageViews.replies);
-                                }
-                            }
-                            getMessagesStorage().putUsersAndChats(res.users, res.chats, true, true);
-                            getMessagesStorage().putChannelViews(channelViews, channelForwards, channelReplies, false);
-                            AndroidUtilities.runOnUIThread(() -> {
-                                putUsers(res.users, false);
-                                putChats(res.chats, false);
-                                getNotificationCenter().postNotificationName(NotificationCenter.didUpdateMessagesViews, channelViews, channelForwards, channelReplies, false);
-                            });
-                        }
-                    });
-                }
-                channelViewsToSend.clear();
-            }
+            // LoogriGram: every message with a view counter or comments that a
+            // chat cell showed was queued here (addToViewsQueue) and sent every
+            // five seconds as messages.getMessagesViews - with increment set for
+            // the first chat of each batch, which is what adds a view - and the
+            // answer refreshed the stored views, forwards and comment info.
+            // Deleted outright, as on desktop (ViewsManager): those counts now
+            // come only with the messages themselves and in updates. This tick
+            // now refreshes polls only.
             if (pollsToCheckSize > 0) {
                 AndroidUtilities.runOnUIThread(() -> {
                     long time = SystemClock.elapsedRealtime();
@@ -13184,22 +13134,6 @@ public class MessagesController extends BaseController implements NotificationCe
             }
         }
         return maxDate;
-    }
-
-    public void addToViewsQueue(MessageObject messageObject) {
-        if (messageObject == null) return;
-        Utilities.stageQueue.postRunnable(() -> {
-            long peer = messageObject.getDialogId();
-            int id = messageObject.getId();
-            ArrayList<Integer> ids = channelViewsToSend.get(peer);
-            if (ids == null) {
-                ids = new ArrayList<>();
-                channelViewsToSend.put(peer, ids);
-            }
-            if (!ids.contains(id)) {
-                ids.add(id);
-            }
-        });
     }
 
     public void addToPollsQueue(long dialogId, ArrayList<MessageObject> visibleObjects) {
@@ -18659,7 +18593,7 @@ public class MessagesController extends BaseController implements NotificationCe
         }
 
         if (channelViews != null || channelForwards != null || channelReplies != null) {
-            getMessagesStorage().putChannelViews(channelViews, channelForwards, channelReplies, true);
+            getMessagesStorage().putChannelViews(channelViews, channelForwards, channelReplies);
         }
         if (folderUpdates != null) {
             for (int a = 0, size = folderUpdates.size(); a < size; a++) {
@@ -19744,7 +19678,7 @@ public class MessagesController extends BaseController implements NotificationCe
                 }
             }
             if (channelViewsFinal != null || channelForwardsFinal != null || channelRepliesFinal != null) {
-                getNotificationCenter().postNotificationName(NotificationCenter.didUpdateMessagesViews, channelViewsFinal, channelForwardsFinal, channelRepliesFinal, true);
+                getNotificationCenter().postNotificationName(NotificationCenter.didUpdateMessagesViews, channelViewsFinal, channelForwardsFinal, channelRepliesFinal);
             }
             if (updateMask != 0) {
                 getNotificationCenter().postNotificationName(NotificationCenter.updateInterfaces, updateMask);

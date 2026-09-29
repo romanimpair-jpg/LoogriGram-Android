@@ -17386,14 +17386,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
     }
 
+    // LoogriGram: binding a message with a view counter or comments queued it
+    // for messages.getMessagesViews, which added a view and refreshed its
+    // counts. Gone, as on desktop; see MessagesController.updateTimerProc.
     private void setMessageObjectInternal(MessageObject messageObject) {
-        if (((messageObject.messageOwner.flags & TLRPC.MESSAGE_FLAG_HAS_VIEWS) != 0 || messageObject.messageOwner.replies != null) && !currentMessageObject.scheduled) {
-            if (!currentMessageObject.viewsReloaded) {
-                MessagesController.getInstance(currentAccount).addToViewsQueue(currentMessageObject);
-                currentMessageObject.viewsReloaded = true;
-            }
-        }
-
         updateCurrentUserAndChat();
         setAvatar(messageObject);
 
