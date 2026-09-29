@@ -903,7 +903,11 @@ public class NotificationsController extends BaseController implements Notificat
 
             LongSparseArray<Boolean> settingsCache = new LongSparseArray<>();
             SharedPreferences preferences = getAccountInstance().getNotificationsSettings();
-            boolean allowPinned = preferences.getBoolean("PinnedMessages", true);
+            // LoogriGram: pinned-message notifications default off, as on
+            // desktop - someone pinning a message is rarely worth an
+            // interruption. A stored choice is kept; the settings screen
+            // reads the same default.
+            boolean allowPinned = preferences.getBoolean("PinnedMessages", false);
             int popup = 0;
             boolean hasScheduled = false;
 

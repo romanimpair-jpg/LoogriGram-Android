@@ -590,7 +590,8 @@ public class NotificationsSettingsActivity extends BaseFragment implements Notif
             } else if (position == pinnedMessageRow) {
                 SharedPreferences preferences = MessagesController.getNotificationsSettings(currentAccount);
                 SharedPreferences.Editor editor = preferences.edit();
-                enabled = preferences.getBoolean("PinnedMessages", true);
+                // LoogriGram: default off; see NotificationsController.
+                enabled = preferences.getBoolean("PinnedMessages", false);
                 editor.putBoolean("PinnedMessages", !enabled);
                 editor.commit();
             } else if (position == androidAutoAlertRow) {
@@ -903,7 +904,8 @@ public class NotificationsSettingsActivity extends BaseFragment implements Notif
                     } else if (position == contactJoinedRow) {
                         checkCell.setTextAndCheck(getString("ContactJoined", R.string.ContactJoined), preferences.getBoolean("EnableContactJoined", true), true);
                     } else if (position == pinnedMessageRow) {
-                        checkCell.setTextAndCheck(getString("PinnedMessages", R.string.PinnedMessages), preferences.getBoolean("PinnedMessages", true), false);
+                        // LoogriGram: default off; see NotificationsController.
+                        checkCell.setTextAndCheck(getString("PinnedMessages", R.string.PinnedMessages), preferences.getBoolean("PinnedMessages", false), false);
                     } else if (position == androidAutoAlertRow) {
                         checkCell.setTextAndCheck("Android Auto", preferences.getBoolean("EnableAutoNotifications", false), true);
                     } else if (position == notificationsServiceRow) {
