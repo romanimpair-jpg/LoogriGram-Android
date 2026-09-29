@@ -629,7 +629,6 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
                 searchResultCommandsEphemeral = null;
                 searchResultCommandsHelp = null;
                 searchResultCommandsUsers = null;
-                visibleByStickersSearch = false;
                 delegate.needChangePanelVisibility(!searchResultBotContext.isEmpty() || searchResultBotContextSwitch != null || searchResultBotWebViewSwitch != null);
                 if (added) {
                     boolean hasTop = searchResultBotContextSwitch != null || searchResultBotWebViewSwitch != null;
