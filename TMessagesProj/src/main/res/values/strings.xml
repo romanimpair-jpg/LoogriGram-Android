@@ -3877,7 +3877,6 @@
     <string name="AttachLocation">Location</string>
     <string name="AttachLiveLocation">Live Location</string>
     <string name="AttachContact">Contact</string>
-    <string name="AttachArticle">Article</string>
     <string name="AttachDocument">File</string>
     <string name="AttachSticker">Sticker</string>
     <string name="AttachAudio">Voice message</string>
@@ -10392,7 +10391,6 @@
     <string name="CommunityHiddenGroupUnavailable">You can\'t join or view this group until an admin invites you.</string>
     <string name="CommunityHiddenChannelUnavailable">You can\'t join or view this group until an admin invites you.</string>
 
-    <string name="ArticleEditor">Rich Editor</string>
     <string name="ArticleHeading1">Heading 1</string>
     <string name="ArticleHeading2">Heading 2</string>
     <string name="ArticleHeading3">Heading 3</string>
@@ -10416,9 +10414,6 @@
     <string name="ArticleListNumbered">Numbered</string>
     <string name="ArticleListTodo">To-Do</string>
     <string name="ArticleSaveDraftTitle">Save this draft?</string>
-    <string name="ArticleDeleteDraft">Delete draft</string>
-    <string name="ArticleDeleteDraftTitle">Delete this draft?</string>
-    <string name="ArticleDeleteDraftMessage">You will lose what you’ve written.</string>
     <string name="ArticleSaveDraftMessage">You can save written text in a draft before closing.</string>
     <string name="ArticleHintTitle">Title</string>
     <string name="ArticleHintDetailsTitle">Title</string>

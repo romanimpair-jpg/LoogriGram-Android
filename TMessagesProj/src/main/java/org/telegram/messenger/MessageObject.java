@@ -1788,7 +1788,6 @@ public class MessageObject {
     public boolean hasRtl;
     public float textXOffset;
     public RichMessageLayout richLayout;
-    public boolean richCheckboxEcho; // next edit-echo for this message is our own checkbox toggle -> reuse layout, skip relayout
     public ArrayList<TextLayoutBlock> textLayoutBlocks;
     public boolean hasCode;
     public boolean hasWideCode;
@@ -11068,8 +11067,13 @@ public class MessageObject {
         if (message == null || message.peer_id == null || message.action != null && !(message.action instanceof TLRPC.TL_messageActionEmpty) || isForwardedMessage(message) || message.via_bot_id != 0 || message.id < 0) {
             return false;
         }
+        // LoogriGram: an article was edited in the article editor, which needs
+        // Premium, and is not editable here, as on desktop.
+        if (message.rich_message != null) {
+            return false;
+        }
         final TLRPC.MessageMedia media = getMedia(message);
-        if (media != null && message.rich_message == null && (isRoundVideoDocument(media.document) || isStickerDocument(media.document) || isAnimatedStickerDocument(media.document, true) || isLocationMessage(message))) {
+        if (media != null && (isRoundVideoDocument(media.document) || isStickerDocument(media.document) || isAnimatedStickerDocument(media.document, true) || isLocationMessage(message))) {
             return false;
         }
         if (message.paid_suggested_post_stars || message.paid_suggested_post_ton) {
@@ -11086,7 +11090,6 @@ public class MessageObject {
         }
         if (
             media != null &&
-            message.rich_message == null &&
             !(media instanceof TLRPC.TL_messageMediaEmpty) &&
             !(media instanceof TLRPC.TL_messageMediaPhoto) &&
             !(media instanceof TLRPC.TL_messageMediaDocument) &&
@@ -11107,7 +11110,6 @@ public class MessageObject {
         }
         if (message.peer_id.channel_id == 0) {
             return (message.out || message.from_id instanceof TLRPC.TL_peerUser && message.from_id.user_id == UserConfig.getInstance(currentAccount).getClientUserId()) && (
-                    message.rich_message != null ||
                     media instanceof TLRPC.TL_messageMediaPhoto ||
                     media instanceof TLRPC.TL_messageMediaDocument && !isStickerMessage(message) && !isAnimatedStickerMessage(message) ||
                     media instanceof TLRPC.TL_messageMediaEmpty ||
@@ -11117,8 +11119,7 @@ public class MessageObject {
                     media == null);
         }
         if (chat != null && chat.megagroup && message.out || chat != null && !chat.megagroup && (chat.creator || chat.admin_rights != null && (chat.admin_rights.edit_messages || message.out && chat.admin_rights.post_messages)) && message.post) {
-            if (message.rich_message != null ||
-                media instanceof TLRPC.TL_messageMediaPhoto ||
+            if (media instanceof TLRPC.TL_messageMediaPhoto ||
                 media instanceof TLRPC.TL_messageMediaDocument && !isStickerMessage(message) && !isAnimatedStickerMessage(message) ||
                 media instanceof TLRPC.TL_messageMediaEmpty ||
                 media instanceof TLRPC.TL_messageMediaWebPage ||

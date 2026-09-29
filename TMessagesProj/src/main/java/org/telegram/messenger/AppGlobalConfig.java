@@ -87,7 +87,6 @@ public class AppGlobalConfig {
     public final ConfigInt richMessageMaxDepth = ofInt("rich_message_max_depth", 16);
     public final ConfigInt richMessageMaxMedia = ofInt("rich_message_max_media", 50);
     public final ConfigInt richMessageMaxTableCols = ofInt("rich_message_max_table_cols", 20);
-    public final ConfigString richMessagePosting = ofString("rich_message_posting", "premium");
 
     public final ConfigInt communityPeersLimit = ofInt("community_peers_limit", 100);
     public final ConfigInt communityBotPeersLimit = ofInt("community_bot_peers_limit", 100);

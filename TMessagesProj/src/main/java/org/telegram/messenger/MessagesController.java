@@ -615,7 +615,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public int chatlistInvitesLimitPremium;
     public int chatlistJoinedLimitDefault;
     public int chatlistJoinedLimitPremium;
-    public String storiesEntities;
     public int stargiftsMessageLengthMax;
     public int stargiftsConvertPeriodMax;
     public boolean videoIgnoreAltDocuments;
@@ -1581,7 +1580,6 @@ public class MessagesController extends BaseController implements NotificationCe
         whitelistedBots = mainPreferences.getStringSet("whitelistedBots", new HashSet<>()).stream().map(s -> tryParseLong(s, 0)).collect(Collectors.toCollection(HashSet::new));
         freezeAppealUrl = mainPreferences.getString("freezeAppealUrl", "t.me/spambot");
         enableGiftsInProfile = mainPreferences.getBoolean("enableGiftsInProfile", true);
-        storiesEntities = mainPreferences.getString("storiesEntities", "premium");
         authorizationAutoconfirmPeriod = mainPreferences.getInt("authorization_autoconfirm_period", 604800);
         quoteLengthMax = mainPreferences.getInt("quoteLengthMax", 1024);
         peerColors = PeerColors.fromString(PeerColors.TYPE_NAME, mainPreferences.getString("peerColors", ""));
@@ -3557,17 +3555,9 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
-                case "stories_entities": {
-                    if (value.value instanceof TLRPC.TL_jsonString) {
-                        TLRPC.TL_jsonString str = (TLRPC.TL_jsonString) value.value;
-                        if (!TextUtils.equals(str.value, storiesEntities)) {
-                            storiesEntities = str.value;
-                            editor.putString("storiesEntities", storiesEntities);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
+                // LoogriGram: stories_entities was read here. Stories are removed,
+                // and its last reader was the Premium badge on the attach menu's
+                // Article button, which is gone with the article editor.
                 case "authorization_autoconfirm_period": {
                     if (value.value instanceof TLRPC.TL_jsonNumber) {
                         TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
@@ -22222,29 +22212,10 @@ public class MessagesController extends BaseController implements NotificationCe
         return unconfirmedAuthController;
     }
 
-    public boolean richEditorAvailable() {
-        if (BuildVars.DEBUG_VERSION) return true;
-        return !TextUtils.equals("disabled", config.richMessagePosting.get());
-    }
-
-    public boolean richEditorAllowed() {
-        switch (config.richMessagePosting.get()) {
-            case "premium":
-                return getUserConfig().isPremium();
-            case "enabled":
-                return true;
-            default:
-            case "disabled":
-                return false;
-        }
-    }
-
-    // LoogriGram: "premium" answers false - Premium is honoured for nobody.
-    // Stories are removed; stories_entities is still read because the attach
-    // menu's article button takes its Premium badge from it (ChatAttachAlert).
-    public boolean storyEntitiesAllowed() {
-        return "enabled".equals(storiesEntities);
-    }
+    // LoogriGram: richEditorAvailable and richEditorAllowed read the
+    // rich_message_posting config to offer the article editor and to let a
+    // Premium account send and edit articles. The editor is deleted, as on
+    // desktop.
 
     public static class ChannelRecommendations {
         public boolean wasPremium;

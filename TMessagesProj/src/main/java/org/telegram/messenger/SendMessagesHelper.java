@@ -3410,9 +3410,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
     private int sendEditRichMessageRequest(final TLRPC.TL_messages_editMessage req, final MessageObject messageObject, final BaseFragment fragment, final boolean onlyCheckbox) {
         final int reqId = getConnectionsManager().sendRequest(req, (response, error) -> {
             if (error == null) {
-                if (onlyCheckbox && messageObject != null) {
-                    messageObject.richCheckboxEcho = true;
-                }
                 getMessagesController().processUpdates((TLRPC.Updates) response, false);
                 AndroidUtilities.runOnUIThread(() -> onRichEditFinished(messageObject, false));
             } else if (FileRefController.isFileRefError(error.text) && requestRichMessageFileReference(messageObject, req, error.text, () -> sendEditRichMessageRequest(req, messageObject, fragment, onlyCheckbox))) {

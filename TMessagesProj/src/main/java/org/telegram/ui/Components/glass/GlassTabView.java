@@ -11,7 +11,6 @@ import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.RectF;
-import android.graphics.drawable.Drawable;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.util.TypedValue;
@@ -42,7 +41,6 @@ import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Components.Premium.PremiumGradient;
 import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.RLottieImageView;
 import org.telegram.ui.Components.ScaleStateListAnimator;
@@ -70,7 +68,6 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
     private int colorSelected;
     private int colorSelectedText;
     private int colorDefault;
-    private boolean usePremiumCounter;
 
     private TabAnimation tabAnimation;
     private TLRPC.TL_attachMenuBot tabAnimationBot;
@@ -164,7 +161,7 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
             canvas.restore();
         }
 
-        final float hasCounter = (usePremiumCounter ? 1f : isHasCounterAnimator.getFloatValue()) * attachScale;
+        final float hasCounter = isHasCounterAnimator.getFloatValue() * attachScale;
         final boolean saveLayer = hasCounter > 0;
         if (saveLayer) {
             canvas.saveLayer(0, 0, viewWidth, getHeight(), null);
@@ -193,23 +190,12 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
             canvas.drawRoundRect(tmpRectF, rOuter, rOuter, Theme.PAINT_CLEAR);
             tmpRectF.inset(gap, gap);
 
-            if (usePremiumCounter) {
-                if (premiumStarDrawable == null) {
-                    premiumStarDrawable = getContext().getResources().getDrawable(R.drawable.star).mutate();
-                }
-
-                PremiumGradient.getInstance().updateMainGradientMatrix(0, 0, dp(96), dp(16), 0, 0);
-                canvas.drawRoundRect(tmpRectF, rInner, rInner, PremiumGradient.getInstance().getMainGradientPaint());
-                int x = (int)(cx - dpf2(7f));
-                int y = (int)(cy - dpf2(7f));
-                premiumStarDrawable.setBounds(x, y, x + dp(14), y + dp(14));
-                premiumStarDrawable.draw(canvas);
-            } else {
-                paintCounterBackground.setColor(ColorUtils.blendARGB(Theme.getColor(Theme.key_telegram_color), Theme.getColor(Theme.key_fill_RedNormal), isHasCounterErrorAnimator.getFloatValue()));
-                canvas.drawRoundRect(tmpRectF, rInner, rInner, paintCounterBackground);
-                counter.setBounds(tmpRectF);
-                counter.draw(canvas);
-            }
+            // LoogriGram: a Premium star could stand in for the counter here - on
+            // the attach menu's Article tab only, which is gone.
+            paintCounterBackground.setColor(ColorUtils.blendARGB(Theme.getColor(Theme.key_telegram_color), Theme.getColor(Theme.key_fill_RedNormal), isHasCounterErrorAnimator.getFloatValue()));
+            canvas.drawRoundRect(tmpRectF, rInner, rInner, paintCounterBackground);
+            counter.setBounds(tmpRectF);
+            counter.draw(canvas);
             canvas.restore();
         }
 
@@ -218,16 +204,10 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
         }
     }
 
-    private Drawable premiumStarDrawable;
-
     public void setCounter(String text, boolean isError, boolean animated) {
         counter.setText(text, animated);
         isHasCounterAnimator.setValue(!TextUtils.isEmpty(text), animated);
         isHasCounterErrorAnimator.setValue(isError, animated);
-    }
-
-    public void setPremiumBadge(boolean usePremiumBadge) {
-        usePremiumCounter = usePremiumBadge;
     }
 
     public void setSelected(boolean selected, boolean animated) {
@@ -572,7 +552,6 @@ public class GlassTabView extends FrameLayout implements MainTabsLayout.Tab, Fac
         // is out of date. Static for the same reason as GHOST - there is no
         // tab animation for it - and it tints when selected.
         UPDATE(TabAnimationType.STATIC, R.drawable.msg_download),
-        ARTICLE(R.raw.tab_article, R.raw.tab_article_reverse),
 
         BOOSTS(R.raw.boosts, 25, 49);
 

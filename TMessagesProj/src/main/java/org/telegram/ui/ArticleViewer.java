@@ -384,7 +384,6 @@ public class ArticleViewer extends IArticleViewer implements NotificationCenter.
 
     private final String BOTTOM_SHEET_VIEW_TAG = "bottomSheet";
 
-    public static TLRPC.WebPage debugCopiedRichMessageWebPage;
 
     @SuppressLint("StaticFieldLeak")
     private static volatile ArticleViewer Instance = null;

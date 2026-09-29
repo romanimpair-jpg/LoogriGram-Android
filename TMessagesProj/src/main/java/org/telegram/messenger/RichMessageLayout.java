@@ -9225,9 +9225,6 @@ public class RichMessageLayout {
         }
 
         private TLObject checkboxItem;
-        private final RectF checkboxHit = new RectF();
-        private boolean checkboxPressed;
-        private ButtonBounce checkboxBounce;
 
         public MultiLayoutTypingAnimator typingAnimator;
 
@@ -9336,7 +9333,7 @@ public class RichMessageLayout {
         }
 
         public final boolean isAccessibilityElementClickable(int element) {
-            return !isAccessibilityElementCheckbox(element) || canToggleCheckbox();
+            return !isAccessibilityElementCheckbox(element);
         }
 
         public final boolean isAccessibilityElementText(int element) {
@@ -9384,9 +9381,7 @@ public class RichMessageLayout {
 
         public final boolean onAccessibilityElementClick(int element, View host) {
             if (checkbox != null && element == 0) {
-                if (!canToggleCheckbox()) return false;
-                toggleCheckbox();
-                return true;
+                return false;
             }
             return onBlockAccessibilityElementClick(element - getCheckboxAccessibilityElementCount(), host);
         }
@@ -9506,16 +9501,11 @@ public class RichMessageLayout {
             }
             if (checkbox != null) {
                 final int checkboxX = rtl ? (int) (rtlTextRight + dp(6)) : -dp(26);
-                checkboxHit.set(checkboxX - dp(6), checkboxY - dp(6), checkboxX + dp(20) + dp(6), checkboxY + dp(20) + dp(6));
                 if (root.view != null && checkbox.getParentView() == null) {
                     checkbox.setParentView(root.view);
                 }
-                final float scale = checkboxBounce != null ? checkboxBounce.getScale(0.1f) : 1f;
-                canvas.save();
-                canvas.scale(scale, scale, checkboxX + dp(10), checkboxY + dp(10));
                 checkbox.setBounds(checkboxX, (int) checkboxY, dp(20), dp(20));
                 checkbox.draw(canvas);
-                canvas.restore();
             }
 
             if (lineIndex == Integer.MIN_VALUE) {
@@ -9528,34 +9518,6 @@ public class RichMessageLayout {
         public boolean touchEvent(MotionEvent event) {
             event.offsetLocation(-padding.left, -padding.top);
             try {
-                if (checkbox != null) {
-                    final int act = event.getActionMasked();
-                    final boolean inside = checkboxHit.contains(event.getX(), event.getY());
-                    if (act == MotionEvent.ACTION_DOWN) {
-                        if (inside && canToggleCheckbox()) {
-                            checkboxPressed = true;
-                            if (checkboxBounce == null && root.view != null) checkboxBounce = new ButtonBounce(root.view);
-                            if (checkboxBounce != null) checkboxBounce.setPressed(true);
-                            invalidateCell();
-                            return true;
-                        }
-                    } else if (checkboxPressed) {
-                        if (act == MotionEvent.ACTION_MOVE) {
-                            if (!inside) {
-                                checkboxPressed = false;
-                                if (checkboxBounce != null) checkboxBounce.setPressed(false);
-                            }
-                            return true;
-                        } else if (act == MotionEvent.ACTION_UP || act == MotionEvent.ACTION_CANCEL) {
-                            final boolean doToggle = act == MotionEvent.ACTION_UP && inside;
-                            checkboxPressed = false;
-                            if (checkboxBounce != null) checkboxBounce.setPressed(false);
-                            if (doToggle) toggleCheckbox();
-                            invalidateCell();
-                            return true;
-                        }
-                    }
-                }
                 return onTouchEvent(event);
             } finally {
                 event.offsetLocation(padding.left, padding.top);
@@ -9563,48 +9525,15 @@ public class RichMessageLayout {
         }
         protected boolean onTouchEvent(MotionEvent event) { return false; }
 
-        private void invalidateCell() {
-            if (root.view != null) root.view.invalidate();
-        }
-
         private boolean getCheckboxChecked() {
             if (checkboxItem instanceof TL_iv.PageListItem) return ((TL_iv.PageListItem) checkboxItem).checked;
             if (checkboxItem instanceof TL_iv.PageListOrderedItem) return ((TL_iv.PageListOrderedItem) checkboxItem).checked;
             return checkbox != null && checkbox.isChecked();
         }
 
-        private void setCheckboxChecked(boolean value) {
-            if (checkboxItem instanceof TL_iv.PageListItem) ((TL_iv.PageListItem) checkboxItem).checked = value;
-            else if (checkboxItem instanceof TL_iv.PageListOrderedItem) ((TL_iv.PageListOrderedItem) checkboxItem).checked = value;
-        }
-
-        // LoogriGram: a checkbox the rich editor may not edit takes no touch.
-        // Upstream took it and opened Premium's sheet.
-        private boolean canToggleCheckbox() {
-            return checkbox != null && checkboxItem != null
-                && root.getCell() != null && root.getDelegate() != null
-                && root.getDelegate().canToggleRichMessageCheckbox(root.getCell())
-                && MessagesController.getInstance(root.currentAccount).richEditorAllowed();
-        }
-
-        private void toggleCheckbox() {
-            if (!canToggleCheckbox()) return;
-            final boolean newChecked = !getCheckboxChecked();
-            setCheckboxChecked(newChecked);
-            if (root.view != null) checkbox.setParentView(root.view);
-            checkbox.setChecked(newChecked, true);
-            invalidateCell();
-            if (root.view != null) {
-                root.view.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
-            }
-            final Runnable revertOnError = () -> {
-                setCheckboxChecked(!newChecked);
-                if (root.view != null) checkbox.setParentView(root.view);
-                checkbox.setChecked(!newChecked, true);
-                invalidateCell();
-            };
-            root.getDelegate().didToggleRichMessageCheckbox(root.getCell(), newChecked, revertOnError);
-        }
+        // LoogriGram: a checkbox in an article was ticked here, which edited the
+        // message - an article edit, which needs Premium. It is drawn as sent
+        // and takes no touch, as on desktop.
         public boolean isHorizontallyDragging() { return false; }
         public boolean isPressingLink() {
             final TextSelectionHelper.TextLayoutBlock[] texts = getText();

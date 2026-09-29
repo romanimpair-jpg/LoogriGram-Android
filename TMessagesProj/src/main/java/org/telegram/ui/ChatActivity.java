@@ -286,8 +286,6 @@ import org.telegram.ui.bots.BotWebViewSheet;
 import org.telegram.ui.bots.WebViewRequestProps;
 import org.telegram.ui.community.CommunitySheet;
 import org.telegram.ui.iv.BlockRow;
-import org.telegram.ui.iv.ChatAttachAlertRichLayout;
-import org.telegram.ui.iv.RichEditor;
 import org.telegram.ui.iv.RichEditorListView;
 import org.telegram.ui.iv.RichHtml;
 
@@ -3777,8 +3775,6 @@ public class ChatActivity extends BaseFragment implements
                     presentFragment(TopicCreateFragment.create(-dialog_id, 0).setOpenInChatActivity(ChatActivity.this));
                 } else if (id == 888) {
                     dumpCanvas();
-                } else if (id == 889) {
-                    sendDebugRichMessage();
                 }
             }
         });
@@ -18719,16 +18715,9 @@ public class ChatActivity extends BaseFragment implements
                     chatAttachAlert.getPhotoLayout().onActivityResultFragment(requestCode, data, currentPicturePath);
                 }
                 currentPicturePath = null;
-            } else if (requestCode == 21 && chatAttachAlert != null && chatAttachAlert.getCurrentAttachLayout() instanceof ChatAttachAlertRichLayout) {
-                ((ChatAttachAlertRichLayout) chatAttachAlert.getCurrentAttachLayout()).onExternalDocumentPicked(data);
-                return;
             } else if (requestCode == 1) {
                 if (data == null || data.getData() == null) {
                     showAttachmentError();
-                    return;
-                }
-                if (chatAttachAlert != null && chatAttachAlert.getCurrentAttachLayout() instanceof ChatAttachAlertRichLayout) {
-                    ((ChatAttachAlertRichLayout) chatAttachAlert.getCurrentAttachLayout()).onExternalMediaPicked(data);
                     return;
                 }
                 Uri uri = data.getData();
@@ -24708,11 +24697,6 @@ public class ChatActivity extends BaseFragment implements
             }
 
             addToPolls(messageObject, old);
-            if (old.richCheckboxEcho && messageObject.type == MessageObject.TYPE_ARTICLE && old.richLayout != null && messageObject.messageOwner != null) {
-                messageObject.richLayout = old.richLayout;
-                messageObject.messageOwner.rich_message = old.messageOwner.rich_message;
-                old.richCheckboxEcho = false;
-            }
             if (messageObject.type >= 0) {
                 if (old.replyMessageObject != null) {
                     messageObject.replyMessageObject = old.replyMessageObject;
@@ -27539,9 +27523,6 @@ public class ChatActivity extends BaseFragment implements
     }
 
     public void saveDraft() {
-        if (chatActivityEnterView != null && chatActivityEnterView.isRichDraftActive()) {
-            return;
-        }
         CharSequence draftMessage = null;
         MessageObject replyMessage = null;
         boolean searchWebpage = true;
@@ -27554,9 +27535,7 @@ public class ChatActivity extends BaseFragment implements
         CharSequence[] message = new CharSequence[]{ignoreDraft ? null : draftMessage};
         ArrayList<TLRPC.MessageEntity> entities = getMediaDataController().getEntities(message, currentEncryptedChat == null || AndroidUtilities.getPeerLayerVersion(currentEncryptedChat.layer) >= 101, false);
         long draftThreadId = computeDraftThreadId(replyMessage);
-        TLRPC.DraftMessage existingDraft = getMediaDataController().getDraft(dialog_id, draftThreadId);
-        TL_iv.RichMessage richMessage = existingDraft != null ? existingDraft.rich_message : null;
-        getMediaDataController().saveDraft(dialog_id, draftThreadId, message[0], entities, (replyMessage != null && !replyMessage.isTopicMainMessage && replyMessage.replyToForumTopic == null && !ignoreDraft) ? replyMessage.messageOwner : null, replyingQuote, messageSuggestionParams != null ? messageSuggestionParams.toTl() : null, chatActivityEnterView != null ? chatActivityEnterView.getEffectId() : 0, !searchWebpage, false, richMessage);
+        getMediaDataController().saveDraft(dialog_id, draftThreadId, message[0], entities, (replyMessage != null && !replyMessage.isTopicMainMessage && replyMessage.replyToForumTopic == null && !ignoreDraft) ? replyMessage.messageOwner : null, replyingQuote, messageSuggestionParams != null ? messageSuggestionParams.toTl() : null, chatActivityEnterView != null ? chatActivityEnterView.getEffectId() : 0, !searchWebpage, false);
     }
 
     public long getDraftThreadId() {
@@ -27832,7 +27811,6 @@ public class ChatActivity extends BaseFragment implements
         } else {
             draftMessage = getMediaDataController().getDraft(dialog_id, chatMode == MODE_SAVED ? 0 : threadMessageId);
         }
-        chatActivityEnterView.setRichDraftPreview(draftMessage != null ? draftMessage.rich_message : null);
         MediaDataController.DraftVoice voiceDraft = MediaDataController.getInstance(currentAccount).getDraftVoice(dialog_id, getTopicId());
         TLRPC.Message draftReplyMessage = draftMessage != null && draftMessage.reply_to != null && draftMessage.reply_to.reply_to_msg_id != 0 ? getMediaDataController().getDraftMessage(dialog_id, topicId != null ? topicId : threadMessageId) : null;
         if ((forceSet && draftMessage != null) || chatActivityEnterView.getFieldText() == null || chatMode == 0 && getUserConfig().getClientUserId() == getDialogId() && draftMessage != null && appliedDraftDate < draftMessage.date) {
@@ -30260,15 +30238,6 @@ public class ChatActivity extends BaseFragment implements
         if (searchItem != null && actionBar.isSearchFieldVisible()) {
             actionBar.closeSearchField();
             chatActivityEnterView.setFieldFocused();
-        }
-
-        if (messageObject != null && messageObject.messageOwner != null && messageObject.messageOwner.rich_message != null) {
-            presentFragment(
-                new RichEditor(messageObject.messageOwner.rich_message)
-                    .setChatActivity(this)
-                    .setEditing(messageObject)
-            );
-            return;
         }
 
         mentionContainer.getAdapter().setNeedBotContext(false);
@@ -35676,38 +35645,6 @@ public class ChatActivity extends BaseFragment implements
         @Override
         public void didPressShowMore(ChatMessageCell cell) {
             ChatActivity.this.loadFullRichMessage(cell);
-        }
-
-        @Override
-        public boolean canToggleRichMessageCheckbox(ChatMessageCell cell) {
-            if (cell == null || getParentActivity() == null) {
-                return false;
-            }
-            if (!MessagesController.getInstance(currentAccount).richEditorAllowed()) {
-                return false;
-            }
-            final MessageObject messageObject = cell.getMessageObject();
-            if (messageObject == null || messageObject.messageOwner == null || messageObject.messageOwner.rich_message == null) {
-                return false;
-            }
-            if (messageObject.translated && messageObject.messageOwner.translatedRichMessage != null) {
-                return false;
-            }
-            return messageObject.canEditMessage(currentChat);
-        }
-
-        @Override
-        public void didToggleRichMessageCheckbox(ChatMessageCell cell, boolean checked, Runnable revertOnError) {
-            if (cell == null) {
-                if (revertOnError != null) revertOnError.run();
-                return;
-            }
-            final MessageObject messageObject = cell.getMessageObject();
-            if (messageObject == null || messageObject.isSending() && !messageObject.isEditing() || messageObject.messageOwner == null || messageObject.messageOwner.rich_message == null) {
-                if (revertOnError != null) revertOnError.run();
-                return;
-            }
-            getSendMessagesHelper().editRichMessage(messageObject, messageObject.messageOwner.rich_message, null, ChatActivity.this, true);
         }
 
         @Override
@@ -41771,7 +41708,10 @@ public class ChatActivity extends BaseFragment implements
                     options.add(OPTION_TRANSLATE);
                     icons.add(R.drawable.msg_translate);
                 }
-                if (message.canEditMessage(currentChat) && message.type != MessageObject.TYPE_POLL || chatMode == MODE_WELCOME_MESSAGES) {
+                // LoogriGram: an article opened the article editor, which needs
+                // Premium; canEditMessage refuses one, and a welcome message,
+                // which skips that check, is refused here.
+                if ((message.canEditMessage(currentChat) && message.type != MessageObject.TYPE_POLL || chatMode == MODE_WELCOME_MESSAGES) && message.messageOwner.rich_message == null) {
                     items.add(LocaleController.getString(R.string.Edit));
                     options.add(OPTION_EDIT);
                     icons.add(R.drawable.msg_edit);
@@ -43154,22 +43094,6 @@ public class ChatActivity extends BaseFragment implements
             clipBoundsTmp.set(0, 0, contentView.getMeasuredWidth(), contentView.getMeasuredHeight() - bottomClip2);
             chatActivityFadeView.setClipBounds(hasSideInsets ? null : clipBoundsTmp);
         }
-    }
-
-    private void sendDebugRichMessage() {
-        TLRPC.WebPage src = ArticleViewer.debugCopiedRichMessageWebPage;
-        if (src == null || src.cached_page == null) {
-            BulletinFactory.of(this).createErrorBulletin("No rich message copied").show();
-            return;
-        }
-        SendMessagesHelper.prepareSendingArticle(
-            getAccountInstance(),
-            new ArrayList<>(src.cached_page.blocks),
-            src.cached_page.rtl,
-            dialog_id,
-            replyingMessageObject,
-            getThreadMessage(),
-            true, 0, 0, null, 0, getSendMonoForumPeerId());
     }
 
     private abstract class ChatListRecyclerView extends RecyclerListView {

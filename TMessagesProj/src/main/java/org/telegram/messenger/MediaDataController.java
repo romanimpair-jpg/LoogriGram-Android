@@ -65,7 +65,6 @@ import org.telegram.tgnet.Vector;
 import org.telegram.tgnet.tl.TL_account;
 import org.telegram.tgnet.tl.TL_bots;
 import org.telegram.tgnet.tl.TL_ephemeral;
-import org.telegram.tgnet.tl.TL_iv;
 import org.telegram.tgnet.tl.TL_update;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.EmojiThemes;
@@ -86,11 +85,11 @@ import org.telegram.ui.Components.TextStyleSpan;
 import org.telegram.ui.Components.URLSpanReplacement;
 import org.telegram.ui.Components.URLSpanUserMention;
 import org.telegram.ui.LaunchActivity;
+import org.telegram.ui.iv.RichMessageConvert;
 import org.telegram.messenger.utils.tlutils.AmountUtils;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -186,6 +185,7 @@ public class MediaDataController extends BaseController {
                 } else {
                     TLRPC.DraftMessage draftMessage = TLRPC.DraftMessage.TLdeserialize(serializedData, serializedData.readInt32(true), true);
                     if (draftMessage != null) {
+                        readRichDraftAsText(draftMessage);
                         LongSparseArray<TLRPC.DraftMessage> threads = drafts.get(did);
                         if (threads == null) {
                             threads = new LongSparseArray<>();
@@ -7373,20 +7373,15 @@ public class MediaDataController extends BaseController {
     }
 
     public void saveDraft(long dialogId, long threadId, CharSequence message, ArrayList<TLRPC.MessageEntity> entities, TLRPC.Message replyToMessage, ChatActivity.ReplyQuote quote, TLRPC.SuggestedPost suggestedPost, long effectId, boolean noWebpage, boolean clean) {
-        saveDraft(dialogId, threadId, message, entities, replyToMessage, quote, suggestedPost, effectId, noWebpage, clean, null);
-    }
-
-    public void saveDraft(long dialogId, long threadId, CharSequence message, ArrayList<TLRPC.MessageEntity> entities, TLRPC.Message replyToMessage, ChatActivity.ReplyQuote quote, TLRPC.SuggestedPost suggestedPost, long effectId, boolean noWebpage, boolean clean, TL_iv.RichMessage richMessage) {
         TLRPC.DraftMessage draftMessage;
         if (getMessagesController().isForum(dialogId) && threadId == 0) {
             replyToMessage = null;
         }
-        if (!TextUtils.isEmpty(message) || replyToMessage != null || richMessage != null) {
+        if (!TextUtils.isEmpty(message) || replyToMessage != null) {
             draftMessage = new TLRPC.TL_draftMessage();
         } else {
             draftMessage = new TLRPC.TL_draftMessageEmpty();
         }
-        draftMessage.rich_message = richMessage;
         draftMessage.date = (int) (System.currentTimeMillis() / 1000);
         draftMessage.message = message == null ? "" : message.toString();
         draftMessage.no_webpage = noWebpage;
@@ -7451,14 +7446,12 @@ public class MediaDataController extends BaseController {
                 sameDraft = (currentDraft.message.equals(draftMessage.message)
                     && replyToEquals(currentDraft.reply_to, draftMessage.reply_to)
                     && suggestedPostEquals(currentDraft.suggested_post, draftMessage.suggested_post)
-                    && richMessageEquals(currentDraft.rich_message, draftMessage.rich_message)
                     && currentDraft.no_webpage == draftMessage.no_webpage
                     && currentDraft.effect == draftMessage.effect);
             } else {
                 sameDraft = (TextUtils.isEmpty(draftMessage.message)
                     && (draftMessage.reply_to == null || draftMessage.reply_to.reply_to_msg_id == 0)
                     && draftMessage.effect == 0
-                    && draftMessage.rich_message == null
                     && draftMessage.suggested_post == null);
             }
             if (sameDraft) {
@@ -7480,9 +7473,6 @@ public class MediaDataController extends BaseController {
                 req.reply_to = draftMessage.reply_to;
                 req.suggested_post = draftMessage.suggested_post;
                 req.entities = draftMessage.entities;
-                if (draftMessage.rich_message != null) {
-                    req.rich_message = toInputRichMessage(draftMessage.rich_message);
-                }
 
                 if ((draftMessage.flags & 128) != 0) {
                     req.effect = draftMessage.effect;
@@ -7512,57 +7502,6 @@ public class MediaDataController extends BaseController {
         }
 
         return true;
-    }
-
-    private static boolean richMessageEquals(TL_iv.RichMessage a, TL_iv.RichMessage b) {
-        if (a == b) {
-            return true;
-        }
-        if ((a == null) != (b == null)) {
-            return false;
-        }
-        try {
-            SerializedData bufA = new SerializedData(a.getObjectSize());
-            SerializedData bufB = new SerializedData(b.getObjectSize());
-            a.serializeToStream(bufA);
-            b.serializeToStream(bufB);
-            return Arrays.equals(bufA.toByteArray(), bufB.toByteArray());
-        } catch (Exception e) {
-            FileLog.e(e);
-            return false;
-        }
-    }
-
-    private TL_iv.TL_inputRichMessage toInputRichMessage(TL_iv.RichMessage rich) {
-        TL_iv.TL_inputRichMessage input = new TL_iv.TL_inputRichMessage();
-        input.rtl = rich.rtl;
-        input.blocks = new ArrayList<>(rich.blocks.size());
-        for (int i = 0; i < rich.blocks.size(); i++) {
-            input.blocks.add(SendMessagesHelper.toInputPageBlock(rich.blocks.get(i)));
-        }
-        if (rich.photos != null && !rich.photos.isEmpty()) {
-            for (int i = 0; i < rich.photos.size(); i++) {
-                TLRPC.Photo p = rich.photos.get(i);
-                TLRPC.TL_inputPhoto ip = new TLRPC.TL_inputPhoto();
-                ip.id = p.id;
-                ip.access_hash = p.access_hash;
-                ip.file_reference = p.file_reference != null ? p.file_reference : new byte[0];
-                input.photos.add(ip);
-            }
-            input.flags |= 4;
-        }
-        if (rich.documents != null && !rich.documents.isEmpty()) {
-            for (int i = 0; i < rich.documents.size(); i++) {
-                TLRPC.Document d = rich.documents.get(i);
-                TLRPC.TL_inputDocument id = new TLRPC.TL_inputDocument();
-                id.id = d.id;
-                id.access_hash = d.access_hash;
-                id.file_reference = d.file_reference != null ? d.file_reference : new byte[0];
-                input.documents.add(id);
-            }
-            input.flags |= 8;
-        }
-        return input;
     }
 
     private static boolean replyToEquals(TLRPC.InputReplyTo a, TLRPC.InputReplyTo b) {
@@ -7616,7 +7555,30 @@ public class MediaDataController extends BaseController {
         return null;
     }
 
+    // LoogriGram: a cloud draft can hold an article, written on a device that
+    // can compose one. The article editor needs Premium and is deleted, as on
+    // desktop, so such a draft is read as the article's text, converted the
+    // way upstream turned an article draft into a plain message. It is never
+    // sent back as an article: saving it sends the text alone.
+    private void readRichDraftAsText(TLRPC.DraftMessage draft) {
+        if (draft == null || draft.rich_message == null) {
+            return;
+        }
+        final CharSequence[] text = new CharSequence[]{ new SpannableStringBuilder(RichMessageConvert.toCharSequence(draft.rich_message)) };
+        draft.rich_message = null;
+        final ArrayList<TLRPC.MessageEntity> entities = getEntities(text, true, false);
+        draft.message = text[0] == null ? "" : text[0].toString();
+        if (entities != null && !entities.isEmpty()) {
+            draft.entities = entities;
+            draft.flags |= 8;
+        } else {
+            draft.entities = new ArrayList<>();
+            draft.flags &= ~8;
+        }
+    }
+
     public void saveDraft(long dialogId, long threadId, TLRPC.DraftMessage draft, TLRPC.Message replyToMessage, boolean fromServer) {
+        readRichDraftAsText(draft);
         if (getMessagesController().isForum(dialogId) && threadId == 0 && TextUtils.isEmpty(draft.message)) {
             if (draft.reply_to instanceof TLRPC.TL_inputReplyToMessage) {
                 ((TLRPC.TL_inputReplyToMessage) draft.reply_to).reply_to_msg_id = 0;

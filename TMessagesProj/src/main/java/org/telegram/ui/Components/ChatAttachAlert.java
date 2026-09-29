@@ -162,7 +162,6 @@ import org.telegram.ui.Stars.MessageSuggestionOfferSheet;
 import org.telegram.ui.Stories.recorder.HintView2;
 import org.telegram.ui.Stories.recorder.StoryEntry;
 import org.telegram.ui.WebAppDisclaimerAlert;
-import org.telegram.ui.iv.ChatAttachAlertRichLayout;
 import org.telegram.ui.web.BotWebViewContainer;
 import org.telegram.ui.bots.BotWebViewMenuContainer;
 import org.telegram.ui.bots.ChatAttachAlertBotWebViewLayout;
@@ -192,7 +191,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     public static final int LAYOUT_TYPE_STICKERS = 13;
     public static final int LAYOUT_TYPE_EMOJI = 14;
     public static final int LAYOUT_TYPE_LINK = 15;
-    public static final int LAYOUT_TYPE_RICH = 16;
 
     private static final int ANIMATOR_ID_CAPTION_ABOVE = 0;
     private static final int ANIMATOR_ID_CAPTION_VISIBLE = 1;
@@ -964,8 +962,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     public ChatAttachAlertColorsLayout colorsLayout;
     private ChatAttachAlertEmojiLayout emojiLayout;
     private ChatAttachAlertEmojiLayout stickersLayout;
-    private ChatAttachAlertRichLayout richLayout;
-    private AttachAlertLayout[] layouts = new AttachAlertLayout[11];
+    private AttachAlertLayout[] layouts = new AttachAlertLayout[10];
     private LongSparseArray<ChatAttachAlertBotWebViewLayout> botAttachLayouts = new LongSparseArray<>();
     private AttachAlertLayout currentAttachLayout;
     private AttachAlertLayout nextAttachLayout;
@@ -1062,7 +1059,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     private boolean musicEnabled = true;
     private boolean pollsEnabled = true;
     private boolean todoEnabled = true;
-    private boolean plainTextEnabled = true;
 
     public boolean restrictEphemeralMessageTypes;
 
@@ -2756,11 +2752,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                         emojiLayout.setDelegate(emojiViewDelegate);
                     }
                     showLayout(emojiLayout);
-                } else if (num == LAYOUT_TYPE_RICH) {
-                    if (richLayout == null) {
-                        layouts[10] = richLayout = new ChatAttachAlertRichLayout(this, getContext(), currentAccount, resourcesProvider);
-                    }
-                    showLayout(richLayout);
                 } else if (view.getTag() instanceof Integer) {
                     delegate.didPressedButton((Integer) view.getTag(), true, true, 0, 0, 0, isCaptionAbove(), false);
                 }
@@ -4209,8 +4200,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             newId = LAYOUT_TYPE_EMOJI;
         } else if (layout == stickersLayout) {
             newId = LAYOUT_TYPE_STICKERS;
-        } else if (layout == richLayout) {
-            newId = LAYOUT_TYPE_RICH;
         }
         showLayout(layout, newId);
     }
@@ -5680,7 +5669,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 musicEnabled = ChatObject.canSendMusic(chat);
                 pollsEnabled = ChatObject.canSendPolls(chat);
                 todoEnabled = !ChatObject.isChannelAndNotMegaGroup(chat) && ChatObject.canSendPolls(chat);
-                plainTextEnabled = ChatObject.canSendPlain(chat);
                 documentsEnabled = ChatObject.canSendDocument(chat);
             } else {
                 pollsEnabled = UserObject.isBot(user) || UserObject.isUserSelf(user);
@@ -6013,7 +6001,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         private int stickerButton;
         private int emojiButton;
         private int linksButton;
-        private int richButton;
         private int buttonsCount;
 
         public ButtonsAdapter(Context context) {
@@ -6046,7 +6033,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     AttachButton attachButton = (AttachButton) holder.itemView;
                     attachButton.glassTabView.onPreBind();
                     boolean err = false;
-                    boolean needPremium = false;
                     if (position == galleryButton) {
                         attachButton.setTextAndIcon(1, getString(R.string.ChatGallery), GlassTabView.TabAnimation.GALLERY);
                         attachButton.setTag(1);
@@ -6079,13 +6065,8 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     } else if (position == emojiButton) {
                         attachButton.setTextAndIcon(LAYOUT_TYPE_EMOJI, getString(R.string.ChatEmoji), GlassTabView.TabAnimation.EMOJI);
                         attachButton.setTag(LAYOUT_TYPE_EMOJI);
-                    } else if (position == richButton) {
-                        attachButton.setTextAndIcon(LAYOUT_TYPE_RICH, getString(R.string.AttachArticle), GlassTabView.TabAnimation.ARTICLE);
-                        attachButton.setTag(LAYOUT_TYPE_RICH);
-                        needPremium = !MessagesController.getInstance(currentAccount).storyEntitiesAllowed();
                     }
                     attachButton.glassTabView.setCounter(err ? "!" : null, err, false);
-                    attachButton.glassTabView.setPremiumBadge(needPremium && !UserConfig.getInstance(currentAccount).isPremium());
                     break;
                 case VIEW_TYPE_BOT_BUTTON:
                     AttachBotButton child = (AttachBotButton) holder.itemView;
@@ -6135,7 +6116,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             locationButton = -1;
             stickerButton = -1;
             linksButton = -1;
-            richButton = -1;
             emojiButton = -1;
             attachBotsStartRow = -1;
             attachBotsEndRow = -1;
@@ -6207,10 +6187,9 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 }
                 documentButton = buttonsCount++;
 
-                // LoogriGram: no Location button here either - see above.
-                if (plainTextEnabled && MessagesController.getInstance(currentAccount).richEditorAvailable()) {
-                    richButton = buttonsCount++;
-                }
+                // LoogriGram: no Location button here either - see above. No
+                // Article button either: it opened the article editor, which
+                // needs Premium and wore its badge here. Deleted, as on desktop.
 
                 if (pollsEnabled) {
                     pollButton = buttonsCount++;

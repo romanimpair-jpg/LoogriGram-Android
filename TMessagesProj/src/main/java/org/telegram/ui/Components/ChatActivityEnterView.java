@@ -135,7 +135,6 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaController;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
-import org.telegram.messenger.RichMessageLayout;
 import org.telegram.messenger.MessageSuggestionParams;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
@@ -161,7 +160,6 @@ import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_bots;
 import org.telegram.tgnet.tl.TL_keyboard;
-import org.telegram.tgnet.tl.TL_iv;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenuSubItem;
 import org.telegram.ui.ActionBar.ActionBarPopupWindow;
@@ -173,7 +171,6 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.BasePermissionsActivity;
 import org.telegram.ui.ChatActivity;
 import org.telegram.ui.Components.Forum.ForumUtilities;
-import org.telegram.ui.Components.Premium.PremiumFeatureBottomSheet;
 import org.telegram.ui.Components.Premium.boosts.BoostRepository;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
@@ -189,7 +186,6 @@ import org.telegram.ui.LinkManager;
 import org.telegram.ui.MessageSendPreview;
 import org.telegram.ui.MultiContactsSelectorBottomSheet;
 import org.telegram.ui.PhotoViewer;
-import org.telegram.ui.PremiumPreviewFragment;
 import org.telegram.ui.ProfileActivity;
 import org.telegram.ui.StickersActivity;
 import org.telegram.ui.Stories.recorder.CaptionContainerView;
@@ -201,10 +197,6 @@ import org.telegram.ui.bots.BotWebViewAttachedSheet;
 import org.telegram.ui.bots.BotWebViewSheet;
 import org.telegram.ui.bots.ChatActivityBotWebViewButton;
 import org.telegram.ui.bots.WebViewRequestProps;
-import org.telegram.ui.iv.BlockRow;
-import org.telegram.ui.iv.RichEditor;
-import org.telegram.ui.iv.RichHtml;
-import org.telegram.ui.iv.RichMessageConvert;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -530,7 +522,6 @@ public class ChatActivityEnterView extends FrameLayout implements
     private ActionBarPopupWindow.ActionBarPopupWindowLayout sendPopupLayout;
     private ImageView cancelBotButton;
     private ChatActivityEnterViewAnimatedIconView emojiButton;
-    private ImageView deleteRichDraftButton;
     @Nullable
     private ImageView expandStickersButton;
     private boolean emojiViewFrozen;
@@ -564,7 +555,6 @@ public class ChatActivityEnterView extends FrameLayout implements
     private LinearLayout attachLayout;
     private ViewPropertyAnimator attachButtonAnimator;
     private ImageView attachButton;
-    private ImageView richButton;
     private float attachButtonAlpha = 1.0f;
     private ImageView suggestButton;
     @Nullable
@@ -575,9 +565,6 @@ public class ChatActivityEnterView extends FrameLayout implements
     public FrameLayout textFieldContainer;
     public FrameLayout sendButtonContainer;
     private ImageView sendOutlineView;
-    public RichMessageLayout.PreviewView richDraftPreview;
-    private boolean richDraftActive;
-    private TL_iv.RichMessage richDraftMessage;
     @Nullable
     private SendButton doneButton;
     private AnimatorSet doneButtonAnimation;
@@ -2514,7 +2501,6 @@ public class ChatActivityEnterView extends FrameLayout implements
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.audioRecordTooShort);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.updateBotMenuButton);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.didUpdatePremiumGiftFieldIcon);
-        NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.currentUserPremiumStatusChanged);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.emojiLoaded);
 
         parentActivity = context;
@@ -2639,29 +2625,6 @@ public class ChatActivityEnterView extends FrameLayout implements
         messageEditTextContainer.addView(emojiButton, LayoutHelper.createFrame(DEFAULT_HEIGHT, DEFAULT_HEIGHT, Gravity.BOTTOM | Gravity.LEFT, 2, 0, 0, 0));
         setEmojiButtonImage(false, false);
 
-        deleteRichDraftButton = new ImageView(context);
-        deleteRichDraftButton.setScaleType(ImageView.ScaleType.CENTER);
-        deleteRichDraftButton.setImageResource(R.drawable.menu_delete_old);
-        deleteRichDraftButton.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_glass_defaultIcon), PorterDuff.Mode.SRC_IN));
-        deleteRichDraftButton.setBackground(Theme.createInsetRoundRectDrawable(getThemedColor(Theme.key_listSelector), dp(19), dp(1), dp(3)));
-        deleteRichDraftButton.setVisibility(View.GONE);
-        deleteRichDraftButton.setContentDescription(getString(R.string.ArticleDeleteDraft));
-        deleteRichDraftButton.setOnClickListener(v -> {
-            new AlertDialog.Builder(getContext(), resourcesProvider)
-                .setTitle(getString(R.string.ArticleDeleteDraftTitle))
-                .setMessage(getString(R.string.ArticleDeleteDraftMessage))
-                .setNegativeButton(getString(R.string.Cancel), null)
-                .setPositiveButton(getString(R.string.Delete), (di, w) -> {
-                    clearRichDraft();
-                    if (messageEditText != null) {
-                        messageEditText.setText("");
-                    }
-                })
-                .makeRed(AlertDialog.BUTTON_POSITIVE)
-                .show();
-        });
-        messageEditTextContainer.addView(deleteRichDraftButton, LayoutHelper.createFrame(DEFAULT_HEIGHT, DEFAULT_HEIGHT, Gravity.BOTTOM | Gravity.LEFT, 2, 0, 0, 0));
-
         if (isChat) {
             final int chatMode = fragment != null ? fragment.getChatMode() : -1;
 
@@ -2732,19 +2695,9 @@ public class ChatActivityEnterView extends FrameLayout implements
             updateFieldRight(1);
         }
 
-        richButton = new ImageView(context);
-        richButton.setImageResource(R.drawable.iv_fullscreen);
-        richButton.setScaleType(ImageView.ScaleType.CENTER);
-        richButton.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_glass_defaultIcon), PorterDuff.Mode.MULTIPLY));
-        richButton.setBackground(Theme.createSelectorDrawable(getThemedColor(Theme.key_listSelector), Theme.RIPPLE_MASK_CIRCLE_20DP, dp(16)));
-        textFieldContainer.addView(richButton, LayoutHelper.createFrame(DEFAULT_HEIGHT, DEFAULT_HEIGHT, Gravity.TOP | Gravity.RIGHT, 0, 1, 0, 0));
-        richButton.setContentDescription(getString(R.string.ArticleEditor));
-        ScaleStateListAnimator.apply(richButton);
-        richButton.setOnClickListener(v -> openRichEditor());
-        richButton.setVisibility(View.GONE);
-        richButton.setAlpha(0.0f);
-        richButton.setScaleX(0.6f);
-        richButton.setScaleY(0.6f);
+        // LoogriGram: an expand button showed here once a message ran past two
+        // lines and opened it in the article editor, which needs Premium.
+        // Nothing here writes an article, as on desktop.
 
         if (audioToSend != null) {
             createRecordAudioPanel();
@@ -4512,23 +4465,7 @@ public class ChatActivityEnterView extends FrameLayout implements
         ArrayList<MessageObject> messages = new ArrayList<>();
         int id = 0;
 
-        if (richDraftMessage != null) {
-            TLRPC.TL_message message = new TLRPC.TL_message();
-            message.id = id++;
-            message.out = true;
-            message.peer_id = MessagesController.getInstance(currentAccount).getPeer(dialog_id);
-            message.from_id = MessagesController.getInstance(currentAccount).getPeer(UserConfig.getInstance(currentAccount).getClientUserId());
-            message.rich_message = richDraftMessage;
-            MessageObject messageObject = new MessageObject(currentAccount, message, false, true);
-            if (replyingMessageObject != null && !replyingMessageObject.isTopicMainMessage) {
-                messageObject.replyMessageObject = replyingMessageObject;
-            }
-            messageObject.isOutOwnerCached = true;
-            messageObject.generateLayout(null);
-            messageObject.notime = true;
-            messageObject.sendPreview = true;
-            messages.add(messageObject);
-        } else if (audioToSend != null) {
+        if (audioToSend != null) {
             TLRPC.TL_message message = new TLRPC.TL_message();
             message.id = id++;
             message.out = true;
@@ -5065,7 +5002,6 @@ public class ChatActivityEnterView extends FrameLayout implements
             super.onMeasure(widthMeasureSpec, heightMeasureSpec);
             if (isInitLineCount) {
                 lineCount = getLineCount();
-                showRichButton(lineCount > 2 && !TextUtils.isEmpty(getText().toString().trim()));
             }
             isInitLineCount = false;
         }
@@ -5248,13 +5184,10 @@ public class ChatActivityEnterView extends FrameLayout implements
                 }
             }
 
-            @Override
-            public boolean onTextContextMenuItem(int id) {
-                if (id == android.R.id.paste && handleRichHtmlPaste()) {
-                    return true;
-                }
-                return super.onTextContextMenuItem(id);
-            }
+            // LoogriGram: pasted html went through the article editor's parser
+            // here, which offered the editor for whatever it could not flatten
+            // into the field. EditTextCaption's own html paste takes it now, as
+            // it did before the editor; desktop dropped its paste offer too.
 
             @Override
             protected void stripPastedPremiumEmoji(Spannable pasted) {
@@ -5322,14 +5255,6 @@ public class ChatActivityEnterView extends FrameLayout implements
                     setWindowView(parentActivity.getWindow().getDecorView());
                 }
             }
-
-            @Override
-            protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-                super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-                if (lineCount != messageEditText.getLineCount()) {
-                    showRichButton(messageEditText.getLineCount() > 2 && messageEditText.getText() != null && !TextUtils.isEmpty(messageEditText.getText().toString().trim()));
-                }
-            }
         };
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             messageEditText.setFallbackLineSpacing(false);
@@ -5373,14 +5298,6 @@ public class ChatActivityEnterView extends FrameLayout implements
         messageEditText.setHandlesColor(getThemedColor(Theme.key_chat_TextSelectionCursor));
         messageEditTextContainer.addView(messageEditText, 1, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM, 52, 0, isChat ? 50 : 2, 1.5f));
 
-        richDraftPreview = new RichMessageLayout.PreviewView(getContext(), currentAccount, resourcesProvider);
-        richDraftPreview.setAllowActions(false);
-        richDraftPreview.setMaxHeight(dp(150));
-        richDraftPreview.setMinHeight(dp(DEFAULT_HEIGHT + DEFAULT_HEIGHT));
-        richDraftPreview.setVisibility(View.GONE);
-        richDraftPreview.setPadding(dp(8), dp(9), dp(8), dp(10));
-        richDraftPreview.setOnClickListener(v -> openRichEditor());
-        messageEditTextContainer.addView(richDraftPreview, 2, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM, 52 - 8, 0, (isChat ? 50 : 2) - 8, 1.5f));
         messageEditText.setOnKeyListener(new OnKeyListener() {
 
             @Override
@@ -5488,7 +5405,6 @@ public class ChatActivityEnterView extends FrameLayout implements
                         onLineCountChanged(lineCount, messageEditText.getLineCount());
                     }
                     lineCount = messageEditText.getLineCount();
-                    showRichButton(lineCount > 2 && charSequence != null && !TextUtils.isEmpty(charSequence.toString().trim()));
                 }
 
                 if (innerTextChange == 1) {
@@ -5590,7 +5506,6 @@ public class ChatActivityEnterView extends FrameLayout implements
                 checkBotMenu();
 
                 checkIsEphemeralMessage(true);
-                showRichButton(lineCount > 2 && editable != null && !TextUtils.isEmpty(editable.toString().trim()));
             }
         });
         messageEditText.addTextChangedListener(new EditTextSuggestionsFix());
@@ -5607,27 +5522,6 @@ public class ChatActivityEnterView extends FrameLayout implements
             parentFragment.applyDraftMaybe(false);
         }
         updateFieldRight(lastAttachVisible);
-    }
-
-    private boolean shownRichButton;
-    private void showRichButton(boolean show_) {
-        final boolean show = (richDraftActive || show_) && parentFragment != null && !parentFragment.isSecretChat() && editingMessageObject == null && MessagesController.getInstance(currentAccount).richEditorAvailable();
-
-        if (shownRichButton == show) return;
-        shownRichButton = show;
-        richButton.setVisibility(View.VISIBLE);
-        richButton.animate()
-            .alpha(show ? 1.0f : 0.0f)
-            .scaleX(show ? 1.0f : 0.6f)
-            .scaleY(show ? 1.0f : 0.6f)
-            .setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT)
-            .setDuration(420)
-            .withEndAction(() -> {
-                if (!show) {
-                    richButton.setVisibility(View.GONE);
-                }
-            })
-            .start();
     }
 
     public void addTextChangedListener(TextWatcher textWatcher) {
@@ -5992,7 +5886,6 @@ public class ChatActivityEnterView extends FrameLayout implements
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.audioRecordTooShort);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.updateBotMenuButton);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.didUpdatePremiumGiftFieldIcon);
-        NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.currentUserPremiumStatusChanged);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.emojiLoaded);
         if (emojiView != null) {
             emojiView.onDestroy();
@@ -6692,14 +6585,6 @@ public class ChatActivityEnterView extends FrameLayout implements
     }
 
     public boolean sendMessage() {
-        if (richDraftActive && !UserConfig.getInstance(currentAccount).isPremium()) {
-            RichEditor.openConversionSheet(getContext(), this::openRichEditorWithoutFormatting, () -> {
-                if (parentFragment != null) {
-                    parentFragment.showDialog(new PremiumFeatureBottomSheet(parentFragment, PremiumPreviewFragment.PREMIUM_FEATURE_RICH_EDITOR, true));
-                }
-            }, resourcesProvider);
-            return true;
-        }
         if (isInScheduleMode()) {
             AlertsCreator.createScheduleDatePickerDialog(parentActivity, parentFragment.getDialogId(), new AlertsCreator.ScheduleDatePickerDelegate() {
                 @Override
@@ -6807,9 +6692,6 @@ public class ChatActivityEnterView extends FrameLayout implements
                     }
                 }, 100);
                 millisecondsRecorded = 0;
-                return;
-            } else if (richDraftActive && richDraftMessage != null) {
-                sendRichDraft(notify, scheduleDate, scheduleRepeatPeriod);
                 return;
             }
             CharSequence message = messageEditText == null ? "" : messageEditText.getTextToUse();
@@ -7460,7 +7342,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                     }
                 }
             }
-        } else if (message.length() > 0 || forceShowSendButton || richDraftActive || audioToSend != null || videoToSendMessageObject != null || slowModeTimer == Integer.MAX_VALUE && !isSlowModeIgnored() || animatorIsBlockedByStreaming.getValue()) {
+        } else if (message.length() > 0 || forceShowSendButton || audioToSend != null || videoToSendMessageObject != null || slowModeTimer == Integer.MAX_VALUE && !isSlowModeIgnored() || animatorIsBlockedByStreaming.getValue()) {
             shownSendButton = true;
             final String caption = messageEditText == null ? null : messageEditText.getCaption();
             boolean showBotButton = caption != null && (getSendButtonInternal().getVisibility() == VISIBLE || expandStickersButton != null && expandStickersButton.getVisibility() == VISIBLE);
@@ -9459,8 +9341,6 @@ public class ChatActivityEnterView extends FrameLayout implements
         }
         updateFieldHint(true);
         updateSendAsButton(true);
-        updateButtons();
-        updateRichDraftPreview();
     }
 
     @Nullable
@@ -9681,8 +9561,6 @@ public class ChatActivityEnterView extends FrameLayout implements
         audioVideoSendButton.setColorFilter(new PorterDuffColorFilter(audioVideoButtonContainerForbidden ? getThemedColor(Theme.key_glass_defaultIcon) : Color.WHITE, PorterDuff.Mode.SRC_IN));
         emojiButton.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_glass_defaultIcon), PorterDuff.Mode.SRC_IN));
         emojiButton.setBackground(Theme.createSelectorDrawable(getThemedColor(Theme.key_listSelector)));
-        deleteRichDraftButton.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_glass_defaultIcon), PorterDuff.Mode.SRC_IN));
-        deleteRichDraftButton.setBackground(Theme.createInsetRoundRectDrawable(getThemedColor(Theme.key_listSelector), dp(19), dp(1), dp(3)));
         sendOutlineView.setColorFilter(getThemedColor(Theme.key_telegram_color), PorterDuff.Mode.SRC_IN);
     }
 
@@ -9865,324 +9743,14 @@ public class ChatActivityEnterView extends FrameLayout implements
         return null;
     }
 
-    public void openRichEditor() {
-        if (messageEditText == null || parentFragment == null) return;
-        if (!MessagesController.getInstance(currentAccount).richEditorAvailable()) return;
-        final RichEditor editor;
-        if (richDraftMessage != null) {
-            editor = new RichEditor(richDraftMessage);
-        } else {
-            final CharSequence fieldText = messageEditText.getText();
-            final CharSequence initialText = parseFieldMarkdown(fieldText);
-            editor = new RichEditor(initialText);
-            if (initialText == fieldText) {
-                int selStart = messageEditText.getSelectionStart();
-                int selEnd = messageEditText.getSelectionEnd();
-                if (selStart < 0) selStart = messageEditText.length();
-                if (selEnd < 0) selEnd = selStart;
-                editor.setInitialSelection(selStart, selEnd);
-            }
-            editor.setOnCleared(() -> {
-                if (messageEditText != null) {
-                    messageEditText.setText("");
-                }
-            });
-        }
-        editor.setResourceProvider(resourcesProvider);
-        editor.setChatActivity(parentFragment);
-        editor.animateFrom(parentFragment);
-        editor.setOnSent(() -> {
-            if (messageEditText != null) {
-                messageEditText.setText("");
-            }
-            checkSendButton(true);
-        });
-        parentFragment.presentFragment(editor);
-    }
-
-    public void openRichEditorWithHtml(CharSequence before, String html, CharSequence after) {
-        if (messageEditText == null || parentFragment == null) return;
-        if (!MessagesController.getInstance(currentAccount).richEditorAvailable()) return;
-        final RichEditor editor = new RichEditor(html, true).setHtmlSurrounding(before, after);
-        editor.setResourceProvider(resourcesProvider);
-        editor.setChatActivity(parentFragment);
-        editor.animateFrom(parentFragment);
-        editor.setOnCleared(() -> {
-            if (messageEditText != null) {
-                messageEditText.setText("");
-            }
-        });
-        editor.setOnSent(() -> {
-            if (messageEditText != null) {
-                messageEditText.setText("");
-            }
-            checkSendButton(true);
-        });
-        parentFragment.presentFragment(editor);
-    }
-
-    private boolean handleRichHtmlPaste() {
-        if (messageEditText == null) return false;
-        try {
-            final ClipboardManager cm = (ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE);
-            final ClipData clip = cm == null ? null : cm.getPrimaryClip();
-            if (clip == null || clip.getItemCount() < 1 || clip.getDescription() == null
-                    || !clip.getDescription().hasMimeType("text/html")) {
-                return false;
-            }
-            final String html = clip.getItemAt(0).getHtmlText();
-            if (TextUtils.isEmpty(html)) return false;
-            final java.util.HashMap<Long, TL_iv.RichText> authors = new java.util.HashMap<>();
-            final List<BlockRow> rows = RichHtml.parse(html, authors);
-            if (rows == null || rows.isEmpty()) return false;
-
-            if (RichMessageConvert.isLossy(rows, authors)) {
-                if (!MessagesController.getInstance(currentAccount).richEditorAvailable()) {
-                    return false;
-                }
-                final int selStart = Math.max(0, messageEditText.getSelectionStart());
-                final int selEnd = Math.min(messageEditText.getText().length(), messageEditText.getSelectionEnd());
-                final CharSequence before = messageEditText.getText().subSequence(0, Math.min(selStart, selEnd));
-                final CharSequence after = messageEditText.getText().subSequence(Math.max(selStart, selEnd), messageEditText.getText().length());
-                openRichEditorWithHtml(before, html, after);
-                return true;
-            }
-
-            final SpannableStringBuilder pasted = new SpannableStringBuilder(RichMessageConvert.rowsToCharSequence(rows));
-            // LoogriGram: see stripPremiumAnimatedEmoji.
-            stripPremiumAnimatedEmoji(currentAccount, dialog_id, pasted);
-            Emoji.replaceEmoji(pasted, messageEditText.getPaint().getFontMetricsInt(), false, null);
-            final AnimatedEmojiSpan[] emoji = pasted.getSpans(0, pasted.length(), AnimatedEmojiSpan.class);
-            if (emoji != null) {
-                for (AnimatedEmojiSpan span : emoji) {
-                    span.applyFontMetrics(messageEditText.getPaint().getFontMetricsInt(), AnimatedEmojiDrawable.getCacheTypeForEnterView());
-                }
-            }
-            final int start = Math.max(0, messageEditText.getSelectionStart());
-            final int end = Math.min(messageEditText.getText().length(), messageEditText.getSelectionEnd());
-            final QuoteSpan.QuoteStyleSpan[] quotesInSelection = messageEditText.getText().getSpans(start, end, QuoteSpan.QuoteStyleSpan.class);
-            if (quotesInSelection != null && quotesInSelection.length > 0) {
-                final QuoteSpan.QuoteStyleSpan[] toDelete = pasted.getSpans(0, pasted.length(), QuoteSpan.QuoteStyleSpan.class);
-                for (int i = 0; i < toDelete.length; ++i) {
-                    pasted.removeSpan(toDelete[i]);
-                    pasted.removeSpan(toDelete[i].span);
-                }
-            } else {
-                QuoteSpan.normalizeQuotes(pasted);
-            }
-            messageEditText.setText(messageEditText.getText().replace(start, end, pasted));
-            messageEditText.setSelection(Math.min(start + pasted.length(), messageEditText.getText().length()));
-            return true;
-        } catch (Exception e) {
-            FileLog.e(e);
-            return false;
-        }
-    }
-
-    private CharSequence parseFieldMarkdown(CharSequence text) {
-        if (TextUtils.isEmpty(text) || TextUtils.indexOf(text, '`') < 0) {
-            return text;
-        }
-        try {
-            final CharSequence[] message = new CharSequence[]{ new SpannableStringBuilder(text) };
-            final ArrayList<TLRPC.MessageEntity> entities = MediaDataController.getInstance(currentAccount).getEntities(message, true);
-            if (entities == null || entities.isEmpty()) {
-                return text;
-            }
-            final SpannableStringBuilder spanned = new SpannableStringBuilder(message[0]);
-            MessageObject.addEntitiesToText(spanned, entities, false, false, false, false);
-            return spanned;
-        } catch (Exception e) {
-            FileLog.e(e);
-            return text;
-        }
-    }
-
-    public boolean isRichDraftActive() {
-        return richDraftActive;
-    }
-
-    public void setRichDraftPreview(TL_iv.RichMessage rich) {
-        if (richDraftPreview == null) return;
-        if (!MessagesController.getInstance(currentAccount).richEditorAvailable())
-            rich = null;
-        richDraftMessage = rich;
-        updateRichDraftPreview();
-    }
-
-    private void updateRichDraftPreview() {
-        if (richDraftPreview == null) return;
-        final boolean wasActive = richDraftActive;
-        richDraftActive = richDraftMessage != null && editingMessageObject == null;
-        if (richDraftActive) {
-            richDraftPreview.setResourcesProvider(resourcesProvider);
-            richDraftPreview.set(richDraftMessage);
-            richDraftPreview.setVisibility(View.VISIBLE);
-            if (messageEditText != null) {
-                messageEditText.setVisibility(View.GONE);
-            }
-            emojiButton.setVisibility(View.GONE);
-            deleteRichDraftButton.setVisibility(View.VISIBLE);
-            sendButton.setLocked(!UserConfig.getInstance(currentAccount).isPremium());
-        } else {
-            richDraftPreview.setVisibility(View.GONE);
-            if (messageEditText != null) {
-                messageEditText.setVisibility(View.VISIBLE);
-            }
-            emojiButton.setVisibility(View.VISIBLE);
-            deleteRichDraftButton.setVisibility(View.GONE);
-            sendButton.setLocked(false);
-        }
-        updateButtons();
-        if (wasActive != richDraftActive) {
-            checkSendButton(true);
-        }
-    }
-
-    private void updateButtons() {
-        showRichButton(messageEditText != null && messageEditText.getLineCount() > 2 && messageEditText.getText() != null && !TextUtils.isEmpty(messageEditText.getText().toString().trim()));
-    }
-
-    private void sendRichDraftAsSimpleMessage() {
-        final TL_iv.RichMessage rich = richDraftMessage;
-        if (rich == null || messageEditText == null) return;
-        final SpannableStringBuilder simple = new SpannableStringBuilder(RichMessageConvert.toCharSequence(rich));
-        Emoji.replaceEmoji(simple, messageEditText.getPaint().getFontMetricsInt(), false, null);
-        final AnimatedEmojiSpan[] emoji = simple.getSpans(0, simple.length(), AnimatedEmojiSpan.class);
-        if (emoji != null) {
-            for (AnimatedEmojiSpan span : emoji) {
-                span.applyFontMetrics(messageEditText.getPaint().getFontMetricsInt(), AnimatedEmojiDrawable.getCacheTypeForEnterView());
-            }
-        }
-        QuoteSpan.normalizeQuotes(simple);
-        clearRichDraft();
-        setFieldText(simple);
-        sendMessage();
-    }
-
-    // Sends non-lossy rich editor content as a simple message through the normal composer pipeline
-    // (used when a non-premium user sends content that has no rich-only formatting).
-    public void sendConvertedRichAsSimple(CharSequence simpleText, boolean notify, int scheduleDate, int scheduleRepeatPeriod) {
-        if (messageEditText == null) return;
-        final SpannableStringBuilder simple = new SpannableStringBuilder(simpleText == null ? "" : simpleText);
-        Emoji.replaceEmoji(simple, messageEditText.getPaint().getFontMetricsInt(), false, null);
-        final AnimatedEmojiSpan[] emoji = simple.getSpans(0, simple.length(), AnimatedEmojiSpan.class);
-        if (emoji != null) {
-            for (AnimatedEmojiSpan span : emoji) {
-                span.applyFontMetrics(messageEditText.getPaint().getFontMetricsInt(), AnimatedEmojiDrawable.getCacheTypeForEnterView());
-            }
-        }
-        QuoteSpan.normalizeQuotes(simple);
-        clearRichDraft();
-        setFieldText(simple);
-        sendMessageInternal(notify, scheduleDate, scheduleRepeatPeriod);
-    }
-
-    private void openRichEditorWithoutFormatting() {
-        final TL_iv.RichMessage rich = richDraftMessage;
-        if (rich == null || messageEditText == null || parentFragment == null) return;
-        if (!MessagesController.getInstance(currentAccount).richEditorAvailable()) {
-            sendRichDraftAsSimpleMessage();
-            return;
-        }
-        // open with the rich draft, then convert to simple right away (undo restores the formatting)
-        final RichEditor editor = new RichEditor(rich).convertToSimpleOnOpen();
-        editor.setResourceProvider(resourcesProvider);
-        editor.setChatActivity(parentFragment);
-        editor.animateFrom(parentFragment);
-        editor.setOnCleared(() -> {
-            if (messageEditText != null) {
-                messageEditText.setText("");
-            }
-        });
-        editor.setOnSent(() -> {
-            if (messageEditText != null) {
-                messageEditText.setText("");
-            }
-            checkSendButton(true);
-        });
-        parentFragment.presentFragment(editor);
-    }
-
-    private void sendRichDraft(boolean notify, int scheduleDate, int scheduleRepeatPeriod) {
-        final TL_iv.RichMessage rich = richDraftMessage;
-        if (rich == null) {
-            return;
-        }
-        SendMessagesHelper.prepareSendingArticle(
-            accountInstance,
-            rich.blocks,
-            rich.photos,
-            rich.documents,
-            null,
-            false,
-            dialog_id,
-            replyingMessageObject,
-            getThreadMessage(),
-            notify,
-            scheduleDate,
-            scheduleRepeatPeriod,
-            parentFragment != null ? parentFragment.getMessageChatSendParams() : null,
-            effectId,
-            getSendMonoForumPeerId());
-        sendButton.setEffect(effectId = 0);
-        messageEditText.setText("");
-        clearRichDraft();
-        if (delegate != null) {
-            delegate.onMessageSend(null, notify, scheduleDate, scheduleRepeatPeriod);
-        }
-        checkSendButton(true);
-    }
-
-    public void clearRichDraft() {
-        if (parentFragment != null) {
-            MediaDataController.getInstance(currentAccount).saveDraft(
-                parentFragment.getDialogId(),
-                parentFragment.getDraftThreadId(),
-                "",
-                null,
-                null,
-                null,
-                null,
-                0,
-                false,
-                true,
-                null
-            );
-        }
-        setRichDraftPreview(null);
-    }
-
-    public void saveRichDraft(TL_iv.RichMessage rich) {
-        if (parentFragment != null) {
-            MediaDataController.getInstance(currentAccount).saveDraft(parentFragment.getDialogId(), parentFragment.getDraftThreadId(), "", null, null, null, null, 0, false, false, rich);
-        }
-        setRichDraftPreview(rich);
-    }
-
-    public void applyConvertedSimpleDraft(CharSequence simple) {
-        if (messageEditText == null) return;
-        final SpannableStringBuilder text = new SpannableStringBuilder(simple == null ? "" : simple);
-        Emoji.replaceEmoji(text, messageEditText.getPaint().getFontMetricsInt(), false, null);
-        final AnimatedEmojiSpan[] emoji = text.getSpans(0, text.length(), AnimatedEmojiSpan.class);
-        if (emoji != null) {
-            for (AnimatedEmojiSpan span : emoji) {
-                span.applyFontMetrics(messageEditText.getPaint().getFontMetricsInt(), AnimatedEmojiDrawable.getCacheTypeForEnterView());
-            }
-        }
-        QuoteSpan.normalizeQuotes(text);
-        if (parentFragment != null) {
-            final CharSequence[] msg = { new SpannableStringBuilder(text) };
-            final ArrayList<TLRPC.MessageEntity> entities = MediaDataController.getInstance(currentAccount).getEntities(msg, true, false);
-            MediaDataController.getInstance(currentAccount).saveDraft(parentFragment.getDialogId(), parentFragment.getDraftThreadId(), msg[0], entities, null, null, null, 0, false, false, null);
-        }
-        setRichDraftPreview(null);
-
-        if (messageEditText.getText() != null) {
-            messageEditText.getText().clear();
-        }
-        setFieldText(text);
-    }
+    // LoogriGram: the article editor opened from here - from the expand
+    // button, the draft preview, and pasted html it could not flatten - and a
+    // cloud draft holding an article took the field over: it hid the field
+    // and the emoji button behind a preview with a discard button, sent the
+    // article from the send button, which wore a lock without Premium, and
+    // offered Premium or a plain-text copy on send. The editor needs Premium
+    // and is deleted, as on desktop; such a draft is read as its text
+    // (MediaDataController.readRichDraftAsText).
 
     // LoogriGram: the compose bar's gift button and the birthday hint that
     // pointed at it opened the gift sheet. Nothing here buys a gift, and
@@ -12711,10 +12279,6 @@ public class ChatActivityEnterView extends FrameLayout implements
                 updateBotButton(false);
             }
         } else if (id == NotificationCenter.didUpdatePremiumGiftFieldIcon) {
-        } else if (id == NotificationCenter.currentUserPremiumStatusChanged) {
-            if (richDraftActive && sendButton != null) {
-                sendButton.setLocked(!UserConfig.getInstance(currentAccount).isPremium());
-            }
         }
     }
 
@@ -13605,42 +13169,23 @@ public class ChatActivityEnterView extends FrameLayout implements
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        int wasHeight = textFieldContainer.getMeasuredHeight();
         if (botCommandsMenuButton != null && botCommandsMenuButton.getTag() != null) {
             botCommandsMenuButton.measure(widthMeasureSpec, heightMeasureSpec);
             ((MarginLayoutParams) emojiButton.getLayoutParams()).leftMargin = dp(10) + (botCommandsMenuButton == null ? 0 : botCommandsMenuButton.getMeasuredWidth());
-            if (deleteRichDraftButton != null) {
-                ((MarginLayoutParams) deleteRichDraftButton.getLayoutParams()).leftMargin = dp(10) + (botCommandsMenuButton == null ? 0 : botCommandsMenuButton.getMeasuredWidth());
-            }
             if (messageEditText != null) {
                 ((MarginLayoutParams) messageEditText.getLayoutParams()).leftMargin = dp(57) + (botCommandsMenuButton == null ? 0 : botCommandsMenuButton.getMeasuredWidth());
-            }
-            if (richDraftPreview != null) {
-                ((MarginLayoutParams) richDraftPreview.getLayoutParams()).leftMargin = dp(57) + (botCommandsMenuButton == null ? 0 : botCommandsMenuButton.getMeasuredWidth());
             }
         } else if (senderSelectView != null && senderSelectView.getVisibility() == View.VISIBLE) {
             int width = senderSelectView.getLayoutParams().width, height = senderSelectView.getLayoutParams().height;
             senderSelectView.measure(MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY));
             ((MarginLayoutParams) emojiButton.getLayoutParams()).leftMargin = dp(7) + width;
-            if (deleteRichDraftButton != null) {
-                ((MarginLayoutParams) deleteRichDraftButton.getLayoutParams()).leftMargin = dp(7) + width;
-            }
             if (messageEditText != null) {
                 ((MarginLayoutParams) messageEditText.getLayoutParams()).leftMargin = dp(54) + width;
             }
-            if (richDraftPreview != null) {
-                ((MarginLayoutParams) richDraftPreview.getLayoutParams()).leftMargin = dp(54) + width;
-            }
         } else {
             ((MarginLayoutParams) emojiButton.getLayoutParams()).leftMargin = dp(3);
-            if (deleteRichDraftButton != null) {
-                ((MarginLayoutParams) deleteRichDraftButton.getLayoutParams()).leftMargin = dp(3);
-            }
             if (messageEditText != null) {
                 ((MarginLayoutParams) messageEditText.getLayoutParams()).leftMargin = dp(50);
-            }
-            if (richDraftPreview != null) {
-                ((MarginLayoutParams) richDraftPreview.getLayoutParams()).leftMargin = dp(50);
             }
         }
         updateBotCommandsMenuContainerTopPadding();
@@ -13661,14 +13206,6 @@ public class ChatActivityEnterView extends FrameLayout implements
 
         checkUi_IslandTotalHeight();
         checkUi_TopViewVisibility();
-
-        if (wasHeight > 0 && textFieldContainer.getMeasuredHeight() != wasHeight) {
-            richButton.setTranslationY(richButton.getTranslationY() + textFieldContainer.getMeasuredHeight() - wasHeight);
-            richButton.animate()
-                .translationY(0)
-                .setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT).setDuration(420)
-                .start();
-        }
     }
 
     @Override
@@ -14022,15 +13559,6 @@ public class ChatActivityEnterView extends FrameLayout implements
             count.setGravity(Gravity.CENTER);
         }
 
-        private boolean locked;
-        private Drawable lockIcon;
-        private int lockIconColor;
-        public void setLocked(boolean locked) {
-            if (this.locked == locked) return;
-            this.locked = locked;
-            invalidate();
-        }
-
         public void setResourceId(int resId) {
             if (this.resId != resId) {
                 this.resId = resId;
@@ -14332,8 +13860,11 @@ public class ChatActivityEnterView extends FrameLayout implements
             }
 
             final float countScale = count.isNotEmpty();
-            // when locked, the badge cut-out is drawn in draw() so it can punch through the View background too
-            if (!locked) {
+            // LoogriGram: this was `if (!locked)` - a locked send button drew a
+            // lock badge in draw() instead of the counter. Nothing locks it now;
+            // the block stays so its locals keep their scope (_cx and _cy are
+            // declared again below).
+            {
                 final float sz = Math.max(dp(9) + count.getCurrentWidth(), dp(18));
                 final float _cx, _cy, o;
                 if (newCounterPos) {
@@ -14377,33 +13908,6 @@ public class ChatActivityEnterView extends FrameLayout implements
 
             canvas.restoreToCount(saved);
             super.onDraw(canvas);
-        }
-
-        @Override
-        public void draw(@NonNull Canvas canvas) {
-            if (!locked) {
-                super.draw(canvas);
-                return;
-            }
-            canvas.saveLayerAlpha(-dp(6), -dp(6), getWidth(), getHeight(), 0xFF, Canvas.ALL_SAVE_FLAG);
-            super.draw(canvas);
-
-            final float sz = dp(18);
-            final float _cx = backgroundRect.left + sz / 2f - dp(6);
-            final float _cy = backgroundRect.top + sz / 2f - dp(6);
-            canvas.drawCircle(_cx, _cy, sz / 2f + dp(2), Theme.PAINT_CLEAR);
-            canvas.drawCircle(_cx, _cy, sz / 2f, backgroundPaint);
-            if (lockIcon == null) {
-                lockIcon = getContext().getResources().getDrawable(R.drawable.mini_switch_lock).mutate();
-                lockIcon.setColorFilter(new PorterDuffColorFilter(lockIconColor = drawableColor, PorterDuff.Mode.SRC_IN));
-            }
-            if (lockIconColor != drawableColor) {
-                lockIcon.setColorFilter(new PorterDuffColorFilter(lockIconColor = drawableColor, PorterDuff.Mode.SRC_IN));
-            }
-            lockIcon.setBounds((int) (_cx - dp(8)), (int) (_cy - dp(8)), (int) (_cx + dp(8)), (int) (_cy + dp(8)));
-            lockIcon.draw(canvas);
-
-            canvas.restore();
         }
 
         private BlurredBackgroundDrawable blurredBackgroundDrawable;

@@ -1487,7 +1487,7 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
                 draftMessage = null;
             }
 
-            if ((draftVoice || draftMessage != null) && (!draftVoice && draftMessage != null && TextUtils.isEmpty(draftMessage.message) && draftMessage.rich_message == null && (draftMessage.reply_to == null || draftMessage.reply_to.reply_to_msg_id == 0) || draftMessage != null && lastDate > draftMessage.date && unreadCount != 0) ||
+            if ((draftVoice || draftMessage != null) && (!draftVoice && draftMessage != null && TextUtils.isEmpty(draftMessage.message) && (draftMessage.reply_to == null || draftMessage.reply_to.reply_to_msg_id == 0) || draftMessage != null && lastDate > draftMessage.date && unreadCount != 0) ||
                     ChatObject.isChannel(chat) && !chat.megagroup && !chat.creator && (chat.admin_rights == null || !chat.admin_rights.post_messages) ||
                     chat != null && (chat.left || chat.kicked) || forbidDraft || ChatObject.isForum(chat) && !isTopic) {
                 draftMessage = null;
@@ -1554,7 +1554,7 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
                 if (draftVoice || draftMessage != null) {
                     checkMessage = false;
                     messageNameString = getString(R.string.Draft);
-                    if (draftMessage != null && TextUtils.isEmpty(draftMessage.message) && draftMessage.rich_message == null) {
+                    if (draftMessage != null && TextUtils.isEmpty(draftMessage.message)) {
                         if ((useForceThreeLines || SharedConfig.useThreeLinesLayout) && !hasTags()) {
                             messageString = "";
                         } else {
@@ -1564,9 +1564,9 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
                         }
                     } else {
                         CharSequence mess;
-                        if (draftMessage != null && draftMessage.rich_message != null) {
-                            mess = MessageObject.formatRichMessage(draftMessage.rich_message, false, false, 150);
-                        } else if (draftVoice) {
+                        // LoogriGram: a draft holding an article is read as its text
+                        // (MediaDataController.readRichDraftAsText), so none reaches here.
+                        if (draftVoice) {
                             mess = getString(R.string.AttachAudio);
                         } else if (draftMessage != null) {
                             mess = draftMessage.message;
