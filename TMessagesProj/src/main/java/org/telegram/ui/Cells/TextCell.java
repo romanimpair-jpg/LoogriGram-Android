@@ -600,6 +600,16 @@ public class TextCell extends FrameLayout {
         spannableStringBuilder.setSpan(span, spannableStringBuilder.length() - 1, spannableStringBuilder.length(), 0);
         return spannableStringBuilder;
     }
+    // LoogriGram: was PremiumPreviewFragment.applyNewSpan, moved out of the
+    // Premium screens, which are deleted. -1 keeps the span's own text size.
+    public static CharSequence applyNewSpan(CharSequence str, int fontSize) {
+        SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder(str);
+        spannableStringBuilder.append("  d");
+        FilterCreateActivity.NewSpan span = new FilterCreateActivity.NewSpan(false, fontSize);
+        span.setColor(Theme.getColor(Theme.key_premiumGradient1));
+        spannableStringBuilder.setSpan(span, spannableStringBuilder.length() - 1, spannableStringBuilder.length(), 0);
+        return spannableStringBuilder;
+    }
 
     public void setColorfulIcon(int color, int resId) {
         setColorfulIcon(color, color, resId);

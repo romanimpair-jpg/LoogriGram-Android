@@ -1,7 +1,7 @@
 package org.telegram.ui.Components;
 
 import static org.telegram.messenger.LocaleController.getString;
-import static org.telegram.ui.PremiumPreviewFragment.applyNewSpan;
+import static org.telegram.ui.Cells.TextCell.applyNewSpan;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -1466,7 +1466,7 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
                 return getString(R.string.AppsTab);
             } else if (items.get(position).type == POSTS_TYPE) {
                 if (postsAreNew) {
-                    return applyNewSpan(getString(R.string.SearchPosts));
+                    return applyNewSpan(getString(R.string.SearchPosts), -1);
                 } else {
                     return getString(R.string.SearchPosts);
                 }

@@ -9,7 +9,7 @@
 package org.telegram.ui.Adapters;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
-import static org.telegram.ui.PremiumPreviewFragment.applyNewSpan;
+import static org.telegram.ui.Cells.TextCell.applyNewSpan;
 
 import android.Manifest;
 import android.content.Context;
