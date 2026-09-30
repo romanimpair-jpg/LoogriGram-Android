@@ -60,9 +60,7 @@ import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
-import org.telegram.ui.Cells.AdminedChannelCell;
 import org.telegram.ui.Cells.HeaderCell;
-import org.telegram.ui.Cells.LoadingCell;
 import org.telegram.ui.Cells.RadioButtonCell;
 import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.TextCell;
@@ -104,7 +102,6 @@ public class ChatEditTypeActivity extends BaseFragment implements NotificationCe
     private LinearLayout linearLayoutTypeContainer;
     private RadioButtonCell radioButtonCell1;
     private RadioButtonCell radioButtonCell2;
-    private LinearLayout adminnedChannelsLayout;
     private LinearLayout linkContainer;
     private LinearLayout publicContainer;
     private LinearLayout privateContainer;
@@ -142,10 +139,6 @@ public class ChatEditTypeActivity extends BaseFragment implements NotificationCe
     private boolean isSaveRestricted;
 
     private boolean canCreatePublic = true;
-    private boolean loadingAdminedChannels;
-    private ShadowSectionCell adminedInfoCell;
-    private ArrayList<AdminedChannelCell> adminedChannelCells = new ArrayList<>();
-    private LoadingCell loadingAdminedCell;
 
     private int checkReqId;
     private String lastCheckName;
@@ -192,10 +185,10 @@ public class ChatEditTypeActivity extends BaseFragment implements NotificationCe
             req.username = "1";
             req.channel = new TLRPC.TL_inputChannelEmpty();
             getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+                // LoogriGram: a Premium account over the limit also loaded its
+                // public chats here, to list them inline for revoking. The limit
+                // sheet, shown when public is picked, lists them for everyone.
                 canCreatePublic = error == null || !error.text.equals("CHANNELS_ADMIN_PUBLIC_TOO_MUCH");
-                if (!canCreatePublic && getUserConfig().isPremium()) {
-                    loadAdminedChannels();
-                }
             }));
         }
         if (isPrivate && info != null) {
@@ -562,16 +555,6 @@ public class ChatEditTypeActivity extends BaseFragment implements NotificationCe
         typeInfoCell = new TextInfoPrivacyCell(context, 12, resourceProvider);
         typeInfoCell.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
         linearLayout.addView(typeInfoCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
-
-        loadingAdminedCell = new LoadingCell(context);
-        linearLayout.addView(loadingAdminedCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
-
-        adminnedChannelsLayout = new LinearLayout(context);
-        adminnedChannelsLayout.setOrientation(LinearLayout.VERTICAL);
-        linearLayout.addView(adminnedChannelsLayout, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
-
-        adminedInfoCell = new ShadowSectionCell(context);
-        linearLayout.addView(adminedInfoCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
 
         linearLayout.addView(usernamesListView = new UsernamesListView(context), LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
         usernamesListView.setVisibility(isPrivate || usernames.isEmpty() ? View.GONE : View.VISIBLE);
@@ -1301,115 +1284,39 @@ public class ChatEditTypeActivity extends BaseFragment implements NotificationCe
         return false;
     }
 
-    private void loadAdminedChannels() {
-        if (loadingAdminedChannels || adminnedChannelsLayout == null) {
-            return;
-        }
-        loadingAdminedChannels = true;
-        updatePrivatePublic();
-        TLRPC.TL_channels_getAdminedPublicChannels req = new TLRPC.TL_channels_getAdminedPublicChannels();
-        getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-            loadingAdminedChannels = false;
-            if (response != null) {
-                if (getParentActivity() == null) {
-                    return;
-                }
-                for (int a = 0; a < adminedChannelCells.size(); a++) {
-                    linearLayout.removeView(adminedChannelCells.get(a));
-                }
-                adminedChannelCells.clear();
-                TLRPC.TL_messages_chats res = (TLRPC.TL_messages_chats) response;
-
-                for (int a = 0; a < res.chats.size(); a++) {
-                    AdminedChannelCell adminedChannelCell = new AdminedChannelCell(getParentActivity(), view -> {
-                        AdminedChannelCell cell = (AdminedChannelCell) view.getParent();
-                        final TLRPC.Chat channel = cell.getCurrentChannel();
-                        AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-                        builder.setTitle(LocaleController.getString(R.string.AppName));
-                        if (isChannel) {
-                            builder.setMessage(AndroidUtilities.replaceTags(LocaleController.formatString("RevokeLinkAlertChannel", R.string.RevokeLinkAlertChannel, getMessagesController().linkPrefix + "/" + ChatObject.getPublicUsername(channel), channel.title)));
-                        } else {
-                            builder.setMessage(AndroidUtilities.replaceTags(LocaleController.formatString("RevokeLinkAlert", R.string.RevokeLinkAlert, getMessagesController().linkPrefix + "/" + ChatObject.getPublicUsername(channel), channel.title)));
-                        }
-                        builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
-                        builder.setPositiveButton(LocaleController.getString(R.string.RevokeButton), (dialogInterface, i) -> {
-                            TLRPC.TL_channels_updateUsername req1 = new TLRPC.TL_channels_updateUsername();
-                            req1.channel = MessagesController.getInputChannel(channel);
-                            req1.username = "";
-                            getConnectionsManager().sendRequest(req1, (response1, error1) -> {
-                                if (response1 instanceof TLRPC.TL_boolTrue) {
-                                    AndroidUtilities.runOnUIThread(() -> {
-                                        canCreatePublic = true;
-                                        if (usernameTextView.length() > 0) {
-                                            checkUserName(usernameTextView.getText().toString());
-                                        }
-                                        updatePrivatePublic();
-                                    });
-                                }
-                            }, ConnectionsManager.RequestFlagInvokeAfter);
-                        });
-                        showDialog(builder.create());
-                    }, false, 0);
-                    adminedChannelCell.setChannel(res.chats.get(a), a == res.chats.size() - 1);
-                    adminedChannelCells.add(adminedChannelCell);
-                    adminnedChannelsLayout.addView(adminedChannelCell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 72));
-                }
-                updatePrivatePublic();
-            }
-        }));
-    }
-
     private void updatePrivatePublic() {
         if (sectionCell2 == null) {
             return;
         }
-        if (!isPrivate && !canCreatePublic && getUserConfig().isPremium()) {
-            typeInfoCell.setText(LocaleController.getString(R.string.ChangePublicLimitReached));
-            typeInfoCell.setTag(Theme.key_text_RedRegular);
-            typeInfoCell.setTextColor(Theme.getColor(Theme.key_text_RedRegular));
-            linkContainer.setVisibility(View.GONE);
-            checkTextView.setVisibility(View.GONE);
+        // LoogriGram: a Premium account over the public link limit saw its
+        // public chats listed here to revoke one (see the username check).
+        typeInfoCell.setTag(Theme.key_windowBackgroundWhiteGrayText4);
+        typeInfoCell.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText4));
+        if (isForcePublic) {
             sectionCell2.setVisibility(View.GONE);
-            adminedInfoCell.setVisibility(View.VISIBLE);
-            if (loadingAdminedChannels) {
-                loadingAdminedCell.setVisibility(View.VISIBLE);
-                adminnedChannelsLayout.setVisibility(View.GONE);
-            } else {
-                loadingAdminedCell.setVisibility(View.GONE);
-                adminnedChannelsLayout.setVisibility(View.VISIBLE);
-            }
         } else {
-            typeInfoCell.setTag(Theme.key_windowBackgroundWhiteGrayText4);
-            typeInfoCell.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText4));
-            if (isForcePublic) {
-                sectionCell2.setVisibility(View.GONE);
-            } else {
-                sectionCell2.setVisibility(View.VISIBLE);
-            }
-            adminedInfoCell.setVisibility(View.GONE);
-            adminnedChannelsLayout.setVisibility(View.GONE);
-            linkContainer.setVisibility(View.VISIBLE);
-            loadingAdminedCell.setVisibility(View.GONE);
-            if (isChannel) {
-                typeInfoCell.setText(isPrivate ? LocaleController.getString(R.string.ChannelPrivateLinkHelp) : LocaleController.getString(R.string.ChannelUsernameHelp));
-                headerCell.setText(isPrivate ? LocaleController.getString(R.string.ChannelInviteLinkTitle) : LocaleController.getString(R.string.ChannelLinkTitle));
-            } else {
-                typeInfoCell.setText(isPrivate ? LocaleController.getString(R.string.MegaPrivateLinkHelp) : LocaleController.getString(R.string.MegaUsernameHelp));
-                headerCell.setText(isPrivate ? LocaleController.getString(R.string.ChannelInviteLinkTitle) : LocaleController.getString(R.string.ChannelLinkTitle));
-            }
-            publicContainer.setVisibility(isPrivate ? View.GONE : View.VISIBLE);
-            privateContainer.setVisibility(isPrivate ? View.VISIBLE : View.GONE);
-            saveContainer.setVisibility(View.VISIBLE);
-            manageLinksTextView.setVisibility(View.VISIBLE);
-            manageLinksInfoCell.setVisibility(View.VISIBLE);
-            linkContainer.setPadding(0, 0, 0, isPrivate ? 0 : AndroidUtilities.dp(7));
-            permanentLinkView.setLink(invite != null ? invite.link : null);
-            permanentLinkView.loadUsers(invite, chatId);
-            checkTextView.setVisibility(!isPrivate && checkTextView.length() != 0 ? View.VISIBLE : View.GONE);
-            final TLRPC.ChatFull chatFull = getMessagesController().getChatFull(chatId);
-            final TLRPC.Chat chat = getMessagesController().getChat(chatId);
-            manageLinksInfoCell.setText(LocaleController.getString(chatFull != null && chatFull.paid_media_allowed && ChatObject.isChannelAndNotMegaGroup(chat) ? R.string.ManageLinksInfoHelpPaid : R.string.ManageLinksInfoHelp));
+            sectionCell2.setVisibility(View.VISIBLE);
         }
+        linkContainer.setVisibility(View.VISIBLE);
+        if (isChannel) {
+            typeInfoCell.setText(isPrivate ? LocaleController.getString(R.string.ChannelPrivateLinkHelp) : LocaleController.getString(R.string.ChannelUsernameHelp));
+            headerCell.setText(isPrivate ? LocaleController.getString(R.string.ChannelInviteLinkTitle) : LocaleController.getString(R.string.ChannelLinkTitle));
+        } else {
+            typeInfoCell.setText(isPrivate ? LocaleController.getString(R.string.MegaPrivateLinkHelp) : LocaleController.getString(R.string.MegaUsernameHelp));
+            headerCell.setText(isPrivate ? LocaleController.getString(R.string.ChannelInviteLinkTitle) : LocaleController.getString(R.string.ChannelLinkTitle));
+        }
+        publicContainer.setVisibility(isPrivate ? View.GONE : View.VISIBLE);
+        privateContainer.setVisibility(isPrivate ? View.VISIBLE : View.GONE);
+        saveContainer.setVisibility(View.VISIBLE);
+        manageLinksTextView.setVisibility(View.VISIBLE);
+        manageLinksInfoCell.setVisibility(View.VISIBLE);
+        linkContainer.setPadding(0, 0, 0, isPrivate ? 0 : AndroidUtilities.dp(7));
+        permanentLinkView.setLink(invite != null ? invite.link : null);
+        permanentLinkView.loadUsers(invite, chatId);
+        checkTextView.setVisibility(!isPrivate && checkTextView.length() != 0 ? View.VISIBLE : View.GONE);
+        final TLRPC.ChatFull chatFull = getMessagesController().getChatFull(chatId);
+        final TLRPC.Chat chat = getMessagesController().getChat(chatId);
+        manageLinksInfoCell.setText(LocaleController.getString(chatFull != null && chatFull.paid_media_allowed && ChatObject.isChannelAndNotMegaGroup(chat) ? R.string.ManageLinksInfoHelpPaid : R.string.ManageLinksInfoHelp));
         radioButtonCell1.setChecked(!isPrivate, true);
         radioButtonCell2.setChecked(isPrivate, true);
         usernameTextView.clearFocus();
@@ -1576,16 +1483,6 @@ public class ChatEditTypeActivity extends BaseFragment implements NotificationCe
     public ArrayList<ThemeDescription> getThemeDescriptions() {
         ArrayList<ThemeDescription> themeDescriptions = new ArrayList<>();
         ThemeDescription.ThemeDescriptionDelegate cellDelegate = () -> {
-            if (adminnedChannelsLayout != null) {
-                int count = adminnedChannelsLayout.getChildCount();
-                for (int a = 0; a < count; a++) {
-                    View child = adminnedChannelsLayout.getChildAt(a);
-                    if (child instanceof AdminedChannelCell) {
-                        ((AdminedChannelCell) child).update();
-                    }
-                }
-            }
-
             permanentLinkView.updateColors();
             if (inviteLinkBottomSheet != null) {
                 inviteLinkBottomSheet.updateColors();
@@ -1641,9 +1538,6 @@ public class ChatEditTypeActivity extends BaseFragment implements NotificationCe
         themeDescriptions.add(new ThemeDescription(saveRestrictInfoCell, ThemeDescription.FLAG_CHECKTAG, new Class[]{TextInfoPrivacyCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText4));
         themeDescriptions.add(new ThemeDescription(saveRestrictInfoCell, ThemeDescription.FLAG_CHECKTAG, new Class[]{TextInfoPrivacyCell.class}, new String[]{"textView"}, null, null, null, Theme.key_text_RedRegular));
 
-        themeDescriptions.add(new ThemeDescription(adminedInfoCell, ThemeDescription.FLAG_BACKGROUNDFILTER, new Class[]{TextInfoPrivacyCell.class}, null, null, null, Theme.key_windowBackgroundGrayShadow));
-        themeDescriptions.add(new ThemeDescription(adminnedChannelsLayout, ThemeDescription.FLAG_BACKGROUND, null, null, null, null, Theme.key_windowBackgroundWhite));
-        themeDescriptions.add(new ThemeDescription(loadingAdminedCell, 0, new Class[]{LoadingCell.class}, new String[]{"progressBar"}, null, null, null, Theme.key_progressCircle));
         themeDescriptions.add(new ThemeDescription(radioButtonCell1, ThemeDescription.FLAG_SELECTOR, null, null, null, null, Theme.key_listSelector));
         themeDescriptions.add(new ThemeDescription(radioButtonCell1, ThemeDescription.FLAG_CHECKBOX, new Class[]{RadioButtonCell.class}, new String[]{"radioButton"}, null, null, null, Theme.key_radioBackground));
         themeDescriptions.add(new ThemeDescription(radioButtonCell1, ThemeDescription.FLAG_CHECKBOXCHECK, new Class[]{RadioButtonCell.class}, new String[]{"radioButton"}, null, null, null, Theme.key_radioBackgroundChecked));
@@ -1655,10 +1549,6 @@ public class ChatEditTypeActivity extends BaseFragment implements NotificationCe
         themeDescriptions.add(new ThemeDescription(radioButtonCell2, ThemeDescription.FLAG_TEXTCOLOR, new Class[]{RadioButtonCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteBlackText));
         themeDescriptions.add(new ThemeDescription(radioButtonCell2, ThemeDescription.FLAG_TEXTCOLOR, new Class[]{RadioButtonCell.class}, new String[]{"valueTextView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText2));
 
-        themeDescriptions.add(new ThemeDescription(adminnedChannelsLayout, ThemeDescription.FLAG_TEXTCOLOR, new Class[]{AdminedChannelCell.class}, new String[]{"nameTextView"}, null, null, null, Theme.key_windowBackgroundWhiteBlackText));
-        themeDescriptions.add(new ThemeDescription(adminnedChannelsLayout, ThemeDescription.FLAG_TEXTCOLOR, new Class[]{AdminedChannelCell.class}, new String[]{"statusTextView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText));
-        themeDescriptions.add(new ThemeDescription(adminnedChannelsLayout, ThemeDescription.FLAG_LINKCOLOR, new Class[]{AdminedChannelCell.class}, new String[]{"statusTextView"}, null, null, null, Theme.key_windowBackgroundWhiteLinkText));
-        themeDescriptions.add(new ThemeDescription(adminnedChannelsLayout, ThemeDescription.FLAG_IMAGECOLOR, new Class[]{AdminedChannelCell.class}, new String[]{"deleteButton"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText));
         themeDescriptions.add(new ThemeDescription(null, 0, null, null, Theme.avatarDrawables, cellDelegate, Theme.key_avatar_text));
         themeDescriptions.add(new ThemeDescription(null, 0, null, null, null, cellDelegate, Theme.key_avatar_backgroundRed));
         themeDescriptions.add(new ThemeDescription(null, 0, null, null, null, cellDelegate, Theme.key_avatar_backgroundOrange));

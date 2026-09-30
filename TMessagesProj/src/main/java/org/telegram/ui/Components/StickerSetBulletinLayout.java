@@ -194,13 +194,12 @@ public class StickerSetBulletinLayout extends Bulletin.TwoLineLayout {
                 // LoogriGram: both bulletins say what was replaced and never offer
                 // Premium's higher limit. Upstream's branch for where Premium is
                 // not sold quoted the Premium limit to everyone; this quotes the
-                // one that applies, as the GIF one already did.
-                titleTextView.setText(LocaleController.formatString("LimitReachedFavoriteStickers", R.string.LimitReachedFavoriteStickers, UserConfig.getInstance(UserConfig.selectedAccount).isPremium() ? MessagesController.getInstance(UserConfig.selectedAccount).stickersFavedLimitPremium : MessagesController.getInstance(UserConfig.selectedAccount).stickersFavedLimitDefault));
+                // free one, the only one there is.
+                titleTextView.setText(LocaleController.formatString("LimitReachedFavoriteStickers", R.string.LimitReachedFavoriteStickers, MessagesController.getInstance(UserConfig.selectedAccount).stickersFavedLimitDefault));
                 subtitleTextView.setText(LocaleController.formatString("LimitReachedFavoriteStickersSubtitlePremium", R.string.LimitReachedFavoriteStickersSubtitlePremium));
                 break;
             case TYPE_REPLACED_TO_FAVORITES_GIFS:
-                final boolean isPremium = UserConfig.getInstance(UserConfig.selectedAccount).isPremium();
-                titleTextView.setText(LocaleController.formatString(R.string.LimitReachedFavoriteGifs, isPremium ? MessagesController.getInstance(UserConfig.selectedAccount).savedGifsLimitPremium : MessagesController.getInstance(UserConfig.selectedAccount).savedGifsLimitDefault));
+                titleTextView.setText(LocaleController.formatString(R.string.LimitReachedFavoriteGifs, MessagesController.getInstance(UserConfig.selectedAccount).savedGifsLimitDefault));
                 subtitleTextView.setText(LocaleController.getString(R.string.LimitReachedFavoriteGifsSubtitlePremium));
                 break;
             case TYPE_REMOVED_FROM_RECENT:

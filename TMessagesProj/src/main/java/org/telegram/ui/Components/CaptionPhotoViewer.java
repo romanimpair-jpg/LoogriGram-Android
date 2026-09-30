@@ -25,7 +25,6 @@ import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
-import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.blur3.drawable.BlurredBackgroundDrawable;
@@ -356,18 +355,8 @@ public class CaptionPhotoViewer extends CaptionContainerView {
     }
 
     @Override
-    protected int getCaptionLimit() {
-        return UserConfig.getInstance(currentAccount).isPremium() ? getCaptionPremiumLimit() : getCaptionDefaultLimit();
-    }
-
-    @Override
     protected int getCaptionDefaultLimit() {
         return MessagesController.getInstance(currentAccount).captionLengthLimitDefault;
-    }
-
-    @Override
-    protected int getCaptionPremiumLimit() {
-        return MessagesController.getInstance(currentAccount).captionLengthLimitPremium;
     }
 
     @Override

@@ -628,11 +628,8 @@ public class SavedMessagesController {
                 newOrder.remove(did);
             }
         }
-        int limit = (
-            UserConfig.getInstance(currentAccount).isPremium() ?
-                MessagesController.getInstance(currentAccount).savedDialogsPinnedLimitPremium :
-                MessagesController.getInstance(currentAccount).savedDialogsPinnedLimitDefault
-        );
+        // LoogriGram: the free limit; Premium's larger one is not kept.
+        int limit = MessagesController.getInstance(currentAccount).savedDialogsPinnedLimitDefault;
         if (newOrder.size() > limit) {
             return false;
         }
@@ -651,11 +648,8 @@ public class SavedMessagesController {
 
     public boolean updatePinnedOrder(ArrayList<Long> newOrder) {
         ArrayList<Long> currentOrder = getCurrentPinnedOrder(allDialogs);
-        int limit = (
-            UserConfig.getInstance(currentAccount).isPremium() ?
-                MessagesController.getInstance(currentAccount).savedDialogsPinnedLimitPremium :
-                MessagesController.getInstance(currentAccount).savedDialogsPinnedLimitDefault
-        );
+        // LoogriGram: the free limit; Premium's larger one is not kept.
+        int limit = MessagesController.getInstance(currentAccount).savedDialogsPinnedLimitDefault;
         if (newOrder.size() > limit) {
             return false;
         }

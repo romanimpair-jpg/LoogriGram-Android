@@ -402,14 +402,11 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
             for (int i = 0; i < accountNumbers.size(); ++i) {
                 items.add(SettingsActivity.AccountCell.Factory.of(i, accountNumbers.get(i)));
             }
-            if (!UserConfig.hasPremiumOnAccounts()) {
-                // LoogriGram: how many more accounts fit, without the sentence
-                // after it that sold Premium for more.
-                final int moreAccounts = Math.max(0, UserConfig.getMaxAccountCount() - UserConfig.getActivatedAccountsCount());
-                items.add(UItem.asShadow(moreAccounts > 0 ? LocaleController.formatPluralStringComma("AddAccountInfo1", moreAccounts) : null));
-            } else {
-                items.add(UItem.asShadow(null));
-            }
+            // LoogriGram: how many more accounts fit, without the sentence
+            // after it that sold Premium for more. A Premium account here
+            // raised the cap and hid the count; none is honoured.
+            final int moreAccounts = Math.max(0, UserConfig.MAX_ACCOUNT_DEFAULT_COUNT - UserConfig.getActivatedAccountsCount());
+            items.add(UItem.asShadow(moreAccounts > 0 ? LocaleController.formatPluralStringComma("AddAccountInfo1", moreAccounts) : null));
         }
         logoutRow = items.size();
         items.add(InfoCell.Factory.of(BUTTON_LOGOUT, R.drawable.msg_leave, getString(R.string.LogOut), null, 0).red());
@@ -447,12 +444,12 @@ public class UserInfoActivity extends UniversalFragment implements NotificationC
                     }
                 }
             }
-            if (!UserConfig.hasPremiumOnAccounts()) {
-                freeAccounts -= (UserConfig.MAX_ACCOUNT_COUNT - UserConfig.MAX_ACCOUNT_DEFAULT_COUNT);
-            }
+            // LoogriGram: a Premium account raised the cap for every account on
+            // the device. None is honoured, so the last slot is never offered.
+            freeAccounts -= (UserConfig.MAX_ACCOUNT_COUNT - UserConfig.MAX_ACCOUNT_DEFAULT_COUNT);
             if (freeAccounts > 0 && availableAccount != null) {
                 presentFragment(new LoginActivity(availableAccount));
-            } else if (!UserConfig.hasPremiumOnAccounts()) {
+            } else {
                 showDialog(new LimitReachedBottomSheet(this, getContext(), TYPE_ACCOUNTS, currentAccount, null));
             }
         } else if (item.instanceOf(SettingsActivity.AccountCell.Factory.class)) {

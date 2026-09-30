@@ -607,23 +607,16 @@ public class LiteModeSettingsActivity extends BaseFragment {
         }
 
         private int preprocessFlagsCount(int flags) {
-            boolean isPremium = getUserConfig().isPremium();
+            // LoogriGram: the Premium half of each animated emoji switch is not
+            // counted (see LiteMode.preprocessFlag); upstream picked the half
+            // by the account's Premium.
             int count = Integer.bitCount(flags);
-            if (isPremium) {
-                if ((flags & LiteMode.FLAG_ANIMATED_EMOJI_CHAT_NOT_PREMIUM) > 0)
-                    count--;
-                if ((flags & LiteMode.FLAG_ANIMATED_EMOJI_REACTIONS_NOT_PREMIUM) > 0)
-                    count--;
-                if ((flags & LiteMode.FLAG_ANIMATED_EMOJI_KEYBOARD_NOT_PREMIUM) > 0)
-                    count--;
-            } else {
-                if ((flags & LiteMode.FLAG_ANIMATED_EMOJI_CHAT_PREMIUM) > 0)
-                    count--;
-                if ((flags & LiteMode.FLAG_ANIMATED_EMOJI_REACTIONS_PREMIUM) > 0)
-                    count--;
-                if ((flags & LiteMode.FLAG_ANIMATED_EMOJI_KEYBOARD_PREMIUM) > 0)
-                    count--;
-            }
+            if ((flags & LiteMode.FLAG_ANIMATED_EMOJI_CHAT_PREMIUM) > 0)
+                count--;
+            if ((flags & LiteMode.FLAG_ANIMATED_EMOJI_REACTIONS_PREMIUM) > 0)
+                count--;
+            if ((flags & LiteMode.FLAG_ANIMATED_EMOJI_KEYBOARD_PREMIUM) > 0)
+                count--;
             if (SharedConfig.getDevicePerformanceClass() < SharedConfig.PERFORMANCE_CLASS_AVERAGE && (flags & LiteMode.FLAG_CHAT_BLUR) > 0) {
                 count--;
             }

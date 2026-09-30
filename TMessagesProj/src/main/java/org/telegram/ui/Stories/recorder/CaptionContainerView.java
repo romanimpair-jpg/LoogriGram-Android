@@ -817,15 +817,13 @@ public class CaptionContainerView extends FrameLayout {
         return getCodePointCount() > getCaptionLimit();
     }
 
+    // LoogriGram: a Premium account got a longer caption. The account is never
+    // Premium, so the limit is the free one.
     protected int getCaptionLimit() {
-        return UserConfig.getInstance(currentAccount).isPremium() ? getCaptionPremiumLimit() : getCaptionDefaultLimit();
+        return getCaptionDefaultLimit();
     }
 
     protected int getCaptionDefaultLimit() {
-        return 0;
-    }
-
-    protected int getCaptionPremiumLimit() {
         return 0;
     }
 

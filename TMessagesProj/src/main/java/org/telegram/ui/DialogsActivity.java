@@ -7630,17 +7630,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             if (containsFilter && filter != null) {
                 maxPinnedCount = 100 - filter.alwaysShow.size();
             } else if (folderId != 0 || filter != null) {
-                if (getUserConfig().isPremium()) {
-                    maxPinnedCount = getMessagesController().maxFolderPinnedDialogsCountPremium;
-                } else {
-                    maxPinnedCount = getMessagesController().maxFolderPinnedDialogsCountDefault;
-                }
+                // LoogriGram: the free pin limits; Premium's are not kept.
+                maxPinnedCount = getMessagesController().maxFolderPinnedDialogsCountDefault;
             } else {
-                if (getUserConfig().isPremium()) {
-                    maxPinnedCount = getMessagesController().maxPinnedDialogsCountPremium;
-                } else {
-                    maxPinnedCount = getMessagesController().maxPinnedDialogsCountDefault;
-                }
+                maxPinnedCount = getMessagesController().maxPinnedDialogsCountDefault;
             }
             hasPinAction[0] = !(newPinnedSecretCount + pinnedSecretCount > maxPinnedCount || newPinnedCount + pinnedCount - alreadyAdded > maxPinnedCount);
         }
@@ -8137,13 +8130,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             if (containsFilter) {
                 maxPinnedCount = 100 - filter.alwaysShow.size();
             } else if (folderId != 0 || filter != null) {
-                if (UserConfig.getInstance(currentAccount).isPremium()) {
-                    maxPinnedCount = getMessagesController().maxFolderPinnedDialogsCountPremium;
-                } else {
-                    maxPinnedCount = getMessagesController().maxFolderPinnedDialogsCountDefault;
-                }
+                // LoogriGram: the free pin limits; Premium's are not kept.
+                maxPinnedCount = getMessagesController().maxFolderPinnedDialogsCountDefault;
             } else {
-                maxPinnedCount = getUserConfig().isPremium() ? getMessagesController().dialogFiltersPinnedLimitPremium : getMessagesController().dialogFiltersPinnedLimitDefault;
+                maxPinnedCount = getMessagesController().dialogFiltersPinnedLimitDefault;
             }
             if (newPinnedSecretCount + pinnedSecretCount > maxPinnedCount || newPinnedCount + pinnedCount - alreadyAdded > maxPinnedCount) {
                 if (folderId != 0 || filter != null) {

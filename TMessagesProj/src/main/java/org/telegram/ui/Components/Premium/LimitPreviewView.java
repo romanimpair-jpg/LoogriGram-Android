@@ -35,7 +35,6 @@ import androidx.core.math.MathUtils;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
-import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.tl.TL_stars;
 import org.telegram.ui.ActionBar.Theme;
@@ -534,10 +533,11 @@ public class LimitPreviewView extends LinearLayout {
             if (limitIcon != null) {
                 SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder();
                 spannableStringBuilder.append("d ").setSpan(new ColoredImageSpan(icon), 0, 1, 0);
-                spannableStringBuilder.append(UserConfig.getInstance(UserConfig.selectedAccount).isPremium() ? "4 GB" : "2 GB");
+                // LoogriGram: "4 GB" for a Premium account, and beside it
+                // Premium's 4 GB. The account is never Premium.
+                spannableStringBuilder.append("2 GB");
                 limitIcon.setText(spannableStringBuilder, false);
             }
-            premiumCount.setText("4 GB");
         } else if (type == LimitReachedBottomSheet.TYPE_ADD_MEMBERS_RESTRICTED) {
             if (limitIcon != null) {
                 SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder();
@@ -546,10 +546,6 @@ public class LimitPreviewView extends LinearLayout {
             }
             premiumCount.setText("");
         }
-    }
-
-    public void setBagePosition(float position) {
-        this.position = MathUtils.clamp(position, 0.1f, 0.9f);
     }
 
     public void setDelayedAnimation() {

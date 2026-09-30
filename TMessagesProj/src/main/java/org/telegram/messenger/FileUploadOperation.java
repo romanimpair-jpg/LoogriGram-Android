@@ -302,10 +302,9 @@ public class FileUploadOperation {
                     isBigFile = true;
                 }
 
+                // LoogriGram: Premium's larger part count for files over the free
+                // size is gone; the account is never Premium.
                 long maxUploadParts = MessagesController.getInstance(currentAccount).uploadMaxFileParts;
-                if (AccountInstance.getInstance(currentAccount).getUserConfig().isPremium() && totalFileSize > FileLoader.DEFAULT_MAX_FILE_SIZE) {
-                    maxUploadParts = MessagesController.getInstance(currentAccount).uploadMaxFilePartsPremium;
-                }
                 uploadChunkSize = (int) Math.max(slowNetwork ? minUploadChunkSlowNetworkSize : minUploadChunkSize, (totalFileSize + 1024L * maxUploadParts - 1) / (1024L * maxUploadParts));
                 if (1024 % uploadChunkSize != 0) {
                     int chunkSize = 64;

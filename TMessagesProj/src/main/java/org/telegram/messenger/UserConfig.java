@@ -114,19 +114,6 @@ public class UserConfig extends BaseController {
         super(instance);
     }
 
-    public static boolean hasPremiumOnAccounts() {
-        for (int a = 0; a < MAX_ACCOUNT_COUNT; a++) {
-            if (AccountInstance.getInstance(a).getUserConfig().isClientActivated() && AccountInstance.getInstance(a).getUserConfig().getUserConfig().isPremium()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static int getMaxAccountCount() {
-        return hasPremiumOnAccounts() ? 5 : 3;
-    }
-
     public int getNewMessageId() {
         int id;
         synchronized (sync) {

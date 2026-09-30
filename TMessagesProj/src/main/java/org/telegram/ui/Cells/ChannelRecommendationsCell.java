@@ -40,7 +40,6 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
-import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.TLObject;
@@ -142,26 +141,18 @@ public class ChannelRecommendationsCell {
                 i--;
             }
         }
-        loading = chats.isEmpty() || !UserConfig.getInstance(currentAccount).isPremium() && chats.size() == 1;
+        // LoogriGram: the free list. Premium also got the tile after the last
+        // channel that opened the rest of them; without Premium it was a
+        // padlocked "Unlock Similar" selling Premium, so neither is drawn.
+        loading = chats.isEmpty() || chats.size() == 1;
         if (!loading) {
             int count = chats.size();
-            final boolean premium = UserConfig.getInstance(currentAccount).isPremium();
-            if (!premium && rec.more > 0) {
+            if (rec.more > 0) {
                 count = Math.min(count, MessagesController.getInstance(currentAccount).recommendedChannelsLimitDefault);
             }
             count = Math.min(count, 10);
             for (int i = 0; i < count; ++i) {
                 channels.add(new ChannelBlock(currentAccount, cell, chats.get(i)));
-            }
-            // LoogriGram: the tile after the last channel opens the rest of them.
-            // Without Premium it was a padlocked "Unlock Similar" selling Premium
-            // in place of the last channel, so it is left out.
-            if (premium && count < chats.size()) {
-                TLObject[] _chats = new TLObject[3];
-                _chats[0] = count >= 0 && count < chats.size() ? chats.get(count) : null;
-                _chats[1] = count >= 0 && count + 1 < chats.size() ? chats.get(count + 1) : null;
-                _chats[2] = count >= 0 && count + 2 < chats.size() ? chats.get(count + 2) : null;
-                channels.add(new ChannelBlock(currentAccount, cell, _chats, (chats.size() + rec.more) - count));
             }
         }
 

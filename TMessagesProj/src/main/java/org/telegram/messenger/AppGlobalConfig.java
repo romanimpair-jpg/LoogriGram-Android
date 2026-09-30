@@ -80,7 +80,6 @@ public class AppGlobalConfig {
     public final ConfigInt communityBotPeersLimit = ofInt("community_bot_peers_limit", 100);
 
     public final ConfigInt messageLengthLimitDefault = ofInt("message_length_limit_default", 4096);
-    public final ConfigInt messageLengthLimitPremium = ofInt("message_length_limit_premium", 8192);
 
     public final ConfigInt ephemeralWelcomeMessagesMax = ofInt("ephemeral_welcome_messages_max", 5);
 

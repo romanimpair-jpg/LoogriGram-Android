@@ -482,7 +482,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public int callConnectTimeout;
     public int callPacketTimeout;
     public int maxFolderPinnedDialogsCountDefault;
-    public int maxFolderPinnedDialogsCountPremium;
     public int mapProvider;
     public int availableMapProviders;
     public int updateCheckDelay;
@@ -491,8 +490,11 @@ public class MessagesController extends BaseController implements NotificationCe
     public int pmReadDateExpirePeriod;
     public String mapKey;
     public int maxMessageLength;
+    // LoogriGram: these limits had a Premium value picked by the account's
+    // Premium flag. The account is never Premium, so each reads the free one,
+    // which is what the server enforces; the Premium values are not kept.
     public int getMaxMessageLength() {
-        return getUserConfig().isPremium() ? config.messageLengthLimitPremium.get() : config.messageLengthLimitDefault.get();
+        return config.messageLengthLimitDefault.get();
     }
     public int maxCaptionLength;
     public int roundVideoSize;
@@ -544,33 +546,22 @@ public class MessagesController extends BaseController implements NotificationCe
     public int transcribeAudioTrialCooldownUntil;
     public int transcribeAudioTrialCurrentNumber;
     public int recommendedChannelsLimitDefault;
-    public int recommendedChannelsLimitPremium;
     public int channelRestrictSponsoredLevelMin;
     public Set<String> webAppAllowedProtocols;
     public Set<String> ignoreRestrictionReasons;
     public int channelsLimitDefault;
-    public int channelsLimitPremium;
     public int savedGifsLimitDefault;
-    public int savedGifsLimitPremium;
     public int stickersFavedLimitDefault;
-    public int stickersFavedLimitPremium;
     public int maxPinnedDialogsCountDefault;
-    public int maxPinnedDialogsCountPremium;
     public int dialogFiltersLimitDefault;
     public int dialogFiltersLimitPremium;
     public int dialogFiltersChatsLimitDefault;
     public int dialogFiltersChatsLimitPremium;
     public int dialogFiltersPinnedLimitDefault;
-    public int dialogFiltersPinnedLimitPremium;
     public int publicLinksLimitDefault;
-    public int publicLinksLimitPremium;
     public int captionLengthLimitDefault;
-    public int captionLengthLimitPremium;
     public int aboutLengthLimitDefault;
-    public int aboutLengthLimitPremium;
     public int reactionsUserMaxDefault;
-    public int reactionsUserMaxPremium;
-    public int reactionsInChatMax;
     public int forumUpgradeParticipantsMin;
     public int topicsPinnedLimit;
     public long telegramAntispamUserId;
@@ -597,17 +588,13 @@ public class MessagesController extends BaseController implements NotificationCe
     public float starsUsdSellRate1000;
     public int botVerificationDescriptionLengthLimit;
     public int savedDialogsPinnedLimitDefault;
-    public int savedDialogsPinnedLimitPremium;
     public boolean savedViewAsChats;
     public int uploadMaxFileParts;
-    public int uploadMaxFilePartsPremium;
     public String verifyAgeBotUsername;
     public String verifyAgeCountry;
     public int verifyAgeMin;
     public int chatlistInvitesLimitDefault;
-    public int chatlistInvitesLimitPremium;
     public int chatlistJoinedLimitDefault;
-    public int chatlistJoinedLimitPremium;
     public int stargiftsMessageLengthMax;
     public int stargiftsConvertPeriodMax;
     public boolean videoIgnoreAltDocuments;
@@ -793,19 +780,15 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public int getCaptionMaxLengthLimit() {
-        return getUserConfig().isPremium() ? captionLengthLimitPremium : captionLengthLimitDefault;
+        return captionLengthLimitDefault;
     }
 
     public int getAboutLimit() {
-        return getUserConfig().isPremium() ? aboutLengthLimitPremium : aboutLengthLimitDefault;
+        return aboutLengthLimitDefault;
     }
 
     public int getMaxUserReactionsCount() {
-        return getUserConfig().isPremium() ? reactionsUserMaxPremium : reactionsUserMaxDefault;
-    }
-
-    public int getChatReactionsCount() {
-        return getUserConfig().isPremium() ? reactionsInChatMax : 1;
+        return reactionsUserMaxDefault;
     }
 
     public int getChatMaxUniqReactions(long dialogId) {
@@ -1427,7 +1410,6 @@ public class MessagesController extends BaseController implements NotificationCe
         callPacketTimeout = mainPreferences.getInt("callPacketTimeout", 10000);
         updateCheckDelay = mainPreferences.getInt("updateCheckDelay", 24 * 60 * 60);
         maxFolderPinnedDialogsCountDefault = mainPreferences.getInt("maxFolderPinnedDialogsCountDefault", 100);
-        maxFolderPinnedDialogsCountPremium = mainPreferences.getInt("maxFolderPinnedDialogsCountPremium", 100);
         maxMessageLength = mainPreferences.getInt("maxMessageLength", 4096);
         maxCaptionLength = mainPreferences.getInt("maxCaptionLength", 1024);
         mapProvider = mainPreferences.getInt("mapProvider", 0);
@@ -1471,32 +1453,20 @@ public class MessagesController extends BaseController implements NotificationCe
         pendingSuggestions = mainPreferences.getStringSet("pendingSuggestions", null);
         dismissedSuggestions = mainPreferences.getStringSet("dismissedSuggestions", null);
         channelsLimitDefault = mainPreferences.getInt("channelsLimitDefault", 500);
-        channelsLimitPremium = mainPreferences.getInt("channelsLimitPremium", 2 * channelsLimitDefault);
         savedGifsLimitDefault = mainPreferences.getInt("savedGifsLimitDefault", 200);
-        savedGifsLimitPremium = mainPreferences.getInt("savedGifsLimitPremium", 400);
         stickersFavedLimitDefault = mainPreferences.getInt("stickersFavedLimitDefault", 5);
-        stickersFavedLimitPremium = mainPreferences.getInt("stickersFavedLimitPremium", 200);
         maxPinnedDialogsCountDefault = mainPreferences.getInt("maxPinnedDialogsCountDefault", 5);
-        maxPinnedDialogsCountPremium = mainPreferences.getInt("maxPinnedDialogsCountPremium", 5);
         maxPinnedDialogsCountDefault = mainPreferences.getInt("maxPinnedDialogsCountDefault", 5);
-        maxPinnedDialogsCountPremium = mainPreferences.getInt("maxPinnedDialogsCountPremium", 5);
         dialogFiltersLimitDefault = mainPreferences.getInt("dialogFiltersLimitDefault", 10);
         dialogFiltersLimitPremium = mainPreferences.getInt("dialogFiltersLimitPremium", 20);
         dialogFiltersChatsLimitDefault = mainPreferences.getInt("dialogFiltersChatsLimitDefault", 100);
         dialogFiltersChatsLimitPremium = mainPreferences.getInt("dialogFiltersChatsLimitPremium", 200);
         dialogFiltersPinnedLimitDefault = mainPreferences.getInt("dialogFiltersPinnedLimitDefault", 5);
-        dialogFiltersPinnedLimitPremium = mainPreferences.getInt("dialogFiltersPinnedLimitPremium", 10);
         publicLinksLimitDefault = mainPreferences.getInt("publicLinksLimitDefault", 10);
-        publicLinksLimitPremium = mainPreferences.getInt("publicLinksLimitPremium", 20);
         captionLengthLimitDefault = mainPreferences.getInt("captionLengthLimitDefault", 1024);
-        captionLengthLimitPremium = mainPreferences.getInt("captionLengthLimitPremium", 4096);
         aboutLengthLimitDefault = mainPreferences.getInt("aboutLengthLimitDefault", 70);
-        aboutLengthLimitPremium = mainPreferences.getInt("aboutLengthLimitPremium", 140);
         reactionsUserMaxDefault = mainPreferences.getInt("reactionsUserMaxDefault", 1);
-        reactionsUserMaxPremium = mainPreferences.getInt("reactionsUserMaxPremium", 3);
-        reactionsInChatMax = mainPreferences.getInt("reactionsInChatMax", 3);
         uploadMaxFileParts = mainPreferences.getInt("uploadMaxFileParts", (int) (FileLoader.DEFAULT_MAX_FILE_SIZE / 1024L / 512L));
-        uploadMaxFilePartsPremium = mainPreferences.getInt("uploadMaxFilePartsPremium", uploadMaxFileParts * 2);
         verifyAgeBotUsername = mainPreferences.getString("verifyAgeBotUsername", null);
         verifyAgeCountry = mainPreferences.getString("verifyAgeCountry", "GB");
         verifyAgeMin = mainPreferences.getInt("verifyAgeMin", 18);
@@ -1515,9 +1485,7 @@ public class MessagesController extends BaseController implements NotificationCe
         boolean isTest = ConnectionsManager.native_isTestBackend(currentAccount) != 0;
         chatlistInvitesLimitDefault = mainPreferences.getInt("chatlistInvitesLimitDefault", 3);
         groupTranscribeLevelMin = mainPreferences.getInt("groupTranscribeLevelMin", 1);
-        chatlistInvitesLimitPremium = mainPreferences.getInt("chatlistInvitesLimitPremium",  isTest ? 5 : 20);
         chatlistJoinedLimitDefault = mainPreferences.getInt("chatlistJoinedLimitDefault", 2);
-        chatlistJoinedLimitPremium = mainPreferences.getInt("chatlistJoinedLimitPremium",  isTest ? 5 : 20);
         stargiftsMessageLengthMax = mainPreferences.getInt("stargiftsMessageLengthMax", 255);
         stargiftsConvertPeriodMax = mainPreferences.getInt("stargiftsConvertPeriodMax", isTest ? 300 : 90 * 86400);
         videoIgnoreAltDocuments = mainPreferences.getBoolean("videoIgnoreAltDocuments", false);
@@ -1545,10 +1513,8 @@ public class MessagesController extends BaseController implements NotificationCe
         transcribeAudioTrialDurationMax = mainPreferences.getInt("transcribeAudioTrialDurationMax", 300);
         transcribeAudioTrialCooldownUntil = mainPreferences.getInt("transcribeAudioTrialCooldownUntil", 0);
         recommendedChannelsLimitDefault = mainPreferences.getInt("recommendedChannelsLimitDefault", 10);
-        recommendedChannelsLimitPremium = mainPreferences.getInt("recommendedChannelsLimitPremium", 100);
         channelRestrictSponsoredLevelMin = mainPreferences.getInt("channelRestrictSponsoredLevelMin", 30);
         savedDialogsPinnedLimitDefault = mainPreferences.getInt("savedDialogsPinnedLimitDefault", 4);
-        savedDialogsPinnedLimitPremium = mainPreferences.getInt("savedDialogsPinnedLimitPremium", 6);
         savedViewAsChats = mainPreferences.getBoolean("savedViewAsChats", false);
         folderTags = mainPreferences.getBoolean("folderTags", false);
         introTitleLengthLimit = mainPreferences.getInt("introTitleLengthLimit", 32);
@@ -2903,34 +2869,12 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
-                case "channels_limit_premium": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber number = (TLRPC.TL_jsonNumber) value.value;
-                        if (number.value != channelsLimitPremium) {
-                            channelsLimitPremium = (int) number.value;
-                            editor.putInt("channelsLimitPremium", channelsLimitPremium);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
                 case "saved_gifs_limit_default": {
                     if (value.value instanceof TLRPC.TL_jsonNumber) {
                         TLRPC.TL_jsonNumber number = (TLRPC.TL_jsonNumber) value.value;
                         if (number.value != savedGifsLimitDefault) {
                             savedGifsLimitDefault = (int) number.value;
                             editor.putInt("savedGifsLimitDefault", savedGifsLimitDefault);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "saved_gifs_limit_premium": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber number = (TLRPC.TL_jsonNumber) value.value;
-                        if (number.value != savedGifsLimitPremium) {
-                            savedGifsLimitPremium = (int) number.value;
-                            editor.putInt("savedGifsLimitPremium", savedGifsLimitPremium);
                             changed = true;
                         }
                     }
@@ -2947,34 +2891,12 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
-                case "stickers_faved_limit_premium": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber number = (TLRPC.TL_jsonNumber) value.value;
-                        if (number.value != stickersFavedLimitPremium) {
-                            stickersFavedLimitPremium = (int) number.value;
-                            editor.putInt("stickersFavedLimitPremium", stickersFavedLimitPremium);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
                 case "pinned_dialogs_count_max_default": {
                     if (value.value instanceof TLRPC.TL_jsonNumber) {
                         TLRPC.TL_jsonNumber number = (TLRPC.TL_jsonNumber) value.value;
                         if (number.value != maxPinnedDialogsCountDefault) {
                             maxPinnedDialogsCountDefault = (int) number.value;
                             editor.putInt("maxPinnedDialogsCountDefault", maxPinnedDialogsCountDefault);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "pinned_dialogs_count_max_premium": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber number = (TLRPC.TL_jsonNumber) value.value;
-                        if (number.value != maxPinnedDialogsCountPremium) {
-                            maxPinnedDialogsCountPremium = (int) number.value;
-                            editor.putInt("maxPinnedDialogsCountPremium", maxPinnedDialogsCountPremium);
                             changed = true;
                         }
                     }
@@ -3035,34 +2957,12 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
-                case "dialog_filters_pinned_limit_premium": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber number = (TLRPC.TL_jsonNumber) value.value;
-                        if (number.value != dialogFiltersPinnedLimitPremium) {
-                            dialogFiltersPinnedLimitPremium = (int) number.value;
-                            editor.putInt("dialogFiltersPinnedLimitPremium", dialogFiltersPinnedLimitPremium);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
                 case "upload_max_fileparts_default": {
                     if (value.value instanceof TLRPC.TL_jsonNumber) {
                         TLRPC.TL_jsonNumber number = (TLRPC.TL_jsonNumber) value.value;
                         if (number.value != uploadMaxFileParts) {
                             uploadMaxFileParts = (int) number.value;
                             editor.putInt("uploadMaxFileParts", uploadMaxFileParts);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "upload_max_fileparts_premium": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber number = (TLRPC.TL_jsonNumber) value.value;
-                        if (number.value != uploadMaxFilePartsPremium) {
-                            uploadMaxFilePartsPremium = (int) number.value;
-                            editor.putInt("uploadMaxFilePartsPremium", uploadMaxFilePartsPremium);
                             changed = true;
                         }
                     }
@@ -3079,34 +2979,12 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
-                case "channels_public_limit_premium": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber number = (TLRPC.TL_jsonNumber) value.value;
-                        if (number.value != publicLinksLimitPremium) {
-                            publicLinksLimitPremium = (int) number.value;
-                            editor.putInt("publicLinksLimitPremium", publicLinksLimitPremium);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
                 case "caption_length_limit_default": {
                     if (value.value instanceof TLRPC.TL_jsonNumber) {
                         TLRPC.TL_jsonNumber number = (TLRPC.TL_jsonNumber) value.value;
                         if (number.value != captionLengthLimitDefault) {
                             captionLengthLimitDefault = (int) number.value;
                             editor.putInt("captionLengthLimitDefault", captionLengthLimitDefault);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "caption_length_limit_premium": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber number = (TLRPC.TL_jsonNumber) value.value;
-                        if (number.value != captionLengthLimitPremium) {
-                            captionLengthLimitPremium = (int) number.value;
-                            editor.putInt("captionLengthLimitPremium", captionLengthLimitPremium);
                             changed = true;
                         }
                     }
@@ -3123,45 +3001,12 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
-                case "about_length_limit_premium": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber number = (TLRPC.TL_jsonNumber) value.value;
-                        if (number.value != aboutLengthLimitPremium) {
-                            aboutLengthLimitPremium = (int) number.value;
-                            editor.putInt("aboutLengthLimitPremium", aboutLengthLimitPremium);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
                 case "reactions_user_max_default": {
                     if (value.value instanceof TLRPC.TL_jsonNumber) {
                         TLRPC.TL_jsonNumber number = (TLRPC.TL_jsonNumber) value.value;
                         if (number.value != reactionsUserMaxDefault) {
                             reactionsUserMaxDefault = (int) number.value;
                             editor.putInt("reactionsUserMaxDefault", reactionsUserMaxDefault);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "reactions_user_max_premium": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber number = (TLRPC.TL_jsonNumber) value.value;
-                        if (number.value != reactionsUserMaxPremium) {
-                            reactionsUserMaxPremium = (int) number.value;
-                            editor.putInt("reactionsUserMaxPremium", reactionsUserMaxPremium);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "reactions_in_chat_max": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber number = (TLRPC.TL_jsonNumber) value.value;
-                        if (number.value != reactionsInChatMax) {
-                            reactionsInChatMax = (int) number.value;
-                            editor.putInt("reactionsInChatMax", reactionsInChatMax);
                             changed = true;
                         }
                     }
@@ -3271,34 +3116,12 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
-                case "chatlist_invites_limit_premium": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != chatlistInvitesLimitPremium) {
-                            chatlistInvitesLimitPremium = (int) num.value;
-                            editor.putInt("chatlistInvitesLimitPremium", chatlistInvitesLimitPremium);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
                 case "chatlists_joined_limit_default": {
                     if (value.value instanceof TLRPC.TL_jsonNumber) {
                         TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
                         if (num.value != chatlistJoinedLimitDefault) {
                             chatlistJoinedLimitDefault = (int) num.value;
                             editor.putInt("chatlistJoinedLimitDefault", chatlistJoinedLimitDefault);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "chatlists_joined_limit_premium": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != chatlistJoinedLimitPremium) {
-                            chatlistJoinedLimitPremium = (int) num.value;
-                            editor.putInt("chatlistJoinedLimitPremium", chatlistJoinedLimitPremium);
                             changed = true;
                         }
                     }
@@ -3442,17 +3265,6 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
-                case "recommended_channels_limit_premium": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (recommendedChannelsLimitPremium != num.value) {
-                            recommendedChannelsLimitPremium = (int) num.value;
-                            editor.putInt("recommendedChannelsLimitPremium", recommendedChannelsLimitPremium);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
                 case "channel_restrict_sponsored_level_min": {
                     if (value.value instanceof TLRPC.TL_jsonNumber) {
                         TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
@@ -3481,17 +3293,6 @@ public class MessagesController extends BaseController implements NotificationCe
                         if (num.value != savedDialogsPinnedLimitDefault) {
                             savedDialogsPinnedLimitDefault = (int) num.value;
                             editor.putInt("savedDialogsPinnedLimitDefault", savedDialogsPinnedLimitDefault);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "saved_dialogs_pinned_limit_premium": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != savedDialogsPinnedLimitPremium) {
-                            savedDialogsPinnedLimitPremium = (int) num.value;
-                            editor.putInt("savedDialogsPinnedLimitPremium", savedDialogsPinnedLimitPremium);
                             changed = true;
                         }
                     }
@@ -4548,7 +4349,6 @@ public class MessagesController extends BaseController implements NotificationCe
             editor.putString("linkPrefix", linkPrefix);
 //            editor.putInt("maxPinnedDialogsCount", maxPinnedDialogsCount);
             editor.putInt("maxFolderPinnedDialogsCountDefault", maxFolderPinnedDialogsCountDefault);
-            editor.putInt("maxFolderPinnedDialogsCountPremium", maxFolderPinnedDialogsCountPremium);
             editor.putInt("maxMessageLength", maxMessageLength);
             editor.putInt("maxCaptionLength", maxCaptionLength);
             editor.putBoolean("preloadFeaturedStickers", preloadFeaturedStickers);
@@ -22001,7 +21801,6 @@ public class MessagesController extends BaseController implements NotificationCe
     // desktop.
 
     public static class ChannelRecommendations {
-        public boolean wasPremium;
         public final ArrayList<TLObject> chats = new ArrayList<>();
         public int more;
 
@@ -22026,13 +21825,10 @@ public class MessagesController extends BaseController implements NotificationCe
         if (cachedChannelRecommendations == null) {
             cachedChannelRecommendations = new HashMap<>();
         }
-        final boolean isPremium = getUserConfig().isPremium();
-        ChannelRecommendations rec = null;
+        // LoogriGram: a cached list was refetched when our Premium changed,
+        // since Premium got a longer one. The account is never Premium.
         if (cachedChannelRecommendations.containsKey(dialogId)) {
-            rec = cachedChannelRecommendations.get(dialogId);
-            if (rec == null || rec.wasPremium == isPremium) {
-                return rec;
-            }
+            return cachedChannelRecommendations.get(dialogId);
         }
         TLObject req;
         if (dialogId > 0) {
@@ -22056,11 +21852,10 @@ public class MessagesController extends BaseController implements NotificationCe
                 putChats(chats, false);
 
                 ChannelRecommendations newrec = new ChannelRecommendations();
-                newrec.wasPremium = isPremium;
                 newrec.chats.addAll(chats);
                 if (res instanceof TLRPC.TL_messages_chatsSlice) {
                     newrec.more = Math.max(0, ((TLRPC.TL_messages_chatsSlice) res).count - chats.size());
-                } else if (!getUserConfig().isPremium() && BuildVars.DEBUG_PRIVATE_VERSION) {
+                } else if (BuildVars.DEBUG_PRIVATE_VERSION) {
                     newrec.more = 90;
                 }
                 cachedChannelRecommendations.put(dialogId, newrec);
@@ -22070,18 +21865,17 @@ public class MessagesController extends BaseController implements NotificationCe
                 putUsers(users, false);
 
                 ChannelRecommendations newrec = new ChannelRecommendations();
-                newrec.wasPremium = isPremium;
                 newrec.chats.addAll(users);
                 if (res instanceof TLRPC.TL_usersSlice) {
                     newrec.more = Math.max(0, ((TLRPC.TL_usersSlice) res).count - users.size());
-                } else if (!getUserConfig().isPremium() && BuildVars.DEBUG_PRIVATE_VERSION) {
+                } else if (BuildVars.DEBUG_PRIVATE_VERSION) {
                     newrec.more = 90;
                 }
                 cachedChannelRecommendations.put(dialogId, newrec);
                 getNotificationCenter().postNotificationName(NotificationCenter.channelRecommendationsLoaded, dialogId);
             }
         }));
-        return rec;
+        return null;
     }
 
     // LoogriGram: the Saved Messages tag list - names, counts, per-chat lists -

@@ -133,15 +133,18 @@ public class LiteMode {
         return lastBatteryLevelCached;
     }
 
+    // LoogriGram: each animated emoji switch is two stored bits, one for when
+    // an account on the device has Premium and one for when none has. None is
+    // honoured, so the switch always means the second bit.
     private static int preprocessFlag(int flag) {
         if ((flag & FLAG_ANIMATED_EMOJI_KEYBOARD) > 0) {
-            flag = flag & ~FLAG_ANIMATED_EMOJI_KEYBOARD | (UserConfig.hasPremiumOnAccounts() ? FLAG_ANIMATED_EMOJI_KEYBOARD_PREMIUM : FLAG_ANIMATED_EMOJI_KEYBOARD_NOT_PREMIUM);
+            flag = flag & ~FLAG_ANIMATED_EMOJI_KEYBOARD | FLAG_ANIMATED_EMOJI_KEYBOARD_NOT_PREMIUM;
         }
         if ((flag & FLAG_ANIMATED_EMOJI_REACTIONS) > 0) {
-            flag = flag & ~FLAG_ANIMATED_EMOJI_REACTIONS | (UserConfig.hasPremiumOnAccounts() ? FLAG_ANIMATED_EMOJI_REACTIONS_PREMIUM : FLAG_ANIMATED_EMOJI_REACTIONS_NOT_PREMIUM);
+            flag = flag & ~FLAG_ANIMATED_EMOJI_REACTIONS | FLAG_ANIMATED_EMOJI_REACTIONS_NOT_PREMIUM;
         }
         if ((flag & FLAG_ANIMATED_EMOJI_CHAT) > 0) {
-            flag = flag & ~FLAG_ANIMATED_EMOJI_CHAT | (UserConfig.hasPremiumOnAccounts() ? FLAG_ANIMATED_EMOJI_CHAT_PREMIUM : FLAG_ANIMATED_EMOJI_CHAT_NOT_PREMIUM);
+            flag = flag & ~FLAG_ANIMATED_EMOJI_CHAT | FLAG_ANIMATED_EMOJI_CHAT_NOT_PREMIUM;
         }
         return flag;
     }
