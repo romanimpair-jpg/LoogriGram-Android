@@ -4228,13 +4228,14 @@ public class MessagesStorage extends BaseController {
             }
             id = document.id;
             type = DownloadController.AUTODOWNLOAD_TYPE_AUDIO;
-        } else if (MessageObject.isStickerMessage(message) || MessageObject.isAnimatedStickerMessage(message)) {
+        } else if (MessageObject.isStickerMessage(message) || MessageObject.isAnimatedStickerMessage(message) || MessageObject.isGifMessage(message)) {
+            // LoogriGram: GIFs are queued as photos, matching DownloadController.
             if (document == null) {
                 return false;
             }
             id = document.id;
             type = DownloadController.AUTODOWNLOAD_TYPE_PHOTO;
-        } else if (MessageObject.isVideoMessage(message) || MessageObject.isRoundVideoMessage(message) || MessageObject.isGifMessage(message)) {
+        } else if (MessageObject.isVideoMessage(message) || MessageObject.isRoundVideoMessage(message)) {
             if (document == null) {
                 return false;
             }
@@ -12023,13 +12024,14 @@ public class MessagesStorage extends BaseController {
                                 object = new TLRPC.TL_messageMediaDocument();
                                 object.document = document;
                                 object.flags |= 1;
-                            } else if (MessageObject.isStickerMessage(message) || MessageObject.isAnimatedStickerMessage(message)) {
+                            } else if (MessageObject.isStickerMessage(message) || MessageObject.isAnimatedStickerMessage(message) || MessageObject.isGifMessage(message)) {
+                                // LoogriGram: GIFs are queued as photos, matching DownloadController.
                                 id = document.id;
                                 type = DownloadController.AUTODOWNLOAD_TYPE_PHOTO;
                                 object = new TLRPC.TL_messageMediaDocument();
                                 object.document = document;
                                 object.flags |= 1;
-                            } else if (MessageObject.isVideoMessage(message) || MessageObject.isRoundVideoMessage(message) || MessageObject.isGifMessage(message)) {
+                            } else if (MessageObject.isVideoMessage(message) || MessageObject.isRoundVideoMessage(message)) {
                                 id = document.id;
                                 type = DownloadController.AUTODOWNLOAD_TYPE_VIDEO;
                                 object = new TLRPC.TL_messageMediaDocument();

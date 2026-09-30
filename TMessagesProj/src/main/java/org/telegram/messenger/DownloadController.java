@@ -387,9 +387,9 @@ public class DownloadController extends BaseController implements NotificationCe
     }
 
     // LoogriGram: desktop's auto-download defaults - photos on, videos and
-    // files off, in every kind of chat. Android files GIFs and round videos
-    // under videos and music under files, so those follow them; desktop
-    // keeps GIFs on, which cannot be had here without videos. The network's
+    // files off, in every kind of chat. GIFs are filed under photos here (see
+    // canDownloadMediaType), so they stay on as on desktop, within the photo
+    // size limit; round videos follow videos and music follows files. The network's
     // upstream preset (medium on mobile data, high on Wi-Fi, low roaming)
     // still supplies the size limits, preloading and bitrate, so a type
     // switched on gets upstream's limit, and voice messages, which download
@@ -665,11 +665,13 @@ public class DownloadController extends BaseController implements NotificationCe
         TLRPC.Message msg = message.messageOwner;
         int type;
         boolean isVideo;
-        if ((isVideo = MessageObject.isVideoMessage(msg)) || MessageObject.isGifMessage(msg) || MessageObject.isRoundVideoMessage(msg) || MessageObject.isGameMessage(msg)) {
+        if ((isVideo = MessageObject.isVideoMessage(msg)) || MessageObject.isRoundVideoMessage(msg) || MessageObject.isGameMessage(msg)) {
             type = AUTODOWNLOAD_TYPE_VIDEO;
         } else if (MessageObject.isVoiceMessage(msg)) {
             type = AUTODOWNLOAD_TYPE_AUDIO;
-        } else if (MessageObject.isPhoto(msg) || MessageObject.isStickerMessage(msg) || MessageObject.isAnimatedStickerMessage(msg)) {
+        } else if (MessageObject.isPhoto(msg) || MessageObject.isGifMessage(msg) || MessageObject.isStickerMessage(msg) || MessageObject.isAnimatedStickerMessage(msg)) {
+            // LoogriGram: GIFs follow photos, not videos (upstream's filing), so
+            // desktop's default of photos and GIFs on, videos off, holds here.
             type = AUTODOWNLOAD_TYPE_PHOTO;
         } else if (MessageObject.getDocument(msg) != null) {
             type = AUTODOWNLOAD_TYPE_DOCUMENT;
@@ -752,11 +754,13 @@ public class DownloadController extends BaseController implements NotificationCe
         TLRPC.Message msg = message.messageOwner;
         int type;
         boolean isVideo;
-        if ((isVideo = MessageObject.isVideoMessage(msg)) || MessageObject.isGifMessage(msg) || MessageObject.isRoundVideoMessage(msg) || MessageObject.isGameMessage(msg)) {
+        if ((isVideo = MessageObject.isVideoMessage(msg)) || MessageObject.isRoundVideoMessage(msg) || MessageObject.isGameMessage(msg)) {
             type = AUTODOWNLOAD_TYPE_VIDEO;
         } else if (MessageObject.isVoiceMessage(msg)) {
             type = AUTODOWNLOAD_TYPE_AUDIO;
-        } else if (MessageObject.isPhoto(msg) || MessageObject.isStickerMessage(msg) || MessageObject.isAnimatedStickerMessage(msg)) {
+        } else if (MessageObject.isPhoto(msg) || MessageObject.isGifMessage(msg) || MessageObject.isStickerMessage(msg) || MessageObject.isAnimatedStickerMessage(msg)) {
+            // LoogriGram: GIFs follow photos, not videos (upstream's filing), so
+            // desktop's default of photos and GIFs on, videos off, holds here.
             type = AUTODOWNLOAD_TYPE_PHOTO;
         } else if (MessageObject.getDocument(msg) != null) {
             type = AUTODOWNLOAD_TYPE_DOCUMENT;
@@ -833,11 +837,13 @@ public class DownloadController extends BaseController implements NotificationCe
         }
         int type;
         boolean isVideo;
-        if ((isVideo = MessageObject.isVideoMessage(message)) || MessageObject.isGifMessage(message) || MessageObject.isRoundVideoMessage(message) || MessageObject.isGameMessage(message)) {
+        if ((isVideo = MessageObject.isVideoMessage(message)) || MessageObject.isRoundVideoMessage(message) || MessageObject.isGameMessage(message)) {
             type = AUTODOWNLOAD_TYPE_VIDEO;
         } else if (MessageObject.isVoiceMessage(message)) {
             type = AUTODOWNLOAD_TYPE_AUDIO;
-        } else if (MessageObject.isPhoto(message) || MessageObject.isStickerMessage(message) || MessageObject.isAnimatedStickerMessage(message)) {
+        } else if (MessageObject.isPhoto(message) || MessageObject.isGifMessage(message) || MessageObject.isStickerMessage(message) || MessageObject.isAnimatedStickerMessage(message)) {
+            // LoogriGram: GIFs follow photos, not videos (upstream's filing), so
+            // desktop's default of photos and GIFs on, videos off, holds here.
             type = AUTODOWNLOAD_TYPE_PHOTO;
         } else if (MessageObject.getDocument(message) != null) {
             type = AUTODOWNLOAD_TYPE_DOCUMENT;
