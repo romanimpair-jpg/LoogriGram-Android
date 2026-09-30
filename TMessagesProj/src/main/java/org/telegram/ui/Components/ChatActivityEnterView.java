@@ -9754,7 +9754,7 @@ public class ChatActivityEnterView extends FrameLayout implements
 
     // LoogriGram: the compose bar's gift button and the birthday hint that
     // pointed at it opened the gift sheet. Nothing here buys a gift, and
-    // premiumPurchaseBlocked already kept both off screen.
+    // both had already been kept off screen.
     public boolean showSendSuggestionHint() {
         if (sendSuggestHintView == null && suggestButton != null && suggestButton.getVisibility() == VISIBLE && MessagesController.getGlobalMainSettings().getInt("channelsuggesthint2", 0) < 2) {
             sendSuggestHintView = new HintView2(getContext(), HintView2.DIRECTION_BOTTOM);

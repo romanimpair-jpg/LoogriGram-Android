@@ -534,7 +534,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             .add(NotificationCenter.screenStateChanged)
             .add(NotificationCenter.showBulletin)
             .add(NotificationCenter.requestPermissions)
-            .add(NotificationCenter.billingConfirmPurchaseError)
             .add(NotificationCenter.tlSchemeParseException)
             .add(NotificationCenter.memoryLeakFoundException);
 
@@ -6833,8 +6832,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             if (args.length > 1 && !mainFragmentsStack.isEmpty()) {
                 AlertsCreator.processError(currentAccount, (TLRPC.TL_error) args[2], mainFragmentsStack.get(mainFragmentsStack.size() - 1), (TLObject) args[1]);
             }
-        } else if (id == NotificationCenter.billingConfirmPurchaseError) {
-            AlertsCreator.processError(currentAccount, (TLRPC.TL_error) args[1], mainFragmentsStack.get(mainFragmentsStack.size() - 1), (TLObject) args[0]);
         } else if (id == NotificationCenter.stickersImportComplete) {
             MediaDataController.getInstance(account).toggleStickerSet(this, (TLObject) args[0], 2, !mainFragmentsStack.isEmpty() ? mainFragmentsStack.get(mainFragmentsStack.size() - 1) : null, false, true);
         } else if (id == NotificationCenter.showBulletin) {

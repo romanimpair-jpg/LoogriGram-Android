@@ -34,7 +34,6 @@ public class CellFlickerDrawable {
     public boolean frameInside = false;
     public float repeatProgress = 1.2f;
     public float animationSpeedScale = 1f;
-    Runnable onRestartCallback;
 
     public CellFlickerDrawable() {
         this(64, 204, 160);
@@ -107,9 +106,6 @@ public class CellFlickerDrawable {
                     progress += (dt / 1200f) * animationSpeedScale;
                     if (progress > repeatProgress) {
                         progress = 0;
-                        if (onRestartCallback != null) {
-                            onRestartCallback.run();
-                        }
                     }
                     lastUpdateTime = currentTime;
                 }
@@ -133,9 +129,6 @@ public class CellFlickerDrawable {
                 progress += dt / 500f;
                 if (progress > 4f) {
                     progress = 0;
-                    if (onRestartCallback != null) {
-                        onRestartCallback.run();
-                    }
                 }
                 lastUpdateTime = currentTime;
             }
@@ -164,10 +157,6 @@ public class CellFlickerDrawable {
 
     public void setParentWidth(int parentWidth) {
         this.parentWidth = parentWidth;
-    }
-
-    public void setOnRestartCallback(Runnable runnable) {
-        onRestartCallback = runnable;
     }
 
     public void setAlpha(int alpha) {

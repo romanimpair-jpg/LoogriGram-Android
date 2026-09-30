@@ -5144,8 +5144,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         AndroidUtilities.shakeViewSpring(view, shiftDp = -shiftDp);
         BotWebViewVibrationEffect.APP_ERROR.vibrate();
         // LoogriGram: the "Subscribe to Premium" button beside this was never
-        // offered (premiumFeaturesBlocked), and the text now also covers a
-        // user who charges per message.
+        // offered here, and the text now also covers a user who charges per
+        // message.
         BulletinFactory.of(this).createSimpleBulletin(R.raw.star_premium_2, DialogObject.getLockedText(currentAccount, dialogId, R.string.UserBlockedNonPremium)).show();
     }
 

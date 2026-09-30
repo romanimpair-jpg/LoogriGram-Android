@@ -47,11 +47,9 @@ public class BuildVars {
 
     public static String HUAWEI_APP_ID = "101184875";
 
-    // You can use this flag to disable Google Play Billing (If you're making fork and want it to be in Google Play)
-    // LoogriGram: taking upstream at its word - this is the fork flag, and it
-    // closes the gift and premium buttons that the premium getters do not
-    // reach on their own.
-    public static boolean IS_BILLING_UNAVAILABLE = true;
+    // LoogriGram: IS_BILLING_UNAVAILABLE, upstream's "disable Google Play
+    // Billing" fork flag, stood here, always true. Its last reader was the
+    // Premium button's shine, which it kept off; the shine is gone.
 
     // works only on official app ids, disable on your forks
     // LoogriGram: doing as the comment above says. Passkeys need the Google

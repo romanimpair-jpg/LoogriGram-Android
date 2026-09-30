@@ -1895,8 +1895,8 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
     private void showPremiumBlockedToast(View view, long dialogId) {
         AndroidUtilities.shakeViewSpring(view, shiftDp = -shiftDp);
         BotWebViewVibrationEffect.APP_ERROR.vibrate();
-        // LoogriGram: no "Subscribe to Premium" button (premiumFeaturesBlocked
-        // never offered it), and the text also covers paid messages.
+        // LoogriGram: no "Subscribe to Premium" button (it was never offered
+        // here), and the text also covers paid messages.
         BulletinFactory.of(bulletinContainer, resourcesProvider).createSimpleBulletin(R.raw.star_premium_2, DialogObject.getLockedText(currentAccount, dialogId, R.string.UserBlockedNonPremium)).show();
     }
 

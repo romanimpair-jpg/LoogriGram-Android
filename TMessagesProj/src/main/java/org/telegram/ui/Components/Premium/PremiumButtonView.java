@@ -20,7 +20,6 @@ import androidx.annotation.NonNull;
 import androidx.core.graphics.ColorUtils;
 
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.utils.ViewOutlineProviderImpl;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.BadWayToMakeButtonRound;
@@ -33,7 +32,6 @@ import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.Loadable;
 import org.telegram.ui.Components.RLottieImageView;
 import org.telegram.ui.Components.ScaleStateListAnimator;
-import org.telegram.ui.Components.voip.CellFlickerDrawable;
 
 public class PremiumButtonView extends FrameLayout implements Loadable {
 
@@ -50,7 +48,6 @@ public class PremiumButtonView extends FrameLayout implements Loadable {
     ValueAnimator overlayAnimator;
 
     Path path = new Path();
-    CellFlickerDrawable flickerDrawable;
     private boolean drawOverlayColor;
 
     RLottieImageView iconView;
@@ -68,10 +65,6 @@ public class PremiumButtonView extends FrameLayout implements Loadable {
         super(context);
         this.radius = radius;
 
-        flickerDrawable = new CellFlickerDrawable();
-        flickerDrawable.animationSpeedScale = 1.2f;
-        flickerDrawable.drawFrame = false;
-        flickerDrawable.repeatProgress = 4f;
         LinearLayout linearLayout = new LinearLayout(context);
         linearLayout.setOrientation(LinearLayout.HORIZONTAL);
         buttonTextView = new AnimatedTextView(context, true, true, true) {
@@ -276,11 +269,6 @@ public class PremiumButtonView extends FrameLayout implements Loadable {
             invalidate();
         }
 
-        if (!BuildVars.IS_BILLING_UNAVAILABLE) {
-            flickerDrawable.setParentWidth(getMeasuredWidth());
-            flickerDrawable.draw(canvas, AndroidUtilities.rectTmp, radius, null);
-        }
-
         if (overlayProgress != 0 && drawOverlayColor) {
             paintOverlayPaint.setAlpha((int) (255 * overlayProgress));
             if (overlayProgress != 1f) {
@@ -352,19 +340,7 @@ public class PremiumButtonView extends FrameLayout implements Loadable {
         updateOverlay(true);
     }
 
-    public void setIcon(int id) {
-        iconView.setAnimation(id, 24, 24);
-        flickerDrawable.progress = 2f;
-        flickerDrawable.setOnRestartCallback(() -> {
-            iconView.getAnimatedDrawable().setCurrentFrame(0, true);
-            iconView.playAnimation();
-        });
-        invalidate();
-        iconView.setVisibility(View.VISIBLE);
-    }
-
     public void hideIcon() {
-        flickerDrawable.setOnRestartCallback(null);
         iconView.setVisibility(View.GONE);
     }
 

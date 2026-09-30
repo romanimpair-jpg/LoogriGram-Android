@@ -637,39 +637,13 @@ public class MessagesController extends BaseController implements NotificationCe
     private final SharedPreferences emojiPreferences;
 
     public volatile boolean ignoreSetOnline;
-    public boolean premiumLocked;
 
-    // LoogriGram: the whole premium and Stars economy, off at three getters.
-    // These are upstream's own "purchases are blocked here" flags, driven by a
-    // server appConfig for regions where Premium cannot be sold, so forcing
-    // them sends roughly ninety call sites down branches upstream already
-    // wrote and ships: no Premium, Stars, Business or Send-a-Gift rows in
-    // settings or the profile, no purchase offers, and every limit box down
-    // its informational branch instead of an upsell.
-    //
-    // Forced at the getter rather than by setting premiumLocked, because
-    // appConfig overwrites that field on every connection.
-    //
-    // premiumFeaturesBlocked also drives the premium decorations -
-    // ChatMessageCell, UserCell, ReactedUsersListView, PremiumGradient - so
-    // this is also what removes the gold star and the badge gradients. Unlike
-    // upstream it ignores isPremium(): the point is that this build has no
-    // premium surfaces at all, not that the current account lacks them.
-    //
-    // One knock-on worth knowing: filterPremiumStickers strips premium
-    // stickers from sticker sets when this is true, as it does upstream in a
-    // purchase-blocked region.
-    public boolean starsPurchaseAvailable() {
-        return false;
-    }
-    public boolean premiumFeaturesBlocked() {
-        return true;
-    }
-    public boolean premiumPurchaseBlocked() {
-        return true;
-    }
-
-    public List<String> directPaymentsCurrency = new ArrayList<>();
+    // LoogriGram: premiumFeaturesBlocked(), premiumPurchaseBlocked() and
+    // starsPurchaseAvailable() stood here - upstream's "Premium cannot be sold
+    // here" flags, forced to "no Premium, no Stars" at the getter so their ninety
+    // callers took the branches upstream already shipped. Each of those
+    // callers has since been removed, the Premium screens last, and the getters
+    // went with the premium_purchase_blocked config behind them.
 
     public NewMessageCallback newMessageCallback;
 
@@ -1526,7 +1500,6 @@ public class MessagesController extends BaseController implements NotificationCe
         verifyAgeBotUsername = mainPreferences.getString("verifyAgeBotUsername", null);
         verifyAgeCountry = mainPreferences.getString("verifyAgeCountry", "GB");
         verifyAgeMin = mainPreferences.getInt("verifyAgeMin", 18);
-        premiumLocked = mainPreferences.getBoolean("premiumLocked", false);
         forumUpgradeParticipantsMin = mainPreferences.getInt("forumUpgradeParticipantsMin", 200);
         topicsPinnedLimit = mainPreferences.getInt("topicsPinnedLimit", 3);
         telegramAntispamUserId = mainPreferences.getLong("telegramAntispamUserId", -1);
@@ -1611,12 +1584,6 @@ public class MessagesController extends BaseController implements NotificationCe
             webFileDatacenterId = mainPreferences.getInt("webFileDatacenterId", 4);
         } else {
             webFileDatacenterId = isTest ? 2 : 4;
-        }
-
-        Set<String> currencySet = mainPreferences.getStringSet("directPaymentsCurrency", null);
-        if (currencySet != null) {
-            directPaymentsCurrency.clear();
-            directPaymentsCurrency.addAll(currencySet);
         }
 
         if (pendingSuggestions != null) {
@@ -2441,39 +2408,9 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
-                case "premium_playmarket_direct_currency_list": {
-                    if (value.value instanceof TLRPC.TL_jsonArray) {
-                        TLRPC.TL_jsonArray arr = (TLRPC.TL_jsonArray) value.value;
-                        HashSet<String> currencySet = new HashSet<>();
-                        for (TLRPC.JSONValue el : arr.value) {
-                            if (el instanceof TLRPC.TL_jsonString) {
-                                TLRPC.TL_jsonString currencyEl = (TLRPC.TL_jsonString) el;
-                                String currency = currencyEl.value;
-                                currencySet.add(currency);
-                            }
-                        }
-
-                        if (!(directPaymentsCurrency.containsAll(currencySet) && currencySet.containsAll(directPaymentsCurrency))) {
-                            directPaymentsCurrency.clear();
-                            directPaymentsCurrency.addAll(currencySet);
-                            editor.putStringSet("directPaymentsCurrency", currencySet);
-                            changed = true;
-
-                            NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.billingProductDetailsUpdated);
-                        }
-                    }
-                    break;
-                }
-                case "premium_purchase_blocked": {
-                    if (value.value instanceof TLRPC.TL_jsonBool) {
-                        if (premiumLocked != ((TLRPC.TL_jsonBool) value.value).value) {
-                            premiumLocked = ((TLRPC.TL_jsonBool) value.value).value;
-                            editor.putBoolean("premiumLocked", premiumLocked);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
+                // LoogriGram: premium_playmarket_direct_currency_list (the
+                // currencies Telegram bills Premium in directly) and
+                // premium_purchase_blocked were read here. Nothing is bought.
                 // LoogriGram: premium_bot_username was read here, the bot the
                 // Premium screen's subscribe button opened. That screen is deleted.
                 case "verify_age_bot_username": {

@@ -765,45 +765,6 @@ public class StoryPrivacyBottomSheet {
             return result;
         }
 
-        public static ArrayList<TLRPC.InputPrivacyRule> toInput(int currentAccount, ArrayList<TLRPC.PrivacyRule> rules) {
-            MessagesController messagesController = MessagesController.getInstance(currentAccount);
-            final ArrayList<TLRPC.InputPrivacyRule> arr = new ArrayList<>();
-            for (int i = 0; i < rules.size(); ++i) {
-                TLRPC.PrivacyRule rule = rules.get(i);
-                if (rule == null) {
-                    continue;
-                }
-                if (rule instanceof TLRPC.TL_privacyValueAllowAll) {
-                    arr.add(new TLRPC.TL_inputPrivacyValueAllowAll());
-                } else if (rule instanceof TLRPC.TL_privacyValueAllowCloseFriends) {
-                    arr.add(new TLRPC.TL_inputPrivacyValueAllowCloseFriends());
-                } else if (rule instanceof TLRPC.TL_privacyValueAllowContacts) {
-                    arr.add(new TLRPC.TL_inputPrivacyValueAllowContacts());
-                } else if (rule instanceof TLRPC.TL_privacyValueDisallowUsers) {
-                    TLRPC.TL_privacyValueDisallowUsers rule2 = (TLRPC.TL_privacyValueDisallowUsers) rule;
-                    TLRPC.TL_inputPrivacyValueDisallowUsers inputRule = new TLRPC.TL_inputPrivacyValueDisallowUsers();
-                    for (int j = 0; j < rule2.users.size(); ++j) {
-                        TLRPC.InputUser user = messagesController.getInputUser(rule2.users.get(j));
-                        if (!(user instanceof TLRPC.TL_inputUserEmpty)) {
-                            inputRule.users.add(user);
-                        }
-                    }
-                    arr.add(inputRule);
-                } else if (rule instanceof TLRPC.TL_privacyValueAllowUsers) {
-                    TLRPC.TL_privacyValueAllowUsers rule2 = (TLRPC.TL_privacyValueAllowUsers) rule;
-                    TLRPC.TL_inputPrivacyValueAllowUsers inputRule = new TLRPC.TL_inputPrivacyValueAllowUsers();
-                    for (int j = 0; j < rule2.users.size(); ++j) {
-                        TLRPC.InputUser user = messagesController.getInputUser(rule2.users.get(j));
-                        if (!(user instanceof TLRPC.TL_inputUserEmpty)) {
-                            inputRule.users.add(user);
-                        }
-                    }
-                    arr.add(inputRule);
-                }
-            }
-            return arr;
-        }
-
         public static ArrayList<TLRPC.PrivacyRule> toOutput(ArrayList<TLRPC.InputPrivacyRule> rules) {
             final ArrayList<TLRPC.PrivacyRule> arr = new ArrayList<>();
             for (int i = 0; i < rules.size(); ++i) {
