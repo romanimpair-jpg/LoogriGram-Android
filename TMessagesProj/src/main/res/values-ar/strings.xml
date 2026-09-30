@@ -407,7 +407,6 @@
     <string name="TermsOfService">شروط الخدمة</string>
     <string name="TermsOfServiceLogin">تسجيلك يعني موافقتك\nعلى *شروط الخدمة*.</string>
     <string name="PrivacyPolicyUrl">https://telegram.org/faq/ar#a10</string>
-    <string name="TermsOfServiceUrl">https://telegram.org/tos</string>
     <string name="WebAppDisclaimerUrl">https://telegram.org/tos/mini-apps</string>
     <string name="DeleteLocalizationTitle">حذف حزمة اللغة</string>
     <string name="DeleteLocalizationText">هل ترغب حقًا في حذف حزمة اللغة **%1$s**؟</string>

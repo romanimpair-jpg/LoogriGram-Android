@@ -1,22 +1,14 @@
 package org.telegram.ui.Components.Premium;
 
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.ColorFilter;
 import android.graphics.LinearGradient;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Shader;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 
 
-import org.telegram.messenger.ApplicationLoader;
 import org.telegram.ui.ActionBar.Theme;
 
 public class PremiumGradient {
@@ -31,7 +23,9 @@ public class PremiumGradient {
     private static PremiumGradient instance;
 
     // LoogriGram: the Premium stars drawn beside names and in menus, the golden
-    // one included, went with everything that drew them.
+    // one included, went with everything that drew them. createGradientDrawable
+    // and its InternalDrawable, which tinted the doubled-limits sheet's icons,
+    // went with that sheet.
 
     public static PremiumGradient getInstance() {
         if (instance == null) {
@@ -44,29 +38,6 @@ public class PremiumGradient {
         mainGradient.chekColors();
     }
 
-    public InternalDrawable createGradientDrawable(Drawable drawable) {
-        return createGradientDrawable(drawable, mainGradient);
-    }
-
-    public InternalDrawable createGradientDrawable(Drawable drawable, PremiumGradientTools gradient) {
-        if (drawable == null) {
-            return null;
-        }
-        int width = drawable.getIntrinsicWidth();
-        int height = drawable.getMinimumHeight();
-        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-        drawable.setBounds(0, 0, width, height);
-        drawable.draw(canvas);
-
-        gradient.paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
-        gradient.gradientMatrix(0, 0, width, height, -width, 0);
-        canvas.drawRect(0, 0, width, height, gradient.paint);
-        gradient.paint.setXfermode(null);
-
-        return new InternalDrawable(drawable, bitmap, gradient.colors);
-    }
-
     public void updateMainGradientMatrix(int x, int y, int width, int height, float xOffset, float yOffset) {
         mainGradient.gradientMatrix(x, y, width, height, xOffset, yOffset);
     }
@@ -77,29 +48,6 @@ public class PremiumGradient {
         }
         lockedPremiumPaint.setColor(Theme.getColor(Theme.key_featuredStickers_addButton));
         return lockedPremiumPaint;
-    }
-
-    public static class InternalDrawable extends BitmapDrawable {
-
-        public int[] colors;
-        Drawable originDrawable;
-
-        public InternalDrawable(Drawable originDrawable, Bitmap bitmap, int[] colors) {
-            super(ApplicationLoader.applicationContext.getResources(), bitmap);
-            this.originDrawable = originDrawable;
-            this.colors = new int[colors.length];
-            System.arraycopy(colors, 0, this.colors, 0, colors.length);
-        }
-
-        @Override
-        public void setColorFilter(ColorFilter colorFilter) {
-
-        }
-
-        @Override
-        public void setColorFilter(int color, PorterDuff.Mode mode) {
-
-        }
     }
 
     // LoogriGram: the Premium gradient is the plain button colour, for everyone.
@@ -219,15 +167,6 @@ public class PremiumGradient {
                 shader.setLocalMatrix(matrix);
                 paint.setShader(shader);
             }
-        }
-
-        public void gradientMatrixLinear(float totalHeight, float offset) {
-            chekColors();
-
-            matrix.reset();
-            matrix.postScale(1f, totalHeight / 100f, 0, 0);
-            matrix.postTranslate(0, offset);
-            shader.setLocalMatrix(matrix);
         }
     }
 }

@@ -264,10 +264,6 @@ public class MediaDataController extends BaseController {
     private int reactionsUpdateDate;
     private boolean reactionsCacheGenerated;
 
-    private TLRPC.TL_help_premiumPromo premiumPromo;
-    private boolean isLoadingPremiumPromo;
-    private int premiumPromoUpdateDate;
-
     private ArrayList<TLRPC.TL_messages_stickerSet>[] stickerSets = new ArrayList[]{new ArrayList<>(), new ArrayList<>(), new ArrayList<>(0), new ArrayList<>(), new ArrayList<>(), new ArrayList<>()};
     private LongSparseArray<TLRPC.Document>[] stickersByIds = new LongSparseArray[]{new LongSparseArray<>(), new LongSparseArray<>(), new LongSparseArray<>(), new LongSparseArray<>(), new LongSparseArray<>(), new LongSparseArray<>()};
     private LongSparseArray<TLRPC.TL_messages_stickerSet> stickerSetsById = new LongSparseArray<>();
@@ -331,9 +327,6 @@ public class MediaDataController extends BaseController {
 
     public final RingtoneDataStore ringtoneDataStore;
     public final ArrayList<ChatThemeBottomSheet.ChatThemeItem> defaultEmojiThemes = new ArrayList<>();
-
-    public final ArrayList<TLRPC.Document> premiumPreviewStickers = new ArrayList<>();
-    boolean previewStickersLoading;
 
     private long[] emojiStatusesHash = new long[4];
     private ArrayList<TLRPC.EmojiStatus>[] emojiStatuses = new ArrayList[4];
@@ -438,16 +431,6 @@ public class MediaDataController extends BaseController {
         if (!isLoadingMenuBots && (atStart && !menuBotsUpdatedLocal || Math.abs(System.currentTimeMillis() / 1000 - menuBotsUpdateDate) >= 60 * 60)) {
             loadAttachMenuBots(true, false);
         }
-    }
-
-    public void checkPremiumPromo() {
-        if (!isLoadingPremiumPromo && (premiumPromo == null || Math.abs(System.currentTimeMillis() / 1000 - premiumPromoUpdateDate) >= 60 * 60)) {
-            loadPremiumPromo(true);
-        }
-    }
-
-    public TLRPC.TL_help_premiumPromo getPremiumPromo() {
-        return premiumPromo;
     }
 
     public TLRPC.TL_attachMenuBots getAttachMenuBots() {
@@ -579,92 +562,11 @@ public class MediaDataController extends BaseController {
         });
     }
 
-    public void loadPremiumPromo(boolean cache) {
-        isLoadingPremiumPromo = true;
-        if (cache) {
-            getMessagesStorage().getStorageQueue().postRunnable(() -> {
-                SQLiteCursor c = null;
-                int date = 0;
-                TLRPC.TL_help_premiumPromo premiumPromo = null;
-                try {
-                    c = getMessagesStorage().getDatabase().queryFinalized("SELECT data, date FROM premium_promo");
-                    if (c.next()) {
-                        NativeByteBuffer data = c.byteBufferValue(0);
-                        if (data != null) {
-                            premiumPromo = TLRPC.TL_help_premiumPromo.TLdeserialize(data, data.readInt32(false), true);
-                            data.reuse();
-                        }
-                        date = c.intValue(1);
-                    }
-                } catch (Exception e) {
-                    FileLog.e(e, false);
-                } finally {
-                    if (c != null) {
-                        c.dispose();
-                    }
-                }
-                processLoadedPremiumPromo(premiumPromo, date, true);
-            });
-        } else {
-            TLRPC.TL_help_getPremiumPromo req = new TLRPC.TL_help_getPremiumPromo();
-            getConnectionsManager().sendRequest(req, (response, error) -> {
-                int date = (int) (System.currentTimeMillis() / 1000);
-                if (response instanceof TLRPC.TL_help_premiumPromo) {
-                    TLRPC.TL_help_premiumPromo r = (TLRPC.TL_help_premiumPromo) response;
-                    processLoadedPremiumPromo(r, date, false);
-                }
-            });
-        }
-    }
-
-    public void processLoadedPremiumPromo(TLRPC.TL_help_premiumPromo premiumPromo, int date, boolean cache) {
-        if (premiumPromo != null) {
-            this.premiumPromo = premiumPromo;
-            premiumPromoUpdateDate = date;
-            getMessagesController().putUsers(premiumPromo.users, cache);
-            AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.premiumPromoUpdated));
-        }
-
-        if (!cache) {
-            if (premiumPromo != null) {
-                putPremiumPromoToCache(premiumPromo, date);
-            }
-            isLoadingPremiumPromo = false;
-        } else {
-            if (premiumPromo == null || Math.abs(System.currentTimeMillis() / 1000 - date) >= 60 * 60 * 24) {
-                loadPremiumPromo(false);
-            } else {
-                isLoadingPremiumPromo = false;
-            }
-        }
-    }
-
-    private void putPremiumPromoToCache(TLRPC.TL_help_premiumPromo premiumPromo, int date) {
-        getMessagesStorage().getStorageQueue().postRunnable(() -> {
-            try {
-                if (premiumPromo != null) {
-                    getMessagesStorage().getDatabase().executeFast("DELETE FROM premium_promo").stepThis().dispose();
-                    SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("REPLACE INTO premium_promo VALUES(?, ?)");
-                    state.requery();
-                    NativeByteBuffer data = new NativeByteBuffer(premiumPromo.getObjectSize());
-                    premiumPromo.serializeToStream(data);
-                    state.bindByteBuffer(1, data);
-                    state.bindInteger(2, date);
-                    state.step();
-                    data.reuse();
-                    state.dispose();
-                } else {
-                    SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("UPDATE premium_promo SET date = ?");
-                    state.requery();
-                    state.bindInteger(1, date);
-                    state.step();
-                    state.dispose();
-                }
-            } catch (Exception e) {
-                FileLog.e(e);
-            }
-        });
-    }
+    // LoogriGram: loadPremiumPromo, processLoadedPremiumPromo and
+    // putPremiumPromoToCache stood here. They fetched help.getPremiumPromo -
+    // the Premium screen's texts, feature videos and prices - on start, hourly
+    // and whenever our Premium status changed, and cached it in premium_promo.
+    // That screen is deleted. The table stays, emptied with the others.
 
     public List<TLRPC.TL_availableReaction> getReactionsList() {
         return reactionsList;
@@ -8199,40 +8101,6 @@ public class MediaDataController extends BaseController {
         return true;
     }
 
-    public void preloadPremiumPreviewStickers() {
-        if (previewStickersLoading || !premiumPreviewStickers.isEmpty()) {
-            for (int i = 0; i < Math.min(premiumPreviewStickers.size(), 3); i++) {
-                TLRPC.Document document = premiumPreviewStickers.get(i == 2 ? premiumPreviewStickers.size() - 1 : i);
-                if (MessageObject.isPremiumSticker(document)) {
-                    ImageReceiver imageReceiver = new ImageReceiver();
-                    imageReceiver.setAllowLoadingOnAttachedOnly(false);
-                    imageReceiver.setImage(ImageLocation.getForDocument(document), null, null, "webp", null, 1);
-                    ImageLoader.getInstance().loadImageForImageReceiver(imageReceiver);
-
-                    imageReceiver = new ImageReceiver();
-                    imageReceiver.setAllowLoadingOnAttachedOnly(false);
-                    imageReceiver.setImage(ImageLocation.getForDocument(MessageObject.getPremiumStickerAnimation(document), document), null, null, null, "tgs", null, 1);
-                    ImageLoader.getInstance().loadImageForImageReceiver(imageReceiver);
-                }
-            }
-            return;
-        }
-        final TLRPC.TL_messages_getStickers req2 = new TLRPC.TL_messages_getStickers();
-        req2.emoticon = Emoji.fixEmoji("⭐") + Emoji.fixEmoji("⭐");
-        req2.hash = 0;
-        previewStickersLoading = true;
-        ConnectionsManager.getInstance(currentAccount).sendRequest(req2, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-            if (error != null) {
-                return;
-            }
-            previewStickersLoading = false;
-            TLRPC.TL_messages_stickers res = (TLRPC.TL_messages_stickers) response;
-            premiumPreviewStickers.clear();
-            premiumPreviewStickers.addAll(res.stickers);
-            NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.premiumStickersPreviewLoaded);
-        }));
-    }
-
     public void checkAllMedia(boolean force) {
         if (force) {
             reactionsUpdateDate = 0;
@@ -8245,7 +8113,6 @@ public class MediaDataController extends BaseController {
         checkFeaturedEmoji();
         checkReactions();
         checkMenuBots(true);
-        checkPremiumPromo();
         checkPremiumGiftStickers();
         checkTonGiftStickers();
         checkGenericAnimations();

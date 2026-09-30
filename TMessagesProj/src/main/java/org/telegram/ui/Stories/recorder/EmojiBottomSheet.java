@@ -2035,9 +2035,6 @@ public class EmojiBottomSheet extends BottomSheet implements NotificationCenter.
             if (!selectorRect.isEmpty()) {
                 selectorDrawable.setBounds(selectorRect);
                 canvas.save();
-                if (selectorTransformer != null) {
-                    selectorTransformer.accept(canvas);
-                }
                 selectorDrawable.draw(canvas);
                 canvas.restore();
             }

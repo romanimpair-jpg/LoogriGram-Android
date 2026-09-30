@@ -274,7 +274,8 @@ public class ApplicationLoader extends Application {
             ContactsController.getInstance(a).applyGhostModePrivacy(false);
             DownloadController.getInstance(a);
         }
-        BillingController.getInstance().startConnection();
+        // LoogriGram: BillingController.startConnection() was called here. With
+        // no Play Billing it connected to nothing, and the class is deleted.
     }
 
     public ApplicationLoader() {

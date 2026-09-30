@@ -74,17 +74,9 @@ public class BuildVars {
         }
     }
 
-    // LoogriGram: always Telegram's own invoices, never Google Play Billing.
-    //
-    // Upstream reaches the same answer here by a longer route -
-    // billingClientEmpty is true when there is no Play Billing, which is now
-    // permanent - but it is stated outright because it is a decision, not a
-    // consequence of the device. hasDirectCurrency went with it: that asked the
-    // Play product details whether the subscription is priced in one of the
-    // currencies Telegram bills directly, and there are no product details.
-    public static boolean useInvoiceBilling() {
-        return true;
-    }
+    // LoogriGram: useInvoiceBilling() stood here, always true: Telegram's own
+    // invoices, never Google Play Billing. Its last readers were the deleted
+    // Premium screens.
 
     private static Boolean betaApp;
     public static boolean isBetaApp() {

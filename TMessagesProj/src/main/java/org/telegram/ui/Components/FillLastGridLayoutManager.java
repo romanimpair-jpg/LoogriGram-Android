@@ -34,11 +34,6 @@ public class FillLastGridLayoutManager extends GridLayoutManager {
         additionalHeight = h;
     }
 
-    public void setAdditionalHeight(int value) {
-        additionalHeight = value;
-        calcLastItemHeight();
-    }
-
     @SuppressWarnings("unchecked")
     protected void calcLastItemHeight() {
         if (listHeight <= 0 || !shouldCalcLastItemHeight()) {

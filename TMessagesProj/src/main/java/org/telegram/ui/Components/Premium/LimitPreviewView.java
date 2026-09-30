@@ -23,7 +23,6 @@ import android.text.style.RelativeSizeSpan;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.animation.OvershootInterpolator;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
@@ -58,7 +57,6 @@ public class LimitPreviewView extends LinearLayout {
     private float percent;
     private final int premiumLimit;
     private int currentValue;
-    public int gradientTotalHeight;
     boolean wasAnimation;
     CounterView limitIcon;
 
@@ -72,9 +70,6 @@ public class LimitPreviewView extends LinearLayout {
     AnimatedTextView premiumCount;
     TextView defaultCount;
     private float position;
-    private View parentVideForGradient;
-    PremiumGradient.PremiumGradientTools staticGradient;
-    int gradientYOffset;
     boolean wasHaptic;
     boolean animationCanPlay = true;
     FrameLayout limitsContainer;
@@ -195,24 +190,7 @@ public class LimitPreviewView extends LinearLayout {
                     canvas.clipRect(width1, 0, getMeasuredWidth(), getMeasuredHeight());
                 }
                 Paint paint = isRatingStyle ? ratingPaint : PremiumGradient.getInstance().getMainGradientPaint();
-                if (parentVideForGradient != null) {
-                    View parent = parentVideForGradient;
-                    if (staticGradient != null) {
-                        paint = staticGradient.paint;
-                        staticGradient.gradientMatrixLinear(gradientTotalHeight, -gradientYOffset);
-                    } else {
-                        float y = 0;
-                        View child = this;
-                        while (child != parent) {
-                            y += child.getY();
-                            child = (View) child.getParent();
-                        }
-                        PremiumGradient.getInstance().updateMainGradientMatrix(0, 0, parent.getMeasuredWidth(), parent.getMeasuredHeight(), getGlobalXOffset() - getLeft(), -y);
-                    }
-
-                } else {
-                    PremiumGradient.getInstance().updateMainGradientMatrix(0, 0, LimitPreviewView.this.getMeasuredWidth(), LimitPreviewView.this.getMeasuredHeight(), getGlobalXOffset() - getLeft(), -getTop());
-                }
+                PremiumGradient.getInstance().updateMainGradientMatrix(0, 0, LimitPreviewView.this.getMeasuredWidth(), LimitPreviewView.this.getMeasuredHeight(), getGlobalXOffset() - getLeft(), -getTop());
                 int wasAlpha = paint.getAlpha();
                 if (animateArrowFadeOut && arrowAnimator != null) {
                     paint.setAlpha((int) (wasAlpha * (1.0f - (float) arrowAnimator.getAnimatedValue())));
@@ -229,7 +207,7 @@ public class LimitPreviewView extends LinearLayout {
                 canvas.drawRoundRect(AndroidUtilities.rectTmp, dp(6), dp(6), paint);
                 paint.setAlpha(wasAlpha);
                 canvas.restore();
-                if (staticGradient == null && invalidationEnabled) {
+                if (invalidationEnabled) {
                     invalidate();
                 }
                 super.dispatchDraw(canvas);
@@ -364,20 +342,18 @@ public class LimitPreviewView extends LinearLayout {
 
     @Override
     protected void dispatchDraw(Canvas canvas) {
-        if (staticGradient == null) {
-            if (inc) {
-                progress += 16f / 1000f;
-                if (progress > 3) {
-                    inc = false;
-                }
-            } else {
-                progress -= 16f / 1000f;
-                if (progress < 1) {
-                    inc = true;
-                }
+        if (inc) {
+            progress += 16f / 1000f;
+            if (progress > 3) {
+                inc = false;
             }
-            invalidate();
+        } else {
+            progress -= 16f / 1000f;
+            if (progress < 1) {
+                inc = true;
+            }
         }
+        invalidate();
         super.dispatchDraw(canvas);
     }
 
@@ -574,14 +550,6 @@ public class LimitPreviewView extends LinearLayout {
 
     public void setBagePosition(float position) {
         this.position = MathUtils.clamp(position, 0.1f, 0.9f);
-    }
-
-    public void setParentViewForGradien(ViewGroup containerView) {
-        parentVideForGradient = containerView;
-    }
-
-    public void setStaticGradinet(PremiumGradient.PremiumGradientTools gradientTools) {
-        staticGradient = gradientTools;
     }
 
     public void setDelayedAnimation() {

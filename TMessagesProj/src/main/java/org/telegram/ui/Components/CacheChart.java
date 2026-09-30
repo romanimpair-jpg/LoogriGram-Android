@@ -10,6 +10,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.CornerPathEffect;
 import android.graphics.LinearGradient;
 import android.graphics.Matrix;
 import android.graphics.Paint;
@@ -25,15 +26,18 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 
+import androidx.core.graphics.ColorUtils;
+
 import com.google.zxing.common.detector.MathUtils;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SvgHelper;
+import org.telegram.messenger.Utilities;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.Components.Premium.StarParticlesView;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class CacheChart extends View {
@@ -105,7 +109,7 @@ public class CacheChart extends View {
     private final AnimatedTextView.AnimatedTextDrawable topCompleteText = new AnimatedTextView.AnimatedTextDrawable(false, true, true);
     private final AnimatedTextView.AnimatedTextDrawable bottomCompleteText = new AnimatedTextView.AnimatedTextDrawable(false, true, true);
 
-    private StarParticlesView.Drawable completeDrawable;
+    private CompleteStars completeDrawable;
 
     private static long particlesStart = -1;
     class Sector {
@@ -843,17 +847,7 @@ public class CacheChart extends View {
         if (complete > 0) {
             boolean init = false;
             if (completeDrawable == null) {
-                completeDrawable = new StarParticlesView.Drawable(25);
-                completeDrawable.type = 100;
-                completeDrawable.roundEffect = true;
-                completeDrawable.useRotate = true;
-                completeDrawable.useBlur = false;
-                completeDrawable.checkBounds = true;
-                completeDrawable.size1 = 18;
-                completeDrawable.distributionAlgorithm = false;
-                completeDrawable.excludeRadius = AndroidUtilities.dp(80);
-                completeDrawable.k1 = completeDrawable.k2 = completeDrawable.k3 = .85f;
-                completeDrawable.init();
+                completeDrawable = new CompleteStars(25);
                 init = true;
             }
             if (init || completePathBounds == null || !completePathBounds.equals(chartMeasureBounds)) {
@@ -969,5 +963,163 @@ public class CacheChart extends View {
     protected void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         requestLayout();
+    }
+
+    // LoogriGram: was StarParticlesView.Drawable, the Premium screens' drifting
+    // stars, which also drew each feature page's own particles. The screens are
+    // deleted and this chart's burst on a finished clean-up was its last user,
+    // so it moved here with only what the chart set: 25 rounded stars on slowly
+    // rotating orbits outside an 80dp hole, each renewed when it leaves the chart.
+    private static class CompleteStars {
+
+        final RectF rect = new RectF();
+        final RectF rect2 = new RectF();
+        private final Bitmap[] stars = new Bitmap[3];
+        private final Paint paint = new Paint();
+        private final float excludeRadius = dp(80);
+        private final ArrayList<Particle> particles = new ArrayList<>();
+        private final float dt = 1000 / AndroidUtilities.screenRefreshRate;
+        private final Matrix[] matrices = new Matrix[3];
+        private final float[][] points = new float[3][];
+        private final int[] pointsCount = new int[3];
+        private final float[] rotationAngles = new float[3];
+        private long prevTime;
+
+        CompleteStars(int count) {
+            final int color = ColorUtils.setAlphaComponent(Theme.getColor(Theme.key_premiumStartSmallStarsColor), 200);
+            final int[] sizes = { dp(18), dp(12), dp(10) };
+            for (int i = 0; i < 3; i++) {
+                stars[i] = createStar(sizes[i], color);
+                matrices[i] = new Matrix();
+                points[i] = new float[count * 2];
+            }
+            for (int i = 0; i < count; i++) {
+                particles.add(new Particle());
+            }
+        }
+
+        private static Bitmap createStar(int size, int color) {
+            Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(bitmap);
+            Path path = new Path();
+            int sizeHalf = size >> 1;
+            int mid = (int) (sizeHalf * .85f);
+            path.moveTo(0, sizeHalf);
+            path.lineTo(mid, mid);
+            path.lineTo(sizeHalf, 0);
+            path.lineTo(size - mid, mid);
+            path.lineTo(size, sizeHalf);
+            path.lineTo(size - mid, size - mid);
+            path.lineTo(sizeHalf, size);
+            path.lineTo(mid, size - mid);
+            path.lineTo(0, sizeHalf);
+            path.close();
+            Paint paint = new Paint();
+            paint.setColor(color);
+            paint.setPathEffect(new CornerPathEffect(dpf2(18 / 5f)));
+            canvas.drawPath(path, paint);
+            return bitmap;
+        }
+
+        void resetPositions() {
+            long time = System.currentTimeMillis();
+            for (int i = 0; i < particles.size(); i++) {
+                particles.get(i).genPosition(time);
+            }
+        }
+
+        void onDraw(Canvas canvas, float alpha) {
+            long time = System.currentTimeMillis();
+            long diff = Math.max(4, Math.min(50, time - prevTime));
+            final float cx = rect.centerX();
+            final float cy = rect.centerY();
+            for (int i = 0; i < matrices.length; i++) {
+                rotationAngles[i] += 360f * (diff / (40000f + i * 10000f));
+                matrices[i].setRotate(rotationAngles[i], cx, cy);
+                pointsCount[i] = 0;
+            }
+            for (int i = 0; i < particles.size(); i++) {
+                particles.get(i).updatePoint();
+            }
+            for (int i = 0; i < matrices.length; i++) {
+                matrices[i].mapPoints(points[i], 0, points[i], 0, pointsCount[i]);
+                pointsCount[i] = 0;
+            }
+            for (int i = 0; i < particles.size(); i++) {
+                Particle particle = particles.get(i);
+                particle.draw(canvas, time, alpha);
+                if (time > particle.lifeTime) {
+                    particle.genPosition(time);
+                }
+                if (!rect2.contains(particle.drawingX, particle.drawingY)) {
+                    particle.genPosition(time);
+                }
+            }
+            prevTime = time;
+        }
+
+        private class Particle {
+            long lifeTime;
+            private float x, y;
+            private float drawingX, drawingY;
+            private float vecX, vecY;
+            private int starIndex;
+            private int alpha;
+            private float inProgress;
+
+            void updatePoint() {
+                final int c = pointsCount[starIndex];
+                points[starIndex][2 * c] = x;
+                points[starIndex][2 * c + 1] = y;
+                pointsCount[starIndex]++;
+            }
+
+            void draw(Canvas canvas, long time, float alpha) {
+                final int c = pointsCount[starIndex];
+                drawingX = points[starIndex][2 * c];
+                drawingY = points[starIndex][2 * c + 1];
+                pointsCount[starIndex]++;
+
+                canvas.save();
+                canvas.translate(drawingX, drawingY);
+                float outProgress = 0f;
+                if (lifeTime - time < 200) {
+                    outProgress = 1f - (lifeTime - time) / 150f;
+                    outProgress = Utilities.clamp(outProgress, 1f, 0f);
+                }
+                if (inProgress < 1f) {
+                    float s = AndroidUtilities.overshootInterpolator.getInterpolation(inProgress);
+                    canvas.scale(s, s, 0, 0);
+                }
+                paint.setAlpha((int) (this.alpha * (1f - outProgress) * alpha));
+                final Bitmap bitmap = stars[starIndex];
+                canvas.drawBitmap(bitmap, -(bitmap.getWidth() >> 1), -(bitmap.getHeight() >> 1), paint);
+                canvas.restore();
+
+                float speed = dp(4) * (dt / 660f);
+                x += vecX * speed;
+                y += vecY * speed;
+                if (inProgress != 1f) {
+                    inProgress += dt / 200;
+                    if (inProgress > 1f) {
+                        inProgress = 1f;
+                    }
+                }
+            }
+
+            void genPosition(long time) {
+                starIndex = Math.abs(Utilities.fastRandom.nextInt() % stars.length);
+                lifeTime = time + 2000 + Utilities.fastRandom.nextInt(1000);
+                float r = (Math.abs(Utilities.fastRandom.nextInt() % 1000) / 1000f) * (rect.width() - excludeRadius) + excludeRadius;
+                float a = Math.abs(Utilities.fastRandom.nextInt() % 360);
+                x = rect.centerX() + (float) (r * Math.sin(Math.toRadians(a)));
+                y = rect.centerY() + (float) (r * Math.cos(Math.toRadians(a)));
+                double angle = Math.atan2(y - rect.centerY(), x - rect.centerX());
+                vecX = (float) Math.cos(angle);
+                vecY = (float) Math.sin(angle);
+                alpha = (int) (255 * ((50 + Utilities.fastRandom.nextInt(50)) / 100f));
+                inProgress = 0;
+            }
+        }
     }
 }

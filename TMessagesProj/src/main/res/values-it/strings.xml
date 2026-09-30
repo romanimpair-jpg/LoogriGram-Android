@@ -443,7 +443,6 @@
     <string name="TermsOfService">Termini di Servizio</string>
     <string name="TermsOfServiceLogin">Iscrivendoti, accetti\ni *Termini di Servizio*.</string>
     <string name="PrivacyPolicyUrl">https://telegram.org/privacy</string>
-    <string name="TermsOfServiceUrl">https://telegram.org/tos</string>
     <string name="WebAppDisclaimerUrl">https://telegram.org/tos/mini-apps</string>
     <string name="DeleteLocalizationTitle">Elimina la lingua</string>
     <string name="DeleteLocalizationText">Vuoi davvero eliminare la lingua **%1$s**?</string>

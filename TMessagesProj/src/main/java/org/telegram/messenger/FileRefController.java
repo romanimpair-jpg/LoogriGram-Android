@@ -75,10 +75,9 @@ public class FileRefController extends BaseController {
 
     public static String getKeyForParentObject(Object parentObject) {
         // LoogriGram: a bot's preview media and a story had their own keys here.
-        // Both are removed, as on desktop.
-        if (parentObject instanceof TLRPC.TL_help_premiumPromo) {
-            return "premium_promo";
-        } else if (parentObject instanceof TLRPC.TL_availableReaction) {
+        // Both are removed, as on desktop. So did the Premium promo's feature
+        // videos, which only the deleted Premium screens played.
+        if (parentObject instanceof TLRPC.TL_availableReaction) {
             return "available_reaction_" + ((TLRPC.TL_availableReaction) parentObject).reaction;
         } else if (parentObject instanceof TL_bots.BotInfo) {
             TL_bots.BotInfo botInfo = (TL_bots.BotInfo) parentObject;
@@ -455,18 +454,9 @@ public class FileRefController extends BaseController {
         // LoogriGram: a story's media refreshed its reference with
         // stories.getStoriesByID here, and the answer updated the story. Stories
         // are removed, as on desktop; nothing loads a story's media now.
-        if (parentObject instanceof TLRPC.TL_help_premiumPromo) {
-            TLRPC.TL_help_getPremiumPromo req = new TLRPC.TL_help_getPremiumPromo();
-            getConnectionsManager().sendRequest(req, (response, error) -> {
-                int date = (int) (System.currentTimeMillis() / 1000);
-                if (response instanceof TLRPC.TL_help_premiumPromo) {
-                    TLRPC.TL_help_premiumPromo r = (TLRPC.TL_help_premiumPromo) response;
-                    getMediaDataController().processLoadedPremiumPromo(r, date, false);
-                }
-
-                onRequestComplete(locationKey, parentKey, response, error, true, false);
-            });
-        } else if (parentObject instanceof TLRPC.TL_availableReaction) {
+        // The Premium promo's videos refreshed theirs with help.getPremiumPromo;
+        // nothing loads them now.
+        if (parentObject instanceof TLRPC.TL_availableReaction) {
             TLRPC.TL_messages_getAvailableReactions req = new TLRPC.TL_messages_getAvailableReactions();
             req.hash = 0;
             getConnectionsManager().sendRequest(req, (response, error) -> onRequestComplete(locationKey, parentKey, response, error, true, false));
@@ -982,9 +972,7 @@ public class FileRefController extends BaseController {
     private boolean onRequestComplete(String locationKey, String parentKey, TLObject response, TLRPC.TL_error error, boolean cache, boolean fromCache) {
         boolean found = false;
         String cacheKey = parentKey;
-        if (response instanceof TLRPC.TL_help_premiumPromo) {
-            cacheKey = "premium_promo";
-        } else if (response instanceof TL_account.TL_wallPapers) {
+        if (response instanceof TL_account.TL_wallPapers) {
             cacheKey = "wallpaper";
         } else if (response instanceof TLRPC.TL_messages_savedGifs) {
             cacheKey = "gif";
@@ -1077,14 +1065,6 @@ public class FileRefController extends BaseController {
                 } else {
                     if (BuildVars.DEBUG_VERSION) {
                         FileLog.d("empty messages, file ref not found");
-                    }
-                }
-            } else if (response instanceof TLRPC.TL_help_premiumPromo) {
-                TLRPC.TL_help_premiumPromo premiumPromo = (TLRPC.TL_help_premiumPromo) response;
-                for (TLRPC.Document document : premiumPromo.videos) {
-                    result = getFileReference(document, null, requester.location, needReplacement, locationReplacement);
-                    if (result != null) {
-                        break;
                     }
                 }
             } else if (response instanceof TLRPC.TL_messages_availableReactions) {
@@ -1394,14 +1374,6 @@ public class FileRefController extends BaseController {
             } else {
                 if (BuildVars.DEBUG_VERSION) {
                     FileLog.d("empty messages, file ref not found");
-                }
-            }
-        } else if (response instanceof TLRPC.TL_help_premiumPromo) {
-            TLRPC.TL_help_premiumPromo premiumPromo = (TLRPC.TL_help_premiumPromo) response;
-            for (TLRPC.Document document : premiumPromo.videos) {
-                result = getFileReference(document, null, location, needReplacement, locationReplacement);
-                if (result != null) {
-                    break;
                 }
             }
         } else if (response instanceof TLRPC.TL_messages_availableReactions) {

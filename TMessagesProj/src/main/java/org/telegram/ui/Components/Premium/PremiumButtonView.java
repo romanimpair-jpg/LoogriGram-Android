@@ -57,7 +57,6 @@ public class PremiumButtonView extends FrameLayout implements Loadable {
 
     private boolean isButtonTextSet;
 
-    private boolean isFlickerDisabled;
     CounterView counterView;
     public boolean drawGradient = true;
 
@@ -183,16 +182,6 @@ public class PremiumButtonView extends FrameLayout implements Loadable {
         }
     }
 
-    private boolean nonClickable;
-
-    public void setNonClickable() {
-        this.nonClickable = true;
-        setClickable(false);
-        buttonLayout.setClickable(false);
-        setStateListAnimator(null);
-
-    }
-
     public boolean isShowOverlay() {
         return showOverlay;
     }
@@ -287,7 +276,7 @@ public class PremiumButtonView extends FrameLayout implements Loadable {
             invalidate();
         }
 
-        if (!BuildVars.IS_BILLING_UNAVAILABLE && !isFlickerDisabled) {
+        if (!BuildVars.IS_BILLING_UNAVAILABLE) {
             flickerDrawable.setParentWidth(getMeasuredWidth());
             flickerDrawable.draw(canvas, AndroidUtilities.rectTmp, radius, null);
         }
@@ -379,11 +368,6 @@ public class PremiumButtonView extends FrameLayout implements Loadable {
         iconView.setVisibility(View.GONE);
     }
 
-    public void setFlickerDisabled(boolean flickerDisabled) {
-        isFlickerDisabled = flickerDisabled;
-        invalidate();
-    }
-
     @Override
     public void setEnabled(boolean enabled) {
         super.setEnabled(enabled);
@@ -410,9 +394,7 @@ public class PremiumButtonView extends FrameLayout implements Loadable {
         buttonTextView.setText(text, animated);
         buttonLayout.setContentDescription(text);
 
-        if (!nonClickable) {
-            buttonLayout.setOnClickListener(clickListener);
-        }
+        buttonLayout.setOnClickListener(clickListener);
     }
 
     public void checkCounterView() {

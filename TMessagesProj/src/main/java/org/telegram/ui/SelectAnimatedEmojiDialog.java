@@ -4207,9 +4207,6 @@ public class SelectAnimatedEmojiDialog extends FrameLayout implements Notificati
                 if (!selectorRect.isEmpty()) {
                     selectorDrawable.setBounds(selectorRect);
                     canvas.save();
-                    if (selectorTransformer != null) {
-                        selectorTransformer.accept(canvas);
-                    }
                     selectorDrawable.draw(canvas);
                     canvas.restore();
                 }

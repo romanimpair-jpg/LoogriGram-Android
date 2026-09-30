@@ -2,23 +2,17 @@ package org.telegram.ui.Components.voip;
 
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.ColorFilter;
 import android.graphics.LinearGradient;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.PixelFormat;
 import android.graphics.RectF;
 import android.graphics.Shader;
-import android.graphics.drawable.Drawable;
 import android.view.View;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.graphics.ColorUtils;
 
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.SvgHelper;
 
 public class CellFlickerDrawable {
 
@@ -40,7 +34,6 @@ public class CellFlickerDrawable {
     public boolean frameInside = false;
     public float repeatProgress = 1.2f;
     public float animationSpeedScale = 1f;
-    View parentView;
     Runnable onRestartCallback;
 
     public CellFlickerDrawable() {
@@ -173,12 +166,6 @@ public class CellFlickerDrawable {
         this.parentWidth = parentWidth;
     }
 
-    public DrawableInterface getDrawableInterface(View parentView, SvgHelper.SvgDrawable drawable) {
-        this.parentView = parentView;
-        return new DrawableInterface(drawable);
-    }
-
-
     public void setOnRestartCallback(Runnable runnable) {
         onRestartCallback = runnable;
     }
@@ -186,55 +173,5 @@ public class CellFlickerDrawable {
     public void setAlpha(int alpha) {
         paint.setAlpha(alpha);
         paintOutline.setAlpha(alpha);
-    }
-
-    public class DrawableInterface extends Drawable {
-
-        public float radius;
-        SvgHelper.SvgDrawable svgDrawable;
-
-        public DrawableInterface(SvgHelper.SvgDrawable drawable) {
-            svgDrawable = drawable;
-        }
-
-        @Override
-        public void draw(@NonNull Canvas canvas) {
-            setParentWidth(getBounds().width());
-            AndroidUtilities.rectTmp.set(getBounds());
-            CellFlickerDrawable.this.draw(canvas, AndroidUtilities.rectTmp, radius, null);
-            if (svgDrawable != null) {
-                svgDrawable.setPaint(paint);
-                float x = (parentWidth + size * 2) * progress - size;
-                int drawableSize = (int) (parentWidth * 0.5f);
-                float s = svgDrawable.getScale(getBounds().width(), getBounds().height());
-                matrix.reset();
-                matrix.setScale(1f / s, 0, size / 2f, 0);
-                matrix.setTranslate(x - svgDrawable.getBounds().left - size / s, 0);
-
-                gradientShader.setLocalMatrix(matrix);
-                svgDrawable.setBounds(
-                        getBounds().centerX() - drawableSize / 2, getBounds().centerY() - drawableSize / 2,
-                        getBounds().centerX() + drawableSize / 2, getBounds().centerY() + drawableSize / 2
-                );
-                svgDrawable.draw(canvas);
-            }
-            parentView.invalidate();
-        }
-
-        @Override
-        public void setAlpha(int alpha) {
-            paint.setAlpha(alpha);
-            paintOutline.setAlpha(alpha);
-        }
-
-        @Override
-        public void setColorFilter(@Nullable ColorFilter colorFilter) {
-
-        }
-
-        @Override
-        public int getOpacity() {
-            return PixelFormat.TRANSLUCENT;
-        }
     }
 }

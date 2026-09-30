@@ -15,8 +15,8 @@ import java.util.Map;
 /**
  * LoogriGram: rendering an amount of money as text.
  *
- * This lived in BillingController, which was Google Play Billing and is going
- * away. Formatting a price has nothing to do with buying anything: a message
+ * This lived in BillingController, which was Google Play Billing and is now
+ * deleted. Formatting a price has nothing to do with buying anything: a message
  * that merely mentions a gift, a star amount or an invoice total still has to
  * render, and the statistics charts label their axes with it. So the currency
  * half moved here, where nothing about it is named after a removed feature,

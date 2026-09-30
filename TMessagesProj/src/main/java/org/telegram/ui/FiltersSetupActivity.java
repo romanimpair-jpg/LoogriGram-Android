@@ -78,12 +78,6 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
 
     private boolean ignoreUpdates;
 
-    private boolean highlightTags;
-    public FiltersSetupActivity highlightTags() {
-        this.highlightTags = true;
-        return this;
-    }
-
     public static class TextCell extends FrameLayout {
 
         private SimpleTextView textView;
@@ -715,14 +709,9 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
             }
         });
 
-        if (highlightTags && getUserConfig().isPremium()) {
-            updateRows(false);
-            highlightTags = false;
-            listView.scrollToPosition(adapter.getItemCount() - 1);
-            AndroidUtilities.runOnUIThread(() -> {
-                listView.highlightRow(() -> folderTagsPosition);
-            }, 200);
-        }
+        // LoogriGram: the Premium screen's folder tags row opened this page
+        // with highlightTags(), which scrolled to the tags row and lit it. That
+        // screen is deleted.
 
         return fragmentView;
     }

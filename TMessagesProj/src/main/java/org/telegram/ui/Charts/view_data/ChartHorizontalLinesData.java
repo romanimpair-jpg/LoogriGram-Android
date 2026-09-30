@@ -6,7 +6,6 @@ import android.text.StaticLayout;
 import android.text.TextPaint;
 
 import org.telegram.messenger.AndroidUtilities;
-import org.telegram.messenger.BillingController;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.AnimatedEmojiSpan;
 

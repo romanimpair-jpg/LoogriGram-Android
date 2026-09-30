@@ -275,14 +275,14 @@ public class UserConfig extends BaseController {
                 NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.currentUserPremiumStatusChanged);
                 NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.premiumStatusChangedGlobal);
 
-                getMediaDataController().loadPremiumPromo(false);
+                // LoogriGram: the Premium promo was refetched here; it is gone
+                // with the Premium screen (see MediaDataController).
                 getMediaDataController().loadReactions(false, null);
             });
         } else if (oldUser == null) {
             AndroidUtilities.runOnUIThread(() -> {
                 getMessagesController().updatePremium(newUser.premium);
                 NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.currentUserPremiumStatusChanged);
-                getMediaDataController().loadPremiumPromo(true);
             });
         }
     }

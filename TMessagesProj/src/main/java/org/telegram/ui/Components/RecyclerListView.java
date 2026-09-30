@@ -57,7 +57,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
-import androidx.core.util.Consumer;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -211,8 +210,6 @@ public class RecyclerListView extends RecyclerView implements IBlur3Capture {
     HashSet<Integer> selectedPositions;
     RecyclerItemsEnterAnimator itemsEnterAnimator;
 
-    protected Consumer<Canvas> selectorTransformer;
-
     protected final Theme.ResourcesProvider resourcesProvider;
 
     private boolean accessibilityEnabled = true;
@@ -238,10 +235,6 @@ public class RecyclerListView extends RecyclerView implements IBlur3Capture {
             }
         }
     };
-
-    public void setSelectorTransformer(Consumer<Canvas> transformer) {
-        selectorTransformer = transformer;
-    }
 
     public FastScroll getFastScroll() {
         return fastScroll;
@@ -2616,10 +2609,6 @@ public class RecyclerListView extends RecyclerView implements IBlur3Capture {
         }
     }
 
-    public Rect getSelectorRect() {
-        return selectorRect;
-    }
-
     public void setTranslateSelector(boolean value) {
         translateSelector = value ? -2 : -1;
     }
@@ -2645,9 +2634,6 @@ public class RecyclerListView extends RecyclerView implements IBlur3Capture {
             selectorDrawable.setBounds(selectorRect);
         }
         canvas.save();
-        if ((translateSelector == -2 || translateSelector == selectorPosition) && selectorTransformer != null) {
-            selectorTransformer.accept(canvas);
-        }
         if ((translateSelector == -2 || translateSelector == selectorPosition) && selectorView != null) {
             canvas.translate(selectorView.getX() - selectorRect.left, selectorView.getY() - selectorRect.top);
             selectorDrawable.setAlpha((int) (0xFF * selectorView.getAlpha()));
@@ -3161,7 +3147,7 @@ public class RecyclerListView extends RecyclerView implements IBlur3Capture {
             for (int a = 0, N = getItemDecorationCount(); a < N; a++) {
                 ItemDecoration itemDecoration = getItemDecorationAt(a);
                 if (itemDecoration instanceof IBlur3Capture) {
-                    if (itemDecoration == sectionsItemDecoration && !canCaptureSectionsDecorator) {
+                    if (itemDecoration == sectionsItemDecoration) {
                         continue;
                     }
                     final IBlur3Capture capture = (IBlur3Capture) itemDecoration;
@@ -3204,7 +3190,7 @@ public class RecyclerListView extends RecyclerView implements IBlur3Capture {
         for (int a = 0, N = getItemDecorationCount(); a < N; a++) {
             ItemDecoration itemDecoration = getItemDecorationAt(a);
             if (itemDecoration instanceof IBlur3Capture) {
-                if (itemDecoration == sectionsItemDecoration && !canCaptureSectionsDecorator) {
+                if (itemDecoration == sectionsItemDecoration) {
                     continue;
                 }
                 final IBlur3Capture capture = (IBlur3Capture) itemDecoration;
@@ -3225,12 +3211,6 @@ public class RecyclerListView extends RecyclerView implements IBlur3Capture {
 
             builder.add(child);
         }
-    }
-
-    private boolean canCaptureSectionsDecorator;
-
-    public void setCaptureSectionsDecoratorAllowed(boolean allowed) {
-        canCaptureSectionsDecorator = allowed;
     }
 
     public View findViewByPosition(int position) {
