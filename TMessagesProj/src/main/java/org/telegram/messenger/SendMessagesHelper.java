@@ -8951,92 +8951,10 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 
     // LoogriGram: prepareSendingArticle and prepareEditingArticle sent and
     // edited what the article editor wrote, as an input rich message with its
-    // media and mentioned users. The editor needs Premium and is deleted, as
-    // on desktop.
-
-    public static TL_iv.PageBlock toInputPageBlock(TL_iv.PageBlock block) {
-        if (block instanceof TL_iv.pageBlockMap) {
-            TL_iv.pageBlockMap map = (TL_iv.pageBlockMap) block;
-            TL_iv.inputPageBlockMap input = new TL_iv.inputPageBlockMap();
-            input.geo = toInputGeoPoint(map.geo);
-            input.zoom = map.zoom;
-            input.w = map.w;
-            input.h = map.h;
-            input.caption = map.caption;
-            return input;
-        }
-        return block;
-    }
-
-    private static TLRPC.InputGeoPoint toInputGeoPoint(TLRPC.GeoPoint geo) {
-        if (!(geo instanceof TLRPC.TL_geoPoint)) {
-            return new TLRPC.TL_inputGeoPointEmpty();
-        }
-        TLRPC.TL_inputGeoPoint input = new TLRPC.TL_inputGeoPoint();
-        input.lat = geo.lat;
-        input._long = geo._long;
-        if (geo.accuracy_radius != 0) {
-            input.flags |= TLObject.FLAG_0;
-            input.accuracy_radius = geo.accuracy_radius;
-        }
-        return input;
-    }
-
-    private static Integer tryParseInt(String s) {
-        if (s == null) return null;
-        try {
-            return Integer.parseInt(s);
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-    private static void clearRichTextParents(TL_iv.RichText t) {
-        if (t == null) return;
-        t.parentRichText = null;
-        if (t.text != null) clearRichTextParents(t.text);
-        if (t.texts != null) {
-            for (TL_iv.RichText c : t.texts) clearRichTextParents(c);
-        }
-    }
-
-    // GSON cant serialize structures with cyclic references
-    private static void clearRichTextParentsInBlock(TL_iv.PageBlock b, java.util.IdentityHashMap<Object, Boolean> seen) {
-        if (b == null || seen.put(b, Boolean.TRUE) != null) return;
-        for (java.lang.reflect.Field f : b.getClass().getFields()) {
-            if (java.lang.reflect.Modifier.isStatic(f.getModifiers())) continue;
-            try {
-                Object v = f.get(b);
-                if (v instanceof TL_iv.RichText) {
-                    clearRichTextParents((TL_iv.RichText) v);
-                } else if (v instanceof TL_iv.PageBlock) {
-                    clearRichTextParentsInBlock((TL_iv.PageBlock) v, seen);
-                } else if (v instanceof TL_iv.PageCaption) {
-                    clearRichTextParents(((TL_iv.PageCaption) v).text);
-                    clearRichTextParents(((TL_iv.PageCaption) v).credit);
-                } else if (v instanceof java.util.List) {
-                    for (Object item : (java.util.List<?>) v) {
-                        if (item instanceof TL_iv.PageBlock) clearRichTextParentsInBlock((TL_iv.PageBlock) item, seen);
-                        else if (item instanceof TL_iv.RichText) clearRichTextParents((TL_iv.RichText) item);
-                        else if (item instanceof TL_iv.PageListItem || item instanceof TL_iv.PageListOrderedItem) {
-                            for (java.lang.reflect.Field f2 : item.getClass().getFields()) {
-                                if (java.lang.reflect.Modifier.isStatic(f2.getModifiers())) continue;
-                                try {
-                                    Object v2 = f2.get(item);
-                                    if (v2 instanceof TL_iv.RichText) clearRichTextParents((TL_iv.RichText) v2);
-                                    else if (v2 instanceof java.util.List) {
-                                        for (Object it2 : (java.util.List<?>) v2) {
-                                            if (it2 instanceof TL_iv.PageBlock) clearRichTextParentsInBlock((TL_iv.PageBlock) it2, seen);
-                                        }
-                                    }
-                                } catch (IllegalAccessException ignored2) {}
-                            }
-                        }
-                    }
-                }
-            } catch (IllegalAccessException ignored) {}
-        }
-    }
+    // media and mentioned users, and toInputPageBlock turned its blocks into
+    // input - last for AIEditorAlert. The editor needs Premium and AI compose
+    // is gone, as on desktop; with them went GSON's cycle breaker for article
+    // pages and an unused tryParseInt.
 
     @UiThread
     public static void prepareSendingDocument(AccountInstance accountInstance, String path, String originalPath, Uri uri, String caption, String mine, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, ChatActivity.ReplyQuote quote, MessageObject editingMessageObject, boolean notify, int scheduleDate, InputContentInfoCompat inputContent, SendMessageChatArguments sendMessageChatArguments, boolean invertMedia) {

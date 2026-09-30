@@ -1237,19 +1237,6 @@ public class GiftsController {
         );
     }
 
-    public TL_stars.SavedStarGift findUserStarGift(long collection_id) {
-        for (int i = 0; i < giftLists.size(); ++i) {
-            final GiftsList list = giftLists.valueAt(i);
-            for (int j = 0; j < list.gifts.size(); ++j) {
-                final TL_stars.SavedStarGift gift = list.gifts.get(j);
-                if (gift != null && gift.gift != null && gift.gift.id == collection_id) {
-                    return gift;
-                }
-            }
-        }
-        return null;
-    }
-
     public static <T extends TL_stars.StarGiftAttribute> T findAttribute(ArrayList<TL_stars.StarGiftAttribute> attributes, Class<T> clazz) {
         if (attributes == null) {
             return null;

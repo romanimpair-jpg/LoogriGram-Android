@@ -92,15 +92,11 @@ import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.ForegroundColorSpanThemable;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.LoadingDrawable;
-import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.ReplyMessageLine;
 import org.telegram.ui.Components.TornEdge;
-import org.telegram.ui.Components.UItem;
 import org.telegram.ui.Components.URLSpanBotCommand;
 import org.telegram.ui.Components.URLSpanMono;
 import org.telegram.ui.Components.URLSpanUserMention;
-import org.telegram.ui.Components.UniversalAdapter;
-import org.telegram.ui.Components.UniversalRecyclerView;
 import org.telegram.ui.Components.UnsupportedBlockDrawable;
 import org.telegram.ui.GradientClip;
 import org.telegram.ui.LinkManager;
@@ -9744,14 +9740,10 @@ public class RichMessageLayout {
             }
         }
 
-        private int minHeight = -1;
-        private int maxHeight = -1;
-        public void setMinHeight(int minHeight) {
-            this.minHeight = minHeight;
-        }
-        public void setMaxHeight(int maxHeight) {
-            this.maxHeight = maxHeight;
-        }
+        // LoogriGram: setMinHeight, setMaxHeight and setAllowActions sized the
+        // message field's article draft preview and kept it from taking
+        // touches; the Factory listed a preview in AIEditorAlert. Both are
+        // gone with the article editor and AI compose, as on desktop.
 
         @Override
         protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
@@ -9759,10 +9751,6 @@ public class RichMessageLayout {
             buildLayout(width - insetLeft - insetRight);
 
             int height = (layout != null ? layout.getHeight() : 0) + insetTop + insetBottom;
-            if (maxHeight > 0 && height > maxHeight)
-                height = maxHeight;
-            if (minHeight > 0 && height < minHeight)
-                height = minHeight;
             switch (MeasureSpec.getMode(heightMeasureSpec)) {
                 case MeasureSpec.EXACTLY:
                     height = MeasureSpec.getSize(heightMeasureSpec);
@@ -9825,18 +9813,10 @@ public class RichMessageLayout {
             if (layout != null) layout.detach(this);
         }
 
-        private boolean allowActions = true;
-        public void setAllowActions(boolean allow) {
-            this.allowActions = allow;
-        }
-
         private Runnable textSelectionLongPressRunnable;
 
         @Override
         public boolean onTouchEvent(MotionEvent event) {
-            if (!allowActions) {
-                return super.onTouchEvent(event);
-            }
             if (textSelectionHelper != null) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
@@ -9870,45 +9850,6 @@ public class RichMessageLayout {
                 if (handled) return true;
             }
             return super.onTouchEvent(event);
-        }
-
-        public static final class Factory extends UItem.UItemFactory<PreviewView> {
-            static { setup(new Factory()); }
-
-            @Override
-            public PreviewView createView(Context context, RecyclerListView listView, int currentAccount, int classGuid, Theme.ResourcesProvider resourcesProvider) {
-                final PreviewView cell = new PreviewView(context, currentAccount, resourcesProvider);
-                cell.setPadding(dp(20), 0, dp(20), dp(16));
-                return cell;
-            }
-
-            @Override
-            public void bindView(View view, UItem item, boolean divider, UniversalAdapter adapter, UniversalRecyclerView listView) {
-                final PreviewView cell = (PreviewView) view;
-                cell.set((TL_iv.RichMessage) item.object);
-                cell.setTranslationLoading(item.checked);
-            }
-
-            @Override
-            public boolean equals(UItem a, UItem b) {
-                return a.id == b.id;
-            }
-
-            @Override
-            public boolean contentsEquals(UItem a, UItem b) {
-                return a.id == b.id && a.object == b.object && a.checked == b.checked;
-            }
-
-            public static UItem of(TL_iv.RichMessage richMessage) {
-                final UItem item = UItem.ofFactory(Factory.class);
-                item.object = richMessage;
-                return item;
-            }
-
-            @Override
-            public boolean isClickable() {
-                return false;
-            }
         }
 
         private static class PaddedTextLayoutBlock implements TextSelectionHelper.TextLayoutBlock {

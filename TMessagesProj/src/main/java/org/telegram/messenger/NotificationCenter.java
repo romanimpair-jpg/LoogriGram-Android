@@ -245,7 +245,8 @@ public class NotificationCenter {
     public static final int profileMusicUpdated = totalEvents++;
     public static final int updatedChatRanks = totalEvents++;
     public static final int joinedGroup = totalEvents++;
-    public static final int loadedAiComposeTones = totalEvents++;
+    // LoogriGram: loadedAiComposeTones stood here. AiTonesController posted it
+    // for AIEditorAlert; AI compose is gone, as on desktop.
 
     //global
     public static final int activeAccountChanged = totalEvents++;

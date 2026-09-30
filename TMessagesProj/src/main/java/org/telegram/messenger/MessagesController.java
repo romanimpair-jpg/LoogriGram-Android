@@ -683,7 +683,6 @@ public class MessagesController extends BaseController implements NotificationCe
     private TopicsController topicsController;
     private CacheByChatsController cacheByChatsController;
     private TranslateController translateController;
-    private AiTonesController tonesController;
     public boolean uploadMarkupVideo;
     public boolean giftAttachMenuIcon;
     public boolean giftTextFieldIcon;
@@ -925,13 +924,6 @@ public class MessagesController extends BaseController implements NotificationCe
 
     public TranslateController getTranslateController() {
         return translateController;
-    }
-
-    public AiTonesController getTonesController() {
-        if (tonesController == null) {
-            tonesController = new AiTonesController(currentAccount);
-        }
-        return tonesController;
     }
 
     public boolean isCommunity(long dialogId) {
@@ -19427,9 +19419,8 @@ public class MessagesController extends BaseController implements NotificationCe
                         final TL_update.TL_updateChatParticipantRank update = (TL_update.TL_updateChatParticipantRank) baseUpdate;
                         updateRank(update.chat_id, update.user_id, update.rank);
                     } else if (baseUpdate instanceof TL_update.TL_updateAiComposeTones) {
-                        if (tonesController != null) {
-                            tonesController.invalidate();
-                        }
+                        // LoogriGram: the AI compose tones changed; AiTonesController
+                        // refetched them. AI compose is gone, as on desktop.
                     } else if (baseUpdate instanceof TL_update.TL_updateWebBrowserSettings) {
                         applyWebBrowserUpdate((TL_update.TL_updateWebBrowserSettings) baseUpdate);
                     } else if (baseUpdate instanceof TL_update.TL_updateWebBrowserException) {
