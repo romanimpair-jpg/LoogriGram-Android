@@ -71,7 +71,6 @@ import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.ListView.AdapterWithDiffUtils;
-import org.telegram.ui.Components.Premium.PremiumLockIconView;
 import org.telegram.ui.Components.Reactions.CustomEmojiReactionsWindow;
 import org.telegram.ui.Components.Reactions.HwEmojis;
 import org.telegram.ui.Components.Reactions.ReactionsEffectOverlay;
@@ -1647,7 +1646,6 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
         public BackupImageView pressedBackupImageView;
         private ImageReceiver preloadImageReceiver = new ImageReceiver();
         public ReactionsLayoutInBubble.VisibleReaction currentReaction;
-        public PremiumLockIconView lockIconView;
         public float sideScale = 1f;
         private boolean isEnter;
         public boolean hasEnterAnimation;
@@ -1827,7 +1825,6 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
             pressedBackupImageView.setLayerNum(Integer.MAX_VALUE);
         }
 
-        public boolean isLocked;
         public float enterScale = 1f;
         public ValueAnimator enterAnimator;
 
@@ -1858,18 +1855,9 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
                 return;
             }
 
-            final boolean userIsPremium = UserConfig.getInstance(currentAccount).isPremium();
-            isLocked = type == TYPE_MESSAGE_EFFECTS && react.premium && !userIsPremium;
-            if (isLocked && lockIconView == null) {
-                lockIconView = new PremiumLockIconView(getContext(), PremiumLockIconView.TYPE_STICKERS_PREMIUM_LOCKED);
-                lockIconView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-                lockIconView.setImageReceiver(loopImageView.getImageReceiver());
-                addView(lockIconView, LayoutHelper.createFrame(18, 18, Gravity.CENTER, 8, 8, 0, 0));
-            }
-            if (lockIconView != null) {
-                lockIconView.setVisibility(isLocked ? View.VISIBLE : View.GONE);
-            }
-
+            // LoogriGram: a Premium effect was padlocked here, and could not be
+            // long-pressed. Without Premium such effects are not offered at all
+            // (see the effects list above), so none is locked.
             resetAnimation();
             currentReaction = react;
             hasEnterAnimation = currentReaction.emojicon != null && (showCustomEmojiReaction() || allReactionsIsDefault) && LiteMode.isEnabled(LiteMode.FLAG_ANIMATED_EMOJI_REACTIONS);
@@ -1882,9 +1870,6 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
                 pressedBackupImageView.setAnimatedEmojiDrawable(null);
                 if (enterImageView.getImageReceiver().getLottieAnimation() != null) {
                     enterImageView.getImageReceiver().getLottieAnimation().setCurrentFrame(0, false);
-                }
-                if (lockIconView != null) {
-                    lockIconView.setAnimatedEmojiDrawable(null);
                 }
             } else {
                 pressedBackupImageView.getImageReceiver().clearImage();
@@ -1900,9 +1885,6 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
                 }
                 pressedBackupImageView.setAnimatedEmojiDrawable(pressedDrawable);
                 loopImageView.setAnimatedEmojiDrawable(loopDrawable);
-                if (lockIconView != null) {
-                    lockIconView.setAnimatedEmojiDrawable(loopDrawable);
-                }
             }
             setFocusable(true);
             shouldSwitchToLoopView = hasEnterAnimation;// && !allReactionsIsDefault;
@@ -1960,9 +1942,6 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
 
                     preloadImageReceiver.setAllowStartLottieAnimation(false);
                     MediaDataController.getInstance(currentAccount).preloadImage(preloadImageReceiver, ImageLocation.getForDocument(defaultReaction.around_animation), ReactionsEffectOverlay.getFilterForAroundAnimation());
-                }
-                if (lockIconView != null) {
-                    lockIconView.setImageReceiver(loopImageView.getImageReceiver());
                 }
             }
         }
@@ -2089,7 +2068,7 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
                 pressed = true;
                 pressedX = event.getX();
                 pressedY = event.getY();
-                if (sideScale == 1f && !isLocked && type != TYPE_STICKER_SET_EMOJI && type != TYPE_MESSAGE_EFFECTS && (delegate == null || delegate.allowLongPress())) {
+                if (sideScale == 1f && type != TYPE_STICKER_SET_EMOJI && type != TYPE_MESSAGE_EFFECTS && (delegate == null || delegate.allowLongPress())) {
                     AndroidUtilities.runOnUIThread(longPressRunnable, ViewConfiguration.getLongPressTimeout());
                 }
             }
