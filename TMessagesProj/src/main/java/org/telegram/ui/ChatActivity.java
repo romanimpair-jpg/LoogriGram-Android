@@ -27536,10 +27536,6 @@ public class ChatActivity extends BaseFragment implements
         getMediaDataController().saveDraft(dialog_id, draftThreadId, message[0], entities, (replyMessage != null && !replyMessage.isTopicMainMessage && replyMessage.replyToForumTopic == null && !ignoreDraft) ? replyMessage.messageOwner : null, replyingQuote, messageSuggestionParams != null ? messageSuggestionParams.toTl() : null, chatActivityEnterView != null ? chatActivityEnterView.getEffectId() : 0, !searchWebpage, false);
     }
 
-    public long getDraftThreadId() {
-        return computeDraftThreadId(replyingMessageObject);
-    }
-
     private long computeDraftThreadId(MessageObject replyMessage) {
         if (chatMode == MODE_SAVED) {
             return 0;

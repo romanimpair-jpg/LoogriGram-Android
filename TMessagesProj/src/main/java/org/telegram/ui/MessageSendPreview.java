@@ -129,7 +129,7 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
     private Utilities.Callback<Canvas> drawEditTextBackground;
     private ChatActivityEnterView.SendButton anchorSendButton;
     private ChatActivityEnterView.SendButton sendButton;
-    private int sendButtonWidth, sendButtonRight;
+    private int sendButtonRight;
     private View optionsView;
     private EmojiAnimationsOverlay effectOverlay;
 
@@ -454,7 +454,7 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
                 );
                 super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
-                final int right = Math.max(getSendButtonWidth() + dp(12), (int) -(sendButtonInitialPosition[0] + dp(7) - getMeasuredWidth()));
+                final int right = Math.max(anchorSendButton.width() + dp(12), (int) -(sendButtonInitialPosition[0] + dp(7) - getMeasuredWidth()));
                 final int diff = Math.max(0, messageObjectsWidth - (getMeasuredWidth() - right - dp(8 + (groupedMessagesMap.isEmpty() ? 0 : 40))));
                 final float scale = (float) Math.max(1, getMeasuredWidth() - right) / Math.max(1, getMeasuredWidth() - right - dp(8) + diff);
                 setPivotX(getMeasuredWidth());
@@ -1261,19 +1261,12 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
         this.sendButton.open.set(sendButton.open.get(), true);
         this.sendButton.setOnClickListener(onClick);
         containerView.addView(this.sendButton, new ViewGroup.LayoutParams(sendButton.getWidth(), sendButton.getHeight()));
-        sendButtonWidth = anchorSendButton.width(sendButton.getHeight());
         sendButtonInitialPosition[0] += anchorSendButton.getWidth() - anchorSendButton.width(sendButton.getHeight()) - dp(6);
         return this.sendButton;
     }
-    private boolean customSendButtonWidth;
-    public void setSendButtonWidth(int width) {
-        customSendButtonWidth = true;
-        sendButtonWidth = width;
-    }
-    private int getSendButtonWidth() {
-        if (customSendButtonWidth) return sendButtonWidth;
-        return anchorSendButton.width();
-    }
+    // LoogriGram: setSendButtonWidth, a send button of another width than the
+    // anchor's, served only the article editor, which is deleted, as on
+    // desktop.
 
     public void setItemOptions(ItemOptions options) {
         options.setGapBackgroundColor(Theme.multAlpha(Theme.getColor(Theme.key_actionBarDefaultSubmenuItem, resourcesProvider), 0.06f));
@@ -1492,10 +1485,6 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
 
         sendButton.setX(pos[0] - (sendButton.getWidth() - sendButton.width()) + dp(6));
         sendButton.setY(pos[1]);
-
-        if (customSendButtonWidth) {
-            pos[0] -= sendButtonWidth - anchorSendButton.width();
-        }
 
         chatListView.setX(pos[0] + dp(7) - chatListView.getMeasuredWidth());
         if (layoutDone) {

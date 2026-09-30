@@ -187,8 +187,8 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
     private boolean focusable;
 
     private boolean verticalButtons;
-    private boolean twoRowsButtonsWhenNeeded;
-    private boolean buttonsInTwoRows;
+    // LoogriGram: twoRowsButtonsWhenNeeded, four buttons laid out in two rows,
+    // served only the article editor, which is deleted, as on desktop.
 
     private Runnable dismissRunnable = this::dismiss;
     private Runnable showRunnable = () -> {
@@ -908,13 +908,7 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
                     buttonsWidth += paint.measureText(neutralButtonText, 0, neutralButtonText.length()) + dp(12 + 12);
                 }
                 if (buttonsWidth > AndroidUtilities.displaySize.x - dp(64)) {
-                    if (twoRowsButtonsWhenNeeded
-                            && positiveButtonText != null && negativeButtonText != null
-                            && negative2ButtonText != null && neutralButtonText != null) {
-                        buttonsInTwoRows = true;
-                    } else {
-                        verticalButtons = true;
-                    }
+                    verticalButtons = true;
                 }
             }
             if (verticalButtons) {
@@ -928,24 +922,6 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
                         int count = getChildCount();
                         View positiveButton = null;
                         int width = right - left;
-                        if (buttonsInTwoRows) {
-                            final View change = findViewWithTag(BUTTON_NEUTRAL);
-                            final View delete = findViewWithTag(BUTTON_NEGATIVE_2);
-                            final View cancel = findViewWithTag(BUTTON_NEGATIVE);
-                            final View ok = findViewWithTag(BUTTON_POSITIVE);
-                            final int start = getPaddingLeft();
-                            final int end = width - getPaddingRight();
-                            final int columnWidth = Math.max(0, (end - start - dp(8)) / 2);
-                            final int firstX = LocaleController.isRTL ? end - columnWidth : start;
-                            final int secondX = LocaleController.isRTL ? start : end - columnWidth;
-                            final int firstY = getPaddingTop();
-                            final int secondY = firstY + dp(44);
-                            if (change != null) change.layout(firstX, firstY, firstX + columnWidth, firstY + dp(40));
-                            if (delete != null) delete.layout(secondX, firstY, secondX + columnWidth, firstY + dp(40));
-                            if (cancel != null) cancel.layout(firstX, secondY, firstX + columnWidth, secondY + dp(40));
-                            if (ok != null) ok.layout(secondX, secondY, secondX + columnWidth, secondY + dp(40));
-                            return;
-                        }
                         for (int a = 0; a < count; a++) {
                             View child = getChildAt(a);
                             Integer tag = (Integer) child.getTag();
@@ -1014,18 +990,6 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
                         int totalWidth = 0;
                         int availableWidth = getMeasuredWidth() - getPaddingLeft() - getPaddingRight();
                         int count = getChildCount();
-                        if (buttonsInTwoRows) {
-                            final int childWidth = Math.max(0, (availableWidth - dp(8)) / 2);
-                            for (int a = 0; a < count; a++) {
-                                final View child = getChildAt(a);
-                                if (child.getTag() != null) {
-                                    child.measure(
-                                        MeasureSpec.makeMeasureSpec(childWidth, MeasureSpec.EXACTLY),
-                                        MeasureSpec.makeMeasureSpec(dp(40), MeasureSpec.EXACTLY));
-                                }
-                            }
-                            return;
-                        }
                         for (int a = 0; a < count; a++) {
                             View child = getChildAt(a);
                             if (child instanceof TextView && child.getTag() != null) {
@@ -1060,7 +1024,7 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
                 buttonsLayout.setPadding(dp(8), dp(8), dp(8), dp(8));
             }
             containerView.addView(buttonsLayout, LayoutHelper.createLinear(
-                LayoutHelper.MATCH_PARENT, buttonsInTwoRows ? 96 : 52));
+                LayoutHelper.MATCH_PARENT, 52));
             if (topAnimationIsNew) {
                 buttonsLayout.setTranslationY(-dp(8));
             }
@@ -1742,11 +1706,6 @@ public class AlertDialog extends Dialog implements Drawable.Callback, Notificati
 
         public Builder forceVerticalButtons() {
             alertDialog.verticalButtons = true;
-            return this;
-        }
-
-        public Builder twoRowsButtonsWhenNeeded() {
-            alertDialog.twoRowsButtonsWhenNeeded = true;
             return this;
         }
 

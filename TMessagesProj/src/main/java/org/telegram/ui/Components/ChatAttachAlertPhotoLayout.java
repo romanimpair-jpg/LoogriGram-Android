@@ -194,7 +194,6 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
     private boolean mediaEnabled;
     private boolean videoEnabled;
     private boolean photoEnabled;
-    private boolean includeVideosInGallery;
     private boolean documentsEnabled;
 
     private float pinchStartDistance;
@@ -2479,12 +2478,10 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
         }
     }
 
-    public void setIncludeVideosInGallery(boolean includeVideosInGallery) {
-        this.includeVideosInGallery = includeVideosInGallery;
-    }
-
+    // LoogriGram: setIncludeVideosInGallery served only the article layout,
+    // which is deleted with the article editor, as on desktop.
     private boolean shouldLoadAllMedia() {
-        return includeVideosInGallery || !parentAlert.isPhotoPicker && (parentAlert.baseFragment instanceof ChatActivity || parentAlert.avatarPicker == 2);
+        return !parentAlert.isPhotoPicker && (parentAlert.baseFragment instanceof ChatActivity || parentAlert.avatarPicker == 2);
     }
 
     public void showCamera() {

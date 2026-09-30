@@ -59,7 +59,6 @@ import org.telegram.messenger.Utilities;
 import org.telegram.ui.ActionBar.ActionBarPopupWindow;
 import org.telegram.ui.ActionBar.FloatingActionMode;
 import org.telegram.ui.ActionBar.FloatingToolbar;
-import org.telegram.ui.iv.RichTextCell;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ArticleViewer;
 import org.telegram.ui.Components.AnimatedEmojiSpan;
@@ -677,11 +676,6 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
         }
     }
 
-    public void hideActionsMenu() {
-        AndroidUtilities.cancelRunOnUIThread(showActionsRunnable);
-        hideActions();
-    }
-
     public TextSelectionOverlay getOverlayView(Context context) {
         if (textSelectionOverlay == null) {
             textSelectionOverlay = new TextSelectionOverlay(context);
@@ -764,18 +758,6 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
     public void stopScrolling() {
         parentIsScrolling = false;
         textSelectionOverlay.invalidate();
-        AndroidUtilities.cancelRunOnUIThread(showActionsRunnable);
-        AndroidUtilities.runOnUIThread(showActionsRunnable);
-    }
-
-    public void finishOneTouchSelection() {
-        if (!isInSelectionMode()) return;
-        movingHandle = false;
-        movingDirectionSettling = false;
-        isOneTouch = false;
-        if (textSelectionOverlay != null) {
-            textSelectionOverlay.invalidate();
-        }
         AndroidUtilities.cancelRunOnUIThread(showActionsRunnable);
         AndroidUtilities.runOnUIThread(showActionsRunnable);
     }
@@ -3218,306 +3200,10 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
             }
         }
 
-        public int anchorViewPosition = -1;
-        public int anchorOffset = -1;
-        public int anchorChildPosition = 0;
-
-        public boolean selectRangeOf(ArticleSelectableView view, int start, int end) {
-            return selectRangeOf(view, 0, start, end);
-        }
-
-        public boolean selectRangeOf(ArticleSelectableView view, int childPos, int start, int end) {
-            int position = getAdapterPosition(view);
-            if (position < 0 || start == end) {
-                return false;
-            }
-            int s = Math.min(start, end);
-            int e = Math.max(start, end);
-            selectedView = view;
-            selectionStart = s;
-            selectionEnd = e;
-            startViewPosition = endViewPosition = position;
-            startViewChildPosition = endViewChildPosition = childPos;
-            startViewOffset = s;
-            endViewOffset = e;
-            anchorViewPosition = position;
-            anchorOffset = start;
-            anchorChildPosition = childPos;
-
-            populateTextCacheForView(view, position);
-
-            if (!arrayList.isEmpty() && childPos >= 0 && childPos < arrayList.size()) {
-                textX = arrayList.get(childPos).getX();
-                textY = arrayList.get(childPos).getY();
-            } else if (!arrayList.isEmpty()) {
-                textX = arrayList.get(0).getX();
-                textY = arrayList.get(0).getY();
-            }
-
-            if (textSelectionOverlay != null) {
-                textSelectionOverlay.setVisibility(View.VISIBLE);
-            }
-            showHandleViews();
-            invalidate();
-            hideActions();
-            AndroidUtilities.cancelRunOnUIThread(showActionsRunnable);
-            AndroidUtilities.runOnUIThread(showActionsRunnable);
-            if (callback != null) {
-                callback.onStateChanged(true);
-            }
-            view.invalidate();
-            return true;
-        }
-
-        public boolean selectChildRange(ArticleSelectableView view, int startChild, int startOffset, int endChild, int endOffset) {
-            int position = getAdapterPosition(view);
-            if (position < 0) {
-                return false;
-            }
-            if (startChild == endChild && startOffset == endOffset) {
-                return false;
-            }
-            selectedView = view;
-            startViewPosition = endViewPosition = position;
-            startViewChildPosition = startChild;
-            endViewChildPosition = endChild;
-            startViewOffset = startOffset;
-            endViewOffset = endOffset;
-            selectionStart = startOffset;
-            selectionEnd = endOffset;
-            anchorViewPosition = position;
-            anchorChildPosition = startChild;
-            anchorOffset = startOffset;
-
-            populateTextCacheForView(view, position);
-
-            arrayList.clear();
-            view.fillTextLayoutBlocks(arrayList);
-            if (!arrayList.isEmpty() && startChild >= 0 && startChild < arrayList.size()) {
-                textX = arrayList.get(startChild).getX();
-                textY = arrayList.get(startChild).getY();
-            } else if (!arrayList.isEmpty()) {
-                textX = arrayList.get(0).getX();
-                textY = arrayList.get(0).getY();
-            }
-
-            if (textSelectionOverlay != null) {
-                textSelectionOverlay.setVisibility(View.VISIBLE);
-            }
-            showHandleViews();
-            invalidate();
-            hideActions();
-            AndroidUtilities.cancelRunOnUIThread(showActionsRunnable);
-            AndroidUtilities.runOnUIThread(showActionsRunnable);
-            if (callback != null) {
-                callback.onStateChanged(true);
-            }
-            view.invalidate();
-            return true;
-        }
-
-        public boolean expandSelectionToWholeCurrentBlock() {
-            if (!isInSelectionMode() || selectedView == null) {
-                return false;
-            }
-            if (startViewPosition != endViewPosition || startViewChildPosition != endViewChildPosition) {
-                return false;
-            }
-            int childPos = startViewChildPosition < 0 ? 0 : startViewChildPosition;
-            arrayList.clear();
-            selectedView.fillTextLayoutBlocks(arrayList);
-            if (arrayList.isEmpty() || childPos >= arrayList.size()) {
-                return false;
-            }
-            int len = arrayList.get(childPos).getLayout().getText().length();
-            if (len <= 0 || (startViewOffset <= 0 && endViewOffset >= len)) {
-                return false;
-            }
-            return selectRangeOf(selectedView, childPos, 0, len);
-        }
-
-        public boolean extendSelectionTo(ArticleSelectableView targetView, int targetOffset) {
-            return extendSelectionTo(targetView, 0, targetOffset);
-        }
-
-        public boolean extendSelectionTo(ArticleSelectableView targetView, int targetChildPos, int targetOffset) {
-            int targetPos = getAdapterPosition(targetView);
-            if (targetPos < 0) {
-                return false;
-            }
-            if (anchorViewPosition < 0) {
-                anchorViewPosition = startViewPosition;
-                anchorChildPosition = startViewChildPosition;
-                anchorOffset = startViewOffset;
-            }
-
-            populateTextCacheForView(targetView, targetPos);
-
-            int sp, sc, so, ep, ec, eo;
-            int cmp = lexCompare(targetPos, targetChildPos, targetOffset,
-                                  anchorViewPosition, anchorChildPosition, anchorOffset);
-            if (cmp < 0) {
-                sp = targetPos; sc = targetChildPos; so = targetOffset;
-                ep = anchorViewPosition; ec = anchorChildPosition; eo = anchorOffset;
-            } else {
-                sp = anchorViewPosition; sc = anchorChildPosition; so = anchorOffset;
-                ep = targetPos; ec = targetChildPos; eo = targetOffset;
-            }
-
-            if (sp == ep && sc == ec && so == eo) {
-                clear();
-                return true;
-            }
-
-            startViewPosition = sp;
-            startViewChildPosition = sc;
-            startViewOffset = so;
-            endViewPosition = ep;
-            endViewChildPosition = ec;
-            endViewOffset = eo;
-
-            pickEndView();
-
-            invalidate();
-            if (textSelectionOverlay != null) {
-                textSelectionOverlay.invalidate();
-            }
-            AndroidUtilities.cancelRunOnUIThread(showActionsRunnable);
-            AndroidUtilities.runOnUIThread(showActionsRunnable);
-            return true;
-        }
-
-        private static int lexCompare(int p1, int c1, int o1, int p2, int c2, int o2) {
-            if (p1 != p2) return Integer.compare(p1, p2);
-            if (c1 != c2) return Integer.compare(c1, c2);
-            return Integer.compare(o1, o2);
-        }
-
-        public boolean selectAllBlocksRange(int firstPos, int lastPos) {
-            if (firstPos < 0 || lastPos < firstPos) return false;
-            CharSequence lastText = textByPosition.get(lastPos);
-            int lastLen = lastText == null ? 0 : lastText.length();
-            ArticleSelectableView lastView = null;
-            if (parentView != null) {
-                for (int i = 0; i < parentView.getChildCount(); i++) {
-                    View child = parentView.getChildAt(i);
-                    if (child instanceof ArticleSelectableView && getAdapterPosition((ArticleSelectableView) child) == lastPos) {
-                        lastView = (ArticleSelectableView) child;
-                        break;
-                    }
-                }
-            }
-            return selectAllBlocksRangeInternal(firstPos, lastPos, lastLen, lastView);
-        }
-
-        public boolean selectAllBlocksRange(int firstPos, int lastPos, int lastChildPos, int lastEndOffset) {
-            if (firstPos < 0 || lastPos < firstPos || lastChildPos < 0) return false;
-            ArticleSelectableView lastView = null;
-            if (parentView != null) {
-                for (int i = 0; i < parentView.getChildCount(); i++) {
-                    View child = parentView.getChildAt(i);
-                    if (child instanceof ArticleSelectableView && getAdapterPosition((ArticleSelectableView) child) == lastPos) {
-                        lastView = (ArticleSelectableView) child;
-                        break;
-                    }
-                }
-            }
-            selectedView = lastView;
-            selectionStart = 0;
-            selectionEnd = lastEndOffset;
-            startViewPosition = firstPos;
-            endViewPosition = lastPos;
-            startViewChildPosition = 0;
-            endViewChildPosition = lastChildPos;
-            startViewOffset = 0;
-            endViewOffset = lastEndOffset;
-            childCountByPosition.put(firstPos, Math.max(1, childCountByPosition.get(firstPos)));
-            childCountByPosition.put(lastPos, Math.max(lastChildPos + 1, childCountByPosition.get(lastPos)));
-            anchorViewPosition = firstPos;
-            anchorChildPosition = 0;
-            anchorOffset = 0;
-
-            if (textSelectionOverlay != null) {
-                textSelectionOverlay.setVisibility(View.VISIBLE);
-            }
-            showHandleViews();
-            invalidate();
-            hideActions();
-            AndroidUtilities.cancelRunOnUIThread(showActionsRunnable);
-            AndroidUtilities.runOnUIThread(showActionsRunnable);
-            if (callback != null) {
-                callback.onStateChanged(true);
-            }
-            return true;
-        }
-
-        private boolean selectAllBlocksRangeInternal(int firstPos, int lastPos, int lastLen, ArticleSelectableView lastViewOrNull) {
-            selectedView = lastViewOrNull;
-            selectionStart = 0;
-            selectionEnd = lastLen;
-            startViewPosition = firstPos;
-            endViewPosition = lastPos;
-            startViewChildPosition = endViewChildPosition = 0;
-            startViewOffset = 0;
-            endViewOffset = lastLen;
-            childCountByPosition.put(firstPos, Math.max(1, childCountByPosition.get(firstPos)));
-            childCountByPosition.put(lastPos, Math.max(1, childCountByPosition.get(lastPos)));
-            anchorViewPosition = firstPos;
-            anchorOffset = 0;
-
-            if (textSelectionOverlay != null) {
-                textSelectionOverlay.setVisibility(View.VISIBLE);
-            }
-            showHandleViews();
-            invalidate();
-            hideActions();
-            AndroidUtilities.cancelRunOnUIThread(showActionsRunnable);
-            AndroidUtilities.runOnUIThread(showActionsRunnable);
-            if (callback != null) {
-                callback.onStateChanged(true);
-            }
-            return true;
-        }
-
-        public void cacheText(int pos, CharSequence text, CharSequence prefix) {
-            final int key = pos + (0 << 16);
-            textByPosition.put(key, detachedText(text));
-            if (prefix == null) {
-                prefixTextByPosition.remove(key);
-            } else {
-                prefixTextByPosition.put(key, detachedText(prefix));
-            }
-            childCountByPosition.put(pos, Math.max(1, childCountByPosition.get(pos)));
-        }
-
-        public void cacheChildText(int pos, int childPos, CharSequence text) {
-            textByPosition.put(pos + (childPos << 16), detachedText(text));
-            childCountByPosition.put(pos, Math.max(childPos + 1, childCountByPosition.get(pos)));
-        }
-
-        private void populateTextCacheForView(ArticleSelectableView view, int pos) {
-            arrayList.clear();
-            view.fillTextLayoutBlocks(arrayList);
-            int n = arrayList.size();
-            childCountByPosition.put(pos, n);
-            for (int i = 0; i < n; i++) {
-                cacheLayoutBlock(pos, i, arrayList.get(i));
-            }
-        }
-
-        public int getStartCell() { return startViewPosition; }
-        public int getEndCell() { return endViewPosition; }
-        public int getStartOffset() { return startViewOffset; }
-        public int getEndOffset() { return endViewOffset; }
-        public int getStartChildPosition() { return startViewChildPosition; }
-        public int getEndChildPosition() { return endViewChildPosition; }
-        public int getAnchorChildPosition() { return anchorChildPosition; }
-        public int getAnchorCell() { return anchorViewPosition; }
-        public int getAnchorOffset() { return anchorOffset; }
-
-        public CharSequence getSelectedTextPublic() {
-            return getSelectedText();
-        }
+        // LoogriGram: selecting a range, a child's range or whole blocks from
+        // code, extending a selection from an anchor, caching text for blocks
+        // not laid out, and reading the selection's cells and offsets served
+        // only the article editor, which is deleted, as on desktop.
 
         protected void onNewViewSelected(ArticleSelectableView oldView, ArticleSelectableView newView, int childPosition) {
             int position = getAdapterPosition(newView);
@@ -3738,8 +3424,6 @@ public abstract class TextSelectionHelper<Cell extends TextSelectionHelper.Selec
             endViewChildPosition = -1;
             textByPosition.clear();
             childCountByPosition.clear();
-            anchorViewPosition = -1;
-            anchorOffset = -1;
         }
 
         @Override

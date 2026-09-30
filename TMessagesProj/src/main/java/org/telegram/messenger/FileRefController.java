@@ -237,16 +237,6 @@ public class FileRefController extends BaseController {
                 location.id = mediaPhoto.id.id;
                 return new Pair<>(location, "photo_" + mediaPhoto.id.id);
             }
-        } else if (args[0] instanceof TLRPC.InputPhoto) {
-            TLRPC.InputPhoto photo = (TLRPC.InputPhoto) args[0];
-            final TLRPC.InputFileLocation location = new TLRPC.TL_inputPhotoFileLocation();
-            location.id = photo.id;
-            return new Pair<>(location, "photo_" + photo.id);
-        } else if (args[0] instanceof TLRPC.InputDocument) {
-            TLRPC.InputDocument document = (TLRPC.InputDocument) args[0];
-            final TLRPC.InputFileLocation location = new TLRPC.TL_inputDocumentFileLocation();
-            location.id = document.id;
-            return new Pair<>(location, "file_" + document.id);
         } else if (args[0] instanceof TLRPC.TL_messages_addPollAnswer) {
             TLRPC.TL_messages_addPollAnswer req = (TLRPC.TL_messages_addPollAnswer) args[0];
             if (req.answer.input_media instanceof TLRPC.TL_inputMediaDocument) {
@@ -833,24 +823,6 @@ public class FileRefController extends BaseController {
                 mediaPhoto.id.file_reference = file_reference;
             }
             AndroidUtilities.runOnUIThread(() -> getSendMessagesHelper().performSendMessageRequest((TLObject) requester.args[0], (MessageObject) requester.args[1], (String) requester.args[2], (SendMessagesHelper.DelayedMessage) requester.args[3], (Boolean) requester.args[4], (SendMessagesHelper.DelayedMessage) requester.args[5], null, null, (Boolean) requester.args[6]));
-        } else if (requester.args[0] instanceof TLRPC.InputPhoto || requester.args[0] instanceof TLRPC.InputDocument) {
-            // refreshed reference for a single rich message photo/document; patch it and re-run the edit
-            if (requester.args[0] instanceof TLRPC.InputPhoto) {
-                TLRPC.InputPhoto photo = (TLRPC.InputPhoto) requester.args[0];
-                if (fromCache && isSameReference(photo.file_reference, file_reference)) {
-                    return false;
-                }
-                photo.file_reference = file_reference;
-            } else {
-                TLRPC.InputDocument document = (TLRPC.InputDocument) requester.args[0];
-                if (fromCache && isSameReference(document.file_reference, file_reference)) {
-                    return false;
-                }
-                document.file_reference = file_reference;
-            }
-            if (requester.args.length > 1 && requester.args[1] instanceof Runnable) {
-                AndroidUtilities.runOnUIThread((Runnable) requester.args[1]);
-            }
         } else if (requester.args[0] instanceof TLRPC.TL_messages_addPollAnswer) {
             TLRPC.TL_messages_addPollAnswer req = (TLRPC.TL_messages_addPollAnswer) requester.args[0];
             if (req.answer.input_media instanceof TLRPC.TL_inputMediaDocument) {

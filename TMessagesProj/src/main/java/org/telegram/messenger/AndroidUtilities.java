@@ -4185,15 +4185,6 @@ public class AndroidUtilities {
         return true;
     }
 
-    public static boolean copyFileSafe(File sourceFile, File destFile) {
-        try {
-            return copyFile(sourceFile, destFile);
-        } catch (Exception e) {
-            FileLog.e(e);
-            return false;
-        }
-    }
-
     public static boolean copyFile(File sourceFile, File destFile) throws IOException {
         if (sourceFile.equals(destFile)) {
             return true;

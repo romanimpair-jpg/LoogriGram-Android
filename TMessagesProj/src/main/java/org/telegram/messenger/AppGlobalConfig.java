@@ -82,12 +82,6 @@ public class AppGlobalConfig {
 
     public final ConfigBoolean messagePrimaryEditedDate = ofBoolean("message_primary_edited_date", false);
 
-    public final ConfigInt richMessageLengthLimit = ofInt("rich_message_length_limit", 32_768);
-    public final ConfigInt richMessageMaxBlocks = ofInt("rich_message_max_blocks", 500);
-    public final ConfigInt richMessageMaxDepth = ofInt("rich_message_max_depth", 16);
-    public final ConfigInt richMessageMaxMedia = ofInt("rich_message_max_media", 50);
-    public final ConfigInt richMessageMaxTableCols = ofInt("rich_message_max_table_cols", 20);
-
     public final ConfigInt communityPeersLimit = ofInt("community_peers_limit", 100);
     public final ConfigInt communityBotPeersLimit = ofInt("community_bot_peers_limit", 100);
 

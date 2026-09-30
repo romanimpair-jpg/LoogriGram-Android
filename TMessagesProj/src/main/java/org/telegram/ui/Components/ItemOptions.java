@@ -1007,11 +1007,9 @@ public class ItemOptions {
         return this;
     }
 
-    private boolean dontFocus;
-    public ItemOptions dontFocus() {
-        this.dontFocus = true;
-        return this;
-    }
+    // LoogriGram: dontFocus, allowShowingOnTopOfKeyboard and followScrimView
+    // (a menu moving with its scrim view, reposition) served only the article
+    // editor, which is deleted, as on desktop.
 
     public boolean needsFocus;
     public ItemOptions needsFocus() {
@@ -1178,12 +1176,6 @@ public class ItemOptions {
             }
             return null;
         }
-    }
-
-    private boolean allowShowingOnTopOfKeyboard;
-    public ItemOptions allowShowingOnTopOfKeyboard() {
-        this.allowShowingOnTopOfKeyboard = true;
-        return this;
     }
 
     private float offsetX, offsetY;
@@ -1365,7 +1357,6 @@ public class ItemOptions {
                 actionBarPopupWindow = null;
                 dismissDim(container);
                 clearHoverListener();
-                removeFollowListeners();
 
                 if (dismissListener != null) {
                     dismissListener.run();
@@ -1374,16 +1365,10 @@ public class ItemOptions {
             }
         });
         actionBarPopupWindow.setOutsideTouchable(true);
-        actionBarPopupWindow.setFocusable(!dontFocus);
+        actionBarPopupWindow.setFocusable(true);
         actionBarPopupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         actionBarPopupWindow.setAnimationStyle(R.style.PopupContextAnimation);
-        if (allowShowingOnTopOfKeyboard) {
-            actionBarPopupWindow.setInputMethodMode(ActionBarPopupWindow.INPUT_METHOD_NOT_NEEDED);
-            actionBarPopupWindow.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED);
-        } else if (dontFocus) {
-            actionBarPopupWindow.setInputMethodMode(ActionBarPopupWindow.INPUT_METHOD_NEEDED);
-            actionBarPopupWindow.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
-        } else if (needsFocus) {
+        if (needsFocus) {
             actionBarPopupWindow.setInputMethodMode(ActionBarPopupWindow.INPUT_METHOD_NEEDED);
             actionBarPopupWindow.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
         } else {
@@ -1414,7 +1399,7 @@ public class ItemOptions {
             X = (container.getWidth() - layout.getMeasuredWidth()) / 2; // at the center
         }
         int keyboardHeight = 0;
-        if (container != null && !allowShowingOnTopOfKeyboard) {
+        if (container != null) {
             final android.graphics.Rect visible = new android.graphics.Rect();
             final View rootView = container.getRootView();
             container.getWindowVisibleDisplayFrame(visible);
@@ -1506,10 +1491,6 @@ public class ItemOptions {
             installHoverReleaseListener();
         }
 
-        if (followScrim) {
-            installFollowListeners();
-        }
-
         return this;
     }
 
@@ -1521,137 +1502,7 @@ public class ItemOptions {
 
     public ItemOptions setScrimView(View view) {
         this.scrimView = view;
-        if (followScrim && isShown()) {
-            installFollowListeners();
-        }
         return this;
-    }
-
-    private boolean followScrim;
-    private View followingView;
-    private android.view.ViewTreeObserver.OnScrollChangedListener followScrollListener;
-    private View.OnLayoutChangeListener followLayoutListener;
-    private final int[] followLoc = new int[2];
-
-    public ItemOptions followScrimView() {
-        followScrim = true;
-        if (isShown()) {
-            installFollowListeners();
-        }
-        return this;
-    }
-
-    private void installFollowListeners() {
-        removeFollowListeners();
-        if (scrimView == null) return;
-        followingView = scrimView;
-        followingView.getLocationOnScreen(followLoc);
-        followScrollListener = () -> {
-            if (followingView == null || actionBarPopupWindow == null || !actionBarPopupWindow.isShowing()) return;
-            final int[] loc = new int[2];
-            followingView.getLocationOnScreen(loc);
-            if (loc[0] != followLoc[0] || loc[1] != followLoc[1]) {
-                followLoc[0] = loc[0];
-                followLoc[1] = loc[1];
-                reposition();
-            }
-        };
-        followingView.getViewTreeObserver().addOnScrollChangedListener(followScrollListener);
-        followLayoutListener = (v, l, t, r, b, ol, ot, or, ob) -> {
-            if (isShown()) reposition();
-        };
-        followingView.addOnLayoutChangeListener(followLayoutListener);
-    }
-
-    private void removeFollowListeners() {
-        if (followingView != null) {
-            if (followScrollListener != null) {
-                final android.view.ViewTreeObserver vto = followingView.getViewTreeObserver();
-                if (vto.isAlive()) vto.removeOnScrollChangedListener(followScrollListener);
-            }
-            if (followLayoutListener != null) {
-                followingView.removeOnLayoutChangeListener(followLayoutListener);
-            }
-        }
-        followScrollListener = null;
-        followLayoutListener = null;
-        followingView = null;
-    }
-
-    public void reposition() {
-        if (actionBarPopupWindow == null || !actionBarPopupWindow.isShowing()) return;
-        if (scrimView == null || pointContainer == null || layout == null || lastLayout == null) return;
-        final ViewGroup container = pointContainer;
-
-        float x;
-        float y;
-        getPointOnScreen(scrimView, container, point);
-        y = point[1];
-        x = point[0];
-        if (offsetByContainer) {
-            int[] p = new int[2];
-            container.getLocationOnScreen(p);
-            x += p[0];
-            y += p[1];
-        }
-        RectF scrimViewBounds = new RectF();
-        if (scrimView instanceof ScrimView) {
-            ((ScrimView) scrimView).getBounds(scrimViewBounds);
-        } else if (animateToWidth != 0 && animateToHeight != 0) {
-            scrimViewBounds.set(0, 0, animateToWidth, animateToHeight);
-        } else {
-            scrimViewBounds.set(0, 0, scrimView.getMeasuredWidth(), scrimView.getMeasuredHeight());
-        }
-        x += scrimViewBounds.left;
-        y += scrimViewBounds.top;
-        if (ignoreX) {
-            x = point[0] = 0;
-        }
-
-        layout.measure(
-            View.MeasureSpec.makeMeasureSpec(container.getMeasuredWidth(), View.MeasureSpec.AT_MOST),
-            View.MeasureSpec.makeMeasureSpec(container.getMeasuredHeight(), View.MeasureSpec.AT_MOST)
-        );
-        final RectF layoutBounds = new RectF();
-        final android.graphics.Rect layoutPadding = lastLayout.getPadding();
-        layoutBounds.set(layoutPadding.left, layoutPadding.top, layout.getMeasuredWidth() - layoutPadding.right, layout.getMeasuredHeight() - layoutPadding.bottom);
-
-        if (AndroidUtilities.isTablet()) {
-            y += container.getPaddingTop();
-            x -= container.getPaddingLeft();
-        }
-        int X;
-        if (gravity == Gravity.LEFT) {
-            X = (int) (container.getX() + x);
-        } else if (gravity == Gravity.RIGHT) {
-            X = (int) (container.getX() + x + scrimViewBounds.width() - layoutBounds.right);
-        } else if (gravity == Gravity.CENTER_HORIZONTAL) {
-            X = (int) (container.getX() + x + scrimViewBounds.width() / 2.0f - layout.getMeasuredWidth() / 2.0f);
-        } else {
-            if (x + layoutBounds.width() > container.getWidth()) {
-                X = (int) (container.getX() + x + scrimViewBounds.width() - layoutBounds.right);
-            } else {
-                X = (int) (container.getX() + x - layoutBounds.left);
-            }
-        }
-        int Y;
-        float scrimHeight = onTopOfScrim ? 0 : scrimViewBounds.height();
-        if (forceBottom) {
-            Y = (int) (Math.min(y + scrimHeight, AndroidUtilities.displaySize.y) - layout.getMeasuredHeight() + container.getY());
-        } else {
-            if (forceTop || y + scrimHeight + layout.getMeasuredHeight() + dp(16) > AndroidUtilities.displaySize.y - AndroidUtilities.navigationBarHeight) {
-                y -= scrimHeight;
-                y -= layout.getMeasuredHeight();
-                if (allowCenter && Math.max(0, y + scrimHeight) + layout.getMeasuredHeight() > point[1] + scrimViewBounds.top && scrimViewBounds.height() == scrimView.getHeight()) {
-                    y = (container.getHeight() - layout.getMeasuredHeight()) / 2f - scrimHeight - container.getY();
-                }
-            }
-            Y = (int) (y + scrimHeight + container.getY());
-        }
-
-        offsetX = X + translateX;
-        offsetY = Y + translateY;
-        actionBarPopupWindow.update((int) offsetX, (int) offsetY, -1, -1);
     }
 
     public ItemOptions setBackgroundColor(int color) {

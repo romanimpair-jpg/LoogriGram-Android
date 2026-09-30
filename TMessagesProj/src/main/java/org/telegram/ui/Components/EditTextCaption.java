@@ -138,12 +138,6 @@ public class EditTextCaption extends EditTextBoldCursor implements FloatingToolb
         delegate = editTextCaptionDelegate;
     }
 
-    protected void notifySpansChanged() {
-        if (delegate != null) {
-            delegate.onSpansChanged();
-        }
-    }
-
     public void setAllowTextEntitiesIntersection(boolean value) {
         allowTextEntitiesIntersection = value;
     }

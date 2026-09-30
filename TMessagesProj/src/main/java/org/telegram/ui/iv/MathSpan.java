@@ -3,7 +3,6 @@ package org.telegram.ui.iv;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.text.Spanned;
 import android.text.style.ReplacementSpan;
 
 import org.telegram.messenger.FileLog;
@@ -59,9 +58,4 @@ public class MathSpan extends ReplacementSpan {
     }
 
     /** Source of the first math span covering [from, to), or null if none. */
-    public static String sourceAt(CharSequence cs, int from, int to) {
-        if (!(cs instanceof Spanned)) return null;
-        final MathSpan[] spans = ((Spanned) cs).getSpans(from, to, MathSpan.class);
-        return spans.length > 0 ? spans[0].source : null;
-    }
 }

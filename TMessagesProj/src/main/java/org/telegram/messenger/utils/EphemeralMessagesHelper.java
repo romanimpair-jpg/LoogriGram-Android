@@ -154,10 +154,8 @@ public class EphemeralMessagesHelper extends BaseController {
                 newRequest.entities = request.entities;
                 newRequest.media = null;
                 newRequest.reply_markup = request.reply_markup;
-                newRequest.rich_message = request.rich_message;
                 newRequest.random_id = request.random_id;
                 newRequest.reply_to = applyReplyTo(request.reply_to);
-                newRequest.rich_message = request.rich_message;
                 newRequest.invert_media = request.invert_media;
 
                 send.run(newRequest);
@@ -195,7 +193,6 @@ public class EphemeralMessagesHelper extends BaseController {
                 newRequest.entities = request.entities;
                 newRequest.media = request.media;
                 newRequest.reply_markup = request.reply_markup;
-                newRequest.rich_message = null;
                 newRequest.random_id = request.random_id;
                 newRequest.reply_to = applyReplyTo(request.reply_to);
                 newRequest.invert_media = request.invert_media;

@@ -123,7 +123,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
     public static final int MEDIA_TYPE_DICE = 11;
     // LoogriGram: 12 was MEDIA_TYPE_STORY, a story shared into a chat from the
     // story viewer. Stories are removed, as on desktop.
-    public static final int MEDIA_TYPE_RICH = 13;
     private final HashMap<String, ArrayList<DelayedMessage>> delayedMessages = new HashMap<>();
     private final SparseArray<MessageObject> unsentMessages = new SparseArray<>();
     private final SparseArray<TLRPC.Message> sendingMessages = new SparseArray<>();
@@ -3356,95 +3355,10 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         });
     }
 
-    public int editRichMessage(MessageObject messageObject, TL_iv.RichMessage rich, ArrayList<TLRPC.InputUser> users, final BaseFragment fragment, boolean onlyCheckbox) {
-        if (messageObject == null || rich == null || messageObject.messageOwner == null) {
-            return 0;
-        }
-        if (messageObject.isEditing() && messageObject.messageOwner.reqId != 0) {
-            getConnectionsManager().cancelRequest(messageObject.messageOwner.reqId, true);
-            messageObject.messageOwner.reqId = 0;
-        }
-        final TLRPC.TL_messages_editMessage req;
-        if (messageObject.isEphemeral()) {
-            final TL_ephemeral.TL_editMessage request2 = new TL_ephemeral.TL_editMessage();
-            request2.id = MessageObject.ephemeralMessageIdUnpack(messageObject.getId());
-            request2.receiver_id = new TLRPC.TL_inputUserEmpty();
-            request2.welcome = true;
-            req = request2;
-        } else {
-            req = new TLRPC.TL_messages_editMessage();
-            req.id = messageObject.getId();
-        }
-
-        req.peer = getMessagesController().getInputPeer(messageObject.getDialogId());
-        req.rich_message = richMessageToInputRichMessage(rich, users);
-        req.flags |= TLObject.FLAG_23;
-        if (messageObject.scheduled) {
-            req.schedule_date = messageObject.messageOwner.date;
-            req.flags |= TLObject.FLAG_15;
-        }
-        messageObject.messageOwner.rich_message = rich;
-        messageObject.messageOwner.send_state = MessageObject.MESSAGE_SEND_STATE_EDITING;
-        final int reqId = sendEditRichMessageRequest(req, messageObject, fragment, onlyCheckbox);
-        notifyRichMessageEditing(messageObject);
-        return reqId;
-    }
-
-    private void notifyRichMessageEditing(MessageObject messageObject) {
-        final ArrayList<MessageObject> arr = new ArrayList<>();
-        arr.add(messageObject);
-        getNotificationCenter().postNotificationName(NotificationCenter.replaceMessagesObjects, messageObject.getDialogId(), arr);
-    }
-
-    private void onRichEditFinished(MessageObject messageObject, boolean failed) {
-        if (messageObject == null || messageObject.messageOwner == null) {
-            return;
-        }
-        messageObject.messageOwner.reqId = 0;
-        if (failed && messageObject.messageOwner.send_state == MessageObject.MESSAGE_SEND_STATE_EDITING) {
-            messageObject.messageOwner.send_state = MessageObject.MESSAGE_SEND_STATE_SENT;
-            notifyRichMessageEditing(messageObject);
-        }
-    }
-
-    private int sendEditRichMessageRequest(final TLRPC.TL_messages_editMessage req, final MessageObject messageObject, final BaseFragment fragment, final boolean onlyCheckbox) {
-        final int reqId = getConnectionsManager().sendRequest(req, (response, error) -> {
-            if (error == null) {
-                getMessagesController().processUpdates((TLRPC.Updates) response, false);
-                AndroidUtilities.runOnUIThread(() -> onRichEditFinished(messageObject, false));
-            } else if (FileRefController.isFileRefError(error.text) && requestRichMessageFileReference(messageObject, req, error.text, () -> sendEditRichMessageRequest(req, messageObject, fragment, onlyCheckbox))) {
-
-            } else {
-                AndroidUtilities.runOnUIThread(() -> onRichEditFinished(messageObject, true));
-                if (fragment != null) {
-                    AndroidUtilities.runOnUIThread(() -> AlertsCreator.processError(currentAccount, error, fragment, req));
-                }
-            }
-        });
-        if (messageObject != null && messageObject.messageOwner != null) {
-            messageObject.messageOwner.reqId = reqId;
-        }
-        return reqId;
-    }
-
-    private boolean requestRichMessageFileReference(MessageObject messageObject, TLRPC.TL_messages_editMessage req, String errorText, Runnable retry) {
-        if (messageObject == null || !(req.rich_message instanceof TL_iv.TL_inputRichMessage)) {
-            return false;
-        }
-        TL_iv.TL_inputRichMessage rich = (TL_iv.TL_inputRichMessage) req.rich_message;
-        ArrayList<TLObject> media = new ArrayList<>(rich.photos.size() + rich.documents.size());
-        media.addAll(rich.photos);
-        media.addAll(rich.documents);
-        if (media.isEmpty()) {
-            return false;
-        }
-        int index = FileRefController.getFileRefErrorIndex(errorText);
-        if (index < 0 || index >= media.size()) {
-            index = 0;
-        }
-        getFileRefController().requestReference(messageObject, media.get(index), retry);
-        return true;
-    }
+    // LoogriGram: editRichMessage sent an article edited in the article editor,
+    // or with one checkbox ticked, refreshing its media's file references
+    // when the server asked. Editing an article needs Premium; the editor is
+    // deleted, as on desktop.
 
     public void deletePollOption(MessageObject messageObject, byte[] option) {
         if (messageObject == null) {
@@ -4313,8 +4227,11 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                             todo = (TLRPC.TL_messageMediaToDo) newMsg.media;
                         }
                         type = 10;
-                    } else if (newMsg.rich_message != null) {
-                        type = MEDIA_TYPE_RICH;
+                    } else if (newMsg.rich_message != null && (params == null || !params.containsKey("query_id"))) {
+                        // LoogriGram: an article of our own was sent again here as
+                        // MEDIA_TYPE_RICH. Sending one went with the article editor,
+                        // as on desktop; it fails at once rather than hang as sending.
+                        throw new IllegalStateException("article");
                     }
                     if (params != null && params.containsKey("query_id")) {
                         type = 9;
@@ -4330,15 +4247,15 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                     canSendStickers = ChatObject.canSendStickers(chat);
                 }
                 if (richMessage != null) {
+                    // LoogriGram: an article arrives here only as an inline bot's
+                    // result, sent with sendInlineBotResult. An article of our own
+                    // (MEDIA_TYPE_RICH, sendMessage with rich_message) went with the
+                    // article editor, as on desktop.
                     newMsg = new TLRPC.TL_message();
                     newMsg.media = new TLRPC.TL_messageMediaEmpty();
                     newMsg.message = "";
                     newMsg.rich_message = richMessage;
-                    if (params != null && params.containsKey("query_id")) {
-                        type = 9;
-                    } else {
-                        type = MEDIA_TYPE_RICH;
-                    }
+                    type = 9;
                 } else if (message != null) {
                     if (encryptedChat != null) {
                         newMsg = new TLRPC.TL_message_secret();
@@ -5109,46 +5026,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                     if (retryMessageObject == null) {
                         getMediaDataController().cleanDraft(peer, replyToTopMsg != null ? replyToTopMsg.getId() : 0, false);
                     }
-                }
-            } else if (type == MEDIA_TYPE_RICH) {
-                final TLRPC.TL_messages_sendMessage reqSend = new TLRPC.TL_messages_sendMessage();
-                reqSend.ephemeralReceiverBotId = ephemeralReceiverBotId;
-                reqSend.message = "";
-                reqSend.clear_draft = retryMessageObject == null;
-                reqSend.silent = newMsg.silent;
-                reqSend.peer = sendToPeer;
-                reqSend.random_id = newMsg.random_id;
-                reqSend.no_webpage = true;
-                reqSend.rich_message = richMessageToInputRichMessage(newMsg.rich_message, sendMessageParams.richMessageInputUsers);
-                if (newMsg.reply_to instanceof TLRPC.TL_messageReplyHeader) {
-                    reqSend.reply_to = createReplyInput((TLRPC.TL_messageReplyHeader) newMsg.reply_to);
-                    reqSend.flags |= 1;
-                }
-                if (newMsg.from_id != null) {
-                    reqSend.send_as = getMessagesController().getInputPeer(newMsg.from_id);
-                }
-                if (scheduleDate != 0) {
-                    reqSend.schedule_date = scheduleDate;
-                    reqSend.flags |= 1024;
-                    if (scheduleRepeatPeriod != 0) {
-                        reqSend.flags |= TLObject.FLAG_24;
-                        reqSend.schedule_repeat_period = scheduleRepeatPeriod;
-                    }
-                }
-                if (sendMessageParams.effect_id != 0) {
-                    reqSend.flags |= 262144;
-                    reqSend.effect = sendMessageParams.effect_id;
-                }
-                if (sendMessageParams.suggestionParams != null) {
-                    reqSend.suggested_post = sendMessageParams.suggestionParams.toTl();
-                }
-                reqSend.invert_media = newMsg.invert_media;
-                applyMonoForumPeerId(reqSend, sendMessageParams.monoForumPeer);
-                if (retryMessageObject == null) {
-                }
-                performSendMessageRequest(reqSend, newMsgObj, null, null, parentObject, params, scheduleDate != 0);
-                if (retryMessageObject == null) {
-                    getMediaDataController().cleanDraft(peer, replyToTopMsg != null ? replyToTopMsg.getId() : 0, false);
                 }
             } else if (type >= 1 && type <= 3 || type >= 5 && type <= 8 || type == 9 && encryptedChat != null || type == 10 || type == MEDIA_TYPE_DICE) {
                 if (encryptedChat == null) {
@@ -9072,107 +8949,10 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         return false;
     }
 
-    @UiThread
-    public static void prepareSendingArticle(AccountInstance accountInstance, ArrayList<TL_iv.PageBlock> blocks, boolean rtl, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, boolean notify, int scheduleDate, int scheduleRepeatPeriod, SendMessageChatArguments sendMessageChatArguments, long effectId, long monoForumPeerId) {
-        prepareSendingArticle(accountInstance, blocks, null, null, null, rtl, dialogId, replyToMsg, replyToTopMsg, notify, scheduleDate, scheduleRepeatPeriod, sendMessageChatArguments, effectId, monoForumPeerId);
-    }
-
-    public static void prepareSendingArticle(AccountInstance accountInstance, ArrayList<TL_iv.PageBlock> blocks, ArrayList<TLRPC.Photo> photos, ArrayList<TLRPC.Document> documents, ArrayList<TLRPC.InputUser> users, boolean rtl, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, boolean notify, int scheduleDate, int scheduleRepeatPeriod, SendMessageChatArguments sendMessageChatArguments, long effectId, long monoForumPeerId) {
-        if (blocks == null || blocks.isEmpty()) {
-            return;
-        }
-        TL_iv.RichMessage rich = new TL_iv.RichMessage();
-        rich.rtl = rtl;
-        for (TL_iv.PageBlock block : blocks) {
-            if (block != null) {
-                rich.blocks.add(block);
-            }
-        }
-        if (rich.blocks.isEmpty()) {
-            return;
-        }
-        if (photos != null && !photos.isEmpty()) {
-            rich.photos.addAll(photos);
-        }
-        if (documents != null && !documents.isEmpty()) {
-            rich.documents.addAll(documents);
-        }
-        java.util.IdentityHashMap<Object, Boolean> seen = new java.util.IdentityHashMap<>();
-        for (TL_iv.PageBlock b : rich.blocks) {
-            clearRichTextParentsInBlock(b, seen);
-        }
-
-        SendMessageParams params = SendMessageParams.ofRichMessage(rich, dialogId, replyToMsg, replyToTopMsg, null, null, notify, scheduleDate, scheduleRepeatPeriod);
-        params.richMessageInputUsers = users;
-        params.sendMessageChatArguments = sendMessageChatArguments;
-        params.effect_id = effectId;
-        params.monoForumPeer = monoForumPeerId;
-        accountInstance.getSendMessagesHelper().sendMessage(params);
-    }
-
-    public static void prepareEditingArticle(AccountInstance accountInstance, MessageObject editingMessageObject, ArrayList<TL_iv.PageBlock> blocks, ArrayList<TLRPC.Photo> photos, ArrayList<TLRPC.Document> documents, ArrayList<TLRPC.InputUser> users, boolean rtl, BaseFragment fragment) {
-        if (editingMessageObject == null || blocks == null || blocks.isEmpty()) {
-            return;
-        }
-        TL_iv.RichMessage rich = new TL_iv.RichMessage();
-        rich.rtl = rtl;
-        for (TL_iv.PageBlock block : blocks) {
-            if (block != null) {
-                rich.blocks.add(block);
-            }
-        }
-        if (rich.blocks.isEmpty()) {
-            return;
-        }
-        if (photos != null && !photos.isEmpty()) {
-            rich.photos.addAll(photos);
-        }
-        if (documents != null && !documents.isEmpty()) {
-            rich.documents.addAll(documents);
-        }
-        java.util.IdentityHashMap<Object, Boolean> seen = new java.util.IdentityHashMap<>();
-        for (TL_iv.PageBlock b : rich.blocks) {
-            clearRichTextParentsInBlock(b, seen);
-        }
-        accountInstance.getSendMessagesHelper().editRichMessage(editingMessageObject, rich, users, fragment, false);
-    }
-
-    private static TL_iv.TL_inputRichMessage richMessageToInputRichMessage(TL_iv.RichMessage rich, ArrayList<TLRPC.InputUser> users) {
-        TL_iv.TL_inputRichMessage out = new TL_iv.TL_inputRichMessage();
-        if (rich == null) {
-            return out;
-        }
-        out.rtl = rich.rtl;
-        out.blocks = new ArrayList<>(rich.blocks.size());
-        for (int i = 0; i < rich.blocks.size(); i++) {
-            out.blocks.add(toInputPageBlock(rich.blocks.get(i)));
-        }
-        if (rich.photos != null && !rich.photos.isEmpty()) {
-            out.flags |= TLObject.FLAG_2;
-            for (TLRPC.Photo p : rich.photos) {
-                TLRPC.TL_inputPhoto ip = new TLRPC.TL_inputPhoto();
-                ip.id = p.id;
-                ip.access_hash = p.access_hash;
-                ip.file_reference = p.file_reference != null ? p.file_reference : new byte[0];
-                out.photos.add(ip);
-            }
-        }
-        if (rich.documents != null && !rich.documents.isEmpty()) {
-            out.flags |= TLObject.FLAG_3;
-            for (TLRPC.Document d : rich.documents) {
-                TLRPC.TL_inputDocument id = new TLRPC.TL_inputDocument();
-                id.id = d.id;
-                id.access_hash = d.access_hash;
-                id.file_reference = d.file_reference != null ? d.file_reference : new byte[0];
-                out.documents.add(id);
-            }
-        }
-        if (users != null && !users.isEmpty()) {
-            out.flags |= TLObject.FLAG_4;
-            out.users.addAll(users);
-        }
-        return out;
-    }
+    // LoogriGram: prepareSendingArticle and prepareEditingArticle sent and
+    // edited what the article editor wrote, as an input rich message with its
+    // media and mentioned users. The editor needs Premium and is deleted, as
+    // on desktop.
 
     public static TL_iv.PageBlock toInputPageBlock(TL_iv.PageBlock block) {
         if (block instanceof TL_iv.pageBlockMap) {
@@ -11611,7 +11391,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         public long livePhotoTimestamp;
         public long ephemeralReceiverBotId;
         public TL_iv.RichMessage richMessage;
-        public ArrayList<TLRPC.InputUser> richMessageInputUsers;
 
         public static SendMessageParams ofRichMessage(TL_iv.RichMessage richMessage, long peer, MessageObject replyToMsg, MessageObject replyToTopMsg, TLRPC.ReplyMarkup replyMarkup, HashMap<String, String> params, boolean notify, int scheduleDate, int scheduleRepeatPeriod) {
             SendMessageParams p = of(null, null, null, null, null, null, null, null, null, null, peer, null, replyToMsg, replyToTopMsg, null, true, null, null, replyMarkup, params, notify, scheduleDate, scheduleRepeatPeriod, 0, null, null, false);

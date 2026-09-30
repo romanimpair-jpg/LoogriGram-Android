@@ -4162,24 +4162,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         buttonPressed = pressed;
     }
 
-    public void openAttachLayoutForType(int layoutType) {
-        if (layoutType == LAYOUT_TYPE_MUSIC) {
-            final Activity activity = baseFragment != null ? baseFragment.getParentActivity() : null;
-            if (activity != null) {
-                if (Build.VERSION.SDK_INT >= 33) {
-                    if (activity.checkSelfPermission(Manifest.permission.READ_MEDIA_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                        activity.requestPermissions(new String[]{Manifest.permission.READ_MEDIA_AUDIO}, BasePermissionsActivity.REQUEST_CODE_EXTERNAL_STORAGE);
-                        return;
-                    }
-                } else if (Build.VERSION.SDK_INT >= 23 && activity.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                    activity.requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, BasePermissionsActivity.REQUEST_CODE_EXTERNAL_STORAGE);
-                    return;
-                }
-            }
-            openAudioLayout(true);
-        }
-    }
-
     public void showLayout(AttachAlertLayout layout) {
         long newId = selectedId;
         if (layout == restrictedLayout) {
@@ -4646,78 +4628,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         if (show) {
             showLayout(documentLayout);
         }
-    }
-
-    public boolean showSendButtonOnly(boolean show, boolean animated) {
-        if (show == (frameLayout2.getTag() != null)) {
-            return false;
-        }
-        if (commentsAnimator != null) {
-            commentsAnimator.cancel();
-        }
-        frameLayout2.setTag(show ? 1 : null);
-        if (show) {
-            writeButtonContainer.setVisibility(View.VISIBLE);
-        } else if (typeButtonsAvailable) {
-            buttonsRecyclerViewWrapper.setVisibility(View.VISIBLE);
-        }
-        if (animated) {
-            commentsAnimator = new AnimatorSet();
-            ArrayList<Animator> animators = new ArrayList<>();
-            animators.add(ObjectAnimator.ofFloat(writeButtonContainer, View.SCALE_X, show ? 1.0f : 0.2f));
-            animators.add(ObjectAnimator.ofFloat(writeButtonContainer, View.SCALE_Y, show ? 1.0f : 0.2f));
-            animators.add(ObjectAnimator.ofFloat(writeButtonContainer, View.ALPHA, show ? 1.0f : 0.0f));
-            animators.add(ObjectAnimator.ofFloat(writeButton, View.SCALE_X, show ? 1.0f : 0.2f));
-            animators.add(ObjectAnimator.ofFloat(writeButton, View.SCALE_Y, show ? 1.0f : 0.2f));
-            if (typeButtonsAvailable) {
-                animators.add(ObjectAnimator.ofFloat(buttonsRecyclerViewWrapper, View.TRANSLATION_Y, show ? dp(36) : 0));
-                animators.add(ObjectAnimator.ofFloat(buttonsRecyclerViewWrapper, View.ALPHA, show ? 0 : 1f));
-            }
-            commentsAnimator.playTogether(animators);
-            commentsAnimator.setInterpolator(new DecelerateInterpolator());
-            commentsAnimator.setDuration(180);
-            commentsAnimator.addListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    if (animation.equals(commentsAnimator)) {
-                        if (!show) {
-                            writeButtonContainer.setVisibility(View.INVISIBLE);
-                        } else if (typeButtonsAvailable) {
-                            if (currentAttachLayout == null || currentAttachLayout.shouldHideBottomButtons()) {
-                                buttonsRecyclerViewWrapper.setVisibility(View.INVISIBLE);
-                            }
-                        }
-                        commentsAnimator = null;
-                    }
-                }
-
-                @Override
-                public void onAnimationCancel(Animator animation) {
-                    if (animation.equals(commentsAnimator)) {
-                        commentsAnimator = null;
-                    }
-                }
-            });
-            commentsAnimator.start();
-        } else {
-            writeButtonContainer.setScaleX(show ? 1.0f : 0.2f);
-            writeButtonContainer.setScaleY(show ? 1.0f : 0.2f);
-            writeButtonContainer.setAlpha(show ? 1.0f : 0.0f);
-            writeButton.setScaleX(show ? 1.0f : 0.2f);
-            writeButton.setScaleY(show ? 1.0f : 0.2f);
-            if (typeButtonsAvailable) {
-                buttonsRecyclerViewWrapper.setTranslationY(show ? dp(36) : 0);
-                buttonsRecyclerViewWrapper.setAlpha(show ? 0 : 1f);
-                if (show && (currentAttachLayout == null || currentAttachLayout.shouldHideBottomButtons())) {
-                    buttonsRecyclerViewWrapper.setVisibility(View.INVISIBLE);
-                }
-            }
-            if (!show) {
-                writeButtonContainer.setVisibility(View.INVISIBLE);
-            }
-        }
-        writeButton.setCount(0, animated);
-        return true;
     }
 
     private boolean showCommentTextView(boolean show, boolean animated) {
@@ -5892,43 +5802,9 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         return selectedTextView;
     }
 
-    private boolean typeButtonsHidden;
-
-    /** Height (px) occupied by the bottom attach-type buttons row, or 0 when unavailable. */
-    public int getTypeButtonsHeight() {
-        return typeButtonsAvailable ? dp(48 + 7 + 7) : 0;
-    }
-
-    /** Hide/show the bottom attach-type buttons row without affecting the write/send button. */
-    public void setTypeButtonsHidden(boolean hidden, boolean animated) {
-        if (typeButtonsHidden == hidden) {
-            return;
-        }
-        typeButtonsHidden = hidden;
-        if (!typeButtonsAvailable) {
-            return;
-        }
-        buttonsRecyclerViewWrapper.animate().cancel();
-        if (!hidden) {
-            buttonsRecyclerViewWrapper.setVisibility(View.VISIBLE);
-        }
-        if (animated) {
-            buttonsRecyclerViewWrapper.animate()
-                .alpha(hidden ? 0f : 1f)
-                .translationY(hidden ? dp(48) : 0)
-                .setDuration(180)
-                .withEndAction(() -> {
-                    if (hidden) {
-                        buttonsRecyclerViewWrapper.setVisibility(View.INVISIBLE);
-                    }
-                })
-                .start();
-        } else {
-            buttonsRecyclerViewWrapper.setAlpha(hidden ? 0f : 1f);
-            buttonsRecyclerViewWrapper.setTranslationY(hidden ? dp(48) : 0);
-            buttonsRecyclerViewWrapper.setVisibility(hidden ? View.INVISIBLE : View.VISIBLE);
-        }
-    }
+    // LoogriGram: openAttachLayoutForType, showSendButtonOnly,
+    // getTypeButtonsHeight and setTypeButtonsHidden served only the article
+    // layout, which is deleted with the article editor, as on desktop.
 
     public void setSoundPicker() {
         isSoundPicker = true;

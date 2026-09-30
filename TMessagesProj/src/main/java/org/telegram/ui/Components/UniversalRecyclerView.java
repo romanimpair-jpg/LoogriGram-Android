@@ -28,7 +28,6 @@ import org.telegram.messenger.Utilities;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
-import org.telegram.ui.iv.RichEditor;
 
 import java.util.ArrayList;
 
@@ -38,13 +37,9 @@ public class UniversalRecyclerView extends RecyclerListView {
     public final UniversalAdapter adapter;
     public ItemTouchHelper itemTouchHelper;
 
-    private boolean doNotDetachViews;
-    public void doNotDetachViews() {
-        doNotDetachViews = true;
-    }
-    public void doNotDetachViews(boolean value) {
-        doNotDetachViews = value;
-    }
+    // LoogriGram: doNotDetachViews, which laid out a screen's worth of extra
+    // rows, and setReorderLongPressEnabled served only the article editor,
+    // which is deleted, as on desktop.
 
     public UniversalRecyclerView(
         BaseFragment fragment,
@@ -103,21 +98,9 @@ public class UniversalRecyclerView extends RecyclerListView {
         super(context, resourcesProvider);
 
         if (spansCount == UItem.MAX_SPAN_COUNT) {
-            setLayoutManager(layoutManager = new LinearLayoutManager(context, orientation, false) {
-                @Override
-                protected int getExtraLayoutSpace(State state) {
-                    if (doNotDetachViews) return AndroidUtilities.displaySize.y;
-                    return super.getExtraLayoutSpace(state);
-                }
-            });
+            setLayoutManager(layoutManager = new LinearLayoutManager(context, orientation, false));
         } else {
-            ExtendedGridLayoutManager layoutManager1 = new ExtendedGridLayoutManager(context, spansCount) {
-                @Override
-                protected int getExtraLayoutSpace(State state) {
-                    if (doNotDetachViews) return AndroidUtilities.displaySize.y;
-                    return super.getExtraLayoutSpace(state);
-                }
-            };
+            ExtendedGridLayoutManager layoutManager1 = new ExtendedGridLayoutManager(context, spansCount);
             layoutManager1.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
                 @Override
                 public int getSpanSize(int position) {
@@ -187,26 +170,14 @@ public class UniversalRecyclerView extends RecyclerListView {
     }
 
     public void makeHorizontal() {
-        setLayoutManager(layoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false) {
-            @Override
-            protected int getExtraLayoutSpace(State state) {
-                if (doNotDetachViews) return AndroidUtilities.displaySize.y;
-                return super.getExtraLayoutSpace(state);
-            }
-        });
+        setLayoutManager(layoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
     }
 
     public void setSpanCount(int spanCount) {
         if (layoutManager instanceof ExtendedGridLayoutManager) {
             ((ExtendedGridLayoutManager) layoutManager).setSpanCount(spanCount);
         } else if (layoutManager instanceof LinearLayoutManager && spanCount != UItem.MAX_SPAN_COUNT) {
-            ExtendedGridLayoutManager layoutManager1 = new ExtendedGridLayoutManager(getContext(), spanCount) {
-                @Override
-                protected int getExtraLayoutSpace(State state) {
-                    if (doNotDetachViews) return AndroidUtilities.displaySize.y;
-                    return super.getExtraLayoutSpace(state);
-                }
-            };
+            ExtendedGridLayoutManager layoutManager1 = new ExtendedGridLayoutManager(getContext(), spanCount);
             layoutManager1.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
                 @Override
                 public int getSpanSize(int position) {
@@ -256,11 +227,6 @@ public class UniversalRecyclerView extends RecyclerListView {
     protected void onReorderRemove(ViewHolder viewHolder) {}
     private ViewHolder reorderingViewHolder;
     public boolean isReordering() { return reorderingViewHolder != null; }
-
-    private boolean reorderingLongPressEnabled = true;
-    public void setReorderLongPressEnabled(boolean enabled) {
-        reorderingLongPressEnabled = enabled;
-    }
 
     public boolean isReorderAllowed() {
         return reorderingAllowed;
@@ -328,7 +294,7 @@ public class UniversalRecyclerView extends RecyclerListView {
     private class TouchHelperCallback extends ItemTouchHelper.Callback {
         @Override
         public boolean isLongPressDragEnabled() {
-            return reorderingAllowed && reorderingLongPressEnabled;
+            return reorderingAllowed;
         }
 
         @Override
@@ -386,9 +352,6 @@ public class UniversalRecyclerView extends RecyclerListView {
                 cancelClickRunnables(false);
                 if (viewHolder != null) {
                     viewHolder.itemView.setPressed(true);
-                    if (viewHolder.itemView.getBackground() instanceof RichEditor.DraggingDrawable) {
-                        ((RichEditor.DraggingDrawable) viewHolder.itemView.getBackground()).setDragging(true);
-                    }
                     if (actionState == ItemTouchHelper.ACTION_STATE_DRAG) {
                         reorderingViewHolder = viewHolder;
                         onReorderStart(viewHolder);
@@ -413,9 +376,6 @@ public class UniversalRecyclerView extends RecyclerListView {
         public void clearView(@NonNull RecyclerView recyclerView, @NonNull ViewHolder viewHolder) {
             super.clearView(recyclerView, viewHolder);
             viewHolder.itemView.setPressed(false);
-            if (viewHolder.itemView.getBackground() instanceof RichEditor.DraggingDrawable) {
-                ((RichEditor.DraggingDrawable) viewHolder.itemView.getBackground()).setDragging(false);
-            }
             if (isReorderRemoving()) {
                 onReorderRemove(viewHolder);
                 viewHolder.itemView.animate()

@@ -119,41 +119,6 @@ public class FileLoader extends BaseController {
         return fileLoaderQueue;
     }
 
-    public void setLocalPathTo(TLObject attach, String attachPath) {
-        long documentId = 0;
-        int dcId = 0;
-        int type = 0;
-        if (attach instanceof TLRPC.Document) {
-            TLRPC.Document document = (TLRPC.Document) attach;
-            if (document.key != null) {
-                type = MEDIA_DIR_CACHE;
-            } else {
-                if (MessageObject.isVoiceDocument(document)) {
-                    type = MEDIA_DIR_AUDIO;
-                } else if (MessageObject.isVideoDocument(document)) {
-                    type = MEDIA_DIR_VIDEO;
-                } else {
-                    type = MEDIA_DIR_DOCUMENT;
-                }
-            }
-            documentId = document.id;
-            dcId = document.dc_id;
-            filePathDatabase.putPath(documentId, dcId, type, FilePathDatabase.FLAG_LOCALLY_CREATED, attachPath);
-        } else if (attach instanceof TLRPC.PhotoSize) {
-            TLRPC.PhotoSize photoSize = (TLRPC.PhotoSize) attach;
-            if (photoSize instanceof TLRPC.TL_photoStrippedSize || photoSize instanceof TLRPC.TL_photoPathSize) {
-                return;
-            } else if (photoSize.location == null || photoSize.location.key != null || photoSize.location.volume_id == Integer.MIN_VALUE && photoSize.location.local_id < 0 || photoSize.size < 0) {
-                type = MEDIA_DIR_CACHE;
-            } else {
-                type = MEDIA_DIR_IMAGE;
-            }
-            documentId = photoSize.location.volume_id;
-            dcId = photoSize.location.dc_id + (photoSize.location.local_id << 16);
-            filePathDatabase.putPath(documentId, dcId, type, FilePathDatabase.FLAG_LOCALLY_CREATED, attachPath);
-        }
-    }
-
 
     public interface FileLoaderDelegate {
         void fileUploadProgressChanged(FileUploadOperation operation, String location, long uploadedSize, long totalSize, boolean isEncrypted);

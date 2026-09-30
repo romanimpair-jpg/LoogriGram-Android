@@ -223,42 +223,6 @@ public class RichMessageLayout {
         numTextPaint.setTextSize(dp(fontSize));
     }
 
-    /** Uses the message renderer for editable inline buttons without laying out a message. */
-    public static RichButtonSpan createEditorButtonSpan(int currentAccount, int maxWidth,
-                                                        Theme.ResourcesProvider resourcesProvider,
-                                                        TL_iv.textButton textButton) {
-        return new RichButtonSpan(
-            new RichMessageLayout(currentAccount, maxWidth, resourcesProvider),
-            maxWidth,
-            textButton,
-            false
-        );
-    }
-
-    /** Uses the page-button renderer with incoming theme colors inside the rich editor. */
-    public static RichButton createEditorPageButton(int currentAccount, int maxWidth,
-                                                    Theme.ResourcesProvider resourcesProvider,
-                                                    TL_keyboard.PageButton pageButton,
-                                                    Runnable invalidateRunnable) {
-        final RichMessageLayout layout = new RichMessageLayout(currentAccount, maxWidth, resourcesProvider);
-        return new RichButton(
-            layout,
-            maxWidth,
-            layout.formatText(pageButton.text, setBlockFlags(TEXT_FLAG_BOLD, TEXT_FLAG_BLOCK_BUTTON)),
-            pageButton,
-            pageButton.type,
-            pageButton.style,
-            pageButton.type instanceof TL_keyboard.TL_inlineButtonTypeDisabled,
-            true,
-            false,
-            false,
-            false,
-            false,
-            false,
-            invalidateRunnable
-        );
-    }
-
     public boolean needsUpdate(TL_iv.RichMessage newRichMessage, int maxWidth) {
         return (
             richMessage != newRichMessage ||
@@ -5192,7 +5156,7 @@ public class RichMessageLayout {
         private final int maxWidth;
 
         public RichButton(RichMessageLayout layout, int maxWidth, TL_keyboard.PageButton button, Runnable invalidateRunnable) {
-            this(layout, maxWidth, layout.formatText(button.text, setBlockFlags(TEXT_FLAG_BOLD, TEXT_FLAG_BLOCK_BUTTON)), button, button.type, button.style, TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeDisabled.class), true, false, false, false, false, null, invalidateRunnable);
+            this(layout, maxWidth, layout.formatText(button.text, setBlockFlags(TEXT_FLAG_BOLD, TEXT_FLAG_BLOCK_BUTTON)), button, button.type, button.style, TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeDisabled.class), true, false, false, false, false, invalidateRunnable);
         }
 
         public RichButton(RichMessageLayout layout, int maxWidth,
@@ -5205,7 +5169,6 @@ public class RichMessageLayout {
                           boolean emojiLast,
                           boolean link,
                           boolean inline,
-                          @Nullable Boolean outOverride,
                           Runnable invalidateRunnable) {
             this.layout = layout;
             this.maxWidth = Math.max(1, maxWidth);
@@ -5218,7 +5181,9 @@ public class RichMessageLayout {
             this.emojiLast = emojiLast;
             this.inline = inline;
             this.link = link;
-            this.out = outOverride != null ? outOverride : layout.isOut();
+            // LoogriGram: an outOverride let the article editor draw a button in
+            // incoming colours whatever the message; the editor is deleted.
+            this.out = layout.isOut();
 
             Theme.IvButtonColors styleKeys = Theme.IvButtonColors.of(style);
             if (styleKeys == Theme.IvButtonColors.DEFAULT && inline) {
@@ -5627,11 +5592,6 @@ public class RichMessageLayout {
         private final RectF bounds = new RectF();
 
         public RichButtonSpan(RichMessageLayout layout, int maxWidth, TL_iv.textButton textButton) {
-            this(layout, maxWidth, textButton, null);
-        }
-
-        private RichButtonSpan(RichMessageLayout layout, int maxWidth, TL_iv.textButton textButton,
-                               @Nullable Boolean outOverride) {
             this.textButton = textButton;
 
             boolean emojiFirst = false;
@@ -5662,7 +5622,6 @@ public class RichMessageLayout {
                     emojiLast,
                     isLink,
                     true,
-                    outOverride,
                     this::invalidate
             );
             button.width = button.getPreferredWidth();

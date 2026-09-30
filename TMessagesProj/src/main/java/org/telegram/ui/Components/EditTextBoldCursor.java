@@ -141,7 +141,6 @@ public class EditTextBoldCursor extends EditTextEffects {
 
     private boolean nextSetTextAnimated;
     private boolean transformHintToHeader;
-    private boolean transformHintToHeaderOnFocus = true;
     private boolean currentDrawHintAsHeader;
     private AnimatorSet headerTransformAnimation;
     private float headerAnimationProgress;
@@ -457,12 +456,6 @@ public class EditTextBoldCursor extends EditTextEffects {
         }
     }
 
-    public void setTransformHintToHeaderOnFocus(boolean value) {
-        if (transformHintToHeaderOnFocus == value) return;
-        transformHintToHeaderOnFocus = value;
-        checkHeaderVisibility(false);
-    }
-
     public void setAllowDrawCursor(boolean value) {
         allowDrawCursor = value;
         invalidate();
@@ -677,7 +670,7 @@ public class EditTextBoldCursor extends EditTextEffects {
 
     private void checkHeaderVisibility(boolean animated) {
         boolean newHintHeader = transformHintToHeader
-            && (getText().length() > 0 || transformHintToHeaderOnFocus && isFocused());
+            && (getText().length() > 0 || isFocused());
         if (currentDrawHintAsHeader != newHintHeader) {
             if (headerTransformAnimation != null) {
                 headerTransformAnimation.cancel();
@@ -697,13 +690,9 @@ public class EditTextBoldCursor extends EditTextEffects {
         }
     }
 
-    @Override
-    protected void onTextChanged(CharSequence text, int start, int lengthBefore, int lengthAfter) {
-        super.onTextChanged(text, start, lengthBefore, lengthAfter);
-        if (transformHintToHeader && !transformHintToHeaderOnFocus) {
-            checkHeaderVisibility(true);
-        }
-    }
+    // LoogriGram: setTransformHintToHeaderOnFocus, a hint that turned into a
+    // header only once text was typed, served only the article editor, which
+    // is deleted, as on desktop.
 
     @Keep
     public void setHeaderAnimationProgress(float value) {

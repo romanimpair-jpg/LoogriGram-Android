@@ -32,7 +32,6 @@ public class HorizontalRoundTabsLayout extends HorizontalScrollView {
     private final Paint bgPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final TextPaint textPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
 
-    private boolean accent;
 
     public HorizontalRoundTabsLayout(Context context, Theme.ResourcesProvider resourcesProvider) {
         super(context);
@@ -68,10 +67,6 @@ public class HorizontalRoundTabsLayout extends HorizontalScrollView {
 
         setVerticalScrollBarEnabled(false);
         setHorizontalScrollBarEnabled(false);
-    }
-
-    public void setAccent(boolean accent) {
-        this.accent = accent;
     }
 
     public void setTabs(ArrayList<CharSequence> tabs, MessagesStorage.IntCallback onSelect) {
@@ -138,10 +133,10 @@ public class HorizontalRoundTabsLayout extends HorizontalScrollView {
         clipPath2.addRoundRect(tmpRect, dp(13), dp(13), Path.Direction.CCW);
         clipPath2.close();
 
+        // LoogriGram: an accent colouring, set only by the article editor, which
+        // is deleted, could replace these two colours.
         bgPaint.setColor(
-            accent ?
-                Theme.multAlpha(Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider), .10f) :
-                Theme.getColor(Theme.key_windowBackgroundWhiteGrayText, resourcesProvider) & 0x1EFFFFFF
+            Theme.getColor(Theme.key_windowBackgroundWhiteGrayText, resourcesProvider) & 0x1EFFFFFF
         );
         canvas.drawPath(clipPath, bgPaint);
 
@@ -156,9 +151,7 @@ public class HorizontalRoundTabsLayout extends HorizontalScrollView {
         canvas.restore();
 
         textPaint.setColor(
-            accent ?
-                Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider) :
-                Theme.getColor(Theme.key_chats_nameArchived, resourcesProvider)
+            Theme.getColor(Theme.key_chats_nameArchived, resourcesProvider)
         );
         canvas.save();
         canvas.clipPath(clipPath);
