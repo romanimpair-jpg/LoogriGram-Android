@@ -148,34 +148,6 @@ public class UserObject {
         return userInfo != null && userInfo.fallback_photo != null && !(userInfo.fallback_photo instanceof TLRPC.TL_photoEmpty);
     }
 
-    public static Long getEmojiStatusDocumentId(TLRPC.User user) {
-        if (user == null) {
-            return null;
-        }
-        return getEmojiStatusDocumentId(user.emoji_status);
-    }
-
-    public static Long getEmojiStatusDocumentId(TLRPC.EmojiStatus emojiStatus) {
-        if (emojiStatus == null) {
-            return null;
-        }
-        if (emojiStatus instanceof TLRPC.TL_emojiStatus) {
-            final TLRPC.TL_emojiStatus status = (TLRPC.TL_emojiStatus) emojiStatus;
-            if ((status.flags & 1) != 0 && status.until <= (int) (System.currentTimeMillis() / 1000)) {
-                return null;
-            }
-            return status.document_id;
-        }
-        if (emojiStatus instanceof TLRPC.TL_emojiStatusCollectible) {
-            final TLRPC.TL_emojiStatusCollectible status = (TLRPC.TL_emojiStatusCollectible) emojiStatus;
-            if ((status.flags & 1) != 0 && status.until <= (int) (System.currentTimeMillis() / 1000)) {
-                return null;
-            }
-            return status.document_id;
-        }
-        return null;
-    }
-
     public static boolean isService(long user_id) {
         return user_id == 333000 || user_id == 777000 || user_id == 42777;
     }

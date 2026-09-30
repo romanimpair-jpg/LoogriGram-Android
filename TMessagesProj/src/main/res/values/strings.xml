@@ -1419,8 +1419,6 @@
     <string name="UsersRestricted_other">%1$d users restricted.</string>
     <string name="ClearRecentEmojiTitle">Clear recent emoji</string>
     <string name="ClearRecentEmojiText">Do you want to clear all your recent emoji?</string>
-    <string name="ClearRecentEmojiStatusesTitle">Clear recent statuses</string>
-    <string name="ClearRecentEmojiStatusesText">Do you want to clear your recent emoji statuses and reset suggestions?</string>
     <string name="Emoji1">Smileys and people</string>
     <string name="Emoji2">Animals and nature</string>
     <string name="Emoji3">Food and drink</string>
@@ -5636,10 +5634,7 @@
     <string name="AccDescrCustomEmoji">Custom emoji</string>
     <string name="RecentlyUsed">Recently Used</string>
     <string name="PopularReactions">Popular</string>
-    <string name="EmojiPackCollectibles">Collectibles</string>
     <string name="ReactionsLongtapHint">Press and hold to send a super reaction</string>
-    <string name="EmojiLongtapHint">Long tap on a emoji to set a timer</string>
-    <string name="EmojiStatusExpireHint">Your status expires %s</string>
     <string name="EnableSomeReactionsInfo">Members of the group can use only some allowed emoji as reactions to messages.</string>
     <string name="EnableAllReactionsInfo">Members of the group can use any emoji as reactions to messages.</string>
     <string name="DisableReactionsInfo">Members of the group can’t add any reactions to messages.</string>
@@ -5647,13 +5642,6 @@
     <string name="ClearRecentReactionsAlertMessage">Do you want to clear your recent reaction emoji from suggestions?</string>
     <string name="SelectSendAsPeerPremiumHint">Subscribe to **Telegram Premium** to be able to comment on behalf of your channels in any group chat.</string>
     <string name="SelectSendAsPeerPremiumOpen">Open</string>
-    <string name="SetEmojiStatusUntilTitle">Set status until…</string>
-    <string name="SetEmojiStatusUntilButton">Set Status</string>
-    <string name="SetEmojiStatusUntil1Hour">Set for 1 hour</string>
-    <string name="SetEmojiStatusUntil2Hours">Set for 2 hours</string>
-    <string name="SetEmojiStatusUntil8Hours">Set for 8 hours</string>
-    <string name="SetEmojiStatusUntil2Days">Set for 2 days</string>
-    <string name="SetEmojiStatusUntilOther">Other…</string>
     <string name="ReportSpamUserEmojiStatusHint">This account uses %1$s as a custom status next to its name. Such emoji statuses are available to all subscribers of %2$s.</string>
     <string name="ReportSpamUserEmojiStatusHint2">%1$s is a mark for **Premium subscribers >**</string>
     <string name="MicrophoneForVoiceMessages">Microphone for voice messages</string>

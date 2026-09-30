@@ -14,7 +14,6 @@ import static org.telegram.messenger.NotificationsController.TYPE_CHANNEL;
 import static org.telegram.messenger.NotificationsController.TYPE_PRIVATE;
 import static org.telegram.messenger.NotificationsController.TYPE_REACTIONS_MESSAGES;
 import static org.telegram.messenger.Utilities.tryParseLong;
-import static org.telegram.ui.Gifts.GiftsController.findAttribute;
 
 import android.Manifest;
 import android.app.Activity;
@@ -73,7 +72,6 @@ import org.telegram.tgnet.tl.TL_communities;
 import org.telegram.tgnet.tl.TL_ephemeral;
 import org.telegram.tgnet.tl.TL_forum;
 import org.telegram.tgnet.tl.TL_phone;
-import org.telegram.tgnet.tl.TL_stars;
 import org.telegram.tgnet.tl.TL_stories;
 import org.telegram.tgnet.tl.TL_chatlists;
 import org.telegram.tgnet.tl.TL_update;
@@ -2329,68 +2327,6 @@ public class MessagesController extends BaseController implements NotificationCe
             SharedConfig.updateChatListSwipeSetting(SwipeGestureSettingsView.SWIPE_GESTURE_FOLDERS);
         }
         lockFiltersInternal();
-    }
-
-    public static TLRPC.TL_emojiStatusCollectible emojiStatusCollectibleFromGift(TL_stars.TL_starGiftUnique gift) {
-        final TLRPC.TL_emojiStatusCollectible status = new TLRPC.TL_emojiStatusCollectible();
-        status.collectible_id = gift.id;
-        final TL_stars.starGiftAttributeModel model = findAttribute(gift.attributes, TL_stars.starGiftAttributeModel.class);
-        final TL_stars.starGiftAttributeBackdrop backdrop = findAttribute(gift.attributes, TL_stars.starGiftAttributeBackdrop.class);
-        final TL_stars.starGiftAttributePattern pattern = findAttribute(gift.attributes, TL_stars.starGiftAttributePattern.class);
-        status.title = gift.title + " #" + gift.num;
-        if (model != null) {
-            status.document_id = model.document.id;
-        }
-        if (pattern != null) {
-            status.pattern_document_id = pattern.document.id;
-        }
-        if (backdrop != null) {
-            status.center_color = backdrop.center_color;
-            status.edge_color = backdrop.edge_color;
-            status.text_color = backdrop.text_color;
-            status.pattern_color = backdrop.pattern_color;
-        }
-        return status;
-    }
-
-    public void updateEmojiStatus(TLRPC.EmojiStatus newStatus) {
-        updateEmojiStatus(newStatus, null);
-    }
-    public void updateEmojiStatus(TLRPC.EmojiStatus newStatus, TL_stars.StarGift gift) {
-        updateEmojiStatus(0, newStatus, gift);
-    }
-
-    public void updateEmojiStatus(long dialogId, TLRPC.EmojiStatus newStatus, TL_stars.StarGift gift) {
-        final boolean myself = dialogId == 0 || dialogId == getUserConfig().getClientUserId();
-        TLRPC.EmojiStatus new_emoji_status = newStatus;
-        if (new_emoji_status instanceof TLRPC.TL_inputEmojiStatusCollectible && gift instanceof TL_stars.TL_starGiftUnique) {
-            new_emoji_status = emojiStatusCollectibleFromGift((TL_stars.TL_starGiftUnique) gift);
-        }
-
-        TLObject r;
-        if (myself) {
-            TL_account.updateEmojiStatus req = new TL_account.updateEmojiStatus();
-            req.emoji_status = newStatus;
-            r = req;
-
-            TLRPC.User user = getUserConfig().getCurrentUser();
-            if (user != null) {
-                user.emoji_status = new_emoji_status;
-            }
-        } else {
-            TLRPC.TL_channels_updateEmojiStatus req = new TLRPC.TL_channels_updateEmojiStatus();
-            req.channel = getInputChannel(-dialogId);
-            req.emoji_status = newStatus;
-            r = req;
-
-            TLRPC.Chat chat = getChat(-dialogId);
-            if (chat != null) {
-                chat.flags |= 512;
-                chat.emoji_status = new_emoji_status;
-                putChat(chat, true);
-            }
-        }
-        getConnectionsManager().sendRequest(r, null);
     }
 
     public void removeFilter(DialogFilter filter) {
@@ -19198,7 +19134,8 @@ public class MessagesController extends BaseController implements NotificationCe
                     } else if (baseUpdate instanceof TL_update.TL_updateDialogFilters) {
                         loadRemoteFilters(true);
                     } else if (baseUpdate instanceof TL_update.TL_updateRecentEmojiStatuses) {
-                        getNotificationCenter().postNotificationName(NotificationCenter.recentEmojiStatusesUpdate);
+                        // LoogriGram: our recent emoji statuses changed; the status
+                        // picker reloaded them. Emoji statuses are gone, as on desktop.
                     } else if (baseUpdate instanceof TL_update.TL_updateWebViewResultSent) {
                         TL_update.TL_updateWebViewResultSent resultSent = (TL_update.TL_updateWebViewResultSent) baseUpdate;
                         getNotificationCenter().postNotificationName(NotificationCenter.webViewResultSent, resultSent.query_id);

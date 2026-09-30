@@ -52,14 +52,13 @@ public class StickerCategoriesListView extends RecyclerListView {
 
     @IntDef({
         CategoriesType.DEFAULT,
-        CategoriesType.STATUS,
         CategoriesType.PROFILE_PHOTOS,
         CategoriesType.STICKERS
     })
     @Retention(RetentionPolicy.SOURCE)
     public static @interface CategoriesType {
         int DEFAULT = 0;
-        int STATUS = 1;
+        // LoogriGram: 1 was STATUS, the emoji status picker's categories.
         int PROFILE_PHOTOS = 2;
         int STICKERS = 3;
     }
@@ -907,10 +906,7 @@ public class StickerCategoriesListView extends RecyclerListView {
         @Override
         protected void getRemote(int currentAccount, @CategoriesType Integer type, long hash, Utilities.Callback4<Boolean, TLRPC.TL_messages_emojiGroups, Long, Boolean> onResult) {
             TLObject req;
-            if (type == CategoriesType.STATUS) {
-                req = new TLRPC.TL_messages_getEmojiStatusGroups();
-                ((TLRPC.TL_messages_getEmojiStatusGroups) req).hash = (int) hash;
-            } else if (type == CategoriesType.PROFILE_PHOTOS) {
+            if (type == CategoriesType.PROFILE_PHOTOS) {
                 req = new TLRPC.TL_messages_getEmojiProfilePhotoGroups();
                 ((TLRPC.TL_messages_getEmojiProfilePhotoGroups) req).hash = (int) hash;
             } else if (type == CategoriesType.STICKERS) {

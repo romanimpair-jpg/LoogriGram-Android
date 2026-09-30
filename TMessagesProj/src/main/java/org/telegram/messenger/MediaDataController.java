@@ -272,8 +272,6 @@ public class MediaDataController extends BaseController {
     private ArrayList<Long> uninstalledForceStickerSetsById = new ArrayList<>();
     private LongSparseArray<TLRPC.TL_messages_stickerSet> groupStickerSets = new LongSparseArray<>();
     private ConcurrentHashMap<String, TLRPC.TL_messages_stickerSet> stickerSetsByName = new ConcurrentHashMap<>(100, 1.0f, 1);
-    private TLRPC.TL_messages_stickerSet stickerSetDefaultStatuses = null;
-    private TLRPC.TL_messages_stickerSet stickerSetDefaultChannelStatuses = null;
     private HashMap<String, TLRPC.TL_messages_stickerSet> diceStickerSetsByEmoji = new HashMap<>();
     private LongSparseArray<String> diceEmojiStickerSetsById = new LongSparseArray<>();
     private HashSet<String> loadingDiceStickerSets = new HashSet<>();
@@ -327,12 +325,6 @@ public class MediaDataController extends BaseController {
 
     public final RingtoneDataStore ringtoneDataStore;
     public final ArrayList<ChatThemeBottomSheet.ChatThemeItem> defaultEmojiThemes = new ArrayList<>();
-
-    private long[] emojiStatusesHash = new long[4];
-    private ArrayList<TLRPC.EmojiStatus>[] emojiStatuses = new ArrayList[4];
-    private Long[] emojiStatusesFetchDate = new Long[4];
-    private boolean[] emojiStatusesFromCacheFetched = new boolean[4];
-    private boolean[] emojiStatusesFetching = new boolean[4];
 
     public void cleanup() {
         for (int a = 0; a < recentStickers.length; a++) {
@@ -1201,10 +1193,6 @@ public class MediaDataController extends BaseController {
             cacheSet = stickerSetsById.get(inputStickerSet.id);
         } else if (inputStickerSet instanceof TLRPC.TL_inputStickerSetShortName && inputStickerSet.short_name != null && stickerSetsByName.containsKey(inputStickerSet.short_name.toLowerCase())) {
             cacheSet = stickerSetsByName.get(inputStickerSet.short_name.toLowerCase());
-        } else if (inputStickerSet instanceof TLRPC.TL_inputStickerSetEmojiDefaultStatuses && stickerSetDefaultStatuses != null) {
-            cacheSet = stickerSetDefaultStatuses;
-        } else if (inputStickerSet instanceof TLRPC.TL_inputStickerSetEmojiChannelDefaultStatuses && stickerSetDefaultChannelStatuses != null) {
-            cacheSet = stickerSetDefaultChannelStatuses;
         }
         if (cacheSet != null) {
             if (!runWhenRemote && onResponse != null) {
@@ -1289,12 +1277,6 @@ public class MediaDataController extends BaseController {
                     if (set.set != null) {
                         stickerSetsById.put(set.set.id, set);
                         stickerSetsByName.put(set.set.short_name.toLowerCase(), set);
-                        if (inputStickerSet instanceof TLRPC.TL_inputStickerSetEmojiDefaultStatuses) {
-                            stickerSetDefaultStatuses = set;
-                        }
-                        if (inputStickerSet instanceof TLRPC.TL_inputStickerSetEmojiDefaultStatuses) {
-                            stickerSetDefaultChannelStatuses = set;
-                        }
                     }
                     saveStickerSetIntoCache(set);
                     getNotificationCenter().postNotificationName(NotificationCenter.groupStickersDidLoad, set.set.id, set);
@@ -8884,163 +8866,10 @@ public class MediaDataController extends BaseController {
 
     //---------------- EMOJI END ----------------
 
-    public ArrayList<TLRPC.EmojiStatus> getDefaultEmojiStatuses() {
-        final int type = 1; // default
-        if (!emojiStatusesFromCacheFetched[type]) {
-            fetchEmojiStatuses(type, true);
-        } else if (emojiStatuses[type] == null || emojiStatusesFetchDate[type] != null && (System.currentTimeMillis() / 1000 - emojiStatusesFetchDate[type]) > 60 * 30) {
-            fetchEmojiStatuses(type, false);
-        }
-        return emojiStatuses[type];
-    }
-
-    public ArrayList<TLRPC.EmojiStatus> getDefaultChannelEmojiStatuses() {
-        final int type = 2; // default channel
-        if (!emojiStatusesFromCacheFetched[type]) {
-            fetchEmojiStatuses(type, true);
-        } else if (emojiStatuses[type] == null || emojiStatusesFetchDate[type] != null && (System.currentTimeMillis() / 1000 - emojiStatusesFetchDate[type]) > 60 * 30) {
-            fetchEmojiStatuses(type, false);
-        }
-        return emojiStatuses[type];
-    }
-
-    public ArrayList<TLRPC.EmojiStatus> getRecentEmojiStatuses() {
-        final int type = 0; // recent
-        if (!emojiStatusesFromCacheFetched[type]) {
-            fetchEmojiStatuses(type, true);
-        } else if (emojiStatuses[type] == null || emojiStatusesFetchDate[type] != null && (System.currentTimeMillis() / 1000 - emojiStatusesFetchDate[type]) > 60 * 30) {
-            fetchEmojiStatuses(type, false);
-        }
-        return emojiStatuses[type];
-    }
-
-    public ArrayList<TLRPC.EmojiStatus> clearRecentEmojiStatuses() {
-        final int type = 0; // recent
-        if (emojiStatuses[type] != null) {
-            emojiStatuses[type].clear();
-        }
-        emojiStatusesHash[type] = 0;
-        getMessagesStorage().getStorageQueue().postRunnable(() -> {
-            try {
-                getMessagesStorage().getDatabase().executeFast("DELETE FROM emoji_statuses WHERE type = " + type).stepThis().dispose();
-            } catch (Exception e) {}
-        });
-        return emojiStatuses[type];
-    }
-
-    public void pushRecentEmojiStatus(TLRPC.EmojiStatus status) {
-        final int type = 0; // recent
-        if (emojiStatuses[type] != null) {
-            if (status instanceof TLRPC.TL_emojiStatus) {
-                long documentId = ((TLRPC.TL_emojiStatus) status).document_id;
-                for (int i = 0; i < emojiStatuses[type].size(); ++i) {
-                    if (emojiStatuses[type].get(i) instanceof TLRPC.TL_emojiStatus &&
-                        ((TLRPC.TL_emojiStatus) emojiStatuses[type].get(i)).document_id == documentId) {
-                        emojiStatuses[type].remove(i--);
-                    }
-                }
-            }
-            emojiStatuses[type].add(0, status);
-            while (emojiStatuses[type].size() > 50) {
-                emojiStatuses[type].remove(emojiStatuses[type].size() - 1);
-            }
-
-            TL_account.TL_emojiStatuses statuses = new TL_account.TL_emojiStatuses();
-            // todo: calc hash
-            statuses.hash = emojiStatusesHash[type];
-            statuses.statuses = emojiStatuses[type];
-            updateEmojiStatuses(type, statuses);
-        }
-    }
-
-    public void fetchEmojiStatuses(int type, boolean cache) {
-        if (emojiStatusesFetching[type]) {
-            return;
-        }
-        emojiStatusesFetching[type] = true;
-        if (cache) {
-            getMessagesStorage().getStorageQueue().postRunnable(() -> {
-                boolean done = false;
-                try {
-                    SQLiteCursor cursor = getMessagesStorage().getDatabase().queryFinalized("SELECT data FROM emoji_statuses WHERE type = " + type + " LIMIT 1");
-                    if (cursor.next() && cursor.getColumnCount() > 0 && !cursor.isNull(0)) {
-                        NativeByteBuffer data = cursor.byteBufferValue(0);
-                        if (data != null) {
-                            TL_account.EmojiStatuses response = TL_account.EmojiStatuses.TLdeserialize(data, data.readInt32(false), false);
-                            if (response instanceof TL_account.TL_emojiStatuses) {
-                                emojiStatusesHash[type] = response.hash;
-                                emojiStatuses[type] = response.statuses;
-                                done = true;
-                            }
-                            data.reuse();
-                        }
-                    }
-                    cursor.dispose();
-                } catch (Exception e) {
-                    FileLog.e(e);
-                }
-                emojiStatusesFromCacheFetched[type] = true;
-                emojiStatusesFetching[type] = false;
-                if (done) {
-                    AndroidUtilities.runOnUIThread(() -> {
-                        getNotificationCenter().postNotificationName(NotificationCenter.recentEmojiStatusesUpdate);
-                    });
-                } else {
-                    fetchEmojiStatuses(type, false);
-                }
-            });
-        } else {
-            TLObject req;
-            if (type == 0) {
-                TL_account.getRecentEmojiStatuses recentReq = new TL_account.getRecentEmojiStatuses();
-                recentReq.hash = emojiStatusesHash[type];
-                req = recentReq;
-            } else if (type == 1) {
-                TL_account.getDefaultEmojiStatuses defaultReq = new TL_account.getDefaultEmojiStatuses();
-                defaultReq.hash = emojiStatusesHash[type];
-                req = defaultReq;
-            } else {
-                TL_account.getChannelDefaultEmojiStatuses defaultReq = new TL_account.getChannelDefaultEmojiStatuses();
-                defaultReq.hash = emojiStatusesHash[type];
-                req = defaultReq;
-            }
-            ConnectionsManager.getInstance(currentAccount).sendRequest(req, (res, err) -> {
-                emojiStatusesFetchDate[type] = System.currentTimeMillis() / 1000;
-                if (res instanceof TL_account.TL_emojiStatusesNotModified) {
-                    emojiStatusesFetching[type] = false;
-                } else if (res instanceof TL_account.TL_emojiStatuses) {
-                    TL_account.TL_emojiStatuses response = (TL_account.TL_emojiStatuses) res;
-                    emojiStatusesHash[type] = response.hash;
-                    emojiStatuses[type] = response.statuses;
-                    updateEmojiStatuses(type, response);
-                    AndroidUtilities.runOnUIThread(() -> {
-                        getNotificationCenter().postNotificationName(NotificationCenter.recentEmojiStatusesUpdate);
-                    });
-                }
-            });
-        }
-    }
-
-    private void updateEmojiStatuses(int type, TL_account.TL_emojiStatuses response) {
-        getMessagesStorage().getStorageQueue().postRunnable(() -> {
-            try {
-                getMessagesStorage().getDatabase().executeFast("DELETE FROM emoji_statuses WHERE type = " + type).stepThis().dispose();
-                SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("INSERT INTO emoji_statuses VALUES(?, ?)");
-                state.requery();
-                NativeByteBuffer data = new NativeByteBuffer(response.getObjectSize());
-                response.serializeToStream(data);
-                state.bindByteBuffer(1, data);
-                state.bindInteger(2, type);
-                state.step();
-                data.reuse();
-                state.dispose();
-            } catch (Exception e) {
-                FileLog.e(e);
-            }
-            emojiStatusesFetching[type] = false;
-        });
-    }
-
+    // LoogriGram: the recent, default and channel default emoji status lists
+    // stood here - fetched, cached in emoji_statuses, pushed to on every status
+    // set - with the channel status blocklist (loadRestrictedStatusEmojis). Only
+    // the emoji status picker read them, and it is gone. The table stays.
 
     ArrayList<TLRPC.Reaction> recentReactions = new ArrayList<>();
     ArrayList<TLRPC.Reaction> topReactions = new ArrayList<>();
@@ -9253,44 +9082,6 @@ public class MediaDataController extends BaseController {
                     replyIconsDefault = (TLRPC.TL_emojiList) response;
                     editor.putString("replyicons",  Utilities.bytesToHex(data.toByteArray()));
                     editor.putLong("replyicons_last_check", System.currentTimeMillis());
-
-                    editor.apply();
-                }
-            }));
-        }
-    }
-
-    public TLRPC.TL_emojiList restrictedStatusEmojis;
-    public void loadRestrictedStatusEmojis() {
-        SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("restrictedstatuses_" + currentAccount, Context.MODE_PRIVATE);
-
-        String value = preferences.getString("restrictedstatuses", null);
-        long lastCheckTime = preferences.getLong("restrictedstatuses_last_check", 0);
-
-        TLRPC.TL_emojiList emojiList = null;
-        if (value != null) {
-            SerializedData serializedData = new SerializedData(Utilities.hexToBytes(value));
-            try {
-                emojiList = (TLRPC.TL_emojiList) TLRPC.TL_emojiList.TLdeserialize(serializedData, serializedData.readInt32(true), true);
-                restrictedStatusEmojis = emojiList;
-            } catch (Throwable e) {
-                FileLog.e(e);
-            }
-        }
-
-        if (emojiList == null || (System.currentTimeMillis() - lastCheckTime) > 24 * 60 * 60 * 1000) {
-            TL_account.getChannelRestrictedStatusEmojis req = new TL_account.getChannelRestrictedStatusEmojis();
-            if (emojiList != null) {
-                req.hash = emojiList.hash;
-            }
-            getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                if (response instanceof TLRPC.TL_emojiList) {
-                    SerializedData data = new SerializedData(response.getObjectSize());
-                    response.serializeToStream(data);
-                    SharedPreferences.Editor editor = preferences.edit();
-                    restrictedStatusEmojis = (TLRPC.TL_emojiList) response;
-                    editor.putString("restrictedstatuses",  Utilities.bytesToHex(data.toByteArray()));
-                    editor.putLong("restrictedstatuses_last_check", System.currentTimeMillis());
 
                     editor.apply();
                 }

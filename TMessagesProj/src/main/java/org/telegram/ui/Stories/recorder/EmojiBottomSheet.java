@@ -722,7 +722,7 @@ public class EmojiBottomSheet extends BottomSheet implements NotificationCenter.
             });
             addView(searchField, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP));
 
-            tabsStrip = new EmojiTabsStrip(context, resourcesProvider, false, false, false, true, 0, null) {
+            tabsStrip = new EmojiTabsStrip(context, resourcesProvider, false, false, true, 0, null) {
                 @Override
                 protected boolean onTabClick(int index) {
                     if (scrollingAnimation) {

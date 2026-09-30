@@ -44,7 +44,6 @@ import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.tgnet.tl.TL_stars;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ChatActivity;
@@ -198,7 +197,7 @@ public class CustomEmojiReactionsWindow {
             }
 
             @Override
-            protected void onEmojiSelected(View emojiView, Long documentId, TLRPC.Document document, TL_stars.TL_starGiftUnique gift, Integer until) {
+            protected void onEmojiSelected(View emojiView, Long documentId, TLRPC.Document document) {
                 // LoogriGram: a custom emoji reaction without Premium was refused
                 // with a bulletin selling Premium, its "more" opening the
                 // subscription sheet. It is still refused - the server would

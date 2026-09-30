@@ -51,7 +51,6 @@ import java.util.Map;
 public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
 
     private int recentDrawableId = R.drawable.msg_emoji_recent;
-    private int giftsDrawableId = R.drawable.msg_emoji_gem;
     private static int[] emojiTabsDrawableIds = {
             R.drawable.msg_emoji_smiles,
             R.drawable.msg_emoji_cat,
@@ -83,7 +82,6 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
 
     public EmojiTabButton toggleEmojiStickersTab;
     public EmojiTabButton recentTab;
-    public EmojiTabButton giftsTab;
     private EmojiTabButton settingsTab;
     private EmojiTabsView emojiTabs;
     private HashMap<View, Rect> removingViews = new HashMap<>();
@@ -108,26 +106,26 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
     public boolean updateButtonDrawables = true;
 
     public EmojiTabsStrip(Context context, Theme.ResourcesProvider resourcesProvider,
-                          boolean includeRecent, boolean includeGifts, boolean includeStandard,
+                          boolean includeRecent, boolean includeStandard,
                           boolean includeAnimated, int type, Runnable onSettingsOpen) {
-        this(context, resourcesProvider, includeRecent, includeGifts, includeStandard, includeAnimated, type, onSettingsOpen, Theme.getColor(Theme.key_windowBackgroundWhiteBlueIcon, resourcesProvider), false);
+        this(context, resourcesProvider, includeRecent, includeStandard, includeAnimated, type, onSettingsOpen, Theme.getColor(Theme.key_windowBackgroundWhiteBlueIcon, resourcesProvider), false);
     }
 
     public EmojiTabsStrip(Context context, Theme.ResourcesProvider resourcesProvider,
-                          boolean includeRecent, boolean includeGifts, boolean includeStandard,
+                          boolean includeRecent, boolean includeStandard,
                           boolean includeAnimated, int type, Runnable onSettingsOpen, boolean isGlassDesign) {
-        this(context, resourcesProvider, includeRecent, includeGifts, includeStandard, includeAnimated, type, onSettingsOpen, Theme.getColor(Theme.key_windowBackgroundWhiteBlueIcon, resourcesProvider), isGlassDesign);
+        this(context, resourcesProvider, includeRecent, includeStandard, includeAnimated, type, onSettingsOpen, Theme.getColor(Theme.key_windowBackgroundWhiteBlueIcon, resourcesProvider), isGlassDesign);
     }
 
     public EmojiTabsStrip(Context context, Theme.ResourcesProvider resourcesProvider,
-                          boolean includeRecent, boolean includeGifts, boolean includeStandard,
+                          boolean includeRecent, boolean includeStandard,
                           boolean includeAnimated, int type, Runnable onSettingsOpen, int accentColor
     ) {
-        this(context, resourcesProvider, includeRecent, includeGifts, includeStandard, includeAnimated, type, onSettingsOpen, accentColor, false);
+        this(context, resourcesProvider, includeRecent, includeStandard, includeAnimated, type, onSettingsOpen, accentColor, false);
     }
 
     public EmojiTabsStrip(Context context, Theme.ResourcesProvider resourcesProvider,
-            boolean includeRecent, boolean includeGifts, boolean includeStandard,
+            boolean includeRecent, boolean includeStandard,
             boolean includeAnimated, int type, Runnable onSettingsOpen, int accentColor, boolean isGlassDesign
     ) {
         super(context);
@@ -170,7 +168,7 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
                                 }
                                 lastX.put(id, x);
                             }
-                            if (child == recentTab && !recentIsShown || child == giftsTab && !giftsIsShown) {
+                            if (child == recentTab && !recentIsShown) {
                                 continue;
                             }
                             x += child.getMeasuredWidth() + AndroidUtilities.dp(3);
@@ -192,11 +190,15 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
                         }
                     }
                 } else {
-                    final int childCount = getChildCount() - (!recentIsShown ? 1 : 0) - (!giftsIsShown ? 1 : 0);
+                    // LoogriGram: "- 1" and "1 +" below stood for a hidden collectibles
+                    // tab, which went with the emoji status picker. Upstream counted
+                    // it as hidden even in strips that never had one, so one tab
+                    // fewer than the strip holds is laid out here; kept as it was.
+                    final int childCount = getChildCount() - (!recentIsShown ? 1 : 0) - 1;
                     int margin = (int) ((r - l - getPaddingLeft() - getPaddingRight() - childCount * AndroidUtilities.dp(30)) / (float) Math.max(1, childCount - 1));
                     int x = getPaddingLeft();
                     for (int i = 0; i < childCount; ++i) {
-                        View child = getChildAt((!recentIsShown ? 1 : 0) + (!giftsIsShown ? 1 : 0) + i);
+                        View child = getChildAt((!recentIsShown ? 1 : 0) + 1 + i);
                         if (child != null) {
                             child.layout(x, cy - child.getMeasuredHeight() / 2, x + child.getMeasuredWidth(), cy + child.getMeasuredHeight() / 2);
                             x += child.getMeasuredWidth() + margin;
@@ -208,7 +210,7 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
             @Override
             protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
                 final int AT_MOST = MeasureSpec.makeMeasureSpec(99999999, MeasureSpec.AT_MOST);
-                int width = getPaddingLeft() + getPaddingRight() - (int) (recentIsShown || recentTab == null ? 0 : recentTab.getAlpha() * AndroidUtilities.dp(30 + 3)) - (int) (giftsIsShown || giftsTab == null ? 0 : giftsTab.getAlpha() * AndroidUtilities.dp(30 + 3));
+                int width = getPaddingLeft() + getPaddingRight() - (int) (recentIsShown || recentTab == null ? 0 : recentTab.getAlpha() * AndroidUtilities.dp(30 + 3));
                 for (int i = 0; i < getChildCount(); ++i) {
                     View child = getChildAt(i);
                     if (child != null) {
@@ -252,7 +254,7 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
                 getChildBounds(selectFrom, from);
                 getChildBounds(selectTo, to);
                 AndroidUtilities.lerp(from, to, selectT - selectFrom, rect);
-                float isEmojiTabs = emojiTabs == null ? 0 : 1f - Utilities.clamp01(Math.abs(selectT - (1 + (giftsTab != null ? 1 : 0))));
+                float isEmojiTabs = emojiTabs == null ? 0 : 1f - Utilities.clamp01(Math.abs(selectT - 1));
                 float isMiddle = 4f * selectAnimationT * (1f - selectAnimationT);
                 float hw = rect.width() / 2 * (1f + isMiddle * .3f);
                 float hh = rect.height() / 2 * (1f - isMiddle * .05f);
@@ -337,12 +339,6 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
             recentTab.setContentDescription(LocaleController.getString(R.string.RecentlyUsed));
             recentTab.id = (long) "recent".hashCode();
         }
-        if (includeGifts) {
-            contentView.addView(giftsTab = new EmojiTabButton(context, giftsDrawableId, false, false));
-            giftsTab.setContentDescription(LocaleController.getString(R.string.EmojiPackCollectibles));
-            giftsTab.setAlpha(0.0f);
-            giftsTab.id = (long) "gifts".hashCode();
-        }
         if (!includeAnimated) {
             for (int i = 0; i < emojiTabsDrawableIds.length; ++i) {
                 EmojiTabButton categoryTab = new EmojiTabButton(context, emojiTabsDrawableIds[i], false, i == 0);
@@ -400,33 +396,6 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
         }
         contentView.requestLayout();
         recentFirstChange = false;
-    }
-
-    private boolean giftsFirstChange = true;
-    private boolean giftsIsShown = false;
-
-    public void showGifts(boolean show) {
-        if (giftsTab == null || !giftsFirstChange && giftsIsShown == show) {
-            return;
-        }
-        giftsIsShown = show;
-        if (giftsFirstChange) {
-            giftsTab.setVisibility(show ? View.VISIBLE : View.GONE);
-            giftsTab.setAlpha(show ? 1f : 0f);
-        } else {
-            giftsTab.setVisibility(View.VISIBLE);
-            giftsTab.animate().alpha(show ? 1f : 0f).setDuration(200).setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT).withEndAction(() -> {
-                if (!show) {
-                    giftsTab.setVisibility(View.GONE);
-                }
-            }).start();
-        }
-        contentView.requestLayout();
-        giftsFirstChange = false;
-    }
-
-    public boolean isGiftsVisible() {
-        return giftsTab != null && giftsIsShown;
     }
 
     protected boolean doIncludeFeatured() {

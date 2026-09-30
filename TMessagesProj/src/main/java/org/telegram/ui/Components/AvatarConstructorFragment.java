@@ -52,7 +52,6 @@ import org.telegram.messenger.SvgHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.tgnet.tl.TL_stars;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
 import org.telegram.ui.ActionBar.ActionBarMenuItem;
@@ -456,7 +455,7 @@ public class AvatarConstructorFragment extends BaseFragment {
                 }
             }
 
-            protected void onEmojiSelected(View view, Long documentId, TLRPC.Document document, TL_stars.TL_starGiftUnique gift, Integer until) {
+            protected void onEmojiSelected(View view, Long documentId, TLRPC.Document document) {
                 // LoogriGram: whether the emoji was one of the constructor's free
                 // defaults was worked out here, for PreviewView.freeEmoji. Its one
                 // reader, in the Premium lock on the finished avatar, never locked
