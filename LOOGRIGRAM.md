@@ -19,7 +19,7 @@ depends on.
 | Fork, CI, degoogling | Done. No Google bytecode in the APK, verified in the dex. The last Google-shaped code went on 2026-09-23/24: the Play install referrer and the four Chromecast stubs |
 | Installed on the phone | **Yes.** `gf20af361`, installed 2026-09-22 over `adb` (`adb install -r` succeeded, so the key matched); launches clean. Not rechecked since: the phone was not on USB on 2026-09-24. `gaf5d70a5` built green on 2026-09-22 but was never installed |
 | Latest release | `g20294896` (full build run 36232289359, green, 2026-09-26). Not installed: the phone was not on USB. Before it: `gb81ce49d`, `gf2478ebb` (which superseded the crashing `g1ec92ae0`, trap 0e) - a buggy Latest is superseded by the next build, never deleted, the user's rule |
-| Pending build | None. Nothing after `20294896` is in a build: Business, all of Stories, the smaller parity removals, telemetry and defaults are compile-checked only, and the pushed head does not compile (article editor mid-pass, see "Start here") |
+| Pending build | None. Nothing after `20294896` is in a build: Business, all of Stories, the smaller parity removals, telemetry, defaults, the article editor and the GIF default are compile-checked only (last green `7fa8201f`); the two Premium-screens commits after it are not yet compiled (see "Start here") |
 | Premium pass | Nearly done outside the parity passes. 15 Premium-screen entry points remain of ~100 (2026-09-27): 5 in the story viewer, 6 in the article editor, 4 in the Premium sheets themselves; emoji statuses, Premium stars and bot icons are drawn for nobody. See "Remaining work" |
 | App name | Done — launcher, in-app strings, and the two wordmark screens |
 | Phone contacts | **Never touched.** Permissions, account and sync adapter all gone |
@@ -62,54 +62,62 @@ The installed APK: ~44.5 MB, `lib/arm64-v8a/libtmessages.49.so` only, signed
 fingerprint is how to confirm a later build carries the same key - and it must,
 because Android will refuse an update signed with any other.
 
-### Start here next session (written 2026-09-30, work frozen mid-article-editor)
+### Start here next session (written 2026-09-30, work frozen mid-Premium-screens)
 
-The user froze the session on 2026-09-30 mid-way through the article
-editor pass. **Resume exactly here:**
+The user froze the session on 2026-09-30 (the second time that day)
+mid-way through deleting the Premium screens. The article editor pass
+(`8807747d..f05cc9ad`) and the GIF default (`7fa8201f`, GIFs follow
+Photos, the user's choice) are **done, reviewed and compiling green**
+(run 36700097187 on `7fa8201f`). **Resume exactly here:**
 
-1. **The pushed head does NOT compile.** `8807747d` (Stop offering the
-   article editor) removed what the editor's own files still call; the
-   next commit is meant to delete those files. `68996905` (copying an
-   article needs nothing from the editor) is on top. Last green head:
-   `27d50187` (run 36601169745).
-2. **Uncommitted in the working tree - step 3, "Delete the article
-   editor", finished, every checker clean per its agent, not yet
-   reviewed here, measured, committed or compiled**: 126 files, about
-   -27,978/+183. The 100 deletions are **staged**, the 26 edits are not.
-   It deletes 41 editor files in `ui/iv`, 76 strings and 59 drawables;
-   cuts `RichHtml`, `RichMessageConvert`, `RichTextStyle`,
-   `RichInlineButtonSpan` and `MathSpan` down to display; removes sending
-   and editing an article (SendMessagesHelper, FileRefController,
-   EphemeralMessagesHelper, AppGlobalConfig) and ~39 editor-only public
-   hooks in 17 surviving classes (ItemOptions, AlertDialog,
-   TextSelectionHelper, ChatAttachAlert...). `git add -A` it, re-run
-   every checker, read the joins, commit as "Delete the article editor"
-   and push.
-3. **Step 4, not started:** AIEditorAlert (holds the last 2 Premium-screen
-   entry points outside Premium's own screens, now unreachable),
-   AiButtonDrawable, AiTonesController; `TL_updateAiComposeTones`
-   consumed and dropped; `RichMessageLayout.PreviewView`'s draft-preview
-   setters. Then compile until green - the first run covers all of it.
-   Joins its agent flagged: ChatActivityEnterView ~13871 (a bare block
-   kept to avoid a name clash), ~6594 `sendMessage`, ~6702
-   `sendMessageInternal`; SendMessagesHelper ~4230 (resending our own
-   article fails at once) and ~4250; MediaDataController ~7559 (a cloud
-   draft holding an article becomes its text, also at startup);
-   RichMessageLayout ~9517; ItemOptions ~1368/1399; AlertDialog ~908;
-   UniversalRecyclerView ~101; TextSelectionHelper ~3201. Kept on
-   purpose: rescheduling an article (Android only changes the date, it
-   does not re-send as desktop's does); the Premium screen's rich/AI
-   editor feature entries.
-4. **Then the GIF default - the user's decision, 2026-09-29: GIFs follow
-   Photos.** Android files GIFs under Video for auto-download, so
-   `c3a60aa7` (videos and files off by default, as desktop) turned GIFs
-   off too. Move `isGifMessage` from the video branch to the photo
-   branch at `DownloadController` ~668, ~755, ~836 and `MessagesStorage`
-   ~4237, ~12032 (all five together - the queue and the check must
-   agree); round videos and games stay Video. GIFs then use the photo
-   size cap (the server's `photo_size_max`, often ~1 MB), so bigger ones
-   still need a tap - the user accepted that.
-5. **Then** the Premium screens themselves (see "Remaining work").
+1. **Pushed, not yet compiled:** `9463978e` (the "new" badge needs
+   nothing from the Premium screens: `applyNewSpan` moved to TextCell)
+   and `7417e051` (no padlock on Premium message effects: 238 lines).
+   The head is not proven green.
+2. **Uncommitted - commit 3, "Delete the Premium screens"**, every edit
+   complete, not cut mid-way (77 files, about -12,316/+218):
+   - **staged** (`git rm`): PremiumPreviewFragment, GLIconSettingsView,
+     TextInfoCell, 20 files in `ui/Components/Premium` plus `GLIcon/`
+     (4), StarParticlesView, BillingController, `assets/models/` (11),
+     `assets/shaders/` (4) and `flecks.png`;
+   - **unstaged**: MessagesController (promo-order keys, Premium bot
+     username, invoice slug), PremiumFeatureCell (down to the plain row
+     the Star rating sheet uses), CacheChart (its star drawable moved in
+     as a private `CompleteStars`), the Premium promo out of
+     MediaDataController/UserConfig/FileRefController (the
+     `premium_promo` table stays), BillingController's call in
+     ApplicationLoader and `BuildVars.useInvoiceBilling`, hooks only the
+     screens used (CellFlickerDrawable, FiltersSetupActivity
+     `highlightTags`, BlurredBackgroundProviderImpl, AnimatedEmojiDrawable,
+     RecyclerListView + two readers, the FillLast layout managers,
+     PremiumButtonView, LimitPreviewView), `premiumStickersPreviewLoaded`,
+     stale imports.
+   **Not done for it:** the checker run timed out before freed_res,
+   removed_decls, brace_balance, check_swallowed and
+   check_dangling_imports reported - re-run them without a timeout; run
+   `freed_res.py --fix` after reading its list; read back the joins in
+   RecyclerListView, FillLastLinearLayoutManager, LimitPreviewView,
+   PremiumButtonView, FiltersSetupActivity, BuildVars and CacheChart's
+   `CompleteStars`; then `git add -A`, commit, push, and compile 1-3.
+3. **Commit 4:** the emoji-status modes - `TYPE_EMOJI_STATUS*` in
+   SelectAnimatedEmojiDialog, `MessagesController.updateEmojiStatus`,
+   MediaDataController's default/recent status lists and
+   `recentEmojiStatusesUpdate` (keep `TL_updateRecentEmojiStatuses`
+   consumed).
+4. **Commit 5:** the three forced getters (`premiumFeaturesBlocked`,
+   `premiumPurchaseBlocked`, `starsPurchaseAvailable`), `premiumLocked`,
+   `directPaymentsCurrency` and its key, `billingProductDetailsUpdated`;
+   LaunchActivity's `billingConfirmPurchaseError` handler (nothing posts
+   it); `BuildVars.IS_BILLING_UNAVAILABLE` and PremiumButtonView's
+   flicker; `TL_account.toggleSponsoredMessages`,
+   `StoryPrivacyBottomSheet.toInput`, and PremiumGradient's
+   `createGradientDrawable`/`InternalDrawable` if unused. Compile 4-5.
+   Kept so far, to report: BotVerifySheet (desktop has none; still
+   reachable from ChatEditActivity) and the Star rating sheet (desktop
+   removed its `Ui::StarsRating`, outside this pass - raise it).
+5. **Then** the `isPremium()` / `user.premium` convergence: the non-
+   Premium path at every remaining check, ours and others' (see
+   "Remaining work"), keeping the user's two exceptions.
 6. **The phone**: `g20294896` is Latest and not installed; nothing after it
    is in any build. When the user asks for a full build (pack everything,
    head must compile), install it and walk the checklists below, newest
