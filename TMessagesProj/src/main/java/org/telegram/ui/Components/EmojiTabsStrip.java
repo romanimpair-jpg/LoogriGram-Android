@@ -73,7 +73,8 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
     };
     private int settingsDrawableId = R.drawable.smiles_tab_settings;
 
-    private boolean forceTabsShow = !UserConfig.getInstance(UserConfig.selectedAccount).isPremium();
+    // LoogriGram: forceTabsShow was "not Premium": without it the category
+    // tabs always showed, and with it they unfolded only on the emoji tab.
     private boolean showSelected = true;
     private AnimatedFloat showSelectedAlpha;
 
@@ -261,11 +262,7 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
                 rect.set(rect.centerX() - hw, rect.centerY() - hh, rect.centerX() + hw, rect.centerY() + hh);
                 float r = AndroidUtilities.dp(AndroidUtilities.lerp(8f, 16f, isEmojiTabs));
                 paint.setColor(selectorColor());
-                if (forceTabsShow) {
-                    paint.setAlpha((int) (paint.getAlpha() * alpha * (1f - isEmojiTabs * .5f)));
-                } else {
-                    paint.setAlpha((int) (paint.getAlpha() * alpha));
-                }
+                paint.setAlpha((int) (paint.getAlpha() * alpha * (1f - isEmojiTabs * .5f)));
 
                 path.rewind();
                 path.addRoundRect(rect,
@@ -274,14 +271,12 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
                     Path.Direction.CW);
                 canvas.drawPath(path, paint);
 
-                if (forceTabsShow) {
-                    path.rewind();
-                    getChildBounds(1, rect);
-                    path.addRoundRect(rect, AndroidUtilities.dpf2(16), AndroidUtilities.dpf2(16), Path.Direction.CW);
-                    paint.setColor(selectorColor());
-                    paint.setAlpha((int) (paint.getAlpha() * .5f));
-                    canvas.drawPath(path, paint);
-                }
+                path.rewind();
+                getChildBounds(1, rect);
+                path.addRoundRect(rect, AndroidUtilities.dpf2(16), AndroidUtilities.dpf2(16), Path.Direction.CW);
+                paint.setColor(selectorColor());
+                paint.setAlpha((int) (paint.getAlpha() * .5f));
+                canvas.drawPath(path, paint);
 
                 if (emojiTabs != null) {
                     path.addCircle(emojiTabs.getLeft() + AndroidUtilities.dp(15), (emojiTabs.getTop() + emojiTabs.getBottom()) / 2f, AndroidUtilities.dp(15), Path.Direction.CW);
@@ -666,10 +661,6 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
                 selectAnimationT = 1f;
                 selectT = AndroidUtilities.lerp(from, to, selectAnimationT);
                 contentView.invalidate();
-            }
-
-            if (emojiTabs != null) {
-                emojiTabs.show(selected == 1 || forceTabsShow, animated);
             }
 
             View child = contentView.getChildAt(selected);
@@ -1403,7 +1394,7 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
         @Override
         protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
             super.onMeasure(
-                    MeasureSpec.makeMeasureSpec(AndroidUtilities.lerp(AndroidUtilities.dp(30), maxWidth(), showT), MeasureSpec.EXACTLY),
+                    MeasureSpec.makeMeasureSpec(maxWidth(), MeasureSpec.EXACTLY),
                     MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(30), MeasureSpec.EXACTLY)
             );
         }
@@ -1414,7 +1405,7 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
         }
 
         private void intercept(MotionEvent ev) {
-            if (shown && !scrollingAnimation) {
+            if (!scrollingAnimation) {
                 switch (ev.getAction()) {
                     case MotionEvent.ACTION_UP:
                         touching = false;
@@ -1437,41 +1428,6 @@ public class EmojiTabsStrip extends ScrollableHorizontalScrollView {
             return super.onTouchEvent(ev);
         }
 
-        private boolean shown = forceTabsShow;
-        private float showT = forceTabsShow ? 1f : 0f;
-
-        public void show(boolean show, boolean animated) {
-            if (show == shown) {
-                return;
-            }
-            shown = show;
-            if (!show) {
-                scrollTo(0);
-            }
-
-            if (showAnimator != null) {
-                showAnimator.cancel();
-            }
-            if (animated) {
-                showAnimator = ValueAnimator.ofFloat(showT, show ? 1f : 0f);
-                showAnimator.addUpdateListener(a -> {
-                    showT = (float) a.getAnimatedValue();
-                    invalidate();
-                    requestLayout();
-                    updateButtonsVisibility();
-                    EmojiTabsStrip.this.contentView.invalidate();
-                });
-                showAnimator.setDuration(475);
-                showAnimator.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
-                showAnimator.start();
-            } else {
-                showT = show ? 1f : 0f;
-                invalidate();
-                requestLayout();
-                updateButtonsVisibility();
-                EmojiTabsStrip.this.contentView.invalidate();
-            }
-        }
     }
 }
 
@@ -1479,7 +1435,6 @@ class ScrollableHorizontalScrollView extends HorizontalScrollView {
 
     boolean touching;
     public LinearLayout contentView;
-    ValueAnimator showAnimator;
 
     public ScrollableHorizontalScrollView(Context context) {
         super(context);
@@ -1570,7 +1525,7 @@ class ScrollableHorizontalScrollView extends HorizontalScrollView {
         for (int i = 0; i < count; ++i) {
             View child = contentView.getChildAt(i);
             if (child instanceof EmojiTabsStrip.EmojiTabButton) {
-                ((EmojiTabsStrip.EmojiTabButton) child).updateVisibilityInbounds(child.getRight() - getScrollX() > 0 && child.getLeft() - getScrollX() < getMeasuredWidth(), scrollingAnimation && !(showAnimator != null && showAnimator.isRunning()));
+                ((EmojiTabsStrip.EmojiTabButton) child).updateVisibilityInbounds(child.getRight() - getScrollX() > 0 && child.getLeft() - getScrollX() < getMeasuredWidth(), scrollingAnimation);
             }
         }
     }

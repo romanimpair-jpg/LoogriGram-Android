@@ -202,9 +202,9 @@ public class CustomEmojiReactionsWindow {
                 // with a bulletin selling Premium, its "more" opening the
                 // subscription sheet. It is still refused - the server would
                 // refuse it - but quietly, as on desktop (window/section_widget.cpp).
-                // Without Premium this window lists no emoji packs, so only a
-                // long press on a custom reaction left in the recents gets here.
-                if (baseFragment != null && !reactionsContainerLayout.channelReactions && reactionsContainerLayout.getWindowType() != SelectAnimatedEmojiDialog.TYPE_STICKER_SET_EMOJI && !UserConfig.getInstance(baseFragment.getCurrentAccount()).isPremium()) {
+                // This window lists no emoji packs, so only a long press on a
+                // custom reaction left in the recents gets here.
+                if (baseFragment != null && !reactionsContainerLayout.channelReactions && reactionsContainerLayout.getWindowType() != SelectAnimatedEmojiDialog.TYPE_STICKER_SET_EMOJI) {
                     return;
                 }
                 if (documentId == null && document == null) return;

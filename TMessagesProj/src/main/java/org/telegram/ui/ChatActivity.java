@@ -30000,32 +30000,6 @@ public class ChatActivity extends BaseFragment implements
 
     Runnable updateReactionRunnable;
 
-    private void showMultipleReactionsPromo(View cell, ReactionsLayoutInBubble.VisibleReaction visibleReaction, int currentChosenReactions) {
-        if (SharedConfig.multipleReactionsPromoShowed || cell == null || visibleReaction == null || getUserConfig().isPremium()) {
-            return;
-        }
-        if (currentChosenReactions == 1) {
-            SharedConfig.setMultipleReactionsPromoShowed(true);
-            TLRPC.Document document;
-            if (visibleReaction.documentId == 0) {
-                TLRPC.TL_availableReaction availableReaction = MediaDataController.getInstance(currentAccount).getReactionsMap().get(visibleReaction.emojicon);
-                if (availableReaction == null) {
-                    return;
-                }
-                document = availableReaction.center_icon;
-            } else {
-                document = AnimatedEmojiDrawable.findDocument(currentAccount, visibleReaction.documentId);
-            }
-            if (document == null) {
-                return;
-            }
-            BulletinFactory.of(ChatActivity.this).createEmojiBulletin(
-                    document,
-                    LocaleController.getString(R.string.ChatMultipleReactionsPromo)
-            ).setDuration(Bulletin.DURATION_PROLONG).show();
-        }
-    }
-
     public void selectReaction(View cell, MessageObject primaryMessage, ReactionsContainerLayout reactionsLayout, View fromView, float x, float y, ReactionsLayoutInBubble.VisibleReaction visibleReaction, boolean fromDoubleTap, boolean bigEmoji, boolean addToRecent, boolean withoutAnimation) {
         if (isInScheduleMode() || primaryMessage == null) {
             return;
@@ -30051,7 +30025,8 @@ public class ChatActivity extends BaseFragment implements
         }
 
         ReactionsEffectOverlay.removeCurrent(false);
-        final int currentChosenReactions = primaryMessage.getChoosenReactions().size();
+        // LoogriGram: a second reaction from an account without Premium got a
+        // bulletin saying Premium sets several (showMultipleReactionsPromo).
         final boolean added = primaryMessage.selectReaction(visibleReaction, bigEmoji, fromDoubleTap);
         int messageIdForCell = primaryMessage.getId();
         if (groupedMessagesMap.get(primaryMessage.getGroupId()) != null) {
@@ -30066,7 +30041,6 @@ public class ChatActivity extends BaseFragment implements
 
         if (added) {
             cell = findMessageCell(finalMessageIdForCell, true);
-            showMultipleReactionsPromo(cell, visibleReaction, currentChosenReactions);
             if (!fromDoubleTap) {
                 ReactionsEffectOverlay.show(ChatActivity.this, reactionsLayout, cell, fromView, x, y, visibleReaction, currentAccount, reactionsLayout != null ? (bigEmoji ? ReactionsEffectOverlay.LONG_ANIMATION : ReactionsEffectOverlay.ONLY_MOVE_ANIMATION) : ReactionsEffectOverlay.SHORT_ANIMATION);
             }

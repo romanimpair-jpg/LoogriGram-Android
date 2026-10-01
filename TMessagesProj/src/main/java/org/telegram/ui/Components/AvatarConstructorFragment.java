@@ -20,8 +20,6 @@ import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.text.SpannableStringBuilder;
 import android.util.TypedValue;
@@ -34,7 +32,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
 import androidx.core.view.NestedScrollingParent;
 import androidx.core.view.NestedScrollingParentHelper;
@@ -49,7 +46,6 @@ import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SvgHelper;
-import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -59,7 +55,6 @@ import org.telegram.ui.ActionBar.AdjustPanLayoutHelper;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BackDrawable;
 import org.telegram.ui.ActionBar.BaseFragment;
-import org.telegram.ui.ActionBar.BottomSheet;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.SelectAnimatedEmojiDialog;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
@@ -76,8 +71,6 @@ public class AvatarConstructorFragment extends BaseFragment {
 
     int collapsedHeight;
     int expandedHeight;
-    View colorPickerPreviewView;
-    boolean colorPickerInAnimatoin;
     boolean drawForBlur;
     boolean wasChanged;
     LinearLayout linearLayout;
@@ -112,41 +105,8 @@ public class AvatarConstructorFragment extends BaseFragment {
             new int[]{ 0xFFEA5877, 0xFFE2724D, 0xFFF4AA49, 0xFFF08550 },
             new int[]{ 0xFFF07854, 0xFFED7E39, 0xFFF0C241, 0xFFF0B04A }
     };
-    public static final int[][] premiumColors = new int[][] {
-            new int[] { 0xFF94A3B0, 0xFF6C7B87 },
-            new int[] { 0xFFEBA15B, 0xFFA16730 },
-            new int[] { 0xFFE8B948, 0xFFB87C30 },
-            new int[] { 0xFF565D61, 0xFF3B4347 },
-            new int[] { 0xFF1B1B1B, 0xFF000000 },
-            new int[] { 0xFF5E6F91, 0xFF415275 },
-            new int[] { 0xFFAE72E3, 0xFF8854B5 },
-            new int[] { 0xFFAF75BC, 0xFF895196 },
-            new int[] { 0xFFC269BE, 0xFF8B4384 },
-            new int[] { 0xFFDA76A8, 0xFFAE5891 },
-            new int[] { 0xFFE66473, 0xFFA74559 },
-            new int[] { 0xFF6C9CF4, 0xFF5C6AEC },
-            new int[] { 0xFF469CD3, 0xFF2E78A8 },
-            new int[] { 0xFF438CB9, 0xFF2D6283 },
-            new int[] { 0xFF66B27A, 0xFF33786D },
-            new int[] { 0xFF81B6B2, 0xFF4B9A96 },
-            new int[] { 0xFF5BCEC5, 0xFF36928E },
-            new int[] { 0xFF5FD66F, 0xFF319F76 },
-            new int[] { 0xFFE68A3C, 0xFFD45393 },
-            new int[] { 0xFF6BE2F2, 0xFF6675F7 },
-            new int[] { 0xFFC56DF4, 0xFF6073F4 },
-            new int[] { 0xFFEBC92F, 0xFF54B848 },
-            new int[] { 0xFF66B27A, 0xFF33786D },
-            new int[] { 0xFFCAB560, 0xFF8C803C },
-            new int[] { 0xFFADB070, 0xFF6B7D54 },
-            new int[] { 0xFF949487, 0xFF707062 },
-            new int[] { 0xFFB09F99, 0xFF8F7E72 },
-            new int[] { 0xFFC7835E, 0xFF9E6345 },
-            new int[] { 0xFFBC7051, 0xFF975547 },
-            new int[] { 0xFF8F6655, 0xFF68443F }
-    };
     public boolean finishOnDone = true;
     private ActionBarMenuItem setPhotoItem;
-    private BottomSheet bottomSheet;
     final ImageUpdater.AvatarFor avatarFor;
     boolean isLandscapeMode;
     private TextView chooseEmojiHint;
@@ -315,7 +275,7 @@ public class AvatarConstructorFragment extends BaseFragment {
                     canvas.restoreToCount(count);
 
 
-                    float alpha = previewView.expandProgress.get() * (1f - (colorPickerPreviewView.getVisibility() == View.VISIBLE ? colorPickerPreviewView.getAlpha() : 0));
+                    float alpha = previewView.expandProgress.get();
                     if (alpha != 0) {
                         overlayActionBar.setVisibility(View.VISIBLE);
                         count = canvas.save();
@@ -329,9 +289,6 @@ public class AvatarConstructorFragment extends BaseFragment {
                     } else {
                         overlayActionBar.setVisibility(View.GONE);
                     }
-                }
-                if (colorPickerInAnimatoin) {
-                    invalidate();
                 }
             }
 
@@ -380,7 +337,7 @@ public class AvatarConstructorFragment extends BaseFragment {
                         }
                     } else if (event.getAction() == MotionEvent.ACTION_UP || event.getAction() == MotionEvent.ACTION_CANCEL) {
                         if (isScrolling) {
-                            setExpanded(progressToExpand > 0.5f, false, false);
+                            setExpanded(progressToExpand > 0.5f, false);
                         }
                         maybeScroll = false;
                         isScrolling = false;
@@ -473,9 +430,6 @@ public class AvatarConstructorFragment extends BaseFragment {
         linearLayout.setClipChildren(false);
         nestedSizeNotifierLayout.addView(linearLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, 0, 0, 0, 0, 64));
 
-        colorPickerPreviewView = new View(getContext());
-        colorPickerPreviewView.setVisibility(View.GONE);
-
         button = new ButtonWithCounterView(context, resourceProvider);
         button.setRound();
         button.text.setHacks(false, true, false);
@@ -501,7 +455,6 @@ public class AvatarConstructorFragment extends BaseFragment {
         nestedSizeNotifierLayout.addView(actionBar);
 
         nestedSizeNotifierLayout.addView(overlayActionBar);
-        nestedSizeNotifierLayout.addView(colorPickerPreviewView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
 
         avatarClickableArea = new CanvasButton(nestedSizeNotifierLayout);
         avatarClickableArea.setDelegate(() -> {
@@ -609,7 +562,7 @@ public class AvatarConstructorFragment extends BaseFragment {
     }
 
 
-    private void setExpanded(boolean expanded, boolean fromClick, boolean withColorPicker) {
+    private void setExpanded(boolean expanded, boolean fromClick) {
         if (isLandscapeMode) {
             return;
         }
@@ -643,14 +596,8 @@ public class AvatarConstructorFragment extends BaseFragment {
 
             }
         });
-        if (withColorPicker) {
-            expandAnimator.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
-            expandAnimator.setDuration(350);
-            expandAnimator.setStartDelay(150);
-        } else {
-            expandAnimator.setInterpolator(CubicBezierInterpolator.DEFAULT);
-            expandAnimator.setDuration(250);
-        }
+        expandAnimator.setInterpolator(CubicBezierInterpolator.DEFAULT);
+        expandAnimator.setDuration(250);
         expandAnimator.start();
         //  }
     }
@@ -934,7 +881,6 @@ public class AvatarConstructorFragment extends BaseFragment {
         int selectedItemId = -1;
 
         Adapter adapter;
-        BackgroundGradient customSelectedGradient;
 
         public BackgroundSelectView(Context context) {
             super(context);
@@ -950,94 +896,45 @@ public class AvatarConstructorFragment extends BaseFragment {
                 backgroundGradient.color4 = defaultColors[i][3];
                 gradients.add(backgroundGradient);
             }
-            // LoogriGram: the Premium gradients and the custom colour are Premium's,
-            // so neither is offered without it. Upstream offered both padlocked
-            // and refused the finished avatar with a Premium toast.
-            final boolean premium = UserConfig.getInstance(currentAccount).isPremium();
-            for (int i = 0; premium && i < premiumColors.length; i++) {
-                BackgroundGradient backgroundGradient = new BackgroundGradient();
-                backgroundGradient.stableId = stableIdPointer++;
-                backgroundGradient.color1 = premiumColors[i][0];
-                backgroundGradient.color2 = premiumColors[i][1];
-                backgroundGradient.color3 = 0;
-                backgroundGradient.color4 = 0;
-                gradients.add(backgroundGradient);
-            }
+            // LoogriGram: the Premium gradients and the custom colour (a last
+            // tile opening a colour picker) were Premium's and are not offered.
+            // Upstream offered both padlocked and refused the finished avatar
+            // with a Premium toast.
             setPadding(dp(4), 0, dp(4), 0);
             setClipToPadding(false);
             useLayoutPositionOnClick = true;
             setOnItemClickListener((view, position) -> {
-                if (view instanceof GradientSelectorView && !((GradientSelectorView) view).isCustom) {
+                if (view instanceof GradientSelectorView) {
                     selectedItemId = ((GradientSelectorView) view).backgroundGradient.stableId;
                     previewView.setGradient(((GradientSelectorView) view).backgroundGradient, false);
                     if (adapter != null) {
                         adapter.notifyDataSetChanged();
                     }
-                } else {
-                    if (selectedItemId != 1 && customSelectedGradient != null) {
-                        selectedItemId = 1;
-                        previewView.setGradient(customSelectedGradient, true);
-                        if (adapter != null) {
-                            adapter.notifyDataSetChanged();
-                        }
-                    } else {
-                        showColorPicker();
-                    }
                 }
             });
             setAdapter(adapter = new Adapter() {
 
-                private final static int VIEW_TYPE_GRADIENT = 0;
-                private final static int VIEW_TYPE_ADD_CUSTOM = 1;
-
                 @NonNull
                 @Override
                 public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-                    View view;
-                    switch (viewType) {
-                        case VIEW_TYPE_ADD_CUSTOM:
-                        case VIEW_TYPE_GRADIENT:
-                        default:
-                            view = new GradientSelectorView(getContext());
-                            break;
-                    }
-                    return new Holder(view);
+                    return new Holder(new GradientSelectorView(getContext()));
                 }
 
                 @Override
                 public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
                     final GradientSelectorView view = (GradientSelectorView) holder.itemView;
-                    if (holder.getItemViewType() == VIEW_TYPE_GRADIENT) {
-                        view.setCustom(false);
-                        final BackgroundGradient gradient = gradients.get(position);
-                        view.setGradient(gradient);
-                        view.setSelectedInternal(selectedItemId == gradients.get(position).stableId, true);
-                    } else {
-                        view.setCustom(true);
-                        view.setGradient(customSelectedGradient);
-                        view.setSelectedInternal(selectedItemId == 1, true);
-                    }
+                    view.setGradient(gradients.get(position));
+                    view.setSelectedInternal(selectedItemId == gradients.get(position).stableId, true);
                 }
 
                 @Override
                 public int getItemCount() {
-                    return gradients.size() + (premium ? 1 : 0);
+                    return gradients.size();
                 }
 
                 @Override
                 public long getItemId(int position) {
-                    if (position >= gradients.size()) {
-                        return 1;
-                    }
                     return gradients.get(position).stableId;
-                }
-
-                @Override
-                public int getItemViewType(int position) {
-                    if (position >= gradients.size()) {
-                        return VIEW_TYPE_ADD_CUSTOM;
-                    }
-                    return VIEW_TYPE_GRADIENT;
                 }
             });
             setOverScrollMode(OVER_SCROLL_IF_CONTENT_SCROLLS);
@@ -1066,152 +963,12 @@ public class AvatarConstructorFragment extends BaseFragment {
                 }
             }
             if (!isDefault) {
-                customSelectedGradient = gradient;
-                selectedItemId = 1;
+                // LoogriGram: an avatar made with a Premium or custom colour
+                // selected the custom tile here; there is none, so none is.
+                selectedItemId = -1;
             }
             adapter.notifyDataSetChanged();
         }
-    }
-
-    BackgroundGradient colorPickerGradient;
-
-    private void showColorPicker() {
-        if (bottomSheet != null) {
-            return;
-        }
-        if (!previewView.expanded) {
-            setExpanded(true, true, true);
-        }
-
-        BackgroundGradient prevGradient = null;
-        if (previewView.backgroundGradient != null) {
-            prevGradient = previewView.backgroundGradient;
-        }
-        boolean[] onDoneButtonPressed = new boolean[]{false};
-        BackgroundGradient finalPrevGradient = prevGradient;
-        AndroidUtilities.requestAdjustNothing(getParentActivity(), getClassGuid());
-        bottomSheet = new BottomSheet(getContext(), true) {
-            @Override
-            public void dismiss() {
-                super.dismiss();
-                backgroundSelectView.selectGradient(colorPickerGradient);
-                colorPickerInAnimatoin = true;
-                fragmentView.invalidate();
-                colorPickerPreviewView.animate().setListener(new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        colorPickerInAnimatoin = false;
-                        colorPickerPreviewView.setVisibility(View.GONE);
-                    }
-                }).alpha(0f).setDuration(200).start();
-            }
-
-            @Override
-            public void dismissInternal() {
-                super.dismissInternal();
-                AndroidUtilities.requestAdjustResize(getParentActivity(), getClassGuid());
-                bottomSheet = null;
-            }
-        };
-        bottomSheet.fixNavigationBar();
-        bottomSheet.pauseAllHeavyOperations = false;
-
-        drawForBlur = true;
-        colorPickerPreviewView.setBackground(new BitmapDrawable(getContext().getResources(), AndroidUtilities.makeBlurBitmap(fragmentView, 12f, 10)));
-        drawForBlur = false;
-        colorPickerPreviewView.setVisibility(View.VISIBLE);
-        colorPickerPreviewView.setAlpha(0);
-        colorPickerInAnimatoin = true;
-        fragmentView.invalidate();
-        colorPickerPreviewView.animate().setListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                super.onAnimationEnd(animation);
-                colorPickerInAnimatoin = false;
-            }
-        }).alpha(1f).setDuration(200).start();
-
-        colorPickerGradient = new BackgroundGradient();
-        ColorPicker colorPicker = new ColorPicker(getContext(), false, (color, num, applyNow) -> {
-            switch (num) {
-                case 0:
-                    if (colorPickerGradient.color1 != color && (colorPickerGradient.color1 == 0 || color == 0)) {
-                        colorPickerGradient = colorPickerGradient.copy();
-                        previewView.setGradient(colorPickerGradient, true);
-                    }
-                    colorPickerGradient.color1 = color;
-                    break;
-                case 1:
-                    if (colorPickerGradient.color2 != color && (colorPickerGradient.color2 == 0 || color == 0)) {
-                        colorPickerGradient = colorPickerGradient.copy();
-                        previewView.setGradient(colorPickerGradient, true);
-                    }
-                    colorPickerGradient.color2 = color;
-                    break;
-                case 2:
-                    if (colorPickerGradient.color3 != color && (colorPickerGradient.color3 == 0 || color == 0)) {
-                        colorPickerGradient = colorPickerGradient.copy();
-                        previewView.setGradient(colorPickerGradient, true);
-                    }
-                    colorPickerGradient.color3 = color;
-                    break;
-                case 3:
-                    if (colorPickerGradient.color4 != color && (colorPickerGradient.color4 == 0 || color == 0)) {
-                        colorPickerGradient = colorPickerGradient.copy();
-                        previewView.setGradient(colorPickerGradient, true);
-                    }
-                    colorPickerGradient.color4 = color;
-                    break;
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.needCheckSystemBarColors);
-            }
-            previewView.invalidate();
-        }) {
-            @Override
-            protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-                super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(dp(300), MeasureSpec.EXACTLY));
-            }
-        };
-
-        if (previewView.backgroundGradient != null) {
-            colorPicker.setColor(colorPickerGradient.color4 = previewView.backgroundGradient.color4, 3);
-            colorPicker.setColor(colorPickerGradient.color3 = previewView.backgroundGradient.color3, 2);
-            colorPicker.setColor(colorPickerGradient.color2 = previewView.backgroundGradient.color2, 1);
-            colorPicker.setColor(colorPickerGradient.color1 = previewView.backgroundGradient.color1, 0);
-        }
-
-        colorPicker.setType(-1, true, 4, colorPickerGradient.colorsCount(), false, 0, false);
-
-        previewView.setGradient(colorPickerGradient, true);
-
-        LinearLayout colorPickerContainer = new LinearLayout(getContext());
-        colorPickerContainer.setOrientation(LinearLayout.VERTICAL);
-        colorPickerContainer.setPadding(0, dp(8), 0, 0);
-        colorPickerContainer.addView(colorPicker);
-
-        FrameLayout button = new FrameLayout(getContext());
-        button.setBackground(Theme.AdaptiveRipple.filledRectByKey(Theme.key_featuredStickers_addButton, 8));
-
-        TextView textView = new TextView(getContext());
-        textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
-        textView.setText(getString(R.string.SetColor));
-        textView.setGravity(Gravity.CENTER);
-        textView.setTypeface(AndroidUtilities.bold());
-        textView.setTextColor(Theme.getColor(Theme.key_featuredStickers_buttonText));
-        button.addView(textView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER));
-
-        colorPickerContainer.addView(button, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, 0, 16, -8, 16, 16));
-        button.setOnClickListener(v -> {
-            onDoneButtonPressed[0] = true;
-            backgroundSelectView.selectGradient(colorPickerGradient);
-            bottomSheet.dismiss();
-        });
-        bottomSheet.setCustomView(colorPickerContainer);
-        bottomSheet.smoothKeyboardAnimationEnabled = true;
-        bottomSheet.setDimBehind(false);
-        bottomSheet.show();
-        isLightStatusBar();
     }
 
     public static class BackgroundGradient {
@@ -1279,11 +1036,8 @@ public class AvatarConstructorFragment extends BaseFragment {
 
         AnimatedFloat progressToSelect = new AnimatedFloat(400, AndroidUtilities.overshootInterpolator);
         boolean selected;
-        boolean isCustom;
 
         GradientTools gradientTools = new GradientTools();
-        Drawable addIcon;
-        Paint optionsPaint;
         Paint defaultPaint;
 
         public GradientSelectorView(Context context) {
@@ -1328,28 +1082,6 @@ public class AvatarConstructorFragment extends BaseFragment {
                 canvas.drawCircle(cx, cy, dp(10) + dp(5) * (1f - progressToSelect.get()), paint);
             }
 
-            if (isCustom) {
-                if (backgroundGradient == null) {
-                    if (addIcon == null) {
-                        addIcon = ContextCompat.getDrawable(getContext(), R.drawable.msg_filled_plus);
-                        addIcon.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_chat_emojiSearchIcon), PorterDuff.Mode.MULTIPLY));
-                    }
-                    addIcon.setBounds(
-                        (int) (cx - addIcon.getIntrinsicWidth() / 2f), (int) (cy - addIcon.getIntrinsicHeight() / 2f),
-                        (int) (cx + addIcon.getIntrinsicWidth() / 2f), (int) (cy + addIcon.getIntrinsicHeight() / 2f)
-                    );
-                    addIcon.draw(canvas);
-                } else {
-                    if (optionsPaint == null) {
-                        optionsPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-                        optionsPaint.setColor(0xffffffff);
-                    }
-                    optionsPaint.setAlpha(Math.round(255f * Utilities.clamp(progressToSelect.get(), 1f, 0f)));
-                    canvas.drawCircle(cx, cy, dp(1.5f), optionsPaint);
-                    canvas.drawCircle(cx - dp(5) * progressToSelect.get(), cy, dp(1.5f), optionsPaint);
-                    canvas.drawCircle(cx + dp(5) * progressToSelect.get(), cy, dp(1.5f), optionsPaint);
-                }
-            }
         }
 
         void setGradient(BackgroundGradient backgroundGradient) {
@@ -1366,9 +1098,6 @@ public class AvatarConstructorFragment extends BaseFragment {
             }
         }
 
-        public void setCustom(boolean b) {
-            isCustom = b;
-        }
     }
 
     boolean isLightInternal = false;
@@ -1400,9 +1129,6 @@ public class AvatarConstructorFragment extends BaseFragment {
                 lightProgressAnimator.setDuration(150).start();
             }
         }
-        if (bottomSheet != null) {
-            AndroidUtilities.setLightStatusBar(bottomSheet, isLight);
-        }
         return isLight;
     }
 
@@ -1432,7 +1158,7 @@ public class AvatarConstructorFragment extends BaseFragment {
             AndroidUtilities.hideKeyboard(fragmentView);
             return;
         }
-        setExpanded(!previewView.expanded, true, false);
+        setExpanded(!previewView.expanded, true);
     }
 
     private class ContainerLayout extends SizeNotifierFrameLayout implements NestedScrollingParent {
@@ -1461,7 +1187,7 @@ public class AvatarConstructorFragment extends BaseFragment {
         @Override
         public void onStopNestedScroll(View target) {
             nestedScrollingParentHelper.onStopNestedScroll(target);
-            setExpanded(progressToExpand > 0.5f, false, false);
+            setExpanded(progressToExpand > 0.5f, false);
         }
 
         @Override

@@ -5618,7 +5618,6 @@
     <string name="UnbanUserMonoforum">Ban User From Channel</string>
     <string name="AccDescrCustomEmoji">Custom emoji</string>
     <string name="RecentlyUsed">Recently Used</string>
-    <string name="PopularReactions">Popular</string>
     <string name="ReactionsLongtapHint">Press and hold to send a super reaction</string>
     <string name="EnableSomeReactionsInfo">Members of the group can use only some allowed emoji as reactions to messages.</string>
     <string name="EnableAllReactionsInfo">Members of the group can use any emoji as reactions to messages.</string>
@@ -6943,7 +6942,6 @@
     <string name="UserProfileColorReset">Reset Profile Color</string>
     <string name="ChannelProfileColorReset">Reset Profile Color</string>
     <string name="UnlockSimilarChannelsPremium_other">Subscribe to **Telegram Premium** to unlock up to %d similar channels.</string>
-    <string name="ChatMultipleReactionsPromo">You can set multiple reactions with Telegram Premium.</string>
     <string name="MoreSimilar">More Channels</string>
     <string name="UnlockSimilar">Unlock more channels</string>
     <string name="MoreSimilarButton">Show More Channels</string>

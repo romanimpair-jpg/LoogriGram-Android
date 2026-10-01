@@ -344,7 +344,6 @@ public class SharedConfig {
     public static int mediaColumnsCount = 3;
     public static int fastScrollHintCount = 3;
     public static boolean dontAskManageStorage;
-    public static boolean multipleReactionsPromoShowed;
 
     public static boolean isFloatingDebugActive;
     public static LiteMode liteMode;
@@ -659,7 +658,6 @@ public class SharedConfig {
             useCamera2Force = !preferences.contains("useCamera2Force_2") ? null : preferences.getBoolean("useCamera2Force_2", false);
             payByInvoice = preferences.getBoolean("payByInvoice", false);
             photoViewerBlur = preferences.getBoolean("photoViewerBlur", true);
-            multipleReactionsPromoShowed = preferences.getBoolean("multipleReactionsPromoShowed", false);
             callEncryptionHintDisplayedCount = preferences.getInt("callEncryptionHintDisplayedCount", 0);
             debugVideoQualities = preferences.getBoolean("debugVideoQualities", false);
             shadowsInSections = preferences.getBoolean("shadowsInSections", false);
@@ -875,14 +873,6 @@ public class SharedConfig {
         dayNightThemeSwitchHintCount = 3;
         dayNightWallpaperSwitchHint = 0;
         saveConfig();
-    }
-
-    public static void setMultipleReactionsPromoShowed(boolean val) {
-        multipleReactionsPromoShowed = val;
-        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean("multipleReactionsPromoShowed", multipleReactionsPromoShowed);
-        editor.apply();
     }
 
     public static void setSearchMessagesAsListUsed(boolean value) {

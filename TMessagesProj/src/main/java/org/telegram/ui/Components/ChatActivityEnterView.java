@@ -6762,9 +6762,9 @@ public class ChatActivityEnterView extends FrameLayout implements
     // strips this way, and the send paths strip again for text that got in
     // otherwise - a draft from another device - so Send always sends. A
     // Spannable is stripped in place; other formatted text comes back as a
-    // stripped copy. A Premium account and Saved Messages keep everything.
+    // stripped copy. Saved Messages keeps everything (a Premium account did too).
     public static CharSequence stripPremiumAnimatedEmoji(int currentAccount, long dialogId, CharSequence text) {
-        if (!(text instanceof Spanned) || UserConfig.getInstance(currentAccount).isPremium() || UserConfig.getInstance(currentAccount).getClientUserId() == dialogId) {
+        if (!(text instanceof Spanned) || UserConfig.getInstance(currentAccount).getClientUserId() == dialogId) {
             return text;
         }
         AnimatedEmojiSpan[] animatedEmojis = ((Spanned) text).getSpans(0, text.length(), AnimatedEmojiSpan.class);
@@ -6783,7 +6783,7 @@ public class ChatActivityEnterView extends FrameLayout implements
     // Whether the text holds a custom emoji the chat does not take without
     // Premium. Only the pack sheet asks now, to not insert such an emoji.
     public static boolean checkPremiumAnimatedEmoji(int currentAccount, long dialogId, CharSequence message) {
-        if (!(message instanceof Spanned) || UserConfig.getInstance(currentAccount).isPremium() || UserConfig.getInstance(currentAccount).getClientUserId() == dialogId) {
+        if (!(message instanceof Spanned) || UserConfig.getInstance(currentAccount).getClientUserId() == dialogId) {
             return false;
         }
         AnimatedEmojiSpan[] animatedEmojis = ((Spanned) message).getSpans(0, message.length(), AnimatedEmojiSpan.class);
@@ -6797,7 +6797,7 @@ public class ChatActivityEnterView extends FrameLayout implements
 
     // LoogriGram: upstream's per-emoji test, pulled out of checkPremiumAnimatedEmoji
     // so pasted and sent text can be stripped by it too; the callers have ruled
-    // out a Premium account and Saved Messages. An emoji of the group's own
+    // out Saved Messages. An emoji of the group's own
     // emoji pack is taken, as is any free one; one whose document cannot be
     // found counts as refused, as upstream counted it. Upstream also let a
     // group-pack emoji pass the whole message; each emoji answers for itself now.

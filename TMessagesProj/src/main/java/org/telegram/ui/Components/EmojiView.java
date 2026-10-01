@@ -87,7 +87,6 @@ import androidx.recyclerview.widget.SimpleItemAnimator;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
-import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.CompoundEmoji;
@@ -599,7 +598,7 @@ public class EmojiView extends FrameLayout implements
         @Override
         public boolean needSend(int contentType) {
             if (contentType == ContentPreviewViewer.CONTENT_TYPE_EMOJI) {
-                return fragment instanceof ChatActivity && ((ChatActivity) fragment).canSendMessage() && (UserConfig.getInstance(UserConfig.selectedAccount).isPremium() || ((ChatActivity) fragment).getCurrentUser() != null && UserObject.isUserSelf(((ChatActivity) fragment).getCurrentUser()));
+                return fragment instanceof ChatActivity && ((ChatActivity) fragment).canSendMessage() && (((ChatActivity) fragment).getCurrentUser() != null && UserObject.isUserSelf(((ChatActivity) fragment).getCurrentUser()));
             }
             return true;
         }
@@ -898,7 +897,8 @@ public class EmojiView extends FrameLayout implements
             });
             box.addView(clear, LayoutHelper.createFrame(36, 36, Gravity.RIGHT | Gravity.TOP));
 
-            if (type != 1 || allowAnimatedEmoji && UserConfig.getInstance(UserConfig.selectedAccount).isPremium()) {
+            // LoogriGram: the emoji tab's category row was Premium's.
+            if (type != 1) {
                 categoriesListView = new StickerCategoriesListView(context, null, type == 0 ? StickerCategoriesListView.CategoriesType.STICKERS : StickerCategoriesListView.CategoriesType.DEFAULT, resourcesProvider) {
                     @Override
                     public void selectCategory(int categoryIndex) {
@@ -1298,10 +1298,6 @@ public class EmojiView extends FrameLayout implements
             return;
         }
         if (imageViewEmoji.getSpan() != null) {
-//                if (pack != null && pack.set != null && (pack.free || UserConfig.getInstance(currentAccount).isPremium())) {
-//                    openEmojiPackAlert(pack.set);
-//                    return;
-//                }
             if (delegate != null) {
                 long documentId = imageViewEmoji.getSpan().documentId;
                 TLRPC.Document document = imageViewEmoji.getSpan().document;
@@ -1330,7 +1326,7 @@ public class EmojiView extends FrameLayout implements
                 // It is still not inserted - the server refuses it - but that is
                 // all now, as on desktop (boxes/send_files_box.cpp). The panel no
                 // longer lists premium packs, so only a recent emoji gets here.
-                if (!MessageObject.isFreeEmoji(document) && !UserConfig.getInstance(currentAccount).isPremium() && !(delegate != null && delegate.isUserSelf()) && !allowEmojisForNonPremium && !isGroupEmojis) {
+                if (!MessageObject.isFreeEmoji(document) && !(delegate != null && delegate.isUserSelf()) && !allowEmojisForNonPremium && !isGroupEmojis) {
                     return;
                 }
                 shownBottomTabAfterClick = SystemClock.elapsedRealtime();
@@ -1768,10 +1764,6 @@ public class EmojiView extends FrameLayout implements
                 }
             }
 
-            @Override
-            protected boolean doIncludeFeatured() {
-                return !(featuredEmojiSets.size() > 0 && featuredEmojiSets.get(0).set != null && MessagesController.getEmojiSettings(currentAccount).getLong("emoji_featured_hidden", 0) != featuredEmojiSets.get(0).set.id && UserConfig.getInstance(UserConfig.selectedAccount).isPremium());
-            }
 
             @Override
             protected boolean onTabClick(int index) {
@@ -2251,7 +2243,7 @@ public class EmojiView extends FrameLayout implements
                 // the "Unlock Premium Stickers" pitch. None is listed any more;
                 // should one get here, it refuses quietly, as on desktop
                 // (window/section_widget.cpp).
-                if (cell.getSticker() != null && MessageObject.isPremiumSticker(cell.getSticker()) && !AccountInstance.getInstance(currentAccount).getUserConfig().isPremium()) {
+                if (cell.getSticker() != null && MessageObject.isPremiumSticker(cell.getSticker())) {
                     return;
                 }
                 ContentPreviewViewer.getInstance().reset();
@@ -3887,7 +3879,7 @@ public class EmojiView extends FrameLayout implements
                 outRect.left = AndroidUtilities.dp(5);
                 outRect.right = AndroidUtilities.dp(5);
                 int position = parent.getChildAdapterPosition(view);
-                if (position + 1 > emojiAdapter.plainEmojisCount && !UserConfig.getInstance(currentAccount).isPremium() && !allowEmojisForNonPremium) {
+                if (position + 1 > emojiAdapter.plainEmojisCount && !allowEmojisForNonPremium) {
                     outRect.top = AndroidUtilities.dp(10);
                 }
             } else if (view instanceof RecyclerListView || view instanceof EmojiPackHeader) {
@@ -6994,7 +6986,7 @@ public class EmojiView extends FrameLayout implements
                 frozenEmojiPacks = new ArrayList<>(mediaDataController.getStickerSets(MediaDataController.TYPE_EMOJIPACKS));
             }
             ArrayList<TLRPC.TL_messages_stickerSet> installedEmojipacks = frozenEmojiPacks;
-            boolean isPremium = UserConfig.getInstance(currentAccount).isPremium() || allowEmojisForNonPremium;
+            // LoogriGram: premium packs were open to a Premium account too.
             int index = 0;
 
             if (info != null && info.emojiset != null) {
@@ -7013,7 +7005,7 @@ public class EmojiView extends FrameLayout implements
                 }
             }
 
-            if (!isPremium) {
+            if (!allowEmojisForNonPremium) {
                 for (int i = 0; i < installedEmojipacks.size(); ++i) {
                     TLRPC.TL_messages_stickerSet set = installedEmojipacks.get(i);
                     if (set != null && !MessageObject.isPremiumEmojiPack(set)) {
@@ -7031,7 +7023,7 @@ public class EmojiView extends FrameLayout implements
             }
             for (int i = 0; i < installedEmojipacks.size(); ++i) {
                 TLRPC.TL_messages_stickerSet set = installedEmojipacks.get(i);
-                if (isPremium) {
+                if (allowEmojisForNonPremium) {
                     EmojiPack pack = new EmojiPack();
                     pack.index = index++;
                     pack.set = set.set;
@@ -7068,7 +7060,7 @@ public class EmojiView extends FrameLayout implements
             }
             for (int i = 0; i < featuredEmojiSets.size(); ++i) {
                 TLRPC.StickerSetCovered set = featuredEmojiSets.get(i);
-//                if (!isPremium && !MessageObject.isPremiumEmojiPack(set) && mediaDataController.isStickerPackInstalled(set.set.id)) {
+//                if (!allowEmojisForNonPremium && !MessageObject.isPremiumEmojiPack(set) && mediaDataController.isStickerPackInstalled(set.set.id)) {
 //                    continue;
 //                }
                 EmojiPack pack = new EmojiPack();
@@ -7092,7 +7084,7 @@ public class EmojiView extends FrameLayout implements
                 // LoogriGram: without Premium, a featured set holding premium
                 // emoji was listed padlocked, with an "Unlock" button. It is left
                 // out, as on desktop (chat_helpers/emoji_list_widget.cpp).
-                if (!isPremium) {
+                if (!allowEmojisForNonPremium) {
                     boolean premium = false;
                     for (int j = 0; j < pack.documents.size(); ++j) {
                         if (!MessageObject.isFreeEmoji(pack.documents.get(j))) {
@@ -7178,12 +7170,11 @@ public class EmojiView extends FrameLayout implements
             packStartPosition.clear();
             rowHashCodes.clear();
             itemCount = 0;
-            boolean isPremium = UserConfig.getInstance(currentAccount).isPremium() || allowEmojisForNonPremium;
             if (needEmojiSearch) {
                 itemCount++;
                 rowHashCodes.add(-1);
             }
-            if (isPremium && allowAnimatedEmoji && featuredEmojiSets.size() > 0 && featuredEmojiSets.get(0).set != null && MessagesController.getEmojiSettings(currentAccount).getLong("emoji_featured_hidden", 0) != featuredEmojiSets.get(0).set.id && needEmojiSearch) {
+            if (allowEmojisForNonPremium && allowAnimatedEmoji && featuredEmojiSets.size() > 0 && featuredEmojiSets.get(0).set != null && MessagesController.getEmojiSettings(currentAccount).getLong("emoji_featured_hidden", 0) != featuredEmojiSets.get(0).set.id && needEmojiSearch) {
                 trendingHeaderRow = itemCount++;
                 trendingRow = itemCount++;
                 recentlyUsedHeaderRow = itemCount++;

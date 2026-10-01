@@ -116,7 +116,7 @@ public class EmojiPacksAlert extends BottomSheet implements NotificationCenter.N
 
         @Override
         public boolean needSend(int contentType) {
-            return fragment instanceof ChatActivity && ((ChatActivity) fragment).canSendMessage() && (UserConfig.getInstance(UserConfig.selectedAccount).isPremium() || ((ChatActivity) fragment).getCurrentUser() != null && UserObject.isUserSelf(((ChatActivity) fragment).getCurrentUser()));
+            return fragment instanceof ChatActivity && ((ChatActivity) fragment).canSendMessage() && (((ChatActivity) fragment).getCurrentUser() != null && UserObject.isUserSelf(((ChatActivity) fragment).getCurrentUser()));
         }
 
         @Override
@@ -128,10 +128,8 @@ public class EmojiPacksAlert extends BottomSheet implements NotificationCenter.N
             dismiss();
         }
 
-        @Override
-        public boolean needCopy(TLRPC.Document document) {
-            return UserConfig.getInstance(UserConfig.selectedAccount).isPremium() && MessageObject.isAnimatedEmoji(document);
-        }
+        // LoogriGram: a Premium account could copy a pack's emoji from its
+        // preview; needCopy's default, false, is what is left.
 
         @Override
         public void copyEmoji(TLRPC.Document document) {

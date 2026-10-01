@@ -8603,7 +8603,7 @@ public class MediaDataController extends BaseController {
             ArrayList<TLRPC.Document> animatedEmoji = new ArrayList<>();
             final int maxAnimatedPerEmoji = maxAnimatedPerEmojiInput == null ? (result.size() > 5 ? 1 : (result.size() > 2 ? 2 : 3)) : maxAnimatedPerEmojiInput;
             int len = maxAnimatedPerEmojiInput == null ? Math.min(15, result.size()) : result.size();
-            boolean isPremium = UserConfig.getInstance(currentAccount).isPremium() || forcePremium;
+            // LoogriGram: a Premium account also got premium emoji in suggestions.
             String topicIconsName = null;
             if (allowTopicIcons) {
                 topicIconsName = UserConfig.getInstance(currentAccount).defaultTopicIcons;
@@ -8635,7 +8635,7 @@ public class MediaDataController extends BaseController {
                                 String emoticon = MessageObject.findAnimatedEmojiEmoticon(document, null);
                                 if (document != null &&
                                     emoticon != null && emoticon.contains(emoji) &&
-                                    (isPremium || MessageObject.isFreeEmoji(document)) &&
+                                    (forcePremium || MessageObject.isFreeEmoji(document)) &&
                                     !foundEmojis.contains(document.id)
                                 ) {
                                     foundEmojis.add(document.id);
@@ -8691,7 +8691,7 @@ public class MediaDataController extends BaseController {
                                         }
                                     }
 
-                                    if (attribute != null && !TextUtils.isEmpty(attribute.alt) && attribute.alt.contains(emoji) && (isPremium || attribute.free || set.set != null && set.set.short_name != null && set.set.short_name.equals(topicIconsName))) {
+                                    if (attribute != null && !TextUtils.isEmpty(attribute.alt) && attribute.alt.contains(emoji) && (forcePremium || attribute.free || set.set != null && set.set.short_name != null && set.set.short_name.equals(topicIconsName))) {
                                         if (!foundEmojis.contains(document.id)) {
                                             foundEmojis.add(document.id);
                                             animatedEmoji.add(document);
@@ -8730,7 +8730,7 @@ public class MediaDataController extends BaseController {
                                     }
                                 }
 
-                                if (attribute != null && !TextUtils.isEmpty(attribute.alt) && attribute.alt.contains(emoji) && (isPremium || attribute.free || set.set != null && set.set.short_name != null && set.set.short_name.equals(topicIconsName))) {
+                                if (attribute != null && !TextUtils.isEmpty(attribute.alt) && attribute.alt.contains(emoji) && (forcePremium || attribute.free || set.set != null && set.set.short_name != null && set.set.short_name.equals(topicIconsName))) {
                                     if (!foundEmojis.contains(document.id)) {
                                         foundEmojis.add(document.id);
                                         animatedEmoji.add(document);

@@ -64,7 +64,6 @@ import org.telegram.messenger.AnimationNotificationsLocker;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.SvgHelper;
-import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.AlertDialog;
@@ -1110,7 +1109,7 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
             fillRecentReactionsList(visibleReactions);
         }
         filterReactions(visibleReactions);
-        showExpandableReactions = !hitLimit && (!allReactionsAvailable && visibleReactions.size() > 16 || allReactionsAvailable && !UserConfig.getInstance(currentAccount).isPremium());
+        showExpandableReactions = !hitLimit && (!allReactionsAvailable && visibleReactions.size() > 16 || allReactionsAvailable);
         if (type == TYPE_STICKER_SET_EMOJI) {
             showExpandableReactions = true;
         }
@@ -1260,9 +1259,8 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
             if (effects != null) {
                 // LoogriGram: effects that need Premium are not offered without it;
                 // upstream offered them padlocked.
-                final boolean premium = UserConfig.getInstance(currentAccount).isPremium();
                 for (int i = 0; i < effects.effects.size(); i++) {
-                    if (!premium && effects.effects.get(i).premium_required) continue;
+                    if (effects.effects.get(i).premium_required) continue;
                     ReactionsLayoutInBubble.VisibleReaction visibleReaction = ReactionsLayoutInBubble.VisibleReaction.fromTL(effects.effects.get(i));
                     if (!hashSet.contains(visibleReaction)) {
                         hashSet.add(visibleReaction);
@@ -1277,7 +1275,8 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
         ArrayList<TLRPC.Reaction> topReactions = MediaDataController.getInstance(currentAccount).getTopReactions();
         for (int i = 0; i < topReactions.size(); i++) {
             ReactionsLayoutInBubble.VisibleReaction visibleReaction = ReactionsLayoutInBubble.VisibleReaction.fromTL(topReactions.get(i));
-            if (!hashSet.contains(visibleReaction) && (UserConfig.getInstance(currentAccount).isPremium() || visibleReaction.documentId == 0)) {
+            // LoogriGram: a Premium account also got the top custom emoji reactions.
+            if (!hashSet.contains(visibleReaction) && visibleReaction.documentId == 0) {
                 hashSet.add(visibleReaction);
                 visibleReactions.add(visibleReaction);
                 added++;
@@ -1309,9 +1308,6 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
 
     // LoogriGram: Premium reactions are left out, never offered padlocked.
     private void checkPremiumReactions(List<TLRPC.TL_availableReaction> reactions) {
-        if (UserConfig.getInstance(currentAccount).isPremium()) {
-            return;
-        }
         try {
             for (int i = 0; i < reactions.size(); i++) {
                 if (reactions.get(i).premium) {
