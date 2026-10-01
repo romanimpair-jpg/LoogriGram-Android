@@ -2121,9 +2121,9 @@ public class MediaDataController extends BaseController {
                         featuredStickersLoaded[emoji ? 1 : 0] = true;
                         loadFeaturedDate[emoji ? 1 : 0] = date;
                     });
-                    putFeaturedStickersToCache(emoji, null, null, date, hash, false);
+                    putFeaturedStickersToCache(emoji, null, null, date, hash);
                 } else {
-                    processLoadedFeaturedStickers(emoji, null, null, false, false, (int) (System.currentTimeMillis() / 1000), hash);
+                    processLoadedFeaturedStickers(emoji, null, null, false, (int) (System.currentTimeMillis() / 1000), hash);
                 }
             }));
         }
