@@ -38,7 +38,6 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.TranslateController;
-import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.tgnet.TLRPC;
@@ -48,7 +47,6 @@ import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.BottomSheet;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ChatActivity;
-import org.telegram.ui.RestrictedLanguagesSelectActivity;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 import org.telegram.ui.Stories.recorder.HintView2;
 
@@ -113,7 +111,8 @@ public class TranslateButton extends FrameLayout implements Theme.Colorable {
         menuView.setImageResource(R.drawable.msg_mini_customize);
         menuView.setOnClickListener(e -> {
             final TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
-            if (UserConfig.getInstance(currentAccount).isPremium() || chat != null && chat.autotranslation) {
+            // LoogriGram: a Premium account had the menu in any chat.
+            if (chat != null && chat.autotranslation) {
                 onMenuClick();
             } else {
                 onCloseClick();
@@ -296,38 +295,6 @@ public class TranslateButton extends FrameLayout implements Theme.Colorable {
             popupLayout.getSwipeBack().openForeground(swipeBackIndex);
         });
 
-        if (UserConfig.getInstance(currentAccount).isPremium() && detectedLanguageNameAccusative != null) {
-            final ActionBarMenuSubItem dontTranslateButton = new ActionBarMenuSubItem(getContext(), false, false, resourcesProvider);
-            String text;
-            if (accusative[0]) {
-                text = LocaleController.formatString(R.string.DoNotTranslateLanguage, detectedLanguageNameAccusative);
-            } else {
-                text = LocaleController.formatString(R.string.DoNotTranslateLanguageOther, detectedLanguageNameAccusative);
-            }
-            dontTranslateButton.setMultiline(false);
-            dontTranslateButton.setTextAndIcon(HintView2.cutInFancyHalfText(text, dontTranslateButton.getTextView().getPaint()), R.drawable.msg_block2);
-            dontTranslateButton.setOnClickListener(e -> {
-                RestrictedLanguagesSelectActivity.toggleLanguage(detectedLanguage, true);
-                translateController.checkRestrictedLanguagesUpdate();
-                translateController.setHideTranslateDialog(dialogId, true);
-                String bulletinTextString;
-                if (accusative[0]) {
-                    bulletinTextString = LocaleController.formatString(R.string.AddedToDoNotTranslate, detectedLanguageNameAccusative);
-                } else {
-                    bulletinTextString = LocaleController.formatString(R.string.AddedToDoNotTranslateOther, detectedLanguageNameAccusative);
-                }
-                CharSequence bulletinText = AndroidUtilities.replaceTags(bulletinTextString);
-                bulletinText = TranslateAlert2.capitalFirst(bulletinText);
-                BulletinFactory.of(fragment).createSimpleBulletin(
-                    R.raw.msg_translate,
-                    bulletinText,
-                    getString(R.string.Settings),
-                    () -> fragment.presentFragment(new RestrictedLanguagesSelectActivity())
-                ).show();
-                popupWindow.dismiss();
-            });
-            popupLayout.addView(dontTranslateButton);
-        }
 
         final ActionBarMenuSubItem hideButton = new ActionBarMenuSubItem(getContext(), false, false, resourcesProvider);
         hideButton.setTextAndIcon(getString(R.string.Hide), R.drawable.msg_cancel);
@@ -411,7 +378,7 @@ public class TranslateButton extends FrameLayout implements Theme.Colorable {
             }
             textView.setText(TextUtils.concat(translateIcon, " ", text));
         }
-        menuView.setImageResource(UserConfig.getInstance(currentAccount).isPremium() || chat != null && chat.autotranslation ? R.drawable.msg_mini_customize : R.drawable.msg_close);
+        menuView.setImageResource(chat != null && chat.autotranslation ? R.drawable.msg_mini_customize : R.drawable.msg_close);
     }
 
     public static void showCocoonAlert(Context context, Theme.ResourcesProvider resourcesProvider) {

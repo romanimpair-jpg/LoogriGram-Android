@@ -1688,7 +1688,6 @@
     <string name="HiddenSendersNameDescription">Sender names removed</string>
     <string name="ForwardingFromNames">From %s</string>
     <string name="NoWordsRecognized">No words recognized.</string>
-    <string name="RateTranscription">Rate transcription</string>
     <!--notification-->
     <string name="NotificationMessageGiftCode">%1$s sent you a Gift Code for %2$s of Telegram Premium</string>
     <string name="NotificationMessageGiveaway">%1$s sent you a giveaway of %2$sx %3$sm Premium subscriptions</string>
@@ -4245,7 +4244,6 @@
     <string name="CallReportIncludeLogs">Include technical information</string>
     <string name="CallReportLogsExplain">Doesn\'t reveal chat contents and helps us fix the issue sooner.</string>
     <string name="CallReportSent">Thank you for helping make Telegram calls better.</string>
-    <string name="TranscriptionReportSent">Thank you for your feedback.</string>
     <string name="VoipQuickReplies">Respond with Text</string>
     <string name="VoipQuickRepliesExplain">These quick responses will be available when you respond to an incoming call with a Telegram message. Change them to say anything you like.</string>
     <string name="QuickReplyDefault1">Can\'t talk now. What\'s up?</string>
@@ -5969,14 +5967,10 @@
     <string name="EditException">Edit Exception</string>
     <string name="TranslateTo">Translate To</string>
     <string name="DetectedLanguage">Detected Language</string>
-    <string name="DoNotTranslateLanguage">Don\'t translate %s</string>
-    <string name="DoNotTranslateLanguageOther">Don\'t translate %s</string>
     <string name="TranslateToButton">Translate to %s</string>
     <string name="TranslateToButtonOther">Translate to %s</string>
     <string name="ShowOriginalButton">Show Original</string>
     <string name="ShowOriginalButtonLanguage">Show Original (%s)</string>
-    <string name="AddedToDoNotTranslate">**%s** is added to the Do Not Translate list.</string>
-    <string name="AddedToDoNotTranslateOther">**%s** is added to the Do Not Translate list.</string>
     <string name="TranslationBarHiddenForChannel">Translation bar is now hidden for this channel.</string>
     <string name="TranslationBarHiddenForGroup">Translation bar is now hidden for this group.</string>
     <string name="TranslationBarHiddenForChat">Translation bar is now hidden for this chat.</string>
@@ -6062,8 +6056,6 @@
     <string name="StoragePathFreeExternal">%1$s free, slow speed</string>\
     <string name="StoragePathFreeValueExternal">%1$s free, slow speed %2$s</string>
     <string name="AccDescrLiteBatteryWhenBelow">enabled when below %s%%</string>
-    <string name="AccDescrRateTranscriptionUp">Rate up</string>
-    <string name="AccDescrRateTranscriptionDown">Rate down</string>
     <string name="PauseMusicOnMedia">Pause music while playing media</string>
     <string name="ProxyBottomSheetCheckStatus">**Check Status**</string>
     <string name="ProxyBottomSheetChecking">Checking</string>

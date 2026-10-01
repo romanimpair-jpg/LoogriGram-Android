@@ -11611,8 +11611,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             !currentMessageObject.isRepostPreview &&
             (!currentMessageObject.isOutOwner() || currentMessageObject.isSent()) &&
             (
-                UserConfig.getInstance(currentAccount).isPremium()
-                ||
+                // LoogriGram: a Premium account could transcribe any voice message.
                 TranscribeButton.isFreeTranscribeInChat(currentMessageObject)
                 ||
                 MessagesController.getInstance(currentAccount).transcribeAudioTrialWeeklyNumber > 0 &&

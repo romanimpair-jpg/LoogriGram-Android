@@ -85,19 +85,15 @@ public class TranslateController extends BaseController {
         AndroidUtilities.runOnUIThread(this::loadTranslatingDialogsCached, 150);
     }
 
-    public boolean isFeatureAvailable() {
-        return isChatTranslateEnabled() && UserConfig.getInstance(currentAccount).isPremium();
-    }
-
     public boolean isFeatureAvailable(long dialogId) {
         if (!isChatTranslateEnabled()) {
             return false;
         }
+        // LoogriGram: a Premium account could translate any chat (and had
+        // isFeatureAvailable() for the settings switch); a channel with
+        // auto-translation on is what is left, as on desktop.
         final TLRPC.Chat chat = getMessagesController().getChat(-dialogId);
-        return (
-            UserConfig.getInstance(currentAccount).isPremium() ||
-            chat != null && chat.autotranslation
-        );
+        return chat != null && chat.autotranslation;
     }
 
     private Boolean chatTranslateEnabled;
@@ -1757,10 +1753,9 @@ public class TranslateController extends BaseController {
         keptReplyMessageObjects.remove(dialogId);
     }
 
+    // LoogriGram: a Premium account's "do not translate" list counted here;
+    // otherwise only the app's own language does.
     private boolean isLanguageRestricted(String lng) {
-        if (getUserConfig().isPremium()) {
-            return RestrictedLanguagesSelectActivity.getRestrictedLanguages().contains(lng);
-        }
         try {
             return TextUtils.equals(LocaleController.getInstance().getCurrentLocaleInfo().pluralLangCode, lng);
         } catch (Exception ignore) {

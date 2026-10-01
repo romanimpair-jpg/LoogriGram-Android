@@ -211,14 +211,14 @@ public class LanguageSelectActivity extends BaseFragment implements Notification
         listView.setOnItemClickListener((view, position) -> {
             try {
                 if (view instanceof TextCheckCell) {
-                    final boolean prevFullValue = getContextValue() || getChatValue();
+                    final boolean prevFullValue = getContextValue();
                     if (position == manualTranslationPosition) {
                         boolean value = !getContextValue();
                         getMessagesController().getTranslateController().setContextTranslateEnabled(value);
                         ((TextCheckCell) view).setChecked(value);
                         NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.updateSearchSettings);
                     }
-                    final boolean currentFullValue = getContextValue() || getChatValue();
+                    final boolean currentFullValue = getContextValue();
                     if (currentFullValue != prevFullValue) {
                         int start = manualTranslationPosition;
                         TextCheckCell last = null;
@@ -548,10 +548,6 @@ public class LanguageSelectActivity extends BaseFragment implements Notification
         return getMessagesController().getTranslateController().isContextTranslateEnabled();
     }
 
-    private boolean getChatValue() {
-        return getMessagesController().getTranslateController().isFeatureAvailable();
-    }
-
     public static final int VIEW_TYPE_LANGUAGE = 0;
     public static final int VIEW_TYPE_SHADOW = 1;
     public static final int VIEW_TYPE_SWITCH = 2;
@@ -600,7 +596,7 @@ public class LanguageSelectActivity extends BaseFragment implements Notification
                     if (getMessagesController().isTranslationsManualEnabled()) {
                         count++;
                     }
-                    if (getChatValue() || getContextValue()) {
+                    if (getContextValue()) {
                         count++;
                     }
                     count++;
@@ -807,7 +803,7 @@ public class LanguageSelectActivity extends BaseFragment implements Notification
                     }
                     // LoogriGram: no "Translate Entire Chats" switch - a Premium
                     // feature, padlocked for everyone else.
-                    if (getChatValue() || getContextValue()) {
+                    if (getContextValue()) {
                         doNotTranslatePosition = position;
                         if (i-- == 0) return VIEW_TYPE_SETTINGS;
                     }

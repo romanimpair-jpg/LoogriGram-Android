@@ -26995,10 +26995,12 @@ public class ChatActivity extends BaseFragment implements
         }
 
         boolean showRestartTopic = !isInPreviewMode() && forumTopic != null && forumTopic.closed && !forumTopic.hidden && ChatObject.canManageTopic(currentAccount, currentChat, forumTopic);
-        // LoogriGram: the translate bar only where translation is on. Upstream
-        // also showed it everywhere else, now and then, as a Premium teaser.
+        // LoogriGram: the translate bar only where translation is on - a channel
+        // with auto-translation, as on desktop; a Premium account had it in any
+        // chat. Upstream also showed it everywhere else, now and then, as a
+        // Premium teaser.
         boolean showTranslate = (
-            (getUserConfig().isPremium() || currentChat != null && currentChat.autotranslation) &&
+            (currentChat != null && currentChat.autotranslation) &&
                 getMessagesController().getTranslateController().isDialogTranslatable(getDialogId()) && !getMessagesController().getTranslateController().isTranslateDialogHidden(getDialogId())
         ) || DEBUG_TOP_PANELS;
         boolean showAddProfilePicture = UserObject.isBot(currentUser) && currentUser.bot_can_edit && currentUser.photo == null;
@@ -29004,9 +29006,9 @@ public class ChatActivity extends BaseFragment implements
                     popupLayout.addView(messagePrivateSeenView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 36));
                     addGap = true;
                 }
-                boolean showRateTranscription = selectedObject != null && selectedObject.isVoice() && selectedObject.messageOwner != null && getUserConfig().isPremium() && !TextUtils.isEmpty(selectedObject.messageOwner.voiceTranscription) && selectedObject.messageOwner != null && !selectedObject.messageOwner.voiceTranscriptionRated && selectedObject.messageOwner.voiceTranscriptionId != 0 && selectedObject.messageOwner.voiceTranscriptionOpen;
+                // LoogriGram: rating a transcription was offered to a Premium account.
 
-                if (!showRateTranscription && message.probablyRingtone() && currentEncryptedChat == null) {
+                if (message.probablyRingtone() && currentEncryptedChat == null) {
                     ActionBarMenuSubItem cell = new ActionBarMenuSubItem(getParentActivity(), !showPrivateMessageSeen && !showPrivateMessageEdit && !showPrivateMessageFwdOriginal, false, themeDelegate);
                     cell.setMinimumWidth(AndroidUtilities.dp(200));
                     cell.setTextAndIcon(getString(R.string.SaveForNotifications), R.drawable.msg_tone_add);
@@ -29061,92 +29063,6 @@ public class ChatActivity extends BaseFragment implements
                     popupLayout.getSwipeBack().setOnClickListener(e -> closeMenu());
                 }
 
-                if (showRateTranscription) {
-                    final LinearLayout rateTranscriptionLayout = new LinearLayout(contentView.getContext());
-                    rateTranscriptionLayout.setOrientation(LinearLayout.VERTICAL);
-                    LinearLayout.LayoutParams rateTranscriptionLayoutParams = LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 89);
-
-                    final FrameLayout rateTranscription = new FrameLayout(contentView.getContext());
-
-                    TextView textView = new TextView(contentView.getContext());
-                    textView.setTextColor(getThemedColor(Theme.key_windowBackgroundWhiteGrayText));
-                    textView.setGravity(Gravity.CENTER_HORIZONTAL);
-                    textView.setText(LocaleController.getString(R.string.RateTranscription));
-                    rateTranscription.addView(textView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP, 0, 12, 0, 0));
-
-
-                    boolean[] ratePositively = new boolean[1];
-                    boolean[] loading = new boolean[1];
-
-                    Drawable drawable;
-                    ImageView rateUp = new ImageView(contentView.getContext());
-                    rateUp.setBackground(Theme.createCircleSelectorDrawable(getThemedColor(Theme.key_dialogButtonSelector), 0, 0));
-                    drawable = contentView.getContext().getResources().getDrawable(R.drawable.msg_rate_up).mutate();
-                    drawable.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_actionBarDefaultSubmenuItemIcon), PorterDuff.Mode.SRC_IN));
-                    drawable = new CrossfadeDrawable(drawable, new CircularProgressDrawable(AndroidUtilities.dp(12f), AndroidUtilities.dp(1.5f), getThemedColor(Theme.key_actionBarDefaultSubmenuItemIcon)));
-                    rateUp.setImageDrawable(drawable);
-                    rateUp.setContentDescription(LocaleController.getString(R.string.AccDescrRateTranscriptionUp));
-                    rateTranscription.addView(rateUp, LayoutHelper.createFrame(33, 33, Gravity.CENTER_HORIZONTAL | Gravity.TOP, -42, 39, 0, 0));
-
-                    ImageView rateDown = new ImageView(contentView.getContext());
-                    rateDown.setBackground(Theme.createCircleSelectorDrawable(getThemedColor(Theme.key_dialogButtonSelector), 0, 0));
-                    drawable = contentView.getContext().getResources().getDrawable(R.drawable.msg_rate_down).mutate();
-                    drawable.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_actionBarDefaultSubmenuItemIcon), PorterDuff.Mode.SRC_IN));
-                    drawable = new CrossfadeDrawable(drawable, new CircularProgressDrawable(AndroidUtilities.dp(12f), AndroidUtilities.dp(1.5f), getThemedColor(Theme.key_actionBarDefaultSubmenuItemIcon)));
-                    rateDown.setImageDrawable(drawable);
-                    rateDown.setContentDescription(LocaleController.getString(R.string.AccDescrRateTranscriptionDown));
-                    rateTranscription.addView(rateDown, LayoutHelper.createFrame(33, 33, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 42, 39, 0, 0));
-
-                    Runnable rate = () -> {
-                        if (loading[0]) {
-                            return;
-                        }
-                        loading[0] = true;
-                        long[] progressShown = new long[1];
-                        progressShown[0] = -1;
-                        Runnable showProgress = () -> {
-                            progressShown[0] = SystemClock.elapsedRealtime();
-                            CrossfadeDrawable ldrawable = ((CrossfadeDrawable) (ratePositively[0] ? rateUp : rateDown).getDrawable());
-                            ValueAnimator lva = ValueAnimator.ofFloat(0f, 1f);
-                            lva.addUpdateListener(a -> {
-                                ldrawable.setProgress((float) a.getAnimatedValue());
-                            });
-                            lva.setDuration(150);
-                            lva.setInterpolator(CubicBezierInterpolator.DEFAULT);
-                            lva.start();
-                        };
-
-                        TLRPC.TL_messages_rateTranscribedAudio req = new TLRPC.TL_messages_rateTranscribedAudio();
-                        req.msg_id = selectedObject.getId();
-                        req.peer = getMessagesController().getInputPeer(selectedObject.messageOwner.peer_id);
-                        req.transcription_id = selectedObject.messageOwner.voiceTranscriptionId;
-                        req.good = ratePositively[0];
-                        getConnectionsManager().sendRequest(req, (res, err) -> {
-                            AndroidUtilities.cancelRunOnUIThread(showProgress);
-                            selectedObject.messageOwner.voiceTranscriptionRated = true;
-                            getMessagesStorage().updateMessageVoiceTranscriptionOpen(selectedObject.getDialogId(), selectedObject.getId(), selectedObject.messageOwner);
-                            AndroidUtilities.runOnUIThread(() -> {
-                                closeMenu();
-                                BulletinFactory.of(ChatActivity.this).createSimpleBulletin(R.raw.chats_infotip, LocaleController.getString(R.string.TranscriptionReportSent)).show();
-                            }, progressShown[0] > 0 ? Math.max(0, 300 - (SystemClock.elapsedRealtime() - progressShown[0])) : 0);
-                        });
-                        AndroidUtilities.runOnUIThread(showProgress, 150);
-                    };
-
-                    rateUp.setOnClickListener(e -> {
-                        ratePositively[0] = true;
-                        rate.run();
-                    });
-                    rateDown.setOnClickListener(e -> {
-                        ratePositively[0] = false;
-                        rate.run();
-                    });
-
-                    rateTranscriptionLayout.addView(rateTranscription, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 81));
-                    rateTranscriptionLayout.addView(new ActionBarPopupWindow.GapView(contentView.getContext(), themeDelegate), LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 8));
-
-                    popupLayout.addView(rateTranscriptionLayout, rateTranscriptionLayoutParams);
-                }
 
                 scrimPopupWindowItems = new ActionBarMenuSubItem[items.size()];
                 for (int a = 0, N = items.size(); a < N; a++) {

@@ -40,7 +40,6 @@ import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.TranslateController;
-import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.utils.DrawableUtils;
 import org.telegram.tgnet.ConnectionsManager;
@@ -80,7 +79,6 @@ public class TranscribeButton {
     private Rect bounds, pressBounds;
     private boolean clickedToOpen = false;
 
-    private boolean premium;
     private boolean isOpen, shouldBeOpen;
 
     public TranscribeButton(ChatMessageCell parent, SeekBarWaveform seekBar) {
@@ -116,7 +114,6 @@ public class TranscribeButton {
 
         this.isOpen = false;
         this.shouldBeOpen = false;
-        premium = parent.getMessageObject() != null && UserConfig.getInstance(parent.getMessageObject().currentAccount).isPremium();
 
         loadingFloat = new AnimatedFloat(parent, 250, CubicBezierInterpolator.EASE_OUT_QUINT);
         animatedDrawLock = new AnimatedFloat(parent, 250, CubicBezierInterpolator.EASE_OUT_QUINT);
@@ -213,7 +210,7 @@ public class TranscribeButton {
         boolean processClick, toOpen = !shouldBeOpen;
         if (!shouldBeOpen) {
             processClick = !loading;
-            if ((premium || canTranscribeTrial(parent.getMessageObject())) && parent.getMessageObject().isSent()) {
+            if (canTranscribeTrial(parent.getMessageObject()) && parent.getMessageObject().isSent()) {
                 setLoading(true, true);
             }
         } else {
@@ -227,7 +224,8 @@ public class TranscribeButton {
         }
         pressed = false;
         if (processClick) {
-            if (!premium && toOpen) {
+            // LoogriGram: a Premium account transcribed without the trial.
+            if (toOpen) {
                 if (canTranscribeTrial(parent.getMessageObject()) || parent.getMessageObject() != null && parent.getMessageObject().messageOwner != null && !TextUtils.isEmpty(parent.getMessageObject().messageOwner.voiceTranscription)) {
                     transcribePressed(parent.getMessageObject(), toOpen, parent.getDelegate());
                 } else {
@@ -251,11 +249,6 @@ public class TranscribeButton {
     }
 
     public void setColor(int color, int grayColor, boolean isOut, float bgBack) {
-        boolean disabled = !premium;
-//        if (disabled) {
-//            color = ColorUtils.blendARGB(color, grayColor, isOut ? .6f : .8f);
-//            color = ColorUtils.setAlphaComponent(color, (int) (Color.alpha(color) * .6f));
-//        }
         boolean newColor = this.color != color;
         this.iconColor = this.color = color;
         this.backgroundColor = ColorUtils.setAlphaComponent(color, (int) (Color.alpha(color) * 0.156f));
@@ -696,10 +689,8 @@ public class TranscribeButton {
                     transcribeOperationsByDialogPosition = new HashMap<>();
                 }
                 transcribeOperationsByDialogPosition.put((Integer) reqInfoHash(messageObject), messageObject);
-                int flags = 0;
-                if (!UserConfig.getInstance(account).isPremium()) {
-                    flags |= ConnectionsManager.RequestFlagDoNotWaitFloodWait;
-                }
+                // LoogriGram: a Premium account waited out a flood wait.
+                int flags = ConnectionsManager.RequestFlagDoNotWaitFloodWait;
                 ConnectionsManager.getInstance(account).sendRequest(req, (res, err) -> {
                     String text;
                     long id = 0;
@@ -849,9 +840,6 @@ public class TranscribeButton {
         }
         ConnectionsManager cc = ConnectionsManager.getInstance(messageObject.currentAccount);
         MessagesController mc = MessagesController.getInstance(messageObject.currentAccount);
-        if (UserConfig.getInstance(messageObject.currentAccount).isPremium()) {
-            return false;
-        }
         return mc.transcribeAudioTrialCooldownUntil != 0 && cc.getCurrentTime() <= mc.transcribeAudioTrialCooldownUntil && mc.transcribeAudioTrialCurrentNumber <= 0;
     }
 }
