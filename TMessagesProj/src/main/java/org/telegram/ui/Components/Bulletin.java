@@ -89,7 +89,7 @@ public class Bulletin {
     public static final int TYPE_BIO_CHANGED = 2;
     public static final int TYPE_NAME_CHANGED = 3;
     public static final int TYPE_ERROR_SUBTITLE = 4;
-    public static final int TYPE_APP_ICON = 5;
+    // LoogriGram: 5 was TYPE_APP_ICON, the "app icon changed" bulletin.
     public static final int TYPE_SUCCESS = 6;
 
     public int tag;

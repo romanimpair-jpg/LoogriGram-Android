@@ -1077,8 +1077,8 @@ public class LinkManager {
                 scrollTo("liteModeRow");
             if ("stickers-and-emoji".equalsIgnoreCase(second))
                 scrollTo("stickersRow");
-            if ("app-icon".equalsIgnoreCase(second))
-                scrollTo("appIconSelectorRow");
+            // LoogriGram: "app-icon" scrolled to the launcher icon picker, which is
+            // gone; such a link now just opens Appearance.
             if ("tap-for-next-media".equalsIgnoreCase(second))
                 scrollTo("nextMediaTapRow");
 

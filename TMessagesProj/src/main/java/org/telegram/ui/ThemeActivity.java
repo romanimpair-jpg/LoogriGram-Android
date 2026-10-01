@@ -77,7 +77,6 @@ import org.telegram.ui.ActionBar.EmojiThemes;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeColors;
 import org.telegram.ui.ActionBar.ThemeDescription;
-import org.telegram.ui.Cells.AppIconsSelectorCell;
 import org.telegram.ui.Cells.BrightnessControlCell;
 import org.telegram.ui.Cells.ChatListCell;
 import org.telegram.ui.Cells.ChatMessageCell;
@@ -102,7 +101,6 @@ import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.SeekBarView;
 import org.telegram.ui.Components.ShareAlert;
-import org.telegram.ui.Components.SimpleThemeDescription;
 import org.telegram.ui.Components.SwipeGestureSettingsView;
 import org.telegram.ui.Components.TextHelper;
 import org.telegram.ui.Components.ThemeEditorView;
@@ -230,10 +228,8 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
     private int liteModeRow;
     private int liteModeInfoRow;
 
-    private int appIconHeaderRow;
-    @Keep
-    private int appIconSelectorRow;
-    private int appIconShadowRow;
+    // LoogriGram: an App Icon header, picker and shadow sat here - the
+    // alternative launcher icons are gone (see LauncherIconController).
 
     private int rowCount;
 
@@ -604,9 +600,6 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
         editThemeRow = -1;
         createNewThemeRow = -1;
 
-        appIconHeaderRow = -1;
-        appIconSelectorRow = -1;
-        appIconShadowRow = -1;
         lastShadowRow = -1;
 
         defaultThemes.clear();
@@ -667,10 +660,6 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
             chatListHeaderRow = rowCount++;
             chatListRow = rowCount++;
             chatListInfoRow = rowCount++;
-
-            appIconHeaderRow = rowCount++;
-            appIconSelectorRow = rowCount++;
-            appIconShadowRow = rowCount++;
 
             swipeGestureHeaderRow = rowCount++;
             swipeGestureRow = rowCount++;
@@ -2057,7 +2046,6 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
         private final static int TYPE_THEME_PREVIEW = 16;
         private final static int TYPE_DEFAULT_THEMES_PREVIEW = 17;
         private final static int TYPE_SAVE_TO_GALLERY = 19;
-        private final static int TYPE_APP_ICON = 20;
 
         private Context mContext;
         private boolean first = true;
@@ -2076,7 +2064,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
             int type = holder.getItemViewType();
             return type == 0 || type == TYPE_TEXT_SETTING || type == TYPE_THEME_TYPE || type == TYPE_TEXT_CHECK ||
                     type == TYPE_NIGHT_THEME || type == TYPE_THEME_LIST || type == TYPE_THEME_ACCENT_LIST ||
-                    type == TYPE_TEXT_PREFERENCE || type == 18 || type == TYPE_APP_ICON;
+                    type == TYPE_TEXT_PREFERENCE || type == 18;
         }
 
         private void showOptionsForTheme(Theme.ThemeInfo themeInfo) {
@@ -2451,9 +2439,6 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                 case TYPE_SAVE_TO_GALLERY:
                     view = new RadioButtonCell(mContext);
                     break;
-                case TYPE_APP_ICON:
-                    view = new AppIconsSelectorCell(mContext, ThemeActivity.this, currentAccount);
-                    break;
             }
             return new RecyclerListView.Holder(view);
         }
@@ -2571,8 +2556,6 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                         headerCell.setText(getString("ChatListSwipeGesture", R.string.ChatListSwipeGesture));
                     } else if (position == selectThemeHeaderRow) {
                         headerCell.setText(getString("SelectTheme", R.string.SelectTheme));
-                    } else if (position == appIconHeaderRow) {
-                        headerCell.setText(getString(R.string.AppIcon));
                     } else if (position == otherHeaderRow) {
                         headerCell.setText(getString("OtherSettings", R.string.OtherSettings));
                     } else if (position == mediaSoundHeaderRow) {
@@ -2725,7 +2708,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                 return TYPE_TEXT_INFO_PRIVACY;
             } else if (position == themeInfoRow || position == nightTypeInfoRow || position == scheduleFromToInfoRow ||
                     position == settings2Row || position == newThemeInfoRow || position == chatListInfoRow || position == bubbleRadiusInfoRow ||
-                    position == saveToGallerySectionRow || position == appIconShadowRow || position == lastShadowRow || position == stickersSectionRow ||
+                    position == saveToGallerySectionRow || position == lastShadowRow || position == stickersSectionRow ||
                     position == mediaSoundSectionRow || position == otherSectionRow) {
                 return TYPE_SHADOW;
             } else if (position == nightDisabledRow || position == nightScheduledRow || position == nightAutomaticRow || position == nightSystemDefaultRow) {
@@ -2733,7 +2716,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
             } else if (position == scheduleHeaderRow || position == automaticHeaderRow || position == preferedHeaderRow ||
                     position == settingsRow || position == themeHeaderRow || position == textSizeHeaderRow ||
                     position == chatListHeaderRow || position == bubbleRadiusHeaderRow || position == swipeGestureHeaderRow ||
-                    position == selectThemeHeaderRow || position == appIconHeaderRow || position == mediaSoundHeaderRow ||
+                    position == selectThemeHeaderRow || position == mediaSoundHeaderRow ||
                     position == otherHeaderRow) {
                 return TYPE_HEADER;
             } else if (position == automaticBrightnessRow) {
@@ -2765,8 +2748,6 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                 return TYPE_DEFAULT_THEMES_PREVIEW;
             } else if (position == saveToGalleryOption1Row || position == saveToGalleryOption2Row) {
                 return TYPE_SAVE_TO_GALLERY;
-            } else if (position == appIconSelectorRow) {
-                return TYPE_APP_ICON;
             }
             return TYPE_TEXT_SETTING;
         }
@@ -2863,37 +2844,6 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
         themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{TextSizeCell.class}, null, null, null, Theme.key_chat_outTimeText));
         themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{TextSizeCell.class}, null, null, null, Theme.key_chat_inTimeSelectedText));
         themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{TextSizeCell.class}, null, null, null, Theme.key_chat_outTimeSelectedText));
-
-        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{AppIconsSelectorCell.class}, null, null, null, Theme.key_windowBackgroundWhite));
-        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{AppIconsSelectorCell.class}, null, null, null, Theme.key_windowBackgroundWhiteBlackText));
-        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{AppIconsSelectorCell.class}, null, null, null, Theme.key_windowBackgroundWhiteHintText));
-        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{AppIconsSelectorCell.class}, null, null, null, Theme.key_windowBackgroundWhiteValueText));
-        themeDescriptions.addAll(SimpleThemeDescription.createThemeDescriptions(() -> {
-            for (int i = 0; i < listView.getChildCount(); i++) {
-                View ch = listView.getChildAt(i);
-                if (ch instanceof AppIconsSelectorCell) {
-                    ((AppIconsSelectorCell) ch).getAdapter().notifyDataSetChanged();
-                }
-            }
-            for (int i = 0; i < listView.getCachedChildCount(); i++) {
-                View ch = listView.getCachedChildAt(i);
-                if (ch instanceof AppIconsSelectorCell) {
-                    ((AppIconsSelectorCell) ch).getAdapter().notifyDataSetChanged();
-                }
-            }
-            for (int i = 0; i < listView.getHiddenChildCount(); i++) {
-                View ch = listView.getHiddenChildAt(i);
-                if (ch instanceof AppIconsSelectorCell) {
-                    ((AppIconsSelectorCell) ch).getAdapter().notifyDataSetChanged();
-                }
-            }
-            for (int i = 0; i < listView.getAttachedScrapChildCount(); i++) {
-                View ch = listView.getAttachedScrapChildAt(i);
-                if (ch instanceof AppIconsSelectorCell) {
-                    ((AppIconsSelectorCell) ch).getAdapter().notifyDataSetChanged();
-                }
-            }
-        }, Theme.key_windowBackgroundWhiteHintText, Theme.key_windowBackgroundWhiteBlackText, Theme.key_windowBackgroundWhiteValueText));
 
         return themeDescriptions;
     }

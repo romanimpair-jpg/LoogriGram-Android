@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- LoogriGram: the foreground is the desktop mark (plane, L and G), built by
+     branding/make_android_icons.py; the themed icon tints its silhouette. -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@drawable/icon_background_round" />
     <foreground android:drawable="@mipmap/icon_foreground_round" />
-    <monochrome android:drawable="@drawable/icon_plane" />
+    <monochrome android:drawable="@mipmap/icon_foreground_round" />
 </adaptive-icon>

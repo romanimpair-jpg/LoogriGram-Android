@@ -5523,14 +5523,6 @@
     <string name="ReportAdLearnMore">Learn more about our [Ad Policies and Guidelines.](https://ads.telegram.org/guidelines)</string>
     <string name="AdReported">We will review this ad to ensure it matches our **Ad Policies and Guidelines.**</string>
     <string name="AdHidden">You will no longer see ads from Telegram.</string>
-    <string name="AppIcon">App Icon</string>
-    <string name="AppIconDefault">Default</string>
-    <string name="AppIconVintage">Vintage</string>
-    <string name="AppIconAqua">Aqua</string>
-    <string name="AppIconPremium">Premium</string>
-    <string name="AppIconTurbo">Turbo</string>
-    <string name="AppIconNox">Nox</string>
-    <string name="AppIconChangedTo">App icon has been changed to %1$s</string>
     <string name="FileTooLarge">File Too Large</string>
     <string name="PaymentCheckoutAcceptRecurrent">I accept the *Terms of Service* of %1$s.</string>
     <string name="PaymentCheckoutAcceptRecurrentFee">I accept the *Terms of Service*.</string>

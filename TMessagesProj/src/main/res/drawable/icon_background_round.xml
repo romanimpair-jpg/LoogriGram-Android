@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@drawable/icon_background_sa" />
-    <item android:drawable="@mipmap/icon_background_clip_round" />
-</layer-list>
+<!-- LoogriGram: the launcher icon's background is black, as on desktop; it was
+     Telegram's blue gradient with a raster highlight over it. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="#000000" />
+</shape>
