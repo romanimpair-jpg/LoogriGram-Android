@@ -17,7 +17,6 @@ import static org.telegram.messenger.LocaleController.formatPluralStringComma;
 import static org.telegram.messenger.LocaleController.formatString;
 import static org.telegram.messenger.LocaleController.getString;
 import static org.telegram.messenger.MessageObject.getMedia;
-import static org.telegram.messenger.MessageObject.replaceWithLink;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -37,7 +36,6 @@ import android.graphics.Color;
 import android.graphics.ColorFilter;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
-import android.graphics.CornerPathEffect;
 import android.graphics.LinearGradient;
 import android.graphics.Matrix;
 import android.graphics.Paint;
@@ -129,7 +127,6 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.RichMessageLayout;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.SharedConfig;
-import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.SvgHelper;
 import org.telegram.messenger.TranslateController;
 import org.telegram.messenger.UserConfig;
@@ -956,11 +953,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     // holds both kinds of message unshown, so neither type is ever assigned.
 
     // LoogriGram: playedDice tracked the same thing.
-    private long starsPrice;
-    private Text starsPriceText;
-    private LinkPath starsPriceTextPath;
-    private CornerPathEffect starsPriceTextPathEffect;
-    public int starsPriceTopPadding;
+    // LoogriGram: starsPrice, starsPriceText, its background path and the padding
+    // it claimed above a message showed the Stars paid to send that message, and
+    // a group message carried the same in front of its time. Nothing is paid
+    // here; the desktop fork deleted the same corner price.
 
     // LoogriGram: diceStakeOutcome and the bottomAction* views it drew stood here.
 
@@ -2193,7 +2189,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private boolean checkRichLayoutMotionEvent(MotionEvent event) {
         if (currentMessageObject == null || currentMessageObject.richLayout == null) return false;
         if (currentMessageObject.type != MessageObject.TYPE_ARTICLE) return false;
-        final float textY = getStarsPriceTopPadding() + suggestionOfferTopPadding + getTopicSeparatorTopPadding() + this.textY;
+        final float textY = suggestionOfferTopPadding + getTopicSeparatorTopPadding() + this.textY;
         event.offsetLocation(-textX, -textY);
         currentMessageObject.richLayout.setChatMessageCellDelegate(this, this.delegate);
         final boolean handled = currentMessageObject.richLayout.onTouchEvent(event);
@@ -10045,74 +10041,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
             prevCaptionLayout = null;
 
-            final int starsPriceMessagesCount;
-            final long starsPrice;
-            if (currentMessageObject != null && currentMessageObject.getDialogId() < 0) {
-                starsPrice = 0;
-                starsPriceMessagesCount = 0;
-            } else if (currentMessagesGroup != null) {
-                long totalPrice = 0;
-                int totalCount = 0;
-                for (MessageObject msg : currentMessagesGroup.messages) {
-                    final long messagePrice = msg == null || msg.messageOwner == null ? 0 : msg.messageOwner.paid_message_stars;
-                    totalPrice += messagePrice;
-                    if (messagePrice > 0) {
-                        totalCount++;
-                    }
-                }
-                starsPrice = totalPrice;
-                starsPriceMessagesCount = totalCount;
-            } else {
-                starsPriceMessagesCount = 1;
-                starsPrice = currentMessageObject == null || currentMessageObject.messageOwner == null ? 0 : currentMessageObject.messageOwner.paid_message_stars;
-            }
-            if (this.starsPrice != starsPrice) {
-                this.starsPrice = starsPrice;
-                if (starsPrice > 0 && (currentPosition == null || (currentPosition.flags & MessageObject.POSITION_FLAG_TOP) != 0)) {
-                    final CharSequence text;
-                    if (currentMessageObject.isOutOwner()) {
-                        if (starsPriceMessagesCount > 1) {
-                            text = formatPluralStringComma("PaidMessageActionOutMany", (int) starsPrice, formatPluralStringComma("PaidMessageActionMessages", starsPriceMessagesCount));
-                        } else {
-                            text = formatPluralStringComma("PaidMessageActionOut", (int) starsPrice);
-                        }
-                    } else {
-                        TLObject fromObject = currentMessageObject.getForwardedFromPeerObject();
-                        if (fromObject == null) {
-                            fromObject = currentMessageObject.getFromPeerObject();
-                        }
-                        if (currentMessageObject.getDialogId() > 0) {
-                            text = replaceWithLink(formatPluralStringComma("PaidMessageActionIn", (int) starsPrice), "un1", fromObject);
-                        } else {
-                            if (starsPriceMessagesCount > 1) {
-                                text = replaceWithLink(formatPluralStringComma("PaidMessageAction", (int) starsPrice), "un1", fromObject);
-                            } else {
-                                text = replaceWithLink(formatPluralStringComma("PaidMessageActionMany", (int) starsPrice, formatPluralStringComma("PaidMessageActionMessages", starsPriceMessagesCount)), "un1", fromObject);
-                            }
-                        }
-                    }
-                    starsPriceText = new Text(text, 14, AndroidUtilities.bold())
-                        .multiline(3)
-                        .setMaxWidth(currentMessageObject.getMaxMessageTextWidth())
-                        .align(Layout.Alignment.ALIGN_CENTER)
-                        .lineSpacing(dp(2));
-                    if (starsPriceTextPath == null) {
-                        starsPriceTextPath = new LinkPath();
-                        starsPriceTextPath.setUseCornerPathImplementation(true);
-                        starsPriceTextPathEffect = new CornerPathEffect(dp(16));
-                    } else {
-                        starsPriceTextPath.rewind();
-                    }
-                    starsPriceTextPath.setPadding(dp(9), dp(2.66f));
-                    starsPriceTopPadding = (int) (starsPriceText.getHeight() + dp(6.66f + 9));
-                    starsPriceTextPath.setCurrentLayout(starsPriceText.getLayout(), 0, 0);
-                    starsPriceText.getLayout().getSelectionPath(0, text.length(), starsPriceTextPath);
-                    starsPriceTextPath.closeRects();
-                } else {
-                    starsPriceText = null;
-                    starsPriceTopPadding = 0;
-                }
-            }
             // LoogriGram: the banner under a rolled dice said how much TON was won or
             // lost on it. That banner had no other use, so the text, its rounded
             // background path, the padding it claimed and the animation between states
@@ -10167,8 +10095,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 }
                 topicSeparatorTopPadding = 0;
             }
-            if ((getPaddingTop() != starsPriceTopPadding + topicSeparatorTopPadding + suggestionOfferTopPadding) || (getPaddingBottom() != askBotForumBottomPadding)) {
-                setPadding(0, starsPriceTopPadding + topicSeparatorTopPadding + suggestionOfferTopPadding, 0, askBotForumBottomPadding);
+            if ((getPaddingTop() != topicSeparatorTopPadding + suggestionOfferTopPadding) || (getPaddingBottom() != askBotForumBottomPadding)) {
+                setPadding(0, topicSeparatorTopPadding + suggestionOfferTopPadding, 0, askBotForumBottomPadding);
             }
             oldPollButtons.clear();
 
@@ -12529,7 +12457,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
         updateSelectionTextPosition();
 
-        final int normHeight = starsPriceTopPadding + topicSeparatorTopPadding + suggestionOfferTopPadding + totalHeight + keyboardHeight + askBotForumBottomPadding;
+        final int normHeight = topicSeparatorTopPadding + suggestionOfferTopPadding + totalHeight + keyboardHeight + askBotForumBottomPadding;
         int resultHeight = normHeight;
         ChatActivityDraftMessageMeasureController botDraftHeightController = getDraftMessageMeasureController();
         if (botDraftHeightController != null) {
@@ -16064,7 +15992,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     wasSending = true;
                     buttonState = 4;
                     boolean sending = SendMessagesHelper.getInstance(currentAccount).isSendingMessage(currentMessageObject.getId());
-                    if ((currentPosition != null || currentMessageObject.isPaid()) && sending && buttonState == 4) {
+                    if (currentPosition != null && sending && buttonState == 4) {
                         drawRadialCheckBackground = true;
                         getIconForCurrentState();
                         radialProgress.setIcon(MediaActionDrawable.ICON_CHECK, ifSame, animated);
@@ -16212,7 +16140,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         buttonState = 1;
                     }
                     boolean sending = SendMessagesHelper.getInstance(currentAccount).isSendingMessage(currentMessageObject.getId());
-                    if ((currentPosition != null || currentMessageObject.isPaid()) && sending && buttonState == 1) {
+                    if (currentPosition != null && sending && buttonState == 1) {
                         drawRadialCheckBackground = true;
                         getIconForCurrentState();
                         radialProgress.setIcon(MediaActionDrawable.ICON_CHECK, ifSame, animated);
@@ -16863,7 +16791,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         float progress = totalSize == 0 ? 0 : Math.min(1f, uploadedSize / (float) totalSize);
         currentMessageObject.loadedFileSize = uploadedSize;
         radialProgress.setProgress(progress, true);
-        if (uploadedSize == totalSize && (currentPosition != null || currentMessageObject.isPaid())) {
+        if (uploadedSize == totalSize && currentPosition != null) {
             boolean sending = SendMessagesHelper.getInstance(currentAccount).isSendingMessage(currentMessageObject.getId());
             if (sending && (buttonState == 1 || buttonState == 4 && documentAttachType == DOCUMENT_ATTACH_TYPE_MUSIC)) {
                 drawRadialCheckBackground = true;
@@ -17081,11 +17009,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             currentTimeString = timeString;
         }
         // LoogriGram: a staked dice put the TON staked on it in front of the timestamp.
-        final long starsPrice = currentMessageObject.getDialogId() < 0 ? getStarsPrice() : 0;
-        if (starsPrice > 0) {
-            currentTimeString = TextUtils.concat("⭐️", AndroidUtilities.formatWholeNumber((int) starsPrice, 0), "  ", currentTimeString);
-            currentTimeString = StarsFormat.replaceStars(currentTimeString, 0.8f, null, 0, dp(-.33f), 0.94f);
-        }
         if (currentMessageObject.messageOwner != null && currentMessageObject.messageOwner.schedule_repeat_period != 0) {
             final int period = currentMessageObject.messageOwner.schedule_repeat_period;
             if (period == 365 * 86400) {
@@ -18477,9 +18400,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
             left = Math.min(left, buttonMostLeft);
         }
-        if (starsPriceText != null) {
-            left = Math.min(left, (int) (getParentWidth() - starsPriceText.getWidth() - dp(18)) / 2);
-        }
         if (topicSeparator != null) {
             left = Math.min(sideMenuWidth, left);
         }
@@ -18505,9 +18425,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 buttonMostRight = Math.max(buttonMostRight, addX + (int) (btn.x * widthForButtons) + (int) (btn.width * widthForButtons));
             }
             right = Math.max(right, buttonMostRight);
-        }
-        if (starsPriceText != null) {
-            right = Math.max(right, (int) (getParentWidth() + starsPriceText.getWidth() + dp(18)) / 2);
         }
         if (topicSeparator != null) {
             right = Math.max(right, getWidth());
@@ -18540,9 +18457,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
         setupTextColors();
 
-        if (getStarsPriceTopPadding() + suggestionOfferTopPadding + getTopicSeparatorTopPadding() > 0) {
+        if (suggestionOfferTopPadding + getTopicSeparatorTopPadding() > 0) {
             canvas.save();
-            canvas.translate(0, getStarsPriceTopPadding() + suggestionOfferTopPadding + getTopicSeparatorTopPadding());
+            canvas.translate(0, suggestionOfferTopPadding + getTopicSeparatorTopPadding());
         }
 
         if (isWidthAdaptive()) {
@@ -19360,9 +19277,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
     public void applyServiceShaderMatrix(int measuredWidth, int backgroundHeight, float x, float viewTop) {
         if (resourcesProvider != null) {
-            resourcesProvider.applyServiceShaderMatrix(measuredWidth, backgroundHeight, x, viewTop + starsPriceTopPadding + topicSeparatorTopPadding + suggestionOfferTopPadding);
+            resourcesProvider.applyServiceShaderMatrix(measuredWidth, backgroundHeight, x, viewTop + topicSeparatorTopPadding + suggestionOfferTopPadding);
         } else {
-            Theme.applyServiceShaderMatrix(measuredWidth, backgroundHeight, x, viewTop + starsPriceTopPadding + topicSeparatorTopPadding + suggestionOfferTopPadding);
+            Theme.applyServiceShaderMatrix(measuredWidth, backgroundHeight, x, viewTop + topicSeparatorTopPadding + suggestionOfferTopPadding);
         }
     }
 
@@ -19380,9 +19297,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             return true;
         }
         if ((drawTopic || transitionParams.animateDrawTopic) && topicButton != null) {
-            return true;
-        }
-        if (starsPriceText != null && (currentPosition == null || (currentPosition.flags & MessageObject.POSITION_FLAG_TOP) != 0 && (currentPosition.flags & MessageObject.POSITION_FLAG_LEFT) != 0)) {
             return true;
         }
         if (topicSeparator != null && (currentPosition == null || (currentPosition.flags & MessageObject.POSITION_FLAG_TOP) != 0 && (currentPosition.flags & MessageObject.POSITION_FLAG_LEFT) != 0)) {
@@ -19427,13 +19341,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         return topicSeparatorTopPadding;
     }
 
-    public int getStarsPriceTopPadding() {
-        if (transitionParams.animateStarsPriceTopPadding) {
-            return lerp(transitionParams.animateStarsPriceTopPaddingFrom, starsPriceTopPadding, transitionParams.animateChangeProgress);
-        }
-        return starsPriceTopPadding;
-    }
-
     public void drawOutboundsContent(Canvas canvas) {
         if (channelRecommendationsCell != null && currentMessageObject != null && currentMessageObject.type == MessageObject.TYPE_JOINED_CHANNEL) {
             channelRecommendationsCell.draw(canvas);
@@ -19450,36 +19357,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
         }
 
-        if (starsPriceText != null && (currentPosition == null || (currentPosition.flags & MessageObject.POSITION_FLAG_TOP) != 0 && (currentPosition.flags & MessageObject.POSITION_FLAG_LEFT) != 0)) {
-            final float appear = transitionParams.animateStarsPriceText ? transitionParams.animateChangeProgress : 1.0f;
-            final float alpha = transitionParams.ignoreAlpha ? timeAlpha : getAlpha() * appear;
-            final float scale = lerp(0.6f, 1.0f, appear);
-            canvas.save();
-            canvas.translate((getParentWidth() - starsPriceText.getWidth()) / 2.0f, -getStarsPriceTopPadding() + dp(4.5f) + dp(3.33f));
-            canvas.scale(scale, scale, getParentWidth() / 2.0f, dp(6.83f) - dp(4.5f) - dp(3.33f));
-            applyServiceShaderMatrix(getMeasuredWidth(), backgroundHeight, getX(), viewTop - getStarsPriceTopPadding() + dp(4.5f) + dp(3.33f));
-            final Paint backgroundPaint = getThemedPaint(Theme.key_paint_chatActionBackground);
-            int oldAlpha = backgroundPaint.getAlpha();
-            backgroundPaint.setPathEffect(starsPriceTextPathEffect);
-            backgroundPaint.setAlpha((int) (oldAlpha * alpha));
-            canvas.drawPath(starsPriceTextPath, backgroundPaint);
-            backgroundPaint.setPathEffect(null);
-            backgroundPaint.setAlpha(oldAlpha);
-            if (hasGradientService()) {
-                final Paint darkenPaint = getThemedPaint(Theme.key_paint_chatActionBackgroundDarken);
-                oldAlpha = darkenPaint.getAlpha();
-                darkenPaint.setPathEffect(starsPriceTextPathEffect);
-                darkenPaint.setAlpha((int) (oldAlpha * alpha));
-                canvas.drawPath(starsPriceTextPath, darkenPaint);
-                darkenPaint.setPathEffect(null);
-                darkenPaint.setAlpha(oldAlpha);
-            }
-            canvas.restore();
-            canvas.save();
-            canvas.scale(scale, scale, getParentWidth() / 2.0f, -getStarsPriceTopPadding() + dp(6.83f));
-            starsPriceText.draw(canvas, (getParentWidth() - starsPriceText.getWidth()) / 2.0f, -getStarsPriceTopPadding() + dp(6.83f), getThemedColor(Theme.key_chat_serviceText), alpha);
-            canvas.restore();
-        }
         // LoogriGram: the won/lost banner was drawn here.
 
         if (topicSeparator != null && (currentPosition == null || (currentPosition.flags & MessageObject.POSITION_FLAG_TOP) != 0 && (currentPosition.flags & MessageObject.POSITION_FLAG_LEFT) != 0)) {
@@ -19487,14 +19364,14 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             if (transitionParams.animateMonoforumPadding) {
                 alpha *= showTopicSeparator ? transitionParams.animateChangeProgress : (1.0f - transitionParams.animateChangeProgress);
             }
-            final float top = -starsPriceTopPadding - topicSeparatorTopPadding - suggestionOfferTopPadding;
+            final float top = -topicSeparatorTopPadding - suggestionOfferTopPadding;
             applyServiceShaderMatrix(getMeasuredWidth(), backgroundHeight, sideMenuWidth / 2f + getX(), viewTop + top);
             topicSeparator.draw(canvas, getParentWidth(), sideMenuWidth, top, 1.0f, alpha, showTopicSeparator);
         }
 
         if (suggestionOffer != null && (currentPosition == null || (currentPosition.flags & MessageObject.POSITION_FLAG_TOP) != 0 && (currentPosition.flags & MessageObject.POSITION_FLAG_LEFT) != 0)) {
             float alpha = transitionParams.ignoreAlpha ? timeAlpha : getAlpha();
-            final float top = -starsPriceTopPadding - suggestionOfferTopPadding + dp(4);
+            final float top = -suggestionOfferTopPadding + dp(4);
             applyServiceShaderMatrix(getMeasuredWidth(), backgroundHeight, sideMenuWidth / 2f + getX(),
                     viewTop + top);
 
@@ -24651,7 +24528,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     }
     
     public float getEventY(MotionEvent event) {
-        return event.getY() - starsPriceTopPadding - topicSeparatorTopPadding - suggestionOfferTopPadding;
+        return event.getY() - topicSeparatorTopPadding - suggestionOfferTopPadding;
     }
 
     @Override
@@ -26068,7 +25945,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     }
 
     public float getPaddingTopAnimated() {
-        return getTopicSeparatorTopPadding() + starsPriceTopPadding + suggestionOfferTopPadding;
+        return getTopicSeparatorTopPadding() + suggestionOfferTopPadding;
     }
 
     public TransitionParams getTransitionParams() {
@@ -26136,8 +26013,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         public float animateFromReplyY;
         public boolean lastDrawingSmallImage;
         public int lastDrawnMonoforumPadding;
-        public int lastDrawnStarsPriceTopPadding;
-        public boolean lastDrawnStarsPriceText;
 
         public boolean lastIsPinned;
         private boolean animatePinned;
@@ -26250,10 +26125,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         public int animateMonoforumPaddingFrom;
         public boolean animateMonoforumPadding;
         public boolean needsStopClipping;
-
-        public boolean animateStarsPriceText;
-        public int animateStarsPriceTopPaddingFrom;
-        public boolean animateStarsPriceTopPadding;
 
 
         public boolean lastDrawingLinkAbove;
@@ -26407,8 +26278,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
             lastDrawingSmallImage = isSmallImage;
             lastDrawnMonoforumPadding = topicSeparatorTopPadding;
-            lastDrawnStarsPriceTopPadding = starsPriceTopPadding;
-            lastDrawnStarsPriceText = starsPriceText != null;
             lastDrawingLinkPreviewHeight = linkPreviewHeight;
             lastDrawingLinkAbove = linkPreviewAbove;
             lastDrawingMediaAbove = captionAbove;
@@ -26662,19 +26531,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 needsStopClipping = true;
                 animateMonoforumPaddingFrom = lastDrawnMonoforumPadding;
                 animateMonoforumPadding = true;
-                changed = true;
-            }
-
-            animateStarsPriceTopPadding = false;
-            if (starsPriceTopPadding != lastDrawnStarsPriceTopPadding) {
-                animateStarsPriceTopPaddingFrom = lastDrawnStarsPriceTopPadding;
-                animateStarsPriceTopPadding = true;
-                changed = true;
-            }
-
-            animateStarsPriceText = false;
-            if ((starsPriceText != null) != lastDrawnStarsPriceText) {
-                animateStarsPriceText = true;
                 changed = true;
             }
 
@@ -27037,8 +26893,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             animateSign = false;
             animateSmallImage = false;
             animateMonoforumPadding = false;
-            animateStarsPriceTopPadding = false;
-            animateStarsPriceText = false;
             needsStopClipping = false;
             animateLinkAbove = false;
             animateMediaAbove = false;
@@ -27377,19 +27231,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             canvas.drawRoundRect(AndroidUtilities.rectTmp, dp(2), dp(2), Theme.chat_videoProgressPaint);
 
             canvas.restore();
-        }
-    }
-
-    public long getStarsPrice() {
-        if (currentMessagesGroup != null) {
-            long totalPrice = 0;
-            for (MessageObject msg : currentMessagesGroup.messages) {
-                final long messagePrice = msg == null || msg.messageOwner == null ? 0 : msg.messageOwner.paid_message_stars;
-                totalPrice += messagePrice;
-            }
-            return totalPrice;
-        } else {
-            return currentMessageObject == null || currentMessageObject.messageOwner == null ? 0 : currentMessageObject.messageOwner.paid_message_stars;
         }
     }
 

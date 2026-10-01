@@ -4534,7 +4534,6 @@ public class ChannelAdminLogActivity extends BaseFragment implements Notificatio
                     ChatMessageCell cell = (ChatMessageCell) child;
                     if (cell.drawBackgroundInParent()) {
                         blurCanvas.save();
-                        blurCanvas.translate(0, cell.starsPriceTopPadding);
                         cell.drawBackgroundInternal(blurCanvas, true);
                         blurCanvas.restore();
                     }

@@ -240,7 +240,7 @@ public class ReactionsEffectOverlay {
         } else if (cell != null) {
             ((View) cell.getParent()).getLocationInWindow(loc);
             fromX = loc[0] + x;
-            fromY = loc[1] + y + (cell instanceof ChatMessageCell ? ((ChatMessageCell) cell).starsPriceTopPadding : 0);
+            fromY = loc[1] + y;
             fromHeight = 0;
         } else {
             fromX = x;

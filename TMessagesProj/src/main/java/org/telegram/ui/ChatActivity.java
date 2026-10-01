@@ -15789,7 +15789,6 @@ public class ChatActivity extends BaseFragment implements
                         ChatMessageCell cell = (ChatMessageCell) child;
                         if (cell.drawBackgroundInParent()) {
                             blurCanvas.save();
-                            blurCanvas.translate(0, cell.starsPriceTopPadding);
                             cell.drawBackgroundInternal(blurCanvas, true);
                             blurCanvas.restore();
                         }
@@ -34124,9 +34123,10 @@ public class ChatActivity extends BaseFragment implements
                         pinnedBottom = nextMessage.isOutOwner() == message.isOutOwner()
                             && (Math.abs(nextMessage.messageOwner.date - message.messageOwner.date) <= 5 * 60 || chatMode == MODE_WELCOME_MESSAGES);
                         if (pinnedBottom) {
-                            if (nextMessage.messageOwner != null && nextMessage.messageOwner.paid_message_stars > 0) {
-                                pinnedBottom = false;
-                            } else if (message.isImportedForward() || nextMessage.isImportedForward()) {
+                            // LoogriGram: a message someone paid Stars to send was kept apart
+                            // from its neighbours, above and below, for the price drawn over
+                            // it. No price is drawn.
+                            if (message.isImportedForward() || nextMessage.isImportedForward()) {
                                 if (message.isImportedForward() && nextMessage.isImportedForward()) {
                                     if (Math.abs(nextMessage.messageOwner.fwd_from.date - message.messageOwner.fwd_from.date) <= 5 * 60) {
                                         if (nextMessage.messageOwner.fwd_from.from_name != null && message.messageOwner.fwd_from.from_name != null) {
@@ -34233,9 +34233,6 @@ public class ChatActivity extends BaseFragment implements
                         if (!pinnedBottomByGroup) {
                             pinnedBottom = false;
                         }
-                    }
-                    if (!pinnedTopByGroup && message.messageOwner != null && message.messageOwner.paid_message_stars > 0) {
-                        pinnedTop = false;
                     }
 
                     message.updateTranslation(false);

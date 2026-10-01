@@ -11822,10 +11822,6 @@ public class MessageObject {
         return getVideoCover() != null;
     }
 
-    public boolean isPaid() {
-        return messageOwner != null && messageOwner.paid_message_stars > 0;
-    }
-
     public static TLRPC.PollAnswer findPollItem(MessageObject messageObject, byte[] task_id) {
         final TLRPC.MessageMedia media = getMedia(messageObject);
         if (!(media instanceof TLRPC.TL_messageMediaPoll)) {
