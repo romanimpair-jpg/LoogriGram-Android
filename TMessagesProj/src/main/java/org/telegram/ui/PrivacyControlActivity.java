@@ -1139,7 +1139,7 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
             return;
         }
 
-        if (currentType != 0 && rulesType == PRIVACY_RULES_TYPE_LASTSEEN && !getUserConfig().isPremium()) {
+        if (currentType != 0 && rulesType == PRIVACY_RULES_TYPE_LASTSEEN) {
             final SharedPreferences preferences = MessagesController.getGlobalMainSettings();
             boolean showed = preferences.getBoolean("privacyAlertShowed", false);
             if (!showed) {

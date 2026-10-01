@@ -633,19 +633,9 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         final Set<String> suggestions = getMessagesController().pendingSuggestions;
         // LoogriGram: no "is this still your number?" prompt
         // (VALIDATE_PHONE_NUMBER), as on desktop. The two-step password
-        // reminder stays: losing that password locks you out.
-        if (suggestions.contains("PREMIUM_GRACE")) {
-            items.add(SuggestionCell.Factory.of(
-                getString(R.string.GraceSuggestionTitle),
-                getString(R.string.GraceSuggestionMessage),
-                null, null,
-                getString(R.string.GraceSuggestionButton), v -> {
-                    Browser.openUrl(getContext(), getMessagesController().premiumManageSubscriptionUrl);
-                    getMessagesController().removeSuggestion(0, "PREMIUM_GRACE");
-                }
-            ));
-            items.add(UItem.asShadow(null));
-        } else if (suggestions.contains("VALIDATE_PASSWORD")) {
+        // reminder stays: losing that password locks you out. Nor is there the
+        // offer to renew a lapsing Premium (PREMIUM_GRACE), as on desktop.
+        if (suggestions.contains("VALIDATE_PASSWORD")) {
             items.add(SuggestionCell.Factory.of(
                 getString(R.string.YourPasswordHeader),
                 getString(R.string.YourPasswordRemember),

@@ -71,7 +71,6 @@ import android.text.TextUtils;
 import android.text.style.CharacterStyle;
 import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
-import android.text.util.Linkify;
 import android.util.Property;
 import android.util.SparseIntArray;
 import android.util.TypedValue;
@@ -563,8 +562,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     public int birthdayRow;
     private int setUsernameRow;
     private int bioRow;
-    private int graceSuggestionRow;
-    private int graceSuggestionSectionRow;
     private int passwordSuggestionSectionRow;
     private int passwordSuggestionRow;
     private int settingsSectionRow;
@@ -8422,9 +8419,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             updateListAnimated(false);
         } else if (id == NotificationCenter.newSuggestionsAvailable) {
             final int prevRow1 = passwordSuggestionRow;
-            final int prevRow3 = graceSuggestionRow;
             updateRowsIds();
-            if (listAdapter != null && (prevRow1 != passwordSuggestionRow || prevRow3 != graceSuggestionRow)) {
+            if (listAdapter != null && prevRow1 != passwordSuggestionRow) {
                 listAdapter.notifyDataSetChanged();
             }
         } else if (id == NotificationCenter.topicsDidLoaded) {
@@ -9492,8 +9488,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         channelRow = -1;
         channelDividerRow = -1;
         passwordSuggestionSectionRow = -1;
-        graceSuggestionRow = -1;
-        graceSuggestionSectionRow = -1;
         passwordSuggestionRow = -1;
         settingsSectionRow = -1;
         settingsSectionRow2 = -1;
@@ -9631,10 +9625,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 settingsSectionRow = rowCount++;
 
                 Set<String> suggestions = getMessagesController().pendingSuggestions;
-                if (suggestions.contains("PREMIUM_GRACE")) {
-                    graceSuggestionRow = rowCount++;
-                    graceSuggestionSectionRow = rowCount++;
-                } else if (suggestions.contains("VALIDATE_PASSWORD")) {
+                // LoogriGram: PREMIUM_GRACE, renewing a lapsing Premium, came first.
+                if (suggestions.contains("VALIDATE_PASSWORD")) {
                     passwordSuggestionRow = rowCount++;
                     passwordSuggestionSectionRow = rowCount++;
                 }
@@ -10219,7 +10211,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             } else {
                 isOnline[0] = false;
                 newString2 = LocaleController.formatUserStatus(currentAccount, user, isOnline, shortStatus ? new boolean[1] : null);
-                hiddenStatusButton = user != null && !isOnline[0] && !getUserConfig().isPremium() && user.status != null && (user.status instanceof TLRPC.TL_userStatusRecently || user.status instanceof TLRPC.TL_userStatusLastMonth || user.status instanceof TLRPC.TL_userStatusLastWeek) && user.status.by_me;
+                hiddenStatusButton = user != null && !isOnline[0] && user.status != null && (user.status instanceof TLRPC.TL_userStatusRecently || user.status instanceof TLRPC.TL_userStatusLastMonth || user.status instanceof TLRPC.TL_userStatusLastWeek) && user.status.by_me;
                 if (onlineTextView[1] != null && !mediaHeaderVisible) {
                     int key = isOnline[0] && peerColor == null ? Theme.key_profile_status : Theme.key_actionBarDefaultSubtitle;
                     onlineTextView[1].setTag(key);
@@ -11994,12 +11986,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         protected void onYesClick(int type) {
                             AndroidUtilities.runOnUIThread(() -> {
                                 getNotificationCenter().removeObserver(ProfileActivity.this, NotificationCenter.newSuggestionsAvailable);
-                                if (type == SettingsSuggestionCell.TYPE_GRACE) {
-                                    getMessagesController().removeSuggestion(0, "PREMIUM_GRACE");
-                                    Browser.openUrl(getContext(), getMessagesController().premiumManageSubscriptionUrl);
-                                } else {
-                                    getMessagesController().removeSuggestion(0, "VALIDATE_PASSWORD");
-                                }
+                                getMessagesController().removeSuggestion(0, "VALIDATE_PASSWORD");
                                 getNotificationCenter().addObserver(ProfileActivity.this, NotificationCenter.newSuggestionsAvailable);
                                 updateListAnimated(false);
                             });
@@ -12161,15 +12148,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         if (userInfo == null) return;
                         TLRPC.TL_textWithEntities note = userInfo.note;
                         CharSequence text;
-                        if (!UserConfig.getInstance(currentAccount).isPremium()) {
-                            text = MessageObject.formatTextWithEntities(MessageObject.removeLinks(note));
-                        } else {
-                            text = MessageObject.formatTextWithEntities(note);
-                            if (!(text instanceof SpannableStringBuilder)) {
-                                text = new SpannableStringBuilder(text);
-                            }
-                            AndroidUtilities.addLinksSafe((SpannableStringBuilder) text, Linkify.WEB_URLS, false, false);
-                        }
+                        // LoogriGram: a Premium account's note kept its links.
+                        text = MessageObject.formatTextWithEntities(MessageObject.removeLinks(note));
                         detailCell.setTextAndValue(
                             text,
                             getString(R.string.ProfileNotes),
@@ -12310,7 +12290,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         String value;
                         if (userInfo == null || !TextUtils.isEmpty(userInfo.about)) {
                             value = userInfo == null ? LocaleController.getString(R.string.Loading) : userInfo.about;
-                            aboutLinkCell.setTextAndValue(value, LocaleController.getString(R.string.UserBio), getUserConfig().isPremium());
+                            // LoogriGram: a Premium account's own bio had its links drawn.
+                            aboutLinkCell.setTextAndValue(value, LocaleController.getString(R.string.UserBio), false);
                             currentBio = userInfo != null ? userInfo.about : null;
                         } else {
                             aboutLinkCell.setTextAndValue(LocaleController.getString(R.string.UserBio), LocaleController.getString(R.string.UserBioDetail), false);
@@ -12655,8 +12636,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     SettingsSuggestionCell suggestionCell = (SettingsSuggestionCell) holder.itemView;
                     if (position == passwordSuggestionRow) {
                         suggestionCell.setType(SettingsSuggestionCell.TYPE_PASSWORD);
-                    } else if (position == graceSuggestionRow) {
-                        suggestionCell.setType(SettingsSuggestionCell.TYPE_GRACE);
                     }
                     break;
                 case VIEW_TYPE_ADDTOGROUP_INFO:
@@ -12870,7 +12849,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     position == secretSettingsSectionRow || position == settingsSectionRow || position == devicesSectionRow ||
                     position == helpSectionCell || position == setAvatarSectionRow || position == passwordSuggestionSectionRow ||
                     position == reportDividerRow ||
-                    position == channelDividerRow || position == graceSuggestionSectionRow ||
+                    position == channelDividerRow ||
                     position == botPermissionsDivider || position == channelBalanceSectionRow || position == unofficialSecurityRiskDividerRow
             ) {
                 return VIEW_TYPE_SHADOW;
@@ -12886,7 +12865,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 return VIEW_TYPE_SHARED_MEDIA;
             } else if (position == versionRow) {
                 return VIEW_TYPE_VERSION;
-            } else if (position == passwordSuggestionRow || position == graceSuggestionRow) {
+            } else if (position == passwordSuggestionRow) {
                 return VIEW_TYPE_SUGGESTION;
             } else if (position == addToGroupInfoRow) {
                 return VIEW_TYPE_ADDTOGROUP_INFO;
@@ -14148,8 +14127,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             put(++pointer, bioRow, sparseIntArray);
             put(++pointer, passwordSuggestionRow, sparseIntArray);
             put(++pointer, passwordSuggestionSectionRow, sparseIntArray);
-            put(++pointer, graceSuggestionRow, sparseIntArray);
-            put(++pointer, graceSuggestionSectionRow, sparseIntArray);
             put(++pointer, settingsSectionRow, sparseIntArray);
             put(++pointer, settingsSectionRow2, sparseIntArray);
             put(++pointer, notificationRow, sparseIntArray);

@@ -21,7 +21,7 @@ public class SettingsSuggestionCell extends LinearLayout {
     // LoogriGram: 0 was TYPE_PHONE, "is this still your number?". Gone, as on
     // desktop.
     public final static int TYPE_PASSWORD = 1;
-    public final static int TYPE_GRACE = 2;
+    // LoogriGram: 2 was TYPE_GRACE, renewing a lapsing Premium.
 
     private TextView textView;
     private TextView detailTextView;
@@ -89,11 +89,6 @@ public class SettingsSuggestionCell extends LinearLayout {
             yesButton.setText(LocaleController.getString(R.string.YourPasswordRememberYes));
             noButton.setVisibility(View.VISIBLE);
             noButton.setText(LocaleController.getString(R.string.YourPasswordRememberNo));
-        } else if (type == TYPE_GRACE) {
-            textView.setText(LocaleController.getString(R.string.GraceSuggestionTitle));
-            detailTextView.setText(LocaleController.getString(R.string.GraceSuggestionMessage));
-            yesButton.setText(LocaleController.getString(R.string.GraceSuggestionButton));
-            noButton.setVisibility(View.GONE);
         }
     }
 

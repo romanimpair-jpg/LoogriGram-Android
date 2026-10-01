@@ -43,8 +43,10 @@ public class ArchiveSettingsActivity extends BaseFragment implements Notificatio
     
     private int shiftDp = -3;
 
+    // LoogriGram: a Premium account could always archive new non-contacts;
+    // without it the server's autoarchive_setting_available decides.
     private boolean canArchiveNonContacts() {
-        return getUserConfig().isPremium() || getMessagesController().autoarchiveAvailable;
+        return getMessagesController().autoarchiveAvailable;
     }
 
     @Override

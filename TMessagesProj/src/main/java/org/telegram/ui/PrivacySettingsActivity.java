@@ -701,7 +701,8 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
         groupsRow = rowCount++;
         privacyShadowRow = rowCount++;
 
-        if (getMessagesController().autoarchiveAvailable || getUserConfig().isPremium()) {
+        // LoogriGram: a Premium account always had the new chats section.
+        if (getMessagesController().autoarchiveAvailable) {
             newChatsHeaderRow = rowCount++;
             newChatsRow = rowCount++;
             newChatsSectionRow = rowCount++;

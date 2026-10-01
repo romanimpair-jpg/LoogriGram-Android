@@ -574,7 +574,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public int introDescriptionLengthLimit;
     public boolean channelRevenueWithdrawalEnabled;
     public int reactionsUniqMax;
-    public String premiumManageSubscriptionUrl;
     public boolean androidDisableRoundCamera2;
     public boolean showAnnualPerMonth = false;
     public boolean canEditFactcheck;
@@ -1515,7 +1514,6 @@ public class MessagesController extends BaseController implements NotificationCe
         introDescriptionLengthLimit = mainPreferences.getInt("introDescriptionLengthLimit", 72);
         channelRevenueWithdrawalEnabled = mainPreferences.getBoolean("channelRevenueWithdrawalEnabled", false);
         reactionsUniqMax = mainPreferences.getInt("reactionsUniqMax", 11);
-        premiumManageSubscriptionUrl = mainPreferences.getString("premiumManageSubscriptionUrl", ApplicationLoader.isStandaloneBuild() ? "https://t.me/premiumbot?start=status" : "https://play.google.com/store/account/subscriptions?sku=telegram_premium&package=org.telegram.messenger");
         androidDisableRoundCamera2 = mainPreferences.getBoolean("androidDisableRoundCamera2", true);
         showAnnualPerMonth = mainPreferences.getBoolean("showAnnualPerMonth", false);
         canEditFactcheck = mainPreferences.getBoolean("canEditFactcheck", false);
@@ -3309,17 +3307,6 @@ public class MessagesController extends BaseController implements NotificationCe
                         if (num.value != reactionsUniqMax) {
                             reactionsUniqMax = (int) num.value;
                             editor.putInt("reactionsUniqMax", reactionsUniqMax);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "premium_manage_subscription_url": {
-                    if (value.value instanceof TLRPC.TL_jsonString) {
-                        TLRPC.TL_jsonString str = (TLRPC.TL_jsonString) value.value;
-                        if (!TextUtils.equals(str.value, premiumManageSubscriptionUrl)) {
-                            premiumManageSubscriptionUrl = str.value;
-                            editor.putString("premiumManageSubscriptionUrl", premiumManageSubscriptionUrl);
                             changed = true;
                         }
                     }
@@ -21910,7 +21897,8 @@ public class MessagesController extends BaseController implements NotificationCe
         return isUserContactBlocked(userId, false);
     }
     public TL_account.RequirementToContact isUserContactBlocked(long userId, boolean cache) {
-        if (getUserConfig().isPremium() || getUserConfig().getClientUserId() == userId) {
+        // LoogriGram: a Premium account was never blocked from writing.
+        if (getUserConfig().getClientUserId() == userId) {
             return null;
         }
         TL_account.RequirementToContact cached = cachedIsUserContactBlocked.get(userId);

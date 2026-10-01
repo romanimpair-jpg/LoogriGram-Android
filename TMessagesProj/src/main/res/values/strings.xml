@@ -7384,11 +7384,6 @@
     <string name="ShowAds">Do Not Hide Ads</string>
     <string name="ShowAdsInfo">As a Premium subscriber, you don’t see any ads on Telegram, but you can turn them on, for example, to view your own ads that you launched on the **Telegram Ad Platform >**</string>
     <string name="ChannelsTab">Channels</string>
-    <string name="GraceTitle">⚠️ Your Premium subscription is expiring!</string>
-    <string name="GraceMessage">Don’t lose access to exclusive features.</string>
-    <string name="GraceSuggestionTitle">Access to Telegram Premium is expiring!</string>
-    <string name="GraceSuggestionMessage">⚠️ Unfortunately, your latest payment didn’t come through. To keep your access to exclusive features, please renew the subscription.</string>
-    <string name="GraceSuggestionButton">Restore Subscription</string>
     <string name="SearchMyChannels">Channels you joined</string>
     <string name="SearchRecommendedChannels">Recommended Channels</string>
     <string name="SearchChannels">Channels</string>
