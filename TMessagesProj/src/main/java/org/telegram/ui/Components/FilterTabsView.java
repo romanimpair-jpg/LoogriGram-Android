@@ -1912,7 +1912,7 @@ public class FilterTabsView extends FrameLayout {
 
         @Override
         public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
-            if (!isEditing || (viewHolder.getAdapterPosition() == 0 && tabs.get(0).isDefault && !UserConfig.getInstance(UserConfig.selectedAccount).isPremium())) {
+            if (!isEditing || (viewHolder.getAdapterPosition() == 0 && tabs.get(0).isDefault)) {
                 return makeMovementFlags(0, 0);
             }
             return makeMovementFlags(ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT, 0);
@@ -1920,7 +1920,8 @@ public class FilterTabsView extends FrameLayout {
 
         @Override
         public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder source, @NonNull RecyclerView.ViewHolder target) {
-            if ((source.getAdapterPosition() == 0 || target.getAdapterPosition() == 0) && !UserConfig.getInstance(UserConfig.selectedAccount).isPremium()) {
+            // LoogriGram: a Premium account could move All Chats.
+            if (source.getAdapterPosition() == 0 || target.getAdapterPosition() == 0) {
                 return false;
             }
             adapter.swapElements(source.getAdapterPosition(), target.getAdapterPosition());
@@ -1928,9 +1929,6 @@ public class FilterTabsView extends FrameLayout {
         }
 
         private final Runnable resetDefaultPosition = () ->  {
-            if (UserConfig.getInstance(UserConfig.selectedAccount).isPremium()) {
-                return;
-            }
             for (int i = 0; i < tabs.size(); ++i) {
                 if (tabs.get(i).isDefault && i != 0) {
                     adapter.moveElementToStart(i);

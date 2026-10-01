@@ -74,7 +74,6 @@ import org.telegram.ui.Cells.ShadowSectionCell;
 import org.telegram.ui.Cells.TextCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.UserCell;
-import org.telegram.ui.Components.AnimatedColor;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.AnimatedEmojiSpan;
 import org.telegram.ui.Components.AnimatedTextView;
@@ -104,7 +103,6 @@ import org.telegram.ui.Components.spoilers.SpoilersTextView;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import org.telegram.ui.Components.PeerColorGrid;
 
 public class FilterCreateActivity extends BaseFragment {
 
@@ -132,7 +130,6 @@ public class FilterCreateActivity extends BaseFragment {
     private ArrayList<Long> newNeverShow;
     private LongSparseIntArray newPinned;
     private CreateLinkCell createLinkCell;
-    private HeaderCellColorPreview folderTagsHeader;
     private HeaderCellWithRight nameHeaderCell;
 
     private EditEmojiTextCell nameEditTextCell;
@@ -357,14 +354,10 @@ public class FilterCreateActivity extends BaseFragment {
             items.add(ItemInner.asShadow(LocaleController.getString(R.string.FilterExcludeInfo)));
         }
 
-        // LoogriGram: a folder's tag colour is Premium's, so the section shows only
-        // for a Premium account with tags on. Upstream also drew it for everyone
-        // else, the colours padlocked, offering Premium on a tap.
-        if (getMessagesController().folderTags && getUserConfig().isPremium()) {
-            items.add(new ItemInner(VIEW_TYPE_HEADER_COLOR_PREVIEW, false));
-            items.add(new ItemInner(VIEW_TYPE_COLOR, false));
-            items.add(ItemInner.asShadow(LocaleController.getString(R.string.FolderTagColorInfo)));
-        }
+        // LoogriGram: a folder's tag colour is Premium's, so its section (a
+        // preview and a colour grid) is not drawn. Upstream also drew it for
+        // everyone else, the colours padlocked, offering Premium on a tap. A
+        // colour the folder already has is sent back unchanged when it is saved.
 
         if (invites.isEmpty()) {
             items.add(ItemInner.asHeader(LocaleController.getString(R.string.FilterShareFolder), true));
@@ -682,7 +675,8 @@ public class FilterCreateActivity extends BaseFragment {
                 }
             }
 
-            final int maxCount = getUserConfig().isPremium() ? getMessagesController().dialogFiltersChatsLimitPremium : getMessagesController().dialogFiltersChatsLimitDefault;
+            // LoogriGram: the free limit; Premium's is not kept.
+            final int maxCount = getMessagesController().dialogFiltersChatsLimitDefault;
             if (peers.size() > maxCount) {
                 showDialog(new LimitReachedBottomSheet(this, getContext(), LimitReachedBottomSheet.TYPE_CHATS_IN_FOLDER, currentAccount, null));
                 return;
@@ -971,9 +965,6 @@ public class FilterCreateActivity extends BaseFragment {
             newName = "";
         }
         newFilterName = newName;
-        if (folderTagsHeader != null) {
-            folderTagsHeader.setPreviewText(AnimatedEmojiSpan.cloneSpans(newFilterName, -1, folderTagsHeader.getPreviewTextPaint().getFontMetricsInt(), .5f), false);
-        }
         RecyclerView.ViewHolder holder = listView.findViewHolderForAdapterPosition(nameRow);
         if (holder != null) {
             adapter.onViewAttachedToWindow(holder);
@@ -1306,8 +1297,7 @@ public class FilterCreateActivity extends BaseFragment {
     private static final int VIEW_TYPE_SHADOW_TEXT = 6;
     private static final int VIEW_TYPE_LINK = 7;
     private static final int VIEW_TYPE_CREATE_LINK = 8;
-    private static final int VIEW_TYPE_HEADER_COLOR_PREVIEW = 9;
-    private static final int VIEW_TYPE_COLOR = 10;
+    // LoogriGram: 9 and 10 were the folder tag colour's preview and grid.
     private static final int VIEW_TYPE_HEADER_ANIMATED = 11;
 
     private static class ItemInner extends AdapterWithDiffUtils.Item {
@@ -1461,7 +1451,6 @@ public class FilterCreateActivity extends BaseFragment {
                 type != VIEW_TYPE_HEADER &&
                 type != VIEW_TYPE_EDIT &&
                 type != VIEW_TYPE_HINT &&
-                type != VIEW_TYPE_HEADER_COLOR_PREVIEW &&
                 type != VIEW_TYPE_HEADER_ANIMATED
             );
         }
@@ -1512,9 +1501,6 @@ public class FilterCreateActivity extends BaseFragment {
                             if (!TextUtils.equals(newName, newFilterName)) {
                                 nameChangedManually = !TextUtils.isEmpty(newName);
                                 newFilterName = AnimatedEmojiSpan.onlyEmojiSpans(newName);
-                                if (folderTagsHeader != null) {
-                                    folderTagsHeader.setPreviewText(AnimatedEmojiSpan.cloneSpans(newFilterName, -1, folderTagsHeader.getPreviewTextPaint().getFontMetricsInt(), .5f), true);
-                                }
                                 if (nameHeaderCell != null) {
                                     nameHeaderCell.rightTextView.setText(hasAnimatedEmojis(newFilterName) ? LocaleController.getString(newFilterAnimations ? R.string.FilterNameAnimationsDisable : R.string.FilterNameAnimationsEnable) : null);
                                 }
@@ -1553,12 +1539,6 @@ public class FilterCreateActivity extends BaseFragment {
                 case VIEW_TYPE_CREATE_LINK:
                     view = new CreateLinkCell(mContext);
                     break;
-                case VIEW_TYPE_HEADER_COLOR_PREVIEW:
-                    view = new HeaderCellColorPreview(mContext);
-                    break;
-                case VIEW_TYPE_COLOR:
-                    view = new PeerColorGrid(getContext(), resourceProvider);
-                    break;
                 case VIEW_TYPE_SHADOW_TEXT:
                 default:
                     view = new TextInfoPrivacyCell(mContext);
@@ -1572,8 +1552,6 @@ public class FilterCreateActivity extends BaseFragment {
             int viewType = holder.getItemViewType();
             if (viewType == 2) {
 
-            } else if (viewType == VIEW_TYPE_HEADER_COLOR_PREVIEW) {
-                ((HeaderCellColorPreview) holder.itemView).setPreviewText(AnimatedEmojiSpan.cloneSpans(newFilterName, -1, folderTagsHeader.getPreviewTextPaint().getFontMetricsInt(), .5f), true);
             }
         }
 
@@ -1683,25 +1661,6 @@ public class FilterCreateActivity extends BaseFragment {
                 case VIEW_TYPE_CREATE_LINK: {
                     createLinkCell = (CreateLinkCell) holder.itemView;
                     createLinkCell.setDivider(divider);
-                    break;
-                }
-                case VIEW_TYPE_HEADER_COLOR_PREVIEW: {
-                    folderTagsHeader = (HeaderCellColorPreview) holder.itemView;
-                    folderTagsHeader.setPreviewText(AnimatedEmojiSpan.cloneSpans(newFilterName, -1, folderTagsHeader.getPreviewTextPaint().getFontMetricsInt(), .5f), false);
-                    folderTagsHeader.setPreviewColor(newFilterColor, false);
-                    folderTagsHeader.setText(LocaleController.getString(R.string.FolderTagColor));
-                    break;
-                }
-                case VIEW_TYPE_COLOR: {
-                    PeerColorGrid cell = (PeerColorGrid) holder.itemView;
-                    cell.setSelected(newFilterColor, false);
-                    cell.setOnColorClick(color -> {
-                        cell.setSelected(newFilterColor = color, true);
-                        if (folderTagsHeader != null) {
-                            folderTagsHeader.setPreviewColor(newFilterColor, true);
-                        }
-                        checkDoneButton(true);
-                    });
                     break;
                 }
             }
@@ -2791,78 +2750,6 @@ public class FilterCreateActivity extends BaseFragment {
             factory.createErrorBulletin(LocaleController.getString(R.string.UnknownError)).show();
         }
         return true;
-    }
-
-    private class HeaderCellColorPreview extends HeaderCell {
-
-        public final TextView noTag;
-        public final AnimatedTextView previewView;
-        private int currentColor;
-        private final AnimatedColor animatedColor;
-
-        public HeaderCellColorPreview(Context context) {
-            super(context, Theme.key_windowBackgroundWhiteBlueHeader, 22, 15, false, resourceProvider);
-
-            noTag = new TextView(getContext());
-            noTag.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
-            noTag.setTextColor(FilterCreateActivity.this.getThemedColor(Theme.key_windowBackgroundWhiteGrayText2));
-            noTag.setText(LocaleController.getString(getUserConfig().isPremium() ? R.string.FolderTagNoColor : R.string.FolderTagNoColorPremium));
-            noTag.setGravity(Gravity.RIGHT);
-            addView(noTag, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.TOP, padding, 16.66f, padding, bottomMargin));
-            noTag.setAlpha(0f);
-
-            previewView = new AnimatedTextView(getContext(), false, true, true) {
-                private final Paint backgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-                @Override
-                protected void dispatchDraw(Canvas canvas) {
-                    final int color = animatedColor.set(currentColor);
-                    setTextColor(color);
-                    backgroundPaint.setColor(Theme.multAlpha(color, Theme.isCurrentThemeDark() ? .20f : .10f));
-                    AndroidUtilities.rectTmp.set(getWidth() - getDrawable().getCurrentWidth() - dpf2(4.66f * 2), (getHeight() - dpf2(14.66f)) / 2f, getWidth(), (getHeight() + dpf2(14.66f)) / 2f);
-                    canvas.drawRoundRect(AndroidUtilities.rectTmp, dp(4), dp(4), backgroundPaint);
-                    super.dispatchDraw(canvas);
-                }
-            };
-            animatedColor = new AnimatedColor(previewView, 0, 320, CubicBezierInterpolator.EASE_OUT_QUINT);
-            previewView.setTextSize(dp(10));
-            previewView.setTypeface(AndroidUtilities.bold());
-            previewView.setGravity(Gravity.RIGHT);
-            previewView.setPadding(dp(4.66f), 0, dp(4.66f), 0);
-            addView(previewView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT) | Gravity.TOP, padding, 16.66f, padding, bottomMargin));
-        }
-
-        private boolean noTagShown;
-        public void setPreviewColor(int colorId, boolean animated) {
-            noTag.setText(LocaleController.getString(getUserConfig().isPremium() ? R.string.FolderTagNoColor : R.string.FolderTagNoColorPremium));
-
-            final boolean noTag = colorId < 0;
-            currentColor = noTag ? 0 : FilterCreateActivity.this.getThemedColor(Theme.keys_avatar_nameInMessage[colorId % Theme.keys_avatar_nameInMessage.length]);
-            if (!noTag) {
-                previewView.setEmojiColor(currentColor);
-            }
-            if (!animated) {
-                this.animatedColor.set(currentColor, true);
-            }
-            if (noTag != noTagShown) {
-                noTagShown = noTag;
-                this.noTag.animate().alpha(noTag ? 1f : 0f).setDuration(320).setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT).start();
-                previewView.animate().alpha(noTag ? 0f : 1f).setDuration(320).setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT).start();
-            }
-        }
-
-        public void setPreviewText(CharSequence text, boolean animated) {
-            if (text == null) {
-                text = "";
-            }
-            if (text.length() > MAX_NAME_LENGTH) {
-                text = text.subSequence(0, MAX_NAME_LENGTH);
-            }
-            previewView.setText(Emoji.replaceEmoji(text, previewView.getPaint().getFontMetricsInt(), false), animated && !LocaleController.isRTL);
-        }
-
-        public TextPaint getPreviewTextPaint() {
-            return previewView.getPaint();
-        }
     }
 
     private class HeaderCellWithRight extends HeaderCell {

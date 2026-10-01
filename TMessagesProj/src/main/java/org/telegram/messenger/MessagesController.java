@@ -554,9 +554,7 @@ public class MessagesController extends BaseController implements NotificationCe
     public int stickersFavedLimitDefault;
     public int maxPinnedDialogsCountDefault;
     public int dialogFiltersLimitDefault;
-    public int dialogFiltersLimitPremium;
     public int dialogFiltersChatsLimitDefault;
-    public int dialogFiltersChatsLimitPremium;
     public int dialogFiltersPinnedLimitDefault;
     public int publicLinksLimitDefault;
     public int captionLengthLimitDefault;
@@ -729,26 +727,24 @@ public class MessagesController extends BaseController implements NotificationCe
         });
     }
 
-    public void updatePremium(boolean premium) {
+    // LoogriGram: this was updatePremium(premium). A Premium account had every
+    // folder unlocked and could move All Chats; the account is never Premium,
+    // so All Chats goes first and the folders past the free limit are locked -
+    // still drawn, dimmed, opening the limit sheet (the user's choice).
+    public void applyFreeFolderLimit() {
         if (dialogFilters.isEmpty()) {
             return;
         }
-        if (!premium) {
-            if (!dialogFilters.get(0).isDefault()) {
-                for (int i = 1; i < dialogFilters.size(); i++) {
-                    if (dialogFilters.get(i).isDefault()) {
-                        DialogFilter defaultFilter = dialogFilters.remove(i);
-                        dialogFilters.add(0, defaultFilter);
-                        break;
-                    }
+        if (!dialogFilters.get(0).isDefault()) {
+            for (int i = 1; i < dialogFilters.size(); i++) {
+                if (dialogFilters.get(i).isDefault()) {
+                    DialogFilter defaultFilter = dialogFilters.remove(i);
+                    dialogFilters.add(0, defaultFilter);
+                    break;
                 }
             }
-            lockFiltersInternal();
-        } else {
-            for (int i = 0; i < dialogFilters.size(); i++) {
-                dialogFilters.get(i).locked = false;
-            }
         }
+        lockFiltersInternal();
 
         getMessagesStorage().saveDialogFiltersOrder();
         getNotificationCenter().postNotificationName(NotificationCenter.dialogFiltersUpdated);
@@ -756,7 +752,7 @@ public class MessagesController extends BaseController implements NotificationCe
 
     public void lockFiltersInternal() {
         boolean changed = false;
-        if (!getUserConfig().isPremium() && dialogFilters.size() - 1 > dialogFiltersLimitDefault) {
+        if (dialogFilters.size() - 1 > dialogFiltersLimitDefault) {
             int n = dialogFilters.size() - 1 - dialogFiltersLimitDefault;
             ArrayList<DialogFilter> filtersSortedById = new ArrayList<>(dialogFilters);
             Collections.reverse(filtersSortedById);
@@ -1458,9 +1454,7 @@ public class MessagesController extends BaseController implements NotificationCe
         maxPinnedDialogsCountDefault = mainPreferences.getInt("maxPinnedDialogsCountDefault", 5);
         maxPinnedDialogsCountDefault = mainPreferences.getInt("maxPinnedDialogsCountDefault", 5);
         dialogFiltersLimitDefault = mainPreferences.getInt("dialogFiltersLimitDefault", 10);
-        dialogFiltersLimitPremium = mainPreferences.getInt("dialogFiltersLimitPremium", 20);
         dialogFiltersChatsLimitDefault = mainPreferences.getInt("dialogFiltersChatsLimitDefault", 100);
-        dialogFiltersChatsLimitPremium = mainPreferences.getInt("dialogFiltersChatsLimitPremium", 200);
         dialogFiltersPinnedLimitDefault = mainPreferences.getInt("dialogFiltersPinnedLimitDefault", 5);
         publicLinksLimitDefault = mainPreferences.getInt("publicLinksLimitDefault", 10);
         captionLengthLimitDefault = mainPreferences.getInt("captionLengthLimitDefault", 1024);
@@ -2913,34 +2907,12 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
-                case "dialog_filters_limit_premium": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber number = (TLRPC.TL_jsonNumber) value.value;
-                        if (number.value != dialogFiltersLimitPremium) {
-                            dialogFiltersLimitPremium = (int) number.value;
-                            editor.putInt("dialogFiltersLimitPremium", dialogFiltersLimitPremium);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
                 case "dialog_filters_chats_limit_default": {
                     if (value.value instanceof TLRPC.TL_jsonNumber) {
                         TLRPC.TL_jsonNumber number = (TLRPC.TL_jsonNumber) value.value;
                         if (number.value != dialogFiltersChatsLimitDefault) {
                             dialogFiltersChatsLimitDefault = (int) number.value;
                             editor.putInt("dialogFiltersChatsLimitDefault", dialogFiltersChatsLimitDefault);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "dialog_filters_chats_limit_premium": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber number = (TLRPC.TL_jsonNumber) value.value;
-                        if (number.value != dialogFiltersChatsLimitPremium) {
-                            dialogFiltersChatsLimitPremium = (int) number.value;
-                            editor.putInt("dialogFiltersChatsLimitPremium", dialogFiltersChatsLimitPremium);
                             changed = true;
                         }
                     }

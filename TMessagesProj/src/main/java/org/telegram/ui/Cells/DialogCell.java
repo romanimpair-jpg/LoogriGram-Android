@@ -105,7 +105,6 @@ import org.telegram.ui.Components.CanvasButton;
 import org.telegram.ui.Components.CheckBox2;
 import org.telegram.ui.Components.ColoredImageSpan;
 import org.telegram.ui.Components.CubicBezierInterpolator;
-import org.telegram.ui.Components.DialogCellTags;
 import org.telegram.ui.Components.EmptyStubSpan;
 import org.telegram.ui.Components.ForegroundColorSpanThemable;
 import org.telegram.ui.Components.Forum.ForumBubbleDrawable;
@@ -165,8 +164,6 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
     public int messagePaddingStart = 72;
     public int heightDefault = 70;
     public int heightThreeLines = 76;
-    public int addHeightForTags = 3;
-    public int addForumHeightForTags = 11;
     public TLRPC.TL_forumTopic forumTopic;
     public boolean useFromUserAsAvatar;
     private boolean isTopic;
@@ -198,7 +195,6 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
     public boolean isMonoForumTopicDialog;
     public boolean isSavedDialog;
     public boolean isSavedDialogCell;
-    public DialogCellTags tags;
 
     // LoogriGram: the avatar was drawn and took its taps through
     // StoriesUtilities.AvatarStoryParams, which drew the story ring and opened
@@ -595,7 +591,6 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
     private int checkDrawTop;
     private int halfCheckDrawLeft;
 
-    private int tagsLeft, tagsRight;
     private int messageTop;
     private int messageLeft;
     private int buttonLeft;
@@ -780,9 +775,6 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
         }
         dialogsType = type;
         showPremiumBlocked(dialogsType == DialogsActivity.DIALOGS_TYPE_FORWARD);
-        if (tags == null) {
-            tags = new DialogCellTags(this);
-        }
         folderId = folder;
         messageId = 0;
         if (update(0, false)) {
@@ -982,7 +974,7 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
             );
         }
         if (isTopic) {
-            setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), dp((useForceThreeLines || SharedConfig.useThreeLinesLayout ? heightThreeLines : heightDefault) + (hasTags() && (!(useForceThreeLines || SharedConfig.useThreeLinesLayout) || isForumCell()) ? (isForumCell() ? addForumHeightForTags : addHeightForTags) : 0)) + (useSeparator ? 1 : 0));
+            setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), dp((useForceThreeLines || SharedConfig.useThreeLinesLayout ? heightThreeLines : heightDefault)) + (useSeparator ? 1 : 0));
             checkTwoLinesForName();
         }
 
@@ -998,9 +990,6 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
             if (useSeparator) {
                 height += 1;
             }
-            if (hasTags()) {
-                height += dp(addForumHeightForTags);
-            }
         } else {
             height = getCollapsedHeight();
         }
@@ -1015,15 +1004,12 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
         if (twoLinesForName) {
             height += dp(20);
         }
-        if (hasTags() && (!(useForceThreeLines || SharedConfig.useThreeLinesLayout) || isForumCell())) {
-            height += dp(isForumCell() ? addForumHeightForTags : addHeightForTags);
-        }
         return height;
     }
 
     private void checkTwoLinesForName() {
         twoLinesForName = false;
-        if (isTopic && !hasTags()) {
+        if (isTopic) {
             buildLayout();
             if (nameIsEllipsized) {
                 twoLinesForName = true;
@@ -1191,12 +1177,8 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
         return Emoji.replaceEmoji(builder, Theme.dialogs_messagePaint[paintIndex].getFontMetricsInt(), false);
     }
 
-    public boolean hasTags() {
-        return tags != null && !tags.isEmpty();
-    }
-
     public boolean separateMessageNameLine() {
-        return (useForceThreeLines || SharedConfig.useThreeLinesLayout) && !hasTags();
+        return (useForceThreeLines || SharedConfig.useThreeLinesLayout);
     }
 
     int thumbSize;
@@ -1285,7 +1267,7 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
         setOpenBotButton(false);
 
         int messageFormatType;
-        if ((!useForceThreeLines && !SharedConfig.useThreeLinesLayout || currentDialogFolderId != 0) || isForumCell() || hasTags()) {
+        if ((!useForceThreeLines && !SharedConfig.useThreeLinesLayout || currentDialogFolderId != 0) || isForumCell()) {
             //1 - "%2$s: \u2068%1$s\u2069";
             messageFormatType = 1;
             hasNameInMessage = true;
@@ -1555,7 +1537,7 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
                     checkMessage = false;
                     messageNameString = getString(R.string.Draft);
                     if (draftMessage != null && TextUtils.isEmpty(draftMessage.message)) {
-                        if ((useForceThreeLines || SharedConfig.useThreeLinesLayout) && !hasTags()) {
+                        if ((useForceThreeLines || SharedConfig.useThreeLinesLayout)) {
                             messageString = "";
                         } else {
                             SpannableStringBuilder stringBuilder = SpannableStringBuilder.valueOf(messageNameString);
@@ -1587,7 +1569,7 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
                         }
 
                         SpannableStringBuilder stringBuilder = formatInternal(messageFormatType, AndroidUtilities.replaceNewLines(messSpan), messageNameString);
-                        if (!useForceThreeLines && !SharedConfig.useThreeLinesLayout || hasTags()) {
+                        if (!useForceThreeLines && !SharedConfig.useThreeLinesLayout) {
                             stringBuilder.setSpan(new ForegroundColorSpanThemable(Theme.key_chats_draft, resourcesProvider), 0, messageNameString.length() + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                         }
                         messageString = Emoji.replaceEmoji(stringBuilder, Theme.dialogs_messagePaint[paintIndex].getFontMetricsInt(), false);
@@ -2343,7 +2325,7 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
             }
             avatarRect.set(avatarLeft, avatarTop, avatarLeft + dp(56), avatarTop + dp(56));
             for (int i = 0; i < thumbImage.length; ++i) {
-                thumbImage[i].setImageCoords(thumbLeft + (thumbSize + 2) * i, avatarTop + dp(31) + (twoLinesForName ? dp(20) : 0) - (!(useForceThreeLines || SharedConfig.useThreeLinesLayout) && tags != null && !tags.isEmpty() ? dp(9) : 0), dp(18), dp(18));
+                thumbImage[i].setImageCoords(thumbLeft + (thumbSize + 2) * i, avatarTop + dp(31) + (twoLinesForName ? dp(20) : 0), dp(18), dp(18));
             }
         } else {
             avatarTop = dp(9);
@@ -2366,22 +2348,11 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
             }
             avatarRect.set(avatarLeft, avatarTop, avatarLeft + dp(52), avatarTop + dp(52));
             for (int i = 0; i < thumbImage.length; ++i) {
-                thumbImage[i].setImageCoords(thumbLeft + (thumbSize + 2) * i, avatarTop + dp(30) + (twoLinesForName ? dp(20) : 0) - (!(useForceThreeLines || SharedConfig.useThreeLinesLayout) && tags != null && !tags.isEmpty() ? dp(9) : 0), dp(thumbSize), dp(thumbSize));
+                thumbImage[i].setImageCoords(thumbLeft + (thumbSize + 2) * i, avatarTop + dp(30) + (twoLinesForName ? dp(20) : 0), dp(thumbSize), dp(thumbSize));
             }
-        }
-        if (LocaleController.isRTL) {
-            tagsRight = getMeasuredWidth() - dp(messagePaddingStart);
-            tagsLeft = dp(64);
-        } else {
-            tagsLeft = messageLeft;
-            tagsRight = getMeasuredWidth() - dp(64);
         }
         if (twoLinesForName) {
             messageNameTop += dp(20);
-        }
-        if ((!(useForceThreeLines || SharedConfig.useThreeLinesLayout) || isForumCell()) && tags != null && !tags.isEmpty()) {
-            timeTop -= dp(6);
-            checkDrawTop -= dp(6);
         }
         if (getIsPinned()) {
             if (!LocaleController.isRTL) {
@@ -2533,7 +2504,7 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
             if (mess.length() > 150) {
                 mess = mess.subSequence(0, 150);
             }
-            if (!useForceThreeLines && !SharedConfig.useThreeLinesLayout || hasTags() || messageNameString != null) {
+            if (!useForceThreeLines && !SharedConfig.useThreeLinesLayout || messageNameString != null) {
                 mess = AndroidUtilities.replaceNewLines(mess);
             } else {
                 mess = AndroidUtilities.replaceTwoNewLinesToOne(mess);
@@ -2548,15 +2519,12 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
         }
         messageWidth = Math.max(dp(12), messageWidth);
         buttonTop = dp(useForceThreeLines || SharedConfig.useThreeLinesLayout ? 58 : 62);
-        if ((!(useForceThreeLines || SharedConfig.useThreeLinesLayout) || isForumCell()) && hasTags()) {
-            buttonTop -= dp(isForumCell() ? 10 : 12);
-        }
         if (isForumCell()) {
             messageTop = dp(useForceThreeLines || SharedConfig.useThreeLinesLayout ? 34 : 39);
             for (int i = 0; i < thumbImage.length; ++i) {
                 thumbImage[i].setImageY(buttonTop);
             }
-        } else if ((useForceThreeLines || SharedConfig.useThreeLinesLayout) && !hasTags() && messageNameString != null && (currentDialogFolderId == 0 || currentDialogFolderDialogsCount == 1)) {
+        } else if ((useForceThreeLines || SharedConfig.useThreeLinesLayout) && messageNameString != null && (currentDialogFolderId == 0 || currentDialogFolderDialogsCount == 1)) {
             try {
                 if (message != null && message.hasHighlightedWords()) {
                     CharSequence s = AndroidUtilities.highlightText(messageNameString, message.highlightedWords, resourcesProvider);
@@ -2611,7 +2579,7 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
 
         try {
             if (!TextUtils.isEmpty(typingString)) {
-                if ((useForceThreeLines || SharedConfig.useThreeLinesLayout) && !hasTags()) {
+                if ((useForceThreeLines || SharedConfig.useThreeLinesLayout)) {
                     typingLayout = StaticLayoutEx.createStaticLayout(typingString, Theme.dialogs_messagePrintingPaint[paintIndex], messageWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, dp(1), false, TextUtils.TruncateAt.END, messageWidth, typingString != null ? 1 : 2);
                 } else {
                     typingString = TextUtils.ellipsize(typingString, currentMessagePaint, messageWidth - dp(12), TextUtils.TruncateAt.END);
@@ -2633,11 +2601,11 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
                     }
                 }
             }
-            if ((useForceThreeLines || SharedConfig.useThreeLinesLayout) && !hasTags() && currentDialogFolderId != 0 && currentDialogFolderDialogsCount > 1) {
+            if ((useForceThreeLines || SharedConfig.useThreeLinesLayout) && currentDialogFolderId != 0 && currentDialogFolderDialogsCount > 1) {
                 messageStringFinal = messageNameString;
                 messageNameString = null;
                 currentMessagePaint = Theme.dialogs_messagePaint[paintIndex];
-            } else if (!useForceThreeLines && !SharedConfig.useThreeLinesLayout || hasTags() || messageNameString != null || ChatObject.isMonoForum(chat) && ChatObject.canManageMonoForum(currentAccount, chat)) {
+            } else if (!useForceThreeLines && !SharedConfig.useThreeLinesLayout || messageNameString != null || ChatObject.isMonoForum(chat) && ChatObject.canManageMonoForum(currentAccount, chat)) {
                 if (!isForumCell() && messageString instanceof Spanned && ((Spanned) messageString).getSpans(0, messageString.length(), FixedWidthSpan.class).length <= 0) {
                     messageStringFinal = TextUtils.ellipsize(messageString, currentMessagePaint, messageWidth - dp(12 + (thumbsCount * (thumbSize + 2) - 2) + 5), TextUtils.TruncateAt.END);
                 } else {
@@ -2648,7 +2616,7 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
             }
 
             Layout.Alignment align = isForum && LocaleController.isRTL ? Layout.Alignment.ALIGN_OPPOSITE : Layout.Alignment.ALIGN_NORMAL;
-            if ((useForceThreeLines || SharedConfig.useThreeLinesLayout) && !hasTags()) {
+            if ((useForceThreeLines || SharedConfig.useThreeLinesLayout)) {
                 if (thumbsCount > 0 && messageNameString != null) {
                     messageWidth += dp(5);
                 }
@@ -3182,16 +3150,9 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
                 drawPin = false;
             }
 
-            if (tags != null) {
-                final boolean tagsWereEmpty = tags.isEmpty();
-                if (tags.update(currentAccount, dialogsType, currentDialogId)) {
-                    if (tagsWereEmpty != tags.isEmpty()) {
-                        rebuildLayout = true;
-                        requestLayout = true;
-                    }
-                    invalidate = true;
-                }
-            }
+            // LoogriGram: folder tags were drawn under the message for a Premium
+            // account with tags on (DialogCellTags); every hasTags() test of the
+            // layout took its no-tags side, which is all that is left.
 
             if (mask != 0) {
                 boolean continueUpdate = false;
@@ -3896,9 +3857,6 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
             }
 
             int nameTop = dp(useForceThreeLines || SharedConfig.useThreeLinesLayout ? 10 : 14);
-            if ((!(useForceThreeLines || SharedConfig.useThreeLinesLayout) || isForumCell()) && hasTags()) {
-                nameTop -= dp(isForumCell() ? 8 : 9);
-            }
             if (nameLayout != null) {
                 if (nameLayoutEllipsizeByGradient && !nameLayoutFits) {
                     if (nameLayoutEllipsizeLeft && fadePaint == null) {
@@ -4029,9 +3987,6 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
                 } else {
                     top = messageTop + typingAnimationOffset * updateHelper.typingProgres;
                 }
-                if ((!(useForceThreeLines || SharedConfig.useThreeLinesLayout) || isForumCell()) && hasTags()) {
-                    top -= dp(isForumCell() ? 10 : 11);
-                }
                 if (updateHelper.typingProgres != 1f) {
                     canvas.save();
                     canvas.translate(messageLeft, top);
@@ -4067,9 +4022,6 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
                 } else {
                     top = messageTop - typingAnimationOffset * (1f - updateHelper.typingProgres);
                 }
-                if ((!(useForceThreeLines || SharedConfig.useThreeLinesLayout) || isForumCell()) && hasTags()) {
-                    top -= dp(isForumCell() ? 10 : 11);
-                }
                 canvas.translate(typingLeft, top);
                 if (typingLayout != null && updateHelper.typingProgres > 0) {
                     int oldAlpha = typingLayout.getPaint().getAlpha();
@@ -4090,9 +4042,6 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
                             top = messageTop + typingAnimationOffset * (1f - updateHelper.typingProgres);
                         } else {
                             top = messageTop - typingAnimationOffset * (1f - updateHelper.typingProgres);
-                        }
-                        if ((!(useForceThreeLines || SharedConfig.useThreeLinesLayout) || isForumCell()) && hasTags()) {
-                            top -= dp(isForumCell() ? 10 : 11);
                         }
                         if (type == 1 || type == 4) {
                             canvas.translate(statusDrawableLeft, top + (type == 1 ? dp(1) : 0));
@@ -4131,9 +4080,6 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
                         canvasButton.rewind();
                         if (topMessageTopicEndIndex != topMessageTopicStartIndex && topMessageTopicEndIndex > 0) {
                             float top = messageTop;
-                            if ((!(useForceThreeLines || SharedConfig.useThreeLinesLayout) || isForumCell()) && hasTags()) {
-                                top -= dp(isForumCell() ? 10 : 11);
-                            }
                             AndroidUtilities.rectTmp.set(messageLeft + dp(2) + messageLayout.getPrimaryHorizontal(0), top, messageLeft + messageLayout.getPrimaryHorizontal(Math.min(messageLayout.getText().length(), topMessageTopicEndIndex)) - dp(3), buttonTop - dp(4));
                             AndroidUtilities.rectTmp.inset(-dp(8), -dp(4));
                             if (AndroidUtilities.rectTmp.right > AndroidUtilities.rectTmp.left) {
@@ -4226,9 +4172,6 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
                 }
                 float muteX = nameMuteLeft - dp(useForceThreeLines || SharedConfig.useThreeLinesLayout ? 0 : 1);
                 float muteY = dp(SharedConfig.useThreeLinesLayout ? 13.5f : 17.5f);
-                if ((!(useForceThreeLines || SharedConfig.useThreeLinesLayout) || isForumCell()) && hasTags()) {
-                    muteY -= dp(isForumCell() ? 8 : 9);
-                }
                 setDrawableBounds(Theme.dialogs_muteDrawable, muteX, muteY);
                 setDrawableBounds(Theme.dialogs_unmuteDrawable, muteX, muteY);
                 DrawableUtils.setBounds(Theme.dialogs_hiddenDrawable,
@@ -4265,18 +4208,12 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
             }
             if (drawVerified) {
                 float y = dp(useForceThreeLines || SharedConfig.useThreeLinesLayout ? 13.5f : 16.5f);
-                if ((!(useForceThreeLines || SharedConfig.useThreeLinesLayout) || isForumCell()) && hasTags()) {
-                    y -= dp(9);
-                }
                 setDrawableBounds(Theme.dialogs_verifiedDrawable, nameMuteLeft - dp(1), y);
                 setDrawableBounds(Theme.dialogs_verifiedCheckDrawable, nameMuteLeft - dp(1), y);
                 Theme.dialogs_verifiedDrawable.draw(canvas);
                 Theme.dialogs_verifiedCheckDrawable.draw(canvas);
             } else if (drawScam != 0) {
                 int y = dp(useForceThreeLines || SharedConfig.useThreeLinesLayout ? 12 : 15);
-                if ((!(useForceThreeLines || SharedConfig.useThreeLinesLayout) || isForumCell()) && hasTags()) {
-                    y -= dp(9);
-                }
                 setDrawableBounds((drawScam == 1 ? Theme.dialogs_scamDrawable : Theme.dialogs_fakeDrawable), nameMuteLeft, y);
                 (drawScam == 1 ? Theme.dialogs_scamDrawable : Theme.dialogs_fakeDrawable).draw(canvas);
             }
@@ -4444,13 +4381,6 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
                 if (updateHelper.typingProgres > 0) {
                     canvas.restore();
                 }
-            }
-
-            if (tags != null && !tags.isEmpty()) {
-                canvas.save();
-                canvas.translate(tagsLeft, getMeasuredHeight() - dp(21.66f) - (useSeparator ? 1 : 0));
-                tags.draw(canvas, tagsRight - tagsLeft);
-                canvas.restore();
             }
 
             if (restoreToCount != -1) {

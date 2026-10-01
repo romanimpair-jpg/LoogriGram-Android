@@ -294,8 +294,8 @@ public class LinkManager {
             if ("create".equalsIgnoreCase(second)) {
                 AndroidUtilities.runOnUIThread(() -> f.createFolder(getParentLayout()), 300);
             }
-            if ("show-tags".equalsIgnoreCase(second))
-                scrollTo("showTagsRow");
+            // LoogriGram: "show-tags" scrolled to the folder tags switch, which
+            // is not drawn.
 
             return true;
         }

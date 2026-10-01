@@ -21,7 +21,6 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.DefaultItemAnimator;
@@ -37,7 +36,6 @@ import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
-import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -49,7 +47,6 @@ import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
 import org.telegram.ui.Cells.HeaderCell;
-import org.telegram.ui.Cells.TextCheckCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.CombinedDrawable;
@@ -533,15 +530,10 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
     private ArrayList<ItemInner> oldItems = new ArrayList<>();
     private ArrayList<ItemInner> items = new ArrayList<>();
 
-    @Keep
-    private int showTagsRow;
     private int filtersStartPosition;
     private int filtersSectionStart = -1, filtersSectionEnd = -1;
-    private int folderTagsPosition;
 
     private void updateRows(boolean animated) {
-        showTagsRow = -1;
-
         if (listView != null) {
             if (listView.forcedSections == null) {
                 listView.forcedSections = new ArrayList<>();
@@ -578,24 +570,17 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
             }
             filtersSectionEnd = items.size();
 
-            if (listView != null) listView.forcedSections.add(AndroidUtilities.pack(filtersSectionStart, filtersSectionEnd - 1 + (dialogFilters.size() < getMessagesController().dialogFiltersLimitPremium ? 1 : 0)));
+            if (listView != null) listView.forcedSections.add(AndroidUtilities.pack(filtersSectionStart, filtersSectionEnd - 1 + 1));
         } else {
             filtersSectionStart = filtersSectionEnd = -1;
         }
-        if (dialogFilters.size() < getMessagesController().dialogFiltersLimitPremium) {
-            items.add(ItemInner.asButton(LocaleController.getString(R.string.CreateNewFilter)));
-        }
+        // LoogriGram: the button hid at Premium's folder limit; at the free one
+        // it opens the limit sheet (createFolder), so it always shows now.
+        items.add(ItemInner.asButton(LocaleController.getString(R.string.CreateNewFilter)));
         items.add(ItemInner.asShadow(null));
-        // LoogriGram: folder tags are Premium's, so their switch is drawn only
-        // for a Premium account. Upstream drew it for everyone, offering Premium
-        // on a tap and in the text under it.
-        folderTagsPosition = -1;
-        if (getUserConfig().isPremium()) {
-            folderTagsPosition = items.size();
-            showTagsRow = items.size();
-            items.add(ItemInner.asCheck(LocaleController.getString(R.string.FolderShowTags)));
-            items.add(ItemInner.asShadow(LocaleController.getString(R.string.FolderShowTagsInfo)));
-        }
+        // LoogriGram: folder tags are Premium's, so their switch is not drawn.
+        // Upstream drew it for everyone, offering Premium on a tap and in the
+        // text under it. Whether tags are on stays the server's (folderTags).
 
         if (adapter != null) {
             if (animated) {
@@ -681,20 +666,7 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
             if (item == null) {
                 return;
             }
-            if (item.viewType == VIEW_TYPE_CHECK) {
-                TLRPC.TL_messages_toggleDialogFilterTags req = new TLRPC.TL_messages_toggleDialogFilterTags();
-                req.enabled = !getMessagesController().folderTags;
-                getMessagesController().setFolderTags(req.enabled);
-                getConnectionsManager().sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
-                    if (req.enabled && !loadedColors) {
-                        loadingFiltersForColors = true;
-                        getMessagesController().loadRemoteFilters(true);
-                        loadedColors = true;
-                    }
-                }));
-                ((TextCheckCell) view).setChecked(getMessagesController().folderTags);
-                adapter.notifyItemRangeChanged(filtersSectionStart, filtersSectionEnd - filtersSectionStart);
-            } else if (item.viewType == VIEW_TYPE_FILTER) {
+            if (item.viewType == VIEW_TYPE_FILTER) {
                 MessagesController.DialogFilter filter = item.filter;
                 if (filter == null || filter.isDefault()) {
                     return;
@@ -719,8 +691,7 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
     public void createFolder(INavigationLayout navigationLayout) {
         final int count = getMessagesController().getDialogFilters().size();
         if (
-            count - 1 >= getMessagesController().dialogFiltersLimitDefault && !getUserConfig().isPremium() ||
-            count >= getMessagesController().dialogFiltersLimitPremium
+            count - 1 >= getMessagesController().dialogFiltersLimitDefault
         ) {
             showDialog(new LimitReachedBottomSheet(this, getContext(), LimitReachedBottomSheet.TYPE_FOLDERS, currentAccount, null));
         } else if (navigationLayout != null) {
@@ -747,7 +718,6 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
         }
     }
 
-    private boolean loadingFiltersForColors;
     private boolean loadedColors;
 
     @Override
@@ -768,7 +738,7 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
     private static final int VIEW_TYPE_SHADOW = 3;
     private static final int VIEW_TYPE_BUTTON = 4;
     private static final int VIEW_TYPE_FILTER_SUGGESTION = 5;
-    private static final int VIEW_TYPE_CHECK = 6;
+    // LoogriGram: 6 was VIEW_TYPE_CHECK, the folder tags switch.
 
     private int shiftDp = -4;
 
@@ -811,11 +781,6 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
             i.suggested = suggested;
             return i;
         }
-        public static ItemInner asCheck(CharSequence text) {
-            ItemInner i = new ItemInner(VIEW_TYPE_CHECK);
-            i.text = text;
-            return i;
-        }
 
         @Override
         public boolean equals(Object obj) {
@@ -829,7 +794,7 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
             if (other.viewType != viewType) {
                 return false;
             }
-            if (viewType == VIEW_TYPE_HEADER || viewType == VIEW_TYPE_BUTTON || viewType == VIEW_TYPE_SHADOW || viewType == VIEW_TYPE_CHECK) {
+            if (viewType == VIEW_TYPE_HEADER || viewType == VIEW_TYPE_BUTTON || viewType == VIEW_TYPE_SHADOW) {
                 if (!TextUtils.equals(text, other.text)) {
                     return false;
                 }
@@ -958,9 +923,6 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
                 case VIEW_TYPE_BUTTON:
                     view = new TextCell(mContext);
                     break;
-                case VIEW_TYPE_CHECK:
-                    view = new TextCheckCell(mContext);
-                    break;
                 case VIEW_TYPE_FILTER_SUGGESTION:
                 default:
                     SuggestedFilterCell suggestedFilterCell = new SuggestedFilterCell(mContext);
@@ -1069,12 +1031,6 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
                     textCell.setTextAndIcon(item.text + "", combinedDrawable, false);
                     break;
                 }
-                case VIEW_TYPE_CHECK: {
-                    TextCheckCell cell = (TextCheckCell) holder.itemView;
-                    cell.setTextAndCheck(item.text, getMessagesController().folderTags, divider);
-                    cell.setCheckBoxIcon(!getUserConfig().isPremium() ? R.drawable.permission_locked : 0);
-                    break;
-                }
                 case VIEW_TYPE_FILTER_SUGGESTION: {
                     SuggestedFilterCell filterCell = (SuggestedFilterCell) holder.itemView;
                     filterCell.setFilter(item.suggested, divider);
@@ -1154,11 +1110,11 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
             return true;
         }
 
-        // LoogriGram: without Premium the first folder cannot be dragged or
-        // displaced, as the chat list's folder tabs already had it. Upstream
-        // let All Chats be dragged here, put it back and offered Premium.
+        // LoogriGram: the first folder cannot be dragged or displaced, as the
+        // chat list's folder tabs already had it; a Premium account could.
+        // Upstream let All Chats be dragged here, put it back and offered Premium.
         private boolean isDefaultPinned(int position) {
-            return position == filtersStartPosition && !UserConfig.getInstance(UserConfig.selectedAccount).isPremium();
+            return position == filtersStartPosition;
         }
 
         @Override
@@ -1167,9 +1123,6 @@ public class FiltersSetupActivity extends BaseFragment implements NotificationCe
         }
 
         private void resetDefaultPosition() {
-            if (UserConfig.getInstance(UserConfig.selectedAccount).isPremium()) {
-                return;
-            }
             ArrayList<MessagesController.DialogFilter> filters = getMessagesController().getDialogFilters();
             for (int i = 0; i < filters.size(); ++i) {
                 if (filters.get(i).isDefault() && i != 0) {

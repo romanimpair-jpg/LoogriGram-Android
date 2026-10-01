@@ -7149,13 +7149,7 @@
     <string name="TelegramBusinessSubtitle">Subscribe to **Telegram Premium** to unlock these additional business features.</string>
     <string name="TelegramBusinessSubscribedSubtitle">You have now unlocked these additional business features.</string>
     <string name="PremiumBusinessChatbots">Chatbots</string>
-    <string name="FolderShowTags">Show Folder Tags</string>
-    <string name="FolderShowTagsInfo">Display folder names for each chat in the chat list.</string>
     <string name="FolderShowTagsInfoPremium">Subscribe to **Telegram Premium** to display folder names for each chat in the chat list.</string>
-    <string name="FolderTagColor">Folder color in chat list</string>
-    <string name="FolderTagColorInfo">Choose a color for the tag of this folder.</string>
-    <string name="FolderTagNoColor">No Tag</string>
-    <string name="FolderTagNoColorPremium">Premium expired</string>
     <string name="BusinessHoursTimezonePicker">Choose time zone</string>
     <string name="BusinessHoursNextDayPicker">Next day, %s</string>
     <string name="BusinessHoursNextDay">%s (Next day)</string>
