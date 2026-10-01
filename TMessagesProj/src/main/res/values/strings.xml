@@ -5067,7 +5067,6 @@
     <string name="AccDescrSpeedSlider">Choose speed</string>
     <string name="AccDescrCaptureStory">Capture story</string>
     <string name="AccDescrProfileMusic">Profile Music</string>
-    <string name="AccDescrProfileRatingLevel">Profile Stars Rating Level</string>
     <!--date formatters-->
     <string name="formatterBoostExpired">MMM dd, yyyy</string>
     <string name="formatterGiveawayCard">dd MMM yyyy</string>
@@ -5508,8 +5507,6 @@
     <string name="LimitReachedCommunitiesPremium">You are a member of **%1$d**  groups and channels. Please leave some before joining a new one.</string>
     <string name="LimitReachedReorderFolder">"Subscribe to **Telegram Premium** to move the \"%1$s\" folder."</string>
     <string name="AccDescrPremium">Premium account</string>
-    <string name="LimitFree">Free</string>
-    <string name="LimitPremium">Premium</string>
     <string name="PremiumPreviewReactions">Unique Reactions</string>
     <string name="GiftSubscriptionCountFor_one">Gift %1$d Subscription for %2$s</string>
     <string name="GiftSubscriptionCountFor_other">Gift %1$d Subscriptions for %2$s</string>
@@ -6365,11 +6362,6 @@
     <string name="LinkForBoosting">Link for boosting</string>
     <string name="Boosts">Boosts</string>
     <string name="BoostsLevel">Level %d</string>
-    <string name="StarRatingLevel">Level %d</string>
-    <string name="StarRatingLevelNegative">Negative Rating</string>
-    <string name="StarRatingLevelNegativeYou_one">A negative rating indicates that your payments are unreliable. Spend **%1$d Star** to fix this issue.</string>
-    <string name="StarRatingLevelNegativeYou_other">A negative rating indicates that your payments are unreliable. Spend **%1$d Stars** to fix this issue.</string>
-    <string name="StarRatingLevelNegativeOther">A negative rating indicates that **%1$s’s** payments are unreliable.</string>
     <string name="BoostsLevel2">Level</string>
     <string name="BoostingBoostToSendMessages">Boost this group to send messages</string>
     <string name="BoostingEnableStories">Enable Stories</string>
@@ -9154,35 +9146,14 @@
     <string name="GiftCollectionSharedToManyChats_one">Gift Collection forwarded to **a chat**.</string>
     <string name="GiftCollectionSharedToManyChats_other">Gift Collection forwarded to **%1$d chats**.</string>
 
-    <string name="StarRatingTitle">Rating</string>
-    <string name="StarRatingAdded">ADDED</string>
-    <string name="StarRatingDeduces">DEDUCTED</string>
-    <string name="StarRatingFuture_one">The rating will update in %d day after purchases.</string>
-    <string name="StarRatingFuture_other">The rating will update in %d days after purchases.</string>
-    <string name="StarRatingFuturePreview1_one">This will be your rating in %d day, after</string>
-    <string name="StarRatingFuturePreview1_other">This will be your rating in %d days, after</string>
-    <string name="StarRatingFuturePreview2_one">%d point are added.</string>
-    <string name="StarRatingFuturePreview2_other">%d points are added.</string>
-    <string name="StarRatingFuturePendingPoints_one">%d point are pending.</string>
-    <string name="StarRatingFuturePendingPoints_other">%d points are pending.</string>
     <string name="StarRatingFuturePendingPointsAndLevel1_one">%d point and</string>
     <string name="StarRatingFuturePendingPointsAndLevel1_other">%d points and</string>
     <string name="StarRatingFuturePendingPointsAndLevel2_one">Level %d are pending.</string>
     <string name="StarRatingFuturePendingPointsAndLevel2_other">Level %d are pending.</string>
-    <string name="StarRatingFuturePendingPointsPreview">**Preview >**</string>
-    <string name="StarRatingFuturePendingPointsPreviewBack">**Back >**</string>
-    <string name="StarRatingDescription">This rating reflects **%s\'s** activity\non Telegram. What affects it:</string>
-    <string name="StarRatingSelfDescription">This rating reflects your activity\non Telegram. What affects it:</string>
-    <string name="StarRatingTitle1">Gifts from Telegram</string>
     <!-- LoogriGram: formatted="false" on these three because they are not
          printf formats - only LocaleController.formatSpannable reads them,
          which swaps %s by search and never unescapes %%, so "100% of" has to
          stay as written. AAPT read "% o" as a second, unnumbered specifier. -->
-    <string name="StarRatingDescription1" formatted="false">%s 100% of the Stars spent on gifts purchased from Telegram.</string>
-    <string name="StarRatingTitle2">Gifts and Posts from Users</string>
-    <string name="StarRatingDescription2" formatted="false">%s 20% of the Stars spent on resold gifts, paid messages and channel posts.</string>
-    <string name="StarRatingTitle3">Refunds and Conversions</string>
-    <string name="StarRatingDescription3" formatted="false">%s 10x of refunded Stars and 85% of bought gifts converted to Stars.</string>
     <string name="StarRatingButtonUnderstood">Understood</string>
     <string name="StoriesAlbumBottomButtonRemoveStoriesFromAlbum">Remove from album</string>
     <string name="StoriesAlbumMenuEdit">Edit</string>

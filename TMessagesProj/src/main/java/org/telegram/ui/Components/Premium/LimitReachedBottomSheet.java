@@ -672,10 +672,8 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView {
             }
 
             if (type != TYPE_CALL_RESTRICTED) {
-                limitPreviewView = new LimitPreviewView(context, icon, currentValue, defaultLimit, resourcesProvider);
+                limitPreviewView = new LimitPreviewView(context, icon, currentValue);
                 limitPreviewView.setType(type);
-                limitPreviewView.defaultCount.setVisibility(View.GONE);
-                limitPreviewView.setPremiumLocked();
 
                 if (type == TYPE_PUBLIC_LINKS || type == TYPE_TO0_MANY_COMMUNITIES) {
                     limitPreviewView.setDelayedAnimation();
@@ -799,7 +797,7 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView {
             }
 
             int currentValue = Math.max(chats.size(), limitParams.defaultLimit);
-            limitPreviewView.setIconValue(currentValue, false);
+            limitPreviewView.setIconValue(currentValue);
             limitPreviewView.startDelayedAnimation();
         }));
     }
@@ -948,7 +946,7 @@ public class LimitReachedBottomSheet extends BottomSheetWithRecyclerListView {
                     }
                     int currentValue = Math.max(inactiveChats.size(), limitParams.defaultLimit);
                     if (limitPreviewView != null) {
-                        limitPreviewView.setIconValue(currentValue, false);
+                        limitPreviewView.setIconValue(currentValue);
                         limitPreviewView.startDelayedAnimation();
                     }
                 });
