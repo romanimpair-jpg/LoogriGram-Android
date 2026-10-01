@@ -3785,7 +3785,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
                 groupVoipInviteAlert.show();
             } else if (position == listAdapter.conferenceAddPeopleRow) {
                 if (call == null || call.call == null) return;
-                new UserSelectorBottomSheet(context, currentAccount, 0, null, UserSelectorBottomSheet.TYPE_CALL, true, new DarkBlueThemeResourcesProvider())
+                new UserSelectorBottomSheet(context, currentAccount, true, new DarkBlueThemeResourcesProvider())
                     .exceptUsers(call != null ? call.sortedParticipants.stream().map(p -> DialogObject.getPeerDialogId(p.peer)).collect(Collectors.toSet()) : null)
                     .setOnShareCallLinkListener(this::openShareConferenceLink)
                     .setOnUsersSelector((video, users) -> {

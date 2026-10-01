@@ -1219,7 +1219,7 @@ public class VoIPFragment implements
                 addPeopleSheet.dismiss();
                 addPeopleSheet = null;
             }
-            addPeopleSheet = new UserSelectorBottomSheet(context, currentAccount, 0, null, UserSelectorBottomSheet.TYPE_CALL, true, new DarkBlueThemeResourcesProvider())
+            addPeopleSheet = new UserSelectorBottomSheet(context, currentAccount, true, new DarkBlueThemeResourcesProvider())
                 .exceptUsers(currentUser != null ? currentUser.id : 0, callingUser != null ? callingUser.id : 0)
                 .setOnUsersSelector((video, users) -> {
                     VoIPService voip = VoIPService.getSharedInstance();

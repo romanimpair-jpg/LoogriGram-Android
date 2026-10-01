@@ -15,7 +15,6 @@ import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.tgnet.Vector;
 
 import java.text.Collator;
 import java.util.ArrayList;
@@ -35,7 +34,6 @@ public class BoostRepository {
     // filtering and the giveaway limits. Its screens are gone; what is left
     // serves the user picker, the poll country picker and contact search.
 
-    private static HashMap<Integer, Pair<Long, List<TLRPC.TL_premiumGiftCodeOption>>> cachedGiftOptions;
 
     public static void loadParticipantsCount(Utilities.Callback<HashMap<Long, Integer>> callback) {
         MessagesStorage storage = MessagesStorage.getInstance(UserConfig.selectedAccount);
@@ -94,59 +92,6 @@ public class BoostRepository {
                     Collections.sort(arr, (country, country2) -> comparator.compare(country.default_name, country2.default_name));
                 }
                 AndroidUtilities.runOnUIThread(() -> onDone.run(new Pair<>(countriesMap, sortedLetters)));
-            }
-        });
-    }
-
-    public static List<TLRPC.TL_premiumGiftCodeOption> getCachedGiftOptions(int currentAccount) {
-        if (cachedGiftOptions == null) return null;
-        Pair<Long, List<TLRPC.TL_premiumGiftCodeOption>> pair = cachedGiftOptions.get(currentAccount);
-        if (pair != null && System.currentTimeMillis() - pair.first < 1000 * 60 * 30) {
-            return pair.second;
-        }
-        return null;
-    }
-
-    public static void saveGiftOptionsToCache(int currentAccount, List<TLRPC.TL_premiumGiftCodeOption> options) {
-        if (cachedGiftOptions == null) cachedGiftOptions = new HashMap<>();
-        cachedGiftOptions.put(currentAccount, new Pair<>(System.currentTimeMillis(), options));
-    }
-
-    public static int loadGiftOptions(int currentAccount, TLRPC.Chat chat, Utilities.Callback<List<TLRPC.TL_premiumGiftCodeOption>> onDone) {
-        if (chat == null) {
-            List<TLRPC.TL_premiumGiftCodeOption> cached = getCachedGiftOptions(currentAccount);
-            if (cached != null) {
-                onDone.run(cached);
-                return -1;
-            }
-        }
-
-        MessagesController controller = MessagesController.getInstance(currentAccount);
-        ConnectionsManager connection = ConnectionsManager.getInstance(currentAccount);
-        TLRPC.TL_payments_getPremiumGiftCodeOptions req = new TLRPC.TL_payments_getPremiumGiftCodeOptions();
-        if (chat != null) {
-            req.flags = 1;
-            req.boost_peer = controller.getInputPeer(-chat.id);
-        }
-
-        return connection.sendRequest(req, (response, error) -> {
-            if (response instanceof Vector) {
-                final Vector<TLRPC.TL_premiumGiftCodeOption> vector = (Vector) response;
-                final List<TLRPC.TL_premiumGiftCodeOption> result = new ArrayList<>();
-                for (int i = 0; i < vector.objects.size(); i++) {
-                    result.add(vector.objects.get(i));
-                }
-                // LoogriGram: options keep the server's own prices. Upstream
-                // collected each option's store_product and re-priced them from
-                // Play product details when Google billing was available; it
-                // never is now, so this is the branch upstream already took when
-                // there were no store products to query.
-                AndroidUtilities.runOnUIThread(() -> {
-                    if (chat == null) {
-                        saveGiftOptionsToCache(currentAccount, result);
-                    }
-                    onDone.run(result);
-                });
             }
         });
     }

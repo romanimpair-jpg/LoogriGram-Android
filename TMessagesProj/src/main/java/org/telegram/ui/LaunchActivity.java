@@ -178,7 +178,6 @@ import org.telegram.ui.Components.PhonebookShareAlert;
 import org.telegram.ui.Components.PipRoundVideoView;
 import org.telegram.ui.Components.PipVideoOverlay;
 import org.telegram.ui.Components.Premium.LimitReachedBottomSheet;
-import org.telegram.ui.Components.Premium.boosts.UserSelectorBottomSheet;
 import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.RLottieImageView;
 import org.telegram.ui.Components.ShareTopView;
@@ -1464,9 +1463,9 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         // code. Premium is honoured for nobody, so they are links this client
         // cannot open - see "giftcode/" below; tg:giftcode falls through to the
         // unsupported branch with the other tg: links it has no screen for.
-        if (UserSelectorBottomSheet.handleIntent(intent, progress)) {
-            return true;
-        }
+        // LoogriGram: t.me/premium_multigift and tg:premium_multigift opened the
+        // sheet to gift Premium to several people (UserSelectorBottomSheet);
+        // they are links this client does not open.
         if (AndroidUtilities.handleProxyIntent(this, intent, true)) {
             return true;
         }

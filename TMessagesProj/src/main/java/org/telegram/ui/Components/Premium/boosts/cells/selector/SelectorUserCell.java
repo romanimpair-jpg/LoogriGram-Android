@@ -41,7 +41,6 @@ public class SelectorUserCell extends BaseCell {
     private final boolean[] isOnline = new boolean[1];
     @Nullable
     private final CheckBox2 checkBox;
-    private final ImageView optionsView;
     private boolean hasAudioView;
     private final ImageView audioView;
     private boolean hasVideoView;
@@ -86,11 +85,8 @@ public class SelectorUserCell extends BaseCell {
             checkBox = null;
         }
 
-        optionsView = new ImageView(context);
-        optionsView.setScaleType(ImageView.ScaleType.CENTER);
-        optionsView.setImageResource(R.drawable.ic_ab_other);
-        optionsView.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_chat_inMenu, resourcesProvider), PorterDuff.Mode.SRC_IN));
-        addView(optionsView, LayoutHelper.createFrame(32, 32, Gravity.CENTER_VERTICAL | (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT), 12, 0, 12, 0));
+        // LoogriGram: an options button (send a message, open the profile) sat
+        // here for the gift recipient picker, which is gone.
 
         audioView = new ImageView(context);
         audioView.setScaleType(ImageView.ScaleType.CENTER);
@@ -105,15 +101,6 @@ public class SelectorUserCell extends BaseCell {
         videoView.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider), PorterDuff.Mode.SRC_IN));
         addView(videoView, LayoutHelper.createFrame(32, 32, Gravity.CENTER_VERTICAL | (LocaleController.isRTL ? Gravity.LEFT : Gravity.RIGHT), 12, 0, 12, 0));
         videoView.setVisibility(View.GONE);
-    }
-
-    public void setOptions(View.OnClickListener listener) {
-        if (listener != null) {
-            optionsView.setVisibility(View.VISIBLE);
-            optionsView.setOnClickListener(listener);
-        } else {
-            optionsView.setVisibility(View.GONE);
-        }
     }
 
     public void setCallButtons(View.OnClickListener audio, View.OnClickListener video) {
@@ -190,7 +177,6 @@ public class SelectorUserCell extends BaseCell {
     }
 
     public void setUser(TLRPC.User user) {
-        optionsView.setVisibility(View.GONE);
         this.user = user;
         this.chat = null;
         avatarDrawable.setInfo(user);
@@ -215,7 +201,6 @@ public class SelectorUserCell extends BaseCell {
     }
 
     public void setCustomUser(Drawable icon, CharSequence title, CharSequence subtitle) {
-        optionsView.setVisibility(View.GONE);
         this.user = null;
         this.chat = null;
         imageView.setRoundRadius(dp(20));
@@ -231,7 +216,6 @@ public class SelectorUserCell extends BaseCell {
     }
 
     public void setChat(TLRPC.Chat chat, int participants_count) {
-        optionsView.setVisibility(View.GONE);
 
         this.chat = chat;
         this.user = null;
@@ -258,7 +242,6 @@ public class SelectorUserCell extends BaseCell {
     }
 
     public void setBoost(TL_stories.TL_myBoost boost) {
-        optionsView.setVisibility(View.GONE);
 
         this.boost = boost;
         this.chat = MessagesController.getInstance(UserConfig.selectedAccount).getChat(-DialogObject.getPeerDialogId(boost.peer));

@@ -208,7 +208,6 @@ public class SelectorAdapter extends AdapterWithDiffUtils {
             if ((position + 1 < items.size()) && items.get(position + 1).viewType == VIEW_TYPE_LETTER) {
                 userCell.setDivider(false);
             }
-            userCell.setOptions(item.options);
             userCell.setCallButtons(item.audioCall, item.videoCall);
             userCell.setCallButtonsVisible(callButtonsVisible, false);
         } else if (viewType == VIEW_TYPE_COUNTRY) {
@@ -343,7 +342,6 @@ public class SelectorAdapter extends AdapterWithDiffUtils {
         public boolean checked;
         public int padHeight = -1;
         public View.OnClickListener callback;
-        public View.OnClickListener options;
         public View.OnClickListener audioCall, videoCall;
         public View view;
         public Drawable icon;
@@ -382,11 +380,6 @@ public class SelectorAdapter extends AdapterWithDiffUtils {
             item.chat = null;
             item.checked = checked;
             return item;
-        }
-
-        public Item withOptions(View.OnClickListener onClickListener) {
-            this.options = onClickListener;
-            return this;
         }
 
         public Item withCall(View.OnClickListener onAudioCallListener, View.OnClickListener onVideoCallListener) {

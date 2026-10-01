@@ -5533,17 +5533,13 @@
     <string name="GiftPremiumGiftsSentStatus">They now have access to additional features.</string>
     <string name="GiftPremiumGiftsSentStatusForUser">**%1$s** now has access to additional features.</string>
     <string name="GiftPremiumFrequentContacts">Frequent Contacts</string>
-    <string name="GiftPremiumUsersSearchHint">Search people to gift Premium to...</string>
     <string name="GiftPremiumWillReceiveBoostsPlural_one">You will receive ⚡ **%1$d** boost.</string>
     <string name="GiftPremiumWillReceiveBoostsPlural_other">You will receive ⚡ **%1$d** boosts.</string>
-    <string name="GiftPremiumChooseRecipientsBtn">Choose Recipients</string>
     <string name="GiftPremiumProceedBtn">Proceed</string>
     <string name="GiftPremiumAboutThisLink">This link allows you or **anyone you choose** to activate a %1$s.</string>
     <string name="GiftPremiumAboutThisLinkEnd">**Telegram Premium** subscription</string>
     <string name="GiftPremiumWhatsIncluded">What\'s included</string>
     <string name="GiftPremiumEventAdsTitle">Send gifts **to your friends!** 🎄</string>
-    <string name="GiftTelegramPremiumTitle">Gift Telegram Premium</string>
-    <string name="GiftTelegramPremiumOrStarsTitle">Gift Premium or Stars</string>
     <string name="TelegramPremium">Telegram Premium</string>
     <string name="LimitReachedFavoriteStickers">Limit of %d Stickers Reached</string>
     <string name="LimitReachedFavoriteStickersSubtitle">An older sticker was replaced with this one. You can **increase the limit** to %d stickers</string>
@@ -6637,7 +6633,6 @@
     <string name="BoostingGiveawayNotEligibleCountry">You are not eligible to participate in this giveaway, because your country is not included in the terms of the giveaway.</string>
     <string name="BoostingOnlyRecipientCode">Only the recipient can see the link.</string>
     <string name="BoostingOnlyGiveawayCreatorSeeLink">Only giveaway creator can see the link.</string>
-    <string name="BoostingSelectUpToWarningUsers">You can select maximum 10 users.</string>
     <string name="UserSelectorLimit_one">You can select maximum %d user.</string>
     <string name="UserSelectorLimit_other">You can select maximum %d users.</string>
     <string name="BoostingSelectUpToWarningChannelsGroupsPlural_one">You can select up to %1$d group or channel.</string>
@@ -7300,7 +7295,6 @@
     <string name="PrivacyBirthdaySetDoneInfo">You can change your birth of date in settings.</string>
     <string name="PrivacyBirthdayTooOftenTitle">Oops</string>
     <string name="PrivacyBirthdayTooOftenMessage">Sorry, you can’t change your birthday so often.</string>
-    <string name="GiftsBirthdaySetup">Add Your Birthday</string>
     <string name="BirthdaySetupTitle">Add your birthday! 🎂</string>
     <string name="BirthdaySetupMessage">Let your contacts know when you’re celebrating</string>
     <string name="BirthdaySetupLater">You can always set your birthday in profile settings.</string>
@@ -7308,9 +7302,6 @@
     <string name="BirthdayTodaySingleMessage2">Send them a Gift.</string>
     <string name="BirthdayTodayMultipleTitle_other">%d contacts have **birthdays** today! 🎂</string>
     <string name="BirthdayTodayMultipleMessage2">Send them a Gift.</string>
-    <string name="BirthdayToday">🎂 Birthday today</string>
-    <string name="BirthdayYesterday">Birthday yesterday</string>
-    <string name="BirthdayTomorrow">Birthday tomorrow</string>
     <string name="UserBirthdayHint">🎂 %1$s’s having a birthday today. You can give %1$s **Telegram Premium** as a birthday gift.</string>
     <string name="PrivacyUserTypes">User Types</string>
     <string name="PrivacyPremium">Premium Users</string>
@@ -8593,8 +8584,6 @@
     <string name="Gift2ExportTONFragmentOpen">Open Fragment</string>
     <string name="Gift2RarityHint">Only %s of such collectibles have this attribute</string>
     <string name="Gift2Refunded">This gift was downgraded because a request to refund the payment related to this gift was made, and the money was returned.</string>
-    <string name="Gift2MyselfSection">This is You</string>
-    <string name="Gift2Myself">buy yourself a gift</string>
     <string name="Gift2TransferredTitle">Gift Transferred</string>
     <string name="Gift2TransferredText">You have successfully transferred **%1$s** to **%2$s**.</string>
     <string name="Gift2SelfInfoUpgrade">You can display this gift on your page or turn it into a unique collectible and send to others.</string>
