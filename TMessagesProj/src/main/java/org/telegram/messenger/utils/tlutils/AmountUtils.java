@@ -6,9 +6,7 @@ import androidx.core.math.MathUtils;
 
 import org.telegram.messenger.BuildConfig;
 import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
-import org.telegram.messenger.UserConfig;
 import org.telegram.tgnet.tl.TL_stars;
 
 import java.math.BigDecimal;
@@ -133,33 +131,6 @@ public class AmountUtils {
             }
 
             return fromNano((nano / r) * r, currency);
-        }
-
-        public static Amount fromUsd(double usd, AmountUtils.Currency currency) {
-            if (currency == AmountUtils.Currency.TON) {
-                return AmountUtils.Amount.fromDecimal(usd / MessagesController.getInstance(UserConfig.selectedAccount).config.tonUsdRate.get(), AmountUtils.Currency.TON).round(2);
-            } else if (currency == AmountUtils.Currency.STARS) {
-                return AmountUtils.Amount.fromDecimal(usd * 100000 / MessagesController.getInstance(UserConfig.selectedAccount).starsUsdSellRate1000, AmountUtils.Currency.STARS).round(0);
-            }
-
-            return AmountUtils.Amount.fromDecimal(0, currency);
-        }
-
-        public double convertToUsd() {
-            if (this.currency == Currency.STARS) {
-                return this.asDouble() / 1000 * MessagesController.getInstance(UserConfig.selectedAccount).starsUsdSellRate1000 / 100;
-            } else if (this.currency == Currency.TON) {
-                return this.asDouble() * MessagesController.getInstance(UserConfig.selectedAccount).config.tonUsdRate.get();
-            }
-            return 0;
-        }
-
-        public Amount convertTo(Currency currency) {
-            if (this.currency == currency) {
-                return this;
-            }
-
-            return fromUsd(convertToUsd(), currency);
         }
 
         public TL_stars.StarsAmount toTl() {

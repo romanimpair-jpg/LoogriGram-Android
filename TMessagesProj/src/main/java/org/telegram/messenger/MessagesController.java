@@ -581,8 +581,9 @@ public class MessagesController extends BaseController implements NotificationCe
     // LoogriGram: botPreviewMediasMax (bot_preview_medias_max) sat here; bot
     // previews are removed, as on desktop, and the key is no longer read.
     public String tonProxyAddress;
-    public boolean stargiftsBlocked;
-    public float starsUsdSellRate1000;
+    // LoogriGram: stargiftsBlocked, starsUsdSellRate1000 (the Stars-to-dollar rate)
+    // and the gift button flags giftAttachMenuIcon and giftTextFieldIcon sat here
+    // and below. No reader is left.
     public int botVerificationDescriptionLengthLimit;
     public int savedDialogsPinnedLimitDefault;
     public boolean savedViewAsChats;
@@ -635,8 +636,6 @@ public class MessagesController extends BaseController implements NotificationCe
     private CacheByChatsController cacheByChatsController;
     private TranslateController translateController;
     public boolean uploadMarkupVideo;
-    public boolean giftAttachMenuIcon;
-    public boolean giftTextFieldIcon;
 
     public boolean isTranslationsManualEnabled() {
         return !"disabled".equals(translationsManualEnabled);
@@ -1466,8 +1465,6 @@ public class MessagesController extends BaseController implements NotificationCe
         hiddenMembersGroupSizeMin = mainPreferences.getInt("hiddenMembersGroupSizeMin", 100);
         chatlistUpdatePeriod = mainPreferences.getInt("chatlistUpdatePeriod", 3600);
         uploadMarkupVideo = mainPreferences.getBoolean("uploadMarkupVideo", true);
-        giftAttachMenuIcon = mainPreferences.getBoolean("giftAttachMenuIcon", false);
-        giftTextFieldIcon = mainPreferences.getBoolean("giftTextFieldIcon", false);
         checkResetLangpack = mainPreferences.getInt("checkResetLangpack", 0);
         smallQueueMaxActiveOperations = mainPreferences.getInt("smallQueueMaxActiveOperations", 5);
         largeQueueMaxActiveOperations = mainPreferences.getInt("largeQueueMaxActiveOperations", 2);
@@ -1514,8 +1511,6 @@ public class MessagesController extends BaseController implements NotificationCe
         webAppAllowedProtocols = mainPreferences.getStringSet("webAppAllowedProtocols", new HashSet<>(Arrays.asList("http", "https")));
         ignoreRestrictionReasons = mainPreferences.getStringSet("ignoreRestrictionReasons", new HashSet<>(Arrays.asList()));
         tonProxyAddress = mainPreferences.getString("tonProxyAddress", "magic.org");
-        stargiftsBlocked = mainPreferences.getBoolean("stargiftsBlocked", true); // !BuildVars.DEBUG_VERSION);
-        starsUsdSellRate1000 = mainPreferences.getFloat("starsUsdSellRate1000", 2000);
         botVerificationDescriptionLengthLimit = mainPreferences.getInt("botVerificationDescriptionLengthLimit", 70);
         stargiftsCraftAttributesPermilles = Arrays.stream(mainPreferences.getString("stargiftsCraftAttributesPermilles", "90,,80,200,,70,190,460,,60,180,450,1000").split(",,"))
                 .map(r -> Arrays.stream(r.split(","))
@@ -2301,28 +2296,8 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
-                case "premium_gift_text_field_icon": {
-                    if (value.value instanceof TLRPC.TL_jsonBool) {
-                        if (giftTextFieldIcon != ((TLRPC.TL_jsonBool) value.value).value) {
-                            giftTextFieldIcon = ((TLRPC.TL_jsonBool) value.value).value;
-                            editor.putBoolean("giftTextFieldIcon", giftTextFieldIcon);
-                            changed = true;
-
-                            NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.didUpdatePremiumGiftFieldIcon);
-                        }
-                    }
-                    break;
-                }
-                case "premium_gift_attach_menu_icon": {
-                    if (value.value instanceof TLRPC.TL_jsonBool) {
-                        if (giftAttachMenuIcon != ((TLRPC.TL_jsonBool) value.value).value) {
-                            giftAttachMenuIcon = ((TLRPC.TL_jsonBool) value.value).value;
-                            editor.putBoolean("giftAttachMenuIcon", giftAttachMenuIcon);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
+                // LoogriGram: premium_gift_text_field_icon and premium_gift_attach_menu_icon
+                // were read here, for gift buttons this build does not draw.
                 case "lite_app_options": {
                     if (value.value instanceof TLRPC.TL_jsonObject) {
                         liteAppOptions = (TLRPC.TL_jsonObject) value.value;
@@ -3379,28 +3354,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                     break;
                 }
-                case "stargifts_blocked": {
-                    if (value.value instanceof TLRPC.TL_jsonBool) {
-                        TLRPC.TL_jsonBool bool = (TLRPC.TL_jsonBool) value.value;
-                        if (bool.value != stargiftsBlocked) {
-                            stargiftsBlocked = bool.value;
-                            editor.putBoolean("stargiftsBlocked", stargiftsBlocked);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "stars_usd_sell_rate_x1000": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (Math.abs(num.value - starsUsdSellRate1000) > 0.001f) {
-                            starsUsdSellRate1000 = (float) num.value;
-                            editor.putFloat("starsUsdSellRate1000", starsUsdSellRate1000);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
+                // LoogriGram: stargifts_blocked and stars_usd_sell_rate_x1000 were read here.
                 case "ignore_restriction_reasons": {
                     HashSet<String> newReasons = new HashSet<>();
                     if (value.value instanceof TLRPC.TL_jsonArray) {
