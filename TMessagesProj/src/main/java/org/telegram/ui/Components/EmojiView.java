@@ -6497,7 +6497,7 @@ public class EmojiView extends FrameLayout implements
                 }
                 case 5: {
                     StickerSetNameCell cell = (StickerSetNameCell) holder.itemView;
-                    cell.setText(MediaDataController.getInstance(currentAccount).loadFeaturedPremium ? getString(R.string.FeaturedStickersPremium) : getString(R.string.FeaturedStickers), R.drawable.msg_close, getString(R.string.AccDescrCloseTrendingStickers));
+                    cell.setText(getString(R.string.FeaturedStickers),R.drawable.msg_close, getString(R.string.AccDescrCloseTrendingStickers));
                     break;
                 }
             }

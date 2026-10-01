@@ -5582,7 +5582,6 @@
     <string name="LimitReachedPinSavedDialogsPremium">Sorry, you can\'t pin more than %1$d chats to the top. Unpin some that are currently pinned.</string>
     <string name="LastActiveCommunities">Recently active communities</string>
     <string name="ChatsLeaveAlert"><![CDATA[>Are you sure you want to leave the selected chats?]]></string>
-    <string name="FeaturedStickersPremium">Trending Premium Stickers</string>
     <string name="UnlockPremiumEmojiPack">Unlock %1$s</string>
     <string name="UnlockPremiumEmojiHint">Subscribe to **Telegram Premium** to unlock this emoji.</string>
     <string name="UnlockPremiumEmojiReaction">Subscribe to **Telegram Premium** to unlock this reaction.</string>

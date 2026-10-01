@@ -315,7 +315,6 @@ public class MediaDataController extends BaseController {
 
     private long loadFeaturedHash[] = new long[2];
     private int loadFeaturedDate[] = new int[2];
-    public boolean loadFeaturedPremium;
     private ArrayList<TLRPC.StickerSetCovered>[] featuredStickerSets = new ArrayList[]{new ArrayList<>(), new ArrayList<>()};
     private LongSparseArray<TLRPC.StickerSetCovered>[] featuredStickerSetsById = new LongSparseArray[]{new LongSparseArray<>(), new LongSparseArray<>()};
     private ArrayList<Long> unreadStickerSets[] = new ArrayList[]{new ArrayList<Long>(), new ArrayList<Long>()};
@@ -2062,10 +2061,9 @@ public class MediaDataController extends BaseController {
                 ArrayList<Long> unread = new ArrayList<>();
                 int date = 0;
                 long hash = 0;
-                boolean premium = false;
                 SQLiteCursor cursor = null;
                 try {
-                    cursor = getMessagesStorage().getDatabase().queryFinalized("SELECT data, unread, date, hash, premium FROM stickers_featured WHERE emoji = " + (emoji ? 1 : 0) + " AND id = " + (emoji ? 2 : 1));
+                    cursor = getMessagesStorage().getDatabase().queryFinalized("SELECT data, unread, date, hash FROM stickers_featured WHERE emoji = " + (emoji ? 1 : 0) + " AND id = " + (emoji ? 2 : 1));
                     if (cursor.next()) {
                         NativeByteBuffer data = cursor.byteBufferValue(0);
                         if (data != null) {
@@ -2087,7 +2085,6 @@ public class MediaDataController extends BaseController {
                         }
                         date = cursor.intValue(2);
                         hash = cursor.longValue(3); // calcFeaturedStickersHash(emoji, newStickerArray);
-                        premium = cursor.intValue(4) == 1;
                     }
                 } catch (Throwable e) {
                     FileLog.e(e);
@@ -2096,7 +2093,7 @@ public class MediaDataController extends BaseController {
                         cursor.dispose();
                     }
                 }
-                processLoadedFeaturedStickers(emoji, newStickerArray, unread, premium, true, date, hash);
+                processLoadedFeaturedStickers(emoji, newStickerArray, unread, true, date, hash);
             });
         } else {
             final long hash;
@@ -2113,7 +2110,10 @@ public class MediaDataController extends BaseController {
             getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
                 if (response instanceof TLRPC.TL_messages_featuredStickers) {
                     TLRPC.TL_messages_featuredStickers res = (TLRPC.TL_messages_featuredStickers) response;
-                    processLoadedFeaturedStickers(emoji, res.sets, res.unread, res.premium, false, (int) (System.currentTimeMillis() / 1000), res.hash);
+                    // LoogriGram: res.premium marked the list as Premium-only trending
+                    // stickers, which only retitled the panel's header. Premium is
+                    // honoured for nobody, so it is not read.
+                    processLoadedFeaturedStickers(emoji, res.sets, res.unread, false, (int) (System.currentTimeMillis() / 1000), res.hash);
                 } else if (response instanceof TLRPC.TL_messages_featuredStickersNotModified) {
                     final int date = (int) (System.currentTimeMillis() / 1000);
                     AndroidUtilities.runOnUIThread(() -> {
@@ -2129,7 +2129,7 @@ public class MediaDataController extends BaseController {
         }
     }
 
-    private void processLoadedFeaturedStickers(boolean emoji, ArrayList<TLRPC.StickerSetCovered> res, ArrayList<Long> unreadStickers, boolean premium, boolean cache, int date, long hash) {
+    private void processLoadedFeaturedStickers(boolean emoji, ArrayList<TLRPC.StickerSetCovered> res, ArrayList<Long> unreadStickers, boolean cache, int date, long hash) {
         AndroidUtilities.runOnUIThread(() -> {
             loadingFeaturedStickers[emoji ? 1 : 0] = false;
             featuredStickersLoaded[emoji ? 1 : 0] = true;
@@ -2159,7 +2159,7 @@ public class MediaDataController extends BaseController {
                     }
 
                     if (!cache) {
-                        putFeaturedStickersToCache(emoji, stickerSetsNew, unreadStickers, date, hash, premium);
+                        putFeaturedStickersToCache(emoji, stickerSetsNew, unreadStickers, date, hash);
                     }
                     AndroidUtilities.runOnUIThread(() -> {
                         unreadStickerSets[emoji ? 1 : 0] = unreadStickers;
@@ -2167,7 +2167,6 @@ public class MediaDataController extends BaseController {
                         featuredStickerSets[emoji ? 1 : 0] = stickerSetsNew;
                         loadFeaturedHash[emoji ? 1 : 0] = hash;
                         loadFeaturedDate[emoji ? 1 : 0] = date;
-                        loadFeaturedPremium = premium;
                         loadStickers(emoji ? TYPE_FEATURED_EMOJIPACKS : TYPE_FEATURED, true, false);
                         getNotificationCenter().postNotificationName(emoji ? NotificationCenter.featuredEmojiDidLoad : NotificationCenter.featuredStickersDidLoad);
                     });
@@ -2176,12 +2175,12 @@ public class MediaDataController extends BaseController {
                 }
             } else {
                 AndroidUtilities.runOnUIThread(() -> loadFeaturedDate[emoji ? 1 : 0] = date);
-                putFeaturedStickersToCache(emoji, null, null, date, 0, premium);
+                putFeaturedStickersToCache(emoji, null, null, date, 0);
             }
         });
     }
 
-    private void putFeaturedStickersToCache(boolean emoji, ArrayList<TLRPC.StickerSetCovered> stickers, ArrayList<Long> unreadStickers, int date, long hash, boolean premium) {
+    private void putFeaturedStickersToCache(boolean emoji, ArrayList<TLRPC.StickerSetCovered> stickers, ArrayList<Long> unreadStickers, int date, long hash) {
         ArrayList<TLRPC.StickerSetCovered> stickersFinal = stickers != null ? new ArrayList<>(stickers) : null;
         getMessagesStorage().getStorageQueue().postRunnable(() -> {
             try {
@@ -2207,7 +2206,7 @@ public class MediaDataController extends BaseController {
                     state.bindByteBuffer(3, data2);
                     state.bindInteger(4, date);
                     state.bindLong(5, hash);
-                    state.bindInteger(6, premium ? 1 : 0);
+                    state.bindInteger(6, 0); // LoogriGram: the premium column stays in the schema, unused.
                     state.bindInteger(7, emoji ? 1 : 0);
                     state.step();
                     data.reuse();
@@ -2260,7 +2259,7 @@ public class MediaDataController extends BaseController {
         unreadStickerSets[emoji ? 1 : 0].clear();
         loadFeaturedHash[emoji ? 1 : 0] = calcFeaturedStickersHash(emoji, featuredStickerSets[emoji ? 1 : 0]);
         getNotificationCenter().postNotificationName(emoji ? NotificationCenter.featuredEmojiDidLoad : NotificationCenter.featuredStickersDidLoad);
-        putFeaturedStickersToCache(emoji, featuredStickerSets[emoji ? 1 : 0], unreadStickerSets[emoji ? 1 : 0], loadFeaturedDate[emoji ? 1 : 0], loadFeaturedHash[emoji ? 1 : 0], loadFeaturedPremium);
+        putFeaturedStickersToCache(emoji, featuredStickerSets[emoji ? 1 : 0], unreadStickerSets[emoji ? 1 : 0], loadFeaturedDate[emoji ? 1 : 0], loadFeaturedHash[emoji ? 1 : 0]);
         if (query) {
             TLRPC.TL_messages_readFeaturedStickers req = new TLRPC.TL_messages_readFeaturedStickers();
             getConnectionsManager().sendRequest(req, (response, error) -> {
@@ -2296,7 +2295,7 @@ public class MediaDataController extends BaseController {
             readingStickerSets[emoji ? 1 : 0].remove(id);
             loadFeaturedHash[emoji ? 1 : 0] = calcFeaturedStickersHash(emoji, featuredStickerSets[emoji ? 1 : 0]);
             getNotificationCenter().postNotificationName(emoji ? NotificationCenter.featuredEmojiDidLoad : NotificationCenter.featuredStickersDidLoad);
-            putFeaturedStickersToCache(emoji, featuredStickerSets[emoji ? 1 : 0], unreadStickerSets[emoji ? 1 : 0], loadFeaturedDate[emoji ? 1 : 0], loadFeaturedHash[emoji ? 1 : 0], loadFeaturedPremium);
+            putFeaturedStickersToCache(emoji, featuredStickerSets[emoji ? 1 : 0], unreadStickerSets[emoji ? 1 : 0], loadFeaturedDate[emoji ? 1 : 0], loadFeaturedHash[emoji ? 1 : 0]);
         }, 1000);
     }
 
