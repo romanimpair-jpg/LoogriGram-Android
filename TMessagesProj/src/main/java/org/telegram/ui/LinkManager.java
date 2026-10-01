@@ -1114,13 +1114,9 @@ public class LinkManager {
         // build, so the links are not special-cased any more and fall through
         // to the plain settings screen at the end of this method.
 
-        // LoogriGram: .../ask-question, .../faq and .../features opened Telegram's
-        // support chat, FAQ and features pages; the rows are gone, as on
-        // desktop, and the links open the settings screen.
-        if ("privacy-policy".equalsIgnoreCase(first)) {
-            Browser.openUrl(activity, LocaleController.getString(R.string.PrivacyPolicyUrl));
-            return true;
-        }
+        // LoogriGram: .../ask-question, .../faq, .../features and .../privacy-policy
+        // opened Telegram's support chat, FAQ, features and privacy pages; the
+        // Help section is gone, and the links open the settings screen.
 
         presentFragment(new SettingsActivity());
         return true;

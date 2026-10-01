@@ -83,7 +83,6 @@ import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.SharedPrefsHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
-import org.telegram.messenger.browser.Browser;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -667,22 +666,13 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
         items.add(SettingCell.Factory.of(9, IconBackgroundColors.ORANGE_DEEP.top, IconBackgroundColors.ORANGE_DEEP.bottom, R.drawable.settings_power, getString(R.string.SettingsPowerSaving), getString(R.string.SettingsPowerSavingInfo)));
         items.add(SettingCell.Factory.of(10, IconBackgroundColors.PURPLE.top, IconBackgroundColors.PURPLE.bottom, R.drawable.settings_language, getString(R.string.SettingsLanguage), LocaleController.getCurrentLanguageName()));
 
-        items.add(UItem.asShadow(null));
-
-        // LoogriGram: the Premium, Stars, Business and Send-a-Gift rows stood here,
-        // each behind a getter this build forces off, so none of them could ever be
-        // shown. Deleted rather than left unreachable, along with the switch cases
-        // that opened them. The shadow above is now the separator before the help
-        // section, which is why the conditional one that used to follow is gone too.
-        items.add(UItem.asHeader(getString(R.string.SettingsHelp)));
-        // LoogriGram: no Ask a Question (17), Telegram FAQ (18) or Telegram
-        // Features (23) rows, as on desktop. They open Telegram's own support
-        // surfaces, which cannot help with this build and would put its users
-        // in front of Telegram's support volunteers.
-        items.add(SettingCell.Factory.of(19, IconBackgroundColors.GREEN.top, IconBackgroundColors.GREEN.bottom, R.drawable.settings_policy, getString(R.string.PrivacyPolicy)));
-        // LoogriGram: a manual update check. The only other way to ask was
-        // item 9 of upstream's hidden debug menu. The subtitle is this build's
-        // tag, which is also how to tell which build is installed.
+        // LoogriGram: the Premium, Stars, Business and Send-a-Gift rows followed,
+        // then a Help section - Ask a Question (17), Telegram FAQ (18), Privacy
+        // Policy (19) and Telegram Features (23) - which opened Telegram's own
+        // support surfaces and documents. All gone, with the separator before them.
+        // The manual update check below (the only other way to ask was item 9 of
+        // upstream's hidden debug menu) joins the settings above; its subtitle is
+        // this build's tag, which is also how to tell which build is installed.
         if (LoogriGramUpdate.updatesEnabled()) {
             items.add(SettingCell.Factory.of(24, IconBackgroundColors.CYAN.top, IconBackgroundColors.CYAN.bottom, R.drawable.settings_update, getString(R.string.LoogriGramUpdateCheck), LoogriGramUpdate.currentTag()));
         }
@@ -782,9 +772,6 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 presentSettingFragment(new LanguageSelectActivity());
                 break;
 
-            case 19:
-                Browser.openUrl(getParentActivity(), LocaleController.getString(R.string.PrivacyPolicyUrl));
-                break;
             case 24:
                 // LoogriGram: a newer build found here re-opens the download
                 // prompt from the update tab; this only reports the other two

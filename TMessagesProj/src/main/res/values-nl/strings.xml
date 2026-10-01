@@ -313,7 +313,6 @@
     <string name="EnableAnimations">Animaties</string>
     <string name="ChatSettings">Chatinstellingen</string>
     <string name="Devices">Apparaten</string>
-    <string name="SettingsHelp">Help</string>
     <string name="SettingsDebug">Debug</string>
     <string name="Account">Account</string>
     <string name="Unblock">Gebruiker deblokkeren</string>
@@ -439,10 +438,8 @@
     <string name="AddAccount">Account toevoegen</string>
     <string name="SelectAccount">Account kiezen</string>
     <string name="TelegramFaqUrl">https://telegram.org/faq</string>
-    <string name="PrivacyPolicy">Privacybeleid</string>
     <string name="TermsOfService">Gebruiksvoorwaarden</string>
     <string name="TermsOfServiceLogin">Door je aan te melden, ga je akkoord met de *Gebruiksvoorwaarden*.</string>
-    <string name="PrivacyPolicyUrl">https://telegram.org/privacy</string>
     <string name="WebAppDisclaimerUrl">https://telegram.org/tos/mini-apps</string>
     <string name="DeleteLocalizationTitle">Vertaalbestand verwijderen</string>
     <string name="DeleteLocalizationText">Taalbestand **%1$s** echt verwijderen?</string>

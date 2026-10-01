@@ -296,7 +296,6 @@
     <string name="EnableAnimations">Ativar Animações no App</string>
     <string name="ChatSettings">Configurações de Chats</string>
     <string name="Devices">Dispositivos</string>
-    <string name="SettingsHelp">Ajuda</string>
     <string name="SettingsDebug">Depuração</string>
     <string name="Account">Conta</string>
     <string name="Unblock">Desbloquear usuário</string>
@@ -422,10 +421,8 @@
     <string name="AddAccount">Adicionar&#160;Conta</string>
     <string name="SelectAccount">Selecionar Conta</string>
     <string name="TelegramFaqUrl">https://telegram.org/faq/pt-br</string>
-    <string name="PrivacyPolicy">Política de Privacidade</string>
     <string name="TermsOfService">Termos de Serviço</string>
     <string name="TermsOfServiceLogin">Ao registrar-se, você aceita\nos *Termos de Serviço*.</string>
-    <string name="PrivacyPolicyUrl">https://telegram.org/privacy</string>
     <string name="WebAppDisclaimerUrl">https://telegram.org/tos/mini-apps</string>
     <string name="DeleteLocalizationTitle">Apagar pacote de idioma</string>
     <string name="DeleteLocalizationText">Deseja mesmo apagar o pacote de idioma %1$s?</string>

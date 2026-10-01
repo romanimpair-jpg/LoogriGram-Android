@@ -277,7 +277,6 @@
     <string name="EnableAnimations">تفعيل المؤثرات البصرية</string>
     <string name="ChatSettings">إعدادات المحادثات</string>
     <string name="Devices">الأجهزة</string>
-    <string name="SettingsHelp">مساعدة</string>
     <string name="SettingsDebug">المعالجة</string>
     <string name="Account">الحساب</string>
     <string name="Unblock">إلغاء حظر المستخدم</string>
@@ -403,10 +402,8 @@
     <string name="AddAccount">إضافة حساب</string>
     <string name="SelectAccount">اختيار حساب</string>
     <string name="TelegramFaqUrl">https://telegram.org/faq/ar</string>
-    <string name="PrivacyPolicy">سياسة الخصوصية</string>
     <string name="TermsOfService">شروط الخدمة</string>
     <string name="TermsOfServiceLogin">تسجيلك يعني موافقتك\nعلى *شروط الخدمة*.</string>
-    <string name="PrivacyPolicyUrl">https://telegram.org/faq/ar#a10</string>
     <string name="WebAppDisclaimerUrl">https://telegram.org/tos/mini-apps</string>
     <string name="DeleteLocalizationTitle">حذف حزمة اللغة</string>
     <string name="DeleteLocalizationText">هل ترغب حقًا في حذف حزمة اللغة **%1$s**؟</string>

@@ -309,7 +309,6 @@
     <string name="EnableAnimations">화면 전환 효과 사용</string>
     <string name="ChatSettings">대화방 설정</string>
     <string name="Devices">기기</string>
-    <string name="SettingsHelp">도움말</string>
     <string name="SettingsDebug">디버그</string>
     <string name="Account">계정</string>
     <string name="Unblock">사용자 차단 해제</string>
@@ -434,10 +433,8 @@
     <string name="AddAccount">계정 추가</string>
     <string name="SelectAccount">계정을 선택하세요</string>
     <string name="TelegramFaqUrl">https://telegram.org/faq/ko</string>
-    <string name="PrivacyPolicy">개인 정보 정책</string>
     <string name="TermsOfService">이용 약관</string>
     <string name="TermsOfServiceLogin">가입함으로써 귀하는 \n*이용 약관*에 동의하게 됩니다.</string>
-    <string name="PrivacyPolicyUrl">https://telegram.org/privacy</string>
     <string name="WebAppDisclaimerUrl">https://telegram.org/tos/mini-apps</string>
     <string name="DeleteLocalizationTitle">언어 묶음 삭제</string>
     <string name="DeleteLocalizationText">정말 **%1$s** 언어 묶음을 삭제하시겠습니까?</string>

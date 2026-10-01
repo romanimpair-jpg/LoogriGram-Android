@@ -259,7 +259,6 @@
     <string name="EnableAnimations">Animationen aktivieren</string>
     <string name="ChatSettings">Chat-Einstellungen</string>
     <string name="Devices">Geräte</string>
-    <string name="SettingsHelp">Hilfe</string>
     <string name="SettingsDebug">Debug</string>
     <string name="Account">Konto</string>
     <string name="Unblock">Nutzer freigeben</string>
@@ -385,10 +384,8 @@
     <string name="AddAccount">Konto hinzufügen</string>
     <string name="SelectAccount">Konto auswählen</string>
     <string name="TelegramFaqUrl">https://telegram.org/faq/de</string>
-    <string name="PrivacyPolicy">Datenschutzerklärung</string>
     <string name="TermsOfService">Nutzungsbedingungen</string>
     <string name="TermsOfServiceLogin">Mit der Registrierung\nstimmst du den *Nutzungsbedingungen* zu.</string>
-    <string name="PrivacyPolicyUrl">https://telegram.org/privacy</string>
     <string name="WebAppDisclaimerUrl">https://telegram.org/tos/mini-apps</string>
     <string name="DeleteLocalizationTitle">Sprachpaket löschen</string>
     <string name="DeleteLocalizationText">Möchtest du wirklich das Sprachpaket **%1$s** löschen?</string>

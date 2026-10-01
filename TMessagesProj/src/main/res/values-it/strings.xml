@@ -313,7 +313,6 @@
     <string name="EnableAnimations">Attiva animazioni</string>
     <string name="ChatSettings">Impostazioni chat</string>
     <string name="Devices">Dispositivi</string>
-    <string name="SettingsHelp">Aiuto</string>
     <string name="SettingsDebug">Debug</string>
     <string name="Account">Account</string>
     <string name="Unblock">Sblocca utente</string>
@@ -439,10 +438,8 @@
     <string name="AddAccount">Aggiungi account</string>
     <string name="SelectAccount">Seleziona Account</string>
     <string name="TelegramFaqUrl">https://telegram.org/faq/it</string>
-    <string name="PrivacyPolicy">Informativa sulla Privacy</string>
     <string name="TermsOfService">Termini di Servizio</string>
     <string name="TermsOfServiceLogin">Iscrivendoti, accetti\ni *Termini di Servizio*.</string>
-    <string name="PrivacyPolicyUrl">https://telegram.org/privacy</string>
     <string name="WebAppDisclaimerUrl">https://telegram.org/tos/mini-apps</string>
     <string name="DeleteLocalizationTitle">Elimina la lingua</string>
     <string name="DeleteLocalizationText">Vuoi davvero eliminare la lingua **%1$s**?</string>

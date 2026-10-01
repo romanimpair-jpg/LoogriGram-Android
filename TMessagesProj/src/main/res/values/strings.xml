@@ -2286,7 +2286,6 @@
     <string name="EnableAnimations">Enable Animations</string>
     <string name="ChatSettings">Chat Settings</string>
     <string name="Devices">Devices</string>
-    <string name="SettingsHelp">Help</string>
     <string name="SettingsDebug">Debug</string>
     <string name="Account">Account</string>
     <string name="Unblock">Unblock</string>
@@ -2416,10 +2415,8 @@
     <string name="SwitchAccountHint">"Long tap to switch accounts"</string>
     <string name="SelectAccount">Select Account</string>
     <string name="TelegramFaqUrl">https://telegram.org/faq</string>
-    <string name="PrivacyPolicy">Privacy Policy</string>
     <string name="TermsOfService">Terms of Service</string>
     <string name="TermsOfServiceLogin">By signing up,\nyou agree to the *Terms of Service*.</string>
-    <string name="PrivacyPolicyUrl">https://telegram.org/privacy</string>
     <string name="WebAppDisclaimerUrl">https://telegram.org/tos/mini-apps</string>
     <string name="DeleteLocalizationTitle">Delete language pack</string>
     <string name="DeleteLocalizationText">Are you sure you want to delete **%1$s** language pack?</string>
