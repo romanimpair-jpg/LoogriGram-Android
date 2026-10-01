@@ -1270,7 +1270,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
             .add(NotificationCenter.groupCallUpdated)
             .add(NotificationCenter.stickersImportComplete)
             .add(NotificationCenter.currentUserShowLimitReachedDialog)
-            .add(NotificationCenter.currentUserPremiumStatusChanged)
             .add(NotificationCenter.chatSwitchedForum)
             .add(NotificationCenter.guardBotDecisionResult);
     }
@@ -6919,8 +6918,6 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                     fragment.showDialog(new LimitReachedBottomSheet(fragment, fragment.getParentActivity(), (int) args[0], currentAccount, null));
                 }
             }
-        } else if (id == NotificationCenter.currentUserPremiumStatusChanged) {
-            MessagesController.getMainSettings(currentAccount).edit().remove("transcribeButtonPressed").apply();
         } else if (id == NotificationCenter.requestPermissions) {
             int type = (int) args[0];
             String[] permissions = null;

@@ -1290,7 +1290,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         setDelegate(this);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.reloadInlineHints);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.attachMenuBotsDidLoad);
-        NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.currentUserPremiumStatusChanged);
         exclusionRects.add(exclustionRect);
 
         sizeNotifierFrameLayout = new SizeNotifierFrameLayout(context) {
@@ -5058,8 +5057,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             if (buttonsAdapter != null) {
                 buttonsAdapter.notifyDataSetChanged();
             }
-        } else if (id == NotificationCenter.currentUserPremiumStatusChanged) {
-            currentLimit = MessagesController.getInstance(UserConfig.selectedAccount).getCaptionMaxLengthLimit();
         }
     }
 
@@ -5599,7 +5596,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         }
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.reloadInlineHints);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.attachMenuBotsDidLoad);
-        NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.currentUserPremiumStatusChanged);
         destroyed = true;
         if (commentTextView != null) {
             commentTextView.onDestroy();

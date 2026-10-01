@@ -4921,9 +4921,6 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                 }
             }
-        } else if (id == NotificationCenter.currentUserPremiumStatusChanged) {
-            loadAppConfig(false);
-            getContactsController().reloadContactsStatusesMaybe(true);
         }
     }
 

@@ -251,26 +251,15 @@ public class UserConfig extends BaseController {
             TLRPC.User oldUser = currentUser;
             currentUser = user;
             clientUserId = user.id;
-            checkPremiumSelf(oldUser, user);
-        }
-    }
-
-    private void checkPremiumSelf(TLRPC.User oldUser, TLRPC.User newUser) {
-        if (oldUser != null && newUser != null && oldUser.premium != newUser.premium) {
-            AndroidUtilities.runOnUIThread(() -> {
-                getMessagesController().applyFreeFolderLimit();
-                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.currentUserPremiumStatusChanged);
-                NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.premiumStatusChangedGlobal);
-
-                // LoogriGram: the Premium promo was refetched here; it is gone
-                // with the Premium screen (see MediaDataController).
-                getMediaDataController().loadReactions(false, null);
-            });
-        } else if (oldUser == null) {
-            AndroidUtilities.runOnUIThread(() -> {
-                getMessagesController().applyFreeFolderLimit();
-                NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.currentUserPremiumStatusChanged);
-            });
+            // LoogriGram: this was checkPremiumSelf. A change of our Premium flag
+            // re-applied the folder limits, reloaded reactions and told every
+            // screen (currentUserPremiumStatusChanged, premiumStatusChangedGlobal).
+            // Premium is honoured for nobody, our account included, so the flag
+            // is not read: the free folder limit is applied once, when the
+            // account's user first arrives.
+            if (oldUser == null) {
+                AndroidUtilities.runOnUIThread(() -> getMessagesController().applyFreeFolderLimit());
+            }
         }
     }
 
@@ -358,7 +347,8 @@ public class UserConfig extends BaseController {
                 }
             }
             if (currentUser != null) {
-                checkPremiumSelf(null, currentUser);
+                // LoogriGram: was checkPremiumSelf(null, currentUser); see setCurrentUser.
+                AndroidUtilities.runOnUIThread(() -> getMessagesController().applyFreeFolderLimit());
                 clientUserId = currentUser.id;
             }
             configLoaded = true;
@@ -556,13 +546,8 @@ public class UserConfig extends BaseController {
         }
     }
 
-    public boolean isPremium() {
-        TLRPC.User user = currentUser;
-        if (user == null) {
-            return false;
-        }
-        return user.premium;
-    }
+    // LoogriGram: isPremium() read our user's premium flag. Every caller now
+    // takes the branch for an account without Premium, as on desktop.
 
 
     int globalTtl = 0;

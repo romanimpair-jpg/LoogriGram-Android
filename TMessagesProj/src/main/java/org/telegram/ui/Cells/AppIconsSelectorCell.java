@@ -40,7 +40,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class AppIconsSelectorCell extends RecyclerListView implements NotificationCenter.NotificationCenterDelegate {
+public class AppIconsSelectorCell extends RecyclerListView {
     public final static float ICONS_ROUND_RADIUS = 18;
 
     private List<LauncherIconController.LauncherIcon> availableIcons = new ArrayList<>();
@@ -162,26 +162,8 @@ public class AppIconsSelectorCell extends RecyclerListView implements Notificati
         super.onMeasure(MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(widthSpec), MeasureSpec.EXACTLY), heightSpec);
     }
 
-    @Override
-    protected void onAttachedToWindow() {
-        super.onAttachedToWindow();
-
-        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.premiumStatusChangedGlobal);
-    }
-
-    @Override
-    protected void onDetachedFromWindow() {
-        super.onDetachedFromWindow();
-
-        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.premiumStatusChangedGlobal);
-    }
-
-    @Override
-    public void didReceivedNotification(int id, int account, Object... args) {
-        if (id == NotificationCenter.premiumStatusChangedGlobal) {
-            updateIconsVisibility();
-        }
-    }
+    // LoogriGram: the list was rebuilt when an account's Premium changed
+    // (premiumStatusChangedGlobal); it is the same list whatever Premium.
 
     private final static class IconHolderView extends LinearLayout {
         private Paint outlinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);

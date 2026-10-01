@@ -508,7 +508,6 @@ public class PhotoViewerCaptionEnterView extends FrameLayout implements Notifica
 
     public void onCreate() {
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.emojiLoaded);
-        NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.currentUserPremiumStatusChanged);
         sizeNotifierLayout.setDelegate(this);
     }
 
@@ -519,7 +518,6 @@ public class PhotoViewerCaptionEnterView extends FrameLayout implements Notifica
         }
         keyboardVisible = false;
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.emojiLoaded);
-        NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.currentUserPremiumStatusChanged);
         if (sizeNotifierLayout != null) {
             sizeNotifierLayout.setDelegate(null);
         }
