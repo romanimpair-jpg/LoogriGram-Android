@@ -603,9 +603,9 @@ public class MessagesController extends BaseController implements NotificationCe
     public String freezeAppealUrl;
     public int conferenceCallSizeLimit;
     public boolean callRequestsDisabled;
-    public int todoItemsMax;
-    public int todoTitleLengthMax;
-    public int todoItemLengthMax;
+    // LoogriGram: todoItemsMax, todoTitleLengthMax and todoItemLengthMax
+    // (todo_items_max, ..._length_max) bounded making and adding to a to-do
+    // list, which is Premium's; the keys are no longer read.
     public String translationsManualEnabled; // "enabled", "alternative", "system", "disabled"
     public String translationsAutoEnabled; // "enabled", "alternative", "system", "disabled"
     public HashSet<Long> whitelistedBots;
@@ -1489,9 +1489,6 @@ public class MessagesController extends BaseController implements NotificationCe
         freezeUntilDate = mainPreferences.getLong("freezeUntilDate", 0L);
         conferenceCallSizeLimit = mainPreferences.getInt("conferenceCallSizeLimit", isTest ? 5 : 100);
         callRequestsDisabled = mainPreferences.getBoolean("callRequestsDisabled", false);
-        todoItemsMax = mainPreferences.getInt("todoItemsMax", isTest ? 10 : 30);
-        todoTitleLengthMax = mainPreferences.getInt("todoTitleLengthMax", 32);
-        todoItemLengthMax = mainPreferences.getInt("todoItemLengthMax", 64);
         translationsManualEnabled = mainPreferences.getString("translationsManualEnabled", "enabled");
         translationsAutoEnabled = mainPreferences.getString("translationsAutoEnabled", "enabled");
         whitelistedBots = mainPreferences.getStringSet("whitelistedBots", new HashSet<>()).stream().map(s -> tryParseLong(s, 0)).collect(Collectors.toCollection(HashSet::new));
@@ -3488,39 +3485,6 @@ public class MessagesController extends BaseController implements NotificationCe
                         if (bool.value != callRequestsDisabled) {
                             callRequestsDisabled = bool.value;
                             editor.putBoolean("callRequestsDisabled", callRequestsDisabled);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "todo_items_max": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != todoItemsMax) {
-                            todoItemsMax = (int) num.value;
-                            editor.putInt("todoItemsMax", todoItemsMax);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "todo_title_length_max": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != todoTitleLengthMax) {
-                            todoTitleLengthMax = (int) num.value;
-                            editor.putInt("todoTitleLengthMax", todoTitleLengthMax);
-                            changed = true;
-                        }
-                    }
-                    break;
-                }
-                case "todo_item_length_max": {
-                    if (value.value instanceof TLRPC.TL_jsonNumber) {
-                        TLRPC.TL_jsonNumber num = (TLRPC.TL_jsonNumber) value.value;
-                        if (num.value != todoItemLengthMax) {
-                            todoItemLengthMax = (int) num.value;
-                            editor.putInt("todoItemLengthMax", todoItemLengthMax);
                             changed = true;
                         }
                     }

@@ -34,7 +34,6 @@ import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.graphics.Insets;
@@ -392,15 +391,6 @@ public class TodoItemMenu extends Dialog {
                 public boolean canPerformActions() {
                     return false;
                 }
-
-                @Override
-                public boolean didPressToDoButton(ChatMessageCell cell, TLRPC.TodoItem task, boolean enable) {
-                    if (TodoItemMenu.this.cell.getDelegate() != null) {
-                        return TodoItemMenu.this.cell.getDelegate().didPressToDoButton(TodoItemMenu.this.cell, task, enable);
-                    } else {
-                        return false;
-                    }
-                }
             });
             myTaskCell.setMessageObject(messageObject, cell.getCurrentMessagesGroup(), cell.pinnedBottom, cell.pinnedTop, cell.firstInChat);
             containerView.addView(myTaskCell, new FrameLayout.LayoutParams(cell.getWidth(), height, Gravity.TOP | Gravity.LEFT));
@@ -442,47 +432,16 @@ public class TodoItemMenu extends Dialog {
         ItemOptions taskOptions = ItemOptions.makeOptions(containerView, resourcesProvider, null);
 
         TLRPC.TodoItem _task = null;
-        TLRPC.TodoCompletion _completion = null;
-        int _index = -1;
         TLRPC.TL_messageMediaToDo media = (TLRPC.TL_messageMediaToDo) MessageObject.getMedia(messageObject);
         for (int i = 0; i < media.todo.list.size(); ++i) {
             if (media.todo.list.get(i).id == taskId) {
-                _task = media.todo.list.get(_index = i);
-                break;
-            }
-        }
-        for (int i = 0; i < media.completions.size(); ++i) {
-            if (media.completions.get(i).id == taskId) {
-                _completion = media.completions.get(i);
+                _task = media.todo.list.get(i);
                 break;
             }
         }
         final TLRPC.TodoItem task = _task;
-        final TLRPC.TodoCompletion completion = _completion;
-        final int index = _index;
-        if (messageObject.canCompleteTodo()) {
-            if (completion != null) {
-                taskOptions.addText(LocaleController.formatTodoCompletedDate(completion.date), 14);
-                taskOptions.addGap();
-                taskOptions.add(R.drawable.msg_cancel, getString(R.string.TodoUncheck), () -> {
-                    if (chatActivity.isInScheduleMode()) {
-                        Toast.makeText(getContext(), getString(R.string.MessageScheduledTodo), Toast.LENGTH_LONG).show();
-                    } else {
-                        myTaskCell.toggleTodoCheck(myTaskCell.getTodoIndex(taskId), false);
-                    }
-                    dismiss(true);
-                });
-            } else {
-                taskOptions.add(R.drawable.msg_select, getString(R.string.TodoCheck), () -> {
-                    if (chatActivity.isInScheduleMode()) {
-                        Toast.makeText(getContext(), getString(R.string.MessageScheduledTodo), Toast.LENGTH_LONG).show();
-                    } else {
-                        myTaskCell.toggleTodoCheck(myTaskCell.getTodoIndex(taskId), false);
-                    }
-                    dismiss(true);
-                });
-            }
-        }
+        // LoogriGram: ticking the task off or back, editing it and deleting it
+        // were offered here; each is Premium's (a tick, or an edit of the list).
         if (task != null) {
             if (chatActivity != null) {
                 taskOptions.add(R.drawable.menu_reply, getString(R.string.TodoItemQuote), () -> {
@@ -503,47 +462,6 @@ public class TodoItemMenu extends Dialog {
                 AndroidUtilities.addToClipboard(MessageObject.formatTextWithEntities(task.title, false));
                 dismiss(true);
             });
-        }
-        if (messageObject.canEditMessage(chatActivity.currentChat)) {
-            taskOptions.add(R.drawable.msg_edit, getString(R.string.TodoEditItem), () -> {
-                PollCreateActivity pollCreateActivity = new PollCreateActivity(chatActivity, true, false);
-                pollCreateActivity.setEditing(MessageObject.getMedia(messageObject), false, index);
-                pollCreateActivity.setDelegate((poll, params, notify, scheduleDate) -> {
-                    if (poll instanceof TLRPC.TL_messageMediaToDo && messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaToDo) {
-                        ((TLRPC.TL_messageMediaToDo) poll).completions = ((TLRPC.TL_messageMediaToDo) messageObject.messageOwner.media).completions;
-                    }
-                    messageObject.messageOwner.media = poll;
-                    chatActivity.getSendMessagesHelper().editMessage(messageObject, null, null, null, null, null, null, false, false, null);
-                });
-                chatActivity.presentFragment(pollCreateActivity);
-                dismiss(false);
-            });
-            if (media.todo.list.size() > 1) {
-                taskOptions.add(R.drawable.msg_delete, getString(R.string.TodoDeleteItem), () -> {
-                    for (int i = 0; i < media.todo.list.size(); ++i) {
-                        final TLRPC.TodoItem item = media.todo.list.get(i);
-                        if (item.id == taskId) {
-                            media.todo.list.remove(i);
-                            i--;
-                        }
-                    }
-                    for (int i = 0; i < media.completions.size(); ++i) {
-                        final TLRPC.TodoCompletion c = media.completions.get(i);
-                        if (c.id == taskId) {
-                            media.completions.remove(i);
-                            if (media.completions.isEmpty()) {
-                                media.flags &=~ 1;
-                            }
-                            i--;
-                        }
-                    }
-                    messageObject.messageOwner.media = media;
-                    chatActivity.getSendMessagesHelper().editMessage(messageObject, null, null, null, null, null, null, false, false, null);
-                    chatActivity.updateVisibleRows();
-
-                    dismiss(false);
-                });
-            }
         }
 
         taskOptions.setGapBackgroundColor(Theme.multAlpha(Theme.getColor(Theme.key_actionBarDefaultSubmenuItem, resourcesProvider), 0.06f));

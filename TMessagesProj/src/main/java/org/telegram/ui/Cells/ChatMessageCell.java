@@ -655,10 +655,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         default void didPressVoteButtons(ChatMessageCell cell, ArrayList<TLRPC.PollAnswer> buttons, int showCount, int x, int y) {
         }
 
-        default boolean didPressToDoButton(ChatMessageCell cell, TLRPC.TodoItem task, boolean enable) {
-            return false;
-        }
-
         default boolean didLongPressPollOption(ChatMessageCell cell, TLRPC.PollAnswer answer) {
             return false;
         }
@@ -3540,21 +3536,20 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                                 pollCheckBox[pressedVoteButton].setChecked(true, true);
                             }
                             checkInstantButtonForPoll(true);
-                        } else {
+                        } else if (button.task == null) {
+                            // LoogriGram: a tap on a task ticked it off, which the server
+                            // allows only for Premium accounts; nothing happens, as on
+                            // desktop (history_view_todo_list.cpp).
                             pollVoteInProgressNum = pressedVoteButton;
                             pollVoteInProgress = true;
                             voteCurrentProgressTime = 0.0f;
                             firstCircleLength = true;
                             voteCurrentCircleLength = 360;
                             voteRisingCircleLength = false;
-                            if (button.task != null) {
-                                toggleTodoCheck(pressedVoteButton, true);
-                            } else {
-                                vibrateOnPollVote = true;
-                                ArrayList<TLRPC.PollAnswer> answers = new ArrayList<>();
-                                answers.add(answer);
-                                delegate.didPressVoteButtons(this, answers, -1, 0, 0);
-                            }
+                            vibrateOnPollVote = true;
+                            ArrayList<TLRPC.PollAnswer> answers = new ArrayList<>();
+                            answers.add(answer);
+                            delegate.didPressVoteButtons(this, answers, -1, 0, 0);
                         }
                     }
                 }
@@ -5242,39 +5237,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
     public ArrayList<PollButton> getPollButtons() {
         return pollButtons;
-    }
-
-    public void toggleTodoCheck(int index, boolean vibrate) {
-        if (index < 0 || index >= pollButtons.size()) return;
-        final PollButton button = pollButtons.get(index);
-        if (delegate.didPressToDoButton(this, button.task, !button.chosen)) {
-            try {
-                if (vibrate) performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
-            } catch (Exception ignored) {}
-            final long dialogId = currentMessageObject.getDialogId();
-            final long send_as = ChatObject.getSendAsPeerId(MessagesController.getInstance(currentAccount).getChat(dialogId), MessagesController.getInstance(currentAccount).getChatFull(dialogId), true);
-            final TLRPC.TL_messageMediaToDo media = (TLRPC.TL_messageMediaToDo) MessageObject.getMedia(currentMessageObject);
-            MessageObject.toggleTodo(currentAccount, send_as, media, button.task.id, !button.chosen, ConnectionsManager.getInstance(currentAccount).getCurrentTime());
-            if (!button.chosen) {
-                final TLObject obj = MessagesController.getInstance(currentAccount).getUserOrChat(send_as);
-                button.avatarDrawable.setInfo(obj);
-                button.avatarImageReceiver.setForUserOrChat(obj, button.avatarDrawable);
-                button.author = new Text(DialogObject.getName(obj), 12);
-            }
-            pollCheckBox[index].setChecked(!button.chosen, true);
-            if (animatedInfoLayout != null) {
-                if (!currentMessageObject.isOutOwner() && currentMessageObject.getDialogId() >= 0 && !media.todo.others_can_complete) {
-                    final String by = DialogObject.getName(currentMessageObject.getFromChatId());
-                    animatedInfoLayout.setText(formatPluralStringComma("TodoCompletedBy", media.todo.list.size(), MessageObject.getCompletionsCount(media), by));
-                } else {
-                    animatedInfoLayout.setText(formatPluralStringComma("TodoCompleted", media.todo.list.size(), MessageObject.getCompletionsCount(media)));
-                }
-            }
-            button.chosen = !button.chosen;
-            invalidate();
-        } else {
-            pollVoteInProgress = false;
-        }
     }
 
     public void syncTodoCheck(int index, ChatMessageCell from) {
@@ -10807,7 +10769,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         }
                     }
                 }
-                Boolean sending = SendMessagesHelper.getInstance(currentAccount).getSendingTodoValue(messageObject, task);
                 PollButton button = new PollButton();
                 button.author = prevButton != null ? prevButton.author : null;
                 if (prevButton != null) {
@@ -10845,9 +10806,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             break;
                         }
                     }
-                }
-                if (sending != null) {
-                    button.chosen = sending;
                 }
                 if (button.chosen && !messageObject.canCompleteTodo()) {
                     if (!(answerText instanceof SpannableStringBuilder)) {

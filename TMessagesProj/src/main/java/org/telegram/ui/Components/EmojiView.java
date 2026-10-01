@@ -4875,13 +4875,6 @@ public class EmojiView extends FrameLayout implements
         }
     }
 
-    public void scrollEmojiToTop() {
-        emojiGridView.stopScroll();
-        emojiTabs.scrollTo(0, 0);
-        resetTabsY(Type.EMOJIS);
-        emojiLayoutManager.scrollToPositionWithOffset(0, 0);
-    }
-
     private void checkEmojiSearchFieldScroll(boolean isLayout) {
         if (delegate != null && delegate.isSearchOpened()) {
             RecyclerView.ViewHolder holder = emojiGridView.findViewHolderForAdapterPosition(0);

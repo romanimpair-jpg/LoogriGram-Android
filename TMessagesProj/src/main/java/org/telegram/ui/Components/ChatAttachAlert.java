@@ -187,7 +187,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     public static final int LAYOUT_TYPE_DOCUMENTS = 4;
     // LoogriGram: LAYOUT_TYPE_CONTACTS (5) was the address book tab.
     public static final int LAYOUT_TYPE_POLL = 9;
-    public static final int LAYOUT_TYPE_TODO = 12;
+    // LoogriGram: 12 was LAYOUT_TYPE_TODO, creating a to-do list (Premium's).
     public static final int LAYOUT_TYPE_STICKERS = 13;
     public static final int LAYOUT_TYPE_EMOJI = 14;
     public static final int LAYOUT_TYPE_LINK = 15;
@@ -602,9 +602,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             if (pollLayout != null && (nextAttachLayout == pollLayout || currentAttachLayout == pollLayout)) {
                 updateSelectedPosition(nextAttachLayout == pollLayout ? 1 : 0);
             }
-            if (todoLayout != null && (nextAttachLayout == todoLayout || currentAttachLayout == todoLayout)) {
-                updateSelectedPosition(nextAttachLayout == todoLayout ? 1 : 0);
-            }
         } else if (id == ANIMATOR_ID_CAPTION_VISIBLE) {
             checkUi_bottomFade();
         } else if (id == ANIMATOR_ID_CAPTION_NOT_EMPTY) {
@@ -691,9 +688,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 nextAttachLayout.onHideShowProgress(value);
                 if (nextAttachLayout == pollLayout || currentAttachLayout == pollLayout) {
                     updateSelectedPosition(nextAttachLayout == pollLayout ? 1 : 0);
-                }
-                if (nextAttachLayout == todoLayout || currentAttachLayout == todoLayout) {
-                    updateSelectedPosition(nextAttachLayout == todoLayout ? 1 : 0);
                 }
                 nextAttachLayout.setTranslationY(dp(78) * value);
                 currentAttachLayout.onHideShowProgress(1.0f - Math.min(1.0f, value / 0.7f));
@@ -956,7 +950,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     private ChatAttachAlertPhotoLayout photoLayout;
     private ChatAttachAlertAudioLayout audioLayout;
     private ChatAttachAlertPollLayout pollLayout;
-    private ChatAttachAlertPollLayout todoLayout;
     private ChatAttachAlertDocumentLayout documentLayout;
     private ChatAttachAlertPhotoLayoutPreview photoPreviewLayout;
     public ChatAttachAlertColorsLayout colorsLayout;
@@ -1058,7 +1051,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     private boolean videosEnabled = true;
     private boolean musicEnabled = true;
     private boolean pollsEnabled = true;
-    private boolean todoEnabled = true;
 
     public boolean restrictEphemeralMessageTypes;
 
@@ -1395,9 +1387,8 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                         return false;
                     }
                     return (
-                        currentAttachLayout != pollLayout && currentAttachLayout != todoLayout && !getCommentView().isPopupVisible() ||
-                        currentAttachLayout == pollLayout && !pollLayout.isPopupVisible() ||
-                        currentAttachLayout == todoLayout && !todoLayout.isPopupVisible()
+                        currentAttachLayout == pollLayout ||
+                        !getCommentView().isPopupVisible()
                     );
                 }
             };
@@ -1480,27 +1471,10 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     ignoreLayout = false;
                 }
 
-                if (pollLayout != null && keyboardSize <= dp(20) && !pollLayout.isWaitingForKeyboardOpen() && !pollLayout.isPopupShowing() && !pollLayout.isAnimatePopupClosing() && !pollLayout.isEmojiSearchOpened) {
-                    ignoreLayout = true;
-                    pollLayout.hideEmojiView();
-                    ignoreLayout = false;
-                }
-
-                if (todoLayout != null && keyboardSize <= dp(20) && !todoLayout.isWaitingForKeyboardOpen() && !todoLayout.isPopupShowing() && !todoLayout.isAnimatePopupClosing() && !todoLayout.isEmojiSearchOpened) {
-                    ignoreLayout = true;
-                    todoLayout.hideEmojiView();
-                    ignoreLayout = false;
-                }
-
                 int emojiPadding = 0;
                 if (keyboardSize <= dp(20)) {
                     if (keyboardVisible) {
                         emojiPadding = 0;
-                        if (currentAttachLayout == pollLayout && pollLayout.emojiView != null && pollLayout.isEmojiSearchOpened) {
-                            emojiPadding += dp(120);
-                        } else if (currentAttachLayout == todoLayout && todoLayout.emojiView != null && todoLayout.isEmojiSearchOpened) {
-                            emojiPadding += dp(120);
-                        }
                     } else {
                         emojiPadding = getEmojiPadding();
                     }
@@ -1553,7 +1527,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                         }
                     }
 
-                    if (commentTextView != null && commentTextView.isPopupView(child) || topCommentTextView != null && topCommentTextView.isPopupView(child) || pollLayout != null && child == pollLayout.emojiView || todoLayout != null && child == todoLayout.emojiView) {
+                    if (commentTextView != null && commentTextView.isPopupView(child) || topCommentTextView != null && topCommentTextView.isPopupView(child)) {
                         if (inBubbleMode) {
                             child.measure(MeasureSpec.makeMeasureSpec(widthSize, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(heightSize + getPaddingTop(), MeasureSpec.EXACTLY));
                         } else if (AndroidUtilities.isInMultiwindow || AndroidUtilities.isTablet()) {
@@ -1599,17 +1573,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 int paddingBottom = getPaddingBottom();
                 if (!keyboardVisible) {
                     int emojiPadding = 0;
-                    if (pollLayout != null && currentAttachLayout == pollLayout && pollLayout.emojiView != null) {
-                        if (keyboardSize <= dp(20) && !AndroidUtilities.isInMultiwindow && !AndroidUtilities.isTablet()) {
-                            emojiPadding = pollLayout.getEmojiPadding();
-                        }
-                    } else if (todoLayout != null && currentAttachLayout == todoLayout && todoLayout.emojiView != null) {
-                        if (keyboardSize <= dp(20) && !AndroidUtilities.isInMultiwindow && !AndroidUtilities.isTablet()) {
-                            emojiPadding = todoLayout.getEmojiPadding();
-                        }
-                    } else {
-                        emojiPadding = keyboardSize <= dp(20) && !AndroidUtilities.isInMultiwindow && !AndroidUtilities.isTablet() ? getCommentView().getEmojiPadding() : 0;
-                    }
+                    emojiPadding = keyboardSize <= dp(20) && !AndroidUtilities.isInMultiwindow && !AndroidUtilities.isTablet() ? getCommentView().getEmojiPadding() : 0;
                     if (emojiPadding > 0) {
                         paddingBottom += emojiPadding; // + AndroidUtilities.navigationBarHeight;
                     }
@@ -1678,7 +1642,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                         childTop = 0;
                     }
 
-                    if (commentTextView != null && commentTextView.isPopupView(child) || topCommentTextView != null && topCommentTextView.isPopupView(child) || pollLayout != null && child == pollLayout.emojiView || todoLayout != null && child == todoLayout.emojiView) {
+                    if (commentTextView != null && commentTextView.isPopupView(child) || topCommentTextView != null && topCommentTextView.isPopupView(child)) {
                         if (AndroidUtilities.isTablet()) {
                             childTop = getMeasuredHeight() - child.getMeasuredHeight();
                         } else {
@@ -1732,8 +1696,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                         float toMove = offset;
                         if (layout == pollLayout) {
                             toMove -= dp(3);
-                        } else if (layout == todoLayout) {
-                            toMove -= dp(3);
                         } else {
                             toMove += dp(4);
                         }
@@ -1774,8 +1736,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     } else {
                         float toMove = offset;
                         if (layout == pollLayout) {
-                            toMove -= dp(3);
-                        } else if (layout == todoLayout) {
                             toMove -= dp(3);
                         } else {
                             toMove += dp(4);
@@ -1889,8 +1849,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     } else if (top + backgroundPaddingTop < h) {
                         float toMove = offset;
                         if (layout == pollLayout) {
-                            toMove -= dp(3);
-                        } else if (layout == todoLayout) {
                             toMove -= dp(3);
                         } else {
                             toMove += dp(4);
@@ -2726,19 +2684,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                         showLayout(restrictedLayout);
                     } else {
                         showPollLayout(true, null);
-                    }
-                } else if (num == 12) {
-                    if (!todoEnabled) {
-                        restrictedLayout = new ChatAttachRestrictedLayout(9, this, getContext(), resourcesProvider);
-                        showLayout(restrictedLayout);
-                    } else {
-                        if (todoLayout == null) {
-                            layouts[1] = todoLayout = new ChatAttachAlertPollLayout(this, getContext(), true, resourcesProvider, null);
-                            todoLayout.setDelegate((poll, caption, media, params, notify, scheduleDate) ->
-                                ((ChatActivity) baseFragment).sendTodo((TLRPC.TL_messageMediaToDo) poll, notify, scheduleDate)
-                            );
-                        }
-                        showLayout(todoLayout);
                     }
                 } else if (num == LAYOUT_TYPE_STICKERS) {
                     if (stickersLayout == null) {
@@ -3836,12 +3781,10 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     private boolean hasOverridenWebviewBackgroundColor;
     private int overridenWebviewBackgroundColor;
 
+    // LoogriGram: the poll layout's emoji panel was Premium's (custom emoji in
+    // questions and answers); its padding and visibility checks went with it.
     private int getEmojiPadding() {
-        if (currentAttachLayout == pollLayout && pollLayout.emojiView != null) {
-            return pollLayout.getEmojiPadding();
-        } else if (currentAttachLayout == todoLayout && todoLayout.emojiView != null) {
-            return todoLayout.getEmojiPadding();
-        } else if (captionAbove) {
+        if (captionAbove) {
             return topCommentTextView.getEmojiPadding();
         } else {
             return commentTextView.getEmojiPadding();
@@ -4176,8 +4119,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             newId = LAYOUT_TYPE_POLL;
         } else if (layout == colorsLayout) {
             newId = 10;
-        } else if (layout == todoLayout) {
-            newId = LAYOUT_TYPE_TODO;
         } else if (layout == emojiLayout) {
             newId = LAYOUT_TYPE_EMOJI;
         } else if (layout == stickersLayout) {
@@ -4188,7 +4129,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
 
     private void showPollLayout(boolean animated, Boolean quiz) {
         if (pollLayout == null) {
-            layouts[1] = pollLayout = new ChatAttachAlertPollLayout(this, getContext(), false, resourcesProvider, quiz);
+            layouts[1] = pollLayout = new ChatAttachAlertPollLayout(this, getContext(), resourcesProvider, quiz);
             pollLayout.setDelegate((poll, caption, media, params, notify, scheduleDate) ->
                 ((ChatActivity) baseFragment).sendPoll((TLRPC.TL_messageMediaPoll) poll, caption, media, params, notify, scheduleDate)
             );
@@ -4313,7 +4254,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                         springAnimation.getSpring().setDampingRatio(0.75f);
                         springAnimation.getSpring().setStiffness(500.0f);
                         springAnimation.addUpdateListener((animation12, value, velocity) -> {
-                            if (nextAttachLayout == pollLayout || nextAttachLayout == todoLayout || (isPhotoPicker && viewChangeAnimator != null)) {
+                            if (nextAttachLayout == pollLayout || (isPhotoPicker && viewChangeAnimator != null)) {
                                 updateSelectedPosition(1);
                             }
                             nextAttachLayout.onContainerTranslationUpdated(currentPanTranslationY);
@@ -4472,7 +4413,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         float isGray = 0;
         for (ListAnimator.Entry<Long> entry : animatorCurrentVisibleLayout) {
             long id = entry.item;
-            if (id == LAYOUT_TYPE_PHOTO || id == LAYOUT_TYPE_MUSIC || id == LAYOUT_TYPE_DOCUMENTS || id == LAYOUT_TYPE_POLL || id == LAYOUT_TYPE_TODO) {
+            if (id == LAYOUT_TYPE_PHOTO || id == LAYOUT_TYPE_MUSIC || id == LAYOUT_TYPE_DOCUMENTS || id == LAYOUT_TYPE_POLL) {
                 isGray += entry.getVisibility();
             }
         }
@@ -5139,7 +5080,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         int scrollOffset = getScrollOffsetY(idx);
         int t = scrollOffset - backgroundPaddingTop;
         float toMove;
-        if (layout == pollLayout || layout == todoLayout) {
+        if (layout == pollLayout) {
             t -= dp(13);
             toMove = dp(11);
         } else {
@@ -5194,8 +5135,8 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             updateCommentTextViewPosition();
         }
         checkUi_writeButtonContainerY();
-        float pollTranslationY = 0.0f, todoTranslationY = 0.0f;
-        float pollAlpha = 0, todoAlpha = 0;
+        float pollTranslationY = 0.0f;
+        float pollAlpha = 0;
         if (pollLayout != null) {
             if (AndroidUtilities.isTablet()) {
                 finalMove = 63;
@@ -5212,34 +5153,14 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 pollAlpha = (nextAttachLayout == null ? 1.0f : 1.0f - translationProgress);
             }
         }
-        if (todoLayout != null) {
-            if (AndroidUtilities.isTablet()) {
-                finalMove = 63;
-            } else if (AndroidUtilities.displaySize.x > AndroidUtilities.displaySize.y) {
-                finalMove = 53;
-            } else {
-                finalMove = 59;
-            }
-            if (todoLayout == nextAttachLayout) {
-                todoTranslationY = (todoLayout.getTranslationY() + getScrollOffsetY(1) - dp(7 + finalMove * moveProgress - 12 * (1 - moveProgress)));
-                todoAlpha = translationProgress;
-            } else if (todoLayout == currentAttachLayout) {
-                todoTranslationY = (todoLayout.getTranslationY() + getScrollOffsetY(0) - dp(7 + finalMove * moveProgress - 12 * (1 - moveProgress)));
-                todoAlpha = (nextAttachLayout == null ? 1.0f : 1.0f - translationProgress);
-            }
-        }
         if (doneItem != null) {
             int rtl = LocaleController.isRTL ? containerView.getMeasuredWidth() - doneItem.getMeasuredWidth() - dp(72 - 10) : 0;
 
-            doneItem.setTranslationY(Math.max(0,
-                pollAlpha > 0 && todoAlpha > 0 ?
-                    lerp(pollTranslationY, todoTranslationY, todoAlpha):
-                    Math.max(pollAlpha > 0 ? pollTranslationY : 0, todoAlpha > 0 ? todoTranslationY : 0)
-            ) + currentPanTranslationY);
+            doneItem.setTranslationY(Math.max(0, pollAlpha > 0 ? pollTranslationY : 0) + currentPanTranslationY);
             doneItem.setTranslationX(-(dp(12 + 7 * (1 - moveProgress)) + rtl * (1f - moveProgress)));
         }
 
-        doneItemAlphaByLayout = Math.max(todoAlpha, pollAlpha);
+        doneItemAlphaByLayout = pollAlpha;
         checkUi_doneItemVisibility();
     }
 
@@ -5578,17 +5499,14 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 videosEnabled = ChatObject.canSendVideo(chat);
                 musicEnabled = ChatObject.canSendMusic(chat);
                 pollsEnabled = ChatObject.canSendPolls(chat);
-                todoEnabled = !ChatObject.isChannelAndNotMegaGroup(chat) && ChatObject.canSendPolls(chat);
                 documentsEnabled = ChatObject.canSendDocument(chat);
             } else {
                 pollsEnabled = UserObject.isBot(user) || UserObject.isUserSelf(user);
-                todoEnabled = !(baseFragment instanceof ChatActivity) || ((ChatActivity) baseFragment).getCurrentEncryptedChat() == null;
             }
         }
 
         if (restrictEphemeralMessageTypes) {
             pollsEnabled = false;
-            todoEnabled = false;
         }
 
         if (!(baseFragment instanceof ChatActivity && avatarPicker != 2)) {
@@ -5872,7 +5790,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         private int documentButton;
         private int musicButton;
         private int pollButton;
-        private int todoButton;
         private int locationButton;
         private int stickerButton;
         private int emojiButton;
@@ -5929,9 +5846,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                         attachButton.setTag(9);
                         attachButton.setTag(5);
                         err = !checkContactsPermission(mContext);
-                    } else if (position == todoButton) {
-                        attachButton.setTextAndIcon(12, getString(R.string.Todo), GlassTabView.TabAnimation.CHECKLIST);
-                        attachButton.setTag(12);
                     } else if (position == stickerButton) {
                         attachButton.setTextAndIcon(LAYOUT_TYPE_STICKERS, getString(R.string.ChatSticker), GlassTabView.TabAnimation.STICKER);
                         attachButton.setTag(LAYOUT_TYPE_STICKERS);
@@ -5988,7 +5902,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             documentButton = -1;
             musicButton = -1;
             pollButton = -1;
-            todoButton = -1;
             locationButton = -1;
             stickerButton = -1;
             linksButton = -1;
@@ -6071,10 +5984,8 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     pollButton = buttonsCount++;
                 }
                 // LoogriGram: creating a to-do list is Premium's, so its button is
-                // drawn only for a Premium account; upstream drew it badged for all.
-                if (todoEnabled && UserConfig.getInstance(currentAccount).isPremium()) {
-                    todoButton = buttonsCount++;
-                }
+                // not drawn; upstream drew it badged for all. Its layout (a
+                // ChatAttachAlertPollLayout in to-do mode) went with it.
                 // LoogriGram: no Contact button - see openContactsLayout.
                 musicButton = buttonsCount++;
             }
@@ -6115,7 +6026,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         }
         audioLayout = null;
         pollLayout = null;
-        todoLayout = null;
         documentLayout = null;
         for (int a = 1; a < layouts.length; a++) {
             if (layouts[a] == null) {

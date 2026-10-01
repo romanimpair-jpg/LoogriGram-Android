@@ -1157,8 +1157,7 @@ public class ChatActivity extends BaseFragment implements
     public final static int OPTION_EDIT_SCHEDULE_TIME = 102;
     public final static int OPTION_OPEN_PROFILE = 104;
     public final static int OPTION_FACT_CHECK = 106;
-    public final static int OPTION_EDIT_TODO = 109;
-    public final static int OPTION_ADD_TO_TODO = 110;
+    // LoogriGram: 109 and 110 were OPTION_EDIT_TODO and OPTION_ADD_TO_TODO.
 
     // LoogriGram: OPTION_SUGGESTION_EDIT_PRICE was 111, and is gone with the price.
     public final static int OPTION_SUGGESTION_EDIT_TIME = 112;
@@ -3670,10 +3669,9 @@ public class ChatActivity extends BaseFragment implements
                         selectedMessagesCanCopyIds[a].clear();
                         selectedMessagesCanStarIds[a].clear();
                     }
-                    if (messageObject != null && messageObject.isTodo()) {
-                        selectedObject = messageObject;
-                        processSelectedOption(OPTION_EDIT_TODO);
-                    } else {
+                    // LoogriGram: a to-do list opened Premium's list editor here;
+                    // without Premium it is not edited.
+                    if (messageObject == null || !messageObject.isTodo()) {
                         startEditingMessageObject(messageObject);
                     }
                     hideActionMode();
@@ -31025,58 +31023,6 @@ public class ChatActivity extends BaseFragment implements
                 }
                 break;
             }
-            case OPTION_EDIT_TODO:
-            case OPTION_ADD_TO_TODO: {
-                if (getUserConfig().isPremium()) {
-                    final MessageObject object = selectedObject;
-                    final boolean adding = option == OPTION_ADD_TO_TODO;
-                    final int oldAnswersCount;
-                    if (MessageObject.getMedia(object) instanceof TLRPC.TL_messageMediaToDo) {
-                        final TLRPC.TL_messageMediaToDo m = (TLRPC.TL_messageMediaToDo) MessageObject.getMedia(object);
-                        oldAnswersCount = m.todo.list.size();
-                    } else {
-                        oldAnswersCount = 0;
-                    }
-                    PollCreateActivity pollCreateActivity = new PollCreateActivity(ChatActivity.this, true, false);
-                    pollCreateActivity.setEditing(MessageObject.getMedia(object), adding);
-                    pollCreateActivity.setDelegate((poll, params, notify, scheduleDate) -> {
-                        if (adding) {
-                            int maxUsedId = 0;
-                            final TLRPC.TL_messages_appendTodoList req = new TLRPC.TL_messages_appendTodoList();
-                            req.peer = getMessagesController().getInputPeer(object.getDialogId());
-                            req.msg_id = object.getId();
-                            if (poll instanceof TLRPC.TL_messageMediaToDo) {
-                                final TLRPC.TL_messageMediaToDo m = (TLRPC.TL_messageMediaToDo) poll;
-                                for (int i = 0; i < oldAnswersCount; ++i) {
-                                    final TLRPC.TodoItem item = m.todo.list.get(i);
-                                    maxUsedId = Math.max(maxUsedId, item.id);
-                                }
-                                for (int i = oldAnswersCount; i < m.todo.list.size(); ++i) {
-                                    final TLRPC.TodoItem item = m.todo.list.get(i);
-                                    if (item.id <= maxUsedId) {
-                                        item.id = maxUsedId + 1;
-                                    }
-                                    req.list.add(item);
-                                    maxUsedId = Math.max(maxUsedId, item.id);
-                                }
-                                if (object.messageOwner.media instanceof TLRPC.TL_messageMediaToDo) {
-                                    m.completions = ((TLRPC.TL_messageMediaToDo) object.messageOwner.media).completions;
-                                }
-                            }
-                            object.messageOwner.media = poll;
-                            getConnectionsManager().sendRequest(req, null);
-                        } else {
-                            if (poll instanceof TLRPC.TL_messageMediaToDo && object.messageOwner.media instanceof TLRPC.TL_messageMediaToDo) {
-                                ((TLRPC.TL_messageMediaToDo) poll).completions = ((TLRPC.TL_messageMediaToDo) object.messageOwner.media).completions;
-                            }
-                            object.messageOwner.media = poll;
-                            getSendMessagesHelper().editMessage(object, null, null, null, null, null, null, false, false, null);
-                        }
-                    });
-                    presentFragment(pollCreateActivity);
-                }
-                break;
-            }
             case OPTION_STOP_POLL_OR_QUIZ: {
                 MessageObject object = selectedObject;
                 AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity(), themeDelegate);
@@ -32359,18 +32305,6 @@ public class ChatActivity extends BaseFragment implements
 
             final PollSendParams pollSendParams = new PollSendParams(media, poll, groupId, captionStr, entities, correctAnswers);
             SendMessagesHelper.prepareSendingPoll(getAccountInstance(), pollSendParams, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, notify, scheduleDate, getMessageChatSendParams(), getSendMonoForumPeerId(), messageSuggestionParams);
-            afterMessageSend();
-        }
-    }
-
-    public void sendTodo(TLRPC.TL_messageMediaToDo todo, boolean notify, int scheduleDate) {
-        if (checkSlowModeAlert()) {
-            final SendMessagesHelper.SendMessageParams params2 = SendMessagesHelper.SendMessageParams.of((TLRPC.TL_messageMediaPoll) null, dialog_id, replyingMessageObject, getThreadMessage(), null, null, notify, scheduleDate, 0);
-            params2.todo = todo;
-            params2.sendMessageChatArguments = getMessageChatSendParams();
-            params2.monoForumPeer = getSendMonoForumPeerId();
-            params2.suggestionParams = messageSuggestionParams;
-            getSendMessagesHelper().sendMessage(params2);
             afterMessageSend();
         }
     }
@@ -36940,31 +36874,6 @@ public class ChatActivity extends BaseFragment implements
             } else {
                 getSendMessagesHelper().sendVote(message, buttons, null);
                 cell.checkPollVoteSendingStatus(true);
-            }
-        }
-
-        @Override
-        public boolean didPressToDoButton(ChatMessageCell cell, TLRPC.TodoItem task, boolean enable) {
-            if (cell.getMessageObject().isForwarded()) {
-                final long fromId = DialogObject.getPeerDialogId(cell.getMessageObject().getFromPeer());
-                BulletinFactory.of(ChatActivity.this)
-                    .createSimpleBulletin(R.raw.passcode_lock_close, AndroidUtilities.replaceTags(formatString(R.string.TodoCompleteForbiddenForward, DialogObject.getName(currentAccount, fromId))))
-                    .show(true);
-                return false;
-            } else if (!cell.getMessageObject().canCompleteTodo()) {
-                final long fromId = DialogObject.getPeerDialogId(cell.getMessageObject().getFromPeer());
-                BulletinFactory.of(ChatActivity.this)
-                    .createSimpleBulletin(R.raw.passcode_lock_close, AndroidUtilities.replaceTags(formatString(R.string.TodoCompleteForbidden, DialogObject.getName(currentAccount, fromId))))
-                    .show(true);
-                return false;
-            } else if (!getUserConfig().isPremium()) {
-                // LoogriGram: checking off a task is Premium's; refused without
-                // the bulletin that offered it.
-                return false;
-            } else {
-                long send_as = ChatObject.getSendAsPeerId(currentChat, chatInfo, true);
-                getSendMessagesHelper().toggleTodo(send_as, cell.getMessageObject(), task, enable, null);
-                return true;
             }
         }
 
@@ -41705,6 +41614,8 @@ public class ChatActivity extends BaseFragment implements
                             }
                         }
 
+                        // LoogriGram: a to-do list also listed editing it and adding
+                        // tasks, both Premium's.
                         if (selectedObject.type == MessageObject.TYPE_POLL && !message.isPollClosed()) {
                             TLRPC.MessageMedia media = MessageObject.getMedia(selectedObject);
                             if (media instanceof TLRPC.TL_messageMediaPoll) {
@@ -41730,19 +41641,6 @@ public class ChatActivity extends BaseFragment implements
                                     }
                                     options.add(OPTION_STOP_POLL_OR_QUIZ);
                                     icons.add(R.drawable.msg_pollstop);
-                                }
-                            } else if (media instanceof TLRPC.TL_messageMediaToDo) {
-                                // LoogriGram: editing or adding to a to-do list is Premium's,
-                                // so neither is listed without it.
-                                if (getUserConfig().isPremium() && message.canEditMessage(currentChat)) {
-                                    items.add(getString(R.string.EditToDo));
-                                    options.add(OPTION_EDIT_TODO);
-                                    icons.add(R.drawable.msg_edit);
-                                }
-                                if (getUserConfig().isPremium() && message.canAppendToTodo()) {
-                                    items.add(getString(R.string.AddTasks));
-                                    options.add(OPTION_ADD_TO_TODO);
-                                    icons.add(R.drawable.msg_addbot);
                                 }
                             }
                         } else if (selectedObject.isMusic() && !noforwards && !selectedObject.isVoiceOnce() && !selectedObject.isRoundOnce()) {

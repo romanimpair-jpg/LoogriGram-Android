@@ -3879,21 +3879,6 @@ public class MessageObject {
         return isOutOwner() || todo.todo.others_can_complete;
     }
 
-    public boolean canAppendToTodo() {
-        TLRPC.MessageMedia m = getMedia(messageOwner);
-        if (!(m instanceof TLRPC.TL_messageMediaToDo)) {
-            return false;
-        }
-        if (isForwarded()) {
-            return false;
-        }
-        final TLRPC.TL_messageMediaToDo todo = (TLRPC.TL_messageMediaToDo) m;
-        if (todo.todo.list.size() >= MessagesController.getInstance(currentAccount).todoItemsMax) {
-            return false;
-        }
-        return isOutOwner() || todo.todo.others_can_complete && todo.todo.others_can_append;
-    }
-
     public boolean canUnvote() {
         if (type != TYPE_POLL) {
             return false;
@@ -12426,27 +12411,6 @@ public class MessageObject {
             }
         }
         return false;
-    }
-
-    public static void toggleTodo(int currentAccount, long dialogId, TLRPC.TL_messageMediaToDo mediaTodo, int taskId, boolean enable, int currentDate) {
-        for (int i = 0; i < mediaTodo.completions.size(); ++i) {
-            final TLRPC.TodoCompletion completion = mediaTodo.completions.get(i);
-            if (completion.id == taskId) {
-                mediaTodo.completions.remove(i);
-                if (mediaTodo.completions.isEmpty()) {
-                    mediaTodo.flags &=~ 1;
-                }
-                i--;
-            }
-        }
-        if (enable) {
-            final TLRPC.TL_todoCompletion completion = new TLRPC.TL_todoCompletion();
-            completion.id = taskId;
-            completion.completed_by = MessagesController.getInstance(currentAccount).getPeer(dialogId);
-            completion.date = currentDate;
-            mediaTodo.flags |= 1;
-            mediaTodo.completions.add(completion);
-        }
     }
 
     public long getPollHash() {

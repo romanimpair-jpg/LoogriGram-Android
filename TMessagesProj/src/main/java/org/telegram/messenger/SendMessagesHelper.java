@@ -110,7 +110,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -3566,45 +3565,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             }
             AndroidUtilities.runOnUIThread(() -> {
                 waitingForVote.remove(key);
-                if (finishRunnable != null) {
-                    finishRunnable.run();
-                }
-            });
-        });
-    }
-
-    private final HashMap<Integer, Boolean> waitingForTodoUpdate = new HashMap<>();
-    public Boolean getSendingTodoValue(final MessageObject messageObject, final TLRPC.TodoItem task) {
-        return waitingForTodoUpdate.get(Objects.hash(messageObject.getDialogId(), messageObject.getId(), task.id));
-    }
-    public int toggleTodo(final long send_as, final MessageObject messageObject, final TLRPC.TodoItem task, final boolean enabled, final Runnable finishRunnable) {
-        if (messageObject == null) {
-            return 0;
-        }
-        int hash = Objects.hash(messageObject.getDialogId(), messageObject.getId(), task.id);
-//        final String key = "todo_" + messageObject.getDialogId() + "_" + messageObject.getId() + "_" + task.id;
-//        if (waitingForCallback.containsKey(key)) {
-//            return 0;
-//        }
-        waitingForTodoUpdate.put(hash, enabled);
-        final TLRPC.TL_messages_toggleTodoCompleted req = new TLRPC.TL_messages_toggleTodoCompleted();
-        req.msg_id = messageObject.getId();
-        req.peer = getMessagesController().getInputPeer(messageObject.getDialogId());
-        if (enabled) {
-            req.completed.add(task.id);
-        } else {
-            req.incompleted.add(task.id);
-        }
-        return getConnectionsManager().sendRequest(req, (response, error) -> {
-            if (error == null) {
-                getMessagesStorage().toggleTodo(messageObject.getDialogId(), messageObject.getId(), task.id, enabled, send_as);
-                getMessagesController().processUpdates((TLRPC.Updates) response, false);
-            }
-            AndroidUtilities.runOnUIThread(() -> {
-                Boolean value = waitingForTodoUpdate.get(hash);
-                if (value != null && value == enabled) {
-                    waitingForTodoUpdate.remove(hash);
-                }
                 if (finishRunnable != null) {
                     finishRunnable.run();
                 }

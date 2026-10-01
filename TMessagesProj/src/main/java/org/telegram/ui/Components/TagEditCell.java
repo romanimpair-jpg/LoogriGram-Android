@@ -121,7 +121,7 @@ public class TagEditCell extends LinearLayout {
 
         addView(chatView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.FILL_HORIZONTAL));
 
-        editTextCell = new PollEditTextCell(context, false, PollEditTextCell.TYPE_DEFAULT, null, resourcesProvider);
+        editTextCell = new PollEditTextCell(context, false, null, resourcesProvider);
         final EditTextBoldCursor editText = editTextCell.getTextView();
         editText.setEnabled(true);
         editText.setSingleLine(true);
