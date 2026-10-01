@@ -1049,7 +1049,6 @@
     <string name="ActionInviteChannelUser">un1 ist dem Kanal über einen Einladungslink beigetreten</string>
     <string name="ActionInviteChannelUserFolder">un1 ist dem Kanal über einen Ordnereinladungslink beigetreten</string>
     <string name="ActionKickUser">un1 hat un2 aus der Gruppe entfernt</string>
-    <string name="ActionRefunded">un1 hat %1$s rückerstattet</string>
     <string name="ActionLeftUser">un1 hat die Gruppe verlassen</string>
     <string name="ActionAddUser">un1 hat un2 hinzugefügt</string>
     <string name="ActionRemovedPhoto">un1 hat das Gruppenbild entfernt</string>

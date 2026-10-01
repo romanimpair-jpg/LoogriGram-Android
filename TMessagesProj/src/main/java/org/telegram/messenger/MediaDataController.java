@@ -5987,12 +5987,6 @@ public class MediaDataController extends BaseController {
                                 messageObject.generatePinMessageText(null, null);
                             } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionGameScore) {
                                 messageObject.generateGameMessageText(null);
-                            } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPaymentSent) {
-                                messageObject.generatePaymentSentMessageText(null, false);
-                            } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPaymentSentMe) {
-                                messageObject.generatePaymentSentMessageText(null, true);
-                            } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionSuggestedPostApproval) {
-                                messageObject.generateSuggestionApprovalMessageText();
                             }
                             break;
                         }
@@ -6400,12 +6394,6 @@ public class MediaDataController extends BaseController {
                             m.generatePinMessageText(null, null);
                         } else if (m.messageOwner.action instanceof TLRPC.TL_messageActionGameScore) {
                             m.generateGameMessageText(null);
-                        } else if (m.messageOwner.action instanceof TLRPC.TL_messageActionPaymentSent) {
-                            m.generatePaymentSentMessageText(null, false);
-                        } else if (m.messageOwner.action instanceof TLRPC.TL_messageActionPaymentSentMe) {
-                            m.generatePaymentSentMessageText(null, true);
-                        }else if (m.messageOwner.action instanceof TLRPC.TL_messageActionSuggestedPostApproval) {
-                            m.generateSuggestionApprovalMessageText();
                         }
                     }
                     changed = true;

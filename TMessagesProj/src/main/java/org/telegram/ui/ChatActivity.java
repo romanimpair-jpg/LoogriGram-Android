@@ -23639,12 +23639,6 @@ public class ChatActivity extends BaseFragment implements
                     messageObject.generatePinMessageText(null, null);
                 } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionGameScore) {
                     messageObject.generateGameMessageText(null);
-                } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPaymentSent) {
-                    messageObject.generatePaymentSentMessageText(null, false);
-                } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPaymentSentMe) {
-                    messageObject.generatePaymentSentMessageText(null, true);
-                } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionSuggestedPostApproval) {
-                    messageObject.generateSuggestionApprovalMessageText();
                 }
             }
 
@@ -24693,12 +24687,6 @@ public class ChatActivity extends BaseFragment implements
                     messageObject.replyMessageObject = old.replyMessageObject;
                     if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionGameScore) {
                         messageObject.generateGameMessageText(null);
-                    } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPaymentSent) {
-                        messageObject.generatePaymentSentMessageText(null, false);
-                    } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPaymentSentMe) {
-                        messageObject.generatePaymentSentMessageText(null, true);
-                    } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionSuggestedPostApproval) {
-                        messageObject.generateSuggestionApprovalMessageText();
                     }
                 }
                 if (!old.isEditing()) {

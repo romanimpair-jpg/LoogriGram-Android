@@ -980,7 +980,6 @@
     <string name="ActionInviteChannelUser">un1 se unió al canal con un enlace</string>
     <string name="ActionInviteChannelUserFolder">un1 se unió al canal con un enlace de invitación de la carpeta</string>
     <string name="ActionKickUser">un1 eliminó a un2</string>
-    <string name="ActionRefunded">un1 reembolsó %1$s</string>
     <string name="ActionLeftUser">un1 salió del grupo</string>
     <string name="ActionAddUser">un1 añadió a un2</string>
     <string name="ActionRemovedPhoto">un1 eliminó la foto del grupo</string>

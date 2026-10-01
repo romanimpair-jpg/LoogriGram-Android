@@ -84,14 +84,6 @@
     <string name="CancelRegistration">Cancel registration</string>
     <string name="RegistrationProfileInfo">Profile info</string>
     <!--payments view-->
-    <string name="PaymentSuccessfullyPaid">You have just successfully transferred %1$s to %2$s for %3$s</string>
-    <string name="PaymentSuccessfullyPaidSubscription">You have just successfully transferred %1$s to %2$s for %3$s until %4$s</string>
-    <string name="PaymentSuccessfullyPaidNoItem">You have just successfully transferred %1$s to %2$s</string>
-    <string name="PaymentSuccessfullyPaidSubscriptionNoItem">You have just successfully transferred %1$s to %2$s until %3$s</string>
-    <string name="PaymentSuccessfullyPaidRecurrent">You successfully transferred %1$s to %2$s for %3$s and allowed future recurrent payments</string>
-    <string name="PaymentSuccessfullyPaidNoItemRecurrent">You successfully transferred %1$s to %2$s and allowed future recurrent payments</string>
-    <string name="PaymentSuccessfullyPaidMeSubscription">%1$s have transferred %2$s for %3$s subscription until %4$s</string>
-    <string name="PaymentSuccessfullyPaidMeNoItemSubscription">%1$s have transferred %2$s for subscription until %3$s</string>
     <string name="PaymentCheckout">Checkout</string>
     <string name="PaymentShippingMethod">Shipping methods</string>
     <string name="PaymentNoShippingMethod">Sorry, it is not possible to deliver to your address.</string>
@@ -573,48 +565,20 @@
     <string name="ChannelPublicEmptyUsernameTitle">Choose a link</string>
     <string name="ChannelPublicEmptyUsername">Please choose a link for your public channel, so that people can find it in search and share with others.\n\nIf you\'re not interested, we suggest creating a private channel instead.</string>
     <string name="ActionCreateChannel">Channel created</string>
-    <string name="ActionGiftTonInbound">sent you a gift for **un2**</string>
-    <string name="ActionGiftInbound">un1 sent you a gift for **un2**</string>
-    <string name="ActionGiftOutbound">You have sent a gift for **un2**</string>
-    <string name="ActionPrepaidGiftInbound">un1 sent an upgrade worth **un2** for your gift</string>
-    <string name="ActionPrepaidGiftOutbound">You sent an upgrade worth **un2** for **un1**\'s gift</string>
-    <string name="ActionGiftSelf">You bought a gift for **un2**</string>
-    <string name="ActionGiftAuctionSelf">You won the auction with a bid of **un2**</string>
-    <string name="ActionGiftSomeone">Someone sent you a gift!</string>
-    <string name="ActionGiftChannel_one">**un1** sent a gift to **un2** for %d Star</string>
-    <string name="ActionGiftChannel_other">**un1** sent a gift to **un2** for %d Stars</string>
-    <string name="ActionUniqueGiftUpgradeInbound">**un1** turned the gift from you into a unique collectible</string>
-    <string name="ActionUniqueGiftUpgradeInboundChannel">**un1** turned the gift into a unique collectible</string>
-    <string name="ActionUniqueGiftUpgradeOutbound">You turned the gift from **un1** into a unique collectible</string>
-    <string name="ActionUniqueGiftUpgradeSelf">You turned the gift into a unique collectible</string>
-    <string name="ActionUniqueGiftTransferInbound">**un1** transferred you a gift!</string>
-    <string name="ActionUniqueGiftTransferService">**un1** transferred a gift to **un2**!</string>
-    <string name="ActionUniqueGiftTransferOutbound">You transferred a gift to **un1**</string>
-    <string name="ActionUniqueGiftTransferOutboundAssigned">You started displaying %s on your Telegram profile page.</string>
-    <string name="ActionUniqueGiftCrafted">You crafted a new gift!</string>
-    <string name="ActionUniqueGiftResaleService_one">**un1** sent a gift to **un2** for %d Star!</string>
-    <string name="ActionUniqueGiftResaleService_other">**un1** sent a gift to **un2** for %d Stars!</string>
-    <string name="ActionUniqueGiftResaleServiceTON">**un1** sent a gift to **un2** for %s TON!</string>
-    <string name="ActionUniqueGiftResaleOutboundTON">You bought this gift for %s TON</string>
-    <string name="ActionUniqueGiftResaleInboundTON">**un1** bought you a gift for %s TON!</string>
     <string name="ActionUniqueGiftResaleOutbound_one">You bought this gift for %d Star</string>
     <string name="ActionUniqueGiftResaleOutbound_other">You bought this gift for %d Stars</string>
     <string name="ActionUniqueGiftResaleInbound_one">**un1** bought you a gift for %d Star!</string>
     <string name="ActionUniqueGiftResaleInbound_other">**un1** bought you a gift for %d Stars!</string>
 
-    <string name="ActionUniqueGiftResaleSoldOutboundTON">You sold this gift for %s TON</string>
     <string name="ActionUniqueGiftResaleSoldOutbound_one">You sold this gift for %d Star</string>
     <string name="ActionUniqueGiftResaleSoldOutbound_other">You sold this gift for %d Stars</string>
 
     <string name="ActionStarGiftInbound">%s sent you a gift</string>
-    <string name="ActionStarGift">Gift</string>
     <string name="ActionGiftPremiumTitle2_one">%d Month Premium</string>
     <string name="ActionGiftPremiumTitle2_other">%d Months Premium</string>
     <string name="ActionGiftPremiumText">Subscription for exclusive Telegram features.</string>
     <string name="ActionGiftPremiumView">View</string>
     <string name="ActionStarGiveawayPrizeTitle">Congratulations!</string>
-    <string name="ActionStarGiveawayPrize_one">You won a prize in a giveaway organized by **un1**.\n\nYour prize is **%d Star**.</string>
-    <string name="ActionStarGiveawayPrize_other">You won a prize in a giveaway organized by **un1**.\n\nYour prize is **%d Stars**.</string>
     <string name="ActionChannelChangedPhoto">Channel photo changed</string>
     <string name="ActionChannelChangedVideo">Channel video changed</string>
     <string name="ActionChannelRemovedPhoto">Channel photo removed</string>
@@ -3773,7 +3737,6 @@
     <string name="ActionInviteChannelUser">un1 joined the channel via invite link</string>
     <string name="ActionInviteChannelUserFolder">un1 joined the channel via folder invite link</string>
     <string name="ActionKickUser">un1 removed un2</string>
-    <string name="ActionRefunded">un1 refunded back %1$s</string>
     <string name="ActionLeftUser">un1 left the group</string>
     <string name="ActionAddUser">un1 added un2</string>
     <string name="ActionRemovedPhoto">un1 removed the group photo</string>
@@ -6385,18 +6348,12 @@
     <string name="BoostingReceivedPrizeDuration">Your prize is a **Telegram Premium** subscription for %s.</string>
     <string name="BoostingReceivedGiftOpenBtn">Open Gift Link</string>
     <string name="BoostingSaveRecipients">Save Recipients</string>
-    <string name="BoostingGiveawayJustStarted">%s just started a giveaway of Telegram Premium subscriptions to its followers.</string>
-    <string name="BoostingGiveawayJustStartedGroup">%s just started a giveaway of Telegram Premium subscriptions to its members.</string>
     <string name="BoostingStarsGiveawayJustStarted_one">%2$s just started a giveaway of %1$d Star to its followers.</string>
     <string name="BoostingStarsGiveawayJustStarted_other">%2$s just started a giveaway of %1$d Stars to its followers.</string>
     <string name="BoostingStarsGiveawayJustStartedGroup_one">%2$s just started a giveaway of %1$d Star to its members.</string>
     <string name="BoostingStarsGiveawayJustStartedGroup_other">%2$s just started a giveaway of %1$d Stars to its members.</string>
     <string name="BoostingGiveawayDeleteMsgTitle">Delete announcement</string>
     <string name="BoostingGiveawayDeleteMsgText">Deleting this message won\'t cancel the giveaway - the winners will still be selected on **%s**.\n\nOnce deleted, the Giveaway Announcement cannot be restored.</string>
-    <string name="BoostingGiveawayServiceWinnersSelected_one">%d winner of the giveaway were randomly selected by Telegram and received private message with giftcode.</string>
-    <string name="BoostingGiveawayServiceWinnersSelected_other">%d winners of the giveaway were randomly selected by Telegram and received private messages with giftcodes.</string>
-    <string name="BoostingStarsGiveawayServiceWinnersSelected_one">%1$d winner of the giveaway were randomly selected by Telegram.</string>
-    <string name="BoostingStarsGiveawayServiceWinnersSelected_other">%1$d winners of the giveaway were randomly selected by Telegram.</string>
     <string name="BoostingGiveawayServiceUndistributed_one">%d undistributed link codes were forwarded to channel administrators.</string>
     <string name="BoostingGiveawayServiceUndistributed_other">%d undistributed links codes were forwarded to channel administrators.</string>
     <string name="BoostingGiveawayServiceUndistributedGroup_one">%d undistributed link codes were forwarded to group administrators.</string>
@@ -6405,13 +6362,9 @@
     <string name="BoostingStarsGiveawayServiceUndistributed_other">%d undistributed stars were forwarded to channel administrators.</string>
     <string name="BoostingStarsGiveawayServiceUndistributedGroup_one">%d undistributed stars were forwarded to group administrators.</string>
     <string name="BoostingStarsGiveawayServiceUndistributedGroup_other">%d undistributed stars were forwarded to group administrators.</string>
-    <string name="BoostingBoostsGroupByUserServiceMsg">%s boosted the group</string>
     <string name="BoostingBoostsGroupByUserServiceMsgCount_other">%2$s boosted the group %1$d times</string>
-    <string name="BoostingBoostsChannelByUserServiceMsg">%s boosted the channel</string>
     <string name="BoostingBoostsChannelByUserServiceMsgCount_other">%2$s boosted the channel %1$d times</string>
-    <string name="BoostingBoostsGroupByYouServiceMsg">You boosted the group</string>
     <string name="BoostingBoostsGroupByYouServiceMsgCount_other">You boosted the group %1$d times</string>
-    <string name="BoostingBoostsChannelByYouServiceMsg">You boosted the channel</string>
     <string name="BoostingBoostsChannelByYouServiceMsgCount_other">You boosted the channel %1$d times</string>
     <string name="BoostingBoostsCountTitle_one">%d boost</string>
     <string name="BoostingBoostsCountTitle_other">%d boosts</string>
@@ -8059,8 +8012,6 @@
     <string name="Gift2ActionOutInfo_other">**%2$s** can display this gift on their page or convert it to %1$d Stars.</string>
     <string name="Gift2ActionOutInfoNoConvert">**%s** can display this gift on their page.</string>
     <string name="Gift2ActionOutInfoUpgrade">**%s** can display this gift on their page or convert it to unique collectible.</string>
-    <string name="Gift2StarsCount_one">%d Star</string>
-    <string name="Gift2StarsCount_other">%d Stars</string>
     <string name="ProfileGifts">Gifts</string>
     <string name="ProfileGiftsNotFoundTitle">No matching gifts</string>
     <string name="ProfileGiftsNotFoundButton">View All Gifts</string>
@@ -8959,12 +8910,6 @@
 
     <string name="SuggestionAgreementReached">🤝 **Agreement Reached!**</string>
 
-    <string name="SuggestionAgreementReachedUser1">📆 Your post will be automatically published on **%1$s** **%2$s**</string>
-    <string name="SuggestionAgreementReachedUser1PresentPerfect">📆 Your post has been published on **%s**</string>
-    <string name="SuggestionAgreementReachedUser1PastSimple">📆 Your post was automatically published on **%1$s** **%2$s**</string>
-    <string name="SuggestionAgreementReachedAdmin1">📆 This post will be automatically published **%1$s** **%2$s**</string>
-    <string name="SuggestionAgreementReachedAdmin1PresentPerfect">📆 This post has been published on **%s**</string>
-    <string name="SuggestionAgreementReachedAdmin1PastSimple">📆 This post was automatically published on **%1$s** **%2$s**</string>
 
     <string name="SuggestionAgreementReachedUser2">💰 You have been charged ⭐️ **%s**.</string>
     <string name="SuggestionAgreementReachedAdmin2">💰 **%1$s** has been charged ⭐️ **%2$s**.</string>
@@ -8978,10 +8923,6 @@
     <string name="SuggestionAgreementReachedUser4TON">🔁 If **%1$s** removes the post before it has been live for **%2$d** hours, your **TON** will be refunded.</string>
     <string name="SuggestionAgreementReachedAdmin4TON">🔁 If **%1$s** removes the post before it has been live for **%2$d** hours, **TON** will be refunded to user.</string>
 
-    <string name="SuggestionAgreementDeclinedYou">❌ **%s** rejected your message.</string>
-    <string name="SuggestionAgreementDeclinedThis">❌ **%s** rejected this message.</string>
-    <string name="SuggestionAgreementDeclinedYouComment">❌ **%s** rejected your message with the comment.</string>
-    <string name="SuggestionAgreementDeclinedThisComment">❌ **%s** rejected this message with the comment.</string>
     <string name="SuggestionAgreementNotEnoughStars">⚠️ **Transaction failed** because **%s** didn’t have enough Stars.</string>
 
     <string name="SuggestionOfferInfoTitleYou">**You** suggest to post this message.</string>
@@ -9011,11 +8952,8 @@
     <string name="SuggestedOfferRefundByAdminAmountF">⭐️ %3$s was returned to %1$s because %2$s deleted the message</string>
     <string name="SuggestedOfferRefundByUserAmountF">%2$s will not receive ⭐️ %3$s because %1$s requested a refund</string>
 
-    <string name="SuggestedOfferRefundByAdminAmountUnknown">The funds was returned to %1$s because %2$s deleted the message</string>
-    <string name="SuggestedOfferRefundByUserAmountUnknown">%2$s will not receive funds because %1$s requested a refund</string>
 
     <string name="SuggestedOfferCompleteAmountF">%1$s has received ⭐️ %2$s for publishing post</string>
-    <string name="SuggestedOfferCompleteAmountUnknown">%1$s has received funds for publishing post</string>
 
     <string name="TopicsTitle">Topics</string>
     <string name="TopicsEnable">Enable Topics</string>
@@ -9268,8 +9206,6 @@
     <string name="UserSuggestBirthday">Suggest Date of Birth</string>
     <string name="UserSuggestBirthdayTitle">%s\'s Date Of Birth</string>
     <string name="UserSuggestBirthdayButton">Suggest Date of Birth</string>
-    <string name="ActionSuggestBirthday">**un1** suggests you to add your date of birth</string>
-    <string name="ActionYouSuggestBirthday">You suggest to add date of birth</string>
     <string name="DateDay">Day</string>
     <string name="DateMonth">Month</string>
     <string name="DateYear">Year</string>
@@ -9441,21 +9377,9 @@
     <string name="GiftOfferTransferInfoTextTON">Do you want to offer **%1$s TON** to **%2$s** for **%3$s**?</string>
     <string name="GiftOfferTransferInfoTextSellStars">Do you want to sell **%3$s** to **%2$s** for **%1$s Stars**?\n\nYou will receive **%4$s Stars** after fees.</string>
     <string name="GiftOfferTransferInfoTextSellTON">Do you want to sell **%3$s** to **%2$s** for **%1$s TON**?\n\nYou will receive **%4$s TON** after fees.</string>
-    <string name="GiftOfferOfferedTextStarsOut">You offered **%1$s** **%2$s Stars** for **%3$s**.</string>
-    <string name="GiftOfferOfferedTextTONOut">You offered **%1$s** **%2$s TON** for **%3$s**.</string>
-    <string name="GiftOfferOfferedTextStars2">This user offered you **%2$s Stars** for **%3$s**.</string>
-    <string name="GiftOfferOfferedTextTON2">This user offered you **%2$s TON** for **%3$s**.</string>
     <string name="GiftOfferSentTitle">Gift offer sent</string>
     <string name="GiftOfferSentText">You have successfully sent offer **%1$s** for **%2$s**.</string>
-    <string name="GiftOfferOfferedTextStarsRejectedOut">You rejected **%1$s\'s** offer to buy your **%3$s** for **%2$s Stars**.</string>
-    <string name="GiftOfferOfferedTextTONRejectedOut">You rejected **%1$s\'s** offer to buy your **%3$s** for **%2$s TON**.</string>
-    <string name="GiftOfferOfferedTextStarsRejected">**%1$s** rejected your offer. **%2$s Stars** for **%3$s**.</string>
-    <string name="GiftOfferOfferedTextTONRejected">**%1$s** rejected your offer. **%2$s TON** for **%3$s**.</string>
 
-    <string name="GiftOfferOfferedTextStarsExpiredOut">**%1$s\'s** offer has expired. **%2$s Stars** for **%3$s**.</string>
-    <string name="GiftOfferOfferedTextTONExpiredOut">**%1$s\'s** offer has expired. **%2$s TON** for **%3$s**.</string>
-    <string name="GiftOfferOfferedTextStarsExpired">Your offer to **%1$s** has expired. **%2$s Stars** for **%3$s**.</string>
-    <string name="GiftOfferOfferedTextTONExpired">Your offer to **%1$s** has expired. **%2$s TON** for **%3$s**.</string>
 
     <string name="GiftsFeature1Text">Upgrade your gifts to get a unique number, model, backdrop and symbol.</string>
     <string name="GiftsFeature2Text">Sell your gift on Telegram or on third-part NFT marketplace</string>

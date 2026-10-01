@@ -39,7 +39,6 @@ import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.style.CharacterStyle;
 import android.text.style.ClickableSpan;
-import android.text.style.RelativeSizeSpan;
 import android.text.style.URLSpan;
 import android.text.util.Linkify;
 import android.util.Base64;
@@ -67,7 +66,6 @@ import org.telegram.ui.Components.AnimatedEmojiSpan;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.ButtonBounce;
 import org.telegram.ui.Components.ColoredImageSpan;
-import org.telegram.ui.Components.EllipsizeSpanAnimator;
 import org.telegram.ui.Components.FormattedDateSpan;
 import org.telegram.ui.Components.Forum.ForumBubbleDrawable;
 import org.telegram.ui.Components.Forum.ForumUtilities;
@@ -3580,60 +3578,6 @@ public class MessageObject {
         return !(replyMessageObject == null || replyMessageObject.messageOwner instanceof TLRPC.TL_messageEmpty || replyMessageObject.messageOwner.action instanceof TLRPC.TL_messageActionHistoryClear || replyMessageObject.messageOwner.action instanceof TLRPC.TL_messageActionTopicCreate);
     }
 
-    @Deprecated
-    public void generateSuggestionApprovalMessageText() {
-        /*
-        final String channelName = ForumUtilities.getMonoForumTitle(currentAccount, DialogObject.getPeerDialogId(messageOwner.peer_id), true);
-        final String userName = MessagesController.getInstance(currentAccount).getPeerName(DialogObject.getPeerDialogId(messageOwner.saved_peer_id));
-
-        messageText = getActionSuggestionApprovalText(channelName, userName);
-        */
-    }
-
-    public void generatePaymentSentMessageText(TLRPC.User fromUser, boolean me) {
-        if (fromUser == null) {
-            fromUser = MessagesController.getInstance(currentAccount).getUser(getDialogId());
-        }
-        final String name = fromUser != null ? UserObject.getFirstName(fromUser) : "";
-        String currency;
-        try {
-            if (StarsFormat.currency.equals(messageOwner.action.currency)) {
-                currency = StarsFormat.currency + " " + messageOwner.action.total_amount;
-            } else {
-                currency = LocaleController.getInstance().formatCurrencyString(messageOwner.action.total_amount, messageOwner.action.currency);
-            }
-        } catch (Exception e) {
-            currency = "<error>";
-            FileLog.e(e);
-        }
-        if (replyMessageObject != null && getMedia(replyMessageObject) instanceof TLRPC.TL_messageMediaInvoice) {
-            if (messageOwner.action.subscription_until_date != 0) {
-                if (me) {
-                    messageText = formatString(R.string.PaymentSuccessfullyPaidMeSubscription, name, currency, getMedia(replyMessageObject).title, LocaleController.formatDateTime(messageOwner.action.subscription_until_date, false));
-                } else {
-                    messageText = formatString(R.string.PaymentSuccessfullyPaidSubscription, currency, name, getMedia(replyMessageObject).title, LocaleController.formatDateTime(messageOwner.action.subscription_until_date, false));
-                }
-            } else if (messageOwner.action.recurring_init && !me) {
-                messageText = formatString(R.string.PaymentSuccessfullyPaidRecurrent, currency, name, getMedia(replyMessageObject).title);
-            } else {
-                messageText = formatString(R.string.PaymentSuccessfullyPaid, currency, name, getMedia(replyMessageObject).title);
-            }
-        } else {
-            if (messageOwner.action.subscription_until_date != 0) {
-                if (me) {
-                    messageText = formatString(R.string.PaymentSuccessfullyPaidMeNoItemSubscription, name, currency, LocaleController.formatDateTime(messageOwner.action.subscription_until_date, false));
-                } else {
-                    messageText = formatString(R.string.PaymentSuccessfullyPaidSubscriptionNoItem, currency, name, LocaleController.formatDateTime(messageOwner.action.subscription_until_date, false));
-                }
-            } else if (messageOwner.action.recurring_init && !me) {
-                messageText = formatString(R.string.PaymentSuccessfullyPaidNoItemRecurrent, currency, name);
-            } else {
-                messageText = formatString(R.string.PaymentSuccessfullyPaidNoItem, currency, name);
-            }
-        }
-        messageText = StarsFormat.replaceStars(messageText);
-    }
-
     public void generatePinMessageText(TLRPC.User fromUser, TLRPC.Chat chat) {
         if (fromUser == null && chat == null) {
             if (isFromUser()) {
@@ -4333,6 +4277,9 @@ public class MessageObject {
         drawServiceWithDefaultTypeface = false;
 
         channelJoined = false;
+        // LoogriGram: the payment, gift, giveaway, boost and suggested-post actions
+        // and the invoice, paid-media and giveaway media had their own text here.
+        // They are held unshown (LoogriGramHidden), so it is gone.
         if (messageOwner instanceof TLRPC.TL_messageService) {
             if (messageOwner.action != null) {
                 if (messageOwner.action instanceof TLRPC.TL_messageActionNewCreatorPending) {
@@ -4541,47 +4488,6 @@ public class MessageObject {
                             messageText = replaceWithLink(messageText, "un1", fromObject);
                         }
                     }
-                } else if (messageOwner.action instanceof TLRPC.TL_messageActionPaymentRefunded) {
-                    TLRPC.TL_messageActionPaymentRefunded action = (TLRPC.TL_messageActionPaymentRefunded) messageOwner.action;
-                    long did = DialogObject.getPeerDialogId(action.peer);
-                    TLObject who;
-                    if (did >= 0) {
-                        who = getUser(users, sUsers, did);
-                    } else {
-                        who = getChat(chats, sChats, -did);
-                    }
-                    messageText = StarsFormat.replaceStars(replaceWithLink(formatString(R.string.ActionRefunded, action.currency + " " + LocaleController.formatNumber(action.total_amount, ',')), "un1", who));
-                } else if (TlUtils.isInstance(messageOwner.action, TLRPC.TL_messageActionSuggestedPostRefund.class, TLRPC.TL_messageActionSuggestedPostSuccess.class)) {
-                    String channelName = ForumUtilities.getMonoForumTitle(currentAccount, DialogObject.getPeerDialogId(messageOwner.peer_id), true);
-                    if (channelName == null) {
-                        TLRPC.Chat chat = getChat(chats, sChats, -DialogObject.getPeerDialogId(messageOwner.peer_id));
-                        if (chat != null && chat.linked_monoforum_id != 0) {
-                            TLRPC.Chat chat2 = getChat(chats, sChats, chat.linked_monoforum_id);
-                            if (chat2 != null) {
-                                chat = chat2;
-                            }
-                        }
-
-                        channelName = DialogObject.getDialogTitle(chat);
-                    }
-                    final String userName = DialogObject.getName(getUser(users, sUsers, DialogObject.getPeerDialogId(messageOwner.saved_peer_id)));
-                    final MessageSuggestionParams sp = obtainSuggestionOfferFromReply();
-
-                    // LoogriGram: both of these named the amount refunded or paid when
-                    // one was known. Nothing we suggest has a price, so they take the
-                    // "amount unknown" wording upstream already ships. Both actions are
-                    // hidden content in any case - see LoogriGramHidden.
-                    if (messageOwner.action instanceof TLRPC.TL_messageActionSuggestedPostRefund) {
-                        final boolean refundByUser = ((TLRPC.TL_messageActionSuggestedPostRefund) messageOwner.action).payer_initiated;
-                        final int key = refundByUser ?
-                            R.string.SuggestedOfferRefundByUserAmountUnknown :
-                            R.string.SuggestedOfferRefundByAdminAmountUnknown;
-
-                        messageText = LocaleController.formatString(key, userName, channelName);
-                    } else if (messageOwner.action instanceof TLRPC.TL_messageActionSuggestedPostSuccess) {
-                        messageText = LocaleController.formatString(R.string.SuggestedOfferCompleteAmountUnknown, channelName);
-                    }
-
                 } else if (messageOwner.action instanceof TLRPC.TL_messageActionChatAddUser) {
                     long singleUserId = messageOwner.action.user_id;
                     if (singleUserId == 0 && messageOwner.action.users.size() == 1) {
@@ -4654,280 +4560,6 @@ public class MessageObject {
                         messageText = getString(R.string.ActionInviteYou);
                     } else {
                         messageText = replaceWithLink(getString(R.string.ActionInviteUser), "un1", fromObject);
-                    }
-                } else if (messageOwner.action instanceof TLRPC.TL_messageActionGiveawayLaunch) {
-                    TLRPC.TL_messageActionGiveawayLaunch giveawayLaunch = (TLRPC.TL_messageActionGiveawayLaunch) messageOwner.action;
-                    TLRPC.Chat chat = messageOwner.peer_id != null && messageOwner.peer_id.channel_id != 0 ? getChat(chats, sChats, messageOwner.peer_id.channel_id) : null;
-                    boolean isChannel = ChatObject.isChannelAndNotMegaGroup(chat);
-                    boolean isStars = (giveawayLaunch.flags & 1) != 0;
-                    if (isStars) {
-                        messageText = formatPluralStringComma(isChannel ? "BoostingStarsGiveawayJustStarted" : "BoostingStarsGiveawayJustStartedGroup", (int) giveawayLaunch.stars, chat != null ? chat.title : "");
-                    } else {
-                        messageText = formatString(isChannel ? R.string.BoostingGiveawayJustStarted : R.string.BoostingGiveawayJustStartedGroup, chat != null ? chat.title : "");
-                    }
-                } else if (messageOwner.action instanceof TLRPC.TL_messageActionBoostApply) {
-                    TLRPC.Chat chat = messageOwner.peer_id != null && messageOwner.peer_id.channel_id != 0 ? getChat(chats, sChats, messageOwner.peer_id.channel_id) : null;
-                    boolean isChannel = ChatObject.isChannelAndNotMegaGroup(chat);
-                    TLRPC.TL_messageActionBoostApply messageActionBoostApply = (TLRPC.TL_messageActionBoostApply) messageOwner.action;
-                    String name = "";
-                    boolean self = false;
-                    if (fromObject instanceof TLRPC.User) {
-                        TLRPC.User user = (TLRPC.User) fromObject;
-                        self = UserObject.isUserSelf(user);
-                        name = UserObject.getFirstName(user);
-                    } else if (fromObject instanceof TLRPC.Chat) {
-                        name = ((TLRPC.Chat) fromObject).title;
-                    }
-                    if (self) {
-                        if (messageActionBoostApply.boosts <= 1) {
-                            messageText = getString(isChannel ? R.string.BoostingBoostsChannelByYouServiceMsg : R.string.BoostingBoostsGroupByYouServiceMsg);
-                        } else {
-                            messageText = LocaleController.formatPluralString(isChannel ? "BoostingBoostsChannelByYouServiceMsgCount" : "BoostingBoostsGroupByYouServiceMsgCount", messageActionBoostApply.boosts);
-                        }
-                    } else {
-                        if (messageActionBoostApply.boosts <= 1) {
-                            messageText = formatString(isChannel ? R.string.BoostingBoostsChannelByUserServiceMsg : R.string.BoostingBoostsGroupByUserServiceMsg, name);
-                        } else {
-                            messageText = LocaleController.formatPluralString(isChannel ? "BoostingBoostsChannelByUserServiceMsgCount" : "BoostingBoostsGroupByUserServiceMsgCount", messageActionBoostApply.boosts, name);
-                        }
-                    }
-                } else if (messageOwner.action instanceof TLRPC.TL_messageActionGiveawayResults) {
-                    TLRPC.Chat chat = messageOwner.peer_id != null && messageOwner.peer_id.channel_id != 0 ? getChat(chats, sChats, messageOwner.peer_id.channel_id) : null;
-                    boolean isChannel = ChatObject.isChannelAndNotMegaGroup(chat);
-                    TLRPC.TL_messageActionGiveawayResults giveawayResults = (TLRPC.TL_messageActionGiveawayResults) messageOwner.action;
-                    SpannableStringBuilder stringBuilder = new SpannableStringBuilder();
-                    if (giveawayResults.stars) {
-                        stringBuilder.append(formatPluralStringComma("BoostingStarsGiveawayServiceWinnersSelected", giveawayResults.winners_count));
-                        if (giveawayResults.unclaimed_count > 0) {
-                            stringBuilder.append("\n");
-                            stringBuilder.append(LocaleController.formatPluralString(isChannel ? "BoostingStarsGiveawayServiceUndistributed" : "BoostingStarsGiveawayServiceUndistributedGroup", giveawayResults.unclaimed_count));
-                        }
-                    } else {
-                        stringBuilder.append(LocaleController.formatPluralString("BoostingGiveawayServiceWinnersSelected", giveawayResults.winners_count));
-                        if (giveawayResults.unclaimed_count > 0) {
-                            stringBuilder.append("\n");
-                            stringBuilder.append(LocaleController.formatPluralString(isChannel ? "BoostingGiveawayServiceUndistributed" : "BoostingGiveawayServiceUndistributedGroup", giveawayResults.unclaimed_count));
-                        }
-                    }
-                    messageText = stringBuilder;
-                } else if (messageOwner.action instanceof TLRPC.TL_messageActionPrizeStars) {
-                    final TLRPC.TL_messageActionPrizeStars action = (TLRPC.TL_messageActionPrizeStars) messageOwner.action;
-                    final long chatId = -DialogObject.getPeerDialogId(action.boost_peer);
-                    final TLRPC.Chat chat = getChat(chats, sChats, chatId);
-                    messageText = replaceWithLink(AndroidUtilities.replaceTags(formatPluralStringComma("ActionStarGiveawayPrize", (int) action.stars)), "un1", chat);
-                } else if (messageOwner.action instanceof TLRPC.TL_messageActionStarGift) {
-                    final TLRPC.TL_messageActionStarGift action = (TLRPC.TL_messageActionStarGift) messageOwner.action;
-                    int stars = 0;
-                    if (action.prepaid_upgrade) {
-                        stars += (int) action.upgrade_stars;
-                    } else {
-                        if (action.gift != null) {
-                            stars = (int) action.gift.stars;
-                        }
-                        if (!action.upgrade_separate) {
-                            stars += (int) action.upgrade_stars;
-                        }
-                    }
-//                    if (action.can_upgrade && action.upgrade_stars == 0) {
-//                    }
-                    final boolean isForChannel = action.peer != null && DialogObject.getPeerDialogId(action.peer) < 0;
-                    TLRPC.User user = getUser(users, sUsers, messageOwner.peer_id.user_id);
-                    TLObject obj = fromObject;
-                    if (!action.prepaid_upgrade && action.from_id != null) {
-                        final long fromId = DialogObject.getPeerDialogId(action.from_id);
-                        if (fromId >= 0) {
-                            obj = getUser(users, sUsers, fromId);
-                        } else {
-                            obj = getChat(chats, sChats, -fromId);
-                        }
-                    }
-                    TLObject peerObj = null;
-                    if (action.peer != null) {
-                        final long peerId = DialogObject.getPeerDialogId(action.peer);
-                        if (peerId >= 0) {
-                            peerObj = getUser(users, sUsers, peerId);
-                        } else {
-                            peerObj = getChat(chats, sChats, -peerId);
-                        }
-                    }
-                    if (action.prepaid_upgrade) {
-                        if (obj instanceof TLRPC.User && ((TLRPC.User) obj).self && !action.forceIn) {
-                            messageText = replaceWithLink(AndroidUtilities.replaceTags(getString(R.string.ActionPrepaidGiftOutbound)), "un1", user);
-                        } else {
-                            messageText = replaceWithLink(AndroidUtilities.replaceTags(getString(R.string.ActionPrepaidGiftInbound)), "un1", obj);
-                        }
-                    } else if (UserObject.isService(getDialogId()) && action.from_id == null) {
-                        messageText = AndroidUtilities.replaceTags(getString(action.auction_acquired ? R.string.ActionGiftAuctionSelf : R.string.ActionGiftSomeone));
-                        messageTextShort = getString(R.string.ActionStarGift);
-                    } else if (isForChannel) {
-                        messageText = AndroidUtilities.replaceTags(formatPluralStringComma("ActionGiftChannel", stars));
-                        messageText = replaceWithLink(messageText, "un1", obj);
-                        messageText = replaceWithLink(messageText, "un2", peerObj);
-                        messageTextShort = getString(R.string.ActionStarGift);
-                    } else if (UserObject.isUserSelf(user)) {
-                        messageText = AndroidUtilities.replaceTags(getString(action.auction_acquired ? R.string.ActionGiftAuctionSelf : R.string.ActionGiftSelf));
-                        messageTextShort = getString(R.string.ActionStarGift);
-                    } else if (obj instanceof TLRPC.User && ((TLRPC.User) obj).self && !action.forceIn) {
-                        messageText = replaceWithLink(AndroidUtilities.replaceTags(getString(R.string.ActionGiftOutbound)), "un1", user);
-                        if (action.message != null && !TextUtils.isEmpty(action.message.text)) {
-                            SpannableStringBuilder stringBuilder = new SpannableStringBuilder(action.message.text);
-                            addEntitiesToText(stringBuilder, action.message.entities, isOutOwner(), false, false, false);
-                            messageTextShort = stringBuilder;
-                        } else {
-                            messageTextShort = getString(R.string.ActionStarGift);
-                        }
-                    } else if (obj instanceof TLRPC.User && UserObject.isService(((TLRPC.User) obj).id)) {
-                        messageText = TextUtils.replace(AndroidUtilities.replaceTags(getString(R.string.ActionGiftInbound)), new String[] {"un1"}, new CharSequence[]{ getString(R.string.StarsTransactionUnknown) });
-                    } else {
-                        messageText = replaceWithLink(AndroidUtilities.replaceTags(getString(R.string.ActionGiftInbound)), "un1", obj);
-                        if (action.message != null && !TextUtils.isEmpty(action.message.text)) {
-                            SpannableStringBuilder stringBuilder = new SpannableStringBuilder(action.message.text);
-                            addEntitiesToText(stringBuilder, action.message.entities, isOutOwner(), false, false, false);
-                            messageTextShort = stringBuilder;
-                        } else {
-                            messageTextShort = getString(R.string.ActionStarGift);
-                        }
-                    }
-                    int i = messageText.toString().indexOf("un2");
-                    if (i != -1) {
-                        SpannableStringBuilder sb = SpannableStringBuilder.valueOf(messageText);
-                        messageText = sb.replace(i, i + 3, formatPluralStringComma("Gift2StarsCount", (int) stars));
-                    }
-                } else if (messageOwner.action instanceof TLRPC.TL_messageActionStarGiftUnique) {
-                    TLRPC.TL_messageActionStarGiftUnique action = (TLRPC.TL_messageActionStarGiftUnique) messageOwner.action;
-                    TLRPC.User user = getUser(users, sUsers, getDialogId());
-                    if (action.resale_amount != null) {
-                        final AmountUtils.Amount amount = AmountUtils.Amount.ofSafe(action.resale_amount);
-                        long fromId = getDialogId();
-                        if (action.from_id != null) {
-                            fromId = DialogObject.getPeerDialogId(action.from_id);
-                        }
-                        TLObject obj;
-                        if (fromId >= 0) {
-                            obj = getUser(users, sUsers, fromId);
-                        } else {
-                            obj = getChat(chats, sChats, -fromId);
-                        }
-                        if (action.craft) {
-                            messageText = AndroidUtilities.replaceTags(getString(R.string.ActionUniqueGiftCrafted));
-                        } else if (action.peer != null) {
-                            long peerId = DialogObject.getPeerDialogId(action.peer);
-                            TLObject peer;
-                            if (peerId >= 0) {
-                                peer = getUser(users, sUsers, peerId);
-                            } else {
-                                peer = getChat(chats, sChats, -peerId);
-                            }
-                            if (amount.currency == AmountUtils.Currency.TON) {
-                                messageText = AndroidUtilities.replaceTags(LocaleController.formatString(R.string.ActionUniqueGiftResaleServiceTON, amount.asFormatString()));
-                            } else {
-                                messageText = AndroidUtilities.replaceTags(formatPluralStringComma("ActionUniqueGiftResaleService", (int) amount.asDecimal()));
-                            }
-                            messageText = replaceWithLink(messageText, "un1", obj);
-                            messageText = replaceWithLink(messageText, "un2", peer);
-                        } else if (action.from_offer) {
-                            if (amount.currency == AmountUtils.Currency.TON) {
-                                messageText = AndroidUtilities.replaceTags(formatString(isOutOwner() ? R.string.ActionUniqueGiftResaleSoldOutboundTON : R.string.ActionUniqueGiftResaleOutboundTON, amount.asFormatString()));
-                            } else {
-                                messageText = AndroidUtilities.replaceTags(formatPluralStringComma(isOutOwner() ? "ActionUniqueGiftResaleSoldOutbound" : "ActionUniqueGiftResaleOutbound", (int) amount.asDecimal()));
-                            }
-                        } else {
-                            if (amount.currency == AmountUtils.Currency.TON) {
-                                messageText = replaceWithLink(AndroidUtilities.replaceTags(formatString(isOutOwner() ? R.string.ActionUniqueGiftResaleOutboundTON : R.string.ActionUniqueGiftResaleInboundTON, amount.asFormatString())), "un1", obj);
-                            } else {
-                                messageText = replaceWithLink(AndroidUtilities.replaceTags(formatPluralStringComma(isOutOwner() ? "ActionUniqueGiftResaleOutbound" : "ActionUniqueGiftResaleInbound", (int) amount.asDecimal())), "un1", obj);
-                            }
-                        }
-                    } else if (action.upgrade) {
-                        if (action.peer != null) {
-                            long peerId = DialogObject.getPeerDialogId(action.peer);
-                            TLObject peer;
-                            if (peerId >= 0) {
-                                peer = getUser(users, sUsers, peerId);
-                            } else {
-                                peer = getChat(chats, sChats, -peerId);
-                            }
-                            messageText = replaceWithLink(AndroidUtilities.replaceTags(getString(R.string.ActionUniqueGiftUpgradeInboundChannel)), "un1", peer);
-                        } else if (UserObject.isUserSelf(user)) {
-                            messageText = AndroidUtilities.replaceTags(getString(R.string.ActionUniqueGiftUpgradeSelf));
-                        } else {
-                            messageText = replaceWithLink(AndroidUtilities.replaceTags(getString(isOutOwner() ? R.string.ActionUniqueGiftUpgradeOutbound : R.string.ActionUniqueGiftUpgradeInbound)), "un1", user);
-                        }
-                    } else {
-                        long fromId = getDialogId();
-                        if (action.from_id != null) {
-                            fromId = DialogObject.getPeerDialogId(action.from_id);
-                        }
-                        TLObject obj;
-                        if (fromId >= 0) {
-                            obj = getUser(users, sUsers, fromId);
-                        } else {
-                            obj = getChat(chats, sChats, -fromId);
-                        }
-                        if (action.craft) {
-                            messageText = AndroidUtilities.replaceTags(getString(R.string.ActionUniqueGiftCrafted));
-                        } else if (action.peer != null) {
-                            long peerId = DialogObject.getPeerDialogId(action.peer);
-                            TLObject peer;
-                            if (peerId >= 0) {
-                                peer = getUser(users, sUsers, peerId);
-                            } else {
-                                peer = getChat(chats, sChats, -peerId);
-                            }
-                            messageText = AndroidUtilities.replaceTags(getString(R.string.ActionUniqueGiftTransferService));
-                            messageText = replaceWithLink(messageText, "un1", obj);
-                            messageText = replaceWithLink(messageText, "un2", peer);
-                        } else if (action.assigned) {
-                            String giftName = action.gift.title + " #" + LocaleController.formatNumber(action.gift.num, ',');
-                            messageText = replaceWithLink(AndroidUtilities.replaceTags(formatString(R.string.ActionUniqueGiftTransferOutboundAssigned, giftName)), "un1", obj);
-                        } else {
-                            messageText = replaceWithLink(AndroidUtilities.replaceTags(getString(isOutOwner() ? R.string.ActionUniqueGiftTransferOutbound : R.string.ActionUniqueGiftTransferInbound)), "un1", obj);
-                        }
-                    }
-                } else if (messageOwner.action instanceof TLRPC.TL_messageActionGiftStars) {
-                    if (fromObject instanceof TLRPC.User && ((TLRPC.User) fromObject).self) {
-                        TLRPC.User user = getUser(users, sUsers, messageOwner.peer_id.user_id);
-                        messageText = replaceWithLink(AndroidUtilities.replaceTags(getString(R.string.ActionGiftOutbound)), "un1", user);
-                    } else if (fromObject instanceof TLRPC.User && UserObject.isService(((TLRPC.User) fromObject).id)) {
-                        messageText = TextUtils.replace(AndroidUtilities.replaceTags(getString(R.string.ActionGiftInbound)), new String[] {"un1"}, new CharSequence[]{ getString(R.string.StarsTransactionUnknown) });
-                    } else {
-                        messageText = replaceWithLink(AndroidUtilities.replaceTags(getString(R.string.ActionGiftInbound)), "un1", fromObject);
-                    }
-                    int i = messageText.toString().indexOf("un2");
-                    if (i != -1) {
-                        SpannableStringBuilder sb = SpannableStringBuilder.valueOf(messageText);
-                        CharSequence price = CurrencyFormat.format(messageOwner.action.amount, messageOwner.action.currency);
-                        if ((messageOwner.action.flags & 1) != 0) {
-                            price = String.format("%.2f", (messageOwner.action.cryptoAmount * Math.pow(10, -9))) + " " + messageOwner.action.cryptoCurrency + " (~ " + price + ")";
-                        }
-                        messageText = sb.replace(i, i + 3, price);
-                    }
-                } else if (messageOwner.action instanceof TLRPC.TL_messageActionGiftCode && ((TLRPC.TL_messageActionGiftCode) messageOwner.action).boost_peer != null) {
-                    messageText = getString(R.string.BoostingReceivedGiftNoName);
-                } else if (TlUtils.isInstance(messageOwner.action, TLRPC.TL_messageActionGiftPremium.class, TLRPC.TL_messageActionGiftCode.class, TLRPC.TL_messageActionGiftTon.class)) {
-                    if (fromObject instanceof TLRPC.User && ((TLRPC.User) fromObject).self) {
-                        TLRPC.User user = getUser(users, sUsers, messageOwner.peer_id.user_id);
-                        messageText = replaceWithLink(AndroidUtilities.replaceTags(getString(R.string.ActionGiftOutbound)), "un1", user);
-                    } else if (messageOwner.action instanceof TLRPC.TL_messageActionGiftTon) {
-                        messageText = AndroidUtilities.replaceTags(getString(R.string.ActionGiftTonInbound));
-                    } else {
-                        messageText = replaceWithLink(AndroidUtilities.replaceTags(getString(R.string.ActionGiftInbound)), "un1", fromObject);
-                    }
-                    int i = messageText.toString().indexOf("un2");
-                    if (i != -1) {
-                        SpannableStringBuilder sb = SpannableStringBuilder.valueOf(messageText);
-                        CharSequence price = CurrencyFormat.format(messageOwner.action.amount, messageOwner.action.currency);
-                        if ((messageOwner.action.flags & 1) != 0) {
-                            price = String.format("%.2f", (messageOwner.action.cryptoAmount * Math.pow(10, -9))) + " " + messageOwner.action.cryptoCurrency + " (~ " + price + ")";
-                        }
-                        messageText = sb.replace(i, i + 3, price);
-                    }
-                    messageText = StarsFormat.replaceStars(messageText);
-                } else if (messageOwner.action instanceof TLRPC.TL_messageActionSuggestBirthday) {
-                    if (isOutOwner()) {
-                        messageText = getString(R.string.ActionYouSuggestBirthday);
-                    } else {
-                        messageText = replaceWithLink(AndroidUtilities.replaceTags(getString(R.string.ActionSuggestBirthday)), "un1", fromObject);
                     }
                 } else if (messageOwner.action instanceof TLRPC.TL_messageActionSuggestProfilePhoto) {
                     if (messageOwner.action.photo != null && messageOwner.action.photo.video_sizes != null && !messageOwner.action.photo.video_sizes.isEmpty()) {
@@ -5328,12 +4960,6 @@ public class MessageObject {
                             messageText = sp;
                         }
                     }
-                } else if (messageOwner.action instanceof TLRPC.TL_messageActionPaymentSent) {
-                    final TLRPC.User user = getUser(users, sUsers, getDialogId());
-                    generatePaymentSentMessageText(user, false);
-                } else if (messageOwner.action instanceof TLRPC.TL_messageActionPaymentSentMe) {
-                    final TLRPC.User user = getUser(users, sUsers, getDialogId());
-                    generatePaymentSentMessageText(user, true);
                 } else if (messageOwner.action instanceof TLRPC.TL_messageActionBotAllowed) {
                     String domain = ((TLRPC.TL_messageActionBotAllowed) messageOwner.action).domain;
                     TLRPC.BotApp botApp = ((TLRPC.TL_messageActionBotAllowed) messageOwner.action).app;
@@ -5534,33 +5160,6 @@ public class MessageObject {
                             messageText = replaceWithLink(formatPluralSpannable("TodoAddedMoreTasks", action.list.size() - 3, formatTaskTitle(action.list.get(0)), formatTaskTitle(action.list.get(1)), formatTaskTitle(action.list.get(2))), "un1", fromObject);
                         }
                     }
-                } else if (messageOwner.action instanceof TLRPC.TL_messageActionSuggestedPostApproval) {
-                    String channelName = ForumUtilities.getMonoForumTitle(currentAccount, DialogObject.getPeerDialogId(messageOwner.peer_id), true);
-                    if (channelName == null) {
-                        TLRPC.Chat chat = getChat(chats, sChats, -DialogObject.getPeerDialogId(messageOwner.peer_id));
-                        if (chat != null && chat.linked_monoforum_id != 0) {
-                            TLRPC.Chat chat2 = getChat(chats, sChats, chat.linked_monoforum_id);
-                            if (chat2 != null) {
-                                chat = chat2;
-                            }
-                        }
-
-                        channelName = DialogObject.getDialogTitle(chat);
-                    }
-                    final String userName = DialogObject.getName(getUser(users, sUsers, DialogObject.getPeerDialogId(messageOwner.saved_peer_id)));
-                    messageText = getActionSuggestionApprovalText(channelName, userName);
-                } else if (messageOwner.action instanceof TLRPC.TL_messageActionStarGiftPurchaseOffer) {
-                    final TLRPC.TL_messageActionStarGiftPurchaseOffer action = (TLRPC.TL_messageActionStarGiftPurchaseOffer) messageOwner.action;
-                    final AmountUtils.Amount amount = AmountUtils.Amount.ofSafe(action.price);
-                    final String giftTitle = action.gift.title + " #" + LocaleController.formatNumber(action.gift.num, ',');
-                    final String userName = DialogObject.getShortName(getUser(users, sUsers, DialogObject.getPeerDialogId(messageOwner.peer_id)));
-
-                    SpannableStringBuilder ssb = new SpannableStringBuilder();
-                    ssb.append(replaceTags(formatString(amount.currency == AmountUtils.Currency.STARS ?
-                                    isOut() ? R.string.GiftOfferOfferedTextStarsOut : R.string.GiftOfferOfferedTextStars2 :
-                                    isOut() ? R.string.GiftOfferOfferedTextTONOut : R.string.GiftOfferOfferedTextTON2,
-                            userName, amount.asFormatString(), giftTitle)));
-                    messageText = ssb;
                 } else if (messageOwner.action instanceof TLRPC.TL_messageActionChangeCommunity) {
                     final TLRPC.TL_messageActionChangeCommunity action = (TLRPC.TL_messageActionChangeCommunity) messageOwner.action;
                     final long peerId = DialogObject.getPeerDialogId(messageOwner.peer_id);
@@ -5575,29 +5174,6 @@ public class MessageObject {
                     SpannableStringBuilder ssb = new SpannableStringBuilder();
                     ssb.append(CommunityUtils.buildServiceMessageText(this, communityName, userName, isChannel, isBot));
                     messageText = ssb;
-                } else if (messageOwner.action instanceof TLRPC.TL_messageActionStarGiftPurchaseOfferDeclined) {
-                    final TLRPC.TL_messageActionStarGiftPurchaseOfferDeclined action = (TLRPC.TL_messageActionStarGiftPurchaseOfferDeclined) messageOwner.action;
-                    final AmountUtils.Amount amount = AmountUtils.Amount.ofSafe(action.price);
-                    final String giftName = action.gift.title + " #" + LocaleController.formatNumber(action.gift.num, ',');
-                    final String userName = DialogObject.getShortName(getUser(users, sUsers, DialogObject.getPeerDialogId(messageOwner.peer_id)));
-                    final String amountFmt = amount.asFormatString();
-
-                    final int key;
-                    if (action.expired) {
-                        if (amount.currency == AmountUtils.Currency.STARS) {
-                            key = isOut() ? R.string.GiftOfferOfferedTextStarsExpiredOut : R.string.GiftOfferOfferedTextStarsExpired;
-                        } else {
-                            key = isOut() ? R.string.GiftOfferOfferedTextTONExpiredOut : R.string.GiftOfferOfferedTextTONExpired;
-                        }
-                    } else {
-                        if (amount.currency == AmountUtils.Currency.STARS) {
-                            key = isOut() ? R.string.GiftOfferOfferedTextStarsRejectedOut : R.string.GiftOfferOfferedTextStarsRejected;
-                        } else {
-                            key = isOut() ? R.string.GiftOfferOfferedTextTONRejectedOut : R.string.GiftOfferOfferedTextTONRejected;
-                        }
-                    }
-
-                    messageText = replaceTags(formatString(key, userName, amountFmt, giftName));
                 } else if (messageOwner.action instanceof TLRPC.TL_messageActionPollAppendAnswer) {
                     final TLRPC.TL_messageActionPollAppendAnswer action = (TLRPC.TL_messageActionPollAppendAnswer) messageOwner.action;
                     if (isOut()) {
@@ -5647,18 +5223,7 @@ public class MessageObject {
                 messageText = AndroidUtilities.replaceNewLines(messageText);
             } else if (!isMediaEmpty()) {
 //                messageText = getMediaTitle(getMedia(messageOwner)); // I'm afraid doing this
-                if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaGiveaway) {
-                    boolean isChannel;
-                    if (messageOwner.fwd_from != null && messageOwner.fwd_from.from_id instanceof TLRPC.TL_peerChannel) {
-                        TLRPC.Chat chat = getChat(chats, sChats, messageOwner.fwd_from.from_id.channel_id);
-                        isChannel = ChatObject.isChannelAndNotMegaGroup(chat);
-                    } else {
-                        isChannel = ChatObject.isChannelAndNotMegaGroup(fromChat);
-                    }
-                    messageText = getString(isChannel ? R.string.BoostingGiveawayChannelStarted : R.string.BoostingGiveawayGroupStarted);
-                } else if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaGiveawayResults) {
-                    messageText = getString(R.string.BoostingGiveawayResults);
-                } else if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaDice) {
+                if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaDice) {
                     messageText = getDiceEmoji();
                 } else if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaPoll) {
                     if (((TLRPC.TL_messageMediaPoll) getMedia(messageOwner)).poll.quiz) {
@@ -5677,22 +5242,6 @@ public class MessageObject {
                     messageText = getString(R.string.AttachOnceAudio);
                 } else if (isRoundOnce()) {
                     messageText = getString(R.string.AttachOnceRound);
-                } else if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaPaidMedia) {
-                    TLRPC.TL_messageMediaPaidMedia paidMedia = (TLRPC.TL_messageMediaPaidMedia) getMedia(messageOwner);
-                    final int count = paidMedia.extended_media.size();
-                    boolean video = false;
-                    for (int i = 0; i < count; ++i) {
-                        TLRPC.MessageExtendedMedia emedia = paidMedia.extended_media.get(i);
-                        if (emedia instanceof TLRPC.TL_messageExtendedMedia) {
-                            video = ((TLRPC.TL_messageExtendedMedia) emedia).media instanceof TLRPC.TL_messageMediaDocument &&
-                                isVideoDocument(((TLRPC.TL_messageExtendedMedia) emedia).media.document);
-                        } else if (emedia instanceof TLRPC.TL_messageExtendedMediaPreview) {
-                            video = (((TLRPC.TL_messageExtendedMediaPreview) emedia).flags & 4) != 0;
-                        }
-                        if (video) break;
-                    }
-                    messageText = count == 1 ? getString(video ? R.string.AttachVideo : R.string.AttachPhoto) : LocaleController.formatPluralString(video ? "Media" : "Photos", count);
-                    messageText = StarsFormat.replaceStars(formatString(R.string.AttachPaidMedia, messageText));
                 } else if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaPhoto) {
                     if (getMedia(messageOwner).ttl_seconds != 0 && !(messageOwner instanceof TLRPC.TL_message_secret)) {
                         messageText = getString(R.string.AttachDestructingPhoto);
@@ -5730,8 +5279,6 @@ public class MessageObject {
                     }
                 } else if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaGame) {
                     messageText = messageOwner.message;
-                } else if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaInvoice) {
-                    messageText = getMedia(messageOwner).description;
                 } else if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaUnsupported) {
                     messageText = getString(R.string.UnsupportedMedia2);
                 } else if (getMedia(messageOwner) instanceof TLRPC.TL_messageMediaDocument) {
@@ -6249,9 +5796,9 @@ public class MessageObject {
         if (LoogriGramHidden.isHidden(messageOwner)) {
             contentType = -1;
             type = -1;
-            // updateMessageText ran just before this and will have described
-            // the gift or the payment; the chat list reads that text, so a row
-            // would otherwise advertise a message the chat does not show.
+            // updateMessageText ran just before this and still sets the text of
+            // a restricted or rich message; the chat list reads that text, so a
+            // row would otherwise advertise a message the chat does not show.
             messageText = "";
             caption = null;
         } else if (channelJoined) {
@@ -12279,82 +11826,6 @@ public class MessageObject {
         return messageOwner != null && messageOwner.paid_message_stars > 0;
     }
 
-    private CharSequence getActionSuggestionApprovalText(String channelName, String userName) {
-        TLRPC.TL_messageActionSuggestedPostApproval approval = null;
-        if (messageOwner != null && messageOwner.action instanceof TLRPC.TL_messageActionSuggestedPostApproval) {
-            approval = (TLRPC.TL_messageActionSuggestedPostApproval) messageOwner.action;
-        }
-        if (approval == null) {
-            return null;
-        }
-
-        MessageSuggestionParams suggestionOffer = MessageSuggestionParams.of(approval);
-
-        final boolean isAdmin = ChatObject.canManageMonoForum(currentAccount, DialogObject.getPeerDialogId(messageOwner.peer_id));
-        final SpannableStringBuilder ssb = new SpannableStringBuilder();
-
-        // LoogriGram: a "they did not have enough Stars" branch stood first here. A
-        // suggestion carries no price, so an approval can never fail on a balance.
-        if (approval.rejected) {
-            boolean byAdmin = true;
-            boolean fromYou = false;
-            if (replyMessageObject != null && replyMessageObject.messageOwner != null) {
-                long fromId = DialogObject.getPeerDialogId(replyMessageObject.messageOwner.from_id);
-                long topicId = DialogObject.getPeerDialogId(replyMessageObject.messageOwner.saved_peer_id);
-                if (fromId != topicId) {
-                    byAdmin = false;
-                }
-                if (fromId == UserConfig.getInstance(currentAccount).getClientUserId()) {
-                    fromYou = true;
-                }
-            }
-            final int key = TextUtils.isEmpty(approval.reject_comment) ?
-                (fromYou ? R.string.SuggestionAgreementDeclinedYou : R.string.SuggestionAgreementDeclinedThis):
-                (fromYou ? R.string.SuggestionAgreementDeclinedYouComment : R.string.SuggestionAgreementDeclinedThisComment);
-
-            ssb.append(AndroidUtilities.replaceTags(LocaleController.formatString(key, byAdmin ? channelName: userName)));
-
-            if (!TextUtils.isEmpty(approval.reject_comment)) {
-                ssb.append("\n\n");
-                ssb.setSpan(new RelativeSizeSpan(0.8f), ssb.length() - 1, ssb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                int p = ssb.length();
-                ssb.append('"');
-                ssb.append(approval.reject_comment);
-                ssb.append('"');
-                ssb.setSpan(new EllipsizeSpanAnimator.TextAlphaSpan(217), p, ssb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            }
-        } else {
-            final int hours = (int) MessagesController.getInstance(currentAccount).config.starsSuggestedPostAgeMin.get(TimeUnit.HOURS);
-
-            if (approval.schedule_date > 0) {
-                final String date = LocaleController.formatDateTime(approval.schedule_date, true);
-                final int currentDate = ConnectionsManager.getInstance(currentAccount).getCurrentTime();
-                final int key;
-                if (approval.schedule_date > currentDate) {
-                    key = isAdmin ?
-                            R.string.SuggestionAgreementReachedAdmin1:
-                            R.string.SuggestionAgreementReachedUser1;
-                } else {
-                    key = isAdmin ?
-                            R.string.SuggestionAgreementReachedAdmin1PastSimple :
-                            R.string.SuggestionAgreementReachedUser1PastSimple;
-                }
-                ssb.append(AndroidUtilities.replaceTags(LocaleController.formatString(key, channelName, date)));
-            } else {
-                final int key = isAdmin ?
-                    R.string.SuggestionAgreementReachedAdmin1PresentPerfect :
-                    R.string.SuggestionAgreementReachedUser1PresentPerfect;
-
-                ssb.append(AndroidUtilities.replaceTags(LocaleController.formatString(key, channelName)));
-            }
-            // LoogriGram: three further paragraphs followed, naming the price agreed, the
-            // hours before the post could be taken down and the refund that would follow
-            // if it were. None of that exists without a price.
-        }
-
-        return ssb;
-    }
-
     public static TLRPC.PollAnswer findPollItem(MessageObject messageObject, byte[] task_id) {
         final TLRPC.MessageMedia media = getMedia(messageObject);
         if (!(media instanceof TLRPC.TL_messageMediaPoll)) {
@@ -12438,27 +11909,6 @@ public class MessageObject {
         }
 
         return false;
-    }
-
-    public MessageSuggestionParams obtainSuggestionOffer() {
-        if (messageOwner == null) {
-            return null;
-        }
-
-        if (messageOwner.suggested_post != null) {
-            return MessageSuggestionParams.of(messageOwner.suggested_post);
-        }
-
-        if (messageOwner.action instanceof TLRPC.TL_messageActionSuggestedPostApproval) {
-            return MessageSuggestionParams.of((TLRPC.TL_messageActionSuggestedPostApproval) messageOwner.action);
-        }
-
-        return null;
-    }
-
-    public MessageSuggestionParams obtainSuggestionOfferFromReply() {
-        return replyMessageObject != null ?
-            replyMessageObject.obtainSuggestionOffer() : null;
     }
 
     public boolean isEditedSuggestionOffer() {

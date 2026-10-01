@@ -909,7 +909,6 @@
     <string name="ActionInviteChannelUser">un1 entrou no canal via link de convite</string>
     <string name="ActionInviteChannelUserFolder">un1 entrou no canal via um link de convite de pasta.</string>
     <string name="ActionKickUser">un1 removeu un2</string>
-    <string name="ActionRefunded">un1 reembolsou %1$s</string>
     <string name="ActionLeftUser">un1 saiu do grupo</string>
     <string name="ActionAddUser">un1 adicionou un2</string>
     <string name="ActionRemovedPhoto">un1 removeu a foto do grupo</string>

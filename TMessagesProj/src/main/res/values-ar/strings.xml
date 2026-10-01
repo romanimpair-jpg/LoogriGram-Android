@@ -922,7 +922,6 @@
     <string name="ActionInviteChannelUser">تم انضمام un1 إلى القناة عبر رابط دعوة</string>
     <string name="ActionInviteChannelUserFolder">تم انضمام un1 إلى القناة عبر رابط الدعوة للمجلد</string>
     <string name="ActionKickUser">تمت إزالة un2 من قِبل un1</string>
-    <string name="ActionRefunded">استرد un1 مبلغ %1$s</string>
     <string name="ActionLeftUser">غادر un1 المجموعة</string>
     <string name="ActionAddUser">تمت إضافة un2 من قِبل un1</string>
     <string name="ActionRemovedPhoto">أزال un1 صورة المجموعة</string>
