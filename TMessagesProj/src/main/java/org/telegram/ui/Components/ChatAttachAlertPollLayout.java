@@ -262,7 +262,9 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
         updateRows();
 
         checkboxPaint.setColor(getThemedColor(Theme.key_telegram_color));
-        parentAlert.sizeNotifierFrameLayout.setDelegate(this);
+        // LoogriGram: this layout made itself the size delegate, to place its
+        // emoji panel above the keyboard; without Premium onSizeChanged did
+        // nothing. The alert's own delegate is left in place.
         listAdapter = new ListAdapter(context);
 
         listView = new RecyclerListView(context) {
