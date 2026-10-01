@@ -311,11 +311,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
         } else if (id == NotificationCenter.emojiLoaded) {
             invalidate();
-        } else if (id == NotificationCenter.didUpdatePremiumGiftStickers) {
-            MessageObject messageObject = currentMessageObject;
-            if (messageObject != null && (messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaGiveaway || messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaGiveawayResults)) {
-                setMessageObject(messageObject, currentMessagesGroup, pinnedBottom, pinnedTop, firstInChat);
-            }
         }
     }
 
@@ -5987,7 +5982,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.startSpoilers);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.stopSpoilers);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.emojiLoaded);
-        NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.didUpdatePremiumGiftStickers);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.userInfoDidLoad);
 
         cancelShakeAnimation();
@@ -6083,7 +6077,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.startSpoilers);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.stopSpoilers);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.emojiLoaded);
-        NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.didUpdatePremiumGiftStickers);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.userInfoDidLoad);
 
         if (currentMessageObject != null) {

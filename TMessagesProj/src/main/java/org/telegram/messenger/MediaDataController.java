@@ -308,8 +308,6 @@ public class MediaDataController extends BaseController {
     private boolean loadingRecentGifs;
     private boolean recentGifsLoaded;
 
-    private boolean loadingPremiumGiftStickers;
-    private boolean loadingPremiumTonStickers;
     private boolean loadingGenericAnimations;
     private boolean loadingDefaultTopicIcons;
 
@@ -2456,70 +2454,6 @@ public class MediaDataController extends BaseController {
         }
     }
 
-    public void checkPremiumGiftStickers() {
-        if (getUserConfig().premiumGiftsStickerPack != null) {
-            String packName = getUserConfig().premiumGiftsStickerPack;
-            TLRPC.TL_messages_stickerSet set = getStickerSetByName(packName);
-            if (set == null) {
-                set = getStickerSetByEmojiOrName(packName);
-            }
-            if (set == null) {
-                MediaDataController.getInstance(currentAccount).loadStickersByEmojiOrName(packName, false, true);
-            }
-        }
-        if (loadingPremiumGiftStickers || System.currentTimeMillis() - getUserConfig().lastUpdatedPremiumGiftsStickerPack < 86400000) {
-            return;
-        }
-        loadingPremiumGiftStickers = true;
-
-        TLRPC.TL_messages_getStickerSet req = new TLRPC.TL_messages_getStickerSet();
-        req.stickerset = new TLRPC.TL_inputStickerSetPremiumGifts();
-        getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-            if (response instanceof TLRPC.TL_messages_stickerSet) {
-                TLRPC.TL_messages_stickerSet stickerSet = (TLRPC.TL_messages_stickerSet) response;
-                getUserConfig().premiumGiftsStickerPack = stickerSet.set.short_name;
-                getUserConfig().lastUpdatedPremiumGiftsStickerPack = System.currentTimeMillis();
-                getUserConfig().saveConfig(false);
-
-                processLoadedDiceStickers(getUserConfig().premiumGiftsStickerPack, false, stickerSet, false, (int) (System.currentTimeMillis() / 1000));
-
-                getNotificationCenter().postNotificationName(NotificationCenter.didUpdatePremiumGiftStickers);
-            }
-        }));
-    }
-
-    public void checkTonGiftStickers() {
-        if (getUserConfig().premiumTonStickerPack != null) {
-            String packName = getUserConfig().premiumTonStickerPack;
-            TLRPC.TL_messages_stickerSet set = getStickerSetByName(packName);
-            if (set == null) {
-                set = getStickerSetByEmojiOrName(packName);
-            }
-            if (set == null) {
-                MediaDataController.getInstance(currentAccount).loadStickersByEmojiOrName(packName, false, true);
-            }
-        }
-        if (loadingPremiumTonStickers || System.currentTimeMillis() - getUserConfig().lastUpdatedTonGiftsStickerPack < 86400000) {
-            return;
-        }
-        loadingPremiumTonStickers = true;
-
-        TLRPC.TL_messages_getStickerSet req = new TLRPC.TL_messages_getStickerSet();
-        req.stickerset = new TLRPC.TL_inputStickerSetTonGifts();
-        getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-            if (response instanceof TLRPC.TL_messages_stickerSet) {
-                TLRPC.TL_messages_stickerSet stickerSet = (TLRPC.TL_messages_stickerSet) response;
-                getUserConfig().premiumTonStickerPack = stickerSet.set.short_name;
-                getUserConfig().lastUpdatedTonGiftsStickerPack = System.currentTimeMillis();
-                getUserConfig().saveConfig(false);
-
-                processLoadedDiceStickers(getUserConfig().premiumTonStickerPack, false, stickerSet, false, (int) (System.currentTimeMillis() / 1000));
-
-                getNotificationCenter().postNotificationName(NotificationCenter.didUpdateTonGiftStickers);
-            }
-        }));
-    }
-
     public void checkGenericAnimations() {
         if (getUserConfig().genericAnimationsStickerPack != null) {
             String packName = getUserConfig().genericAnimationsStickerPack;
@@ -2616,9 +2550,7 @@ public class MediaDataController extends BaseController {
             });
         } else {
             TLRPC.TL_messages_getStickerSet req = new TLRPC.TL_messages_getStickerSet();
-            if (Objects.equals(getUserConfig().premiumGiftsStickerPack, name)) {
-                req.stickerset = new TLRPC.TL_inputStickerSetPremiumGifts();
-            } else if (isEmoji) {
+            if (isEmoji) {
                 TLRPC.TL_inputStickerSetDice inputStickerSetDice = new TLRPC.TL_inputStickerSetDice();
                 inputStickerSetDice.emoticon = name;
                 req.stickerset = inputStickerSetDice;
@@ -8083,8 +8015,8 @@ public class MediaDataController extends BaseController {
         checkFeaturedEmoji();
         checkReactions();
         checkMenuBots(true);
-        checkPremiumGiftStickers();
-        checkTonGiftStickers();
+        // LoogriGram: the Premium and TON gift sticker packs are not fetched;
+        // they drew gift and giveaway messages, which are held unshown.
         checkGenericAnimations();
         getMessagesController().getAvailableEffects();
     }

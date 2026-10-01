@@ -69,12 +69,8 @@ public class UserConfig extends BaseController {
     public TLRPC.TL_help_termsOfService unacceptedTermsOfService;
     public long autoDownloadConfigLoadTime;
 
-    public String premiumGiftsStickerPack;
-    public String premiumTonStickerPack;
     public String genericAnimationsStickerPack;
     public String defaultTopicIcons;
-    public long lastUpdatedPremiumGiftsStickerPack;
-    public long lastUpdatedTonGiftsStickerPack;
     public long lastUpdatedGenericAnimations;
     public long lastUpdatedDefaultTopicIcons;
 
@@ -158,8 +154,6 @@ public class UserConfig extends BaseController {
                     editor.putInt("sharingMyLocationUntil", sharingMyLocationUntil);
                     editor.putInt("lastMyLocationShareTime", lastMyLocationShareTime);
                     editor.putBoolean("filtersLoaded", filtersLoaded);
-                    editor.putString("premiumGiftsStickerPack", premiumGiftsStickerPack);
-                    editor.putLong("lastUpdatedPremiumGiftsStickerPack", lastUpdatedPremiumGiftsStickerPack);
 
                     editor.putString("genericAnimationsStickerPack", genericAnimationsStickerPack);
                     editor.putLong("lastUpdatedGenericAnimations", lastUpdatedGenericAnimations);
@@ -297,8 +291,6 @@ public class UserConfig extends BaseController {
             sharingMyLocationUntil = preferences.getInt("sharingMyLocationUntil", 0);
             lastMyLocationShareTime = preferences.getInt("lastMyLocationShareTime", 0);
             filtersLoaded = preferences.getBoolean("filtersLoaded", false);
-            premiumGiftsStickerPack = preferences.getString("premiumGiftsStickerPack", null);
-            lastUpdatedPremiumGiftsStickerPack = preferences.getLong("lastUpdatedPremiumGiftsStickerPack", 0);
 
             genericAnimationsStickerPack = preferences.getString("genericAnimationsStickerPack", null);
             lastUpdatedGenericAnimations = preferences.getLong("lastUpdatedGenericAnimations", 0);

@@ -208,9 +208,6 @@ public class NotificationCenter {
     public static final int filterSettingsUpdated = totalEvents++;
     public static final int suggestedFiltersLoaded = totalEvents++;
     public static final int updateBotMenuButton = totalEvents++;
-    public static final int giftsToUserSent = totalEvents++;
-    public static final int didUpdatePremiumGiftStickers = totalEvents++;
-    public static final int didUpdateTonGiftStickers = totalEvents++;
     public static final int didUpdatePremiumGiftFieldIcon = totalEvents++;
     public static final int unconfirmedAuthUpdate = totalEvents++;
     public static final int dialogPhotosUpdate = totalEvents++;
