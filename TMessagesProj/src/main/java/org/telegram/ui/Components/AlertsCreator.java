@@ -7222,16 +7222,8 @@ public class AlertsCreator {
         int currentDate = ConnectionsManager.getInstance(currentAccount).getCurrentTime();
         boolean hasNonDiceMessages = false;
 
-        final long unsafePaidSuggestedPostTime = MessagesController.getInstance(currentAccount).config.starsSuggestedPostAgeMin.get(TimeUnit.SECONDS);
-        boolean hasUnsafePaidSuggestedPostStars = false;
-        boolean hasUnsafePaidSuggestedPostTon = false;
         if (selectedMessage != null) {
             hasNonDiceMessages = !selectedMessage.isDice() || Math.abs(currentDate - selectedMessage.messageOwner.date) > 24 * 60 * 60;
-            if (selectedMessage.isPaidSuggestedPostProtected()) {
-                hasUnsafePaidSuggestedPostStars |= selectedMessage.messageOwner.paid_suggested_post_stars;
-                hasUnsafePaidSuggestedPostTon |= selectedMessage.messageOwner.paid_suggested_post_ton;
-            }
-
         } else {
             for (int a = 0; a < 2; a++) {
                 for (int b = 0; b < selectedMessages[a].size(); b++) {
@@ -7239,19 +7231,6 @@ public class AlertsCreator {
                     if (!msg.isDice() || Math.abs(currentDate - msg.messageOwner.date) > 24 * 60 * 60) {
                         hasNonDiceMessages = true;
                     }
-                    if (msg.isPaidSuggestedPostProtected()) {
-                        hasUnsafePaidSuggestedPostStars |= msg.messageOwner.paid_suggested_post_stars;
-                        hasUnsafePaidSuggestedPostTon |= msg.messageOwner.paid_suggested_post_ton;
-                    }
-                }
-            }
-        }
-        if (selectedGroup != null) {
-            for (int a = 0; a < selectedGroup.messages.size(); a++) {
-                MessageObject messageObject = selectedGroup.messages.get(a);
-                if (messageObject.isPaidSuggestedPostProtected()) {
-                    hasUnsafePaidSuggestedPostStars |= messageObject.messageOwner.paid_suggested_post_stars;
-                    hasUnsafePaidSuggestedPostTon |= messageObject.messageOwner.paid_suggested_post_ton;
                 }
             }
         }
@@ -7593,23 +7572,11 @@ public class AlertsCreator {
         }
 
         // LoogriGram: deleting a running giveaway of ours asked first, with its
-        // end date. A giveaway is held unshown, so nothing selected is one.
+        // end date. A giveaway is held unshown, so nothing selected is one. A paid
+        // suggested post younger than its hold period warned that its Stars or TON
+        // would be lost; nothing here is paid, and the desktop fork dropped it too.
 
-        if (hasUnsafePaidSuggestedPostStars) {
-            final int hours = (int) MessagesController.getInstance(currentAccount).config.starsSuggestedPostAgeMin.get(TimeUnit.HOURS);
-
-            builder.setTitle(getString(R.string.SuggestionStarsWillBeLost));
-            builder.setMessage(replaceTags(LocaleController.formatString(R.string.SuggestionStarsWillBeLostInfo, hours)));
-            builder.setPositiveButton(LocaleController.getString(R.string.SuggestionStarsWillBeLostDelete), deleteAction);
-        } else if (hasUnsafePaidSuggestedPostTon) {
-            final int hours = (int) MessagesController.getInstance(currentAccount).config.starsSuggestedPostAgeMin.get(TimeUnit.HOURS);
-
-            builder.setTitle(getString(R.string.SuggestionTONWillBeLost));
-            builder.setMessage(replaceTags(LocaleController.formatString(R.string.SuggestionTONWillBeLostInfo, hours)));
-            builder.setPositiveButton(LocaleController.getString(R.string.SuggestionStarsWillBeLostDelete), deleteAction);
-        } else {
-            builder.setPositiveButton(LocaleController.getString(isSavedMessages ? R.string.Remove : R.string.Delete), deleteAction);
-        }
+        builder.setPositiveButton(LocaleController.getString(isSavedMessages ? R.string.Remove : R.string.Delete), deleteAction);
         builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
         builder.setOnPreDismissListener(di -> {
             if (hideDim != null) {

@@ -307,7 +307,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
@@ -29078,12 +29077,6 @@ public class ChatActivity extends BaseFragment implements
                             menuDeleteItem = cell;
                             updateDeleteItemRunnable.run();
                             cell.setSubtextColor(getThemedColor(Theme.key_windowBackgroundWhiteGrayText6));
-                        } else if (selectedObject.isPaidSuggestedPostProtected()) {
-                            final long until = selectedObject.messageOwner.date
-                                + getMessagesController().config.starsSuggestedPostAgeMin.get(TimeUnit.SECONDS);
-
-                            cell.setSubtext(LocaleController.formatString(R.string.SuggestedOfferPaidUntil, LocaleController.formatDateTime(until, false)));
-                            cell.setSubtextColor(getThemedColor(Theme.key_windowBackgroundWhiteGrayText6));
                         }
                     }
                     scrimPopupWindowItems[a] = cell;
@@ -41425,9 +41418,10 @@ public class ChatActivity extends BaseFragment implements
         }
 
         final @DrawableRes int deleteIconRes;
-        if (selectedObject.isPaidSuggestedPostProtected()) {
-            deleteIconRes = R.drawable.menu_delete_paid;
-        } else if (selectedObject.messageOwner.ttl_period != 0) {
+        // LoogriGram: a paid suggested post in its hold period had a paid delete
+        // icon, a "paid until" line under Delete and no Send Now or Reschedule.
+        // Nothing here is paid; the desktop fork dropped the same.
+        if (selectedObject.messageOwner.ttl_period != 0) {
             deleteIconRes = R.drawable.msg_delete_auto;
         } else {
             deleteIconRes = R.drawable.msg_delete;
@@ -41533,7 +41527,7 @@ public class ChatActivity extends BaseFragment implements
             icons.add(deleteIconRes);
         } else {
             if (currentEncryptedChat == null) {
-                if (!selectedObject.isPaidSuggestedPostProtected() && chatMode == MODE_SCHEDULED) {
+                if (chatMode == MODE_SCHEDULED) {
                     items.add(LocaleController.getString(R.string.MessageScheduleSend));
                     options.add(OPTION_SEND_NOW);
                     icons.add(R.drawable.msg_send);
@@ -41814,7 +41808,7 @@ public class ChatActivity extends BaseFragment implements
                     options.add(OPTION_SUGGESTION_ADD_OFFER);
                     icons.add(R.drawable.menu_edit_price);
                 }
-                if (!selectedObject.isPaidSuggestedPostProtected() && chatMode == MODE_SCHEDULED && selectedObject.canEditMessageScheduleTime(currentChat)) {
+                if (chatMode == MODE_SCHEDULED && selectedObject.canEditMessageScheduleTime(currentChat)) {
                     items.add(LocaleController.getString(R.string.MessageScheduleEditTime));
                     options.add(OPTION_EDIT_SCHEDULE_TIME);
                     icons.add(R.drawable.msg_calendar2);

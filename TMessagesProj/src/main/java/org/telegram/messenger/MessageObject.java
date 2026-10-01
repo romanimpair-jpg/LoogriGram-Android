@@ -108,7 +108,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TreeSet;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -10608,9 +10607,9 @@ public class MessageObject {
         if (media != null && (isRoundVideoDocument(media.document) || isStickerDocument(media.document) || isAnimatedStickerDocument(media.document, true) || isLocationMessage(message))) {
             return false;
         }
-        if (message.paid_suggested_post_stars || message.paid_suggested_post_ton) {
-            return false;
-        }
+        // LoogriGram: a paid suggested post could not be edited, sent now or
+        // rescheduled until its hold period ran out. Nothing here is paid; as on
+        // desktop, the server alone decides.
         if (message.from_id instanceof TLRPC.TL_peerUser && message.from_id.user_id == message.peer_id.user_id && message.from_id.user_id == UserConfig.getInstance(currentAccount).getClientUserId() && !isLiveLocationMessage(message) && !(media instanceof TLRPC.TL_messageMediaContact)) {
             return true;
         }
@@ -11889,22 +11888,6 @@ public class MessageObject {
             return ((TLRPC.TL_messageMediaPoll) m).poll.hash;
         }
         return 0;
-    }
-
-    public boolean isPaidSuggestedPost() {
-        return messageOwner != null && (messageOwner.paid_suggested_post_stars || messageOwner.paid_suggested_post_ton);
-    }
-
-    public boolean isPaidSuggestedPostProtected() {
-        if (isPaidSuggestedPost()) {
-            final int currentDate = ConnectionsManager.getInstance(currentAccount).getCurrentTime();
-            final long unsafePaidSuggestedPostTime = MessagesController.getInstance(currentAccount).config.starsSuggestedPostAgeMin.get(TimeUnit.SECONDS);
-            if ((currentDate - messageOwner.date) < unsafePaidSuggestedPostTime) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     public boolean isEditedSuggestionOffer() {

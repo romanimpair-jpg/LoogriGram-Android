@@ -8927,13 +8927,7 @@
     <string name="SuggestionOfferInfoPrice">Price</string>
     <string name="SuggestionOfferInfoTime">Time</string>
 
-    <string name="SuggestionStarsWillBeLost">Stars will be lost</string>
-    <string name="SuggestionTONWillBeLost">TON will be lost</string>
-    <string name="SuggestionStarsWillBeLostInfo">You won’t receive Stars for this post if you delete it now. The post must remain visible for at least** %d hours** after it was published.</string>
-    <string name="SuggestionTONWillBeLostInfo">You won’t receive TON for this post if you delete it now. The post must remain visible for at least** %d hours** after it was published.</string>
-    <string name="SuggestionStarsWillBeLostDelete">Delete Anyway</string>
 
-    <string name="SuggestedOfferPaidUntil">Paid until %1$s</string>
     <string name="SuggestedOfferStars">Offer Stars</string>
     <string name="SuggestedOfferTON">Offer TON</string>
 
