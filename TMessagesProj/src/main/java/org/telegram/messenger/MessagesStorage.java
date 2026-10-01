@@ -15801,7 +15801,6 @@ public class MessagesStorage extends BaseController {
             SQLiteCursor cursor = null;
             try {
                 ArrayList<Long> usersToLoad = new ArrayList<>();
-                HashSet<Long> dialogUsers = new HashSet<>();
                 usersToLoad.add(getUserConfig().getClientUserId());
                 ArrayList<Long> chatsToLoad = new ArrayList<>();
                 ArrayList<Integer> encryptedToLoad = new ArrayList<>();
@@ -15945,7 +15944,6 @@ public class MessagesStorage extends BaseController {
                             if (!usersToLoad.contains(dialogId)) {
                                 usersToLoad.add(dialogId);
                             }
-                            dialogUsers.add(dialogId);
                         } else if (DialogObject.isChatDialog(dialogId)) {
                             if (!chatsToLoad.contains(-dialogId)) {
                                 chatsToLoad.add(-dialogId);
@@ -16085,21 +16083,10 @@ public class MessagesStorage extends BaseController {
                 if (!usersToLoad.isEmpty()) {
                     getUsersInternal(usersToLoad, dialogs.users);
                 }
-                ArrayList<TLRPC.UserFull> fullUsers = null;
-                if (!dialogUsers.isEmpty()) {
-                    HashSet<Long> fullUsersToLoad = new HashSet<>();
-                    for (Long did : dialogUsers) {
-                        for (int i = 0; i < dialogs.users.size(); i++) {
-                            if (dialogs.users.get(i).id == did && dialogs.users.get(i).premium) {
-                                fullUsersToLoad.add(did);
-                            }
-                        }
-                    }
-                    if (!fullUsersToLoad.isEmpty()) {
-                        fullUsers = loadUserInfos(fullUsersToLoad);
-                    }
-                }
-                getMessagesController().processLoadedDialogs(dialogs, encryptedChats, fullUsers, folderId, offset, count, 1, false, false, true);
+                // LoogriGram: the full profiles of the Premium users among the
+                // dialogs were loaded from the cache here, for their profile
+                // videos in the list; nobody's Premium is honoured.
+                getMessagesController().processLoadedDialogs(dialogs, encryptedChats, null, folderId, offset, count, 1, false, false, true);
             } catch (Exception e) {
                 dialogs.dialogs.clear();
                 dialogs.users.clear();

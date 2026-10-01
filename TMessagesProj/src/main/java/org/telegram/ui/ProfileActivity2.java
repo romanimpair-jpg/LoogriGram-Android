@@ -779,13 +779,12 @@ public class ProfileActivity2 extends BaseFragment implements
             avatarImage.avatarDrawable.setInfo(user);
             final ImageLocation imageLocation = ImageLocation.getForUserOrChat(user, ImageLocation.TYPE_BIG);
             final ImageLocation thumbLocation = ImageLocation.getForUserOrChat(user, ImageLocation.TYPE_SMALL);
-            final ImageLocation videoThumbLocation = ImageLocation.getForUserOrChat(user, ImageLocation.TYPE_VIDEO_BIG);
             VectorAvatarThumbDrawable vectorAvatarThumbDrawable = null;
             TLRPC.VideoSize vectorAvatar = null;
             if (userInfo != null) {
                 vectorAvatar = FileLoader.getVectorMarkupVideoSize(user.photo != null && user.photo.personal ? userInfo.personal_photo : userInfo.profile_photo);
                 if (vectorAvatar != null) {
-                    vectorAvatarThumbDrawable = new VectorAvatarThumbDrawable(vectorAvatar, user.premium, VectorAvatarThumbDrawable.TYPE_PROFILE);
+                    vectorAvatarThumbDrawable = new VectorAvatarThumbDrawable(vectorAvatar, VectorAvatarThumbDrawable.TYPE_PROFILE);
                 }
             }
             final ImageLocation videoLocation = avatarsViewPager.getCurrentVideoLocation(thumbLocation, imageLocation);
@@ -794,9 +793,6 @@ public class ProfileActivity2 extends BaseFragment implements
             }
             if (vectorAvatar != null) {
                 avatarImage.imageReceiver.setImageBitmap(vectorAvatarThumbDrawable);
-            } else if (videoThumbLocation != null && !user.photo.personal) {
-                avatarImage.imageReceiver.setVideoThumbIsSame(true);
-                avatarImage.imageReceiver.setImage(videoThumbLocation, "avatar", imageLocation, "50_50", thumbLocation, "50_50", avatarImage.avatarDrawable, 0, null, user, 1);
             } else {
                 avatarImage.imageReceiver.setImage(videoLocation, ImageLoader.AUTOPLAY_FILTER, imageLocation, "100_100", thumbLocation, "50_50", avatarImage.avatarDrawable, 0, null, user, 1);
             }

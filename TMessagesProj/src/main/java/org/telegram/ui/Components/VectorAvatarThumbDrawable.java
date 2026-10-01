@@ -33,7 +33,6 @@ public class VectorAvatarThumbDrawable extends Drawable implements AnimatedEmoji
     public final GradientTools gradientTools = new GradientTools();
     private final int type;
     float roundRadius;
-    boolean isPremium;
 
     ImageReceiver currentParent;
     HashSet<ImageReceiver> parents = new HashSet<>();
@@ -45,9 +44,10 @@ public class VectorAvatarThumbDrawable extends Drawable implements AnimatedEmoji
     boolean imageSeted;
     TLRPC.TL_videoSizeStickerMarkup sizeStickerMarkup;
 
-    public VectorAvatarThumbDrawable(TLRPC.VideoSize vectorImageMarkup, boolean isPremiumUser, int type) {
+    // LoogriGram: an isPremiumUser argument let a Premium user's emoji avatar
+    // play in small lists; it is drawn still for everyone.
+    public VectorAvatarThumbDrawable(TLRPC.VideoSize vectorImageMarkup, int type) {
         this.type = type;
-        this.isPremium = isPremiumUser;
         int color1 = ColorUtils.setAlphaComponent(vectorImageMarkup.background_colors.get(0), 255);
         int color2 = vectorImageMarkup.background_colors.size() > 1 ? ColorUtils.setAlphaComponent(vectorImageMarkup.background_colors.get(1), 255) : 0;
         int color3 = vectorImageMarkup.background_colors.size() > 2 ? ColorUtils.setAlphaComponent(vectorImageMarkup.background_colors.get(2), 255) : 0;
@@ -56,9 +56,7 @@ public class VectorAvatarThumbDrawable extends Drawable implements AnimatedEmoji
         if (vectorImageMarkup instanceof TLRPC.TL_videoSizeEmojiMarkup) {
             TLRPC.TL_videoSizeEmojiMarkup emojiMarkup = (TLRPC.TL_videoSizeEmojiMarkup) vectorImageMarkup;
             int cacheType = AnimatedEmojiDrawable.STANDARD_LOTTIE_FRAME;
-            if (type == TYPE_SMALL && isPremiumUser) {
-                cacheType = AnimatedEmojiDrawable.CACHE_TYPE_EMOJI_STATUS;
-            } else if (type == TYPE_PROFILE) {
+            if (type == TYPE_PROFILE) {
                 cacheType = AnimatedEmojiDrawable.CACHE_TYPE_AVATAR_CONSTRUCTOR_PREVIEW2;
             }
 
@@ -90,11 +88,7 @@ public class VectorAvatarThumbDrawable extends Drawable implements AnimatedEmoji
                     TLRPC.Document thumb =  null;
                     String filter = "50_50_firstframe";
                     String thumbFilter = null;
-                    if (isPremium && type == TYPE_SMALL) {
-                        filter = "50_50";
-                        thumbFilter = "50_50_firstframe";
-                        thumb = document;
-                    } else if (type == TYPE_PROFILE) {
+                    if (type == TYPE_PROFILE) {
                         filter = "100_100";
                         thumbFilter = "50_50_firstframe";
                         thumb = document;

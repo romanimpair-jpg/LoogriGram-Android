@@ -1376,7 +1376,6 @@ public class ReactionsLayoutInBubble {
         public boolean isStar;
         public boolean isEffect;
         public long effectId;
-        public boolean premium;
         public boolean sticker;
 
         public String emojicon;
@@ -1411,7 +1410,6 @@ public class ReactionsLayoutInBubble {
             visibleReaction.sticker = effect.effect_animation_id == 0;
             visibleReaction.documentId = effect.effect_sticker_id;
             visibleReaction.hash = effect.id;
-            visibleReaction.premium = effect.premium_required;
             visibleReaction.emojicon = effect.emoticon;
             return visibleReaction;
         }

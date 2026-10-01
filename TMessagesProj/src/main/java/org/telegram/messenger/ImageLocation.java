@@ -144,8 +144,7 @@ public class ImageLocation {
     public static final int TYPE_BIG = 0;
     public static final int TYPE_SMALL = 1;
     public static final int TYPE_STRIPPED = 2;
-    public static final int TYPE_VIDEO_SMALL = 3;
-    public static final int TYPE_VIDEO_BIG = 4;
+    // LoogriGram: 3 and 4 were TYPE_VIDEO_SMALL and TYPE_VIDEO_BIG.
 
     public static ImageLocation getForUserOrChat(TLObject object, int type) {
         return getForUserOrChat(UserConfig.selectedAccount, object, type);
@@ -168,39 +167,10 @@ public class ImageLocation {
         if (user == null || user.photo == null) {
             return null;
         }
-        if (type == TYPE_VIDEO_BIG || type == TYPE_VIDEO_SMALL) {
-            if (MessagesController.getInstance(currentAccount).isPremiumUser(user) && user.photo.has_video) {
-                final TLRPC.UserFull userFull = MessagesController.getInstance(currentAccount).getUserFull(user.id);
-                TLRPC.Photo photo = null;
-                if (userFull != null) {
-                    if (user.photo.personal && userFull.personal_photo != null && userFull.personal_photo.video_sizes != null && !userFull.personal_photo.video_sizes.isEmpty()) {
-                        photo = userFull.personal_photo;
-                    } else if (userFull.profile_photo != null && userFull.profile_photo.id == user.photo.photo_id && userFull.profile_photo.video_sizes != null && !userFull.profile_photo.video_sizes.isEmpty()) {
-                        photo = userFull.profile_photo;
-                    } else if (userFull.fallback_photo != null && userFull.fallback_photo.id == user.photo.photo_id && userFull.fallback_photo.video_sizes != null && !userFull.fallback_photo.video_sizes.isEmpty()) {
-                        photo = userFull.fallback_photo;
-                    } else if (userFull.profile_photo != null && userFull.profile_photo.video_sizes != null && !userFull.profile_photo.video_sizes.isEmpty()) {
-                        photo = userFull.profile_photo;
-                    }
-                }
-                if (photo != null) {
-                    if (type == TYPE_VIDEO_BIG) {
-                        TLRPC.VideoSize videoSize = FileLoader.getClosestVideoSizeWithSize(photo.video_sizes, 1000);
-                        return ImageLocation.getForPhoto(videoSize, photo);
-                    } else {
-                        TLRPC.VideoSize videoSize = FileLoader.getClosestVideoSizeWithSize(photo.video_sizes, 100);
-                        for (int i = 0; i < photo.video_sizes.size(); i++) {
-                            if ("p".equals(photo.video_sizes.get(i).type)) {
-                                videoSize = photo.video_sizes.get(i);
-                                break;
-                            }
-                        }
-                        return ImageLocation.getForPhoto(videoSize, photo);
-                    }
-                }
-            }
-            return null;
-        }
+        // LoogriGram: TYPE_VIDEO_BIG / TYPE_VIDEO_SMALL gave a Premium user's
+        // profile video, to play in place of the photo in lists and the
+        // profile's small avatar. Nobody's Premium is honoured, as on desktop
+        // (data_peer.cpp): profile videos play in the profile gallery only.
         if (type == TYPE_STRIPPED) {
             if (user.photo.stripped_thumb == null) {
                 return null;

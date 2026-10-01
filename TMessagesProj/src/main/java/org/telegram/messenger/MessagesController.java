@@ -794,10 +794,6 @@ public class MessagesController extends BaseController implements NotificationCe
         return reactionsUniqMax;
     }
 
-    public boolean isPremiumUser(TLRPC.User currentUser) {
-        return currentUser != null && currentUser.premium && !isSupportUser(currentUser);
-    }
-
     public void putLastGiftAuctionUpdate() {
         if (mainPreferences != null) {
             mainPreferences.edit().putLong("lastGiftAuctionTimeUpdate", System.currentTimeMillis()).apply();

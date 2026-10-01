@@ -145,16 +145,21 @@ public class StickerCategoriesListView extends RecyclerListView {
         fetcher.fetch(UserConfig.selectedAccount, categoriesType, (emojiGroups) -> {
             if (emojiGroups != null) {
                 Runnable action = () -> {
-                    categories = new EmojiCategory[(additionalCategories == null ? 0 : additionalCategories.length) + emojiGroups.groups.size()];
-                    int i = 0;
+                    // LoogriGram: the Premium category (TL_emojiGroupPremium) listed
+                    // every premium sticker, all locked. It is not shown, as on
+                    // desktop (data_emoji_statuses.cpp).
+                    final java.util.ArrayList<EmojiCategory> list = new java.util.ArrayList<>();
                     if (additionalCategories != null) {
-                        for (; i < additionalCategories.length; ++i) {
-                            categories[i] = additionalCategories[i];
+                        for (int i = 0; i < additionalCategories.length; ++i) {
+                            list.add(additionalCategories[i]);
                         }
                     }
                     for (int j = 0; j < emojiGroups.groups.size(); ++j) {
-                        categories[i + j] = EmojiCategory.remote(emojiGroups.groups.get(j));
+                        if (!(emojiGroups.groups.get(j) instanceof TLRPC.TL_emojiGroupPremium)) {
+                            list.add(EmojiCategory.remote(emojiGroups.groups.get(j)));
+                        }
                     }
+                    categories = list.toArray(new EmojiCategory[0]);
                     categories = preprocessCategories(categories);
                     adapter.notifyDataSetChanged();
                     setCategoriesShownT(0);
@@ -861,7 +866,6 @@ public class StickerCategoriesListView extends RecyclerListView {
         public boolean animated;
         public int iconResId;
         public String emojis;
-        public boolean premium;
         public boolean greeting;
 
         public boolean remote;
@@ -889,12 +893,7 @@ public class StickerCategoriesListView extends RecyclerListView {
             EmojiCategory category = new EmojiCategory();
             category.remote = true;
             category.documentId = group.icon_emoji_id;
-            if (group instanceof TLRPC.TL_emojiGroupPremium) {
-                category.emojis = "premium";
-                category.premium = true;
-            } else {
-                category.emojis = TextUtils.concat(group.emoticons.toArray(new String[0])).toString();
-            }
+            category.emojis = TextUtils.concat(group.emoticons.toArray(new String[0])).toString();
             category.greeting = group instanceof TLRPC.TL_emojiGroupGreeting;
             category.title = group.title;
             return category;

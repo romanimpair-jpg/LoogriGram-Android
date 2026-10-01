@@ -430,12 +430,9 @@ public class ImageReceiver implements NotificationCenter.NotificationCenterDeleg
         setUseRoundForThumbDrawable(true);
         BitmapDrawable strippedBitmap = null;
         boolean hasStripped = false;
-        ImageLocation videoLocation = null;
         TLRPC.VideoSize vectorImageMarkup = null;
-        boolean isPremium = false;
         if (object instanceof TLRPC.User) {
             TLRPC.User user = (TLRPC.User) object;
-            isPremium = user.premium;
             if (user.photo != null) {
                 strippedBitmap = user.photo.strippedBitmap;
                 hasStripped = user.photo.stripped_thumb != null;
@@ -448,33 +445,8 @@ public class ImageReceiver implements NotificationCenter.NotificationCenterDeleg
                         }
                     }
                 }
-                if (vectorImageMarkup == null && animationEnabled && MessagesController.getInstance(currentAccount).isPremiumUser(user) && user.photo.has_video && LiteMode.isEnabled(LiteMode.FLAG_AUTOPLAY_VIDEOS)) {
-                    final TLRPC.UserFull userFull = MessagesController.getInstance(currentAccount).getUserFull(user.id);
-                    if (userFull == null) {
-                        MessagesController.getInstance(currentAccount).loadFullUser(user, currentGuid, false);
-                    } else {
-                        TLRPC.Photo photo = user.photo.personal ? userFull.personal_photo : userFull.profile_photo;
-                        if (photo != null) {
-                            vectorImageMarkup = FileLoader.getVectorMarkupVideoSize(photo);
-                            if (vectorImageMarkup == null) {
-                                ArrayList<TLRPC.VideoSize> videoSizes = photo.video_sizes;
-                                if (videoSizes != null && !videoSizes.isEmpty()) {
-                                    TLRPC.VideoSize videoSize = FileLoader.getClosestVideoSizeWithSize(videoSizes, 100);
-                                    for (int i = 0; i < videoSizes.size(); i++) {
-                                        TLRPC.VideoSize videoSize1 = videoSizes.get(i);
-                                        if ("p".equals(videoSize1.type)) {
-                                            videoSize = videoSize1;
-                                        }
-                                        if (videoSize1 instanceof TLRPC.TL_videoSizeEmojiMarkup || videoSize1 instanceof TLRPC.TL_videoSizeStickerMarkup) {
-                                            vectorImageMarkup = videoSize1;
-                                        }
-                                    }
-                                    videoLocation = ImageLocation.getForPhoto(videoSize, photo);
-                                }
-                            }
-                        }
-                    }
-                }
+                // LoogriGram: a Premium user's profile video or emoji avatar
+                // played here, in every list; nobody's Premium is honoured.
             }
         } else if (object instanceof TLRPC.Chat) {
             TLRPC.Chat chat = (TLRPC.Chat) object;
@@ -484,7 +456,7 @@ public class ImageReceiver implements NotificationCenter.NotificationCenterDeleg
             }
         }
         if (vectorImageMarkup != null && vectorType != 0) {
-            VectorAvatarThumbDrawable drawable = new VectorAvatarThumbDrawable(vectorImageMarkup, isPremium, vectorType);
+            VectorAvatarThumbDrawable drawable = new VectorAvatarThumbDrawable(vectorImageMarkup, vectorType);
             setImageBitmap(drawable);
         } else {
             ImageLocation location;
@@ -496,17 +468,12 @@ public class ImageReceiver implements NotificationCenter.NotificationCenterDeleg
                 location = ImageLocation.getForUserOrChat(currentAccount, object, ImageLocation.TYPE_BIG);
                 filter = "100_100";
             }
-            if (videoLocation != null) {
-                setImage(videoLocation, "avatar", location, filter, null, null, strippedBitmap, 0, null, parentObject, 0);
-                animatedFileDrawableRepeatMaxCount = 3;
+            if (strippedBitmap != null) {
+                setImage(location, filter, strippedBitmap, null, parentObject, 0);
+            } else if (hasStripped) {
+                setImage(location, filter, ImageLocation.getForUserOrChat(currentAccount, object, ImageLocation.TYPE_STRIPPED), "50_50_b", avatarDrawable, parentObject, 0);
             } else {
-                if (strippedBitmap != null) {
-                    setImage(location, filter, strippedBitmap, null, parentObject, 0);
-                } else if (hasStripped) {
-                    setImage(location, filter, ImageLocation.getForUserOrChat(currentAccount, object, ImageLocation.TYPE_STRIPPED), "50_50_b", avatarDrawable, parentObject, 0);
-                } else {
-                    setImage(location, filter, avatarDrawable, null, parentObject, 0);
-                }
+                setImage(location, filter, avatarDrawable, null, parentObject, 0);
             }
         }
 
