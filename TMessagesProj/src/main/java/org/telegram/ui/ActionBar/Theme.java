@@ -1206,7 +1206,6 @@ public class Theme {
         public long wallpaperId;
         public long accessHash;
         public long dialogId;
-        public boolean forBoth;
 
         public ThemeInfo parentTheme;
         public ThemeAccent parentAccent;

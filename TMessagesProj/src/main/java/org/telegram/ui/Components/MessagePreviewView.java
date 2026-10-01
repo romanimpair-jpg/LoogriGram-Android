@@ -52,7 +52,6 @@ import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
-import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBarMenuSubItem;
@@ -996,13 +995,12 @@ public class MessagePreviewView extends FrameLayout {
 
             } else if (tab == TAB_FORWARD && messagePreviewParams.forwardMessages != null) {
 
+                // LoogriGram: a Premium account could hide the sender of an article.
                 boolean _canHideSenderName = true;
-                if (!UserConfig.getInstance(currentAccount).isPremium()) {
-                    for (int i = 0; i < messagePreviewParams.forwardMessages.messages.size(); ++i) {
-                        if (messagePreviewParams.forwardMessages.messages.get(i).type == MessageObject.TYPE_ARTICLE) {
-                            _canHideSenderName = false;
-                            break;
-                        }
+                for (int i = 0; i < messagePreviewParams.forwardMessages.messages.size(); ++i) {
+                    if (messagePreviewParams.forwardMessages.messages.get(i).type == MessageObject.TYPE_ARTICLE) {
+                        _canHideSenderName = false;
+                        break;
                     }
                 }
                 final boolean canHideSenderName = _canHideSenderName;

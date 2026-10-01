@@ -29,7 +29,6 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.R;
-import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.browser.Browser;
@@ -293,16 +292,15 @@ public class CreateBotAlert {
                 if (err != null) {
                     if ("BOT_CREATE_LIMIT_EXCEEDED".equalsIgnoreCase(err.text)) {
                         final MessagesController m = MessagesController.getInstance(currentAccount);
-                        final boolean premium = UserConfig.getInstance(currentAccount).isPremium();
                         BulletinFactory.of(sheet.topBulletinContainer, resourcesProvider)
                             .createSimpleBulletin(
                                 R.raw.error,
                                 getString(R.string.CreateManagedBotLimitTitle),
                                 highlightBotFather(
                                     context,
-                                    // LoogriGram: the limit that applies; the text for an
+                                    // LoogriGram: the free limit, the only one; the text for an
                                     // account without Premium offered Premium's higher one.
-                                    formatString(R.string.CreateManagedBotLimitText, premium ? m.config.botsCreateLimitPremium.get() : m.config.botsCreateLimitDefault.get()),
+                                    formatString(R.string.CreateManagedBotLimitText, m.config.botsCreateLimitDefault.get()),
                                     () -> {
                                         sheet.dismiss();
                                         Browser.openUrl(context, "https://t.me/BotFather?start=deletebot");

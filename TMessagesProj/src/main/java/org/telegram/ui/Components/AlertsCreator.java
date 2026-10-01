@@ -4259,110 +4259,9 @@ public class AlertsCreator {
 
         checkScheduleDate(buttonTextView, null, forcedTitle != null ? 3 : selfUserId == dialogId ? 1 : 0, dayPicker, hourPicker, minutePicker);
 
-        final boolean testBackend = ConnectionsManager.getInstance(UserConfig.selectedAccount).isTestBackend();
-        final int[] repeatValues =
-            testBackend ?
-                new int[] {
-                    0,
-                    60,
-                    300,
-                    86400,
-                    7 * 86400,
-                    14 * 86400,
-                    30 * 86400,
-                    91 * 86400,
-                    182 * 86400,
-                    365 * 86400
-                } : new int[] {
-                    0,
-                    86400,
-                    7 * 86400,
-                    14 * 86400,
-                    30 * 86400,
-                    91 * 86400,
-                    182 * 86400,
-                    365 * 86400
-                };
-        final String[] repeatLabels =
-            testBackend ?
-                new String[] {
-                    getString(R.string.MessageScheduledRepeatOptionNever),
-                    "Every minute",
-                    "Every 5 minutes",
-                    getString(R.string.MessageScheduledRepeatOptionDaily),
-                    getString(R.string.MessageScheduledRepeatOptionWeekly),
-                    getString(R.string.MessageScheduledRepeatOptionBiweekly),
-                    getString(R.string.MessageScheduledRepeatOptionMonthly),
-                    getString(R.string.MessageScheduledRepeatOption3Monthly),
-                    getString(R.string.MessageScheduledRepeatOption6Monthly),
-                    getString(R.string.MessageScheduledRepeatOptionYearly)
-                } :
-                new String[] {
-                    getString(R.string.MessageScheduledRepeatOptionNever),
-                    getString(R.string.MessageScheduledRepeatOptionDaily),
-                    getString(R.string.MessageScheduledRepeatOptionWeekly),
-                    getString(R.string.MessageScheduledRepeatOptionBiweekly),
-                    getString(R.string.MessageScheduledRepeatOptionMonthly),
-                    getString(R.string.MessageScheduledRepeatOption3Monthly),
-                    getString(R.string.MessageScheduledRepeatOption6Monthly),
-                    getString(R.string.MessageScheduledRepeatOptionYearly)
-                };
-        final FrameLayout repeatContainer;
-        final TextView repeatTextView;
-        final Runnable updateRepeatText;
-        // LoogriGram: repeating a scheduled message is Premium's, so the repeat
-        // row is drawn only for a Premium account. Upstream drew it for everyone
-        // and offered Premium on a tap.
-        if (!doNotShowReminder && UserConfig.getInstance(UserConfig.selectedAccount).isPremium()) {
-            repeatContainer = new FrameLayout(context);
-
-            final int textColor = datePickerColors != null ? datePickerColors.textColor : Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider);
-            final int backgroundColor = datePickerColors != null ? Theme.blendOver(datePickerColors.backgroundColor, Theme.multAlpha(datePickerColors.textColor, 0.075f)) : Theme.getColor(Theme.key_dialogBackgroundGray, resourcesProvider);
-            final int selectorColor = datePickerColors != null ? Theme.multAlpha(datePickerColors.textColor, 0.1f) : Theme.getColor(Theme.key_listSelector, resourcesProvider);
-
-            repeatTextView = new TextView(context);
-            repeatTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
-            repeatTextView.setTextColor(textColor);
-            repeatTextView.setPadding(dp(12), 0, dp(12), 0);
-            repeatTextView.setBackground(Theme.createSimpleSelectorRoundRectDrawable(dp(14), backgroundColor, Theme.blendOver(backgroundColor, selectorColor)));
-            repeatTextView.setGravity(Gravity.CENTER);
-            updateRepeatText = () -> {
-                final SpannableStringBuilder sb = new SpannableStringBuilder();
-                sb.append(getString(R.string.MessageScheduledRepeatOption));
-                sb.append(" ");
-                int fromIndex = sb.length();
-                for (int i = 0; i < repeatValues.length; ++i) {
-                    if (repeat[0] == repeatValues[i]) {
-                        sb.append(repeatLabels[i]);
-                        sb.setSpan(new TypefaceSpan(AndroidUtilities.bold()), fromIndex, sb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        break;
-                    }
-                }
-                sb.append(" v");
-                if (UserConfig.getInstance(UserConfig.selectedAccount).isPremium()) {
-                    final ColoredImageSpan imageSpan = new ColoredImageSpan(R.drawable.arrows_select);
-                    imageSpan.spaceScaleX = 0.7f;
-                    imageSpan.translate(dp(-1.33f), dp(0));
-                    imageSpan.setAlpha(0.75f);
-                    sb.setSpan(imageSpan, sb.length() - 1, sb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                } else {
-                    final ColoredImageSpan imageSpan = new ColoredImageSpan(R.drawable.mini_switch_lock);
-                    imageSpan.spaceScaleX = 0.7f;
-                    imageSpan.translate(dp(-1.33f), dp(0));
-                    imageSpan.setAlpha(0.75f);
-                    sb.setSpan(imageSpan, sb.length() - 1, sb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                }
-                repeatTextView.setText(sb);
-            };
-            updateRepeatText.run();
-
-            repeatContainer.addView(repeatTextView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 28, Gravity.CENTER_HORIZONTAL, 32, 4, 32, 5));
-            container.addView(repeatContainer, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
-        } else {
-            repeatContainer = null;
-            repeatTextView = null;
-            updateRepeatText = null;
-        }
+        // LoogriGram: below the date sat a row to repeat the message (daily,
+        // weekly, ... yearly), drawn only for a Premium account. A period the
+        // scheduled message already has is passed back unchanged.
 
         buttonTextView.setPadding(dp(34), 0, dp(34), 0);
         buttonTextView.setGravity(Gravity.CENTER);
@@ -4396,20 +4295,6 @@ public class AlertsCreator {
         bottomSheet.setBackgroundColor(datePickerColors.backgroundColor);
         bottomSheet.fixNavigationBar(datePickerColors.backgroundColor);
 
-        if (repeatTextView != null) {
-            repeatTextView.setOnClickListener(v -> {
-                final ItemOptions o = ItemOptions.makeOptions(bottomSheet.container, resourcesProvider, repeatContainer);
-                for (int i = 0; i < repeatValues.length; ++i) {
-                    final int value = repeatValues[i];
-                    o.add(repeatLabels[i], () -> {
-                        repeat[0] = value;
-                        updateRepeatText.run();
-                    });
-                }
-                o.setGravity(Gravity.CENTER_HORIZONTAL);
-                o.show();
-            });
-        }
         final HintView2[] notifyHint = new HintView2[1];
         notifyItem.setOnClickListener(v -> {
             notify[0] = !notify[0];

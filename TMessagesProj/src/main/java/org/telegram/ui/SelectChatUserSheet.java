@@ -33,7 +33,6 @@ import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.checkerframework.checker.units.qual.A;
-import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.DialogObject;
@@ -699,7 +698,8 @@ public class SelectChatUserSheet extends BottomSheetWithRecyclerListView {
                         }
                     }), ConnectionsManager.RequestFlagWithoutLogin);
                 } else if (error.text.equals("CHANNELS_TOO_MUCH")) {
-                    if (context != null && !AccountInstance.getInstance(currentAccount).getUserConfig().isPremium()) {
+                    // LoogriGram: a Premium account went straight to the list to leave from.
+                    if (context != null) {
                         final BaseFragment lastFragment = LaunchActivity.getSafeLastFragment();
                         if (lastFragment == null) return;
                         showDialog(new LimitReachedBottomSheet(lastFragment, context, LimitReachedBottomSheet.TYPE_TO0_MANY_COMMUNITIES, currentAccount, null));

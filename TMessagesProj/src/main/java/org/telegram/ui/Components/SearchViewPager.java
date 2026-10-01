@@ -1429,11 +1429,11 @@ public class SearchViewPager extends ViewPagerFixed implements FilteredSearchVie
             }
             items.add(new Item(CHANNELS_TYPE));
             items.add(new Item(BOTS_TYPE));
-            // LoogriGram: searching every public post is Premium's. Without it the
-            // Posts tab held only an offer of Premium, so it is left out.
-            if (UserConfig.getInstance(currentAccount).isPremium()) {
-                items.add(new Item(POSTS_TYPE));
-            }
+            // LoogriGram: the Posts tab is shown whatever our Premium, as on
+            // desktop (dialogs/ui/posts_search_intro.cpp): the server's free
+            // daily searches decide, then a countdown. 80072e50 had left the
+            // tab out without Premium, whose page then held only an offer of it.
+            items.add(new Item(POSTS_TYPE));
             if (!showOnlyDialogsAdapter) {
                 Item item = new Item(FILTER_TYPE);
                 item.filterIndex = 0;

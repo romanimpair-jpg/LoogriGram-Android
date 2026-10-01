@@ -719,7 +719,6 @@ public class ChatThemeController extends BaseController {
             TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-dialogId);
             req.peer = MessagesController.getInputPeer(chat);
         }
-        req.for_both = wallpaperInfo.forBoth;
         boolean applyOnRequest = true;
         if (serverWallpaper != null && serverWallpaper.messageOwner.action instanceof TLRPC.TL_messageActionSetChatWallPaper) {
             applyOnRequest = false;

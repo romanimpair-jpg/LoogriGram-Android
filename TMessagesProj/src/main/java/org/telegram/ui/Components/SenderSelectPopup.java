@@ -136,9 +136,8 @@ public class SenderSelectPopup extends ActionBarPopupWindow {
 
         // LoogriGram: an identity only Premium may send as is left out without
         // Premium. Upstream listed it padlocked and a tap offered Premium.
-        final boolean premium = UserConfig.getInstance(UserConfig.selectedAccount).isPremium();
         for (TLRPC.TL_sendAsPeer p : sendAsPeers.peers) {
-            if (premium || !p.premium_required) {
+            if (!p.premium_required) {
                 shownPeers.add(p);
             }
         }

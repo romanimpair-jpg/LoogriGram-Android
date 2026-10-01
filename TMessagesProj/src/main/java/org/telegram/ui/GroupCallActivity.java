@@ -3860,21 +3860,19 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
                                             restricterdUsersBottomSheet.setRestrictedUsers(null, users2, premiumBlockedUsers, premiumInviteBlockedUsers, link);
                                             restricterdUsersBottomSheet.show();
                                         };
-                                        if (UserConfig.getInstance(currentAccount).isPremium()) {
-                                            showLimitSheet.run();
-                                        } else {
-                                            ConnectionsManager.getInstance(currentAccount).sendRequest(req3, (res3, err3) -> AndroidUtilities.runOnUIThread(() -> {
-                                                if (res3 instanceof Vector) {
-                                                    Vector<TL_account.RequirementToContact> result = (Vector<TL_account.RequirementToContact>) res3;
-                                                    for (int i = 0; i < Math.min(users2.size(), result.objects.size()); ++i) {
-                                                        if (result.objects.get(i) instanceof TL_account.requirementToContactPremium) {
-                                                            premiumBlockedUsers.add(users2.get(i).id);
-                                                        }
+                                        // LoogriGram: a Premium account skipped asking who takes
+                                        // messages only from Premium users; ours is never Premium.
+                                        ConnectionsManager.getInstance(currentAccount).sendRequest(req3, (res3, err3) -> AndroidUtilities.runOnUIThread(() -> {
+                                            if (res3 instanceof Vector) {
+                                                Vector<TL_account.RequirementToContact> result = (Vector<TL_account.RequirementToContact>) res3;
+                                                for (int i = 0; i < Math.min(users2.size(), result.objects.size()); ++i) {
+                                                    if (result.objects.get(i) instanceof TL_account.requirementToContactPremium) {
+                                                        premiumBlockedUsers.add(users2.get(i).id);
                                                     }
                                                 }
-                                                showLimitSheet.run();
-                                            }));
-                                        }
+                                            }
+                                            showLimitSheet.run();
+                                        }));
                                     });
                                 }
                             });

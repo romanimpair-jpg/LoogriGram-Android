@@ -689,7 +689,6 @@ public class SearchDownloadsContainer extends FrameLayout implements Notificatio
         @Override
         public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder source, RecyclerView.ViewHolder target) {
             boolean canMove = target.getAdapterPosition() >= downloadingFilesStartRow && target.getAdapterPosition() < downloadingFilesEndRow;
-//            boolean canMove = getUserConfig().isPremium() || !((target.itemView instanceof FiltersSetupActivity.FilterCell) && ((FiltersSetupActivity.FilterCell) target.itemView).currentFilter.isDefault());
             if (!canMove) {
                 return false;
             }

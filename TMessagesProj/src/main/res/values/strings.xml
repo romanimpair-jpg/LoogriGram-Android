@@ -6928,7 +6928,6 @@
     <string name="SimilarChannels">Similar Channels</string>
     <string name="SimilarBots">Similar Bots</string>
     <string name="ApplyWallpaperForMe">Apply for Me</string>
-    <string name="ApplyWallpaperForMeAndPeer">Apply for Me and %s</string>
     <string name="ApplyWallpaperForChannel">Apply for %s</string>
     <string name="ApplyWallpaper">Set Background</string>
     <string name="RemoveWallpaperTitle">Remove wallpaper</string>
@@ -9377,15 +9376,6 @@
     <string name="MessageScheduledRepeatBiweekly">biweekly</string>
     <string name="MessageScheduledRepeatDaily">daily</string>
     <string name="MessageScheduledRepeatSeconds">every %1$ds</string>
-    <string name="MessageScheduledRepeatOption">Repeat:</string>
-    <string name="MessageScheduledRepeatOptionNever">Never</string>
-    <string name="MessageScheduledRepeatOptionDaily">Daily</string>
-    <string name="MessageScheduledRepeatOptionWeekly">Weekly</string>
-    <string name="MessageScheduledRepeatOptionBiweekly">Biweekly</string>
-    <string name="MessageScheduledRepeatOptionMonthly">Monthly</string>
-    <string name="MessageScheduledRepeatOption3Monthly">Every 3 months</string>
-    <string name="MessageScheduledRepeatOption6Monthly">Every 6 months</string>
-    <string name="MessageScheduledRepeatOptionYearly">Yearly</string>
     <string name="MessageScheduledRepeatPremium">Subscribe to **Telegram Premium** to schedule repeating messages.</string>
     <string name="DateOfBirth">Date Of Birth</string>
     <string name="DateOfBirthHideYear">Hide Year</string>
@@ -9675,7 +9665,6 @@
 
     <string name="GalleryAccessAllowAccess">Allow Access to Photos</string>
     <string name="GalleryAccessAllowAccessTextNonPremium">Share an unlimited number of photos\nand videos of up to 2 GB each.</string>
-    <string name="GalleryAccessAllowAccessTextPremium">Share an unlimited number of photos\nand videos of up to 4 GB each.</string>
     <string name="GalleryAccessAllowAccessButton">Allow Access</string>
     <string name="GalleryAccessAllowAccessOpenCamera">Open Camera</string>
     <string name="GalleryAccessAllowAccessCamera">Allow Access to Camera</string>

@@ -42,7 +42,6 @@ import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BotWebViewVibrationEffect;
 import org.telegram.messenger.ChatObject;
@@ -1232,7 +1231,8 @@ public class ChatRightsEditActivity extends BaseFragment implements Notification
                         }
                     }), ConnectionsManager.RequestFlagWithoutLogin);
                 } else if (error.text.equals("CHANNELS_TOO_MUCH")) {
-                    if (getParentActivity() != null && !AccountInstance.getInstance(currentAccount).getUserConfig().isPremium()) {
+                    // LoogriGram: a Premium account went straight to the list to leave from.
+                    if (getParentActivity() != null) {
                         showDialog(new LimitReachedBottomSheet(this, getParentActivity(), LimitReachedBottomSheet.TYPE_TO0_MANY_COMMUNITIES, currentAccount, null));
                     } else {
                         presentFragment(new TooManyCommunitiesActivity(TooManyCommunitiesActivity.TYPE_EDIT));

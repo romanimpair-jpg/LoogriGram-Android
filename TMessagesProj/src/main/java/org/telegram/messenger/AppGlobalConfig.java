@@ -70,7 +70,6 @@ public class AppGlobalConfig {
     public final ConfigTime pollAnswerDeletePeriod = ofTime("poll_answer_delete_period", 300, TimeUnit.SECONDS);
 
     public final ConfigInt botsCreateLimitDefault = ofInt("bots_create_limit_default", 20);
-    public final ConfigInt botsCreateLimitPremium = ofInt("bots_create_limit_premium", 40);
 
     public final ConfigString phoneCountryIso2 = ofString("phone_country_iso2", "en");
 

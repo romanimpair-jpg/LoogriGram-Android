@@ -548,11 +548,11 @@ public class TopicCreateFragment extends BaseFragment {
             return;
         }
 
-        // LoogriGram: without Premium, an icon from outside the default topic
-        // icons was refused with a bulletin selling Premium, its "more" opening
-        // the subscription sheet. It is still refused, but quietly, as on
+        // LoogriGram: an icon from outside the default topic icons was refused
+        // with a bulletin selling Premium, its "more" opening the subscription
+        // sheet, and taken from a Premium account. It is refused quietly, as on
         // desktop (boxes/peers/edit_forum_topic_box.cpp).
-        if (!free && docId != 0 && !getUserConfig().isPremium()) {
+        if (!free && docId != 0) {
             return;
         }
 

@@ -12048,15 +12048,8 @@ public class ChatActivity extends BaseFragment implements
         if (chatActivityEnterView == null || chatActivityEnterView.getVisibility() != View.VISIBLE) {
             return false;
         }
-        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-        int moreemojihint;
-        if ((moreemojihint = preferences.getInt("moreemojihint", 0)) > 3 && UserConfig.getInstance(currentAccount).isPremium()) {
-            return false;
-        }
-        if (UserConfig.getInstance(currentAccount).isPremium()) {
-            preferences.edit().putInt("moreemojihint", moreemojihint + 1).commit();
-        }
-
+        // LoogriGram: a Premium account stopped seeing this hint after four
+        // showings; the count was kept only for it.
         if (getParentActivity() == null || fragmentView == null || emojiHintTextView != null) {
             return false;
         }
@@ -23601,7 +23594,9 @@ public class ChatActivity extends BaseFragment implements
                         }
                     }
                 }
-                if (messageObject.wasJustSent && (getUserConfig().isPremium() || messageObject.getEffect() != null) && !(SharedConfig.getDevicePerformanceClass() == SharedConfig.PERFORMANCE_CLASS_LOW || !LiteMode.isEnabled(LiteMode.FLAG_ANIMATED_STICKERS_CHAT))) {
+                // LoogriGram: a Premium account also replayed a just-sent premium
+                // sticker's effect; only a message effect is replayed now.
+                if (messageObject.wasJustSent && messageObject.getEffect() != null && !(SharedConfig.getDevicePerformanceClass() == SharedConfig.PERFORMANCE_CLASS_LOW || !LiteMode.isEnabled(LiteMode.FLAG_ANIMATED_STICKERS_CHAT))) {
                     messageObject.forcePlayEffect = true;
                 }
             }
@@ -25635,7 +25630,7 @@ public class ChatActivity extends BaseFragment implements
             bottomOverlayLinksText.setBackground(Theme.createSelectorDrawable(Theme.multAlpha(getThemedColor(Theme.key_featuredStickers_addButton), .05f), Theme.RIPPLE_MASK_ALL));
             bottomOverlayLinksText.setClickable(true);
             showBottomOverlayProgress(false, false);
-        } else if (chatMode == MODE_DEFAULT && getDialogId() != getUserConfig().getClientUserId() && userInfo != null && (userInfo.contact_require_premium && !getUserConfig().isPremium() || userInfo.send_paid_messages_stars != 0)) {
+        } else if (chatMode == MODE_DEFAULT && getDialogId() != getUserConfig().getClientUserId() && userInfo != null && (userInfo.contact_require_premium || userInfo.send_paid_messages_stars != 0)) {
             bottomOverlayLinks = true;
             bottomOverlayChatText.setVisibility(View.GONE);
             bottomOverlayLinksText.setVisibility(View.VISIBLE);
@@ -27684,8 +27679,8 @@ public class ChatActivity extends BaseFragment implements
         }
 
         ArrayList<TLRPC.MessageEntity> entities;
-        final boolean isPremium = UserConfig.getInstance(currentAccount).isPremium();
-        if (!isPremium && UserConfig.getInstance(currentAccount).getClientUserId() != dialog_id && resolvedChatLink.entities != null) {
+        // LoogriGram: a Premium account kept every custom emoji of the link's text.
+        if (UserConfig.getInstance(currentAccount).getClientUserId() != dialog_id && resolvedChatLink.entities != null) {
             entities = resolvedChatLink.entities.stream().filter(entity -> {
                 if (entity instanceof TLRPC.TL_messageEntityCustomEmoji) {
                     TLRPC.TL_messageEntityCustomEmoji emojiEntity = (TLRPC.TL_messageEntityCustomEmoji) entity;
@@ -29776,7 +29771,8 @@ public class ChatActivity extends BaseFragment implements
             TLRPC.Chat mfChat = getLinkedMonoForumChat();
             return mfChat != null && currentChat != null && !ChatObject.canManageMonoForum(currentAccount, currentChat) && currentChat.send_paid_messages_stars <= 0;
         }
-        return getDialogId() != getUserConfig().getClientUserId() && userInfo != null && userInfo.contact_require_premium && !getUserConfig().isPremium();
+        // LoogriGram: Premium lifted this lock; ours is never honoured.
+        return getDialogId() != getUserConfig().getClientUserId() && userInfo != null && userInfo.contact_require_premium;
     }
 
     private void createEmptyView(boolean recreate) {
@@ -29800,7 +29796,7 @@ public class ChatActivity extends BaseFragment implements
             welcomeMessagesEmptyView.setBackground(Theme.createServiceDrawable(AndroidUtilities.dp(24), welcomeMessagesEmptyView, contentView, getThemedPaint(Theme.key_paint_chatActionBackground)));
             emptyViewContainer.addView(welcomeMessagesEmptyView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER));
             viewPositionWatcher.subscribe(welcomeMessagesEmptyView, contentView, (v, r) -> v.invalidate());
-        } else if (userInfo != null && getDialogId() != getUserConfig().getClientUserId() && userInfo.contact_require_premium && !getUserConfig().isPremium()) {
+        } else if (userInfo != null && getDialogId() != getUserConfig().getClientUserId() && userInfo.contact_require_premium) {
             greetingsViewContainer = new ChatGreetingsView(getContext(), currentUser, currentAccount, themeDelegate) {
                 @Override
                 protected void onLayout(boolean changed, int l, int t, int r, int b) {
@@ -29916,7 +29912,7 @@ public class ChatActivity extends BaseFragment implements
             }
         } else if (getDialogId() != getUserConfig().getClientUserId()) {
             if (userInfo != null && userInfo.contact_require_premium) {
-                greetingsViewContainer.setPremiumLock(!getUserConfig().isPremium(), AndroidUtilities.replaceTags(formatString(R.string.MessageLockedPremiumLocked, DialogObject.getShortName(dialog_id))));
+                greetingsViewContainer.setPremiumLock(true, AndroidUtilities.replaceTags(formatString(R.string.MessageLockedPremiumLocked, DialogObject.getShortName(dialog_id))));
             } else {
                 // LoogriGram: no "charges N Stars per message" and Unlock
                 // button for a user who charges - the compose field already
@@ -29962,7 +29958,7 @@ public class ChatActivity extends BaseFragment implements
         showGreetInfo(
             getDialogId() != getUserConfig().getClientUserId() &&
             userInfo != null && userInfo.business_intro != null &&
-            !(userInfo != null && userInfo.contact_require_premium && !getUserConfig().isPremium())
+            !userInfo.contact_require_premium
         );
     }
 
@@ -40605,7 +40601,7 @@ public class ChatActivity extends BaseFragment implements
             return;
         // LoogriGram: a user who charges per message is locked too, and Premium
         // does not lift that one.
-        if (currentUser == null || !(currentUser.contact_require_premium && !getUserConfig().isPremium() || currentUser.send_paid_messages_stars != 0))
+        if (currentUser == null || !(currentUser.contact_require_premium || currentUser.send_paid_messages_stars != 0))
             return;
         if (messages.isEmpty() == (getMessagesController().isUserContactBlocked(getDialogId()) != null))
             return;

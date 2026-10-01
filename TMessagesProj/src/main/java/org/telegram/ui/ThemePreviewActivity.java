@@ -47,7 +47,6 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.os.SystemClock;
-import android.text.SpannableStringBuilder;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.util.SparseIntArray;
@@ -79,7 +78,6 @@ import org.telegram.messenger.ApplicationLoader;
 import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.ChatThemeController;
 import org.telegram.messenger.DownloadController;
-import org.telegram.messenger.Emoji;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.ImageLoader;
@@ -313,7 +311,6 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
     private float parallaxScale = 1.0f;
 
     private BlurButton applyButton1;
-    private BlurButton applyButton2;
 
     private String loadingFile = null;
     private File loadingFileObject = null;
@@ -1432,27 +1429,12 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
                 applyButton1 = new BlurButton(context);
                 ScaleStateListAnimator.apply(applyButton1, 0.033f, 1.2f);
                 updateApplyButton1();
-                applyButton1.setOnClickListener(view -> applyWallpaperBackground(false));
+                applyButton1.setOnClickListener(view -> applyWallpaperBackground());
 
-                // LoogriGram: setting a wallpaper for both sides is Premium's, so the
-                // second button is drawn only for a Premium account. Upstream drew it
-                // padlocked for everyone else and offered Premium on a tap.
-                if (dialogId > 0 && !self && serverWallpaper == null && getUserConfig().isPremium()) {
-                    applyButton2 = new BlurButton(context);
-                    ScaleStateListAnimator.apply(applyButton2, 0.033f, 1.2f);
-                    TLRPC.User user = getMessagesController().getUser(dialogId);
-                    SpannableStringBuilder text = new SpannableStringBuilder("");
-                    text.append(LocaleController.formatString(R.string.ApplyWallpaperForMeAndPeer, UserObject.getUserName(user)));
-                    applyButton2.setText(text);
-                    try {
-                        applyButton2.setText(Emoji.replaceEmoji(applyButton2.getText(), applyButton2.text.getFontMetricsInt(), false));
-                    } catch (Exception ignore) {}
-                    applyButton2.setOnClickListener(view -> applyWallpaperBackground(true));
-                    bottomOverlayChat.addView(applyButton1, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 0, 0, 48 + 10));
-                    bottomOverlayChat.addView(applyButton2, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 0, 0, 0));
-                } else {
-                    bottomOverlayChat.addView(applyButton1, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 0, 0, 0));
-                }
+                // LoogriGram: setting a wallpaper for both sides is Premium's, so its
+                // second button is not drawn. Upstream drew it padlocked and offered
+                // Premium on a tap.
+                bottomOverlayChat.addView(applyButton1, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.BOTTOM | Gravity.CENTER_HORIZONTAL, 0, 0, 0, 0));
 
                 if (shouldShowBrightnessControll) {
                     dimmingSliderContainer = new FrameLayout(getContext()) {
@@ -2378,7 +2360,7 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
         }
     }
 
-    private void applyWallpaperBackground(boolean forBoth) {
+    private void applyWallpaperBackground() {
         // LoogriGram: this screen also set a channel's or group's wallpaper,
         // locked behind its boost level with the "boost this channel" sheet,
         // and handed an emoji wallpaper back unapplied. Only the deleted
@@ -2620,7 +2602,6 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
                 wallpaperInfo.prevUserWallpaper = userFull.wallpaper;
             }
         }
-        wallpaperInfo.forBoth = forBoth;
         MessagesController.getInstance(currentAccount).saveWallpaperToServer(path, wallpaperInfo, slug != null && dialogId == 0, 0);
 
         boolean needFinishFragment = true;
@@ -2651,7 +2632,7 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
                     Utilities.blurBitmap(bitmap, 3);
                     tlwallPaper.stripedThumb = bitmap;
 
-                    createServiceMessageLocal(tlwallPaper, forBoth);
+                    createServiceMessageLocal(tlwallPaper);
 
                     TLRPC.UserFull fullUser = getMessagesController().getUserFull(dialogId);
                     if (fullUser != null) {
@@ -3281,9 +3262,6 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
         if (applyButton1 != null) {
             applyButton1.invalidate();
         }
-        if (applyButton2 != null) {
-            applyButton2.invalidate();
-        }
         if (bottomOverlayChat != null) {
             bottomOverlayChat.invalidate();
         }
@@ -3833,9 +3811,6 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
                 if (applyButton1 != null) {
                     applyButton1.setAlpha(fileExists ? 1.0f : 0.5f);
                 }
-                if (applyButton2 != null) {
-                    applyButton2.setAlpha(fileExists ? 1.0f : 0.5f);
-                }
             } else {
                 saveItem.setEnabled(fileExists);
                 saveItem.setAlpha(fileExists ? 1.0f : 0.5f);
@@ -4017,7 +3992,7 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
                     }
                     colorPicker.hideKeyboard();
                 } else if (screenType == SCREEN_TYPE_CHANGE_BACKGROUND) {
-                    animators.add(ObjectAnimator.ofFloat(listView2, View.TRANSLATION_Y, -patternLayout[num].getMeasuredHeight() + dp(12 + 48 + 12 + (applyButton2 != null ? 48 + 10 : 0)) + (insideBottomSheet() ? AndroidUtilities.navigationBarHeight : 0)));
+                    animators.add(ObjectAnimator.ofFloat(listView2, View.TRANSLATION_Y, -patternLayout[num].getMeasuredHeight() + dp(12 + 48 + 12) + (insideBottomSheet() ? AndroidUtilities.navigationBarHeight : 0)));
                     animators.add(ObjectAnimator.ofFloat(backgroundCheckBoxView[2], View.ALPHA, showMotion ? 1.0f : 0.0f));
                     animators.add(ObjectAnimator.ofFloat(backgroundCheckBoxView[0], View.ALPHA, showMotion ? 0.0f : 1.0f));
 //                    animators.add(ObjectAnimator.ofFloat(backgroundImage, View.ALPHA, 0.0f));
@@ -4083,7 +4058,7 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
                     }
                     colorPicker.hideKeyboard();
                 } else if (screenType == SCREEN_TYPE_CHANGE_BACKGROUND) {
-                    listView2.setTranslationY(-dp(num == 0 ? 343 : 316) + dp(48 + 12 + 12 + (applyButton2 != null ? 10 + 48 : 0)) + (insideBottomSheet() ? AndroidUtilities.navigationBarHeight : 0));
+                    listView2.setTranslationY(-dp(num == 0 ? 343 : 316) + dp(48 + 12 + 12) + (insideBottomSheet() ? AndroidUtilities.navigationBarHeight : 0));
                     backgroundCheckBoxView[2].setAlpha(showMotion ? 1.0f : 0.0f);
                     backgroundCheckBoxView[0].setAlpha(showMotion ? 0.0f : 1.0f);
 //                    backgroundImage.setAlpha(0.0f);
@@ -5620,7 +5595,7 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
         }
     }
 
-    private void createServiceMessageLocal(TLRPC.WallPaper wallPaper, boolean forBoth) {
+    private void createServiceMessageLocal(TLRPC.WallPaper wallPaper) {
 
         TLRPC.TL_messageService message = new TLRPC.TL_messageService();
         message.random_id = SendMessagesHelper.getInstance(currentAccount).getNextRandomId();
@@ -5637,7 +5612,6 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
         TLRPC.TL_messageActionSetChatWallPaper setChatWallPaper = new TLRPC.TL_messageActionSetChatWallPaper();
         message.action = setChatWallPaper;
         setChatWallPaper.wallpaper = wallPaper;
-        setChatWallPaper.for_both = forBoth;
 
         ArrayList<MessageObject> objArr = new ArrayList<>();
         objArr.add(new MessageObject(currentAccount, message, false, false));

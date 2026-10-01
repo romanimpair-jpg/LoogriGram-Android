@@ -15,7 +15,6 @@ import android.widget.TextView;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
-import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
@@ -58,7 +57,7 @@ public class GalleryEmptyView extends LinearLayout {
         subtitleTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
         subtitleTextView.setTextColor(Theme.getColor(Theme.key_emptyListPlaceholder));
         subtitleTextView.setGravity(Gravity.CENTER_HORIZONTAL);
-        subtitleTextView.setText(LocaleController.getString(UserConfig.getInstance(currentAccount).isPremium() ? R.string.GalleryAccessAllowAccessTextPremium : R.string.GalleryAccessAllowAccessTextNonPremium));
+        subtitleTextView.setText(LocaleController.getString(R.string.GalleryAccessAllowAccessTextNonPremium));
         subtitleTextView.setMaxWidth(dp(260));
         subtitleTextView.setLineSpacing(AndroidUtilities.dp(2), 1);
         addView(subtitleTextView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 0, 0, 0, 14));
