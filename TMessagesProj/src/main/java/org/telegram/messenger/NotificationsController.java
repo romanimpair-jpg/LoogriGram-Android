@@ -1732,8 +1732,6 @@ public class NotificationsController extends BaseController implements Notificat
                             TLRPC.TL_messageActionStarGift.class,
                             TLRPC.TL_messageActionGiftPremium.class,
                             TLRPC.TL_messageActionStarGiftUnique.class,
-                            TLRPC.TL_messageActionPaidMessagesPrice.class,
-                            TLRPC.TL_messageActionPaidMessagesRefunded.class,
                             TLRPC.TL_messageActionGiftTon.class
                     )) {
                         return messageObject.messageText.toString();
@@ -2376,8 +2374,6 @@ public class NotificationsController extends BaseController implements Notificat
                         } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionStarGiftUnique) {
                             msg = messageObject.messageText.toString();
                         } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionSuggestBirthday) {
-                            msg = messageObject.messageText.toString();
-                        } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPaidMessagesRefunded || messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPaidMessagesPrice) {
                             msg = messageObject.messageText.toString();
                         } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPhoneCall) {
                             if (messageObject.messageOwner.action.video) {

@@ -70,6 +70,10 @@ public class LoogriGramHidden {
             || action instanceof TLRPC.TL_messageActionSuggestedPostApproval
             || action instanceof TLRPC.TL_messageActionSuggestedPostRefund
             || action instanceof TLRPC.TL_messageActionSuggestedPostSuccess
+            // what someone now charges per message, or a refund of what we
+            // paid them - desktop's c4e76b9f holds both
+            || action instanceof TLRPC.TL_messageActionPaidMessagesPrice
+            || action instanceof TLRPC.TL_messageActionPaidMessagesRefunded
             // not money, but it is drawn with the gift card and has no other
             // presentation - the desktop fork hides it for the same reason
             || action instanceof TLRPC.TL_messageActionSuggestBirthday;

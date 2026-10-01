@@ -13,7 +13,6 @@ import static org.telegram.messenger.AndroidUtilities.find;
 import static org.telegram.messenger.AndroidUtilities.replaceTags;
 import static org.telegram.messenger.LocaleController.formatPluralSpannable;
 import static org.telegram.messenger.LocaleController.formatPluralString;
-import static org.telegram.messenger.LocaleController.formatPluralStringComma;
 import static org.telegram.messenger.LocaleController.formatSpannable;
 import static org.telegram.messenger.LocaleController.formatString;
 import static org.telegram.messenger.LocaleController.getString;
@@ -5059,36 +5058,6 @@ public class MessageObject {
                                 : getString(R.string.RequestToJoinGroupApproved);
                     } else {
                         messageText = replaceWithLink(getString(R.string.UserAcceptedToGroupAction), "un1", fromObject);
-                    }
-                } else if (messageOwner.action instanceof TLRPC.TL_messageActionPaidMessagesPrice) {
-                    final TLRPC.TL_messageActionPaidMessagesPrice action = (TLRPC.TL_messageActionPaidMessagesPrice) messageOwner.action;
-                    if (ChatObject.isChannel(fromChat) && fromChat != null && fromChat.broadcast) {
-                        if ((action.flags & 1) != 0) {
-                            if (action.stars > 0) {
-                                messageText = replaceWithLink(formatPluralStringComma("PostSuggestionsPriceUpdated", (int) action.stars), "un1", fromObject);
-                            } else {
-                                messageText = replaceWithLink(LocaleController.getString(R.string.PostSuggestionsEnabledUpdated), "un1", fromObject);
-                            }
-                        } else {
-                            messageText = replaceWithLink(LocaleController.getString(R.string.PostSuggestionsDisabledUpdated), "un1", fromObject);
-                        }
-                    } else if (isOutOwner()) {
-                        messageText = formatPluralStringComma("PaidMessagesPriceUpdatedOut", (int) action.stars);
-                    } else {
-                        messageText = replaceWithLink(formatPluralStringComma("PaidMessagesPriceUpdated", (int) action.stars), "un1", fromObject);
-                    }
-                } else if (messageOwner.action instanceof TLRPC.TL_messageActionPaidMessagesRefunded) {
-                    final TLRPC.TL_messageActionPaidMessagesRefunded action = (TLRPC.TL_messageActionPaidMessagesRefunded) messageOwner.action;
-                    if (isOutOwner()) {
-                        final TLRPC.User user;
-                        if (messageOwner.saved_peer_id != null) {
-                            user = getUser(users, sUsers, DialogObject.getPeerDialogId(messageOwner.saved_peer_id));
-                        } else {
-                            user = getUser(users, sUsers, DialogObject.getPeerDialogId(messageOwner.peer_id));
-                        }
-                        messageText = replaceWithLink(formatPluralStringComma("PaidMessagesRefundedOut", (int) action.stars), "un1", user);
-                    } else {
-                        messageText = replaceWithLink(formatPluralStringComma("PaidMessagesRefunded", (int) action.stars), "un1", fromObject);
                     }
                 } else if (messageOwner.action instanceof TLRPC.TL_messageActionTodoCompletions) {
                     final TLRPC.TL_messageActionTodoCompletions action = (TLRPC.TL_messageActionTodoCompletions) messageOwner.action;

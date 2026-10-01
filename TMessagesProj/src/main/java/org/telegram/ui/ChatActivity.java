@@ -23597,6 +23597,8 @@ public class ChatActivity extends BaseFragment implements
                 }
             }
             if (currentChat != null) {
+                // LoogriGram: a price change is held and never drawn, but it still
+                // refreshes the chat, so the paid-message lock follows it.
                 if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionChatDeleteUser && messageObject.messageOwner.action.user_id == currentUserId ||
                         messageObject.messageOwner.action instanceof TLRPC.TL_messageActionChatAddUser && messageObject.messageOwner.action.users.contains(currentUserId) ||
                         messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPaidMessagesPrice
