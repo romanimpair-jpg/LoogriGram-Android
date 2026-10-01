@@ -2297,11 +2297,10 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
             TLRPC.Document document = messageObject.getDocument();
             currentFile = FileLoader.getAttachFileName(document);
             currentAudioFinishedLoading = false;
-            String artworkUrl = messageObject.getArtworkUrl(false);
             final ImageLocation thumbImageLocation = getArtworkThumbImageLocation(messageObject);
-            if (!TextUtils.isEmpty(artworkUrl)) {
-                imageView.setImage(ImageLocation.getForPath(artworkUrl), null, thumbImageLocation, null, null, 0, 1, messageObject);
-            } else if (thumbImageLocation != null) {
+            // LoogriGram: a track without a cover of its own was looked up on
+            // Apple's iTunes search; see MessageObject.
+            if (thumbImageLocation != null) {
                 imageView.setImage(null, null, thumbImageLocation, null, null, 0, 1, messageObject);
             } else {
                 imageView.setImageDrawable(null);
@@ -2318,10 +2317,6 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
         }
         if (thumb != null) {
             return ImageLocation.getForDocument(thumb, document);
-        }
-        final String smallArtworkUrl = messageObject.getArtworkUrl(true);
-        if (smallArtworkUrl != null) {
-            return ImageLocation.getForPath(smallArtworkUrl);
         }
         return null;
     }
@@ -2360,11 +2355,7 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
             final MessageObject messageObject = neighboringItems.get(i);
             final ImageLocation thumbImageLocation = getArtworkThumbImageLocation(messageObject);
             if (thumbImageLocation != null) {
-                if (thumbImageLocation.path != null) {
-                    ImageLoader.getInstance().preloadArtwork(thumbImageLocation.path);
-                } else {
-                    FileLoader.getInstance(currentAccount).loadFile(thumbImageLocation, messageObject, null, FileLoader.PRIORITY_LOW, 1);
-                }
+                FileLoader.getInstance(currentAccount).loadFile(thumbImageLocation, messageObject, null, FileLoader.PRIORITY_LOW, 1);
             }
         }
     }

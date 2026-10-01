@@ -159,10 +159,6 @@ public class RadialProgress2 {
         overlayImageView.setImage(image == null ? null : ImageLocation.getForDocument(image, document), filter, thumb == null ? null : ImageLocation.getForDocument(thumb, document), filter, null, 0, null, parentObject, 1);
     }
 
-    public void setImageOverlay(String url) {
-        overlayImageView.setImage(url, url != null ? String.format(Locale.US, "%d_%d", circleRadius * 2, circleRadius * 2) : null, null, null, -1);
-    }
-
     public void setImageOverlay(Bitmap bitmap) {
         overlayImageView.setImageBitmap(bitmap);
     }

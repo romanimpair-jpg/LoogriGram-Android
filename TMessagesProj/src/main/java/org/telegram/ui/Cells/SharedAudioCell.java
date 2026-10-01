@@ -270,12 +270,8 @@ public class SharedAudioCell extends FrameLayout implements DownloadController.F
             if (cover != null) {
                 radialProgress.setImageOverlay(cover);
             } else {
-                final String artworkUrl = messageObject.getArtworkUrl(true);
-                if (!TextUtils.isEmpty(artworkUrl)) {
-                    radialProgress.setImageOverlay(artworkUrl);
-                } else {
-                    radialProgress.setImageOverlay(null, null, null);
-                }
+                // LoogriGram: no cover lookup on Apple's iTunes; see MessageObject.
+                radialProgress.setImageOverlay(null, null, null);
             }
         }
         updateButtonState(false, false);

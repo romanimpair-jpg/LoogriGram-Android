@@ -280,12 +280,8 @@ public class PollContentDrawable extends Drawable implements DownloadController.
                     TLRPC.PhotoSize image = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, dp(44), true, thumb, true);
                     radialProgress.setImageOverlay(image, thumb, document, messageObject);
                 } else {
-                    String artworkUrl = MessageObject.getArtworkUrl(document, true);
-                    if (!TextUtils.isEmpty(artworkUrl)) {
-                        radialProgress.setImageOverlay(artworkUrl);
-                    } else {
-                        radialProgress.setImageOverlay(null, null, null);
-                    }
+                    // LoogriGram: no cover lookup on Apple's iTunes; see MessageObject.
+                    radialProgress.setImageOverlay(null, null, null);
                 }
 
                 musicDuration = duration;

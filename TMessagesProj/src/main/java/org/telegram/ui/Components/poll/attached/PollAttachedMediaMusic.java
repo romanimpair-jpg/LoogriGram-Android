@@ -3,7 +3,6 @@ package org.telegram.ui.Components.poll.attached;
 import static org.telegram.messenger.AndroidUtilities.dp;
 
 import android.graphics.Canvas;
-import android.text.TextUtils;
 import android.view.View;
 
 import org.telegram.messenger.FileLoader;
@@ -30,12 +29,8 @@ public class PollAttachedMediaMusic extends PollAttachedMedia {
             TLRPC.PhotoSize image = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, dp(44), true, thumb, true);
             radialProgress.setImageOverlay(image, thumb, document, messageObject);
         } else {
-            String artworkUrl = MessageObject.getArtworkUrl(document, true);
-            if (!TextUtils.isEmpty(artworkUrl)) {
-                radialProgress.setImageOverlay(artworkUrl);
-            } else {
-                radialProgress.setImageOverlay(null, null, null);
-            }
+            // LoogriGram: no cover lookup on Apple's iTunes; see MessageObject.
+            radialProgress.setImageOverlay(null, null, null);
         }
 
         radialProgress.setColorKeys(Theme.key_chat_inLoader, Theme.key_chat_inLoaderSelected, Theme.key_chat_inMediaIcon, Theme.key_chat_inMediaIconSelected);

@@ -351,22 +351,6 @@ public class MessageObject {
     public TLRPC.Peer sendAsPeer;
     public Drawable[] topicIconDrawable = new Drawable[1];
 
-    static final String[] excludeWords = new String[]{
-            " vs. ",
-            " vs ",
-            " versus ",
-            " ft. ",
-            " ft ",
-            " featuring ",
-            " feat. ",
-            " feat ",
-            " presents ",
-            " pres. ",
-            " pres ",
-            " and ",
-            " & ",
-            " . "
-    };
     public boolean isRepostPreview;
     public boolean isRepostVideoPreview;
     public boolean business;
@@ -10318,45 +10302,10 @@ public class MessageObject {
         return audioPlayerDuration;
     }
 
-    public String getArtworkUrl(boolean small) {
-        return getArtworkUrl(getDocument(), small);
-    }
-
-    public static String getArtworkUrl(TLRPC.Document document, boolean small) {
-        if (document == null) {
-            return null;
-        }
-
-        if ("audio/ogg".equals(document.mime_type)) {
-            return null;
-        }
-        for (int i = 0, N = document.attributes.size(); i < N; i++) {
-            TLRPC.DocumentAttribute attribute = document.attributes.get(i);
-            if (attribute instanceof TLRPC.TL_documentAttributeAudio) {
-                if (attribute.voice) {
-                    return null;
-                } else {
-                    String performer = attribute.performer;
-                    String title = attribute.title;
-                    if (!TextUtils.isEmpty(performer)) {
-                        for (int a = 0; a < excludeWords.length; a++) {
-                            performer = performer.replace(excludeWords[a], " ");
-                        }
-                    }
-                    if (TextUtils.isEmpty(performer) && TextUtils.isEmpty(title)) {
-                        return null;
-                    }
-                    try {
-                        return "athumb://itunes.apple.com/search?term=" + URLEncoder.encode(performer + " - " + title, "UTF-8") + "&entity=song&limit=4" + (small ? "&s=1" : "");
-                    } catch (Exception ignore) {
-
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
+    // LoogriGram: getArtworkUrl looked up the cover of a track without one of its
+    // own on Apple's iTunes search (itunes.apple.com/search?term=performer -
+    // title), telling Apple what was being played or shown. Only a cover the file
+    // carries is shown now; ImageLoader's ArtworkLoadTask went with it.
     public String getMusicAuthor() {
         return getMusicAuthor(true);
     }

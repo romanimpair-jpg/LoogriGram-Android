@@ -146,12 +146,8 @@ public class PollAttachedMediaFile extends PollAttachedMedia {
                 TLRPC.PhotoSize image = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, dp(44), true, thumb, true);
                 fileInfoDrawable.radialProgress.setImageOverlay(image, thumb, document, messageObject);
             } else {
-                String artworkUrl = MessageObject.getArtworkUrl(document, true);
-                if (!TextUtils.isEmpty(artworkUrl)) {
-                    fileInfoDrawable.radialProgress.setImageOverlay(artworkUrl);
-                } else {
-                    fileInfoDrawable.radialProgress.setImageOverlay(null, null, null);
-                }
+                // LoogriGram: no cover lookup on Apple's iTunes; see MessageObject.
+                fileInfoDrawable.radialProgress.setImageOverlay(null, null, null);
             }
 
             fileInfoDrawable.radialProgress.setIcon(MediaActionDrawable.ICON_PLAY, false, false);

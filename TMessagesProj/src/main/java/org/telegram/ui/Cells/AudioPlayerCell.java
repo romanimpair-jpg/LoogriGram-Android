@@ -181,12 +181,8 @@ public class AudioPlayerCell extends FrameLayout implements DownloadController.F
         if (thumb instanceof TLRPC.TL_photoSize || thumb instanceof TLRPC.TL_photoSizeProgressive) {
             radialProgress.setImageOverlay(thumb, document, messageObject);
         } else {
-            final String artworkUrl = messageObject.getArtworkUrl(true);
-            if (!TextUtils.isEmpty(artworkUrl)) {
-                radialProgress.setImageOverlay(artworkUrl);
-            } else {
-                radialProgress.setImageOverlay(null, null, null);
-            }
+            // LoogriGram: no cover lookup on Apple's iTunes; see MessageObject.
+            radialProgress.setImageOverlay(null, null, null);
         }
         requestLayout();
         updateButtonState(false, false);

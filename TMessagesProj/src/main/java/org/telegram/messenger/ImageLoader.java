@@ -40,8 +40,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.core.graphics.ColorUtils;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.telegram.DispatchQueuePriority;
 import org.telegram.messenger.secretmedia.EncryptedFileInputStream;
 import org.telegram.messenger.utils.BitmapsCache;
@@ -125,7 +123,6 @@ public class ImageLoader {
     private HashMap<String, ThumbGenerateInfo> waitingForQualityThumb = new HashMap<>();
     private SparseArray<String> waitingForQualityThumbByTag = new SparseArray<>();
     private LinkedList<HttpImageTask> httpTasks = new LinkedList<>();
-    private LinkedList<ArtworkLoadTask> artworkTasks = new LinkedList<>();
     private DispatchQueuePriority cacheOutQueue = new DispatchQueuePriority("cacheOutQueue");
     private DispatchQueue cacheThumbOutQueue = new DispatchQueue("cacheThumbOutQueue");
     private DispatchQueue thumbGeneratingQueue = new DispatchQueue("thumbGeneratingQueue");
@@ -139,7 +136,6 @@ public class ImageLoader {
     private static byte[] header = new byte[12];
     private static byte[] headerThumb = new byte[12];
     private int currentHttpTasksCount = 0;
-    private int currentArtworkTasksCount = 0;
     private boolean canForce8888;
 
     private ConcurrentHashMap<String, WebFile> testWebFile = new ConcurrentHashMap<>();
@@ -391,131 +387,9 @@ public class ImageLoader {
         }
     }
 
-    private class ArtworkLoadTask extends AsyncTask<Void, Void, String> {
-
-        private CacheImage cacheImage;
-        private boolean canRetry = true;
-        private HttpURLConnection httpConnection;
-
-        private boolean small;
-
-        public ArtworkLoadTask(CacheImage cacheImage) {
-            this.cacheImage = cacheImage;
-            Uri uri = Uri.parse(cacheImage.imageLocation.path);
-            small = uri.getQueryParameter("s") != null;
-        }
-
-        protected String doInBackground(Void... voids) {
-            ByteArrayOutputStream outbuf = null;
-            InputStream httpConnectionStream = null;
-            try {
-                String location = cacheImage.imageLocation.path;
-                URL downloadUrl = new URL(location.replace("athumb://", "https://"));
-                httpConnection = (HttpURLConnection) downloadUrl.openConnection();
-                //httpConnection.addRequestProperty("User-Agent", "Mozilla/5.0 (iPhone; CPU iPhone OS 10_0 like Mac OS X) AppleWebKit/602.1.38 (KHTML, like Gecko) Version/10.0 Mobile/14A5297c Safari/602.1");
-                httpConnection.setConnectTimeout(5000);
-                httpConnection.setReadTimeout(5000);
-                httpConnection.connect();
-                try {
-                    if (httpConnection != null) {
-                        int code = httpConnection.getResponseCode();
-                        if (code != HttpURLConnection.HTTP_OK && code != HttpURLConnection.HTTP_ACCEPTED && code != HttpURLConnection.HTTP_NOT_MODIFIED) {
-                            canRetry = false;
-                        }
-                    }
-                } catch (Exception e) {
-                    FileLog.e(e, false);
-                }
-                httpConnectionStream = httpConnection.getInputStream();
-
-                outbuf = new ByteArrayOutputStream();
-
-                byte[] data = new byte[1024 * 32];
-                while (true) {
-                    if (isCancelled()) {
-                        break;
-                    }
-                    int read = httpConnectionStream.read(data);
-                    if (read > 0) {
-                        outbuf.write(data, 0, read);
-                    } else if (read == -1) {
-                        break;
-                    } else {
-                        break;
-                    }
-                }
-                canRetry = false;
-                JSONObject object = new JSONObject(new String(outbuf.toByteArray()));
-                JSONArray array = object.getJSONArray("results");
-                if (array.length() > 0) {
-                    JSONObject media = array.getJSONObject(0);
-                    String artworkUrl100 = media.getString("artworkUrl100");
-                    if (small) {
-                        return artworkUrl100;
-                    } else {
-                        return artworkUrl100.replace("100x100", "600x600");
-                    }
-                }
-            } catch (Throwable e) {
-                if (e instanceof SocketTimeoutException) {
-                    if (ApplicationLoader.isNetworkOnline()) {
-                        canRetry = false;
-                    }
-                } else if (e instanceof UnknownHostException) {
-                    canRetry = false;
-                } else if (e instanceof SocketException) {
-                    if (e.getMessage() != null && e.getMessage().contains("ECONNRESET")) {
-                        canRetry = false;
-                    }
-                } else if (e instanceof FileNotFoundException) {
-                    canRetry = false;
-                }
-                FileLog.e(e, false);
-            } finally {
-                try {
-                    if (httpConnection != null) {
-                        httpConnection.disconnect();
-                    }
-                } catch (Throwable ignore) {
-
-                }
-                try {
-                    if (httpConnectionStream != null) {
-                        httpConnectionStream.close();
-                    }
-                } catch (Throwable e) {
-                    FileLog.e(e);
-                }
-                try {
-                    if (outbuf != null) {
-                        outbuf.close();
-                    }
-                } catch (Exception ignore) {
-
-                }
-            }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(final String result) {
-            if (result != null) {
-                imageLoadQueue.postRunnable(() -> {
-                    cacheImage.httpTask = new HttpImageTask(cacheImage, 0, result);
-                    httpTasks.add(cacheImage.httpTask);
-                    runHttpTasks(false);
-                });
-            } else if (canRetry) {
-                artworkLoadError(cacheImage.url);
-            }
-            imageLoadQueue.postRunnable(() -> runArtworkTasks(true));
-        }
-
-        @Override
-        protected void onCancelled() {
-            imageLoadQueue.postRunnable(() -> runArtworkTasks(true));
-        }
-    }
+    // LoogriGram: ArtworkLoadTask fetched athumb:// addresses - Apple's iTunes
+    // search for a track's cover (MessageObject.getArtworkUrl) - and queued the
+    // picture it named. Gone with the lookup.
 
     private class HttpImageTask extends AsyncTask<Void, Void, Boolean> {
 
@@ -1844,7 +1718,6 @@ public class ImageLoader {
         protected File tempFilePath;
         protected File encryptionKeyPath;
 
-        protected ArtworkLoadTask artworkTask;
         protected HttpImageTask httpTask;
         protected CacheOutTask cacheTask;
 
@@ -1936,11 +1809,6 @@ public class ImageLoader {
                     httpTasks.remove(httpTask);
                     httpTask.cancel(true);
                     httpTask = null;
-                }
-                if (artworkTask != null) {
-                    artworkTasks.remove(artworkTask);
-                    artworkTask.cancel(true);
-                    artworkTask = null;
                 }
                 if (url != null) {
                     imageLoadingByUrl.remove(url);
@@ -3008,7 +2876,7 @@ public class ImageLoader {
 
                 if (imageLocation.path != null) {
                     String location = imageLocation.path;
-                    if (!location.startsWith("http") && !location.startsWith("athumb")) {
+                    if (!location.startsWith("http")) {
                         onlyCache = true;
                         if (location.startsWith("thumb://")) {
                             int idx = location.indexOf(":", 8);
@@ -3252,15 +3120,9 @@ public class ImageLoader {
                             File cacheDir = FileLoader.getDirectory(FileLoader.MEDIA_DIR_CACHE);
                             img.tempFilePath = new File(cacheDir, file + "_temp.jpg");
                             img.finalFilePath = cacheFile;
-                            if (imageLocation.path.startsWith("athumb")) {
-                                img.artworkTask = new ArtworkLoadTask(img);
-                                artworkTasks.add(img.artworkTask);
-                                runArtworkTasks(false);
-                            } else {
-                                img.httpTask = new HttpImageTask(img, size);
-                                httpTasks.add(img.httpTask);
-                                runHttpTasks(false);
-                            }
+                            img.httpTask = new HttpImageTask(img, size);
+                            httpTasks.add(img.httpTask);
+                            runHttpTasks(false);
                         } else {
                             int loadingPriority = thumb != 0 ? FileLoader.PRIORITY_HIGH : imageReceiver.getFileLoadingPriority();
                             if (imageLocation.location != null) {
@@ -3286,37 +3148,6 @@ public class ImageLoader {
         };
         imageLoadQueue.postRunnable(loadOperationRunnable, imageReceiver.getFileLoadingPriority() == FileLoader.PRIORITY_LOW ? 0 : 1);
         imageReceiver.addLoadingImageRunnable(loadOperationRunnable);
-    }
-
-    public void preloadArtwork(String athumbUrl) {
-        imageLoadQueue.postRunnable(() -> {
-            String ext = getHttpUrlExtension(athumbUrl, "jpg");
-            String url = Utilities.MD5(athumbUrl) + "." + ext;
-            File cacheFile = new File(FileLoader.getDirectory(FileLoader.MEDIA_DIR_CACHE), url);
-            if (cacheFile.exists()) {
-                return;
-            }
-            ImageLocation imageLocation = ImageLocation.getForPath(athumbUrl);
-            CacheImage img = new CacheImage();
-            img.type = ImageReceiver.TYPE_THUMB;
-            img.key = Utilities.MD5(athumbUrl);
-            img.filter = null;
-            img.imageLocation = imageLocation;
-            img.ext = ext;
-            img.parentObject = null;
-            if (imageLocation.imageType != 0) {
-                img.imageType = imageLocation.imageType;
-            }
-            img.url = url;
-            imageLoadingByUrl.put(url, img);
-            String file = Utilities.MD5(imageLocation.path);
-            File cacheDir = FileLoader.getDirectory(FileLoader.MEDIA_DIR_CACHE);
-            img.tempFilePath = new File(cacheDir, file + "_temp.jpg");
-            img.finalFilePath = cacheFile;
-            img.artworkTask = new ArtworkLoadTask(img);
-            artworkTasks.add(img.artworkTask);
-            runArtworkTasks(false);
-        });
     }
 
     public void loadImageForImageReceiver(ImageReceiver imageReceiver) {
@@ -3688,21 +3519,6 @@ public class ImageLoader {
         });
     }
 
-    private void artworkLoadError(final String location) {
-        imageLoadQueue.postRunnable(() -> {
-            CacheImage img = imageLoadingByUrl.get(location);
-            if (img == null) {
-                return;
-            }
-            ArtworkLoadTask oldTask = img.artworkTask;
-            if (oldTask != null) {
-                img.artworkTask = new ArtworkLoadTask(oldTask.cacheImage);
-                artworkTasks.add(img.artworkTask);
-            }
-            runArtworkTasks(false);
-        });
-    }
-
     private void fileDidLoaded(final String location, final File finalFile, final int mediaType) {
         imageLoadQueue.postRunnable(() -> {
             ThumbGenerateInfo info = waitingForQualityThumb.get(location);
@@ -3779,21 +3595,6 @@ public class ImageLoader {
             if (task != null) {
                 task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, null, null, null);
                 currentHttpTasksCount++;
-            }
-        }
-    }
-
-    private void runArtworkTasks(boolean complete) {
-        if (complete) {
-            currentArtworkTasksCount--;
-        }
-        while (currentArtworkTasksCount < 4 && !artworkTasks.isEmpty()) {
-            try {
-                ArtworkLoadTask task = artworkTasks.poll();
-                task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, null, null, null);
-                currentArtworkTasksCount++;
-            } catch (Throwable ignore) {
-                runArtworkTasks(false);
             }
         }
     }

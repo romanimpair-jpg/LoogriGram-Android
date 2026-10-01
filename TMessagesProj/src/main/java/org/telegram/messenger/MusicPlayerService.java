@@ -272,22 +272,6 @@ public class MusicPlayerService extends Service implements NotificationCenter.No
         return START_STICKY;
     }
 
-    private Bitmap loadArtworkFromUrl(String artworkUrl, boolean big, boolean tryLoad) {
-        File path = ImageLoader.getHttpFilePath(artworkUrl, "jpg");
-        if (path.exists()) {
-            return ImageLoader.loadBitmap(path.getAbsolutePath(), null, big ? 600 : 100, big ? 600 : 100, false);
-        }
-        if (tryLoad) {
-            loadingFilePath = path.getAbsolutePath();
-            if (!big) {
-                imageReceiver.setImage(artworkUrl, "48_48", null, null, 0);
-            }
-        } else {
-            loadingFilePath = null;
-        }
-        return null;
-    }
-
 
     private Bitmap getAvatarBitmap(TLObject userOrChat, boolean big, boolean tryLoad) {
         int size = big ? 600 : 100;
@@ -384,24 +368,14 @@ public class MusicPlayerService extends Service implements NotificationCenter.No
         Bitmap fullAlbumArt = null;
         long duration = (long) (messageObject.getDuration() * 1000);
         if (messageObject.isMusic()) {
-            String artworkUrl = messageObject.getArtworkUrl(true);
-            String artworkUrlBig = messageObject.getArtworkUrl(false);
-
             albumArt = audioInfo != null ? audioInfo.getSmallCover() : null;
             fullAlbumArt = audioInfo != null ? audioInfo.getCover() : null;
 
             loadingFilePath = null;
             imageReceiver.setImageBitmap((BitmapDrawable) null);
-            if (albumArt == null && !TextUtils.isEmpty(artworkUrl)) {
-                fullAlbumArt = loadArtworkFromUrl(artworkUrlBig, true, !forBitmap);
-                if (fullAlbumArt == null) {
-                    fullAlbumArt = albumArt = loadArtworkFromUrl(artworkUrl, false, !forBitmap);
-                } else {
-                    albumArt = loadArtworkFromUrl(artworkUrlBig, false, !forBitmap);
-                }
-            } else {
-                loadingFilePath = FileLoader.getInstance(UserConfig.selectedAccount).getPathToAttach(messageObject.getDocument()).getAbsolutePath();
-            }
+            // LoogriGram: a track without a cover of its own was looked up on
+            // Apple's iTunes search; see MessageObject.
+            loadingFilePath = FileLoader.getInstance(UserConfig.selectedAccount).getPathToAttach(messageObject.getDocument()).getAbsolutePath();
         } else if (messageObject.isVoice() || messageObject.isRoundVideo()) {
             long senderId = messageObject.getSenderId();
             if (messageObject.isFromUser()) {

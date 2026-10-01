@@ -9954,12 +9954,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     TLRPC.PhotoSize image = FileLoader.getClosestPhotoSizeWithSize(documentAttach.thumbs, dp(44), true, thumb, true);
                     radialProgress.setImageOverlay(image, thumb, documentAttach, messageObject);
                 } else {
-                    String artworkUrl = messageObject.getArtworkUrl(true);
-                    if (!TextUtils.isEmpty(artworkUrl)) {
-                        radialProgress.setImageOverlay(artworkUrl);
-                    } else {
-                        radialProgress.setImageOverlay(null, null, null);
-                    }
+                    // LoogriGram: no cover lookup on Apple's iTunes; see MessageObject.
+                    radialProgress.setImageOverlay(null, null, null);
                 }
             } else {
                 radialProgress.setImageOverlay(null, null, null);
