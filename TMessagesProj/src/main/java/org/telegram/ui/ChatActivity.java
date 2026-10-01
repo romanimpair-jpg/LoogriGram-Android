@@ -15289,8 +15289,8 @@ public class ChatActivity extends BaseFragment implements
     public static final int PROGRESS_LINK = 1;
     public static final int PROGRESS_INSTANT = 2;
     public static final int PROGRESS_BOT_BUTTON = 3;
-    public static final int PROGRESS_GIFT = 4;
-    public static final int PROGRESS_PAID_MEDIA = 5;
+    // LoogriGram: PROGRESS_GIFT (4) and PROGRESS_PAID_MEDIA (5) went with what they
+    // marked, a gift and a paid media message.
     public static final int PROGRESS_FORWARD = 6;
     public static final int PROGRESS_FULL_ARTICLE = 7;
 

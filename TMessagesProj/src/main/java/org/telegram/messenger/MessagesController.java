@@ -5647,39 +5647,6 @@ public class MessagesController extends BaseController implements NotificationCe
         }
     }
 
-    public long getSendPaidMessagesStars(long did) {
-        if (did > 0) {
-            if (did == getUserConfig().getClientUserId()) {
-                return 0;
-            }
-            final TLRPC.UserFull userFull = getUserFull(did);
-            if (userFull != null) {
-                return userFull.send_paid_messages_stars;
-            }
-            final TLRPC.User user = getUser(did);
-            if (user != null && user.send_paid_messages_stars > 0) {
-                return DialogObject.getMessagesStarsPrice(isUserContactBlocked(user.id));
-            }
-        } else if (did < 0) {
-            final TLRPC.Chat chat = getChat(-did);
-            if (ChatObject.hasAdminRights(chat)) {
-                return 0;
-            }
-            if (ChatObject.isMonoForum(chat) && ChatObject.canManageMonoForum(currentAccount, chat)) {
-                return 0;
-            }
-
-            TLRPC.ChatFull chatFull = getChatFull(-did);
-            if (chatFull != null) {
-                return chatFull.send_paid_messages_stars;
-            } else if (chat != null) {
-                return chat.send_paid_messages_stars;
-            }
-            return 0;
-        }
-        return 0;
-    }
-
     public void putMonoForumLinkedChat(long chatId, long monoForumChatId) {
         monoForumLinkedChannels.put(chatId, monoForumChatId);
         monoForumLinkedChannels.put(monoForumChatId, chatId);

@@ -445,11 +445,4 @@ public class DialogObject {
         final String name = dialogId > 0 ? UserObject.getUserName(MessagesController.getInstance(currentAccount).getUser(dialogId)) : getShortName(currentAccount, dialogId);
         return AndroidUtilities.replaceTags(LocaleController.formatString(paid ? R.string.LoogriGramPaidMessagesLocked : premiumText, name));
     }
-
-    public static long getMessagesStarsPrice(TL_account.RequirementToContact value) {
-        if (value instanceof TL_account.requirementToContactPaidMessages) {
-            return ((TL_account.requirementToContactPaidMessages) value).stars_amount;
-        }
-        return 0;
-    }
 }
