@@ -233,7 +233,6 @@ import org.telegram.ui.Components.ItemOptions;
 import org.telegram.ui.Components.JoinGroupAlert;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.LinkSpanDrawable;
-import org.telegram.ui.Components.MessagePrivateSeenView;
 import org.telegram.ui.Components.ProfileActionsView;
 import org.telegram.ui.Components.ProfileGalleryBlurView;
 import org.telegram.ui.Components.Paint.PersistColorPalette;
@@ -2953,9 +2952,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         avatarContainer.setVisibility(View.INVISIBLE);
                         avatarsViewPager.resetCurrentItem();
                         avatarsViewPager.setVisibility(View.VISIBLE);
-                        if (showStatusButton != null) {
-                            showStatusButton.setBackgroundColor(0x23ffffff);
-                        }
                         if (giftsView != null) {
                             giftsView.setExpandProgress(1f);
                         }
@@ -5007,9 +5003,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                             onlineTextView[2].setTextColor(color);
                             onlineTextView[3].setTextColor(color);
                         }
-                        if (showStatusButton != null) {
-                            showStatusButton.setTextColor(Theme.multAlpha(Theme.adaptHSV(color, -.02f, +.15f), 1.4f));
-                        }
                     }
                 };
             } else {
@@ -5655,9 +5648,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
         needLayoutText(Math.min(1f, diff));
 
-        if (showStatusButton != null) {
-            showStatusButton.setBackgroundColor(ColorUtils.blendARGB(Theme.multAlpha(Theme.adaptHSV(actionBarBackgroundColor, +0.18f, -0.1f), 0.5f), 0x23ffffff, currentExpandAnimatorValue));
-        }
 
         nameTextView[1].setTextColor(peerColor != null ? Color.WHITE : ColorUtils.blendARGB(getThemedColor(Theme.key_profile_title), Color.WHITE, currentExpandAnimatorValue));
         actionBar.setItemsColor(peerColor != null ? Color.WHITE : ColorUtils.blendARGB(getThemedColor(Theme.key_actionBarDefaultIcon), Color.WHITE, value), false);
@@ -7280,9 +7270,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             backwardInitialValues[4] = giftsView.expandProgress;
             backwardInitialValues[5] = giftsView.collapseProgress;
         }
-        if (showStatusButton != null) {
-            backwardInitialValues[6] = showStatusButton.getAlpha();
-        }
         backwardInitialValues[7] = nameTextView[1].getScaleX();
         backwardInitialValues[8] = nameTextView[1].getTranslationY();
         backwardInitialValues[9] = onlineTextView[1].getTranslationY();
@@ -7341,9 +7328,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             giftsView.invalidate();
         }
 
-        if (showStatusButton != null) {
-            showStatusButton.setAlpha((int) AndroidUtilities.lerp(0, backwardInitialValues[6], backwardDiff));
-        }
 
         float extra = dp(42) * (avatarScale * 100 / 42) - dp(42);
         timeItem.setTranslationX(avatarContainer.getX() + dp(16) + extra);
@@ -7825,9 +7809,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 onlineY = avatarBottom + dp(24) + (float) Math.floor(11 * AndroidUtilities.density) * diff;
                 final float minimizedX = openAnimationInProgress ? (prevAvatarTranslation - dp(109) + dp(48)) : -dpf2(42 + 4);
 
-                if (showStatusButton != null) {
-                    showStatusButton.setAlpha((int) (0xFF * diff));
-                }
 
                 int viewportWidth = listView.getMeasuredWidth();
                 for (int a = 0; a < nameTextView.length; a++) {
@@ -9012,9 +8993,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 nameTextView[1].setTextColor(Color.WHITE);
                 onlineTextView[1].setTextColor(0xB3FFFFFF);
                 actionBar.setItemsBackgroundColor(Theme.ACTION_BAR_WHITE_SELECTOR_COLOR, false);
-                if (showStatusButton != null) {
-                    showStatusButton.setBackgroundColor(0x23ffffff);
-                }
                 overlaysView.setOverlaysVisible();
             }
             for (int a = 0; a < 2; a++) {
@@ -10103,7 +10081,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
             CharSequence newString = UserObject.getUserName(user);
             String newString2;
-            boolean hiddenStatusButton = false;
             if (user.id == getUserConfig().getClientUserId()) {
                 if (UserObject.hasFallbackPhoto(getUserInfo())) {
                     newString2 = "";
@@ -10131,7 +10108,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             } else {
                 isOnline[0] = false;
                 newString2 = LocaleController.formatUserStatus(currentAccount, user, isOnline, shortStatus ? new boolean[1] : null);
-                hiddenStatusButton = user != null && !isOnline[0] && user.status != null && (user.status instanceof TLRPC.TL_userStatusRecently || user.status instanceof TLRPC.TL_userStatusLastMonth || user.status instanceof TLRPC.TL_userStatusLastWeek) && user.status.by_me;
+                // LoogriGram: a "when?" pill followed a last seen we hid from
+                // them, offering to reveal ours to see theirs (desktop's
+                // f398bc59). Only our own privacy screens relax Last Seen.
                 if (onlineTextView[1] != null && !mediaHeaderVisible) {
                     int key = isOnline[0] && peerColor == null ? Theme.key_profile_status : Theme.key_actionBarDefaultSubtitle;
                     onlineTextView[1].setTag(key);
@@ -10180,14 +10159,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 } else {
                     onlineTextView[a].setText(newString2);
                 }
-                onlineTextView[a].setDrawablePadding(dp(9));
-                onlineTextView[a].setRightDrawableInside(true);
-                onlineTextView[a].setRightDrawable(a == 1 && hiddenStatusButton ? getShowStatusButton() : null);
-                onlineTextView[a].setRightDrawableOnClick(a == 1 && hiddenStatusButton ? v -> {
-                    MessagePrivateSeenView.showSheet(getContext(), currentAccount, getDialogId(), true, () -> {
-                        getMessagesController().reloadUser(getDialogId());
-                    }, resourcesProvider);
-                } : null);
                 Drawable leftIcon = currentEncryptedChat != null ? getLockIconDrawable() : null;
                 nameTextView[a].setRightDrawableOutside(a == 0);
                 if (a == 0 && !copyFromChatActivity) {
@@ -10570,9 +10541,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 statusColor = getThemedColor(Theme.key_actionBarDefaultSubtitle);
             }
             onlineTextView[1].setTextColor(ColorUtils.blendARGB(applyPeerColor(statusColor, true, isOnline[0]), 0xB3FFFFFF, currentExpandAnimatorValue));
-        }
-        if (showStatusButton != null) {
-            showStatusButton.setBackgroundColor(ColorUtils.blendARGB(Theme.multAlpha(Theme.adaptHSV(actionBarBackgroundColor, +0.18f, -0.1f), 0.5f), 0x23ffffff, currentExpandAnimatorValue));
         }
         if (actionBar != null) {
             actionBar.setItemsColor(ColorUtils.blendARGB(peerColor != null ? Color.WHITE : getThemedColor(Theme.key_actionBarDefaultIcon), getThemedColor(Theme.key_actionBarActionModeDefaultIcon), mediaHeaderAnimationProgress), false);
@@ -14172,17 +14140,11 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     onlineTextView[3].setAlpha(1f - currentExpandAnimatorValue);
                     onlineTextView[1].setTranslationX(getOnlineTextViewTranslationXWithOffsets(lastOnlineTextViewX));
                     avatarContainer2.invalidate();
-                    if (showStatusButton != null) {
-                        showStatusButton.setAlpha2(1f - currentExpandAnimatorValue);
-                    }
                 }
             } else {
                 if (onlineTextView[2] != null) {
                     onlineTextView[2].setAlpha(0);
                     onlineTextView[3].setAlpha(0);
-                }
-                if (showStatusButton != null) {
-                    showStatusButton.setAlpha2(1f);
                 }
             }
 
@@ -14191,15 +14153,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 if (onlineTextView[2] != null) {
                     onlineTextView[2].setAlpha(photoDescriptionProgress);
                 }
-                if (showStatusButton != null) {
-                    showStatusButton.setAlpha2(1f - photoDescriptionProgress);
-                }
             } else {
                 if (onlineTextView[2] != null) {
                     onlineTextView[2].setAlpha(0);
-                }
-                if (showStatusButton != null) {
-                    showStatusButton.setAlpha2(1f);
                 }
             }
         }
@@ -14354,17 +14310,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         blurredView.setBackground(new BitmapDrawable(bitmap));
         blurredView.setAlpha(0.0f);
         blurredView.setVisibility(View.VISIBLE);
-    }
-
-    private ShowDrawable showStatusButton;
-
-    public ShowDrawable getShowStatusButton() {
-        if (showStatusButton == null) {
-            showStatusButton = new ShowDrawable(LocaleController.getString(R.string.StatusHiddenShow));
-            showStatusButton.setAlpha((int) (0xFF * Math.min(1f, extraHeight / getHeaderExtraHeight())));
-            showStatusButton.setBackgroundColor(ColorUtils.blendARGB(Theme.multAlpha(Theme.adaptHSV(actionBarBackgroundColor, +0.18f, -0.1f), 0.5f), 0x23ffffff, currentExpandAnimatorValue));
-        }
-        return showStatusButton;
     }
 
     public static class ShowDrawable extends Drawable implements SimpleTextView.PressableDrawable {
