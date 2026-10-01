@@ -237,7 +237,12 @@ public class UserSelectorBottomSheet extends BottomSheetWithRecyclerListView imp
             videoCheckbox.setChecked(!videoCheckbox.isChecked(), true);
         });
         buttonContainer.addView(videoLayout, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER, 0, 0, 0, 8));
-        actionButton = new ButtonWithCounterView(getContext(), resourcesProvider);
+        actionButton = new ButtonWithCounterView(getContext(), resourcesProvider) {
+            @Override
+            protected float calculateCounterWidth(float width, float percent) {
+                return width;
+            }
+        };
         buttonContainer.setAlpha(0.0f);
         buttonContainer.setVisibility(View.GONE);
         actionButton.setOnClickListener(v -> next());
