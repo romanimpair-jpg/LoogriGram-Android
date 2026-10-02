@@ -9,16 +9,13 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ColorFilter;
-import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
-import android.graphics.RadialGradient;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.RenderNode;
-import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
@@ -58,7 +55,6 @@ public class ProfileActionsView extends View {
 
     private final List<Action> actions = new ArrayList<>();
     private final Paint paint = new Paint();
-    private final Paint shaderPaint = new Paint();
     private float parentExpanded;
 
     public boolean isAnimatingCallAction = false;
@@ -119,9 +115,6 @@ public class ProfileActionsView extends View {
     final float textPadding;
 
     private int color = 0;
-    private boolean hasColorById;
-    private RadialGradient radialGradient;
-    private final Matrix matrix = new Matrix();
 
     public boolean myProfile;
 
@@ -168,50 +161,22 @@ public class ProfileActionsView extends View {
     public void setParentExpanded(float expanded) {
         if (parentExpanded != expanded) {
             parentExpanded = expanded;
-            checkPaints();
             invalidate();
         }
     }
 
-    public void setActionsColor(int color, boolean hasColorById) {
-        if (radialGradient == null || this.color != color || this.hasColorById != hasColorById) {
-            this.color = color;
-            this.hasColorById = hasColorById;
-            createColorShader();
-            checkPaints();
+    // LoogriGram: with a profile colour each button was also filled with a
+    // radial gradient (hasColorById). Profiles have no colour of their own
+    // (desktop's e05b12b0), so the buttons always take the plain colour.
+    public void setActionsColor(int color) {
+        this.color = color;
+        if (color != 0) {
+            paint.setColor(color);
         }
     }
 
     private boolean isButtonColorLight() {
         return AndroidUtilities.computePerceivedBrightness(color) > 0.72f;
-    }
-
-    private void checkPaints() {
-
-    }
-
-    private void createColorShader() {
-        if (color == 0) return;
-        if (!hasColorById) {
-            paint.setColor(color);
-//            paint.setAlpha(40);
-            return;
-        }
-        int w = getMeasuredWidth();
-        if (w <= 0) return;
-
-        float betweenPadding = xpadding / 2f;
-        float width = (w - betweenPadding * Math.max(0, activeCount - 1) - xpadding * 2f) / Math.max(1, activeCount);
-
-        this.radialGradient = new RadialGradient(
-                width / 2f,
-                targetHeight / 2f,
-                hasColorById ? width * 0.65f : 1f,
-                Theme.multAlpha(color, 0.8f),
-                color,
-                Shader.TileMode.CLAMP
-        );
-        shaderPaint.setShader(radialGradient);
     }
 
     @Override
@@ -306,23 +271,15 @@ public class ProfileActionsView extends View {
                     );
                     int wasAlpha = paint.getAlpha();
                     int newAlpha = (int) (action.getAlpha() * alphaFraction1 * wasAlpha);
-                    paint.setAlpha((int) (newAlpha * (radialGradient != null ? 0.1f : 1f)));
+                    paint.setAlpha(newAlpha);
 
                     if (SharedConfig.shadowsInSections && isButtonColorLight() && parentExpanded < 0.5f) {
-                        paint.setShadowLayer(dpf2(1.5f), 0, 0, Theme.multAlpha(Color.BLACK & 0x20FFFFFF, (newAlpha / 255f * (radialGradient != null ? 0.1f : 1f))));
+                        paint.setShadowLayer(dpf2(1.5f), 0, 0, Theme.multAlpha(Color.BLACK & 0x20FFFFFF, newAlpha / 255f));
                     } else {
                         paint.setShadowLayer(0, 0, 0, 0);
                     }
 
                     canvas.drawRoundRect(AndroidUtilities.rectTmp, r, r, paint);
-                    if (radialGradient != null) {
-                        int wasAlpha2 = shaderPaint.getAlpha();
-                        shaderPaint.setAlpha((int) (action.getAlpha() * alphaFraction1 * wasAlpha2));
-                        matrix.setTranslate(AndroidUtilities.rectTmp.left, AndroidUtilities.rectTmp.top);
-                        radialGradient.setLocalMatrix(matrix);
-                        canvas.drawRoundRect(AndroidUtilities.rectTmp, r, r, shaderPaint);
-                        shaderPaint.setAlpha(wasAlpha2);
-                    }
                     paint.setAlpha(wasAlpha);
                 }
             }
@@ -770,9 +727,6 @@ public class ProfileActionsView extends View {
             int oldCount = activeCount;
             activeCount = out.size();
 
-            if (oldCount != activeCount && radialGradient != null) {
-                createColorShader();
-            }
 
             int c = actions.size();
             for (int i = 0; i < c; i++) {

@@ -23,12 +23,10 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import androidx.annotation.NonNull;
-import androidx.core.graphics.ColorUtils;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
@@ -93,22 +91,11 @@ public class ProfileMusicView extends View {
     private int backgroundColor;
     private boolean withShadows;
 
-    public void setColor(MessagesController.PeerColor peerColor) {
-        int color1, color2;
-        if (peerColor == null) {
-            color1 = color2 = Theme.getColor(Theme.key_actionBarDefault, resourcesProvider);
-        } else {
-            color1 = peerColor.getBgColor1(Theme.isCurrentThemeDark());
-            color2 = peerColor.getBgColor2(Theme.isCurrentThemeDark());
-        }
-
-        if (peerColor == null) {
-            backgroundColor = Theme.getColor(Theme.key_windowBackgroundWhite, resourcesProvider);
-            withShadows = true;
-        } else {
-            backgroundColor = Theme.adaptHSV(ColorUtils.blendARGB(color1, color2, .15f), +.04f, -.09f);
-            withShadows = false;
-        }
+    // LoogriGram: this took the profile colour and tinted the bar to match it.
+    // Profiles have no colour of their own (desktop's e05b12b0).
+    public void updateColors() {
+        backgroundColor = Theme.getColor(Theme.key_windowBackgroundWhite, resourcesProvider);
+        withShadows = true;
         backgroundPaint.setColor(backgroundColor);
         checkTextColor();
     }

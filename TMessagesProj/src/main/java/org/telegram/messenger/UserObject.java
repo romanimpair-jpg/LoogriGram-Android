@@ -170,12 +170,6 @@ public class UserObject {
         return 0;
     }
 
-    public static int getProfileColorId(TLRPC.User user) {
-        if (user == null) return 0;
-        if (user.profile_color instanceof TLRPC.TL_peerColor && (user.profile_color.flags & 1) != 0) return user.profile_color.color;
-        return -1;
-    }
-
     // LoogriGram: the profile's own background emoji, never a collectible
     // status's pattern, as on desktop.
     public static long getProfileEmojiId(TLRPC.User user) {

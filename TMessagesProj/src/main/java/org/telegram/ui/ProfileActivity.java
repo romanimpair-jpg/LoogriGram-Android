@@ -40,17 +40,14 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ColorFilter;
-import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
-import android.graphics.RadialGradient;
 import android.graphics.Rect;
 import android.graphics.RectF;
-import android.graphics.Shader;
 import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
@@ -173,7 +170,6 @@ import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BackDrawable;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.INavigationLayout;
-import org.telegram.ui.ActionBar.OKLCH;
 import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.ActionBar.ThemeDescription;
@@ -198,10 +194,7 @@ import org.telegram.ui.Cells.TextDetailCell;
 import org.telegram.ui.Cells.TextInfoPrivacyCell;
 import org.telegram.ui.Cells.UserCell;
 import org.telegram.ui.Components.AlertsCreator;
-import org.telegram.ui.Components.AnimatedColor;
-import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.AnimatedFileDrawable;
-import org.telegram.ui.Components.AnimatedFloat;
 import org.telegram.ui.Components.AnimatedTextView;
 import org.telegram.ui.Components.AnimationProperties;
 import org.telegram.ui.Components.AudioPlayerAlert;
@@ -264,7 +257,6 @@ import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceRenderNode
 import org.telegram.ui.Components.chat.ViewPositionWatcher;
 import org.telegram.ui.Components.voip.VoIPHelper;
 import org.telegram.ui.Stars.ProfileGiftsView;
-import org.telegram.ui.Components.StarGiftPatterns;
 import org.telegram.ui.Stories.recorder.ButtonWithCounterView;
 import org.telegram.ui.bots.BotBiometry;
 import org.telegram.ui.bots.BotDownloads;
@@ -1123,124 +1115,28 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 currentColor = color;
                 paint.setColor(color);
                 invalidate();
-                if (!hasColorById) {
-                    actionBarBackgroundColor = currentColor;
-                }
-            }
-        }
-
-        private boolean hasColorById;
-        private final AnimatedFloat hasColorAnimated = new AnimatedFloat(this, 350, CubicBezierInterpolator.EASE_OUT_QUINT);
-        public int color1, color2;
-        private final AnimatedColor color1Animated = new AnimatedColor(this, 350, CubicBezierInterpolator.EASE_OUT_QUINT);
-        private final AnimatedColor color2Animated = new AnimatedColor(this, 350, CubicBezierInterpolator.EASE_OUT_QUINT);
-
-        private int backgroundGradientColor1, backgroundGradientColor2, backgroundGradientX;
-        public float backgroundGradientRadius, backgroundGradientY;
-        public RadialGradient backgroundGradient;
-        public final Matrix backgroundGradientMatrix = new Matrix();
-        private final Paint backgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-
-        public void setBackgroundColorId(MessagesController.PeerColor peerColor, boolean animated) {
-            if (peerColor != null) {
-                hasColorById = true;
-                color1 = peerColor.getBgColor1(Theme.isCurrentThemeDark());
-                color2 = peerColor.getBgColor2(Theme.isCurrentThemeDark());
-                actionBarBackgroundColor = ColorUtils.blendARGB(color1, color2, 0.25f);
-                if (peerColor.patternColor != 0) {
-                    emojiColor = peerColor.patternColor;
-                    btnColor = Theme.multAlpha(peerColor.patternColor, .45f);
-                } else {
-                    emojiColor = adaptProfileEmojiColor(color1);
-                    btnColor = Theme.multAlpha(adaptProfileEmojiColor(color1), .15f);
-                }
-            } else {
                 actionBarBackgroundColor = currentColor;
-                hasColorById = false;
-                if (AndroidUtilities.computePerceivedBrightness(getThemedColor(Theme.key_actionBarDefault)) > .8f) {
-                    emojiColor = Color.WHITE; // getThemedColor(Theme.key_windowBackgroundWhiteBlueText);
-                    btnColor = Color.WHITE; // Theme.multAlpha(getThemedColor(Theme.key_windowBackgroundWhiteBlueText), .75f);
-                } else if (AndroidUtilities.computePerceivedBrightness(getThemedColor(Theme.key_actionBarDefault)) < .2f) {
-                    emojiColor = Theme.multAlpha(Theme.adaptHSV(getThemedColor(Theme.key_actionBarDefault), +0.02f, +0.25f), .5f);
-                    btnColor = Theme.multAlpha(Theme.adaptHSV(getThemedColor(Theme.key_actionBarDefault), +0.02f, +0.25f), .35f);
-                } else {
-                    emojiColor = adaptProfileEmojiColor(getThemedColor(Theme.key_actionBarDefault));
-                    btnColor = Theme.multAlpha(adaptProfileEmojiColor(getThemedColor(Theme.key_actionBarDefault)), .15f);
-                }
             }
-            if (!animated) {
-                color1Animated.set(color1, true);
-                color2Animated.set(color2, true);
-            }
-            invalidate();
         }
 
-        private int emojiColor;
+        // LoogriGram: a profile colour - bought, or a collectible gift's - drew a
+        // gradient behind the header, and the profile's background emoji (or the
+        // gift's pattern) was scattered over it. Desktop dropped both in e05b12b0:
+        // every profile gets the plain header a peer without them always had.
+        // Only the action buttons' colour, which follows the header, is left.
         private int btnColor;
-        private final AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable emoji = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(this, false, dp(20), AnimatedEmojiDrawable.CACHE_TYPE_ALERT_PREVIEW_STATIC);
 
-        @Override
-        protected void onAttachedToWindow() {
-            super.onAttachedToWindow();
-            emoji.attach();
-        }
-
-        @Override
-        protected void onDetachedFromWindow() {
-            super.onDetachedFromWindow();
-            emoji.detach();
-        }
-
-        public final AnimatedFloat emojiLoadedT = new AnimatedFloat(this, 0, 440, CubicBezierInterpolator.EASE_OUT_QUINT);
-        public final AnimatedFloat emojiFullT = new AnimatedFloat(this, 0, 440, CubicBezierInterpolator.EASE_OUT_QUINT);
-
-        public boolean hasEmoji;
-        private boolean emojiIsCollectible;
-
-        public void setBackgroundEmojiId(long emojiId, boolean isCollectible, boolean animated) {
-            emoji.set(emojiId, animated);
-            emoji.setColor(emojiColor);
-            emojiIsCollectible = isCollectible;
-            if (!animated) {
-                emojiFullT.force(isCollectible);
+        public void updateActionsColor() {
+            actionBarBackgroundColor = currentColor;
+            final int headerColor = getThemedColor(Theme.key_actionBarDefault);
+            if (AndroidUtilities.computePerceivedBrightness(headerColor) > .8f) {
+                btnColor = Color.WHITE;
+            } else if (AndroidUtilities.computePerceivedBrightness(headerColor) < .2f) {
+                btnColor = Theme.multAlpha(Theme.adaptHSV(headerColor, +0.02f, +0.25f), .35f);
+            } else {
+                btnColor = Theme.multAlpha(adaptProfileEmojiColor(headerColor), .15f);
             }
-            hasEmoji = hasEmoji || emojiId != 0 && emojiId != -1;
             invalidate();
-        }
-
-        private boolean emojiLoaded;
-
-        private boolean isEmojiLoaded() {
-            if (emojiLoaded) {
-                return true;
-            }
-            if (emoji != null && emoji.getDrawable() instanceof AnimatedEmojiDrawable) {
-                AnimatedEmojiDrawable drawable = (AnimatedEmojiDrawable) emoji.getDrawable();
-                if (drawable.getImageReceiver() != null && drawable.getImageReceiver().hasImageLoaded()) {
-                    return emojiLoaded = true;
-                }
-            }
-            return false;
-        }
-
-        private void updateBackgroundPaint() {
-            final int color1 = color1Animated.set(this.color1);
-            final int color2 = color2Animated.set(this.color2);
-            if (actionsView != null) {
-                actionsView.setActionsColor(btnColor, hasColorById);
-            }
-
-            int gradientX = getWidth() / 2;
-            if (backgroundGradient == null || backgroundGradientColor1 != color1 || backgroundGradientColor2 != color2 || backgroundGradientX != gradientX) {
-                backgroundGradientRadius = dp(96) * 2;
-                backgroundGradientY = (actionBar.getOccupyStatusBar() ? AndroidUtilities.statusBarHeight : 0)
-                        + ActionBar.getCurrentActionBarHeight()
-                        - 21 * AndroidUtilities.density
-                        + actionBar.getTranslationY();
-                backgroundGradient = new RadialGradient(backgroundGradientX = gradientX, backgroundGradientY + backgroundGradientRadius / 2f, backgroundGradientRadius, new int[]{backgroundGradientColor2 = color2, backgroundGradientColor1 = color1}, new float[]{0, 1}, Shader.TileMode.CLAMP);
-                backgroundGradient.setLocalMatrix(backgroundGradientMatrix);
-                backgroundPaint.setShader(backgroundGradient);
-            }
         }
 
         @Override
@@ -1252,27 +1148,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
             if (y1 != 0) {
                 paint.setColor(currentColor);
-                updateBackgroundPaint();
-                final float progressToGradient = (playProfileAnimation == 0 ? 1f : avatarAnimationProgress) * hasColorAnimated.set(hasColorById);
-                if (progressToGradient < 1) {
-                    canvas.drawRect(0, 0, getMeasuredWidth(), y1, paint);
+                if (actionsView != null) {
+                    actionsView.setActionsColor(btnColor);
                 }
-                if (progressToGradient > 0) {
-                    backgroundPaint.setAlpha((int) (0xFF * progressToGradient));
-                    canvas.drawRect(0, 0, getMeasuredWidth(), y1, backgroundPaint);
-                }
-                if (hasEmoji) {
-                    final float loadedScale = emojiLoadedT.set(isEmojiLoaded());
-                    boolean shoudIgnore = openAnimationInProgress && playProfileAnimation == 2;
-                    if (!shoudIgnore && loadedScale > 0 && avatarContainer != null) {
-                        canvas.save();
-                        canvas.clipRect(0, 0, getMeasuredWidth(), y1);
-                        float atop = actionBar.getOccupyStatusBar() ? AndroidUtilities.statusBarHeight : 0;
-                        float maxExpand = getHeaderOnlyExtraHeight() + atop + (actionBar.getHeight() - atop) / 2f;
-                        StarGiftPatterns.drawProfileAnimatedPattern(canvas, emoji, getMeasuredWidth(), maxExpand, calculateHeaderExtraDiff(), avatarContainer, 1.0f);
-                        canvas.restore();
-                    }
-                }
+                canvas.drawRect(0, 0, getMeasuredWidth(), y1, paint);
                 if (previousTransitionFragment != null) {
                     ActionBar actionBar = previousTransitionFragment.getActionBar();
                     ActionBarMenu menu = actionBar.menu;
@@ -2339,7 +2218,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         };
         actionBar.setForceSkipTouches(true);
         actionBar.setBackgroundColor(Color.TRANSPARENT);
-        actionBar.setItemsBackgroundColor(peerColor != null ? 0x20ffffff : getThemedColor(Theme.key_avatar_actionBarSelectorBlue), false);
+        actionBar.setItemsBackgroundColor(getThemedColor(Theme.key_avatar_actionBarSelectorBlue), false);
         actionBar.setItemsColor(getThemedColor(Theme.key_actionBarDefaultIcon), false);
         actionBar.setItemsColor(getThemedColor(Theme.key_actionBarDefaultIcon), true);
         actionBar.setCastShadows(false);
@@ -3394,7 +3273,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             if (avatarsBlurView != null) {
                 avatarsBlurView.setMusicView(musicView);
             }
-            musicView.setColor(peerColor);
+            musicView.updateColors();
             if (userInfo != null && userInfo.saved_music != null) {
                 musicView.setMusicDocument(userInfo.saved_music);
             }
@@ -4650,7 +4529,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
 
         topView = new TopView(context);
-        topView.setBackgroundColorId(peerColor, false);
+        topView.updateActionsColor();
         topView.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundGray));
         frameLayout.addView(topView);
         contentView.blurBehindViews.add(topView);
@@ -5010,7 +4889,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             }
 
             onlineTextView[a].setEllipsizeByGradient(true);
-            onlineTextView[a].setTextColor(applyPeerColor(getThemedColor(Theme.key_actionBarDefaultSubtitle), true, null));
+            onlineTextView[a].setTextColor(getThemedColor(Theme.key_actionBarDefaultSubtitle));
             onlineTextView[a].setTextSizePx(dp(13.5f));
             onlineTextView[a].setGravity(Gravity.LEFT);
             onlineTextView[a].setAlpha(a == 0 ? 0.0f : 1.0f);
@@ -5151,7 +5030,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
             @Override
             public void onAnimationEnd(Animator animation) {
-                actionBar.setItemsBackgroundColor(isPulledDown ? Theme.ACTION_BAR_WHITE_SELECTOR_COLOR : peerColor != null ? 0x20ffffff : getThemedColor(Theme.key_avatar_actionBarSelectorBlue), false);
+                actionBar.setItemsBackgroundColor(isPulledDown ? Theme.ACTION_BAR_WHITE_SELECTOR_COLOR : getThemedColor(Theme.key_avatar_actionBarSelectorBlue), false);
                 avatarImage.clearForeground();
                 doNotSetForeground = false;
                 updateGiftsViewBounds(false);
@@ -5579,7 +5458,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
 
         if (lockIconDrawable != null) {
-            lockIconDrawable.setColorFilter(peerColor != null ? Color.WHITE : ColorUtils.blendARGB(getThemedColor(Theme.key_chat_lockIcon), Color.WHITE, value), PorterDuff.Mode.MULTIPLY);
+            lockIconDrawable.setColorFilter(ColorUtils.blendARGB(getThemedColor(Theme.key_chat_lockIcon), Color.WHITE, value), PorterDuff.Mode.MULTIPLY);
         }
 
         if (verifiedCrossfadeDrawable[0] != null) {
@@ -5640,7 +5519,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         } else {
             statusColor = getThemedColor(Theme.key_actionBarDefaultSubtitle);
         }
-        onlineTextView[1].setTextColor(ColorUtils.blendARGB(applyPeerColor(statusColor, true, online), 0xB3FFFFFF, value));
+        onlineTextView[1].setTextColor(ColorUtils.blendARGB(statusColor, 0xB3FFFFFF, value));
         if (extraHeight > getHeaderOnlyExtraHeight()) {
             nameTextView[1].setPivotY(AndroidUtilities.lerp(0, nameTextView[1].getMeasuredHeight(), value));
             nameTextView[1].setScaleX(AndroidUtilities.lerp(1f + 0.12f * diff, 1.38f, value));
@@ -5649,8 +5528,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         needLayoutText(Math.min(1f, diff));
 
 
-        nameTextView[1].setTextColor(peerColor != null ? Color.WHITE : ColorUtils.blendARGB(getThemedColor(Theme.key_profile_title), Color.WHITE, currentExpandAnimatorValue));
-        actionBar.setItemsColor(peerColor != null ? Color.WHITE : ColorUtils.blendARGB(getThemedColor(Theme.key_actionBarDefaultIcon), Color.WHITE, value), false);
+        nameTextView[1].setTextColor(ColorUtils.blendARGB(getThemedColor(Theme.key_profile_title), Color.WHITE, currentExpandAnimatorValue));
+        actionBar.setItemsColor(ColorUtils.blendARGB(getThemedColor(Theme.key_actionBarDefaultIcon), Color.WHITE, value), false);
         actionBar.setMenuOffsetSuppressed(true);
 
         avatarImage.setForegroundAlpha(value);
@@ -5665,9 +5544,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             giftsView.setExpandProgress(value);
         }
 
-        if (topView != null && topView.hasEmoji) {
-            topView.invalidate();
-        }
     }
 
     private float calculateHeaderExtraDiff() {
@@ -6865,31 +6741,31 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             }
             topView.invalidate();
 
-            int color1 = peerColor != null ? Color.WHITE : getThemedColor(Theme.key_profile_title);
+            int color1 = getThemedColor(Theme.key_profile_title);
             int color2 = getThemedColor(Theme.key_player_actionBarTitle);
             int c = AndroidUtilities.getOffsetColor(color1, color2, value, 1.0f);
             nameTextView[1].setTextColor(c);
             if (lockIconDrawable != null) {
-                lockIconDrawable.setColorFilter(peerColor != null ? Color.WHITE : c, PorterDuff.Mode.MULTIPLY);
+                lockIconDrawable.setColorFilter(c, PorterDuff.Mode.MULTIPLY);
             }
             if (scamDrawable != null) {
                 color1 = getThemedColor(Theme.key_avatar_subtitleInProfileBlue);
                 scamDrawable.setColor(AndroidUtilities.getOffsetColor(color1, color2, value, 1.0f));
             }
 
-            color1 = peerColor != null ? Color.WHITE : getThemedColor(Theme.key_actionBarDefaultIcon);
+            color1 = getThemedColor(Theme.key_actionBarDefaultIcon);
             color2 = getThemedColor(Theme.key_actionBarActionModeDefaultIcon);
             actionBar.setItemsColor(AndroidUtilities.getOffsetColor(color1, color2, value, 1.0f), false);
 
-            color1 = peerColor != null ? Theme.ACTION_BAR_WHITE_SELECTOR_COLOR : peerColor != null ? 0x20ffffff : getThemedColor(Theme.key_avatar_actionBarSelectorBlue);
+            color1 = getThemedColor(Theme.key_avatar_actionBarSelectorBlue);
             color2 = getThemedColor(Theme.key_actionBarActionModeDefaultSelector);
             actionBar.setItemsBackgroundColor(AndroidUtilities.getOffsetColor(color1, color2, value, 1.0f), false);
 
             topView.invalidate();
-            otherItem.setIconColor(peerColor != null ? Color.WHITE : getThemedColor(Theme.key_actionBarDefaultIcon));
-            callItem.setIconColor(peerColor != null ? Color.WHITE : getThemedColor(Theme.key_actionBarDefaultIcon));
-            videoCallItem.setIconColor(peerColor != null ? Color.WHITE : getThemedColor(Theme.key_actionBarDefaultIcon));
-            editItem.setIconColor(peerColor != null ? Color.WHITE : getThemedColor(Theme.key_actionBarDefaultIcon));
+            otherItem.setIconColor(getThemedColor(Theme.key_actionBarDefaultIcon));
+            callItem.setIconColor(getThemedColor(Theme.key_actionBarDefaultIcon));
+            videoCallItem.setIconColor(getThemedColor(Theme.key_actionBarDefaultIcon));
+            editItem.setIconColor(getThemedColor(Theme.key_actionBarDefaultIcon));
             if (callToActionItem != null) {
                 //callToActionItem.setIconColor(peerColor != null ? Color.WHITE : getThemedColor(Theme.key_actionBarDefaultIcon));
             }
@@ -6900,7 +6776,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 verifiedDrawable[0].setColorFilter(AndroidUtilities.getOffsetColor(color1, color2, value, 1.0f), PorterDuff.Mode.MULTIPLY);
             }
             if (verifiedDrawable[1] != null) {
-                color1 = peerColor != null ? Theme.adaptHSV(ColorUtils.blendARGB(peerColor.getColor2(), peerColor.hasColor6(Theme.isCurrentThemeDark()) ? peerColor.getColor5() : peerColor.getColor3(), .4f), +.1f, Theme.isCurrentThemeDark() ? -.1f : -.08f) : getThemedColor(Theme.key_profile_verifiedBackground);
+                color1 = getThemedColor(Theme.key_profile_verifiedBackground);
                 color2 = getThemedColor(Theme.key_player_actionBarTitle);
                 verifiedDrawable[1].setColorFilter(AndroidUtilities.getOffsetColor(color1, color2, value, 1.0f), PorterDuff.Mode.MULTIPLY);
             }
@@ -6911,7 +6787,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 verifiedCheckDrawable[0].setColorFilter(AndroidUtilities.getOffsetColor(color1, color2, value, 1.0f), PorterDuff.Mode.MULTIPLY);
             }
             if (verifiedCheckDrawable[1] != null) {
-                color1 = peerColor != null ? Color.WHITE : dontApplyPeerColor(getThemedColor(Theme.key_profile_verifiedCheck));
+                color1 = dontApplyPeerColor(getThemedColor(Theme.key_profile_verifiedCheck));
                 color2 = getThemedColor(Theme.key_windowBackgroundWhite);
                 verifiedCheckDrawable[1].setColorFilter(AndroidUtilities.getOffsetColor(color1, color2, value, 1.0f), PorterDuff.Mode.MULTIPLY);
             }
@@ -7739,13 +7615,13 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 avatarImage.setBlurRadiusProgressForExpand(avatarAnimationProgress, avatarScale, true);
 
                 overlaysView.setAlphaValue(avatarAnimationProgress, false);
-                actionBar.setItemsColor(ColorUtils.blendARGB(peerColor != null ? Color.WHITE : getThemedColor(Theme.key_actionBarDefaultIcon), Color.WHITE, avatarAnimationProgress), false);
+                actionBar.setItemsColor(ColorUtils.blendARGB(getThemedColor(Theme.key_actionBarDefaultIcon), Color.WHITE, avatarAnimationProgress), false);
 
                 if (scamDrawable != null) {
                     scamDrawable.setColor(ColorUtils.blendARGB(getThemedColor(Theme.key_avatar_subtitleInProfileBlue), Color.argb(179, 255, 255, 255), avatarAnimationProgress));
                 }
                 if (lockIconDrawable != null) {
-                    lockIconDrawable.setColorFilter(peerColor != null ? Color.WHITE : ColorUtils.blendARGB(getThemedColor(Theme.key_chat_lockIcon), Color.WHITE, avatarAnimationProgress), PorterDuff.Mode.MULTIPLY);
+                    lockIconDrawable.setColorFilter(ColorUtils.blendARGB(getThemedColor(Theme.key_chat_lockIcon), Color.WHITE, avatarAnimationProgress), PorterDuff.Mode.MULTIPLY);
                 }
                 if (verifiedCrossfadeDrawable[1] != null) {
                     verifiedCrossfadeDrawable[1].setProgress(avatarAnimationProgress);
@@ -7868,10 +7744,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             overlaysView.requestLayout();
         }
         if (topView != null) {
-            topView.backgroundGradientMatrix.setTranslate(0f, avatarY - topView.backgroundGradientY);
-            if (topView.backgroundGradient != null) {
-                topView.backgroundGradient.setLocalMatrix(topView.backgroundGradientMatrix);
-            }
             topView.invalidate();
         }
         updateActionsPosition();
@@ -8828,11 +8700,11 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         topView.setBackgroundColor(ColorUtils.blendARGB(actionBarColor, color, progress));
         timerDrawable.setBackgroundColor(ColorUtils.blendARGB(actionBarColor2, color, progress));
 
-        color = peerColor != null ? Color.WHITE : AvatarDrawable.getIconColorForId(userId != 0 || ChatObject.isChannel(chatId, currentAccount) && !currentChat.megagroup ? 5 : chatId, resourcesProvider);
+        color = AvatarDrawable.getIconColorForId(userId != 0 || ChatObject.isChannel(chatId, currentAccount) && !currentChat.megagroup ? 5 : chatId, resourcesProvider);
         int iconColor = getThemedColor(Theme.key_actionBarDefaultIcon);
         actionBar.setItemsColor(ColorUtils.blendARGB(iconColor, color, avatarAnimationProgress), false);
 
-        color = peerColor != null ? Color.WHITE : getThemedColor(Theme.key_profile_title);
+        color = getThemedColor(Theme.key_profile_title);
         int titleColor = /*peerColor != null ? Color.WHITE :*/ getThemedColor(Theme.key_actionBarDefaultTitle);
         for (int i = 0; i < 2; i++) {
             if (nameTextView[i] == null || i == 1 && playProfileAnimation == 2) {
@@ -8847,7 +8719,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             if (onlineTextView[i] == null || i == 1 || i == 2 && playProfileAnimation == 2) {
                 continue;
             }
-            onlineTextView[i].setTextColor(ColorUtils.blendARGB(i == 0 ? subtitleColor : applyPeerColor(subtitleColor, true, isOnline[0]), i == 0 ? color : applyPeerColor(color, true, isOnline[0]), progress));
+            onlineTextView[i].setTextColor(ColorUtils.blendARGB(subtitleColor, color, progress));
         }
         extraHeight = initialAnimationExtraHeight * progress;
         color = AvatarDrawable.getProfileColorForId(userId != 0 ? userId : chatId, resourcesProvider);
@@ -9516,7 +9388,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             }
 
             if (emptyRow < 0 && emptyRow2 < 0) {
-                if (hasMusic || peerColor != null || actionsView == null) {
+                if (hasMusic || actionsView == null) {
                     emptyRow2 = rowCount++;
                 } else {
                     emptyRow = rowCount++;
@@ -9692,7 +9564,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             }
         } else if (isTopic) {
             if (emptyRow < 0 && emptyRow2 < 0) {
-                if (hasMusic || peerColor != null || actionsView == null) {
+                if (hasMusic || actionsView == null) {
                     emptyRow2 = rowCount++;
                 } else {
                     emptyRow = rowCount++;
@@ -9712,7 +9584,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         } else if (chatId != 0) {
             if (chatInfo != null && (!TextUtils.isEmpty(chatInfo.about) || chatInfo.location instanceof TLRPC.TL_channelLocation) || ChatObject.isPublic(currentChat)) {
                 if (emptyRow < 0 && emptyRow2 < 0) {
-                    if (hasMusic || peerColor != null || actionsView == null) {
+                    if (hasMusic || actionsView == null) {
                         emptyRow2 = rowCount++;
                     } else {
                         emptyRow = rowCount++;
@@ -9735,7 +9607,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 }
             }
             if (emptyRow < 0 && emptyRow2 < 0) {
-                if (hasMusic || peerColor != null || actionsView == null) {
+                if (hasMusic || actionsView == null) {
                     emptyRow2 = rowCount++;
                 } else {
                     emptyRow = rowCount++;
@@ -9913,12 +9785,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         if (verifiedCrossfadeDrawable[a] == null) {
             verifiedDrawable[a] = Theme.profile_verifiedDrawable.getConstantState().newDrawable().mutate();
             verifiedCheckDrawable[a] = Theme.profile_verifiedCheckDrawable.getConstantState().newDrawable().mutate();
-            if (a == 1 && peerColor != null) {
-                int color = Theme.adaptHSV(peerColor.hasColor6(Theme.isCurrentThemeDark()) ? peerColor.getColor5() : peerColor.getColor3(), +.1f, Theme.isCurrentThemeDark() ? -.1f : -.08f);
-                verifiedDrawable[1].setColorFilter(AndroidUtilities.getOffsetColor(color, getThemedColor(Theme.key_player_actionBarTitle), mediaHeaderAnimationProgress, 1.0f), PorterDuff.Mode.MULTIPLY);
-                color = Color.WHITE;
-                verifiedCheckDrawable[1].setColorFilter(AndroidUtilities.getOffsetColor(color, getThemedColor(Theme.key_windowBackgroundWhite), mediaHeaderAnimationProgress, 1.0f), PorterDuff.Mode.MULTIPLY);
-            }
             verifiedCrossfadeDrawable[a] = new CrossfadeDrawable(
                     new CombinedDrawable(verifiedDrawable[a], verifiedCheckDrawable[a]),
                     ContextCompat.getDrawable(getParentActivity(), R.drawable.verified_profile)
@@ -9981,7 +9847,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
     }
 
-    private MessagesController.PeerColor peerColor;
 
     private void updateProfileData(boolean reload) {
         if (avatarContainer == null || nameTextView == null || getParentActivity() == null) {
@@ -10034,18 +9899,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             }
             avatarDrawable.setInfo(currentAccount, user);
 
-            final MessagesController.PeerColor wasPeerColor = peerColor;
-            {
-                final int colorId = UserObject.getProfileColorId(user);
-                final MessagesController.PeerColors peerColors = MessagesController.getInstance(currentAccount).profilePeerColors;
-                peerColor = peerColors == null ? null : peerColors.getColor(colorId);
-            }
-            if (wasPeerColor != peerColor) {
-                updatedPeerColor();
-            }
-            if (topView != null) {
-                topView.setBackgroundEmojiId(UserObject.getProfileEmojiId(user), false, true);
-            }
+            // LoogriGram: the profile colour and background emoji were read here; see TopView.
 
 
             final ImageLocation imageLocation = ImageLocation.getForUserOrChat(user, ImageLocation.TYPE_BIG);
@@ -10112,10 +9966,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 // them, offering to reveal ours to see theirs (desktop's
                 // f398bc59). Only our own privacy screens relax Last Seen.
                 if (onlineTextView[1] != null && !mediaHeaderVisible) {
-                    int key = isOnline[0] && peerColor == null ? Theme.key_profile_status : Theme.key_actionBarDefaultSubtitle;
+                    int key = isOnline[0] ? Theme.key_profile_status : Theme.key_actionBarDefaultSubtitle;
                     onlineTextView[1].setTag(key);
                     if (!isPulledDown) {
-                        onlineTextView[1].setTextColor(applyPeerColor(getThemedColor(key), true, isOnline[0]));
+                        onlineTextView[1].setTextColor(getThemedColor(key));
                     }
                 }
             }
@@ -10232,18 +10086,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 flagSecure.invalidate();
             }
 
-            final MessagesController.PeerColor wasPeerColor = peerColor;
-            {
-                final int colorId = ChatObject.getProfileColorId(chat);
-                MessagesController.PeerColors peerColors = MessagesController.getInstance(currentAccount).profilePeerColors;
-                peerColor = peerColors == null ? null : peerColors.getColor(colorId);
-            }
-            if (wasPeerColor != peerColor) {
-                updatedPeerColor();
-            }
-            if (topView != null) {
-                topView.setBackgroundEmojiId(ChatObject.getProfileEmojiId(chat), false, true);
-            }
+            // LoogriGram: the profile colour and background emoji were read here; see TopView.
 
             if (isTopic) {
                 topic = getMessagesController().getTopicsController().findTopic(chatId, topicId);
@@ -10522,16 +10365,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
 
 
-    @Override
-    public void clearViews() {
-        peerColor = null;
-        super.clearViews();
-    }
-
     private void updatedPeerColor() {
-        adaptedColors.clear();
         if (topView != null) {
-            topView.setBackgroundColorId(peerColor, true);
+            topView.updateActionsColor();
         }
         if (onlineTextView[1] != null) {
             int statusColor;
@@ -10540,33 +10376,33 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             } else {
                 statusColor = getThemedColor(Theme.key_actionBarDefaultSubtitle);
             }
-            onlineTextView[1].setTextColor(ColorUtils.blendARGB(applyPeerColor(statusColor, true, isOnline[0]), 0xB3FFFFFF, currentExpandAnimatorValue));
+            onlineTextView[1].setTextColor(ColorUtils.blendARGB(statusColor, 0xB3FFFFFF, currentExpandAnimatorValue));
         }
         if (actionBar != null) {
-            actionBar.setItemsColor(ColorUtils.blendARGB(peerColor != null ? Color.WHITE : getThemedColor(Theme.key_actionBarDefaultIcon), getThemedColor(Theme.key_actionBarActionModeDefaultIcon), mediaHeaderAnimationProgress), false);
-            actionBar.setItemsBackgroundColor(ColorUtils.blendARGB(peerColor != null ? Theme.ACTION_BAR_WHITE_SELECTOR_COLOR : peerColor != null ? 0x20ffffff : getThemedColor(Theme.key_avatar_actionBarSelectorBlue), getThemedColor(Theme.key_actionBarActionModeDefaultSelector), mediaHeaderAnimationProgress), false);
+            actionBar.setItemsColor(ColorUtils.blendARGB(getThemedColor(Theme.key_actionBarDefaultIcon), getThemedColor(Theme.key_actionBarActionModeDefaultIcon), mediaHeaderAnimationProgress), false);
+            actionBar.setItemsBackgroundColor(ColorUtils.blendARGB(getThemedColor(Theme.key_avatar_actionBarSelectorBlue), getThemedColor(Theme.key_actionBarActionModeDefaultSelector), mediaHeaderAnimationProgress), false);
         }
         if (verifiedDrawable[1] != null) {
-            final int color1 = peerColor != null ? Theme.adaptHSV(ColorUtils.blendARGB(peerColor.getColor2(), peerColor.hasColor6(Theme.isCurrentThemeDark()) ? peerColor.getColor5() : peerColor.getColor3(), .4f), +.1f, Theme.isCurrentThemeDark() ? -.1f : -.08f) : getThemedColor(Theme.key_profile_verifiedBackground);
+            final int color1 = getThemedColor(Theme.key_profile_verifiedBackground);
             final int color2 = getThemedColor(Theme.key_player_actionBarTitle);
             verifiedDrawable[1].setColorFilter(AndroidUtilities.getOffsetColor(color1, color2, mediaHeaderAnimationProgress, 1.0f), PorterDuff.Mode.MULTIPLY);
         }
         if (verifiedCheckDrawable[1] != null) {
-            final int color1 = peerColor != null ? Color.WHITE : dontApplyPeerColor(getThemedColor(Theme.key_profile_verifiedCheck));
+            final int color1 = dontApplyPeerColor(getThemedColor(Theme.key_profile_verifiedCheck));
             final int color2 = getThemedColor(Theme.key_windowBackgroundWhite);
             verifiedCheckDrawable[1].setColorFilter(AndroidUtilities.getOffsetColor(color1, color2, mediaHeaderAnimationProgress, 1.0f), PorterDuff.Mode.MULTIPLY);
         }
         if (nameTextView[1] != null) {
-            nameTextView[1].setTextColor(ColorUtils.blendARGB(ColorUtils.blendARGB(peerColor != null ? Color.WHITE : getThemedColor(Theme.key_profile_title), getThemedColor(Theme.key_player_actionBarTitle), mediaHeaderAnimationProgress), Color.WHITE, currentExpandAnimatorValue));
+            nameTextView[1].setTextColor(ColorUtils.blendARGB(ColorUtils.blendARGB(getThemedColor(Theme.key_profile_title), getThemedColor(Theme.key_player_actionBarTitle), mediaHeaderAnimationProgress), Color.WHITE, currentExpandAnimatorValue));
         }
         if (autoDeletePopupWrapper != null && autoDeletePopupWrapper.textView != null) {
             autoDeletePopupWrapper.textView.invalidate();
         }
         if (lockIconDrawable != null) {
-            lockIconDrawable.setColorFilter(peerColor != null ? Color.WHITE : ColorUtils.blendARGB(getThemedColor(Theme.key_chat_lockIcon), Color.WHITE, avatarAnimationProgress), PorterDuff.Mode.MULTIPLY);
+            lockIconDrawable.setColorFilter(ColorUtils.blendARGB(getThemedColor(Theme.key_chat_lockIcon), Color.WHITE, avatarAnimationProgress), PorterDuff.Mode.MULTIPLY);
         }
         if (musicView != null) {
-            musicView.setColor(peerColor);
+            musicView.updateColors();
         }
         AndroidUtilities.forEachViews(listView, view -> {
             if (view instanceof HeaderCell) {
@@ -10607,42 +10443,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         return dontApplyPeerColor(color, actionBar, null);
     }
 
-    private final SparseIntArray adaptedColors = new SparseIntArray();
-
     private int dontApplyPeerColor(int color, boolean actionBar, Boolean online) {
-        return color;
-    }
-
-    private int applyPeerColor(int color, boolean actionBar, Boolean online) {
-        if (!actionBar && isSettings()) return color;
-        if (peerColor != null) {
-            if (!actionBar) {
-                int index = adaptedColors.indexOfKey(color);
-                if (index < 0) {
-                    final int baseColor = Theme.adaptHSV(peerColor.getBgColor1(Theme.isCurrentThemeDark()), Theme.isCurrentThemeDark() ? 0 : +.05f, Theme.isCurrentThemeDark() ? -.1f : -.04f);
-                    int adapted = OKLCH.adapt(color, baseColor);
-                    adaptedColors.put(color, adapted);
-                    return adapted;
-                } else {
-                    return adaptedColors.valueAt(index);
-                }
-            }
-            final int baseColor = getThemedColor(actionBar ? Theme.key_actionBarDefault : Theme.key_windowBackgroundWhiteBlueIcon);
-            final int storyColor = ColorUtils.blendARGB(peerColor.getStoryColor1(Theme.isCurrentThemeDark()), peerColor.getStoryColor2(Theme.isCurrentThemeDark()), .5f);
-            int accentColor = actionBar ? storyColor : peerColor.getBgColor1(Theme.isCurrentThemeDark());
-            if (!Theme.hasHue(baseColor)) {
-                return online != null && !online ? Theme.adaptHSV(Theme.multAlpha(storyColor, .7f), -.2f, +.2f) : storyColor;
-            }
-            return Theme.changeColorAccent(baseColor, accentColor, color, Theme.isCurrentThemeDark(), online != null && !online ? Theme.multAlpha(storyColor, .7f) : storyColor);
-        }
-        return color;
-    }
-
-    private int applyPeerColor2(int color) {
-        if (peerColor != null) {
-            int accentColor = peerColor.getBgColor2(Theme.isCurrentThemeDark());
-            return Theme.changeColorAccent(getThemedColor(Theme.key_windowBackgroundWhiteBlueIcon), accentColor, color, Theme.isCurrentThemeDark(), accentColor);
-        }
         return color;
     }
 
@@ -13626,14 +13427,14 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     final Object onlineTextViewTag = onlineTextView[1].getTag();
                     for (int i = 0; i < 2; i++) {
                         if (onlineTextViewTag instanceof Integer) {
-                            onlineTextView[i + 1].setTextColor(applyPeerColor(getThemedColor((Integer) onlineTextViewTag), true, isOnline[0]));
+                            onlineTextView[i + 1].setTextColor(getThemedColor((Integer) onlineTextViewTag));
                         } else {
-                            onlineTextView[i + 1].setTextColor(applyPeerColor(getThemedColor(Theme.key_actionBarDefaultSubtitle), true, true));
+                            onlineTextView[i + 1].setTextColor(getThemedColor(Theme.key_actionBarDefaultSubtitle));
                         }
                     }
                 }
                 if (lockIconDrawable != null) {
-                    lockIconDrawable.setColorFilter(peerColor != null ? Color.WHITE : getThemedColor(Theme.key_chat_lockIcon), PorterDuff.Mode.MULTIPLY);
+                    lockIconDrawable.setColorFilter(getThemedColor(Theme.key_chat_lockIcon), PorterDuff.Mode.MULTIPLY);
                 }
                 if (scamDrawable != null) {
                     scamDrawable.setColor(getThemedColor(Theme.key_avatar_subtitleInProfileBlue));
@@ -13642,8 +13443,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     nameTextView[1].setTextColor(getThemedColor(Theme.key_profile_title));
                 }
                 if (actionBar != null) {
-                    actionBar.setItemsColor(peerColor != null ? Color.WHITE : getThemedColor(Theme.key_actionBarDefaultIcon), false);
-                    actionBar.setItemsBackgroundColor(peerColor != null ? 0x20ffffff : getThemedColor(Theme.key_avatar_actionBarSelectorBlue), false);
+                    actionBar.setItemsColor(getThemedColor(Theme.key_actionBarDefaultIcon), false);
+                    actionBar.setItemsBackgroundColor(getThemedColor(Theme.key_avatar_actionBarSelectorBlue), false);
                 }
 //                if (sharedMediaLayout != null) {
 //                    sharedMediaLayout.setBackgroundColor(getThemedColor(Theme.key_windowBackgroundWhite));
@@ -13884,11 +13685,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             int color1 = getThemedColor(Theme.key_profile_actionBackground);
             int color2 = getThemedColor(Theme.key_profile_actionPressedBackground);
             int iconColor = getThemedColor(Theme.key_profile_actionIcon);
-            if (peerColor != null && Theme.hasHue(color1)) {
-                color1 = Theme.adaptHSV(peerColor.getBgColor1(false), +.05f, -.04f);
-                color2 = applyPeerColor2(color2);
-                iconColor = Color.WHITE;
-            }
             CombinedDrawable combinedDrawable = new CombinedDrawable(shadowDrawable,
                     Theme.createSimpleSelectorCircleDrawable(AndroidUtilities.dp(56), color1, color2),
                     0, 0);
@@ -14098,8 +13894,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             color = getThemedColor(Theme.key_actionBarActionModeDefault);
         } else if (mediaHeaderVisible) {
             color = getThemedColor(Theme.key_windowBackgroundWhite);
-        } else if (peerColor != null) {
-            color = peerColor.getBgColor2(Theme.isCurrentThemeDark());
         } else {
             color = getThemedColor(Theme.key_actionBarDefault);
         }

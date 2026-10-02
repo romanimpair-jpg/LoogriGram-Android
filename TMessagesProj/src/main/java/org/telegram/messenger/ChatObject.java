@@ -2525,21 +2525,6 @@ public class ChatObject {
         return 0;
     }
 
-    public static int getProfileColorId(TLRPC.Chat chat) {
-        if (chat == null) return 0;
-        if (chat.profile_color instanceof TLRPC.TL_peerColor && (chat.profile_color.flags & 1) != 0)
-            return chat.profile_color.color;
-        return -1;
-    }
-
-    // LoogriGram: the profile's own background emoji, never a collectible
-    // status's pattern, as on desktop.
-    public static long getProfileEmojiId(TLRPC.Chat chat) {
-        if (chat != null && chat.profile_color instanceof TLRPC.TL_peerColor && (chat.profile_color.flags & 2) != 0)
-            return chat.profile_color.background_emoji_id;
-        return 0;
-    }
-
     public static boolean areTabsEnabled(TLRPC.Chat chat) {
         return SharedConfig.forceForumTabs || chat != null && chat.forum_tabs;
     }
