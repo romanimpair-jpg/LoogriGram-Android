@@ -19,8 +19,6 @@ import org.telegram.messenger.ImageReceiver;
 import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.wallpaper.WallpaperBitmapHolder;
-import org.telegram.messenger.wallpaper.WallpaperGiftBitmapDrawable;
-import org.telegram.messenger.wallpaper.WallpaperGiftPatternPosition;
 import org.telegram.tgnet.ResultCallback;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.theme.ITheme;
@@ -30,7 +28,6 @@ import org.telegram.ui.Components.RLottieDrawable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
-import java.util.List;
 
 public class EmojiThemes {
 
@@ -500,13 +497,8 @@ public class EmojiThemes {
             imageReceiver.setImage(imageLocation, imageFilter, null, ".jpg", wallPaper, 1);
             imageReceiver.setDelegate((receiver, set, thumb, memCache) -> {
                 ImageReceiver.BitmapHolder holder = receiver.getBitmapSafe();
-                ImageReceiver.BitmapHolder dHolder = receiver.getDrawableSafe();
                 if (!set || holder == null) {
                     return;
-                }
-                List<WallpaperGiftPatternPosition> patternPositions = null;
-                if (dHolder != null && dHolder.drawable instanceof WallpaperGiftBitmapDrawable) {
-                    patternPositions = ((WallpaperGiftBitmapDrawable) dHolder.drawable).patternPositions;
                 }
 
                 Bitmap bitmap = holder.bitmap;
@@ -514,7 +506,7 @@ public class EmojiThemes {
                     bitmap = ((BitmapDrawable) holder.drawable).getBitmap();
                 }
 
-                final WallpaperBitmapHolder wallpaperBitmapHolder = new WallpaperBitmapHolder(bitmap, mode, patternPositions);
+                final WallpaperBitmapHolder wallpaperBitmapHolder = new WallpaperBitmapHolder(bitmap, mode);
                 if (callback != null) {
                     callback.run(wallpaperBitmapHolder);
                 }

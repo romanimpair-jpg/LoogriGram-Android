@@ -250,9 +250,6 @@ public class ChatBackgroundDrawable extends Drawable {
             attached = false;
             imageReceiver.onDetachedFromWindow();
         }
-        if (motionBackgroundDrawable != null) {
-            motionBackgroundDrawable.onAttachedToWindow();
-        }
     }
 
     public void onDetachedFromWindow(View view) {
@@ -265,9 +262,6 @@ public class ChatBackgroundDrawable extends Drawable {
         } else if (!isAttached() && attached) {
             attached = false;
             imageReceiver.onDetachedFromWindow();
-        }
-        if (motionBackgroundDrawable != null) {
-            motionBackgroundDrawable.onDetachedFromWindow();
         }
     }
 

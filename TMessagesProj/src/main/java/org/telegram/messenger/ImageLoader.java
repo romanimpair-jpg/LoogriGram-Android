@@ -43,7 +43,6 @@ import androidx.core.graphics.ColorUtils;
 import org.telegram.DispatchQueuePriority;
 import org.telegram.messenger.secretmedia.EncryptedFileInputStream;
 import org.telegram.messenger.utils.BitmapsCache;
-import org.telegram.messenger.wallpaper.WallpaperGiftBitmapDrawable;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
@@ -782,7 +781,7 @@ public class ImageLoader {
                 if (bitmap != null && !TextUtils.isEmpty(cacheImage.filter) && cacheImage.filter.contains("wallpaper") && cacheImage.parentObject instanceof TLRPC.WallPaper) {
                     bitmap = applyWallpaperSetting(bitmap, (TLRPC.WallPaper) cacheImage.parentObject);
                 }
-                onPostExecute(WallpaperGiftBitmapDrawable.create(bitmap, svgResult != null ? svgResult.getGiftPatternPositions(): null));
+                onPostExecute(bitmap != null ? new BitmapDrawable(bitmap) : null);
             } else if (cacheImage.imageType == FileLoader.IMAGE_TYPE_LOTTIE) {
                 int w = Math.min(512, AndroidUtilities.dp(170.6f));
                 int h = Math.min(512, AndroidUtilities.dp(170.6f));

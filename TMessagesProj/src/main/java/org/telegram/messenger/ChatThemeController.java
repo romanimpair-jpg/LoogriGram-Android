@@ -10,7 +10,6 @@ import android.util.LongSparseArray;
 import androidx.annotation.Nullable;
 
 import org.telegram.messenger.wallpaper.WallpaperBitmapHolder;
-import org.telegram.messenger.wallpaper.WallpaperGiftPatternPosition;
 import org.telegram.messenger.wallpaper.pgm.PGMImage;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.ResultCallback;
@@ -30,7 +29,6 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -433,7 +431,7 @@ public class ChatThemeController extends BaseController {
         if (mode == WallpaperBitmapHolder.MODE_DEFAULT) {
             saveWallpaperBitmap(bitmap, wallpaperId);
         } else if (mode == WallpaperBitmapHolder.MODE_PATTERN) {
-            saveWallpaperPatternBitmap(bitmap, wallpaper.giftPatternPositions, wallpaperId);
+            saveWallpaperPatternBitmap(bitmap, wallpaperId);
         }
     }
 
@@ -459,37 +457,23 @@ public class ChatThemeController extends BaseController {
             String.format(Locale.US, "pattern_%d.pgm.gz", wallpaperId));
 
         chatThemeQueue.postRunnable(() -> {
-            List<WallpaperGiftPatternPosition> positions = null;
             Bitmap bitmap = null;
 
+            // LoogriGram: a "patterns = " comment in the file held where a
+            // collectible gift's symbol went. Older files still carry one;
+            // read skips comments.
             try (
                 InputStream fileStream = new FileInputStream(file);
                 InputStream gzipStream = new GZIPInputStream(fileStream)
             ) {
-                ArrayList<String> comments = new ArrayList<>(1);
-                bitmap = PGMImage.read(gzipStream, comments);
-
-                for (String comment : comments) {
-                    if (comment.startsWith("patterns = ")) {
-                        final byte[] buffer = Utilities.hexToBytes(comment.substring("patterns = ".length()));
-                        final int count = buffer.length / WallpaperGiftPatternPosition.SERIALIZED_BUFFER_SIZE;
-                        final SerializedData data = new SerializedData(buffer);
-
-                        positions = new ArrayList<>(count);
-                        for (int a = 0; a < count; a++) {
-                            positions.add(WallpaperGiftPatternPosition.deserialize(data));
-                        }
-
-                        data.cleanup();
-                    }
-                }
+                bitmap = PGMImage.read(gzipStream);
             } catch (Exception e) {
                 FileLog.e(e);
             }
 
             final WallpaperBitmapHolder bitmapHolder;
             if (bitmap != null) {
-                bitmapHolder = new WallpaperBitmapHolder(bitmap, WallpaperBitmapHolder.MODE_PATTERN, positions);
+                bitmapHolder = new WallpaperBitmapHolder(bitmap, WallpaperBitmapHolder.MODE_PATTERN);
             } else {
                 bitmapHolder = null;
             }
@@ -498,7 +482,7 @@ public class ChatThemeController extends BaseController {
         });
     }
 
-    private void saveWallpaperPatternBitmap(Bitmap bitmap, List<WallpaperGiftPatternPosition> positions, long wallpaperId) {
+    private void saveWallpaperPatternBitmap(Bitmap bitmap, long wallpaperId) {
         File file = new File(
             ApplicationLoader.getFilesDirFixed("rasterized/wallpaper"),
             String.format(Locale.US, "pattern_%d.pgm.gz", wallpaperId));
@@ -507,22 +491,11 @@ public class ChatThemeController extends BaseController {
                 OutputStream fileStream = new FileOutputStream(file);
                 OutputStream gzipStream = new GZIPOutputStream(fileStream)
             ) {
-                List<String> comments = null;
-                if (positions != null && !positions.isEmpty()) {
-                    SerializedData data = new SerializedData(WallpaperGiftPatternPosition.SERIALIZED_BUFFER_SIZE * positions.size());
-                    for (WallpaperGiftPatternPosition position: positions) {
-                        position.serialize(data);
-                    }
-
-                    comments = Collections.singletonList("patterns = " + Utilities.bytesToHex(data.toByteArray()));
-                    data.cleanup();
-                }
-
                 if (bitmap.getConfig() == Bitmap.Config.ALPHA_8) {
-                    PGMImage.write(bitmap, gzipStream, comments);
+                    PGMImage.write(bitmap, gzipStream);
                 } else {
                     Bitmap tmpBitmap = bitmap.extractAlpha();
-                    PGMImage.write(tmpBitmap, gzipStream, comments);
+                    PGMImage.write(tmpBitmap, gzipStream);
                     tmpBitmap.recycle();
                 }
             } catch (Exception e) {

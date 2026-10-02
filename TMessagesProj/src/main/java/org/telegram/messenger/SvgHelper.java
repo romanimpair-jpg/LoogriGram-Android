@@ -43,7 +43,6 @@ import android.util.SparseArray;
 
 import androidx.core.graphics.ColorUtils;
 
-import org.telegram.messenger.wallpaper.WallpaperGiftPatternPosition;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.DrawingInBackgroundThreadDrawable;
 import org.xml.sax.Attributes;
@@ -1524,9 +1523,12 @@ public class SvgHelper {
             }
         }
 
+        // LoogriGram: a "GiftPatterns" group marks where a collectible gift's
+        // symbol goes in its chat theme's pattern, and its rects were kept as
+        // positions. Those themes are not applied (desktop's 42294064); the
+        // group is still skipped, so its placeholders are never drawn.
         private boolean insideGiftRect = false;
         private int insideGiftRectDepth = 0;
-        private List<WallpaperGiftPatternPosition> insideGiftRectPositions;
         
         
         @Override
@@ -1540,15 +1542,6 @@ public class SvgHelper {
                 }
             } else if (insideGiftRect) {
                 insideGiftRectDepth++;
-                if ("rect".equals(qName)) {
-                    WallpaperGiftPatternPosition position = WallpaperGiftPatternPosition.create(atts, scale);
-                    if (position != null) {
-                        if (insideGiftRectPositions == null) {
-                            insideGiftRectPositions = new ArrayList<>();
-                        }
-                        insideGiftRectPositions.add(position);
-                    }
-                }
                 return;
             }
 
@@ -1838,17 +1831,12 @@ public class SvgHelper {
             return bitmap;
         }
 
-        public List<WallpaperGiftPatternPosition> getGiftPatternPositions() {
-            return insideGiftRectPositions;
-        }
-
         public SvgDrawable getDrawable() {
             return drawable;
         }
     }
 
     public interface SvgResult {
-        List<WallpaperGiftPatternPosition> getGiftPatternPositions();
         Bitmap getBitmap();
         SvgDrawable getDrawable();
     }

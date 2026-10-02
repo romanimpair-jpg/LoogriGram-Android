@@ -2454,7 +2454,6 @@ public class ChatActivity extends BaseFragment implements
 
     public boolean isInsideContainer;
     public boolean reversed;
-    private long wallpaperRandomSeed;
 
     public ChatActivity(Bundle args) {
         super(args);
@@ -2556,7 +2555,6 @@ public class ChatActivity extends BaseFragment implements
         scrollToTopOnResume = arguments.getBoolean("scrollToTopOnResume", false);
         needRemovePreviousSameChatActivity = arguments.getBoolean("need_remove_previous_same_chat_activity", true);
         justCreatedChat = arguments.getBoolean("just_created_chat", false);
-        wallpaperRandomSeed = Utilities.random.nextLong();
         if (chatId != 0) {
             currentChat = getMessagesController().getChat(chatId);
             if (currentChat == null) {
@@ -40058,7 +40056,6 @@ public class ChatActivity extends BaseFragment implements
 
                 MotionBackgroundDrawable motionDrawable = new MotionBackgroundDrawable();
                 motionDrawable.setPatternBitmap(chatTheme.getWallpaper(isDark ? 1 : 0).settings.intensity);
-                motionDrawable.setGiftDrawable(chatTheme.getEmojiAnimatedSticker());
                 motionDrawable.setColors(backgroundColor, gradientColor1, gradientColor2, gradientColor3, 0,true);
                 motionDrawable.setPhase(prevPhase);
                 int patternColor = motionDrawable.getPatternColor();
@@ -40075,8 +40072,6 @@ public class ChatActivity extends BaseFragment implements
                             patternIntensityAnimator.cancel();
                         }
                         int intensity = chatTheme.getWallpaper(isDarkTheme ? 1 : 0).settings.intensity;
-                        motionDrawable.setPatternGiftPositions(pair.second.giftPatternPositions);
-                        motionDrawable.setGiftPatternRandomSeed(wallpaperRandomSeed);
                         motionDrawable.setPatternBitmap(intensity, bitmap);
                         motionDrawable.setPatternColorFilter(patternColor);
                         patternIntensityAnimator = ValueAnimator.ofFloat(0, 1f);

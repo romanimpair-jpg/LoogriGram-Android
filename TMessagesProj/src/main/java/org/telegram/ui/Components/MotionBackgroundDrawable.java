@@ -25,19 +25,13 @@ import androidx.core.graphics.ColorUtils;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.GenericProvider;
-import org.telegram.messenger.ImageLocation;
-import org.telegram.messenger.ImageReceiver;
 import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.Utilities;
-import org.telegram.messenger.wallpaper.WallpaperGiftPatternPosition;
-import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.Components.blur3.utils.BitmapChangeTracker;
 
 import java.lang.ref.WeakReference;
-import java.util.List;
-import java.util.Random;
 
 public class MotionBackgroundDrawable extends Drawable {
 
@@ -84,8 +78,6 @@ public class MotionBackgroundDrawable extends Drawable {
     private BitmapShader bitmapShader;
     private BitmapShader gradientShader;
 
-    private Bitmap patternGiftBitmap;
-    private ImageReceiver giftImageReceiver;
     private boolean disableGradientShaderScaling;
     private Matrix matrix;
 
@@ -303,9 +295,6 @@ public class MotionBackgroundDrawable extends Drawable {
 
     public void setParentView(View view) {
         parentView = new WeakReference<>(view);
-        if (giftImageReceiver != null) {
-            giftImageReceiver.setParentView(view);
-        }
     }
 
     public void setColors(int c1, int c2, int c3, int c4) {
@@ -387,55 +376,11 @@ public class MotionBackgroundDrawable extends Drawable {
     }
 
 
-    private List<WallpaperGiftPatternPosition> giftPatternPositions;
-    private int giftPosition = -1;
-    public void setPatternGiftPositions(List<WallpaperGiftPatternPosition> giftPositions) {
-        giftPatternPositions = giftPositions;
-    }
-
-    public void setGiftPatternRandomSeed(long seed) {
-        if (giftPatternPositions != null) {
-            giftPosition = new Random(seed).nextInt(giftPatternPositions.size());
-        }
-    }
-
-    public void setGiftPatternBitmap(Bitmap bitmap) {
-        patternGiftBitmap = bitmap;
-        invalidateParent();
-    }
-
-    public void setGiftDrawable(TLRPC.Document document) {
-        if (giftImageReceiver == null) {
-            giftImageReceiver = new ImageReceiver();
-            giftImageReceiver.setAlpha(0.5f);
-            if (parentView != null) {
-                giftImageReceiver.setParentView(parentView.get());
-            }
-            if (isAttached) {
-                giftImageReceiver.onAttachedToWindow();
-            }
-        }
-
-        giftImageReceiver.setImage(ImageLocation.getForDocument(document), "80_80", null, null, null, 0);
-        giftImageReceiver.setAutoRepeatCount(1);
-        giftImageReceiver.setAutoRepeat(1);
-    }
-
-    public boolean isAttached;
-
-    public void onAttachedToWindow() {
-        isAttached = true;
-        if (giftImageReceiver != null) {
-            giftImageReceiver.onAttachedToWindow();
-        }
-    }
-
-    public void onDetachedFromWindow() {
-        isAttached = false;
-        if (giftImageReceiver != null) {
-            giftImageReceiver.onDetachedFromWindow();
-        }
-    }
+    // LoogriGram: a collectible gift's chat theme wove the gift's symbol into
+    // the pattern at the positions its SVG marked, with the gift's sticker
+    // animated in one of them (setPatternGiftPositions, setGiftPatternBitmap,
+    // setGiftDrawable, and the attach hooks that served the sticker). Those
+    // themes are not applied, as desktop's 42294064.
 
     public void setPatternBitmap(int intensity, Bitmap bitmap, boolean doNotScale) {
         this.intensity = intensity;
@@ -490,7 +435,6 @@ public class MotionBackgroundDrawable extends Drawable {
         android.graphics.Rect bounds = getBounds();
         canvas.save();
 
-        final Bitmap patternBitmap = getOrBuildPatternWithGiftBitmap();
         float tr = patternBitmap != null ? bounds.top : translationY;
         int bitmapWidth = currentBitmap.getWidth();
         int bitmapHeight = currentBitmap.getHeight();
@@ -535,7 +479,6 @@ public class MotionBackgroundDrawable extends Drawable {
                     } else {
                         canvas.drawColor(ColorUtils.setAlphaComponent(Color.BLACK, (int) (alpha * backgroundAlpha)));
                     }
-                    drawGiftImageForLegacyNegativeIntensity(canvas, rect, giftPosition);
                 } else {
                     if (matrix == null) {
                         matrix = new Matrix();
@@ -576,7 +519,6 @@ public class MotionBackgroundDrawable extends Drawable {
                     } else {
                         canvas.drawRoundRect(rect, roundRadius, roundRadius, paint2);
                     }
-                    drawGiftImageForNegativeIntensity(canvas, x, y + tr, maxScale);
                 }
             }
         } else {
@@ -635,7 +577,6 @@ public class MotionBackgroundDrawable extends Drawable {
                     canvas.drawBitmap(patternBitmap, null, rect, paint2);
                 }
                 paint2.setAlpha((int) ((Math.abs(intensity) / 100f) * alpha * patternAlpha * 0.8f));
-                drawGiftImageForPositiveIntensity(canvas, rect, giftPosition);
             }
         }
         canvas.restore();
@@ -833,117 +774,9 @@ public class MotionBackgroundDrawable extends Drawable {
         this.isIndeterminateAnimation = isIndeterminateAnimation;
     }
 
-    private void drawGiftImageForNegativeIntensity(Canvas canvas, float tx, float ty, float scale) {
-        drawGiftImage(canvas, giftPosition, tx, ty, scale, scale);
-    }
-
-    private void drawGiftImageForLegacyNegativeIntensity(Canvas canvas, RectF rect, int giftIndex) {
-        drawGiftImageForPositiveIntensity(canvas, rect, giftIndex);
-    }
-
-    private void drawGiftImageForPositiveIntensity(Canvas canvas, RectF rect, int giftIndex) {
-        if (giftPatternPositions != null && patternBitmap != null) {
-            float sx = rect.width()  / (float) patternBitmap.getWidth();
-            float sy = rect.height() / (float) patternBitmap.getHeight();
-            drawGiftImage(canvas, giftIndex, rect.left, rect.top, sx, sy);
-        }
-    }
-
-    private void drawGiftImage(Canvas canvas, int giftIndex, float tx, float ty, float sx, float sy) {
-        if (giftPatternPositions != null && giftImageReceiver != null && giftIndex >= 0 && giftIndex < giftPatternPositions.size()) {
-            final WallpaperGiftPatternPosition r = giftPatternPositions.get(giftIndex);
-            canvas.save();
-            canvas.translate(tx, ty);
-            canvas.scale(sx, sy);
-            canvas.concat(r.matrix);
-            giftImageReceiver.setImageCoords(r.rect);
-            giftImageReceiver.draw(canvas);
-            canvas.restore();
-        }
-    }
-
-
-
-    /* Pattern And Gift Merge */
-
-    private final BitmapChangeTracker patternChangeTracker = new BitmapChangeTracker();
-    private final BitmapChangeTracker giftChangeTracker = new BitmapChangeTracker();
-    private Bitmap patternWithGiftBitmap;
-    private Canvas patternWithGiftCanvas;
-    private Paint patternWithGiftPaint;
-    private int patternInvertedLastPosition;
-
-    private Bitmap getOrBuildPatternWithGiftBitmap() {
-        if (patternBitmap == null) {
-            return null;
-        }
-
-        if (patternGiftBitmap == null) {
-            return patternBitmap;
-        }
-
-        final boolean isPatternInvalidated = patternChangeTracker.isInvalidated(patternBitmap);
-        final boolean isGiftInvalidated = giftChangeTracker.isInvalidated(patternGiftBitmap);
-        final boolean isGiftPositionInvalidated = patternInvertedLastPosition != giftPosition;
-        final boolean isPatternOrGiftInvalidated = isPatternInvalidated || isGiftInvalidated || isGiftPositionInvalidated;
-
-        if (patternWithGiftBitmap != null && !isPatternOrGiftInvalidated) {
-            return patternWithGiftBitmap;
-        }
-
-        final int W = patternBitmap.getWidth();
-        final int H = patternBitmap.getHeight();
-        final boolean recreateBitmap = patternWithGiftBitmap == null
-                || patternWithGiftBitmap.getWidth() != W
-                || patternWithGiftBitmap.getHeight() != H;
-
-        if (recreateBitmap) {
-            patternWithGiftBitmap = Bitmap.createBitmap(W, H, Bitmap.Config.ARGB_8888);
-            patternWithGiftCanvas = new Canvas(patternWithGiftBitmap);
-        }
-
-        final Bitmap.Config patternConfig = patternBitmap.getConfig();
-        if (patternConfig == Bitmap.Config.ARGB_8888) {
-            Utilities.copyBitmaps(patternBitmap, patternWithGiftBitmap);
-        } else if (patternConfig == Bitmap.Config.ALPHA_8) {
-            Utilities.expandAlphaToBlack(patternBitmap, patternWithGiftBitmap);
-        }
-
-        if (patternWithGiftPaint == null) {
-            patternWithGiftPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
-            patternWithGiftPaint.setAlpha(204); // 80%
-        }
-
-        drawGiftPatterns(patternWithGiftCanvas, patternWithGiftPaint, giftPosition);
-
-        patternInvertedLastPosition = giftPosition;
-        patternChangeTracker.set(patternBitmap);
-        giftChangeTracker.set(patternGiftBitmap);
-
-        return patternWithGiftBitmap;
-    }
-
-    private void drawGiftPatterns(Canvas canvas, Paint paint, int giftIndex) {
-        if (patternGiftBitmap != null && giftPatternPositions != null) {
-            for (int a = 0; a < giftPatternPositions.size(); a++) {
-                if (a == giftIndex) {
-                    continue;
-                }
-
-                final WallpaperGiftPatternPosition r = giftPatternPositions.get(a);
-                canvas.save();
-                canvas.concat(r.matrix);
-                canvas.drawBitmap(patternGiftBitmap, null, r.rect, paint);
-                canvas.restore();
-            }
-        }
-    }
-
-
-
     /* Legacy Utils */
 
-    private final BitmapChangeTracker patternWithGiftChangeTracker = new BitmapChangeTracker();
+    private final BitmapChangeTracker patternToInvertChangeTracker = new BitmapChangeTracker();
     private Bitmap patternAlphaInverted;
     private int patternInvertedLastAlpha;
 
@@ -952,8 +785,8 @@ public class MotionBackgroundDrawable extends Drawable {
             return;
         }
 
-        final Bitmap patternToInvert = getOrBuildPatternWithGiftBitmap();
-        final boolean patternToInvertInvalidated = patternWithGiftChangeTracker.isInvalidated(patternToInvert);
+        final Bitmap patternToInvert = patternBitmap;
+        final boolean patternToInvertInvalidated = patternToInvertChangeTracker.isInvalidated(patternToInvert);
         if (patternToInvertInvalidated || patternAlphaInverted == null || patternInvertedLastAlpha != alpha) {
             final int W = patternBitmap.getWidth();
             final int H = patternBitmap.getHeight();
@@ -969,6 +802,6 @@ public class MotionBackgroundDrawable extends Drawable {
             Utilities.applyAlphaInvert(patternToInvert, patternAlphaInverted, alpha);
         }
 
-        patternWithGiftChangeTracker.set(patternToInvert);
+        patternToInvertChangeTracker.set(patternToInvert);
     }
 }
