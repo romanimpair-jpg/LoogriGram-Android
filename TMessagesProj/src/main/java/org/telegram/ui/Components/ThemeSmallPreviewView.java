@@ -33,11 +33,9 @@ import org.telegram.messenger.ImageLoader;
 import org.telegram.messenger.ImageLocation;
 import org.telegram.messenger.ImageReceiver;
 import org.telegram.messenger.LocaleController;
-import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SvgHelper;
-import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.EmojiThemes;
 import org.telegram.ui.ActionBar.MessageDrawable;
@@ -89,16 +87,12 @@ public class ThemeSmallPreviewView extends FrameLayout implements NotificationCe
     ChatBackgroundDrawable chatBackgroundDrawable;
     boolean attached;
 
-    private final ImageReceiver avatarImageReceiver;
-    private AvatarDrawable avatarDrawable;
 
     public ThemeSmallPreviewView(Context context, int currentAccount, Theme.ResourcesProvider resourcesProvider, int currentType) {
         super(context);
         this.currentType = currentType;
         this.currentAccount = currentAccount;
         this.resourcesProvider = resourcesProvider;
-        this.avatarImageReceiver = new ImageReceiver(this);
-        this.avatarImageReceiver.setRoundRadius(AndroidUtilities.dp(8));
         setBackgroundColor(getThemedColor(Theme.key_dialogBackgroundGray));
         backupImageView = new BackupImageView(context);
         backupImageView.getImageReceiver().setCrossfadeWithOldImage(true);
@@ -195,35 +189,17 @@ public class ThemeSmallPreviewView extends FrameLayout implements NotificationCe
         }
     }
 
-    private long themeUserByUserId;
-
     public int lastThemeIndex;
+    // LoogriGram: a collectible's theme set in another chat drew that chat's
+    // avatar and a swap arrow in the preview bubble. Those themes are not
+    // offered (desktop's 42294064).
     public void setItem(ChatThemeBottomSheet.ChatThemeItem item, boolean animated) {
-        setItem(item, 0, animated);
-    }
-
-    public void setItem(ChatThemeBottomSheet.ChatThemeItem item, long parentDialogId, boolean animated) {
         boolean itemChanged = chatThemeItem != item;
         boolean darkModeChanged = lastThemeIndex != item.themeIndex;
         lastThemeIndex = item.themeIndex;
         this.chatThemeItem = item;
         hasAnimatedEmoji = false;
         final TLRPC.Document document = item.chatTheme.getEmojiAnimatedSticker();
-
-        themeUserByUserId = item.chatTheme.getBusyByUserId();
-        if (parentDialogId == themeUserByUserId) {
-            themeUserByUserId = 0;
-        }
-        if (themeUserByUserId != 0) {
-            if (avatarDrawable == null) {
-                avatarDrawable = new AvatarDrawable();
-            }
-            TLObject infoObject = MessagesController.getInstance(currentAccount).getUserOrChat(themeUserByUserId);
-            avatarDrawable.setInfo(currentAccount, infoObject);
-            avatarImageReceiver.setForUserOrChat(infoObject, avatarDrawable);
-        } else {
-            avatarImageReceiver.clearImage();
-        }
 
         if (itemChanged) {
             if (animationCancelRunnable != null) {
@@ -361,7 +337,7 @@ public class ThemeSmallPreviewView extends FrameLayout implements NotificationCe
         if (chatThemeItem.chatTheme == null || chatThemeItem.chatTheme.isAnyStub()) {
             setContentDescription(LocaleController.getString(R.string.ChatNoTheme));
         } else {
-            setContentDescription(chatThemeItem.chatTheme.getEmoticonOrSlug());
+            setContentDescription(chatThemeItem.chatTheme.getKeyEmoticon());
         }
     }
 
@@ -445,9 +421,6 @@ public class ThemeSmallPreviewView extends FrameLayout implements NotificationCe
         }
         EmojiThemes.ThemeItem themeItem = chatThemeItem.chatTheme.getThemeItem(chatThemeItem.themeIndex);
         int color = themeItem.inBubbleColor;
-        if (themeUserByUserId != 0) {
-            color = themeItem.patternBgColor;
-        }
         themeDrawable.inBubblePaint.setColor(color);
         color = themeItem.outBubbleColor;
         themeDrawable.outBubblePaintSecond.setColor(color);
@@ -620,7 +593,6 @@ public class ThemeSmallPreviewView extends FrameLayout implements NotificationCe
         private final Paint outBubblePaintSecond = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Paint inBubblePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         Drawable previewDrawable;
-        Drawable rotateDrawable;
 
         ThemeDrawable() {
             strokePaint.setStyle(Paint.Style.STROKE);
@@ -730,30 +702,6 @@ public class ThemeSmallPreviewView extends FrameLayout implements NotificationCe
                     if (currentType == TYPE_DEFAULT || currentType == TYPE_CHANNEL) {
                         canvas.drawRoundRect(rectF, rectF.height() * 0.5f, rectF.height() * 0.5f, inBubblePaint);
 
-                        if (themeUserByUserId != 0) {
-                            float cy = rectF.centerY();
-                            float cx = rectF.left + rectF.height() / 2f;
-                            float cx2 = rectF.right - rectF.height() / 2f;
-                            rectF.set(
-                                cx - AndroidUtilities.dp(8),
-                                cy - AndroidUtilities.dp(8),
-                                cx + AndroidUtilities.dp(8),
-                                cy + AndroidUtilities.dp(8)
-                            );
-                            avatarImageReceiver.setImageCoords(rectF);
-                            avatarImageReceiver.draw(canvas);
-
-                            if (rotateDrawable == null) {
-                                rotateDrawable = getContext().getDrawable(R.drawable.mini_replace_16).mutate();
-                            }
-                            rotateDrawable.setBounds(
-                                (int) cx2 - AndroidUtilities.dp(8),
-                                (int) cy - AndroidUtilities.dp(8),
-                                (int) cx2 + AndroidUtilities.dp(8),
-                                (int) cy + AndroidUtilities.dp(8)
-                            );
-                            rotateDrawable.draw(canvas);
-                        }
                     } else {
                         messageDrawableIn.setBounds((int) rectF.left - AndroidUtilities.dp(4), (int) rectF.top - AndroidUtilities.dp(2), (int) rectF.right, (int) rectF.bottom + AndroidUtilities.dp(2));
                         messageDrawableIn.setRoundRadius((int) (rectF.height() * 0.5f));
@@ -772,7 +720,6 @@ public class ThemeSmallPreviewView extends FrameLayout implements NotificationCe
         if (chatBackgroundDrawable != null) {
             chatBackgroundDrawable.onAttachedToWindow(ThemeSmallPreviewView.this);
         }
-        avatarImageReceiver.onAttachedToWindow();
     }
 
     @Override
@@ -783,7 +730,6 @@ public class ThemeSmallPreviewView extends FrameLayout implements NotificationCe
         if (chatBackgroundDrawable != null) {
             chatBackgroundDrawable.onDetachedFromWindow(ThemeSmallPreviewView.this);
         }
-        avatarImageReceiver.onDetachedFromWindow();
     }
 
     @Override

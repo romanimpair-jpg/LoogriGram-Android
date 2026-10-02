@@ -900,21 +900,6 @@ public class Theme {
             return !isMyMessagesGradientColorsNear;
         }
 
-        public void resetAccentColorsForMyMessagesGiftThemeLight(SparseIntArray currentColors) {
-            for (int a = Theme.myMessagesBubblesStartIndex; a < Theme.myMessagesBubblesEndIndex; a++) {
-                currentColors.delete(a);
-                currentColors.put(a, defaultColors[a]);
-            }
-            for (int a = Theme.myMessagesStartIndex; a < Theme.myMessagesEndIndex; a++) {
-                currentColors.delete(a);
-                currentColors.put(a, defaultColors[a]);
-            }
-            for (int a = Theme.myMessages2StartIndex; a < Theme.myMessages2EndIndex; a++) {
-                currentColors.delete(a);
-                currentColors.put(a, defaultColors[a]);
-            }
-        }
-
 
         private float[] tempHSV = new float[3];
         private int setHue(int color, int hueFromColor) {

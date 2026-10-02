@@ -57,7 +57,6 @@ import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.ResultCallback;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_account;
-import org.telegram.tgnet.tl.TL_stars;
 import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BackDrawable;
 import org.telegram.ui.ActionBar.BaseFragment;
@@ -130,7 +129,7 @@ public class ChatThemeBottomSheet extends BottomSheet implements NotificationCen
         this.originalTheme = themeDelegate.getCurrentTheme();
         this.currentWallpaper = themeDelegate.getCurrentWallpaper();
         this.originalIsDark = Theme.getActiveTheme().isDark();
-        adapter = new Adapter(currentAccount, chatActivity.getDialogId(), themeDelegate, ThemeSmallPreviewView.TYPE_DEFAULT);
+        adapter = new Adapter(currentAccount, themeDelegate, ThemeSmallPreviewView.TYPE_DEFAULT);
         setDimBehind(false);
         setCanDismissWithSwipe(false);
         setApplyBottomPadding(false);
@@ -424,44 +423,24 @@ public class ChatThemeBottomSheet extends BottomSheet implements NotificationCen
 
         themesLoading = true;
 
-        if (chatThemeController.isGiftThemesFullyLoaded()) {
-            chatThemeController.requestAllChatThemes(new ResultCallback<List<EmojiThemes>>() {
-                @Override
-                public void onComplete(List<EmojiThemes> res) {
-                    List<EmojiThemes> result = chatThemeController.getEmojiThemes(
-                        ChatThemeController.THEME_LIST_WITH_DEFAULT |
-                            ChatThemeController.THEME_LIST_WITH_EMOJI |
-                            ChatThemeController.THEME_LIST_WITH_GIFTS
-                    );
-                    NotificationCenter.getInstance(currentAccount).doOnIdle(() -> onDataLoaded(result));
-                    themesLoading = false;
-                }
+        // LoogriGram: the collectible gifts we own were paged in here first and
+        // listed ahead of the emoji themes. A collectible's theme is not applied.
+        chatThemeController.requestAllChatThemes(new ResultCallback<List<EmojiThemes>>() {
+            @Override
+            public void onComplete(List<EmojiThemes> res) {
+                List<EmojiThemes> result = chatThemeController.getEmojiThemes(
+                    ChatThemeController.THEME_LIST_WITH_DEFAULT |
+                        ChatThemeController.THEME_LIST_WITH_EMOJI
+                );
+                NotificationCenter.getInstance(currentAccount).doOnIdle(() -> onDataLoaded(result));
+                themesLoading = false;
+            }
 
-                @Override
-                public void onError(TLRPC.TL_error error) {
-                    Toast.makeText(getContext(), error.text, Toast.LENGTH_SHORT).show();
-                }
-            }, false);
-        } else {
-            chatThemeController.loadNextChatThemes(new ResultCallback<Void>() {
-                @Override
-                public void onComplete(Void r) {
-                    List<EmojiThemes> result = chatThemeController.getEmojiThemes(
-                            ChatThemeController.THEME_LIST_WITH_DEFAULT |
-                                (chatThemeController.isGiftThemesFullyLoaded() ? ChatThemeController.THEME_LIST_WITH_EMOJI : 0) |
-                                ChatThemeController.THEME_LIST_WITH_GIFTS
-                    );
-
-                    NotificationCenter.getInstance(currentAccount).doOnIdle(() -> onDataLoaded(result));
-                    themesLoading = false;
-                }
-
-                @Override
-                public void onError(TLRPC.TL_error error) {
-                    Toast.makeText(getContext(), error.text, Toast.LENGTH_SHORT).show();
-                }
-            });
-        }
+            @Override
+            public void onError(TLRPC.TL_error error) {
+                Toast.makeText(getContext(), error.text, Toast.LENGTH_SHORT).show();
+            }
+        }, false);
     }
 
     @Override
@@ -479,8 +458,7 @@ public class ChatThemeBottomSheet extends BottomSheet implements NotificationCen
         if (chatThemeController.isAllThemesFullyLoaded()) {
             onDataLoaded(chatThemeController.getEmojiThemes(
                 ChatThemeController.THEME_LIST_WITH_DEFAULT |
-                ChatThemeController.THEME_LIST_WITH_EMOJI |
-                ChatThemeController.THEME_LIST_WITH_GIFTS
+                ChatThemeController.THEME_LIST_WITH_EMOJI
             ));
         } else {
             loadNext();
@@ -919,10 +897,6 @@ public class ChatThemeBottomSheet extends BottomSheet implements NotificationCen
     }
 
     private void applySelectedTheme() {
-        applySelectedTheme(false);
-    }
-
-    private void applySelectedTheme(boolean ignoreGiftReplace) {
         // LoogriGram: a group's or channel's theme was locked here behind its
         // boost level - a padlock under the apply button and the "boost this
         // channel" sheet - but this sheet only ever opens for a private chat.
@@ -932,14 +906,6 @@ public class ChatThemeBottomSheet extends BottomSheet implements NotificationCen
         if (selectedItem != null && newTheme != currentTheme) {
             EmojiThemes chatTheme = selectedItem.chatTheme;
             TLRPC.ChatTheme tlChatTheme = !chatTheme.showAsDefaultStub ? chatTheme.getChatTheme() : null;
-            final long isBusyByUserId = chatTheme.getBusyByUserId();
-            final TL_stars.TL_starGiftUnique gift = chatTheme.getThemeGift();
-            if (isBusyByUserId != 0 && gift != null && !ignoreGiftReplace) {
-                AlertsCreator.showGiftThemeApplyConfirm(getContext(), resourcesProvider,
-                    currentAccount, gift, isBusyByUserId,
-                    () -> applySelectedTheme(true));
-                return;
-            }
             ChatThemeController.getInstance(currentAccount).clearWallpaper(chatActivity.getDialogId(), false);
             ChatThemeController.getInstance(currentAccount).setDialogTheme(chatActivity.getDialogId(), tlChatTheme, true);
             TLRPC.WallPaper wallpaper = hasChanges() ? null : themeDelegate.getCurrentWallpaper();
@@ -997,18 +963,12 @@ public class ChatThemeBottomSheet extends BottomSheet implements NotificationCen
         private int selectedItemPosition = -1;
         private final int currentAccount;
         private final int currentViewType;
-        private final long parentDialogId;
 
         private HashMap<String, Theme.ThemeInfo> loadingThemes = new HashMap<>();
         private HashMap<Theme.ThemeInfo, String> loadingWallpapers = new HashMap<>();
 
         public Adapter(int currentAccount, Theme.ResourcesProvider resourcesProvider, int type) {
-            this(currentAccount, 0, resourcesProvider, type);
-        }
-
-        public Adapter(int currentAccount, long parentDialogId, Theme.ResourcesProvider resourcesProvider, int type) {
             this.currentViewType = type;
-            this.parentDialogId = parentDialogId;
             this.resourcesProvider = resourcesProvider;
             this.currentAccount = currentAccount;
         }
@@ -1040,7 +1000,7 @@ public class ChatThemeBottomSheet extends BottomSheet implements NotificationCen
             view.setEnabled(true);
 
             view.setBackgroundColor(Theme.getColor(Theme.key_dialogBackgroundGray));
-            view.setItem(newItem, parentDialogId, animated);
+            view.setItem(newItem, animated);
             view.setSelected(position == selectedItemPosition, animated);
             if (position == selectedItemPosition) {
                 selectedViewRef = new WeakReference<>(view);

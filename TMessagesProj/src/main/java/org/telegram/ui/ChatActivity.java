@@ -2931,13 +2931,6 @@ public class ChatActivity extends BaseFragment implements
             }
         }
 
-        if (currentUser != null) {
-            TLRPC.UserFull userFull = getMessagesController().getUserFull(currentUser.id);
-            if (userFull != null && userFull.theme != null) {
-                ChatThemeController.getInstance(currentAccount).putThemeIfNeeded(userFull.theme);
-            }
-        }
-
 
         themeDelegate = parentThemeDelegate != null ? parentThemeDelegate : new ThemeDelegate();
         if (themeDelegate.isThemeChangeAvailable(false)) {
@@ -39309,20 +39302,8 @@ public class ChatActivity extends BaseFragment implements
         ThemeKey key = ThemeKey.of(theme);
         ChatThemeController chatThemeController = ChatThemeController.getInstance(currentAccount);
         chatThemeController.setDialogTheme(dialog_id, theme, false);
-
-        if (theme instanceof TLRPC.TL_chatThemeUniqueGift) {
-            chatThemeController.putThemeIfNeeded(theme);
-            EmojiThemes theme1 = chatThemeController.getTheme(key);
-            if (theme1 == null) {
-                // unreachable code?
-                theme1 = new EmojiThemes(currentAccount, (TLRPC.TL_chatThemeUniqueGift) theme);
-                theme1.initColors();
-                theme1.loadPreviewColors(currentAccount);
-            }
-
-            themeDelegate.setCurrentTheme(theme1, themeDelegate.wallpaper, openAnimationStartTime != 0, null);
-            return;
-        }
+        // LoogriGram: a collectible gift's theme was applied here. Its key is
+        // null, so it reads as no theme (desktop's 42294064).
 
         if (key != null && !key.isEmpty()) {
             chatThemeController.requestChatTheme(key, result -> {
@@ -39479,11 +39460,6 @@ public class ChatActivity extends BaseFragment implements
             return backgroundDrawable != null ? currentColor : Theme.currentColor;
         }
 
-        public boolean isGiftTheme() {
-            EmojiThemes themes = getCurrentTheme();
-            return themes != null && themes.getThemeGift() != null;
-        }
-
         @Override
         public boolean hasGradientService() {
             return backgroundDrawable != null ? serviceShader != null : Theme.hasGradientService();
@@ -39551,12 +39527,6 @@ public class ChatActivity extends BaseFragment implements
                 startServiceIconColor = drawServiceGradient ? 0xffffffff : Theme.getColor(Theme.key_chat_serviceIcon);
             } else if (drawServiceGradient && backgroundDrawable instanceof MotionBackgroundDrawable) {
                 startServiceBitmap = ((MotionBackgroundDrawable) backgroundDrawable).getBitmap();
-                final boolean forceRecolorServiceMessages = isGiftTheme() && isDark;
-                if (forceRecolorServiceMessages) {
-                    startServiceBitmap = Bitmap.createBitmap(startServiceBitmap);
-                    Canvas tmpC = new Canvas(startServiceBitmap);
-                    tmpC.drawColor(0xCC222222);
-                }
             } else if (backgroundDrawable != null) {
                 initServiceMessageColors(backgroundDrawable);
             }
@@ -39861,8 +39831,6 @@ public class ChatActivity extends BaseFragment implements
                 backgroundDrawable = ((ChatBackgroundDrawable) backgroundDrawable).getDrawable(false);
             }
             drawServiceGradient = (backgroundDrawable instanceof MotionBackgroundDrawable || backgroundDrawable instanceof BitmapDrawable) && SharedConfig.getDevicePerformanceClass() != SharedConfig.PERFORMANCE_CLASS_LOW;
-            final boolean forceRecolorServiceMessages = isGiftTheme() && isDark;
-
             drawSelectedGradient = drawServiceGradient;
 
             if (drawServiceGradient) {
@@ -39895,20 +39863,11 @@ public class ChatActivity extends BaseFragment implements
                     serviceBitmap = Bitmap.createBitmap(60, 80, Bitmap.Config.ARGB_8888);
                     serviceBitmapSource = ((MotionBackgroundDrawable) backgroundDrawable).getBitmap();
 
-                    if (forceRecolorServiceMessages) {
-                        serviceBitmapSource = Bitmap.createBitmap(serviceBitmapSource);
-                        Canvas tmpC = new Canvas(serviceBitmapSource);
-                        tmpC.drawColor(0xCC222222);
-                    }
-
                     serviceCanvas = new Canvas(serviceBitmap);
                     src.set(0, 0, serviceBitmapSource.getWidth(), serviceBitmapSource.getHeight());
                     dst.set(0, 0, serviceBitmap.getWidth(), serviceBitmap.getHeight());
                     serviceCanvas.drawBitmap(serviceBitmapSource, src, dst, null);
                     serviceCanvas.drawColor(ColorUtils.setAlphaComponent(0xff000000, (int) (0xFF * dimAmount)));
-                    if (forceRecolorServiceMessages) {
-                        serviceCanvas.drawColor(0xCC222222);
-                    }
 
                     serviceShader = new BitmapShader(serviceBitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
                     serviceShaderSource = new BitmapShader(serviceBitmapSource, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
@@ -40104,17 +40063,6 @@ public class ChatActivity extends BaseFragment implements
                 motionDrawable.setPhase(prevPhase);
                 int patternColor = motionDrawable.getPatternColor();
                 final boolean isDarkTheme = isDark;
-
-                chatTheme.loadWallpaperGiftPattern(isDark ? 1 : 0, pair -> {
-                    if (pair == null) {
-                        return;
-                    }
-                    long themeId = pair.first;
-                    Bitmap bitmap = pair.second;
-                    if (this.chatTheme != null && themeId == this.chatTheme.getThemeId(isDark ? 1 : 0) && bitmap != null) {
-                        motionDrawable.setGiftPatternBitmap(bitmap);
-                    }
-                });
 
                 chatTheme.loadWallpaper(isDark ? 1 : 0, pair -> {
                     if (pair == null) {

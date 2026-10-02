@@ -82,7 +82,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BotWebViewVibrationEffect;
 import org.telegram.messenger.ChatObject;
-import org.telegram.messenger.ChatThemeController;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.Emoji;
 import org.telegram.messenger.ImageReceiver;
@@ -107,10 +106,7 @@ import org.telegram.ui.ActionBar.AlertDialog;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.ActionBar.theme.ThemeKey;
 import org.telegram.ui.Cells.SessionCell;
-import org.telegram.ui.ChatActivity;
-import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.AnimatedEmojiSpan;
 import org.telegram.ui.Components.AnimatedFloat;
@@ -146,7 +142,6 @@ import org.telegram.ui.Components.Text;
 import org.telegram.ui.Components.TextHelper;
 import org.telegram.ui.Components.ViewPagerFixed;
 import org.telegram.ui.Components.spoilers.SpoilersTextView;
-import org.telegram.ui.DialogsActivity;
 import org.telegram.ui.Gifts.GiftMessageView;
 import org.telegram.ui.Gifts.GiftViews;
 import org.telegram.ui.Gifts.ProfileGiftsContainer;
@@ -797,7 +792,6 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
             .addIf(link != null, R.drawable.msg_share, getString(R.string.ShareFile), () -> {
                 onSharePressed(null);
             })
-            .addIf(canSetAsTheme(), R.drawable.msg_colors, getString(R.string.GiftThemesSetIn), this::openSetAsTheme)
             .addIf(savedStarGift == null && getDialogId() != 0, R.drawable.msg_view_file, getString(R.string.Gift2ViewInProfile), this::openInProfile)
             .setDrawScrim(false)
             .setOnTopOfScrim()
@@ -808,56 +802,8 @@ public class StarGiftSheet extends BottomSheetWithRecyclerListView implements No
 
     // LoogriGram: "Offer to buy" opened GiftOfferSheet here. Nothing buys a
     // gift, and an offer someone makes for one of ours is held unread.
-
-    private boolean canSetAsTheme() {
-        final TL_stars.TL_starGiftUnique giftUnique = getUniqueGift();
-        if (giftUnique == null || !giftUnique.theme_available) {
-            return false;
-        }
-
-        final long owner_id = DialogObject.getPeerDialogId(giftUnique.owner_id);
-        final long host_id = DialogObject.getPeerDialogId(giftUnique.host_id);
-        return (
-            owner_id > 0 && isMineWithActions(currentAccount, owner_id) ||
-            host_id > 0 && isMineWithActions(currentAccount, host_id)
-        );
-    }
-
-    private void openSetAsTheme() {
-        dismiss();
-
-        final BaseFragment lastFragment = LaunchActivity.getSafeLastFragment();
-        final TL_stars.TL_starGiftUnique giftUnique = getUniqueGift();
-        if (lastFragment == null || giftUnique == null) return;
-
-        Bundle args = new Bundle();
-        args.putBoolean("onlySelect", true);
-        args.putInt("dialogsType", DialogsActivity.DIALOGS_TYPE_USERS_ONLY);
-
-        DialogsActivity fragment = new DialogsActivity(args);
-        fragment.setDelegate((fragment1, dids, message, param, notify, scheduleDate, scheduleRepeatPeriod, topicsFragment) -> {
-            if (dids.isEmpty()) {
-                return false;
-            }
-
-            final long userId = dids.get(0).dialogId;
-            final long busyBy = ChatThemeController.getInstance(currentAccount).getGiftThemeUser(giftUnique.slug);
-            if (busyBy != 0 && busyBy != userId) {
-                AlertsCreator.showGiftThemeApplyConfirm(getContext(), resourcesProvider, currentAccount, giftUnique, busyBy, () -> {
-                    ChatThemeController.getInstance(currentAccount).setDialogTheme(userId, ThemeKey.ofGiftSlug(giftUnique.slug));
-                    fragment.presentFragment(ChatActivity.of(userId), true);
-                });
-                return true;
-            }
-
-            ChatThemeController.getInstance(currentAccount).setDialogTheme(userId, ThemeKey.ofGiftSlug(giftUnique.slug));
-            fragment.presentFragment(ChatActivity.of(userId), true);
-
-            return true;
-        });
-
-        lastFragment.presentFragment(fragment);
-    }
+    // "Set as theme in..." went too: a collectible's chat theme is not
+    // applied (desktop's 42294064).
 
 
     // LoogriGram: onWearPressed, setupWearPage, isWorn and toggleWear stood

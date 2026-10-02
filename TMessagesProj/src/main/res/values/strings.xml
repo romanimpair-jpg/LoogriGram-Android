@@ -9104,9 +9104,6 @@
     <string name="GiftValueOnSaleTelegram">for sale on Telegram ></string>
     <string name="GiftValueOnSaleFragment">for sale on Fragment ></string>
     <string name="GiftSkipAnimation">Skip</string>
-    <string name="GiftThemesSetIn">Set as Theme in...</string>
-    <string name="GiftThemesSetInReuseInfo">This gift is already your theme in the chat with **%s**. Remove it there and use it here instead?</string>
-    <string name="GiftThemesSetInReuseConfirm">Yes</string>
     <string name="GiftThemesSetActionView">View</string>
     <string name="GiftLocked">Gift Locked</string>
     <string name="Gift2UpgradeCostsInfo">See how this price will decrease ></string>

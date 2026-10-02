@@ -772,7 +772,8 @@ public class MessagesStorage extends BaseController {
 
         database.executeFast("CREATE TABLE star_gifts2(id INTEGER PRIMARY KEY, data BLOB, hash INTEGER, time INTEGER, pos INTEGER);").stepThis().dispose();
 
-        database.executeFast("CREATE TABLE gift_themes (slug TEXT PRIMARY KEY, data BLOB);").stepThis().dispose();
+        // LoogriGram: gift_themes held the collectible gifts we own as chat themes;
+        // nothing applies those. A database made earlier keeps the table unread.
 
         database.executeFast("CREATE TABLE poll_votes_mentions(message_id INTEGER, state INTEGER, dialog_id INTEGER, PRIMARY KEY(message_id, dialog_id))").stepThis().dispose();
         database.executeFast("CREATE INDEX IF NOT EXISTS poll_votes_mentions_did ON poll_votes_mentions(dialog_id);").stepThis().dispose();
@@ -17643,86 +17644,6 @@ public class MessagesStorage extends BaseController {
         });
     }
 
-
-    public void putGiftChatTheme(TLRPC.ChatTheme theme) {
-        putGiftChatThemes(Collections.singletonList(theme));
-    }
-
-    public void putGiftChatThemes(List<TLRPC.ChatTheme> themes) {
-        executeInStorageQueue(() -> {
-            SQLitePreparedStatement state = null;
-            try {
-                state = database.executeFast("REPLACE INTO gift_themes VALUES(?, ?)");
-                for (TLRPC.ChatTheme theme: themes) {
-                    if (!(theme instanceof TLRPC.TL_chatThemeUniqueGift)) {
-                        continue;
-                    }
-
-                    final TLRPC.TL_chatThemeUniqueGift giftTheme = (TLRPC.TL_chatThemeUniqueGift) theme;
-
-                    state.requery();
-                    state.bindString(1, giftTheme.gift.slug);
-
-                    NativeByteBuffer data = new NativeByteBuffer(giftTheme.getObjectSize());
-                    giftTheme.serializeToStream(data);
-                    state.bindByteBuffer(2, data);
-                    data.reuse();
-
-                    state.step();
-                }
-                state.dispose();
-                state = null;
-            } catch (SQLiteException e) {
-                checkSQLException(e);
-            } catch (Exception e) {
-                FileLog.e(e);
-            } finally {
-                if (state != null) {
-                    state.dispose();
-                }
-            }
-        });
-    }
-
-    public void loadGiftChatTheme(Utilities.Callback<List<TLRPC.TL_chatThemeUniqueGift>> callback) {
-        executeInStorageQueue(() -> {
-            SQLiteCursor cursor = null;
-            boolean success = false;
-            try {
-                List<TLRPC.TL_chatThemeUniqueGift> gifts = new ArrayList<>();
-                cursor = database.queryFinalized("SELECT data FROM gift_themes");
-                while (cursor.next()) {
-                    NativeByteBuffer data = cursor.byteBufferValue(0);
-                    if (data != null) {
-                        TLRPC.ChatTheme chatTheme = TLRPC.ChatTheme.TLdeserialize(data, data.readInt32(false), false);
-                        data.reuse();
-
-                        if (chatTheme instanceof TLRPC.TL_chatThemeUniqueGift) {
-                            gifts.add((TLRPC.TL_chatThemeUniqueGift) chatTheme);
-                        }
-                    }
-                }
-                cursor.dispose();
-                cursor = null;
-
-
-                AndroidUtilities.runOnUIThread(() -> callback.run(gifts));
-                success = true;
-            } catch (SQLiteException e) {
-                checkSQLException(e);
-            } catch (Exception e) {
-                FileLog.e(e);
-            } finally {
-                if (cursor != null) {
-                    cursor.dispose();
-                }
-            }
-
-            if (!success) {
-                AndroidUtilities.runOnUIThread(() -> callback.run(null));
-            }
-        });
-    }
 
     private void executeInStorageQueue(Runnable runnable) {
         if (storageQueue.getHandler().getLooper() != Looper.myLooper()) {

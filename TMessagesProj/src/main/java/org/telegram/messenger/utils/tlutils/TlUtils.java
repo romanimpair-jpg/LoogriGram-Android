@@ -175,19 +175,6 @@ public class TlUtils {
         return document;
     }
 
-    public static TLRPC.Document getGiftDocumentPattern(TL_stars.StarGift gift) {
-        TLRPC.Document document = gift.sticker;
-        if (gift.attributes != null && document == null)  {
-            for (TL_stars.StarGiftAttribute attribute : gift.attributes) {
-                if (attribute instanceof TL_stars.starGiftAttributePattern) {
-                    document = ((TL_stars.starGiftAttributePattern) attribute).document;
-                    break;
-                }
-            }
-        }
-        return document;
-    }
-
     // LoogriGram: this also named a collectible gift's theme by the gift's
     // title. Those are not applied and their change message is held.
     public static String getThemeEmoticon(TLRPC.ChatTheme chatTheme) {
