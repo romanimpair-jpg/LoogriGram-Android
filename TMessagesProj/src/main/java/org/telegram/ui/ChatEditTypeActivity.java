@@ -24,10 +24,8 @@ import android.text.Editable;
 import android.text.InputType;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
-import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
 import android.util.TypedValue;
 import android.view.MotionEvent;
@@ -50,7 +48,6 @@ import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
-import org.telegram.messenger.browser.Browser;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -79,7 +76,6 @@ import org.telegram.ui.Components.LinkActionView;
 import org.telegram.ui.Components.Premium.LimitReachedBottomSheet;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.SectionsScrollView;
-import org.telegram.ui.Components.TypefaceSpan;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -483,27 +479,9 @@ public class ChatEditTypeActivity extends BaseFragment implements NotificationCe
                         tagsString.replace(index, index + 1, " ");
                         tagsString.setSpan(new ForegroundColorSpan(getThemedColor(Theme.key_text_RedRegular)), 0, index, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                     }
-                    TypefaceSpan[] spans = tagsString.getSpans(0, tagsString.length(), TypefaceSpan.class);
-                    final String username = usernameTextView == null || usernameTextView.getText() == null ? "" : usernameTextView.getText().toString();
-                    for (int i = 0; i < spans.length; ++i) {
-                        tagsString.setSpan(
-                            new ClickableSpan() {
-                                @Override
-                                public void onClick(@NonNull View view) {
-                                    Browser.openUrl(getContext(), "https://fragment.com/username/" + username);
-                                }
-                                @Override
-                                public void updateDrawState(@NonNull TextPaint ds) {
-                                    super.updateDrawState(ds);
-                                    ds.setUnderlineText(false);
-                                }
-                            },
-                            tagsString.getSpanStart(spans[i]),
-                            tagsString.getSpanEnd(spans[i]),
-                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                        );
-                        tagsString.removeSpan(spans[i]);
-                    }
+                    // LoogriGram: bold text here became a link to the name's sale on
+                    // Fragment. A name for sale is reported as taken (desktop's
+                    // 8458de3b), so nothing links there.
                     text = tagsString;
                 }
                 super.setText(text);
@@ -1425,13 +1403,6 @@ public class ChatEditTypeActivity extends BaseFragment implements NotificationCe
                         if (error != null && "USERNAME_INVALID".equals(error.text) && req.username.length() == 4) {
                             checkTextView.setText(LocaleController.getString(R.string.UsernameInvalidShort));
                             checkTextView.setTextColor(Theme.getColor(Theme.key_text_RedRegular));
-                        } else if (error != null && "USERNAME_PURCHASE_AVAILABLE".equals(error.text)) {
-                            if (req.username.length() == 4) {
-                                checkTextView.setText(LocaleController.getString(R.string.UsernameInvalidShortPurchase));
-                            } else {
-                                checkTextView.setText(LocaleController.getString(R.string.UsernameInUsePurchase));
-                            }
-                            checkTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText8));
                         } else if (error != null && "CHANNELS_ADMIN_PUBLIC_TOO_MUCH".equals(error.text)) {
                             canCreatePublic = false;
                             showPremiumIncreaseLimitDialog();

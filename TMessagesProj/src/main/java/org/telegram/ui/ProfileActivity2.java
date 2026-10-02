@@ -23,7 +23,6 @@ import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextPaint;
 import android.text.TextUtils;
-import android.text.style.CharacterStyle;
 import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
 import android.util.DisplayMetrics;
@@ -57,7 +56,6 @@ import org.telegram.messenger.R;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.tgnet.tl.TL_fragment;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
 import org.telegram.ui.ActionBar.BackDrawable;
@@ -658,30 +656,10 @@ public class ProfileActivity2 extends BaseFragment implements
         span = new ClickableSpan() {
             @Override
             public void onClick(@NonNull View view) {
-                if (!usernameObj.editable) {
-                    if (loadingSpan == this) return;
-                    setLoadingSpan(this);
-                    final TL_fragment.TL_getCollectibleInfo req = new TL_fragment.TL_getCollectibleInfo();
-                    final TL_fragment.TL_inputCollectibleUsername input = new TL_fragment.TL_inputCollectibleUsername();
-                    input.username = usernameObj.username;
-                    req.collectible = input;
-                    int reqId = getConnectionsManager().sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
-                        setLoadingSpan(null);
-                        if (res instanceof TL_fragment.TL_collectibleInfo) {
-                            if (getContext() == null) return;
-                            FragmentUsernameBottomSheet.open(getContext(), FragmentUsernameBottomSheet.TYPE_USERNAME, usernameObj.username, user != null ? user : chat, (TL_fragment.TL_collectibleInfo) res, getResourceProvider());
-                        } else {
-                            BulletinFactory.showError(err);
-                        }
-                    }));
-                    getConnectionsManager().bindRequestToGuid(reqId, getClassGuid());
-                } else {
-                    setLoadingSpan(null);
-                    String urlFinal = getMessagesController().linkPrefix + "/" + usernameRaw;
-                    if (chat == null || !chat.noforwards) {
-                        AndroidUtilities.addToClipboard(urlFinal);
-                        BulletinFactory.of(ProfileActivity2.this).createCopyBulletin(getString(R.string.UsernameCopied)).show();
-                    }
+                String urlFinal = getMessagesController().linkPrefix + "/" + usernameRaw;
+                if (chat == null || !chat.noforwards) {
+                    AndroidUtilities.addToClipboard(urlFinal);
+                    BulletinFactory.of(ProfileActivity2.this).createCopyBulletin(getString(R.string.UsernameCopied)).show();
                 }
             }
 
@@ -693,18 +671,6 @@ public class ProfileActivity2 extends BaseFragment implements
         };
         usernameSpans.put(usernameObj, span);
         return span;
-    }
-
-    private CharacterStyle loadingSpan;
-    public void setLoadingSpan(CharacterStyle span) {
-        if (loadingSpan == span) return;
-        loadingSpan = span;
-        AndroidUtilities.forEachViews(listView, view -> {
-            if (view instanceof TextDetailCell) {
-                ((TextDetailCell) view).textView.setLoading(loadingSpan);
-                ((TextDetailCell) view).valueTextView.setLoading(loadingSpan);
-            }
-        });
     }
 
     private void onClick(UItem item, View view, int position, float x, float y) {

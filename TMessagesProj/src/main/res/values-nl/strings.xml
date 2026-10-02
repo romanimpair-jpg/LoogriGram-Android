@@ -287,10 +287,8 @@
     <string name="UsernameAlso">ook %1$s</string>
     <string name="UsernameLinkPlaceholder">gebruikersnaam</string>
     <string name="UsernameInUse">Deze gebruikersnaam is al bezet.</string>
-    <string name="UsernameInUsePurchase">Deze link is al bezet.\nEchter, het staat momenteel te koop. **Lees meer...**</string>
     <string name="UsernameInvalid">Deze gebruikersnaam is ongeldig.</string>
     <string name="UsernameInvalidShort">De minimumlengte voor gebruikersnamen is 5 tekens.</string>
-    <string name="UsernameInvalidShortPurchase">De minimumlengte voor gebruikersnamen is normaliter 5 tekens. Echter, korte verzamelbare gebruikersnamen zoals deze staan momenteel te koop. **Lees meer...**</string>
     <string name="UsernameInvalidLong">Naam mag niet langer dan 32 tekens zijn.</string>
     <string name="UsernameInvalidStartNumber">Gebruikersnamen kunnen niet met een nummer beginnen.</string>
     <string name="UsernameHelp">Je kunt een gebruikersnaam instellen op **Telegram**. Op die manier kunnen anderen je vinden en contact met je opnemen zonder je telefoonnummer te kennen.\n\nJe kunt **a–z**, **0–9** en underscores gebruiken. De minimumlengte is **5** tekens.</string>

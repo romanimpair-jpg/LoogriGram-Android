@@ -224,8 +224,9 @@ public class Browser {
         return (
             isTelegraphUrl(url, false, true) ||
             url.matches("^(https://)?t\\.me/iv\\??(/.*|$)") || // t.me/iv?
-            url.matches("^(https://)?telegram\\.org/(blog|tour)(/.*|$)") || // telegram.org/blog, telegram.org/tour
-            url.matches("^(https://)?fragment\\.com(/.*|$)") // fragment.com
+            url.matches("^(https://)?telegram\\.org/(blog|tour)(/.*|$)") // telegram.org/blog, telegram.org/tour
+            // LoogriGram: fragment.com, the collectibles market, opened without
+            // confirmation too. It is an ordinary site here.
         );
     }
 

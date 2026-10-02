@@ -2009,10 +2009,8 @@
     <string name="UsernameAlso">also %1$s</string>
     <string name="UsernameLinkPlaceholder">username</string>
     <string name="UsernameInUse">Sorry, this username is already taken.</string>
-    <string name="UsernameInUsePurchase">This link is already taken.\nHowever, it is currently available for purchase. **Learn more…**</string>
     <string name="UsernameInvalid">Sorry, this username is invalid.</string>
     <string name="UsernameInvalidShort">A username must have at least 5 characters.</string>
-    <string name="UsernameInvalidShortPurchase">A username must have at least 5 characters.\nHowever, it is currently available for purchase. **Learn more…**</string>
     <string name="UsernameInvalidLong">The username must not exceed 32 characters.</string>
     <string name="UsernameInvalidStartNumber">Sorry, a username can\'t start with a number.</string>
     <string name="UsernameHelp">You can choose a username on **Telegram**. If you do, other people will be able to find you by this username and contact you without knowing your phone number.\n\nYou can use **a–z**, **0–9** and underscores. Minimum length is **5** characters.</string>
@@ -5706,7 +5704,6 @@
     <string name="YouTubeVideoErrorNotAvailableInApp">This video can\'t be played inside this app.</string>
     <string name="YouTubeVideoErrorOpenExternal">Watch on YouTube</string>
     <string name="AnonymousNumber">Anonymous Number</string>
-    <string name="AnonymousNumberNotice">This number is not tied to a SIM card and was acquired on *Fragment.*</string>
     <string name="AutoDeleteMessages">Auto-Delete Messages</string>
     <string name="SetCustomTime">Set Custom Time</string>
     <string name="GlobalAutoDeleteInfo">If enabled, all new messages in chats you start will be automatically deleted for everyone at some point after they have been sent. You can also **apply this setting for your existing chats.**</string>
@@ -7085,14 +7082,6 @@
     <string name="BusinessLink">Link to Chat</string>
     <string name="BusinessLinkInvalid">Invalid link to chat</string>
     <string name="MessageBizBot">Only you can see that this message is sent by **bot**.</string>
-    <string name="FragmentUsernameTitle">**%s** is a collectible username that belongs to</string>
-    <string name="FragmentUsernameMessage">This username was bought on **Fragment** on %1$s for **%2$s** %3$s</string>
-    <string name="FragmentUsernameOpen">Learn More</string>
-    <string name="FragmentUsernameCopy">Copy Link</string>
-    <string name="FragmentPhoneTitle">**%s** is a collectible phone number that belongs to</string>
-    <string name="FragmentPhoneMessage">This phone number was bought on **Fragment** on %1$s for **%2$s** %3$s</string>
-    <string name="FragmentPhoneCopy">Copy Phone Number</string>
-    <string name="FragmentChannelUsername">The **%1$s** username was acquired on **Fragment** on %2$s for **%3$s** %4$s.</string>
     <string name="FragmentAddFunds">You can add funds to your balance via the third-party platform Fragment.</string>
 
     <string name="LearnMoreArrow">Learn More ></string>
@@ -7360,7 +7349,6 @@
     <string name="ViewProfile">View Profile ></string>
     <string name="ViewGroupProfile">View Group Info ></string>
     <string name="ViewChannelProfile">View Channel Info ></string>
-    <string name="BuyUsernameOnFragment">Buy on Fragment</string>
     <string name="ViewChannel">View Channel</string>
     <string name="UnlockToUse">Unlock to use Telegram</string>
     <string name="UsePIN">Use PIN</string>

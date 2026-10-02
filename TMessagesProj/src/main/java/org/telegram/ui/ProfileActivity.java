@@ -27,7 +27,6 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.Dialog;
-import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -64,7 +63,6 @@ import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextPaint;
 import android.text.TextUtils;
-import android.text.style.CharacterStyle;
 import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
 import android.util.Property;
@@ -118,7 +116,6 @@ import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
 import org.telegram.PhoneFormat.PhoneFormat;
-import org.telegram.messenger.CurrencyFormat;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
@@ -159,7 +156,6 @@ import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_account;
 import org.telegram.tgnet.tl.TL_bots;
-import org.telegram.tgnet.tl.TL_fragment;
 import org.telegram.tgnet.tl.TL_iv;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
@@ -244,7 +240,6 @@ import org.telegram.ui.Components.StickerEmptyView;
 import org.telegram.ui.Components.TagEditCell;
 import org.telegram.ui.Components.TimerDrawable;
 import org.telegram.ui.Components.TranslateAlert2;
-import org.telegram.ui.Components.TypefaceSpan;
 import org.telegram.ui.Components.UItem;
 import org.telegram.ui.Components.UndoView;
 import org.telegram.ui.Components.VectorAvatarThumbDrawable;
@@ -275,7 +270,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -679,7 +673,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
     HashSet<Integer> notificationsExceptionTopics = new HashSet<>();
 
-    private CharacterStyle loadingSpan;
 
     private final Property<ProfileActivity, Float> HEADER_SHADOW = new AnimationProperties.FloatProperty<ProfileActivity>("headerShadow") {
         @Override
@@ -6348,67 +6341,14 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     }
                 };
                 showDialog(shareAlert);
-                if (usernameObj != null && !usernameObj.editable) {
-                    TL_fragment.TL_getCollectibleInfo req = new TL_fragment.TL_getCollectibleInfo();
-                    TL_fragment.TL_inputCollectibleUsername input = new TL_fragment.TL_inputCollectibleUsername();
-                    input.username = usernameObj.username;
-                    req.collectible = input;
-                    int reqId = getConnectionsManager().sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
-                        if (res instanceof TL_fragment.TL_collectibleInfo) {
-                            TL_fragment.TL_collectibleInfo info = (TL_fragment.TL_collectibleInfo) res;
-                            TLObject obj;
-                            if (userId != 0) {
-                                obj = getMessagesController().getUser(userId);
-                            } else {
-                                obj = getMessagesController().getChat(chatId);
-                            }
-                            final String usernameStr = "@" + usernameObj.username;
-                            final String date = LocaleController.getInstance().getFormatterBoostExpired().format(new Date(info.purchase_date * 1000L));
-                            final String cryptoAmount = CurrencyFormat.format(info.crypto_amount, info.crypto_currency);
-                            final String amount = CurrencyFormat.format(info.amount, info.currency);
-                            BulletinFactory.of(shareAlert.bulletinContainer2, resourcesProvider)
-                                    .createImageBulletin(
-                                            R.drawable.filled_username,
-                                            AndroidUtilities.withLearnMore(AndroidUtilities.replaceTags(formatString(R.string.FragmentChannelUsername, usernameStr, date, cryptoAmount, TextUtils.isEmpty(amount) ? "" : "(" + amount + ")")), () -> {
-                                                Bulletin.hideVisible();
-                                                Browser.openUrl(getContext(), info.url);
-                                            })
-                                    )
-                                    .setOnClickListener(v -> {
-                                        Bulletin.hideVisible();
-                                        Browser.openUrl(getContext(), info.url);
-                                    })
-                                    .show(false);
-                        } else {
-                            BulletinFactory.showError(err);
-                        }
-                    }));
-                    getConnectionsManager().bindRequestToGuid(reqId, getClassGuid());
-                }
             } else {
                 if (editRow(view, position)) return true;
 
-                if (usernameObj != null && !usernameObj.editable) {
-                    TL_fragment.TL_getCollectibleInfo req = new TL_fragment.TL_getCollectibleInfo();
-                    TL_fragment.TL_inputCollectibleUsername input = new TL_fragment.TL_inputCollectibleUsername();
-                    input.username = usernameObj.username;
-                    req.collectible = input;
-                    int reqId = getConnectionsManager().sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
-                        if (res instanceof TL_fragment.TL_collectibleInfo) {
-                            TLObject obj;
-                            if (userId != 0) {
-                                obj = getMessagesController().getUser(userId);
-                            } else {
-                                obj = getMessagesController().getChat(chatId);
-                            }
-                            FragmentUsernameBottomSheet.open(getContext(), FragmentUsernameBottomSheet.TYPE_USERNAME, usernameObj.username, obj, (TL_fragment.TL_collectibleInfo) res, getResourceProvider());
-                        } else {
-                            BulletinFactory.showError(err);
-                        }
-                    }));
-                    getConnectionsManager().bindRequestToGuid(reqId, getClassGuid());
-                    return true;
-                }
+                // LoogriGram: a username that is a Fragment collectible opened its
+                // sale sheet (FragmentUsernameBottomSheet: sale date, price in TON,
+                // a link to the sale) instead of copying, and a channel's share sheet
+                // said the same in a bulletin. It copies like any other, as desktop's
+                // 8458de3b.
 
                 try {
                     android.content.ClipboardManager clipboard = (android.content.ClipboardManager) ApplicationLoader.applicationContext.getSystemService(Context.CLIPBOARD_SERVICE);
@@ -6431,21 +6371,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 return false;
             }
 
-            if (position == phoneRow && user.phone.startsWith("888")) {
-                final TL_fragment.TL_inputCollectiblePhone input = new TL_fragment.TL_inputCollectiblePhone();
-                final String phone = input.phone = user.phone;
-                final TL_fragment.TL_getCollectibleInfo req = new TL_fragment.TL_getCollectibleInfo();
-                req.collectible = input;
-                int reqId = getConnectionsManager().sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
-                    if (res instanceof TL_fragment.TL_collectibleInfo) {
-                        FragmentUsernameBottomSheet.open(getContext(), FragmentUsernameBottomSheet.TYPE_PHONE, phone, user, (TL_fragment.TL_collectibleInfo) res, getResourceProvider());
-                    } else {
-                        BulletinFactory.showError(err);
-                    }
-                }));
-                getConnectionsManager().bindRequestToGuid(reqId, getClassGuid());
-                return true;
-            }
 
             final ItemOptions o = ItemOptions.makeOptions(this, view);
             o.setScrimViewBackground(listView.getClipBackground(view));
@@ -6487,29 +6412,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     FileLog.e(e);
                 }
             });
-            if (isFragmentPhoneNumber) {
-                final SpannableStringBuilder spanned = new SpannableStringBuilder(AndroidUtilities.replaceTags(LocaleController.getString(R.string.AnonymousNumberNotice)));
-                final int startIndex = TextUtils.indexOf(spanned, '*');
-                final int lastIndex = TextUtils.lastIndexOf(spanned, '*');
-                if (startIndex != -1 && lastIndex != -1 && startIndex != lastIndex) {
-                    spanned.replace(lastIndex, lastIndex + 1, "");
-                    spanned.replace(startIndex, startIndex + 1, "");
-                    spanned.setSpan(new TypefaceSpan(AndroidUtilities.bold()), startIndex, lastIndex - 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                    spanned.setSpan(new ForegroundColorSpan(Theme.getColor(Theme.key_windowBackgroundWhiteValueText, resourcesProvider)), startIndex, lastIndex - 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                }
-                o.addGap().addText(spanned, 13, dp(200));
-                if (o.getLastView() instanceof TextView) {
-                    final TextView textView = (TextView) o.getLastView();
-                    textView.setBackground(Theme.createRadSelectorDrawable(Theme.getColor(Theme.key_dialogButtonSelector, resourcesProvider), 0, 6));
-                    textView.setOnClickListener(v -> {
-                        try {
-                            v.getContext().startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://fragment.com")));
-                        } catch (ActivityNotFoundException e) {
-                            FileLog.e(e);
-                        }
-                    });
-                }
-            }
+            // LoogriGram: a +888 number opened its Fragment sale sheet on tap, and
+            // its menu ended with "acquired on Fragment", linking there. It is a
+            // plain number now (desktop's 8458de3b); it still is not dialled.
             o.show();
             return true;
         } else if (position == channelInfoRow || position == userInfoRow || position == locationRow || position == bioRow) {
@@ -11743,10 +11648,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             if (holder.itemView == sharedMediaLayout) {
                 sharedMediaLayoutAttached = true;
             }
-            if (holder.itemView instanceof TextDetailCell) {
-                ((TextDetailCell) holder.itemView).textView.setLoading(loadingSpan);
-                ((TextDetailCell) holder.itemView).valueTextView.setLoading(loadingSpan);
-            }
         }
 
         @Override
@@ -11954,8 +11855,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         detailCell.setImageClickListener(null);
                     }
                     detailCell.setTag(position);
-                    detailCell.textView.setLoading(loadingSpan);
-                    detailCell.valueTextView.setLoading(loadingSpan);
                     break;
                 case VIEW_TYPE_ABOUT_LINK:
                     AboutLinkCell aboutLinkCell = (AboutLinkCell) holder.itemView;
@@ -12407,38 +12306,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             span = new ClickableSpan() {
                 @Override
                 public void onClick(@NonNull View view) {
-                    if (!usernameObj.editable) {
-                        if (loadingSpan == this) return;
-                        setLoadingSpan(this);
-                        final TL_fragment.TL_getCollectibleInfo req = new TL_fragment.TL_getCollectibleInfo();
-                        final TL_fragment.TL_inputCollectibleUsername input = new TL_fragment.TL_inputCollectibleUsername();
-                        input.username = usernameObj.username;
-                        req.collectible = input;
-                        int reqId = getConnectionsManager().sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
-                            setLoadingSpan(null);
-                            if (res instanceof TL_fragment.TL_collectibleInfo) {
-                                TLObject obj;
-                                if (userId != 0) {
-                                    obj = getMessagesController().getUser(userId);
-                                } else {
-                                    obj = getMessagesController().getChat(chatId);
-                                }
-                                if (getContext() == null) {
-                                    return;
-                                }
-                                FragmentUsernameBottomSheet.open(getContext(), FragmentUsernameBottomSheet.TYPE_USERNAME, usernameObj.username, obj, (TL_fragment.TL_collectibleInfo) res, getResourceProvider());
-                            } else {
-                                BulletinFactory.showError(err);
-                            }
-                        }));
-                        getConnectionsManager().bindRequestToGuid(reqId, getClassGuid());
-                    } else {
-                        setLoadingSpan(null);
-                        String urlFinal = getMessagesController().linkPrefix + "/" + usernameRaw;
-                        if (currentChat == null || !currentChat.noforwards) {
-                            AndroidUtilities.addToClipboard(urlFinal);
-                            undoView.showWithAction(0, UndoView.ACTION_USERNAME_COPIED, null);
-                        }
+                    String urlFinal = getMessagesController().linkPrefix + "/" + usernameRaw;
+                    if (currentChat == null || !currentChat.noforwards) {
+                        AndroidUtilities.addToClipboard(urlFinal);
+                        undoView.showWithAction(0, UndoView.ACTION_USERNAME_COPIED, null);
                     }
                 }
 
@@ -14232,17 +14103,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         public void setView(View view) {
             this.view = view;
         }
-    }
-
-    public void setLoadingSpan(CharacterStyle span) {
-        if (loadingSpan == span) return;
-        loadingSpan = span;
-        AndroidUtilities.forEachViews(listView, view -> {
-            if (view instanceof TextDetailCell) {
-                ((TextDetailCell) view).textView.setLoading(loadingSpan);
-                ((TextDetailCell) view).valueTextView.setLoading(loadingSpan);
-            }
-        });
     }
 
     private ProfileBirthdayEffect birthdayEffect;

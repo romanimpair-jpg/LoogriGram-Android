@@ -28,10 +28,8 @@ import android.text.InputFilter;
 import android.text.InputType;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
-import android.text.TextPaint;
 import android.text.TextUtils;
 import android.text.TextWatcher;
-import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -44,7 +42,6 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ChatObject;
@@ -55,7 +52,6 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.Utilities;
-import org.telegram.messenger.browser.Browser;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -87,7 +83,6 @@ import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.RLottieImageView;
 import org.telegram.ui.Components.RadialProgressView;
 import org.telegram.ui.Components.SizeNotifierFrameLayout;
-import org.telegram.ui.Components.TypefaceSpan;
 
 import java.util.ArrayList;
 
@@ -863,28 +858,9 @@ public class ChannelCreateActivity extends BaseFragment implements NotificationC
                             tagsString.replace(index, index + 1, " ");
                             tagsString.setSpan(new ForegroundColorSpan(getThemedColor(Theme.key_text_RedRegular)), 0, index, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                         }
-                        TypefaceSpan[] spans = tagsString.getSpans(0, tagsString.length(), TypefaceSpan.class);
-                        final String username = descriptionTextView == null || descriptionTextView.getText() == null ? "" : descriptionTextView.getText().toString();
-                        for (int i = 0; i < spans.length; ++i) {
-                            tagsString.setSpan(
-                                new ClickableSpan() {
-                                    @Override
-                                    public void onClick(@NonNull View view) {
-                                        Browser.openUrl(getContext(), "https://fragment.com/username/" + username);
-                                    }
-
-                                    @Override
-                                    public void updateDrawState(@NonNull TextPaint ds) {
-                                        super.updateDrawState(ds);
-                                        ds.setUnderlineText(false);
-                                    }
-                                },
-                                tagsString.getSpanStart(spans[i]),
-                                tagsString.getSpanEnd(spans[i]),
-                                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                            );
-                            tagsString.removeSpan(spans[i]);
-                        }
+                        // LoogriGram: bold text here became a link to the name's sale on
+                        // Fragment. A name for sale is reported as taken (desktop's
+                        // 8458de3b), so nothing links there.
                         text = tagsString;
                     }
                     super.setText(text, type);
@@ -1326,13 +1302,6 @@ public class ChannelCreateActivity extends BaseFragment implements NotificationC
                         if (error != null && "USERNAME_INVALID".equals(error.text) && req.username.length() == 4) {
                             checkTextView.setText(LocaleController.getString(R.string.UsernameInvalidShort));
                             checkTextView.setTextColor(Theme.getColor(Theme.key_text_RedRegular));
-                        } else if (error != null && "USERNAME_PURCHASE_AVAILABLE".equals(error.text)) {
-                            if (req.username.length() == 4) {
-                                checkTextView.setText(LocaleController.getString(R.string.UsernameInvalidShortPurchase));
-                            } else {
-                                checkTextView.setText(LocaleController.getString(R.string.UsernameInUsePurchase));
-                            }
-                            checkTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText8));
                         } else if (error != null && "CHANNELS_ADMIN_PUBLIC_TOO_MUCH".equals(error.text)) {
                             checkTextView.setTextColor(Theme.getColor(Theme.key_text_RedRegular));
                             canCreatePublic = false;

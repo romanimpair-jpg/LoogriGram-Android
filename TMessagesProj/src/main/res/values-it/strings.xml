@@ -287,10 +287,8 @@
     <string name="UsernameAlso">e %1$s</string>
     <string name="UsernameLinkPlaceholder">username</string>
     <string name="UsernameInUse">Questo username è già occupato.</string>
-    <string name="UsernameInUsePurchase">Questo link è già occupato.\nTuttavia, al momento è disponibile per l\'acquisto. **Scopri di più…**</string>
     <string name="UsernameInvalid">Questo username non è valido.</string>
     <string name="UsernameInvalidShort">Gli username devono avere almeno 5 caratteri.</string>
-    <string name="UsernameInvalidShortPurchase">Un username base deve avere almeno 5 caratteri.\nTuttavia, gli username collezionabili brevi, incluso questo, sono disponibili per l\'acquisto. **Scopri di più…**</string>
     <string name="UsernameInvalidLong">Gli username non possono superare i 32 caratteri.</string>
     <string name="UsernameInvalidStartNumber">Gli username non possono iniziare con un numero.</string>
     <string name="UsernameHelp">Puoi scegliere un username su **Telegram**. Se lo fai, le persone potranno trovarti tramite questo username e contattarti senza sapere il tuo numero di telefono.\n\nPuoi usare **a–z**, **0–9** e underscore. La lunghezza minima è **5** caratteri.</string>

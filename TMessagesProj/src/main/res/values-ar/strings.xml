@@ -251,10 +251,8 @@
     <string name="UsernameAlso">أيضًا %1$s</string>
     <string name="UsernameLinkPlaceholder">اسم المستخدم</string>
     <string name="UsernameInUse">اسم المستخدم هذا مأخوذ مسبقًا.</string>
-    <string name="UsernameInUsePurchase">هذا الرابط مأخوذ مسبقًا.\nبالرغم من ذلك، هو متاح حاليًا للشراء. **معرفة المزيد…**</string>
     <string name="UsernameInvalid">عذرًا، اسم المستخدم غير صالح.</string>
     <string name="UsernameInvalidShort">يجب ألا يقل اسم المستخدم عن 5 أحرف.</string>
-    <string name="UsernameInvalidShortPurchase">يجب أن يحتوي اسم المستخدم الأساسي على 5 أحرف على الأقل.\nمع ذلك، فإن أسماء المستخدم القصيرة القابلة للتحصيل بما في ذلك هذا الاسم متاحة للشراء. **معرفة المزيد…**</string>
     <string name="UsernameInvalidLong">يجب ألا يزيد اسم المستخدم عن 32 خانة.</string>
     <string name="UsernameInvalidStartNumber">لا يمكن لاسم المستخدم أن يبدأ برقم.</string>
     <string name="UsernameHelp">يمكنك اختيار اسم مستخدم في **تيليجرام**.\nإذا قمت بذلك سيتمكن الآخرون من العثور عليك باسم المستخدم والتواصل معك دون الحاجة لرقم هاتفك.\n\nيمكنك استخدام **الحروف والأرقام الإنجليزية** وكذلك الشَّرطة السفلية. الطول الأدنى هو **5 خانات**.</string>
