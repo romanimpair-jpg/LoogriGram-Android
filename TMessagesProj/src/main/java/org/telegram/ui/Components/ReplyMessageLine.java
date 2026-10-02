@@ -34,7 +34,6 @@ import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.ChatMessageCell;
 
-import java.util.ArrayList;
 
 public class ReplyMessageLine {
 
@@ -55,11 +54,13 @@ public class ReplyMessageLine {
     private int switchedCount = 0;
     private float emojiAlpha = 1f;
 
+    // LoogriGram: a peer wearing a collectible gift's colours (peerColorCollectible)
+    // drew them here - the stripe, name and background colours, its pattern
+    // emoji and the gift's own sticker in the corner. Those colours are not
+    // worn, as desktop's 276f7ec1: the peer gets the colour its id gives it.
     private AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable emoji;
-    private AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable sticker;
 
     private long emojiDocumentId;
-    private long stickerDocumentId;
     public int backgroundColor, nameColor, color1, color2, color3, emojiColor;
     private final View parentView;
     public final AnimatedColor backgroundColorAnimated;
@@ -80,17 +81,11 @@ public class ReplyMessageLine {
                     if (emoji != null) {
                         emoji.attach();
                     }
-                    if (sticker != null) {
-                        sticker.attach();
-                    }
                 }
                 @Override
                 public void onViewDetachedFromWindow(@NonNull View v) {
                     if (emoji != null) {
                         emoji.detach();
-                    }
-                    if (sticker != null) {
-                        sticker.attach();
                     }
                 }
             });
@@ -131,7 +126,6 @@ public class ReplyMessageLine {
 
     private int wasMessageId;
     private int wasColorId;
-    private long wasCollectionId;
     private void resolveColor(MessageObject messageObject, int colorId, Theme.ResourcesProvider resourcesProvider) {
         final boolean dark = resourcesProvider != null ? resourcesProvider.isDark() : Theme.isCurrentThemeDark();
         if (wasColorId != colorId) {
@@ -139,7 +133,6 @@ public class ReplyMessageLine {
             if (msgId == wasMessageId) {
                 switchedCount++;
             }
-            wasCollectionId = 0;
             wasColorId = colorId;
             wasMessageId = msgId;
         }
@@ -168,65 +161,6 @@ public class ReplyMessageLine {
         }
     }
 
-    private int resolveCollectionColor(MessageObject messageObject, TLRPC.TL_peerColorCollectible p, Theme.ResourcesProvider resourcesProvider) {
-        final boolean dark = resourcesProvider != null ? resourcesProvider.isDark() : Theme.isCurrentThemeDark();
-        final int accent_color = dark && (p.flags & 1) != 0 ? p.dark_accent_color : p.accent_color;
-        final ArrayList<Integer> colors = dark && (p.flags & 2) != 0 ? p.dark_colors : p.colors;
-
-        if (colors == null || colors.isEmpty()) {
-            return 0;
-        }
-
-        if (wasCollectionId != p.collectible_id) {
-            final int msgId = messageObject != null ? messageObject.getId() : 0;
-            if (msgId == wasMessageId) {
-                switchedCount++;
-            }
-            wasColorId = 0;
-            wasCollectionId = p.collectible_id;
-            wasMessageId = msgId;
-        }
-
-        reversedOut = false;
-        color1 = p.colors.get(0) | 0xFF000000;
-        if (hasColor2 = colors.size() >= 2) {
-            color2 = p.colors.get(1) | 0xFF000000;
-        }
-        if (hasColor3 = colors.size() >= 3) {
-            color3 = p.colors.get(2) | 0xFF000000;
-        }
-        nameColor = accent_color | 0xFF000000;
-        backgroundColor = Theme.multAlpha(nameColor, 0.10f);
-        emojiDocumentId = p.background_emoji_id;
-        stickerDocumentId = p.gift_emoji_id;
-        if (emojiDocumentId != 0 && emoji == null && parentView != null) {
-            emoji = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(parentView, false, dp(20), AnimatedEmojiDrawable.CACHE_TYPE_ALERT_PREVIEW_STATIC);
-            if (parentView instanceof ChatMessageCell ? ((ChatMessageCell) parentView).isCellAttachedToWindow() : parentView.isAttachedToWindow()) {
-                emoji.attach();
-            }
-        }
-        if (emoji != null) {
-            if (emoji.set(emojiDocumentId, true)) {
-                emojiLoaded = false;
-            }
-        }
-        emojiColor = nameColor;
-
-        if (stickerDocumentId != 0 && sticker == null && parentView != null) {
-            sticker = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(parentView, false, dp(20), AnimatedEmojiDrawable.CACHE_TYPE_ALERT_PREVIEW_STATIC);
-            if (parentView instanceof ChatMessageCell ? ((ChatMessageCell) parentView).isCellAttachedToWindow() : parentView.isAttachedToWindow()) {
-                sticker.attach();
-            }
-        }
-        if (sticker != null) {
-            if (sticker.set(stickerDocumentId, true)) {
-//                emojiLoaded = false;
-            }
-        }
-
-        return nameColorAnimated.set(nameColor);
-    }
-
     public static final int TYPE_REPLY = 0;
     public static final int TYPE_QUOTE = 1;
     public static final int TYPE_CODE = 2;
@@ -235,13 +169,9 @@ public class ReplyMessageLine {
 
     public int check(MessageObject messageObject, TLRPC.User currentUser, TLRPC.Chat currentChat, Theme.ResourcesProvider resourcesProvider, final int type) {
         final boolean dark = resourcesProvider != null ? resourcesProvider.isDark() : Theme.isCurrentThemeDark();
-        if (messageObject != null && !(messageObject.isOutOwner() || type == TYPE_CODE) && messageObject.overrideLinkPeerColor != null) {
-            return resolveCollectionColor(messageObject, messageObject.overrideLinkPeerColor, resourcesProvider);
-        }
 
         reversedOut = false;
         emojiDocumentId = 0;
-        stickerDocumentId = 0;
         if (messageObject == null) {
             hasColor2 = hasColor3 = false;
             color1 = color2 = color3 = Theme.getColor(Theme.key_chat_inReplyLine, resourcesProvider);
@@ -258,9 +188,6 @@ public class ReplyMessageLine {
             long uid = MessageObject.getMedia(messageObject.messageOwner).user_id;
             if (uid != 0) {
                 user = MessagesController.getInstance(messageObject.currentAccount).getUser(uid);
-            }
-            if (!(messageObject.isOutOwner() || type == TYPE_CODE) && user != null && user.color instanceof TLRPC.TL_peerColorCollectible) {
-                return resolveCollectionColor(messageObject, (TLRPC.TL_peerColorCollectible) user.color, resourcesProvider);
             }
             if (user != null) {
                 colorId = UserObject.getColorId(user);
@@ -284,9 +211,6 @@ public class ReplyMessageLine {
                 long dialogId = DialogObject.getPeerDialogId(messageObject.messageOwner.fwd_from.from_id);
                 if (dialogId < 0) {
                     TLRPC.Chat chat = MessagesController.getInstance(messageObject.currentAccount).getChat(-dialogId);
-                    if (!(messageObject.isOutOwner() || type == TYPE_CODE) && chat != null && chat.color instanceof TLRPC.TL_peerColorCollectible) {
-                        return resolveCollectionColor(messageObject, (TLRPC.TL_peerColorCollectible) chat.color, resourcesProvider);
-                    }
                     if (chat != null) {
                         colorId = ChatObject.getColorId(chat);
                     }
@@ -295,9 +219,6 @@ public class ReplyMessageLine {
                     }
                 } else {
                     TLRPC.User user = MessagesController.getInstance(messageObject.currentAccount).getUser(dialogId);
-                    if (!(messageObject.isOutOwner() || type == TYPE_CODE) && user != null && user.color instanceof TLRPC.TL_peerColorCollectible) {
-                        return resolveCollectionColor(messageObject, (TLRPC.TL_peerColorCollectible) user.color, resourcesProvider);
-                    }
                     if (user != null) {
                         colorId = UserObject.getColorId(user);
                     }
@@ -308,25 +229,16 @@ public class ReplyMessageLine {
             } else if (DialogObject.isEncryptedDialog(messageObject.getDialogId()) && currentUser != null) {
                 TLRPC.User user = messageObject.isOutOwner() ? UserConfig.getInstance(messageObject.currentAccount).getCurrentUser() : currentUser;
                 if (user == null) user = currentUser;
-                if (!(messageObject.isOutOwner() || type == TYPE_CODE) && user != null && user.color instanceof TLRPC.TL_peerColorCollectible) {
-                    return resolveCollectionColor(messageObject, (TLRPC.TL_peerColorCollectible) user.color, resourcesProvider);
-                }
                 colorId = UserObject.getColorId(user);
                 if (type == TYPE_LINK) {
                     emojiDocumentId = UserObject.getEmojiId(user);
                 }
             } else if (messageObject.isFromUser() && currentUser != null) {
-                if (!(messageObject.isOutOwner() || type == TYPE_CODE) && currentUser != null && currentUser.color instanceof TLRPC.TL_peerColorCollectible) {
-                    return resolveCollectionColor(messageObject, (TLRPC.TL_peerColorCollectible) currentUser.color, resourcesProvider);
-                }
                 colorId = UserObject.getColorId(currentUser);
                 if (type == TYPE_LINK) {
                     emojiDocumentId = UserObject.getEmojiId(currentUser);
                 }
             } else if (messageObject.isFromChannel() && currentChat != null) {
-                if (!(messageObject.isOutOwner() || type == TYPE_CODE) && currentChat != null && currentChat.color instanceof TLRPC.TL_peerColorCollectible) {
-                    return resolveCollectionColor(messageObject, (TLRPC.TL_peerColorCollectible) currentChat.color, resourcesProvider);
-                }
                 if (currentChat.signature_profiles) {
                     long did = messageObject.getFromChatId();
                     if (did >= 0) {
@@ -378,9 +290,6 @@ public class ReplyMessageLine {
                 }
             } else if (messageObject.replyMessageObject.isFromUser()) {
                 TLRPC.User user = MessagesController.getInstance(messageObject.currentAccount).getUser(messageObject.replyMessageObject.messageOwner.from_id.user_id);
-                if (!(messageObject.isOutOwner() || type == TYPE_CODE) && user != null && user.color instanceof TLRPC.TL_peerColorCollectible) {
-                    return resolveCollectionColor(messageObject, (TLRPC.TL_peerColorCollectible) user.color, resourcesProvider);
-                }
                 if (user != null) {
                     colorId = UserObject.getColorId(user);
                     emojiDocumentId = UserObject.getEmojiId(user);
@@ -389,9 +298,6 @@ public class ReplyMessageLine {
                 }
             } else if (messageObject.replyMessageObject.isFromChannel()) {
                 TLRPC.Chat chat = MessagesController.getInstance(messageObject.currentAccount).getChat(messageObject.replyMessageObject.messageOwner.from_id.channel_id);
-                if (!(messageObject.isOutOwner() || type == TYPE_CODE) && chat != null && chat.color instanceof TLRPC.TL_peerColorCollectible) {
-                    return resolveCollectionColor(messageObject, (TLRPC.TL_peerColorCollectible) chat.color, resourcesProvider);
-                }
                 if (chat != null) {
                     colorId = ChatObject.getColorId(chat);
                     emojiDocumentId = ChatObject.getEmojiId(chat);
@@ -448,15 +354,8 @@ public class ReplyMessageLine {
                 emojiLoaded = false;
             }
         }
-        if (sticker != null) {
-            sticker.set(stickerDocumentId, true);
-        }
         emojiColor = getColor();
         return nameColorAnimated.set(nameColor);
-    }
-
-    public boolean hasSticker() {
-        return stickerDocumentId != 0;
     }
 
     public int setFactCheck(Theme.ResourcesProvider resourcesProvider) {
@@ -683,18 +582,14 @@ public class ReplyMessageLine {
                 }
                 float y0 = Math.min(rect.centerY(), rect.top + dp(42 / 2));
 
-                if (sticker != null) {
-                    sticker.setAlpha((int) (0xFF * alpha));
-                }
-
                 emoji.setColor(emojiColor);
                 for (int i = 0; i < iconCoords.length; ++i) {
-                    final AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable drawable = i == 0 && sticker != null && stickerDocumentId != 0 ? sticker : emoji;
+                    final AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable drawable = emoji;
                     IconCoords c = iconCoords[i];
                     if (c.q && !hasQuote) {
                         continue;
                     }
-                    drawable.setAlpha((int) (0xFF * (drawable == sticker ? 1.0f : .30f) * c.a * emojiAlpha));
+                    drawable.setAlpha((int) (0xFF * .30f * c.a * emojiAlpha));
                     final float cx = x0 - dp(c.x);
                     final float cy = y0 + dp(c.y);
                     final float sz = dp(10) * c.s * loadedScale;

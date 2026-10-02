@@ -3929,16 +3929,6 @@ public class MessagesController extends BaseController implements NotificationCe
             sb.append("}");
         }
 
-        public static PeerColor fromPeerCollectible(TLRPC.PeerColor peer_color) {
-            if (!(peer_color instanceof TLRPC.TL_peerColorCollectible)) return null;
-            final TLRPC.TL_peerColorCollectible color = (TLRPC.TL_peerColorCollectible) peer_color;
-            final PeerColor peerColor = new PeerColor();
-            peerColor.id = -1;
-            peerColor.hidden = true;
-            // TODO
-            return peerColor;
-        }
-
         public static PeerColor fromTL(TLRPC.TL_help_peerColorOption tl) {
             if (tl == null) return null;
 

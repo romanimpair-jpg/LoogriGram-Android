@@ -17961,9 +17961,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         replyLine = new ReplyMessageLine(this);
                     }
                     replyLine.check(currentMessageObject, currentUser, currentChat, resourcesProvider, ReplyMessageLine.TYPE_REPLY);
-                    if (replyLine.hasSticker()) {
-                        maxWidth -= dp(38);
-                    }
 
                     replyNameWidth = dp(4) + (needReplyImage ? dp(16) + (int) (textPaint.getTextSize() + Theme.chat_replyNamePaint.getTextSize()) : 0);
                     if (stringFinalName != null) {
@@ -17979,9 +17976,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         replyNameWidth += dp(3);
                     }
 
-                    if (replyLine.hasSticker()) {
-                        replyNameWidth += dp(38);
-                    }
                 } catch (Exception e) {
                     FileLog.e(e);
                 }

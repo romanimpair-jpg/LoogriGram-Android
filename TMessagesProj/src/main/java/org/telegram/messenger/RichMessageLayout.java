@@ -243,7 +243,7 @@ public class RichMessageLayout {
     }
 
     private boolean hasCustomIncomingQuoteColor(TLRPC.User currentUser, TLRPC.Chat currentChat) {
-        if (messageObject.overrideLinkColor >= 0 || messageObject.overrideLinkPeerColor != null) {
+        if (messageObject.overrideLinkColor >= 0) {
             return true;
         }
         if (messageObject.messageOwner != null && messageObject.messageOwner.fwd_from != null
@@ -276,9 +276,10 @@ public class RichMessageLayout {
         return false;
     }
 
+    // LoogriGram: a collectible gift's colours counted as custom too. They are
+    // not worn (desktop's 276f7ec1), so such a peer has no colour of its own.
     private static boolean hasCustomPeerColor(TLRPC.PeerColor color) {
-        return color instanceof TLRPC.TL_peerColorCollectible
-                || color instanceof TLRPC.TL_peerColor && (color.flags & 1) != 0;
+        return color instanceof TLRPC.TL_peerColor && (color.flags & 1) != 0;
     }
 
     public void setChatMessageCellDelegate(ChatMessageCell cell, ChatMessageCell.ChatMessageCellDelegate delegate) {
