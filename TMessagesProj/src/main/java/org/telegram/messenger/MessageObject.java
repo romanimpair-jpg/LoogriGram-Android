@@ -50,7 +50,6 @@ import androidx.core.graphics.ColorUtils;
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.ringtone.RingtoneDataStore;
-import org.telegram.messenger.utils.tlutils.AmountUtils;
 import org.telegram.messenger.utils.tlutils.TlUtils;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.SerializedData;
@@ -11812,7 +11811,8 @@ public class MessageObject {
         return replyMessageObject != null && replyMessageObject.messageOwner != null && messageOwner != null && messageOwner.suggested_post != null;
     }
 
-    public static final int SUGGESTION_FLAG_EDIT_PRCIE = 1;
+    // LoogriGram: SUGGESTION_FLAG_EDIT_PRCIE (1) went with priced suggestions,
+    // which LoogriGramHidden holds; the other flags keep their values.
     public static final int SUGGESTION_FLAG_EDIT_TIME = 1 << 1;
     public static final int SUGGESTION_FLAG_EDIT_TEXT = 1 << 2;
     public static final int SUGGESTION_FLAG_EDIT_MEDIA = 1 << 3;
@@ -11828,9 +11828,6 @@ public class MessageObject {
         final TLRPC.SuggestedPost newOffer = newMessage.suggested_post;
 
         int flags = 0;
-        if (!AmountUtils.Amount.equals(oldOffer.price, newOffer.price)) {
-            flags |= SUGGESTION_FLAG_EDIT_PRCIE;
-        }
         if (oldOffer.schedule_date != newOffer.schedule_date) {
             flags |= SUGGESTION_FLAG_EDIT_TIME;
         }

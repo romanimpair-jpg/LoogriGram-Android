@@ -26,7 +26,7 @@ import org.telegram.tgnet.TLRPC;
  * and the cell machinery already handle it.
  *
  * Known and accepted, as on desktop: a paid post in a channel vanishes
- * without trace.
+ * without trace, and so does a post suggested to a channel for a price.
  */
 public class LoogriGramHidden {
 
@@ -38,7 +38,10 @@ public class LoogriGramHidden {
         if (message == null) {
             return false;
         }
-        return isHiddenMedia(MessageObject.getMedia(message)) || isHiddenAction(message.action);
+        return isHiddenMedia(MessageObject.getMedia(message)) || isHiddenAction(message.action)
+            // a proposal to publish a post for a price, as desktop's 186c57ea and
+            // b8442a0b; a free suggestion has no price and is shown as before
+            || message.suggested_post != null && message.suggested_post.price != null;
     }
 
     private static boolean isHiddenMedia(TLRPC.MessageMedia media) {

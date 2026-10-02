@@ -8885,7 +8885,6 @@
 
     <string name="SuggestionOfferInfoTitleEditedFromYou">**You** suggest a new %1$s for this message.</string>
     <string name="SuggestionOfferInfoTitleEditedFromX">**%1$s** suggest a new %2$s for this message.</string>
-    <string name="SuggestionOfferInfoTitleEditedPrice">price</string>
     <string name="SuggestionOfferInfoTitleEditedTime">time</string>
     <string name="SuggestionOfferInfoTitleEditedText">text</string>
     <string name="SuggestionOfferInfoTitleEditedMedia">media</string>

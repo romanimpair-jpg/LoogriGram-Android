@@ -108,13 +108,9 @@ public class SuggestionOffer {
             final int flagsCount =
                 (((flags & MessageObject.SUGGESTION_FLAG_EDIT_TEXT) != 0) ? 1 : 0) +
                 (((flags & MessageObject.SUGGESTION_FLAG_EDIT_TIME) != 0) ? 1 : 0) +
-                (((flags & MessageObject.SUGGESTION_FLAG_EDIT_MEDIA) != 0) ? 1 : 0) +
-                (((flags & MessageObject.SUGGESTION_FLAG_EDIT_PRCIE) != 0) ? 1 : 0);
+                (((flags & MessageObject.SUGGESTION_FLAG_EDIT_MEDIA) != 0) ? 1 : 0);
             int count = 0;
 
-            if ((flags & MessageObject.SUGGESTION_FLAG_EDIT_PRCIE) != 0) {
-                updateBuildTitleStep(ssb2, R.string.SuggestionOfferInfoTitleEditedPrice, flagsCount == ++count);
-            }
             if ((flags & MessageObject.SUGGESTION_FLAG_EDIT_TIME) != 0) {
                 updateBuildTitleStep(ssb2, R.string.SuggestionOfferInfoTitleEditedTime, flagsCount == ++count);
             }
