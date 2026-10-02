@@ -5631,7 +5631,6 @@ public class EmojiView extends FrameLayout implements
         super.onAttachedToWindow();
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.emojiLoaded);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.newEmojiSuggestionsAvailable);
-        NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.groupPackUpdated);
         if (stickersGridAdapter != null) {
             NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.stickersDidLoad);
             NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.recentDocumentsDidLoad);
@@ -5681,7 +5680,6 @@ public class EmojiView extends FrameLayout implements
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.emojiLoaded);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.newEmojiSuggestionsAvailable);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.stickersDidLoad);
-        NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.groupPackUpdated);
         if (stickersGridAdapter != null) {
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.recentDocumentsDidLoad);
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.featuredStickersDidLoad);
@@ -5920,12 +5918,6 @@ public class EmojiView extends FrameLayout implements
                 } else {
                     emojiAdapter.notifyDataSetChanged(false);
                 }
-            }
-        } else if (id == NotificationCenter.groupPackUpdated) {
-            long chatId = (long) args[0];
-            boolean isEmoji = (boolean) args[1];
-            if (info != null && info.id == chatId && isEmoji) {
-                emojiAdapter.notifyDataSetChanged(true);
             }
         } else if (id == NotificationCenter.recentDocumentsDidLoad) {
             boolean isGif = (Boolean) args[0];

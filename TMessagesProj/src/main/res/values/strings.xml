@@ -1134,19 +1134,12 @@
     <string name="GroupStickersInfo">You can choose a sticker set that will be available to all group members when they are chatting in this group.</string>
     <string name="ChooseStickerSet">CHOOSE STICKER SET</string>
     <string name="ChooseStickerSetHeader">Choose sticker set</string>
-    <string name="ChooseEmojiPackHeader">Choose emoji pack</string>
     <string name="ChooseStickerSetMy">You can create your own custom sticker sets using the @stickers bot.</string>
-    <string name="ChooseEmojiPackMy">You can create your own custom emoji packs using the @stickers bot.</string>
     <string name="SetAsGroupStickerSet">Set as Group Sticker Set</string>
     <string name="RemoveGroupStickerSet">Remove Group Sticker Set</string>
-    <string name="SetAsGroupEmojiPackSet">Set as Group Emoji Pack</string>
-    <string name="RemoveGroupEmojiPackSet">Remove Group Emoji Pack</string>
     <string name="ChooseStickerNoResultsFound">No results found for \"%1$s\"</string>
     <string name="ChooseStickerMyStickerSets">My sticker sets</string>
     <string name="ChooseStickerMyEmojiPacks">My emoji packs</string>
-    <string name="AddEmojiPackHeader">Add emoji pack by link</string>
-    <string name="AddGroupEmojiPackHint">All members will be able to use these emoji in the group, even if they don\'t have Telegram Premium.</string>
-    <string name="AddEmojiPackLinkHint">emojiset</string>
     <!--chat view-->
     <string name="Invisible">invisible</string>
     <string name="SupportStatus">support</string>
@@ -5109,7 +5102,6 @@
     <string name="ChatResetTheme">Reset Theme</string>
     <string name="ChatNoTheme">No Theme</string>
     <string name="ChannelWallpaperUpdated">Wallpaper updated</string>
-    <string name="GroupsEmojiPackUpdated">Group emoji pack updated</string>
     <string name="ChatThemeChangedYou">You changed the chat theme to %1$s</string>
     <string name="ChatThemeChangedTo">%1$s changed the chat theme to %2$s</string>
     <string name="ChannelThemeChangedTo">%1$s changed the channel theme to %2$s</string>
@@ -6893,7 +6885,6 @@
     <string name="ChannelProfileLogo">Profile Logo</string>
     <string name="ChannelProfileInfo">Choose a color and a logo for the channel\'s profile.</string>
     <string name="GroupProfileInfo">Choose a color and a logo for the group\'s profile.</string>
-    <string name="GroupEmojiPack">Group Emoji Pack</string>
     <string name="GroupEmoji">Group Emoji</string>
     <string name="GroupEmojiPackInfo">Choose an emoji pack that will be available to all members within the group.</string>
     <string name="GroupStickerPack">Group Sticker Pack</string>
