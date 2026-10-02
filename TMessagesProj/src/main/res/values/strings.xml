@@ -7298,7 +7298,6 @@
     <string name="SearchChannels">Channels</string>
     <string name="OpenStickerSet">VIEW STICKERS</string>
     <string name="OpenEmojiSet">VIEW EMOJI</string>
-    <string name="OpenUniqueGift">VIEW COLLECTIBLE</string>
     <string name="OpenGiftAuctionActive">JOIN</string>
     <string name="OpenGiftAuctionView">VIEW</string>
     <string name="OpenGiftAuctionResults">VIEW RESULTS</string>
@@ -8673,7 +8672,6 @@
     <string name="Gift2ReplacedPinSubtitle">replacing %s</string>
     <string name="SearchAd">Ad</string>
     <string name="JoinCall">Join Call</string>
-    <string name="ViewCollection">VIEW COLLECTION</string>
     <string name="GroupCallLinkTitle">Group Call</string>
     <string name="GroupCallLinkText">You are invited to join a Telegram call.</string>
     <string name="GroupCallLinkText2One">**%1$s** already joined this call.</string>
