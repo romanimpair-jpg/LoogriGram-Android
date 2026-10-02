@@ -565,7 +565,6 @@
     <string name="UseProxyForCallsInfo">Proxyserver können die Qualität von Anrufen beinflussen.</string>
     <string name="ConnectingToProxyEnable">Aktivieren</string>
     <string name="LowDiskSpaceTitle">Warnung</string>
-    <string name="LowDiskSpaceMessage">Du hast kaum noch freien Speicher. Lege fest, ob du nur kürzlich erhaltene Medien im Cache behalten willst.</string>
     <string name="LowDiskSpaceMessage2">Auf deinem Gerät ist fast kein Speicherplatz mehr frei. Du kannst die Cache-Einstellungen verwenden, um unnötige Medien zu entfernen und Dateien erneut herunterzuladen, wenn du sie wieder brauchen solltest.</string>
     <string name="LowDiskSpaceButton">Cache verwalten</string>
     <string name="AutodownloadContacts">Kontakte</string>
@@ -1289,10 +1288,7 @@
     <string name="PermissionNoAudioVideoWithHint">**Telegram** benötigt Zugriff auf dein **Mikrofon**, damit du Sprachnachrichten senden kannst. Tippe unten auf Einstellungen &gt; Berechtigungen und aktiviere den Zugriff.</string>
     <string name="PermissionNoCameraWithHint">**Telegram** benötigt Zugriff auf deine **Kamera**, damit du Bilder und Videos aufnehmen kannst. Tippe unten auf Einstellungen &gt; Berechtigungen und aktiviere den Zugriff.</string>
     <string name="PermissionNoCameraMicVideo">**Telegram** benötigt Zugriff auf deine **Kamera** und dein **Mikrofon**, damit du Videonachrichten aufnehmen kannst. Tippe unten auf Einstellungen &gt; Berechtigungen und aktiviere den Zugriff für beides.</string>
-    <string name="PermissionNoLocation">"Telegram benötigt Zugriff auf deinen Standort, damit du ihn mit Freunden teilen kannst. "</string>
     <string name="PermissionNoLocationFriends">**Telegram** benötigt Zugriff auf deinen **Standort**, damit du ihn mit Freunden teilen kannst. Tippe unten auf Einstellungen &gt; Berechtigungen und aktiviere den Zugriff.</string>
-    <string name="PermissionNoLocationNavigation">**Telegram** benötigt Zugriff auf deinen **Standort**, damit du Anweisungen erhalten kannst. Tippe unten auf Einstellungen &gt; Berechtigungen und aktiviere den Zugriff.</string>
-    <string name="PermissionNoContactsSharing">**Telegram** benötigt Zugriff auf deine **Kontakte**, damit du sie mit deinen Freunden teilen kannst. Tippe unten auf Einstellungen &gt; Berechtigungen und aktiviere den Zugriff.</string>
     <string name="PermissionNoStorageAvatar">**Telegram** benötigt Zugriff auf deinen **Speicher**, damit du ein Profilbild hochladen kannst. Tippe auf Einstellungen &gt; Berechtigungen und aktiviere den Zugriff.</string>
     <string name="PermissionDrawAboveOtherApps">Telegram braucht Zugriff auf die Funktion \'Über andere Apps einblenden\'. Nur so können Videos im Bild in Bild Modus wiedergegeben werden.</string>
     <string name="PermissionDrawAboveOtherAppsGroupCall">Der Überlagerungsmodus erlaubt dir die Verwendung von Push-To-Talk und die Anzeige, wer gerade spricht, selbst wenn du dich ausserhalb von Telegram befindest.</string>

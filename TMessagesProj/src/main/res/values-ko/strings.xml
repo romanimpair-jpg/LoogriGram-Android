@@ -637,7 +637,6 @@
     <string name="UseProxyForCallsInfo">프록시 서버는 통화 품질을 저하시킬 수 있습니다.</string>
     <string name="ConnectingToProxyEnable">사용</string>
     <string name="LowDiskSpaceTitle">주의</string>
-    <string name="LowDiskSpaceMessage">기기에 남은 공간이 거의 없습니다. 텔레그램이 최근 미디어의 캐시만 저장하도록 설정해 여유 공간을 확보하실 수 있습니다.</string>
     <string name="LowDiskSpaceMessage2">기기의 저장 공간이 거의 다 찼습니다. 캐시 설정으로 불필요한 미디어를 제거하실 수 있습니다. 파일이 필요할 때 다시 다운로드하세요.</string>
     <string name="LowDiskSpaceButton">캐시 관리</string>
     <string name="AutodownloadContacts">연락처</string>
@@ -739,7 +738,6 @@
     <!--passcode view-->
     <string name="Passcode">암호 잠금</string>
     <string name="ChangePasscode">암호 변경</string>
-    <string name="ChangePasscodeInfo">암호를 설정하시면, 대화 목록 상단에 잠금 아이콘이 나타납니다. 이를 탭하여 텔레그램 앱을 잠그실 수 있습니다.\n\n주의: 암호를 잊어버릴 경우, 앱을 로그아웃하거나 재설치하셔야 합니다. 비밀 대화는 모두 사라집니다.</string>
     <string name="ChangePasscodeInfoShort">암호를 설정하시면, 대화 목록 상단에 잠금 아이콘이 나타납니다. 이를 탭하여 텔레그램 앱을 잠그실 수 있습니다.</string>
     <string name="EnablePasscode">암호 설정</string>
     <string name="ConfirmCreatePasscode">암호를 다시 입력해주세요</string>
@@ -1051,10 +1049,7 @@
     <string name="PermissionNoAudioVideoWithHint">**텔레그램**이 음성 메시지를 보내려면 마이크 접근 권한이 필요합니다. 설정 &gt; 권한을 탭하고 **마이크**를 활성화 해주세요.</string>
     <string name="PermissionNoCameraWithHint">**텔레그램**이 사진 및 동영상을 찍으려면 접근 권한이 필요합니다. 설정 &gt; 권한을 탭하고 **카메라**를 활성화 해주세요.</string>
     <string name="PermissionNoCameraMicVideo">**텔레그램**이 영상 메시지를 보내려면 카메라와 마이크 접근 권한이 필요합니다. 설정 &gt; 권한을 탭하고 **마이크**와 **카메라**를 활성화 해주세요.</string>
-    <string name="PermissionNoLocation">회원님의 위치를 친구들과 공유하려면 텔레그램에게 위치 접근 권한이 필요합니다.</string>
     <string name="PermissionNoLocationFriends">**텔레그램**이 친구들과 위치를 공유하려면 위치 접근 권한이 필요합니다. 설정 &gt; 권한을 탭하고 **위치**를 활성화 해주세요.</string>
-    <string name="PermissionNoLocationNavigation">**텔레그램**이 길을 찾으려면 위치 접근 권한이 필요합니다. 설정 &gt; 권한을 탭하고 **위치**를 활성화 해주세요.</string>
-    <string name="PermissionNoContactsSharing">**텔레그램**에서 연락처를 친구들에게 공유 하려면 연락처 접근 권한이 필요합니다. 설정 &gt; 권한을 탭하고 **연락처**를 활성화 해주세요.</string>
     <string name="PermissionNoStorageAvatar">**텔레그램**이 프로필 사진 및 영상을 업로드하기 위하여 저장 접근 권한이 필요합니다. 설정 &gt; 권한을 탭하고 **파일 및 미디어**를 활성화 해주세요.</string>
     <string name="PermissionDrawAboveOtherApps">화면속화면 모드로 동영상을 재생하려면 텔레그램에게 다른 앱 위에 그릴 수 있는 권한을 부여하셔야 합니다.</string>
     <string name="PermissionDrawAboveOtherAppsGroupCall">오버레이 모드는 푸시-투-토크시, 텔레그램을 나가더라도 누가 대화를 하는지 알 수 있게 됩니다.</string>

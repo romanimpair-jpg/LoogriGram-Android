@@ -44,7 +44,7 @@
     <string name="SentFragmentCode">Get the code for %1$s in the Anonymous Numbers section on Fragment.</string>
     <string name="SentSmsCodeTitle">Enter code</string>
     <string name="OpenFragment">Open Fragment</string>
-    <string name="SentCallCode">We\'re calling your phone **%1$s**.\n\nDon\'t accept the call, Telegram will process everything automatically.</string>
+    <string name="SentCallCode">We\'re calling your phone **%1$s**.\n\nDon\'t accept the call, LoogriGram will process everything automatically.</string>
     <string name="SentCallOnly">Calling your phone **%1$s** to dictate the code.</string>
     <string name="CallText">Telegram will call you in %1$d:%2$02d</string>
     <string name="SmsText">Sending you an SMS in %1$d:%2$02d</string>
@@ -328,11 +328,10 @@
     <string name="Highlight">Highlight</string>
     <string name="Regular">Regular</string>
     <string name="FormattedDate">Date</string>
-    <string name="ContactsPermissionAlert">**Telegram** needs access to your contacts so that you can connect with your friends across all your devices. Your contacts will be continuously synced with Telegram\'s heavily encrypted cloud servers.</string>
     <string name="ContactsPermissionAlertNotNow">Not now</string>
     <string name="ContactsPermissionAlertContinue">Continue</string>
     <string name="NotificationsPermissionAlertTitle">Turn on notifications</string>
-    <string name="NotificationsPermissionAlertSubtitle">Please allow Telegram to send you notifications to stay in touch with your friends and family.</string>
+    <string name="NotificationsPermissionAlertSubtitle">Please allow LoogriGram to send you notifications to stay in touch with your friends and family.</string>
     <string name="NotificationsPermissionAlert1">Get notified about new messages</string>
     <string name="NotificationsPermissionAlert2">Learn when you are mentioned in groups</string>
     <string name="NotificationsPermissionAlert3">Mute specific chats and types of chats</string>
@@ -407,7 +406,7 @@
     <string name="ImportedInfo">This message was imported from another app. We can\'t guarantee it\'s real.</string>
     <string name="ImportUploading">Importing messages and media... **%d%%**</string>
     <string name="ImportImportingTitle">Importing chat</string>
-    <string name="ImportImportingInfo">Please keep Telegram open\nuntil the import is completed.</string>
+    <string name="ImportImportingInfo">Please keep LoogriGram open\nuntil the import is completed.</string>
     <string name="ImportCount">%1$s of %2$s</string>
     <string name="ImportDone">Done</string>
     <string name="ImportDoneTitle">Chat imported successfully!</string>
@@ -2299,7 +2298,7 @@
     <string name="NotificationsAndSounds">Notifications and Sounds</string>
     <string name="CustomNotifications">Custom Notifications</string>
     <string name="ProfilePopupNotification">Popup notifications</string>
-    <string name="ProfilePopupNotificationInfo">New messages from this contact will appear on your screen when you are not using Telegram.</string>
+    <string name="ProfilePopupNotificationInfo">New messages from this contact will appear on your screen when you are not using LoogriGram.</string>
     <string name="NotificationsLed">LED</string>
     <string name="NotificationsLedColor">Color</string>
     <string name="ColorBlue">Blue</string>
@@ -2400,7 +2399,7 @@
     <string name="LanguageUnknownTitle">Insufficient data</string>
     <string name="LanguageUnsupportedError">There is no such language.</string>
     <string name="LanguageSame">You are already using this language pack (**%1$s**). You can change your language at any time in Settings.</string>
-    <string name="LanguageUnknownCustomAlert">Unfortunately, this custom language pack (**%1$s**) doesn\'t contain data for Telegram Android.</string>
+    <string name="LanguageUnknownCustomAlert">Unfortunately, this custom language pack (**%1$s**) doesn\'t contain data for LoogriGram.</string>
     <string name="TelegramFaq">Telegram FAQ</string>
     <string name="AddAccount">Add Account</string>
     <string name="SwitchAccountHint">"Long tap to switch accounts"</string>
@@ -2605,7 +2604,7 @@
     <string name="UseProxyTelegram">MTProto Proxy</string>
     <string name="UseProxyTelegramError">The proxy you are using is not configured correctly and will be disabled. Please find another one.</string>
     <string name="UseProxySponsor">Proxy sponsor</string>
-    <string name="UseProxySponsorInfo">This channel is shown by your proxy server. To remove this channel from your chat list, disable the proxy in Telegram Settings.</string>
+    <string name="UseProxySponsorInfo">This channel is shown by your proxy server. To remove this channel from your chat list, disable the proxy in LoogriGram Settings.</string>
     <string name="UseProxyInfo">SOCKS5 proxy settings.</string>
     <string name="UseProxyTelegramInfo">MTProto proxy settings.</string>
     <string name="UseProxyTelegramInfo2">This proxy may display a sponsored channel in your chat list. This doesn\'t reveal any of your Telegram traffic.</string>
@@ -2613,7 +2612,6 @@
     <string name="UseProxyForCallsInfo">Proxy servers may degrade the quality of your calls.</string>
     <string name="ConnectingToProxyEnable">Enable</string>
     <string name="LowDiskSpaceTitle">Attention</string>
-    <string name="LowDiskSpaceMessage">Your device is almost out of disk space. To free some space, you can set up Telegram to cache only recent media.</string>
     <string name="LowDiskSpaceMessage2">Your device is almost out of disk space. You can use cache settings to remove unnecessary media — and re-download files if you need them again.</string>
     <string name="LowDiskSpaceButton">Manage Cache</string>
     <string name="AutodownloadContacts">Contacts</string>
@@ -2647,7 +2645,7 @@
     <string name="ClearSelectedCache">Clear Selected</string>
     <string name="ClearCacheInfo">Free up disk space on your device; your media will stay in the cloud.</string>
     <string name="ClearingCache">Clearing cache…</string>
-    <string name="ClearingCacheDescription">Please keep this window open while Telegram is clearing your cache.</string>
+    <string name="ClearingCacheDescription">Please keep this window open while LoogriGram is clearing your cache.</string>
     <string name="ChangePhoneNumber">Change Phone Number</string>
     <string name="ChangePhoneNumberInfo">Move your account, chats and media to a new number.</string>
     <string name="ChangePhoneNumberSuccessWithPhone">Your phone number has been successfully changed to %1$s.</string>
@@ -2674,10 +2672,9 @@
     <string name="AuthAnotherClientInfo2">Run Telegram Desktop to get the QR code.</string>
     <string name="AuthAnotherClientInfo3">Scan the QR code to connect your account.</string>
     <string name="AuthAnotherClientUrl">This code can be used to allow someone to log in to your Telegram account.\n\nTo confirm Telegram login, please go to Settings &gt; Devices &gt; Scan QR and scan the code.</string>
-    <string name="QRCodePermissionNoCameraWithHint">**Telegram** needs camera access so that you can scan QR codes. Tap Settings -> Permissions, and turn **Camera** on.</string>
+    <string name="QRCodePermissionNoCameraWithHint">**LoogriGram** needs camera access so that you can scan QR codes. Tap Settings -> Permissions, and turn **Camera** on.</string>
     <string name="SetProfilePhoto">Set Profile Photo</string>
-    <string name="AppUpdate">Update Telegram</string>
-    <string name="AppUpdateBeta">Update Telegram Beta</string>
+    <string name="AppUpdate">Update LoogriGram</string>
     <string name="AppUpdateVersionAndSize">Version %1$s • %2$s</string>
     <string name="AppBetaUpdateVersion">Version %1$s (%2$s)</string>
     <string name="AppUpdateDownloading">Downloading %1$d%%...</string>
@@ -3030,7 +3027,6 @@
     <!--passcode view-->
     <string name="Passcode">Passcode Lock</string>
     <string name="ChangePasscode">Change Passcode</string>
-    <string name="ChangePasscodeInfo">When you set up an additional passcode, a lock icon will appear on the chats page. Tap it to lock and unlock your Telegram app.\n\nNote: if you forget the passcode, you\'ll need to delete and reinstall the app. All secret chats will be lost.</string>
     <string name="ChangePasscodeInfoShort">When you set up a passcode, a lock icon will apear on the chats page. Tap it to lock and unlock the app.</string>
     <string name="EnablePasscode">Enable passcode</string>
     <string name="ConfirmCreatePasscode">Re-enter your passcode</string>
@@ -3038,7 +3034,7 @@
     <string name="PasscodeSwitchToPIN">Switch to PIN</string>
     <string name="PasscodesDoNotMatchTryAgain">Passcodes don\'t match. Please try again.</string>
     <string name="EnterYourPasscode">Enter your passcode</string>
-    <string name="EnterYourPasscodeInfo">Please enter your current Telegram passcode to manage this option.</string>
+    <string name="EnterYourPasscodeInfo">Please enter your current LoogriGram passcode to manage this option.</string>
     <string name="ForgotPasscode">Forgot passcode?</string>
     <string name="ForgotPasscodeInfo">If you forgot your passcode, you\'ll need to delete and reinstall the app.\n\nAll secret chats will be lost.</string>
     <string name="PasscodeScreenHint">Tap a lock icon on the chats page to lock and unlock the app.</string>
@@ -3046,7 +3042,7 @@
     <string name="DisablePasscodeConfirmMessage">Are you sure you want to turn off passcode?</string>
     <string name="DisablePasscodeTurnOff">Turn Off</string>
     <string name="EnterNewPasscode">Enter your new passcode</string>
-    <string name="EnterYourTelegramPasscode">Enter your Telegram passcode</string>
+    <string name="EnterYourTelegramPasscode">Enter your LoogriGram passcode</string>
     <string name="AutoLock">Auto-lock</string>
     <string name="AutoLockInfo">Require passcode if away for a time.</string>
     <string name="AutoLockInTime">in %1$s</string>
@@ -3056,7 +3052,7 @@
     <string name="ScreenCaptureHeader">App Content in Task Switcher</string>
     <string name="ScreenCaptureShowContent">Show Content</string>
     <string name="ScreenCaptureInfo">If disabled, you won\'t be able to take screenshots in the app but chat content will be hidden in the task switcher.</string>
-    <string name="ScreenCaptureAlert">This will hide the contents of your chats or chat list from the task switcher, but you will not be able to take screenshots on Telegram.\n\nYou may need to restart the app for this to take effect.</string>
+    <string name="ScreenCaptureAlert">This will hide the contents of your chats or chat list from the task switcher, but you will not be able to take screenshots on LoogriGram.\n\nYou may need to restart the app for this to take effect.</string>
     <string name="TooManyTries">Too many tries.\nPlease try again in %1$s.</string>
     <!--media view-->
     <string name="January">January</string>
@@ -3475,7 +3471,7 @@
     <string name="OutgoingCalls">Outgoing calls</string>
     <string name="IncomingCalls">Incoming calls</string>
     <string name="IncomingCallsSystemSetting">Internal calls notifications</string>
-    <string name="IncomingCallsSystemSettingDescription">You can change ringtone sound in Telegram -> Settings -> Notifications and Sounds.</string>
+    <string name="IncomingCallsSystemSettingDescription">You can change ringtone sound in LoogriGram -> Settings -> Notifications and Sounds.</string>
     <string name="OutgoingCallsCount_one">%1$d outgoing call</string>
     <string name="OutgoingCallsCount_other">%1$d outgoing calls</string>
     <string name="IncomingCallsCount_one">%1$d incoming call</string>
@@ -3784,7 +3780,7 @@
     <string name="ActionBotDocumentEmail">Email Address</string>
     <string name="ActionNewCreatorPending">un1 will be the new main admin in 7 days if un2 does not return.</string>
     <string name="ActionChangeCreator">un1 has transferred ownership of the group to un2.</string>
-    <string name="UnsupportedMedia2">This message is not supported on your version of Telegram. Please update to the latest version.</string>
+    <string name="UnsupportedMedia2">This message is not supported on your version of LoogriGram. Please update to the latest version.</string>
     <string name="YourVersionIsLatest">Your version is up to date.</string>
     <string name="AttachPhoto">Photo</string>
     <string name="AttachVideo">Video</string>
@@ -3835,8 +3831,8 @@
     <string name="DeleteAll">Delete All</string>
     <string name="StopLoadingTitle">Stop loading?</string>
     <string name="StopLoading">Do you want to cancel loading?</string>
-    <string name="UpdateTelegram">Update Telegram</string>
-    <string name="UpdateAppAlert">Sorry, your Telegram app is out of date and can\'t handle this request. Please update Telegram.</string>
+    <string name="UpdateTelegram">Update LoogriGram</string>
+    <string name="UpdateAppAlert">Sorry, your LoogriGram app is out of date and can\'t handle this request. Please update LoogriGram.</string>
     <string name="InvalidPhoneNumber">Invalid phone number. Please check the number and try again.</string>
     <string name="PleaseLoginPassport">Please log in to your Telegram account to use Telegram Passport.</string>
     <string name="BannedPhoneNumber">This phone number is banned.</string>
@@ -3950,10 +3946,10 @@
     <string name="SecretLinkPreviewAlert">Would you like to enable extended link previews in Secret Chats? Note that link previews are generated on Telegram servers.</string>
     <string name="SecretChatContextBotAlert">Please note that inline bots are provided by third-party developers. For the bot to work, the symbols you type after the bot\'s username are sent to the respective developer.</string>
     <string name="EditMessageError">Sorry, you can\'t edit this message.</string>
-    <string name="AllowReadCall">Please allow Telegram to receive calls so that we can automatically enter your code for you.</string>
-    <string name="AllowReadCallAndLog">Please allow Telegram to receive calls and read the call log so that we can automatically enter your code for you.</string>
-    <string name="AllowReadCallLog">Please allow Telegram to read the call log so that we can automatically enter your code for you.</string>
-    <string name="AllowFillNumber">Please allow Telegram to receive calls so that we can automatically confirm your phone number.</string>
+    <string name="AllowReadCall">Please allow LoogriGram to receive calls so that we can automatically enter your code for you.</string>
+    <string name="AllowReadCallAndLog">Please allow LoogriGram to receive calls and read the call log so that we can automatically enter your code for you.</string>
+    <string name="AllowReadCallLog">Please allow LoogriGram to read the call log so that we can automatically enter your code for you.</string>
+    <string name="AllowFillNumber">Please allow LoogriGram to receive calls so that we can automatically confirm your phone number.</string>
     <string name="UserRestricted">Sorry, you are not allowed to do this.</string>
     <string name="YouBlockedUser">Sorry, you can\'t add this user or bot to groups because you\'ve blocked them. Please unblock to proceed.</string>
     <string name="AddAdminErrorNotAMember">Sorry, you can\'t add this user as an admin because they are not a member of this group and you are not allowed to add them.</string>
@@ -3990,24 +3986,21 @@
     <string name="TosUpdateDecline">We\'re very sorry, but this means we must part ways here. Unlike others, we don\'t use your data for ad targeting or other commercial purposes. Telegram only stores the information it needs to function as a feature-rich cloud service. You can adjust how we use your data (e.g., delete synced contacts) in Privacy &amp; Security settings.\n\nBut if you\'re generally not OK with Telegram\'s modest needs, it won\'t be possible for us to provide this service. You can deactivate your account now — or look around some more and deactivate it later if you feel you\'re not happy with the way we use your data.</string>
     <string name="TosDeclineDeleteAccount">Warning, this will irreversibly delete your Telegram account along with all the data you store in the Telegram cloud.\n\nImportant: You can Cancel now and export your data before deleting your account instead of losing it all. (To do this, open the latest version of Telegram Desktop and go to Settings &gt; Export Telegram Data.)</string>
     <!--permissions-->
-    <string name="PermissionStorageWithHint">**Telegram** needs storage access so you can send and save photos, videos, music and other media. Tap Settings -> Permissions, and turn **Files and media** on.</string>
-    <string name="PermissionNoAudioWithHint">**Telegram** needs microphone access so that you can send voice messages. Tap Settings -> Permissions, and turn **Microphone** on.</string>
-    <string name="PermissionNoBluetoothWithHint">**Telegram** needs bluetooth access to record video from your headset microphone. Tap Settings -> Permissions, and turn **Bluetooth** on.</string>
-    <string name="PermissionNoAudioVideoWithHint">**Telegram** needs microphone access so that you can send voice messages. Tap Settings -> Permissions, and turn **Microphone** on. </string>
-    <string name="PermissionNoCameraWithHint">**Telegram** needs camera access so that you can take photos and videos. Tap Settings -> Permissions, and turn **Camera** on.</string>
-    <string name="PermissionNoCameraMicVideo">**Telegram** needs camera and microphone access so that you can send video messages. Tap Settings -> Permissions, and turn **Microphone** and **Camera** on.</string>
-    <string name="PermissionNoLocation">Telegram needs access to your location so that you can share it with your friends.</string>
-    <string name="PermissionNoLocationFriends">**Telegram** needs access to location so that you can share it with your friends. Tap Settings -> Permissions, and turn **Location** on.</string>
-    <string name="PermissionNoLocationNavigation">**Telegram** needs access to location so that you can get directions. Tap Settings -> Permissions, and turn **Location** on.</string>
-    <string name="PermissionNoContactsSharing">**Telegram** needs access to contacts so that you can share them with your friends. Tap Settings -> Permissions, and turn **Contacts** on.</string>
-    <string name="PermissionNoContactsSaving">**Telegram** needs access to contacts to save them on your phone. Tap Settings -> Permissions, and turn **Contacts** on.</string>
-    <string name="PermissionNoStorageAvatar">**Telegram** needs storage access so you can upload profile picture. Tap Settings -> Permissions, and turn **Files and media** on.</string>
+    <string name="PermissionStorageWithHint">**LoogriGram** needs storage access so you can send and save photos, videos, music and other media. Tap Settings -> Permissions, and turn **Files and media** on.</string>
+    <string name="PermissionNoAudioWithHint">**LoogriGram** needs microphone access so that you can send voice messages. Tap Settings -> Permissions, and turn **Microphone** on.</string>
+    <string name="PermissionNoBluetoothWithHint">**LoogriGram** needs bluetooth access to record video from your headset microphone. Tap Settings -> Permissions, and turn **Bluetooth** on.</string>
+    <string name="PermissionNoAudioVideoWithHint">**LoogriGram** needs microphone access so that you can send voice messages. Tap Settings -> Permissions, and turn **Microphone** on. </string>
+    <string name="PermissionNoCameraWithHint">**LoogriGram** needs camera access so that you can take photos and videos. Tap Settings -> Permissions, and turn **Camera** on.</string>
+    <string name="PermissionNoCameraMicVideo">**LoogriGram** needs camera and microphone access so that you can send video messages. Tap Settings -> Permissions, and turn **Microphone** and **Camera** on.</string>
+    <string name="PermissionNoLocationFriends">**LoogriGram** needs access to location so that you can share it with your friends. Tap Settings -> Permissions, and turn **Location** on.</string>
+    <string name="PermissionNoContactsSaving">**LoogriGram** needs access to contacts to save them on your phone. Tap Settings -> Permissions, and turn **Contacts** on.</string>
+    <string name="PermissionNoStorageAvatar">**LoogriGram** needs storage access so you can upload profile picture. Tap Settings -> Permissions, and turn **Files and media** on.</string>
     <string name="PermissionDrawAboveOtherApps">LoogriGram needs access to draw above other apps to play videos in Picture-in-Picture mode.</string>
-    <string name="PermissionDrawAboveOtherAppsGroupCall">Overlay mode lets you use push-to-talk and see who is talking even when you are outside of Telegram.</string>
+    <string name="PermissionDrawAboveOtherAppsGroupCall">Overlay mode lets you use push-to-talk and see who is talking even when you are outside of LoogriGram.</string>
     <string name="PermissionOpenSettings">SETTINGS</string>
-    <string name="PermissionXiaomiLockscreen">Please allow Telegram to be shown on the lock screen so that calls can work properly.</string>
-    <string name="PermissionFSILockscreen">Please allow Telegram to be shown on the lock screen so that calls can work properly.</string>
-    <string name="PermissionBackgroundLocation">To share your live location in this chat, Telegram needs access to your location all the time, including while the app is in the background.\n\nWe will access your location only for the duration you choose, and you can stop sharing it any time. We won\'t use your location for any purpose other than sharing it in this chat.</string>
+    <string name="PermissionXiaomiLockscreen">Please allow LoogriGram to be shown on the lock screen so that calls can work properly.</string>
+    <string name="PermissionFSILockscreen">Please allow LoogriGram to be shown on the lock screen so that calls can work properly.</string>
+    <string name="PermissionBackgroundLocation">To share your live location in this chat, LoogriGram needs access to your location all the time, including while the app is in the background.\n\nWe will access your location only for the duration you choose, and you can stop sharing it any time. We won\'t use your location for any purpose other than sharing it in this chat.</string>
     <string name="PermissionDrawAboveOtherAppsTitle">Picture-in-Picture</string>
     <string name="PermissionDrawAboveOtherAppsGroupCallTitle">Voice Chat Overlay</string>
     <!--charts-->
@@ -4028,15 +4021,15 @@
     <string name="SlideUpToLock">Slide up to lock recording</string>
     <string name="NotificationsChartTitle">Notifications</string>
     <string name="TotalDeviceFreeSize">%s Free</string>
-    <string name="ClearTelegramCache">Clear Telegram Cache</string>
+    <string name="ClearTelegramCache">Clear LoogriGram Cache</string>
     <string name="StatisticOverview">Overview</string>
     <string name="ViewsPerPost">Views Per Post</string>
     <string name="ReactionsPerPost">Reactions Per Post</string>
     <string name="SharesPerPost">Shares Per Post</string>
     <string name="EnabledNotifications">Enabled Notifications</string>
     <string name="ClearLocalDatabase">Clear Local Database</string>
-    <string name="TelegramCacheSize">%s Telegram Cache</string>
-    <string name="LocalDatabaseSize">%s Telegram Local Database</string>
+    <string name="TelegramCacheSize">%s LoogriGram Cache</string>
+    <string name="LocalDatabaseSize">%s LoogriGram Local Database</string>
     <string name="CacheWasCleared">%s freed on your device!</string>
     <string name="TotalDeviceSize">%s Other Data</string>
     <string name="GroupMembersChartTitle">Group members</string>
@@ -4101,7 +4094,7 @@
     <string name="VoipInCallBranding">LoogriGram Call</string>
     <string name="VoipInVideoCallBranding">LoogriGram Video Call</string>
     <string name="VoipInConferenceCallBranding">LoogriGram Group Call</string>
-    <string name="VoipOutgoingCall">Ongoing Telegram call</string>
+    <string name="VoipOutgoingCall">Ongoing LoogriGram call</string>
     <string name="VoipVoiceChat">Ongoing Voice Chat</string>
     <string name="VoipLiveStream">Ongoing Live Stream</string>
     <string name="VoipConference">Ongoing Video Chat</string>
@@ -4165,8 +4158,8 @@
     <string name="VoipPeerVideoOutdated">Sorry, **%1$s** is using an old version of Telegram that doesn\'t support video calls.</string>
     <string name="VoipPeerVideoOutdatedMakeVoice">Make a voice call</string>
     <string name="VoipRateCallAlert">Please rate the quality of your Telegram call</string>
-    <string name="VoipNeedMicPermissionWithHint">**Telegram** needs microphone access so that you can make calls. Tap Settings -> Permissions, and turn **Microphone** on.</string>
-    <string name="VoipNeedMicCameraPermissionWithHint">**Telegram** needs camera and microphone access so that you can make video calls. Tap Settings -> Permissions, and turn **Microphone** and **Camera** on.</string>
+    <string name="VoipNeedMicPermissionWithHint">**LoogriGram** needs microphone access so that you can make calls. Tap Settings -> Permissions, and turn **Microphone** on.</string>
+    <string name="VoipNeedMicCameraPermissionWithHint">**LoogriGram** needs camera and microphone access so that you can make video calls. Tap Settings -> Permissions, and turn **Microphone** and **Camera** on.</string>
     <string name="VoipNeedCameraPermission">LoogriGram needs access to your camera so that you can make video calls.</string>
     <string name="VoipFeedbackCommentHint">Add an optional comment</string>
     <string name="CallBack">Call Back</string>
@@ -4174,7 +4167,7 @@
     <string name="DefaultRingtone">Default</string>
     <string name="CallViaTelegram">LoogriGram Call</string>
     <string name="VideoCallViaTelegram">LoogriGram Video Call</string>
-    <string name="VoiceCallViaTelegram">Telegram Voice Call</string>
+    <string name="VoiceCallViaTelegram">LoogriGram Voice Call</string>
     <string name="VoiceCallViaCarrier">Call via Carrier</string>
     <string name="VoipAudioRoutingEarpiece">Earpiece</string>
     <string name="VoipAudioRoutingHeadset">Headset</string>
@@ -5112,7 +5105,7 @@
     <string name="ChatThemeSaveDialogText">Do you want to apply the new theme for this chat?</string>
     <string name="ChatThemeSaveDialogApply">Apply</string>
     <string name="ChatThemeSaveDialogDiscard">Discard</string>
-    <string name="OptimizingTelegram">Optimizing Telegram...</string>
+    <string name="OptimizingTelegram">Optimizing LoogriGram...</string>
     <string name="OptimizingTelegramDescription1">This may take a while, depending on the size of the database. Please keep the app open until the process is finished.</string>
     <string name="OptimizingTelegramDescription2">Sorry for the inconvenience.</string>
     <string name="EnjoyngAnimations">**oo** watching %1$s</string>
@@ -5277,7 +5270,7 @@
     <string name="DidNotGetTheCodePhone">Get code on this phone</string>
     <string name="MigrateOldFolderButton">Move Files Now</string>
     <string name="MigrateOldFolderTitle">Migrate Files to Scoped Storage</string>
-    <string name="MigrateOldFolderDescription">Due to a change made by **Google**, we need to move the files you downloaded using **Telegram** to a new folder.\n\nThis may take a few moments. You can continue using the app while the files are moved.</string>
+    <string name="MigrateOldFolderDescription">Due to a change made by **Google**, we need to move the files you downloaded using **LoogriGram** to a new folder.\n\nThis may take a few moments. You can continue using the app while the files are moved.</string>
     <string name="MigratingFiles">Migrating files</string>
     <string name="ReactionsCount_one">%1$d reaction</string>
     <string name="ReactionsCount_other">%1$d reactions</string>
@@ -5366,8 +5359,8 @@
     <string name="YourPasswordReset">Your password was successfully deactivated</string>
     <string name="CreatePassword">Create a Password</string>
     <string name="CreatePasscode">Create a passcode</string>
-    <string name="CreatePasscodeInfoPIN">Please enter any 4 digits that you will use to unlock Telegram.</string>
-    <string name="CreatePasscodeInfoPassword">Please enter the password you will use to unlock Telegram.</string>
+    <string name="CreatePasscodeInfoPIN">Please enter any 4 digits that you will use to unlock LoogriGram.</string>
+    <string name="CreatePasscodeInfoPassword">Please enter the password you will use to unlock LoogriGram.</string>
     <string name="PasscodeReinstallNotice">If you forget your passcode, you\'ll need to **reinstall** the app. All secret chats will be lost.</string>
     <string name="EditNumberInfo">Do you want to edit your number?\n\n**%1$s**\n\nIf the number above is correct, please wait for the verification code.</string>
     <string name="ReportChatIllegalDrugs">Illegal Drugs</string>
@@ -6003,10 +5996,10 @@
     <string name="BlockBot">Block bot</string>
     <string name="AreYouSureDeleteThisChatWithBotWithCheckmark">Are you sure you want to delete the chat with **%1$s**?</string>
     <string name="DecreaseSpeed">Decrease speed</string>
-    <string name="SdCardAlert">Storing on SD card will make Telegram slow. Proceed anyway?</string>
+    <string name="SdCardAlert">Storing on SD card will make LoogriGram slow. Proceed anyway?</string>
     <string name="Proceed">Proceed</string>
     <string name="SdCardError">SD Card Error</string>
-    <string name="SdCardErrorDescription">Telegram is unable to save data on your SD card.</string>
+    <string name="SdCardErrorDescription">LoogriGram is unable to save data on your SD card.</string>
     <string name="DoNotUseSDCard">Do not use SD card</string>
     <string name="NextMediaTap">Show next media on Tap</string>
     <string name="NextMediaTapInfo">Tap near the edge of the screen while viewing media to navigate between photos</string>
@@ -7341,11 +7334,11 @@
     <string name="ViewGroupProfile">View Group Info ></string>
     <string name="ViewChannelProfile">View Channel Info ></string>
     <string name="ViewChannel">View Channel</string>
-    <string name="UnlockToUse">Unlock to use Telegram</string>
+    <string name="UnlockToUse">Unlock to use LoogriGram</string>
     <string name="UsePIN">Use PIN</string>
     <string name="EnterPINorFingerprint">Enter your PIN or use a fingerprint</string>
     <string name="EnterPIN">Enter your PIN</string>
-    <string name="AppLocked">Telegram Locked</string>
+    <string name="AppLocked">LoogriGram Locked</string>
     <string name="ShowSensitiveContent">Show 18+ Content</string>
     <string name="ShowSensitiveContentInfo">Do not hide media that contain content suitable only for adults</string>
     <string name="ConfirmSensitiveContentTitle">18+ Content</string>
@@ -7584,7 +7577,7 @@
     <string name="WebRecentClearTitle">Clear recent searches?</string>
     <string name="WebRecentClearText">Do you want to clear your recent search queries?</string>
     <string name="SearchEngine">Search Engine</string>
-    <string name="OpenInTelegramBrowser">Open in Telegram</string>
+    <string name="OpenInTelegramBrowser">Open in LoogriGram</string>
     <string name="OpenInTelegramBrowser2">Open In-App</string>
     <string name="OpenInSystemBrowser">Open in...</string>
     <string name="OpenInSystemBrowser2">Open in Browser</string>
@@ -7643,15 +7636,15 @@
     <string name="BrowserSettingsTitle">Web Browser</string>
     <string name="BrowserSettingsEnable">Enable In-App Browser</string>
     <string name="BrowserSettingsCustomTabsTitle">Open external links in</string>
-    <string name="BrowserSettingsCustomTabs">New Pages within Telegram</string>
+    <string name="BrowserSettingsCustomTabs">New Pages within LoogriGram</string>
     <string name="BrowserSettingsNoCustomTabs">New Tabs in External Browser</string>
-    <string name="BrowserSettingsNoCustomTabsInfo">You can choose to open external link without leaving Telegram.</string>
+    <string name="BrowserSettingsNoCustomTabsInfo">You can choose to open external link without leaving LoogriGram.</string>
     <string name="BrowserSettingsEnableInfo">Open links inside Telegram without starting an external browser.</string>
     <string name="BrowserSettingsCacheClear">Clear Cache</string>
     <string name="BrowserSettingsCookiesClear">Clear Cookies</string>
     <string name="BrowserSettingsCacheClearText">Are you sure you want to clear browser cache%s?</string>
     <string name="BrowserSettingsCookiesClearText">Are you sure you want to clear browser cookies%s?\n\nThis might log you out from website account sessions.</string>
-    <string name="BrowserSettingsCookiesInfo">Delete all cookies and cache from the Telegram in-app browser and miniapps.</string>
+    <string name="BrowserSettingsCookiesInfo">Delete all cookies and cache from the LoogriGram in-app browser and miniapps.</string>
     <string name="BrowserSettingsHistoryShow">View History</string>
     <string name="BrowserSettingsHistoryClear">Clear History</string>
     <string name="BrowserSettingsHistoryPages_one">%d page</string>
@@ -8227,7 +8220,7 @@
     <string name="BotProfilePermissionEmojiStatus">Emoji Status</string>
     <string name="BotProfilePermissionBiometry">Biometry</string>
     <string name="BotLocationPermissionRequestGranted">**%s** can now have access to your location</string>
-    <string name="BotLocationPermissionRequestDeniedApp">**%s** can\'t have access to your location since you restricted Telegram from accessing it.</string>
+    <string name="BotLocationPermissionRequestDeniedApp">**%s** can\'t have access to your location since you restricted LoogriGram from accessing it.</string>
     <string name="BotLocationPermissionRequestDeniedAppSettings">Change in Settings \></string>
     <string name="BotEmojiStatusPermissionRequestGranted">**%s** can now set your emoji status anytime.</string>
     <string name="BotEmojiStatusUpdated">Your emoji status is updated.</string>
@@ -8964,7 +8957,7 @@
     <string name="AgeVerificationFailedTitle">Age Check Failed</string>
     <string name="AgeVerificationFailedText">Sorry, you can\'t view 18+ content.</string>
     <string name="AgeVerificationPassedTitle">Age Check Passed</string>
-    <string name="AgeVerificationNeedCameraPermission">Telegram needs access to your camera so that you can confirm your age.</string>
+    <string name="AgeVerificationNeedCameraPermission">LoogriGram needs access to your camera so that you can confirm your age.</string>
     <string name="Gift2CollectionEmptyTitle">Organize Your Gifts</string>
     <string name="Gift2CollectionEmptyText">Add some of your gifts to this collection.</string>
     <string name="Gift2CollectionEmptyButton">Add to Collection</string>
@@ -9887,9 +9880,9 @@
     <string name="GiftMessageAddDescription">You can add a message for **%1$s** or send **%2$s** right away.</string>
 
     <string name="UnsupportedBlockTitle">Unsupported Block</string>
-    <string name="UnsupportedBlockMessage">Update Telegram to view this part of the message</string>
+    <string name="UnsupportedBlockMessage">Update LoogriGram to view this part of the message</string>
     <string name="UnsupportedMessageTitle">Unsupported Message</string>
-    <string name="UnsupportedMessageMessage">Update Telegram to view this message</string>
+    <string name="UnsupportedMessageMessage">Update LoogriGram to view this message</string>
     <string name="UnsupportedUpdate">Update</string>
     <!-- LoogriGram: ghost mode. The tab label is deliberately one short word,
          since it sits in the bottom bar next to Chats and Settings. -->
