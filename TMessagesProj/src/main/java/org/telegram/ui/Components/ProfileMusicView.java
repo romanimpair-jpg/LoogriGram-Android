@@ -68,7 +68,7 @@ public class ProfileMusicView extends View {
         arrowPath.lineTo(dpf2(3.16f), 0);
         arrowPath.lineTo(0, dpf2(3.33f));
 
-        setColor(null);
+        updateColors();
         setText("Author", " - Title");
     }
 
