@@ -10,10 +10,8 @@ package org.telegram.ui.Cells;
 
 import static org.telegram.messenger.AndroidUtilities.dp;
 import static org.telegram.messenger.AndroidUtilities.replaceTags;
-import static org.telegram.messenger.LocaleController.formatNumber;
 import static org.telegram.messenger.LocaleController.formatString;
 import static org.telegram.messenger.LocaleController.getString;
-import static org.telegram.ui.Gifts.GiftsController.findAttribute;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -63,7 +61,6 @@ import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.ChatThemeController;
 import org.telegram.messenger.DialogObject;
-import org.telegram.messenger.DocumentObject;
 import org.telegram.messenger.DownloadController;
 import org.telegram.messenger.Emoji;
 import org.telegram.messenger.FileLoader;
@@ -77,18 +74,15 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
-import org.telegram.messenger.SvgHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.utils.DrawableUtils;
-import org.telegram.messenger.utils.tlutils.TlUtils;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.tgnet.tl.TL_keyboard;
 import org.telegram.tgnet.tl.TL_payments;
-import org.telegram.tgnet.tl.TL_stars;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
@@ -115,11 +109,9 @@ import org.telegram.ui.Components.TopicSeparator;
 import org.telegram.ui.Components.TypefaceSpan;
 import org.telegram.ui.Components.URLSpanNoUnderline;
 import org.telegram.ui.Components.spoilers.SpoilerEffect;
-import org.telegram.ui.Gifts.GiftViews;
 import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.PhotoViewer;
 import org.telegram.ui.ProfileActivity;
-import org.telegram.ui.Stars.StarGiftSheet;
 import org.telegram.ui.Stories.UploadingDotsSpannable;
 import org.telegram.ui.Stories.recorder.HintView2;
 import org.telegram.ui.Stories.recorder.PreviewView;
@@ -128,7 +120,6 @@ import org.telegram.ui.community.CommunityUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 import java.util.Stack;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -294,7 +285,6 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
     private MessageObject currentMessageObject;
     private int customDate;
     private CharSequence customText;
-    private GiftViews.CardBackground cardBackground;
 
     private int overrideBackground = -1;
     private int overrideText = -1;
@@ -593,16 +583,15 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
             } else {
                 radialProgress.setIcon(MediaActionDrawable.ICON_CANCEL, !messageIdChanged, !messageIdChanged);
             }
-        } else if (messageObject.type == MessageObject.TYPE_GIFT_THEME_UPDATE || messageObject.type == MessageObject.TYPE_SHARING_OFFER) {
+        } else if (messageObject.type == MessageObject.TYPE_SHARING_OFFER) {
             // LoogriGram: this also set up the sticker of every gift message -
             // Premium, Stars, TON and Star gifts, gift codes, prizes and offers
             // to buy a gift - with the gift packs it was looked up in, and the
-            // animation and fireworks a gift played once. Those messages are
-            // held unshown (LoogriGramHidden); a collectible's chat theme and a
-            // sharing offer are what still come here.
+            // animation and fireworks a gift played once, and the sticker and
+            // card of a collectible's chat theme. Those messages are held
+            // unshown (LoogriGramHidden); a sharing offer is what still comes
+            // here, and it has no sticker.
             imageReceiver.setRoundRadius(0);
-
-            TLRPC.Document document = null;
 
             if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionNoForwardsRequest) {
                 final TLRPC.TL_messageActionNoForwardsRequest action = (TLRPC.TL_messageActionNoForwardsRequest) messageObject.messageOwner.action;
@@ -613,18 +602,6 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
                     final BotInlineKeyboard.Builder b = new BotInlineKeyboard.Builder();
                     b.addSharingOfferKeyboard();
                     botInlineButtons = b.build();
-                }
-            } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionSetChatTheme) {
-                final TLRPC.TL_messageActionSetChatTheme action = (TLRPC.TL_messageActionSetChatTheme) messageObject.messageOwner.action;
-                final TLRPC.TL_chatThemeUniqueGift chatThemeUniqueGift = (TLRPC.TL_chatThemeUniqueGift) action.theme;
-                final TL_stars.StarGift gift = chatThemeUniqueGift.gift;
-                if (gift != null) {
-                    document = TlUtils.getGiftDocument(gift);
-                    if (cardBackground == null) {
-                        cardBackground = new GiftViews.CardBackground(this, themeDelegate, false);
-                    }
-                    cardBackground.setBackdrop(findAttribute(gift.attributes, TL_stars.starGiftAttributeBackdrop.class));
-                    cardBackground.setPattern(findAttribute(gift.attributes, TL_stars.starGiftAttributePattern.class));
                 }
             }
 
@@ -653,12 +630,6 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
                 }
             }
 
-            if (document != null) {
-                imageReceiver.setAllowStartLottieAnimation(true);
-                SvgHelper.SvgDrawable svgThumb = DocumentObject.getSvgThumb(document, Theme.key_windowBackgroundGray, 0.3f);
-                imageReceiver.setAutoRepeat(0);
-                imageReceiver.setImage(ImageLocation.getForDocument(document), String.format(Locale.US, "%d_%d_nr_messageId=%d", 160, 160, messageObject.stableId), svgThumb, "tgs", null, 1);
-            }
         } else if (messageObject.type == MessageObject.TYPE_COMMUNITY_CHANGED) {
             final TLRPC.TL_messageActionChangeCommunity action = (TLRPC.TL_messageActionChangeCommunity) messageObject.messageOwner.action;
             final TLRPC.Chat community = MessagesController.getInstance(currentAccount).getChat(action.community_id);
@@ -952,9 +923,6 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
                                     new CommunitySheet(lastFragment, ((TLRPC.TL_messageActionChangeCommunity) messageObject.messageOwner.action).community_id)
                                         .show();
                                 }
-                            } else if (messageObject.type == MessageObject.TYPE_GIFT_THEME_UPDATE) {
-                                playSoundEffect(SoundEffectConstants.CLICK);
-                                openThemeGift();
                             } else {
                                 ImageUpdater imageUpdater = MessagesController.getInstance(currentAccount).photoSuggestion.get(messageObject.messageOwner.local_id);
                                 if (imageUpdater == null) {
@@ -983,9 +951,7 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_UP:
                         imagePressed = false;
-                        if (messageObject.type == MessageObject.TYPE_GIFT_THEME_UPDATE) {
-                            openThemeGift();
-                        } else if (delegate != null) {
+                        if (delegate != null) {
                             boolean consumed = false;
                             if (messageObject.type == MessageObject.TYPE_SUGGEST_PHOTO) {
                                 ImageUpdater imageUpdater = MessagesController.getInstance(currentAccount).photoSuggestion.get(messageObject.messageOwner.local_id);
@@ -1104,23 +1070,9 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
         this.onActionClick = l;
     }
 
-    // LoogriGram: this opened the sheet of every gift message too - a Stars,
-    // TON or prize transaction, and a Star gift, burned or not. Those messages
-    // are held unshown; a collectible's chat theme is what is left.
-    private void openThemeGift() {
-        if (currentMessageObject == null || currentMessageObject.messageOwner == null) return;
-        if (currentMessageObject.messageOwner.action instanceof TLRPC.TL_messageActionSetChatTheme) {
-            TLRPC.TL_messageActionSetChatTheme action = (TLRPC.TL_messageActionSetChatTheme) currentMessageObject.messageOwner.action;
-            if (action.theme instanceof TLRPC.TL_chatThemeUniqueGift) {
-                TL_stars.StarGift gift = ((TLRPC.TL_chatThemeUniqueGift) action.theme).gift;
-                if (gift instanceof TL_stars.TL_starGiftUnique) {
-                    new StarGiftSheet(getContext(), currentAccount, currentMessageObject.getDialogId(), themeDelegate)
-                        .set(gift.slug, (TL_stars.TL_starGiftUnique) gift, null)
-                        .show();
-                }
-            }
-        }
-    }
+    // LoogriGram: openThemeGift stood here. It opened the sheet of every gift
+    // message - a Stars, TON or prize transaction, a Star gift, burned or not,
+    // and a collectible's chat theme. All of them are held unshown.
 
     // LoogriGram: openStarsNeedSheet stood here. Tapping a "your balance was too low"
     // approval notice offered to buy the Stars it wanted; nothing here pays.
@@ -1255,10 +1207,6 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
                 giftRectSize = (int) (giftRectSize * 1.2f);
             }
             stickerSize = giftRectSize - dp(106);
-            if (messageObject.type == MessageObject.TYPE_GIFT_THEME_UPDATE) {
-                giftRectSize = Math.min(giftRectSize, dp(192));
-                stickerSize = dp(78);
-            }
             if (messageObject.type == MessageObject.TYPE_COMMUNITY_CHANGED) {
                 stickerSize = dp(52);
                 imageReceiver.setRoundRadius(dp(14));
@@ -1326,8 +1274,7 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
     }
 
     private boolean isNewStyleButtonLayout() {
-        return currentMessageObject.type == MessageObject.TYPE_GIFT_THEME_UPDATE
-            || currentMessageObject.type == MessageObject.TYPE_COMMUNITY_CHANGED
+        return currentMessageObject.type == MessageObject.TYPE_COMMUNITY_CHANGED
             || currentMessageObject.type == MessageObject.TYPE_SHARING_OFFER
             || currentMessageObject.type == MessageObject.TYPE_SUGGEST_PHOTO
             || currentMessageObject.type == MessageObject.TYPE_ACTION_WALLPAPER;
@@ -1438,24 +1385,6 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
                 }
 
                 createGiftPremiumLayouts(ssb, null, giftRectSize, false);
-                textLayout = null;
-                textHeight = 0;
-                textY = 0;
-            } else if (messageObject.type == MessageObject.TYPE_GIFT_THEME_UPDATE) {
-                final TLRPC.TL_messageActionSetChatTheme action = (TLRPC.TL_messageActionSetChatTheme) messageObject.messageOwner.action;
-                final TLRPC.TL_chatThemeUniqueGift chatThemeUniqueGift = (TLRPC.TL_chatThemeUniqueGift) action.theme;
-                final TL_stars.StarGift gift = chatThemeUniqueGift.gift;
-                final String giftTitle = gift.title + " #" + LocaleController.formatNumber(gift.num, ',');
-
-                final long fromDialogId = messageObject.getFromChatId();
-                final boolean isUserSelf = UserConfig.getInstance(currentAccount).getClientUserId() == fromDialogId;
-
-                final String t = isUserSelf ?
-                    LocaleController.formatString(R.string.GiftThemesSetByYou, giftTitle):
-                    LocaleController.formatString(R.string.GiftThemesSetByOther,
-                        DialogObject.getShortName(currentAccount, fromDialogId), giftTitle);
-
-                createGiftPremiumLayouts(AndroidUtilities.replaceTags(t), getString(R.string.GiftThemesSetActionView), giftRectSize, true);
                 textLayout = null;
                 textHeight = 0;
                 textY = 0;
@@ -1618,7 +1547,7 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
             int top = textY + textHeight + dp(4) + dp(16);
             float x = (previousWidth - imageSize) / 2f;
             float y = top;
-            if (messageObject.type == MessageObject.TYPE_GIFT_THEME_UPDATE || messageObject.type == MessageObject.TYPE_SHARING_OFFER) {
+            if (messageObject.type == MessageObject.TYPE_SHARING_OFFER) {
                 x += dp(10);
                 y += dp(10);
                 imageSize -= dp(20);
@@ -1628,7 +1557,7 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
             }
 
             imageReceiver.setImageCoords(x, y, Math.max(0, imageSize), Math.max(0, imageSize));
-            if (messageObject.type == MessageObject.TYPE_GIFT_THEME_UPDATE || messageObject.type == MessageObject.TYPE_SHARING_OFFER) {
+            if (messageObject.type == MessageObject.TYPE_SHARING_OFFER) {
                 imageSize += dp(20);
             }
             textPaint = (TextPaint) getThemedPaint(Theme.key_paint_chatActionText);
@@ -1643,15 +1572,6 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
         drawBackground(canvas, false);
 
         if (isButtonLayout(messageObject) || (messageObject != null && messageObject.type == MessageObject.TYPE_ACTION_PHOTO)) {
-            if (cardBackground != null && (messageObject.type == MessageObject.TYPE_GIFT_THEME_UPDATE || messageObject.type == MessageObject.TYPE_COMMUNITY_CHANGED)) {
-                cardBackground.setBounds(
-                    (int) (imageReceiver.getImageX() - dp(10 + GiftViews.CardBackground.PADDING_HORIZONTAL_DP)),
-                    (int) (imageReceiver.getImageY() - dp(10 + GiftViews.CardBackground.PADDING_VERTICAL_DP)),
-                    (int) (imageReceiver.getImageX() + imageReceiver.getImageWidth() + dp(10 + GiftViews.CardBackground.PADDING_HORIZONTAL_DP)),
-                    (int) (imageReceiver.getImageY() + imageReceiver.getImageHeight() + dp(10 + GiftViews.CardBackground.PADDING_VERTICAL_DP))
-                );
-                cardBackground.draw(canvas);
-            }
 
             if (wallpaperPreviewDrawable != null) {
                 canvas.save();
@@ -1739,7 +1659,7 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
             }
             float top = backgroundRect != null ? backgroundRect.top : (textY + textHeight + dp(4));
             float y = top + (imageSize > 0 ? (dp(16) * 2 + imageSize) : dp(16));
-            if (messageObject.type == MessageObject.TYPE_GIFT_THEME_UPDATE || messageObject.type == MessageObject.TYPE_COMMUNITY_CHANGED) {
+            if (messageObject.type == MessageObject.TYPE_COMMUNITY_CHANGED) {
                 y -= dp(3.66f);
             }
 
@@ -1863,7 +1783,7 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
                     canvas.drawRoundRect(giftButtonRect, dp(15), dp(15), dimPaint);
                 }
 
-                if (getMessageObject().type == MessageObject.TYPE_GIFT_THEME_UPDATE || getMessageObject().type == MessageObject.TYPE_COMMUNITY_CHANGED) {
+                if (getMessageObject().type == MessageObject.TYPE_COMMUNITY_CHANGED) {
                     final boolean isDark = themeDelegate != null ? themeDelegate.isDark() : Theme.isCurrentThemeDark();
                     int sC = dimPaint.getColor();
                     dimPaint.setColor(isDark ? 0x24FFFFFF : 0x10000000);

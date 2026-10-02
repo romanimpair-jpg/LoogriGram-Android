@@ -17393,7 +17393,7 @@ public class ChatActivity extends BaseFragment implements
             } else {
                 if (messageObject.type == MessageObject.TYPE_LOADING) {
                     return -1;
-                } else if (messageObject.type == MessageObject.TYPE_DATE || messageObject.type == MessageObject.TYPE_GIFT_THEME_UPDATE || messageObject.type == MessageObject.TYPE_ACTION_PHOTO || messageObject.type == MessageObject.TYPE_SUGGEST_PHOTO || messageObject.isWallpaperAction()) {
+                } else if (messageObject.type == MessageObject.TYPE_DATE || messageObject.type == MessageObject.TYPE_ACTION_PHOTO || messageObject.type == MessageObject.TYPE_SUGGEST_PHOTO || messageObject.isWallpaperAction()) {
                     if (messageObject.getId() == 0) {
                         return -1;
                     }

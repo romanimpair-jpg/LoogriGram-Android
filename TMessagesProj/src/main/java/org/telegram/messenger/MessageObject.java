@@ -153,9 +153,9 @@ public class MessageObject {
     // giveaway is held unshown, so neither was assigned any more.
     public static final int TYPE_JOINED_CHANNEL = 27; // recommendations list
     // LoogriGram: 18, 20, 25, 29, 30, 32, 33 and 34 were the gift, paid media
-    // and extended-media-preview types. Those messages are held with type -1
+    // and extended-media-preview types, and 31 TYPE_GIFT_THEME_UPDATE, a chat
+    // theme that is a collectible. Those messages are held with type -1
     // (LoogriGramHidden), so the numbers are left unused.
-    public static final int TYPE_GIFT_THEME_UPDATE = 31;
     public static final int TYPE_SHARING_OFFER = 35;
     public static final int TYPE_ARTICLE = 36;
     public static final int TYPE_COMMUNITY_CHANGED = 37;
@@ -5022,17 +5022,9 @@ public class MessageObject {
                     TLRPC.TL_messageActionWebViewDataSent dataSent = (TLRPC.TL_messageActionWebViewDataSent) messageOwner.action;
                     messageText = formatString(R.string.ActionBotWebViewData, dataSent.text);
                 } else if (messageOwner.action instanceof TLRPC.TL_messageActionSetChatTheme) {
-                    final TLRPC.ChatTheme actionTheme = ((TLRPC.TL_messageActionSetChatTheme) messageOwner.action).theme;
-                    final String title = TlUtils.getThemeEmoticonOrGiftTitle(actionTheme);
-                    CharSequence emoticon = title;
-                    if (title != null && actionTheme instanceof TLRPC.TL_chatThemeUniqueGift) {
-                        final SpannableStringBuilder ssb = new SpannableStringBuilder(title);
-                        final TLRPC.Document document = TlUtils.getGiftDocument(((TLRPC.TL_chatThemeUniqueGift) actionTheme).gift);
-                        if (document != null) {
-                            //ssb.setSpan(new AnimatedEmojiSpan(document, /*Theme.chat_actionTextPaint.getFontMetricsInt()*/ null), 0, ssb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        }
-                        emoticon = ssb;
-                    }
+                    // LoogriGram: a collectible gift's theme is held (LoogriGramHidden),
+                    // so only an emoji theme is named here.
+                    final String emoticon = TlUtils.getThemeEmoticon(((TLRPC.TL_messageActionSetChatTheme) messageOwner.action).theme);
 
                     String userName = UserObject.getFirstName(fromUser);
                     boolean isChannel = fromUser == null && fromChat != null;
@@ -5878,9 +5870,6 @@ public class MessageObject {
                 type = -1;
             } else if (messageOwner.action instanceof TLRPC.TL_messageActionPhoneCall || messageOwner.action instanceof TLRPC.TL_messageActionConferenceCall) {
                 type = TYPE_PHONE_CALL;
-            } else if (messageOwner.action instanceof TLRPC.TL_messageActionSetChatTheme && ((TLRPC.TL_messageActionSetChatTheme) messageOwner.action).theme instanceof TLRPC.TL_chatThemeUniqueGift) {
-                type = TYPE_GIFT_THEME_UPDATE;
-                contentType = 1;
             } else if (messageOwner.action instanceof TLRPC.TL_messageActionChangeCommunity && ((TLRPC.TL_messageActionChangeCommunity) messageOwner.action).community_id != 0) {
                 type = TYPE_COMMUNITY_CHANGED;
                 contentType = 1;
@@ -9873,7 +9862,7 @@ public class MessageObject {
             return dp(82);
         } else if (type == 10 || type == TYPE_SHARING_OFFER) {
             return dp(30);
-        } else if (type == TYPE_ACTION_PHOTO || type == TYPE_GIFT_THEME_UPDATE || type == TYPE_SUGGEST_PHOTO) {
+        } else if (type == TYPE_ACTION_PHOTO || type == TYPE_SUGGEST_PHOTO) {
             return dp(50);
         } else if (type == TYPE_ROUND_VIDEO) {
             return AndroidUtilities.roundMessageSize;
@@ -10444,7 +10433,7 @@ public class MessageObject {
     }
 
     public boolean canForwardMessage() {
-        if (type == TYPE_GIFT_THEME_UPDATE || type == TYPE_SHARING_OFFER || type == TYPE_COMMUNITY_CHANGED) return false;
+        if (type == TYPE_SHARING_OFFER || type == TYPE_COMMUNITY_CHANGED) return false;
         return !(messageOwner instanceof TLRPC.TL_message_secret) && !needDrawBluredPreview() && !isLiveLocation() && type != MessageObject.TYPE_PHONE_CALL && !messageOwner.noforwards;
     }
 

@@ -77,6 +77,10 @@ public class LoogriGramHidden {
             // paid them - desktop's c4e76b9f holds both
             || action instanceof TLRPC.TL_messageActionPaidMessagesPrice
             || action instanceof TLRPC.TL_messageActionPaidMessagesRefunded
+            // a chat theme that is a collectible gift; a plain emoji theme's
+            // change is still shown - desktop's 42294064 and 2c87e718
+            || action instanceof TLRPC.TL_messageActionSetChatTheme
+                && ((TLRPC.TL_messageActionSetChatTheme) action).theme instanceof TLRPC.TL_chatThemeUniqueGift
             // not money, but it is drawn with the gift card and has no other
             // presentation - the desktop fork hides it for the same reason
             || action instanceof TLRPC.TL_messageActionSuggestBirthday;

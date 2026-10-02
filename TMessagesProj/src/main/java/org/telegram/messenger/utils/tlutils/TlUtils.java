@@ -188,11 +188,11 @@ public class TlUtils {
         return document;
     }
 
-    public static String getThemeEmoticonOrGiftTitle(TLRPC.ChatTheme chatTheme) {
+    // LoogriGram: this also named a collectible gift's theme by the gift's
+    // title. Those are not applied and their change message is held.
+    public static String getThemeEmoticon(TLRPC.ChatTheme chatTheme) {
         if (chatTheme instanceof TLRPC.TL_chatTheme) {
             return ((TLRPC.TL_chatTheme) chatTheme).emoticon;
-        } else if (chatTheme instanceof TLRPC.TL_chatThemeUniqueGift) {
-            return ((TLRPC.TL_chatThemeUniqueGift) chatTheme).gift.title;
         }
         return null;
     }
