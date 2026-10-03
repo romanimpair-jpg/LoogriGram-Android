@@ -22,6 +22,16 @@ commit-by-commit audit of desktop (2026-10-01) found 13 gaps its notes never
 summarised. The reverse audit, Android's commits against desktop, followed on
 2026-10-04 and found four gaps (see "Parity with desktop" below).
 
+**Rule: both READMEs stay current** (the user, 2026-10-04). `README.md` is the
+public description, and GitHub shows the copy on `dev`, the default branch.
+Any change a user could notice - removed, added or changed behaviour, a
+default, installing or updating - updates the README in the same stretch of
+work, on `patches` and on `dev` alike (identical files), and a change mirrored
+to desktop updates desktop's README too. Written for someone deciding whether
+to install; maintainer detail stays here. `dev` gets the commit without a
+checkout (the local `dev` is stale): build it on `origin/dev` with a temporary
+index and `commit-tree`, then push it to `dev`.
+
 ---
 
 ## Status
