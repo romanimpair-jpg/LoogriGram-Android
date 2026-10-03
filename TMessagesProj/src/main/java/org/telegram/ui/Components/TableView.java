@@ -29,7 +29,6 @@ import androidx.annotation.NonNull;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.Emoji;
-import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
@@ -50,13 +49,13 @@ import org.telegram.ui.Stories.recorder.HintView2;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Date;
 
 public class TableView extends TableLayout {
 
     // LoogriGram: moved out of StarsIntroActivity.StarsTransactionView, the
-    // Stars transaction list, which is deleted; these rows and GiftViews still
-    // draw a platform icon with it.
+    // Stars transaction list, which is deleted; addRowUser still draws a
+    // platform icon with it. The gift sheet's rows (a wallet address, a user
+    // with their emoji status, a date) went with that sheet.
     public static HashMap<String, CombinedDrawable> cachedPlatformDrawables;
     public static CombinedDrawable getPlatformDrawable(String platform) {
         return getPlatformDrawable(platform, 44);
@@ -143,90 +142,6 @@ public class TableView extends TableLayout {
         return addRowUnpadded(title, idLayout);
     }
 
-    public TableRow addWalletAddressRow(CharSequence title, CharSequence text, Runnable onCopy) {
-        FrameLayout idLayout = new FrameLayout(getContext());
-        LinkSpanDrawable.LinksTextView textView = new LinkSpanDrawable.LinksTextView(getContext());
-        textView.setTypeface(AndroidUtilities.getTypeface(AndroidUtilities.TYPEFACE_ROBOTO_MONO));
-        textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 13);
-        textView.setTextColor(Theme.getColor(Theme.key_dialogTextBlack, resourcesProvider));
-        textView.setLinkTextColor(Theme.getColor(Theme.key_chat_messageLinkIn, resourcesProvider));
-//        textView.setMaxLines(4);
-        textView.setMaxLines(1);
-        textView.setSingleLine();
-        textView.setEllipsize(TextUtils.TruncateAt.MIDDLE);
-        SpannableStringBuilder sb = new SpannableStringBuilder(text);
-        if (onCopy != null) {
-            sb.setSpan(new ClickableSpan() {
-                @Override
-                public void onClick(@NonNull View widget) {
-                    AndroidUtilities.addToClipboard(text);
-                    onCopy.run();
-                }
-                @Override
-                public void updateDrawState(@NonNull TextPaint ds) {
-                    ds.setColor(ds.linkColor);
-                }
-            }, 0, sb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        }
-        textView.setText(sb);
-        textView.setDisablePaddingsOffsetY(true);
-        textView.setPadding(dp(12.66f), dp(9.33f), dp(10.66f), dp(9.33f));
-        idLayout.addView(textView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.FILL, 0, 0, 0, 0));
-//        textView.setMaxWidth(HintView2.cutInFancyHalf(textView.getText(), textView.getPaint()) + dp(12.66f + 12.66f));
-        return addRowUnpadded(title, idLayout);
-    }
-
-    public TableRow addRowUserWithEmojiStatus(CharSequence title, final int currentAccount, final long did, Runnable onClick) {
-        final LinkSpanDrawable.LinksSimpleTextView textView = new LinkSpanDrawable.LinksSimpleTextView(getContext(), resourcesProvider);
-        textView.setPadding(dp(12.66f), dp(9.33f), dp(12.66f), dp(9.33f));
-        textView.setTextColor(Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider));
-        textView.setLinkTextColor(Theme.getColor(Theme.key_featuredStickers_addButton, resourcesProvider));
-        textView.setTextSize(14);
-        AvatarSpan avatarSpan = new AvatarSpan(textView, currentAccount, 24);
-        CharSequence username;
-        boolean clickable = true;
-        if (did == UserObject.ANONYMOUS) {
-            clickable = false;
-            username = getString(R.string.StarsTransactionHidden);
-            CombinedDrawable iconDrawable = getPlatformDrawable("anonymous");
-            iconDrawable.setIconSize(dp(16), dp(16));
-            avatarSpan.setImageDrawable(iconDrawable);
-        } else if (UserObject.isService(did)) {
-            username = getString(R.string.StarsTransactionUnknown);
-            CombinedDrawable iconDrawable = getPlatformDrawable("fragment");
-            iconDrawable.setIconSize(dp(16), dp(16));
-            avatarSpan.setImageDrawable(iconDrawable);
-        } else if (did >= 0) {
-            final TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(did);
-            username = UserObject.getUserName(user);
-            avatarSpan.setUser(user);
-        } else {
-            final TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-did);
-            username = chat == null ? "" : chat.title;
-            avatarSpan.setChat(chat);
-        }
-        final SpannableStringBuilder ssb = new SpannableStringBuilder("x  " + username);
-        ssb.setSpan(avatarSpan, 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        if (clickable) {
-            textView.setClickable(true);
-            ssb.setSpan(new ClickableSpan() {
-                @Override
-                public void onClick(@NonNull View widget) {
-                    if (onClick != null) {
-                        onClick.run();
-                    }
-                }
-                @Override
-                public void updateDrawState(@NonNull TextPaint ds) {
-                    ds.setUnderlineText(false);
-                }
-            }, 3, ssb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        }
-        // LoogriGram: no emoji status or Premium star after the name, as on desktop.
-        textView.setText(ssb);
-        return addRowUnpadded(title, textView);
-    }
-
     public TableRow addRowUser(CharSequence title, final int currentAccount, final long did, Runnable onClick) {
         return addRowUser(title, currentAccount, did, onClick, null, null);
     }
@@ -297,10 +212,6 @@ public class TableView extends TableLayout {
             return addRowUnpadded(title, textView);
         }
         return null;
-    }
-
-    public TableRow addRowDateTime(CharSequence title, int date) {
-        return addRow(title, LocaleController.formatString(R.string.formatDateAtTime, LocaleController.getInstance().getFormatterGiveawayCard().format(new Date(date * 1000L)), LocaleController.getInstance().getFormatterDay().format(new Date(date * 1000L))));
     }
 
     public TableRow addRowLink(CharSequence title, CharSequence value, Runnable onClick) {

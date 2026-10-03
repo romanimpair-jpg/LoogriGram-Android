@@ -19,10 +19,10 @@ import java.util.Locale;
  * the screens the money removal is working towards deleting. Nothing about
  * them belongs to a screen: they take a CharSequence and swap a currency
  * placeholder for the glyph that stands for it, or turn a StarsAmount into
- * digits. Ordinary message rendering needs that and will go on needing it,
- * because a received gift or a Stars transfer is still described in text by
- * MessageObject, ChatMessageCell and the chat list even though this build
- * offers no way to send or buy one. The same reasoning moved the currency
+ * digits. Ordinary message rendering needs that and will go on needing it:
+ * MessageObject, the chat and the chat list still format amounts that arrive
+ * in server text, though nothing here sends, buys or shows a gift - a gift
+ * message is held unshown (LoogriGramHidden). The same reasoning moved the currency
  * half of Play Billing out to CurrencyFormat; see that class.
  *
  * The logic is upstream's, unchanged. The one edit is the currency constant,

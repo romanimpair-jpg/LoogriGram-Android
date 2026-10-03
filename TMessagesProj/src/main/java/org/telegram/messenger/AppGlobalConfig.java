@@ -21,10 +21,8 @@ public class AppGlobalConfig {
 
     public final ConfigBoolean needAgeVideoVerification = ofBoolean("need_age_video_verification", false);
 
-    public final ConfigInt starsStarGiftResaleAmountMax = ofInt("stars_stargift_resale_amount_max", 35000);
-
-    public final ConfigInt stargiftsCollectionsLimit = ofInt("stargifts_collections_limit", 100);
-    public final ConfigInt stargiftsCollectionGiftsLimit = ofInt("stargifts_collection_gifts_limit", 100);
+    // LoogriGram: the gift resale price cap and the gift collection limits sat
+    // here; nothing lists or sells a gift (desktop's 02ddb37a).
     // LoogriGram: stories_albums_limit and stories_album_stories_limit sat here.
     // Story albums are removed, as on desktop; the keys are no longer read.
 
