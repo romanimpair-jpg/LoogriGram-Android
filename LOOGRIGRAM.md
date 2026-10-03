@@ -18,7 +18,8 @@ desktop's code once removed *free* suggested posts against its own money rule)
 or has no counterpart (Play Services, launcher mechanics, Windows packaging).
 Check against the other client's **commits**, not only its notes - a
 commit-by-commit audit of desktop (2026-10-01) found 13 gaps its notes never
-summarised. The reverse audit, Android's commits against desktop, is still owed.
+summarised. The reverse audit, Android's commits against desktop, followed on
+2026-10-04 and found four gaps (see "Parity with desktop" below).
 
 ---
 
@@ -1098,7 +1099,8 @@ In rough order of how much is left behind:
   exceptions stand. Left on purpose: a bot's request-a-user-with/without-
   Premium filter (desktop keeps it; the server checks it),
   `TL_availableReaction.premium`, read only to leave Premium reactions out,
-  and `BotVerifySheet` (desktop never had one).
+  and `BotVerifySheet` (desktop keeps its counterpart too: `verify_peers_box`
+  and the profile's `fillBotVerifyAccounts`, checked 2026-10-04).
 - **Parity with desktop - both ways now** (the rule at the top of this
   file). Desktop to Android: every item of desktop's checklist is done
   (Business, Stories, the article editor, AI compose, large emoji,
@@ -1111,7 +1113,15 @@ In rough order of how much is left behind:
   group emoji-pack chooser, 56 strings, the README, and the profile Gifts
   tab with the gift data. Desktop's code removing *free* suggested posts was
   judged a desktop mistake and restored there (`12f173a996`, `f7bbe51779`).
-  **Android to desktop: the reverse audit is owed** - see "Start here".
+  **Android to desktop** (2026-10-04): all 337 Android commits classified
+  against desktop - 210 done there or absent, 91 notes/tooling/internal, 25
+  Android-only, 4 differing by decision (the ghost toggle's place, a paid
+  login code's alert, the updater's waiting download, the avatar maker's
+  locks), and 7 missing, which came to four gaps, all mirrored on desktop the
+  same day: Telegram's help links and the pre-login FAQ row (`d062a5d77c`,
+  `c3041e5e96`), a verifier bot's note (`6adee333cb`), the updater's hourly
+  re-check (`00e97cf4bb`), and the location picker with geolocation and
+  venue search (`680eee9198`). Desktop's builds of them are owed.
 - **Stories - four stages, as desktop (2026-09-19), each a subagent with
   a full brief, reviewed here.** Desktop's decisions: story-carrying
   messages held, not dropped; a story reply keeps its text and loses the
