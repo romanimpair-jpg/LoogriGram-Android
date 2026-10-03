@@ -1,46 +1,81 @@
-## Telegram messenger for Android
+# LoogriGram for Android
 
-[Telegram](https://telegram.org) is a messaging app with a focus on speed and security. It’s superfast, simple and free.
-This repo contains the official source code for [Telegram App for Android](https://play.google.com/store/apps/details?id=org.telegram.messenger).
+A personal, privacy-minded build of [Telegram for Android](https://github.com/DrKLO/Telegram). It has no ads, no Premium, no Stars or other paid features, no stories, no non-essential telemetry and no Google libraries, and ghost mode is on by default.
 
-## Creating your Telegram Application
+**Not affiliated with Telegram.** LoogriGram is an unofficial third-party client built on the official Telegram for Android source and the public Telegram API, with its own API ID. It talks to Telegram's servers exactly as the official app does, so nothing here hides your activity from Telegram itself.
 
-We welcome all developers to use our API and source code to create applications on our platform.
-There are several things we require from **all developers** for the moment.
+It's built for one person's daily use and published because the license requires the source. There are no support or feature promises. It is the Android side of [LoogriGram Desktop](https://github.com/romanimpair-jpg/LoogriGram-Desktop), and the two make the same choices.
 
-1. [**Obtain your own api_id**](https://core.telegram.org/api/obtaining_api_id) for your application.
-2. Please **do not** use the name Telegram for your app — or make sure your users understand that it is unofficial.
-3. Kindly **do not** use our standard logo (white paper plane in a blue circle) as your app's logo.
-3. Please study our [**security guidelines**](https://core.telegram.org/mtproto/security_guidelines) and take good care of your users' data and privacy.
-4. Please remember to publish **your** code too in order to comply with the licences.
+## What's different
 
-### API, Protocol documentation
+### Ghost mode (on by default)
 
-Telegram API manuals: https://core.telegram.org/api
+One switch in the tab bar, where the Contacts tab used to be.
 
-MTproto protocol manuals: https://core.telegram.org/mtproto
+- No "typing…" or other activity indicators are sent.
+- You always appear offline.
+- It sets **Last Seen** to *Nobody* and turns on **hide read time** on the server, once when an account first logs in and again each time you switch ghost mode on. Setting Last Seen replaces its rules, so any exceptions you had there are dropped. Turning ghost mode off doesn't change either setting back.
 
-### Compilation Guide
+**Read receipts are still sent.** Telegram uses the same request both to tell the sender you've read a message and to sync your read position to your other devices, so blocking it would make everything you read on the phone show up unread everywhere else. Hiding the read *time* is the part that can be had without breaking sync.
 
-**Note**: In order to support [reproducible builds](https://core.telegram.org/reproducible-builds), this repo contains dummy release.keystore,  google-services.json and filled variables inside BuildVars.java. Before publishing your own APKs please make sure to replace all these files with your own.
+### Removed
 
-You will require Android Studio 2025.1.4, Android NDK 27.2.12479018 and Android SDK 36.
+- **Ads.** No sponsored messages in channels, in the video player, or above search results.
+- **Telemetry that isn't needed to use Telegram.** Per-message reading time, and view-count reporting from channels.
+- **Everything to do with money, in either direction.** Premium subscriptions and upsells, Stars, TON, gifts, giveaways, paid media, paid posts, paid reactions, paid messages, boosts, Telegram Business, payments and channel earnings. Messages that carry a gift, a giveaway, a payment or a price stay in your history but aren't shown. Chats with people who charge per message are locked, with a note explaining why.
+- **Premium is shown for nobody.** Everyone looks the same: no Premium badges, emoji statuses, collectible colours or decorated profiles on anyone, and no Premium-only tools in the interface. Limits that Telegram's servers enforce on free accounts still apply.
+- **Stories**, entirely: the strip, avatar rings, profile tabs, the camera and editor, the viewer and statistics. Messages that carry a story are hidden. Replies to a story keep their text.
+- **AI compose**, the **article editor**, **large animated emoji**, the **greeting sticker** in empty chats, and **emoji and sticker suggestions** above the message field.
+- **Bots can't set your emoji status**, and an account verified by a bot rather than by Telegram looks unverified.
+- **Telegram's help section:** Ask a Question, the FAQ, Telegram Features and the Privacy Policy row, and the "is this still your number?" prompt. The two-step verification password reminder is kept, because forgetting that password locks you out.
+- **Your location.** The app has no location permission, so it can't find you or share where you are, and there is no map to pick a place on. A location someone sends you opens in your maps app.
+- **Your address book.** The app has no contacts permission and never reads or uploads your phone's contacts. Your Telegram contacts work as usual.
+- **Google, entirely.** No Play Services, Firebase (push or crash reporting), Google Pay, Play Billing, Play Integrity, SafetyNet, reCAPTCHA, Google sign-in, ML Kit, Chromecast, Wear OS, Android Auto or the Play install referrer.
+- **Telegram's own updates.** Updates come from this repository instead (see below).
 
-1. Clone the Telegram source code with its submodules:
-   ```bash
-   git clone --recursive --shallow-submodules https://github.com/DrKLO/Telegram.git Telegram
-   ```
-   In case you forgot the `--recursive` flag, change to the `Telegram` directory and run:
-   ```bash
-   git submodule init && git submodule update --init --recursive --depth=1
-   ```
-2. Copy your release.keystore into TMessagesProj/config
-3. Fill out RELEASE_KEY_PASSWORD, RELEASE_KEY_ALIAS, RELEASE_STORE_PASSWORD in gradle.properties to access your  release.keystore
-4.  Go to https://console.firebase.google.com/, create two android apps with application IDs org.telegram.messenger and org.telegram.messenger.beta, turn on firebase messaging and download google-services.json, which should be copied to the same folder as TMessagesProj.
-5. Open the project in the Studio (note that it should be opened, NOT imported).
-6. Fill out values in TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java – there’s a link for each of the variables showing where and which data to obtain.
-7. You are ready to compile Telegram.
+### Changed defaults
 
-### Localization
+- Media auto-download: photos and GIFs only.
+- Notifications for pinned messages are off.
 
-We moved all translations to https://translations.telegram.org/en/android/. Please use it.
+### Kept on purpose
+
+- Read receipts (see above).
+- Delivery confirmations for login codes sent through Telegram Gateway. Without them, services tend to resend the code by SMS.
+- Verified, scam and fake badges. They're warnings, not purchases.
+- The proxy sponsor channel, because it discloses who runs the proxy.
+
+## Installing and updating
+
+1. Download `LoogriGram.apk` from the [latest release](https://github.com/romanimpair-jpg/LoogriGram-Android/releases/latest).
+2. Open it on the phone. The first time, Android asks you to allow installs from the app you opened it with.
+
+It runs on 64-bit ARM phones only. The package name is `com.loogrimedia.loogrigram`, so it installs beside an official Telegram app rather than over it.
+
+Releases are signed with this fork's own key. Its certificate's SHA-256 fingerprint is:
+
+```
+97b5106a0796100b36f7aea5e42ceae51b5861bd0dec6e672ee5a85bc1e49030
+```
+
+Android refuses an update signed with any other key, so every later release must carry the same one.
+
+The app checks this repository's releases each time it starts, and at most once an hour when you come back to it. A new build shows up as an extra tab at the end of the tab bar. You can also check by hand with **Check for updates** in Settings, below Language; its subtitle shows the build you're on. Android always asks before installing. The check is an anonymous request to GitHub and carries nothing about your account.
+
+**Notifications** come over the app's own connection to Telegram, because a renamed app can't receive Telegram's push messages through Google. Android requires a permanent notification for an app that stays connected like this. It's silent and sits at the bottom of the shade.
+
+## Building
+
+Builds run on GitHub Actions and are started by hand. See [`.github/workflows/android.yml`](.github/workflows/android.yml). The fork's work lives on the `patches` branch, and `dev` holds the upstream baseline it was forked from. [`LOOGRIGRAM.md`](LOOGRIGRAM.md) on `patches` holds the maintainer notes: build details, pitfalls, and the reasons behind each change.
+
+Every change from upstream in the source carries a `LoogriGram:` comment, so
+
+```
+grep -rn "LoogriGram:" TMessagesProj/src
+```
+
+lists the complete behavioural difference from Telegram for Android.
+
+## License
+
+GNU GPL version 2, the same as Telegram for Android. See [LICENSE](LICENSE).
