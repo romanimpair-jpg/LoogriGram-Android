@@ -2,8 +2,9 @@
 
 Personal fork of Telegram for Android. Same goals as the desktop side: no ads,
 no non-essential telemetry, no auto-updates, ghost mode on by default — plus
-fully Google-free, because the phone runs GrapheneOS with no Play Services at
-all. Started 2026-09-10.
+fully Google-free: the app ships no Google code. Started 2026-09-10 for a
+GrapheneOS phone with no Play Services; the phone is now a Pixel 10a on stock
+Android with Play Services (see Status), and the app stays Google-free.
 
 Upstream's own conventions still apply to code style. This file covers what is
 specific to the fork. The desktop fork's `LOOGRIGRAM.md` is worth reading too:
@@ -641,7 +642,7 @@ phone number by hand, deleting them, and "Delete synced contacts", which
 matters because an account can still hold contacts imported before this.
 
 **Location.** Cannot geolocate: every location permission is gone from all six
-manifests, which the OS enforces and GrapheneOS shows in app info.
+manifests, which the OS enforces and shows in app info.
 `ACCESS_MEDIA_LOCATION` went too — that one exposes photo EXIF coordinates.
 Received locations open in any maps app via a `geo:` intent - from a message,
 a poll answer, shared media, the admin log, a group's address, a business
