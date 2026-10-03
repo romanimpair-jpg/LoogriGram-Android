@@ -74,20 +74,48 @@ because Android will refuse an update signed with any other.
 
 ### Start here next session (written 2026-10-03, handoff)
 
-1. **Ask how the desktop full build `f7bbe51779` went** - run 37138072076,
-   https://github.com/romanimpair-jpg/LoogriGram-Desktop/actions/runs/37138072076.
-   It is the first compile of desktop's free-suggested-posts restore
-   (`12f173a996` receiving, `f7bbe51779` sending; desktop has no
-   compile-only mode). If it failed, fix from `--log-failed` (`ninja -k 0`
-   lists every compile error; link errors can only show in the next build).
-   Its risk list, from the session that wrote it: `data_msg_id.h`
-   `SuggestOptions`, `api_common.cpp` `SuggestToMTP`, `apiwrap.cpp` ~3737
-   (the time change now replies to the original), `history_widget.cpp`
-   ~2424/~3242 (the bar, reverse-applied from `b6ce0dfcef`),
-   `history_view_compose_controls.cpp` ~1914, `history_view_chat_section.cpp`,
-   `history_item_reply_markup.h` ~100 (enum and table both shift
-   `CreateBot`). If green, the installed desktop app offers it on launch.
-2. **Next step - the user's, 2026-10-03: the reverse parity audit.** Parity
+1. **Ask how the desktop full build `dd0ea5658d` went** - run 37158363951,
+   https://github.com/romanimpair-jpg/LoogriGram-Desktop/actions/runs/37158363951.
+   The earlier one (`f7bbe51779`, run 37138072076) failed before compiling
+   anything of ours: every dependency cache had been evicted after the idle
+   fortnight, and the rebuild died at MSYS2's "target not found:
+   mingw-w64-x86_64-diffutils". The fix is desktop's frozen dependencies
+   (see its `LOOGRIGRAM.md`, Building, "Frozen dependencies") - **not**
+   upstream's ucrt64 switch, which was tried (`6b3c48e7d1`) and reverted
+   (`d4958b8bab`) on the user's rule: "stop following upstream until break".
+   This run is also the first compile of the free-suggested-posts restore
+   (`12f173a996`, `f7bbe51779`); its risk list: `data_msg_id.h`
+   `SuggestOptions`, `api_common.cpp` `SuggestToMTP`, `apiwrap.cpp` ~3737,
+   `history_widget.cpp` ~2424/~3242, `history_view_compose_controls.cpp`
+   ~1914, `history_view_chat_section.cpp`, `history_item_reply_markup.h`
+   ~100. If it fails, fix from `--log-failed`. **If green, ask the user
+   whether to dispatch one desktop `cache` run** (no app release; it stores
+   the built ThirdParty and Libraries trees as the `deps-trees`
+   pre-release, so an evicted cache can never force a rebuild again).
+2. **Then freeze every other dependency, in both projects** - the user's
+   decision, 2026-10-03, for the start of the next session. Pin each to
+   exactly what the last good build used (read it from that run's log),
+   never to upstream's newer choice:
+   - Android (`.github/workflows/android.yml`): `runs-on: ubuntu-latest`
+     -> `ubuntu-24.04` (the last good build ran image 20260927.320.1);
+     `java-version: '17'` -> `'17.0.20+101'` (Temurin, as `g55475fe4`
+     used); `actions/checkout@v5`, `actions/setup-java@v5`,
+     `gradle/actions/setup-gradle@v5`, `actions/upload-artifact@v6` ->
+     exact commit SHAs. `platforms;android-36` installs its latest revision
+     and sdkmanager cannot pin one - record it, low risk. Already pinned:
+     NDK 27.2.12479018, CMake 3.22.1, build-tools 36.0.0, Gradle 8.11.1, no
+     dynamic dependency versions, native sources at submodule commits.
+     Validate with a compile run.
+   - Desktop (`win.yml`, `prepare.py`): `Eden-CI/msvc-dev-cmd@master` (a
+     branch!) and every `actions/*@vN` -> commit SHAs; `runs-on:
+     windows-latest` -> the image version the last good build used (the
+     VS toolset is already pinned to 14.44); `prepare.py`'s python stage
+     `pip install pywin32 six meson` -> exact versions; NuGet's
+     `.../latest/nuget.exe` -> a fixed version (or mirror it, as the MSYS2
+     packages are); then audit every other `stage(...)` for a download that
+     is not a fixed tag, commit or hash. Desktop has no compile-only mode -
+     each change costs a build, so batch them and ask.
+3. **Then the reverse parity audit** (the user's, 2026-10-03). Parity
    is two-way now (the rule at the top of this file). Desktop's 233 commits
    were audited against Android on 2026-10-01 - 13 gaps, all closed by
    `0d90a619..090da946` - but Android's own commits (`9f8c35d1..patches`)
@@ -104,7 +132,7 @@ because Android will refuse an update signed with any other.
    desktop still draws. Then mirror the gaps on desktop - each desktop change
    costs a full build, so ask before dispatching - and watch for a client
    being wrong (desktop once was): raise it, don't copy it.
-3. **Install `g55475fe4`** (Latest, green) when the phone is on USB, and walk
+4. **Install `g55475fe4`** (Latest, green) when the phone is on USB, and walk
    the lists below, newest first. `adb` is at
    `C:\Users\Loogris\platform-tools\adb.exe`, the package
    `com.loogrimedia.loogrigram`. The notes know of nothing since `gf20af361`
