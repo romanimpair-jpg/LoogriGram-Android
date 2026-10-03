@@ -436,6 +436,16 @@ and the unstripped `.so`. The installed app reads those releases - see the
 updater below - so a build is outward facing and is asked about every time. A
 `compile` is not.
 
+**Every dependency is frozen** at what the last good build used, and changes
+only on purpose - never by following upstream or "latest" (the user's rule,
+as on desktop; `2c60b2fb`, 2026-10-04, read from `g55475fe4`'s run
+37110897841): `runs-on: ubuntu-24.04`, Temurin `17.0.20+101`, every action
+by commit SHA, NDK 27.2.12479018, CMake 3.22.1, build-tools 36.0.0, Gradle
+8.11.1, no dynamic dependency versions, native sources at submodule commits.
+Two things cannot be pinned: a hosted image's build (only its label), and
+the SDK platform's revision, which sdkmanager always installs at its latest -
+`android-36` was revision 2, and the install step warns when that changes.
+
 There is no JDK on the dev machine — **CI is the only compiler.** Plan edits
 accordingly: read code back after scripted edits rather than trusting them,
 because a four-minute round trip punishes guessing.
