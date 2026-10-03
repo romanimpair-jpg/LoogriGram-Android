@@ -28,13 +28,12 @@ summarised. The reverse audit, Android's commits against desktop, followed on
 | Part | State |
 |---|---|
 | Fork, CI, degoogling | Done. No Google bytecode in the APK, verified in the dex. The last Google-shaped code went on 2026-09-23/24: the Play install referrer and the four Chromecast stubs |
-| Installed on the phone | **Yes.** `gf20af361`, installed 2026-09-22 over `adb` (`adb install -r` succeeded, so the key matched); launches clean. Not rechecked since: the phone was not on USB on 2026-09-24. `gaf5d70a5` built green on 2026-09-22 but was never installed |
-| Latest release | `g55475fe4` (full build run 37110897841, green, 2026-10-03): everything through the desktop-parity pass, the icon, iTunes and Help. Not installed. Before it: `g83c5583d` (36907722985, 2026-10-01), `g20294896`, `gb81ce49d`, `gf2478ebb` (which superseded the crashing `g1ec92ae0`, trap 0e) - a buggy Latest is superseded by the next build, never deleted, the user's rule |
-| Pending build | None on Android: `55475fe4` is Latest and only `56d3930b` (notes) follows it. **Desktop** has one in flight - see "Start here" |
+| Latest release | `g55475fe4` (full build run 37110897841, green, 2026-10-03): everything through the desktop-parity pass, the icon, iTunes and Help. Before it: `g83c5583d` (36907722985, 2026-10-01), `g20294896`, `gb81ce49d`, `gf2478ebb` (which superseded the crashing `g1ec92ae0`, trap 0e) - a buggy Latest is superseded by the next build, never deleted, the user's rule |
+| Pending build | None on Android: `55475fe4` is Latest; only CI and notes commits follow it. **Desktop** has one in flight - see "Start here" |
 | Premium pass | **Done** (2026-10-01). The Premium screens are deleted (`51d67433`), `UserConfig.isPremium()` is gone and every caller takes the non-Premium path, others' Premium changes nothing drawn (`b90da4f6`), limits are the free ones. The user's two exceptions stand: the Premium-users-only notice's wording, dimmed folders past the cap |
 | App name and icon | Done - launcher, in-app strings (56 more in `5bd6a07d`), the two wordmark screens, and the launcher icon: desktop's mark, one icon only (`037d897a`, built by `branding/make_android_icons.py`) |
 | Phone contacts | **Never touched.** Permissions, account and sync adapter all gone |
-| Updater | Ours, from this repo's releases. Checks on every cold start, then hourly; manual row in Settings (2026-09-21). Since `ec7c9d55` (2026-09-24) a download waiting to be installed no longer blocks the check: a newer release replaces it and one no longer Latest is dropped - the installed `gf20af361` does not have that yet. **Nobody has seen the automatic check find a release** |
+| Updater | Ours, from this repo's releases. Checks on every cold start, then at most hourly on resume; manual row in Settings, after Language (2026-09-21). Since `ec7c9d55` (2026-09-24) a download waiting to be installed no longer blocks the check: a newer release replaces it and one no longer Latest is dropped |
 | Ads | **Gone**, all three surfaces, down to `MessageObject`'s fields (2026-09-21) |
 | Money messages | Held in history, never drawn — desktop's hidden-content rule. The chat list no longer rises for one. **Their drawing code is deleted too** (2026-09-24/25): ChatActionCell's gift cards, the invoice card, paid media and `GroupMedia`, the eight message types nothing can have, the extended-media checks |
 | Stars wallet | **Gone** (2026-09-25): StarsIntroActivity, TONIntroActivity, PaymentFormActivity, BotStarsController and the wallet half of StarsController. Its gift-list half went with the Gifts tab (2026-10-03, `92281bd2`); `messenger.MessageId` is its own class |
@@ -50,8 +49,8 @@ summarised. The reverse audit, Android's commits against desktop, followed on
 | Location | **Gone** (2026-09-22): the map screens are deleted, every received location opens in a maps app, and the weather sticker went with them |
 | Photo/video viewer | **Fixed** 2026-09-20; was our own null dereference, see the traps |
 | Build warnings | **None of ours are left.** Native, CMake, Gradle, Kotlin and CI fixed in `d6b0890c`/`f2f12360`; both AAPT sets fixed 2026-09-22 (`663ec903`, `77673c28`). What remains is javac's two notes, which are upstream's and third-party's — see "The javac notes are not ours" |
-| Ghost mode | Working in first use; not yet checked against a second account |
-| Push transport | Working; **not yet trusted over hours idle**. FCM is impossible here — see below |
+| Ghost mode | Done: on by default, see Architecture |
+| Push transport | Ours: an MTProto foreground service. FCM is impossible here — see below |
 
 **The phone is now a Pixel 10a running stock Android with Play Services**, not
 GrapheneOS - so Google code could come back where it buys something. It has
@@ -61,13 +60,13 @@ and their servers push with their own credentials, so a renamed package signed
 with our key can never receive it. Checked in their `google-services.json`, not
 assumed. The MTProto foreground service stays.
 
-What is still not earned is confidence in the push transport. That path is entirely ours - foreground service, `specialUse`
-type, MTProto connection - and its failure mode is *delayed* notifications after
-hours of idle, which no amount of testing in the first few minutes will reveal.
-If messages start arriving late or only on unlock, look there first, and question
+The push path is entirely ours - foreground service, `specialUse` type, MTProto
+connection - and its failure mode would be *delayed* notifications after hours
+of idle, which no amount of testing in the first few minutes reveals. If
+messages start arriving late or only on unlock, look there first, and question
 the `specialUse` choice before anything else.
 
-The installed APK: ~44.5 MB, `lib/arm64-v8a/libtmessages.49.so` only, signed
+The release APK: ~44.5 MB, `lib/arm64-v8a/libtmessages.49.so` only, signed
 `O=LoogriMedia, CN=LoogriGram`, certificate SHA-256
 `97b5106a0796100b36f7aea5e42ceae51b5861bd0dec6e672ee5a85bc1e49030`. That
 fingerprint is how to confirm a later build carries the same key - and it must,
@@ -133,11 +132,6 @@ because Android will refuse an update signed with any other.
    desktop still draws. Then mirror the gaps on desktop - each desktop change
    costs a full build, so ask before dispatching - and watch for a client
    being wrong (desktop once was): raise it, don't copy it.
-4. **Install `g55475fe4`** (Latest, green) when the phone is on USB, and walk
-   the lists below, newest first. `adb` is at
-   `C:\Users\Loogris\platform-tools\adb.exe`, the package
-   `com.loogrimedia.loogrigram`. The notes know of nothing since `gf20af361`
-   on the phone.
 
 Each pass since 2026-09-26 went to a subagent with a full brief (rules,
 every checker, the other client's decisions quoted) and was reviewed here
@@ -146,240 +140,9 @@ after: every checker over the pass's whole range (`git reset --soft
 dropped positional parameters `argcheck_all.py` (the dropped values must be
 null or the removed variable).
 
-**Look first where a mistake would be silent** - a compile draws nothing.
-Every list below is in `g55475fe4` and none has been seen on the phone.
-Gift items in the older lists are obsolete: the gift sheet, the Gifts tab
-and the gift data went on 2026-10-03.
-
-   From 2026-10-01..03:
-   - the launcher icon in round and squircle masks, the themed icon on
-     Android 13+, our picture in notifications and on the call screen;
-     Appearance has no App Icon section; an install that had Vintage or Aqua
-     still has an icon after updating (`LauncherIconController`);
-   - music without its own cover shows the plain music icon (no iTunes
-     lookup); covers carried by the file still show;
-   - Settings has no Help section, the update check follows Language,
-     `tg://settings/privacy-policy` opens Settings;
-   - a private chat's read-time line says "read", no "show when" pill; a
-     profile with hidden last seen has no "when?" pill;
-   - chat theme sheet: emoji themes only; a chat with a collectible theme
-     shows the default; wallpapers carry no gift symbol;
-   - replies and quotes from someone with a collectible colour use the plain
-     colour; profile headers are plain, buttons legible in light and dark,
-     the music bar included;
-   - `t.me/nft/...`: the "unsupported" alert and a plain preview; a
-     collectible username copies on tap; username editors show "taken" for a
-     name on sale; a +888 number's menu has no Fragment note;
-   - admin log "changed emoji pack": a tap does nothing; the group sticker
-     chooser works;
-   - permission prompts and the passcode screens say LoogriGram;
-   - profiles: no Gifts tab, no ring; `my-profile/gifts` opens the profile;
-   - free suggested posts get Accept/Decline; a priced one is not shown;
-     chat-list badges and order are unaffected by the held messages.
-
-   From 2026-09-29..10-01 (article editor, Premium, leftovers):
-   - no Article button in the attach menu, no expand button on long
-     messages; a received article copies and pastes with its formatting, its
-     checkboxes do not tick, it offers no Edit; a cloud draft holding an
-     article shows as text; html paste works; an inline bot's article sends;
-   - GIFs auto-download with photos (within the photo size limit), videos
-     and files do not by default;
-   - limit sheets: centred badge, plain sentence, OK; a file over 2 GB says
-     so; folders past the cap dimmed and locked; no folder tags on rows;
-   - emoji panel: the category row only on the stickers/GIF tabs, no
-     Premium packs; the double-tap reaction setting is the plain list; the
-     message-effect picker has no padlocks; Trending Stickers, never
-     "Premium";
-   - a received checklist draws with its ticks, tapping a task does nothing;
-     no checklist button in the attach menu;
-   - adding people to a group call works; the storage chart's star burst
-     after clearing the cache;
-   - global search shows the Posts tab; the scheduler has no repeat row; at
-     most three accounts can be added (a fourth already logged in stays);
-   - a gift or payment arriving shows no text in the chat list; a paid group
-     message has no star before its time.
-
-   From 2026-09-28/29:
-   - the chat list: no story strip or rings, avatar taps work; the
-     archive folder appears and goes correctly; unread counts and read
-     positions sync with another device;
-   - profiles: no story, archive, album or bot-preview tabs; shared
-     media, calendar and gifts still work;
-   - sending in chats and topics, with reply and quote: text, sticker,
-     GIF, inline result, photo, video, file, poll, voice (the story
-     parameter left ~22 send methods); a resumed voice draft;
-   - Storage clears old story files under Miscellaneous; "Clear local
-     database" completes (it now also empties the story tables);
-   - blocking and unblocking; the send-as picker in a channel;
-   - a message of only emoji, or one custom emoji, is ordinary text in
-     a bubble; dice and premium sticker effects still play;
-   - typing a word or `:word` shows no emoji strip, a lone emoji offers
-     no stickers; @mentions, #hashtags, /commands, @bot inline work;
-     emoji and sticker search work;
-   - an empty chat shows "No messages here yet"; a business intro still
-     shows and its sticker sends;
-   - Settings > Help: only Privacy Policy and the update check; no
-     phone-number banner; the password reminder can still appear; the
-     log-out screen has no Contact Support;
-   - channel posts show views and comment buttons (counts now update
-     only from the server); Reset in Data settings leaves only Photos
-     on; Pinned Messages notifications keep their state.
-
-   From 2026-09-27, Stories stages 1-2:
-   - the chat photo editor: stickers, and the sticker sheet's Photo
-     widget; choosing a video cover (GallerySheet, TimelineView); the
-     round-video camera and the in-chat camera's flash;
-   - share sheets (chat, photo viewer, a gift link) and sharing a photo
-     from another app: no "My Story" row;
-   - the chat list: no story button above the pencil, the new-chat hint's
-     arrow is back;
-   - our own profile's stories tab: its button shows only while stories
-     are selected; archiving and "Add to album" still work;
-   - a mini app calling shareToStory: the "not supported" popup;
-     tg://post links are refused as unopenable;
-   - a forwarded story and a story mention: no bubble, no chat-list
-     preview, no unread badge that will not clear;
-   - a reply to a story: its text, no quote;
-   - `t.me/x/s/1`, `/a/1`, `?story=`, `?album=` open the peer; a story
-     link previews as a plain page;
-   - channel statistics: the overview in 3 rows, no story charts.
-
-   From 2026-09-26/27, Business:
-   - Devices: the session list, and Terminate all shows the plain alert;
-   - Edit profile: no Chat Automation, hours or location rows;
-   - a chat with a person: no bot bar, "/" offers nothing; a bot chat:
-     "/" lists commands and sends them, the menu button works;
-   - the attach menu: no Quick Replies tab, the rest work, photo
-     multi-select is not capped;
-   - the folder include/exclude picker: type rows show avatars and
-     toggle, search finds users, bots and groups; the auto-delete
-     "existing chats" picker;
-   - a group's Welcome messages: empty state, hint row, sending;
-   - a business user's profile: hours expand, my-time toggle, location;
-     their chat intro in an empty chat; their t.me/m/ link opens the chat
-     with the preset text;
-   - the giveaway, Stars and suggested-post placeholder avatars (the
-     avatar drawable slots were renumbered);
-   - sending, forwarding, editing, deleting and retrying messages,
-     albums included.
-
-   From the second 2026-09-26 session, built in `g20294896`, unseen:
-   - **the chat list**: rows lost the space an emoji status or bot icon
-     reserved - names, the mute icon and the verified check must sit right
-     (`873fe3ab` rewrote DialogCell's layout math); the title reads
-     "LoogriGram" with nothing beside it;
-   - **a group's messages**: author names, admin badges and topic chips,
-     with no status after the name;
-   - **profiles**: the name row (verified or scam only); the header colour
-     of someone wearing a collectible (their own profile colour now); the
-     pinned-gift ring and the story ring; a bot's profile has no
-     emoji-status permission row; a private chat's menu offers only
-     "Enable Sharing", and only when sharing is off;
-   - **Privacy and Security**: no Voice Messages, Messages or Gifts rows;
-     the Invites and Calls exception pickers have no "User types" section,
-     and each row's summary still reads sensibly;
-     tg://settings/privacy/voice, /messages and /gifts open Privacy and
-     Security;
-   - **Appearance**: no name-colour row, and three launcher icons
-     (Default, Vintage, Aqua);
-   - **a folder's edit screen**: the tag colour picker (PeerColorGrid, cut
-     down to folders in `b2682a10`);
-   - **a channel's admin log**: "changed colour" entries keep their dots
-     (PeerColorSpan moved out of the deleted screen);
-   - **pinning a gift past the limit**: the unpin sheet's gift cells
-     (`ProfileGiftsContainer.UnpinGiftCell`);
-   - **a long press on a custom emoji**: no "Set as Status";
-   - **the report bar** in a chat with a stranger: no emoji-status or
-     bot-verification hint under it;
-   - **an empty chat with a Business greeting**: the line has no "how?"
-     and takes no tap;
-   - Settings -> Reactions lists no Premium reactions; a channel's Similar
-     tab has no "More similar" block and a counter matching the list; the
-     translation sheet has no "Translate Entire Chat".
-
-   From the first 2026-09-26 session, built in `gb81ce49d` and also unseen:
-   - **Saved Messages**: no tags anywhere, no reactions (double-tap, the
-     menu's row); search there works as plain search; forwarding to it
-     shows the ordinary "Forwarded to Saved Messages" bulletin;
-   - **the emoji panel and pack sheets**: no padlocked packs, a mixed
-     pack shows its free half, Premium packs add without "Unlock"; paste
-     text holding a custom emoji into a chat and send it - it must go out,
-     the Premium ones as plain emoji;
-   - **global search**: no Posts tab; the chat list's downloads shortcut
-     must still open the Downloads tab (`80072e50` replaced a fixed index
-     with a lookup by type);
-   - **Settings**: Folders won't drag All Chats and shows no tags switch;
-     Privacy has no voice-messages or "who can message me" rows;
-     Language has no "Translate Entire Chats"; Archive's non-contacts
-     switch only shows where the server allows it;
-   - **compose**: no AI button anywhere (chat field, attach captions,
-     photo caption); hints still hide on a touch (`77f0cb10`); the attach
-     menu has no Checklist button; a long press on Send offers no
-     padlocked effects;
-   - **a voice message past the free trials**: the bulletin reads "...
-     Wait until <date> to use it again." (`LoogriGramTranscribeTrialsOver`);
-   - **a group that lets members send as a channel**: the popup lists only
-     free identities and still scrolls to the current one;
-   - **a channel's similar-channels strip**: no "Unlock Similar" tile.
-
-   From 2026-09-24/25, also still unseen:
-   - **the chat list**: tapping a chat must open *that* chat. `61055a34`
-     changed `DialogsAdapter`'s position offsets when it took out the
-     "Recently viewed" section, and an off-by-one there shows nothing else;
-   - **video and music**: quality, speed, mute, and the music player's
-     options menu ("remove from profile" must still do that) - `bb8137fb`
-     edited `MediaController` and `PhotoViewer`;
-   - **a collectible gift**: its sheet opens, the action row is Share only,
-     and back from the upgrade page works;
-   - **Settings → Add account** walks the login pages without touching the
-     main session (`LoginActivity`'s page array went from 19 to 18);
-   - **a group that restricts us**: the bottom bar names the restriction;
-     slow mode, the attach menu, the emoji panel and the voice button's hint
-     behave; its stories offer no reply field;
-   - **a channel we admin**: no Appearance or Auto-translate rows, the
-     standard reactions editor, invite links without a subscription switch,
-     and Statistics as one page, shown only where `can_view_stats`;
-   - **the limit sheets**: a pinned chat past the limit, folders past the
-     cap;
-   - **colours and wallpapers**: our own name-colour row in Appearance,
-     `PeerColorActivity` without its tab row and with the "Use a gift"
-     header, setting a wallpaper, a private chat's theme, and the story
-     recorder's theme picker (`ThemeChooser`, moved out of the deleted
-     channel screen);
-   - **the gift upgrade page**, from the previous list and still unseen: it
-     should appear *only* when the sender prepaid the upgrade, reading
-     "Upgrade for Free" and then Confirm;
-   - **service messages** (ChatActionCell was cut by 1,335 lines): a
-     collectible's chat theme ("set a gift theme", View), a sharing offer
-     with its two buttons, a community change, a suggested profile photo,
-     a wallpaper message and a story mention must all still draw;
-   - **a received collectible's sheet**: no "Value" row, Share has no story
-     cell, the sticker and "Availability" row still draw (helpers moved to
-     GiftViews);
-   - **link previews**: boost, gift-code and auction links preview as plain
-     pages; a collectible's (`telegram_nft`) preview and button remain;
-   - **limit sheets** (LimitPreviewView lost its dark-gradient paths): the
-     bars and counters look as before.
 **When a decision is needed, first check what the other client decided**
 (its `LOOGRIGRAM.md`, its commits and its `LoogriGram:` comments) and copy
 it - the user's rule, 2026-09-25, two-way since 2026-10-03.
-
-Still unverified from earlier sessions, since a compile cannot see layout:
-   - chat list: a gift or payment arriving must not move the chat to the top
-     or blank its preview; the unread badge must still count it and clear;
-   - opening a channel: scrolling to the newest message, the jump-to-bottom
-     button, and new messages arriving while open;
-   - message bubbles: link previews with photos, the side share/go-to button's
-     position, name tap highlight, time placement;
-   - global search results list, and "show more" there;
-   - reporting a message or chat;
-   - Settings and your own profile no longer list Premium, Stars, TON,
-     Business or Send a Gift; a bot you own has no balance or affiliate rows;
-   - the paid-message lock (needs a user who charges per message): their chat
-     shows "X only accepts paid messages, which LoogriGram doesn't send."
-     instead of a compose field, and their row is padlocked in the share and
-     forward pickers;
-   - the updater's automatic check, which has still never found a release.
 
 ---
 
@@ -833,7 +596,7 @@ failed request leaves the next resume free to retry. Until 2026-09-21 it was
 once a day, counted from any attempt, and that is why `ge9a33bc2` never
 appeared on the phone: the installed build had checked that morning, before
 the release existed. There is also a manual check, the "Check for updates" row
-at the bottom of Settings' help section (subtitled with the build's tag): a
+after Language in Settings (subtitled with the build's tag): a
 newer build found that way re-opens the download prompt even if it was refused
 before; otherwise a toast says up to date or GitHub unreachable. The only
 earlier manual way was item 9 of upstream's hidden debug menu.
@@ -1376,19 +1139,13 @@ In rough order of how much is left behind:
 
 ### Then
 
-1. **Verify what first use could not.** Installed and working, but still open:
-   notifications after hours idle and after a reboot (the push path is ours and
-   fails *slowly*); ghost mode's four signals confirmed from a second account,
-   including that the read date is hidden and no burst of receipts follows
-   turning it off; a received location opening in a maps app; and a sweep for any
-   premium, Stars or gift surface still reachable.
-2. **Cosmetic pass - done** (2026-10-01, `037d897a`): the launcher icon is
+1. **Cosmetic pass - done** (2026-10-01, `037d897a`): the launcher icon is
    desktop's mark (black, the white plane, a blue L and G), built from
    `branding/LoogriGram/logo_256.png` by `branding/make_android_icons.py`
    (stdlib only); one icon, Vintage and Aqua gone; Telegram's unused
    wordmark drawable went too (`660b642a`). The pre-API-26 launcher PNGs
    stay - minSdk is 21.
-3. Consider caching the native build (`.cxx`) the way desktop caches `out/`, if
+2. Consider caching the native build (`.cxx`) the way desktop caches `out/`, if
    22 minutes becomes annoying. Same mtime problem applies.
 
 ## Known limits
