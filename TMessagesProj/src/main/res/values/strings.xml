@@ -7951,7 +7951,6 @@
     <string name="Gift2ActionOutInfo_other">**%2$s** can display this gift on their page or convert it to %1$d Stars.</string>
     <string name="Gift2ActionOutInfoNoConvert">**%s** can display this gift on their page.</string>
     <string name="Gift2ActionOutInfoUpgrade">**%s** can display this gift on their page or convert it to unique collectible.</string>
-    <string name="ProfileGifts">Gifts</string>
     <string name="ProfilePollsCount_one">%d poll</string>
     <string name="ProfilePollsCount_other">%d polls</string>
     <string name="ProfileGiftsSend">Send Gifts to Friends</string>

@@ -9301,7 +9301,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
     }
     private void updateOptionsSearch(boolean finish) {
         if (optionsSearchImageView == null) return;
-        optionsSearchImageView.setAlpha((searching || giftsContainer != null && giftsContainer.isReordering()) ? 0f : Utilities.clamp(searchAlpha + optionsAlpha, 1, 0));
+        optionsSearchImageView.setAlpha(searching ? 0f : Utilities.clamp(searchAlpha + optionsAlpha, 1, 0));
         if (finish) {
             animateSearchToOptions(getPhotoVideoOptionsAlpha(1) > 0.5f, true);
         } else if (searchItemState == 2) {
@@ -9713,15 +9713,16 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         }
     }
 
-    // LoogriGram: TAB_STORIES was the server's profileTabPosts. A main tab of
-    // posts now matches no tab, so the tabs keep their own order, as on
-    // desktop; the TL types are still parsed as the server sends them.
+    // LoogriGram: TAB_STORIES was the server's profileTabPosts, and TAB_GIFTS
+    // its profileTabGifts - the one main tab a user's profile could set. A main
+    // tab of posts or gifts now matches no tab, so the tabs keep their own
+    // order, as on desktop (1dcf631a parses Gifts as no preference); the TL
+    // types are still parsed as the server sends them.
     public static TLRPC.ProfileTab getTab(int id, boolean isChannel) {
-        if (id != TAB_GIFTS && !isChannel)
+        if (!isChannel)
             return null;
         switch (id) {
             case TAB_PHOTOVIDEO: return new TLRPC.TL_profileTabMedia();
-            case TAB_GIFTS:      return new TLRPC.TL_profileTabGifts();
             case TAB_AUDIO:      return new TLRPC.TL_profileTabMusic();
             case TAB_VOICE:      return new TLRPC.TL_profileTabVoice();
             case TAB_LINKS:      return new TLRPC.TL_profileTabLinks();
@@ -9734,7 +9735,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
     public static String getTabName(int id) {
         switch (id) {
             case TAB_PHOTOVIDEO: return getString(R.string.SharedMediaTabFull2);
-            case TAB_GIFTS:      return getString(R.string.ProfileGifts);
             case TAB_AUDIO:      return getString(R.string.SharedMusicTab2);
             case TAB_VOICE:      return getString(R.string.SharedVoiceTab2);
             case TAB_LINKS:      return getString(R.string.SharedLinksTab2);
@@ -9746,7 +9746,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
 
     public static int getTabId(TLRPC.ProfileTab tab) {
         if (tab instanceof TLRPC.TL_profileTabMedia) return TAB_PHOTOVIDEO;
-        if (tab instanceof TLRPC.TL_profileTabGifts) return TAB_GIFTS;
         if (tab instanceof TLRPC.TL_profileTabMusic) return TAB_AUDIO;
         if (tab instanceof TLRPC.TL_profileTabVoice) return TAB_VOICE;
         if (tab instanceof TLRPC.TL_profileTabLinks) return TAB_LINKS;
