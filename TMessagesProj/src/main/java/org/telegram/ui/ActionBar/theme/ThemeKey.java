@@ -52,7 +52,8 @@ public class ThemeKey {
         }
 
         if (string.startsWith("gift_")) {
-            // saved by an older build for a collectible's theme
+            // LoogriGram: saved by an older build for a collectible's theme. Gift
+            // themes are not applied, as on desktop, so it reads as no theme.
             return null;
         }
         if (string.startsWith("emoticon_")) {
