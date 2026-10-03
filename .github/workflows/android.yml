@@ -33,7 +33,11 @@ jobs:
 
   android:
     name: Android
-    runs-on: ubuntu-latest
+    # Frozen, like everything else here: every dependency stays at what the
+    # last good build (g55475fe4, run 37110897841) used, and changes only on
+    # purpose - never by following upstream or "latest". GitHub cannot pin a
+    # hosted image's build; that run had ubuntu-24.04 image 20260927.320.1.
+    runs-on: ubuntu-24.04
 
     permissions:
       # LoogriGram: write, because a successful Release build publishes the APK
@@ -45,11 +49,14 @@ jobs:
     timeout-minutes: 180
 
     env:
-      # Hard-pinned rather than "latest": the app declares both versions in
-      # its own Gradle files, and neither is preinstalled on the runner.
+      # Hard-pinned rather than "latest": the app declares the NDK and CMake
+      # versions in its own Gradle files, and neither is preinstalled on the
+      # runner. PLATFORM_REVISION is the one sdkmanager cannot pin; it is
+      # checked, not enforced.
       NDK_VERSION: "27.2.12479018"
       CMAKE_VERSION: "3.22.1"
       COMPILE_SDK: "36"
+      PLATFORM_REVISION: "2"
       BUILD_TOOLS: "36.0.0"
       GRADLE_TASK: "${{ inputs.config == 'Debug' && ':TMessagesProj_App:assembleAfatDebug' || ':TMessagesProj_App:assembleAfatRelease' }}"
 
@@ -95,7 +102,7 @@ jobs:
           echo "Mode: ${{ inputs.mode }}, config: ${{ inputs.config }}"
 
       - name: Clone.
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           # Ten submodules, one of them libyuv from chromium.googlesource.com
           # rather than GitHub. A missing submodule fails at Gradle
@@ -136,19 +143,21 @@ jobs:
           df -h / | tail -1
 
       - name: Set up JDK 17.
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: temurin
-          java-version: '17'
+          # Temurin's 17.0.20.1+1 release, which setup-java names this way.
+          java-version: '17.0.20+101'
 
       - name: Set up Gradle.
-        uses: gradle/actions/setup-gradle@v5
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
       - name: Install Android SDK components.
         run: |
-          # None of these are preinstalled at the pinned versions. sdkmanager
-          # is quiet about a version it cannot find and Gradle then reports it
-          # as a missing NDK much later, so each install is checked here.
+          # The NDK and CMake are not preinstalled at the pinned versions; the
+          # platform and build-tools are. sdkmanager is quiet about a version
+          # it cannot find and Gradle then reports it as a missing NDK much
+          # later, so each install is checked here.
           SDK="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
           MGR="$SDK/cmdline-tools/latest/bin/sdkmanager"
           yes | "$MGR" --licenses >/dev/null 2>&1 || true
@@ -164,6 +173,13 @@ jobs:
             fi
             echo "ok: $p"
           done
+          # sdkmanager always installs a platform's latest revision and cannot
+          # pin one, so a change is reported rather than prevented.
+          rev=$(sed -n 's/^Pkg\.Revision=//p' "$SDK/platforms/android-$COMPILE_SDK/source.properties")
+          echo "platform android-$COMPILE_SDK revision $rev"
+          if [ "$rev" != "$PLATFORM_REVISION" ]; then
+            echo "::warning::platform android-$COMPILE_SDK is revision $rev, not the frozen $PLATFORM_REVISION."
+          fi
 
       - name: Inject API credentials.
         env:
@@ -329,7 +345,7 @@ jobs:
           fi
 
       - name: Upload symbols.
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         if: inputs.mode == 'build'
         with:
           name: LoogriGram ${{ inputs.config }} symbols ${{ env.LOOGRIGRAM_TAG }}
@@ -337,7 +353,7 @@ jobs:
           retention-days: 30
 
       - name: Upload artifact.
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         if: inputs.mode == 'build'
         with:
           name: LoogriGram ${{ inputs.config }}
