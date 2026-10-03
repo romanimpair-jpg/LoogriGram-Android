@@ -28,22 +28,22 @@ summarised. The reverse audit, Android's commits against desktop, is still owed.
 |---|---|
 | Fork, CI, degoogling | Done. No Google bytecode in the APK, verified in the dex. The last Google-shaped code went on 2026-09-23/24: the Play install referrer and the four Chromecast stubs |
 | Installed on the phone | **Yes.** `gf20af361`, installed 2026-09-22 over `adb` (`adb install -r` succeeded, so the key matched); launches clean. Not rechecked since: the phone was not on USB on 2026-09-24. `gaf5d70a5` built green on 2026-09-22 but was never installed |
-| Latest release | `g20294896` (full build run 36232289359, green, 2026-09-26). Not installed: the phone was not on USB. Before it: `gb81ce49d`, `gf2478ebb` (which superseded the crashing `g1ec92ae0`, trap 0e) - a buggy Latest is superseded by the next build, never deleted, the user's rule |
-| Pending build | None. Nothing after `20294896` is in a build: Business, all of Stories, the smaller parity removals, telemetry, defaults, the article editor and the GIF default are compile-checked only (last green `7fa8201f`); the two Premium-screens commits after it are not yet compiled (see "Start here") |
-| Premium pass | Nearly done outside the parity passes. 15 Premium-screen entry points remain of ~100 (2026-09-27): 5 in the story viewer, 6 in the article editor, 4 in the Premium sheets themselves; emoji statuses, Premium stars and bot icons are drawn for nobody. See "Remaining work" |
-| App name | Done — launcher, in-app strings, and the two wordmark screens |
+| Latest release | `g55475fe4` (full build run 37110897841, green, 2026-10-03): everything through the desktop-parity pass, the icon, iTunes and Help. Not installed. Before it: `g83c5583d` (36907722985, 2026-10-01), `g20294896`, `gb81ce49d`, `gf2478ebb` (which superseded the crashing `g1ec92ae0`, trap 0e) - a buggy Latest is superseded by the next build, never deleted, the user's rule |
+| Pending build | None on Android: `55475fe4` is Latest and only `56d3930b` (notes) follows it. **Desktop** has one in flight - see "Start here" |
+| Premium pass | **Done** (2026-10-01). The Premium screens are deleted (`51d67433`), `UserConfig.isPremium()` is gone and every caller takes the non-Premium path, others' Premium changes nothing drawn (`b90da4f6`), limits are the free ones. The user's two exceptions stand: the Premium-users-only notice's wording, dimmed folders past the cap |
+| App name and icon | Done - launcher, in-app strings (56 more in `5bd6a07d`), the two wordmark screens, and the launcher icon: desktop's mark, one icon only (`037d897a`, built by `branding/make_android_icons.py`) |
 | Phone contacts | **Never touched.** Permissions, account and sync adapter all gone |
 | Updater | Ours, from this repo's releases. Checks on every cold start, then hourly; manual row in Settings (2026-09-21). Since `ec7c9d55` (2026-09-24) a download waiting to be installed no longer blocks the check: a newer release replaces it and one no longer Latest is dropped - the installed `gf20af361` does not have that yet. **Nobody has seen the automatic check find a release** |
 | Ads | **Gone**, all three surfaces, down to `MessageObject`'s fields (2026-09-21) |
 | Money messages | Held in history, never drawn — desktop's hidden-content rule. The chat list no longer rises for one. **Their drawing code is deleted too** (2026-09-24/25): ChatActionCell's gift cards, the invoice card, paid media and `GroupMedia`, the eight message types nothing can have, the extended-media checks |
-| Stars wallet | **Gone** (2026-09-25): StarsIntroActivity, TONIntroActivity, PaymentFormActivity, BotStarsController and the wallet half of StarsController. What was left of it is `ui/Gifts/GiftsController` (gift catalogue and profile gift lists), `messenger.MessageId` is its own class |
+| Stars wallet | **Gone** (2026-09-25): StarsIntroActivity, TONIntroActivity, PaymentFormActivity, BotStarsController and the wallet half of StarsController. Its gift-list half went with the Gifts tab (2026-10-03, `92281bd2`); `messenger.MessageId` is its own class |
 | Paid messages | **Done** (2026-09-21/22): users who charge are locked, nothing ever pays, nothing charges. The price-setting half went with the privacy option, the group permission and a live's price per comment |
 | Paid media, live comments | **Gone** (2026-09-22): no price on a photo or album, no paid or highlighted live comment, no Star donations to a live |
 | Paid reactions | **Gone** (2026-09-22/23). The star is not offered, its sheet and flying-star overlay are deleted, the bookkeeping that tracked one of ours in flight is gone, and one that *arrives* is no longer drawn — no button is built for it, and the particle halo that was the whole of the reaction row's overlay pass went with it |
-| Gifts | Sending, auctions, selling, buying, crafting, the buy-a-collectible tab, transfers and the TON export all **deleted** (2026-09-22/23), and wearing a collectible, which needs Premium (2026-09-24). Nothing is paid for a gift and nothing is paid *by* one: no converting one back into Stars, no paying to erase its provenance, and an upgrade only when the sender already paid for it. **Receiving is untouched**, and the gift sheet holds no money surface at all |
+| Gifts | Sending, auctions, selling, buying, crafting, the buy-a-collectible tab, transfers and the TON export all **deleted** (2026-09-22/23), and wearing a collectible, which needs Premium (2026-09-24). Nothing is paid for a gift and nothing is paid *by* one: no converting one back into Stars, no paying to erase its provenance, and an upgrade only when the sender already paid for it. Receiving went too, for desktop parity (2026-10-03): no profile Gifts tab, no pinned-gift ring, no gift sheet or data layer (`22836784`, `92281bd2`); gift messages are held |
 | Payments and earnings | **Gone** (2026-09-23). No payment form opens anywhere - bots, merchants, mini apps, invoice links, receipts - and nothing earns: affiliate programs, a referrer's commission, channel earnings and the charging half of Stars subscriptions are deleted. A number whose login code costs money gets an alert instead of a price |
 | Boosts | **Gone** (2026-09-24), honoured for nobody, ours included: no level locks, no booster badge, no Boost items, tab, screens or links, no giveaways or gift codes, and a group's restrictions apply as written to members who boosted it. Free transcription in a boosted group stays, as on desktop |
-| Suggested posts | **Free only** (2026-09-23). Suggesting a post to a channel stays — it is a publishing time and nothing else, upstream's own "Offer for free" case. The price, the Stars/TON tabs, the balance, the accept dialog's payment and commission paragraphs and the "Edit Price" menu row are gone |
+| Suggested posts | **Free only** (2026-09-23; a priced one received is held, `ec4885b2`; desktop restored the same free case on 2026-10-03). Suggesting a post to a channel stays — it is a publishing time and nothing else, upstream's own "Offer for free" case. The price, the Stars/TON tabs, the balance, the accept dialog's payment and commission paragraphs and the "Edit Price" menu row are gone |
 | Staked dice | **Gone** (2026-09-23). A 🎲 could be rolled with TON staked on it; `StakedDiceSheet` and the won/lost banner are deleted. Plain dice and the slot machine are untouched |
 | Paid search | **Gone** (2026-09-23). Global post search stays free-with-a-daily-quota; the "Search for N Stars" button past the limit is a countdown now |
 | Location | **Gone** (2026-09-22): the map screens are deleted, every received location opens in a maps app, and the weather sticker went with them |
@@ -72,77 +72,105 @@ The installed APK: ~44.5 MB, `lib/arm64-v8a/libtmessages.49.so` only, signed
 fingerprint is how to confirm a later build carries the same key - and it must,
 because Android will refuse an update signed with any other.
 
-### Start here next session (written 2026-09-30, work frozen mid-Premium-screens)
+### Start here next session (written 2026-10-03, handoff)
 
-The user froze the session on 2026-09-30 (the second time that day)
-mid-way through deleting the Premium screens. The article editor pass
-(`8807747d..f05cc9ad`) and the GIF default (`7fa8201f`, GIFs follow
-Photos, the user's choice) are **done, reviewed and compiling green**
-(run 36700097187 on `7fa8201f`). **Resume exactly here:**
-
-1. **Pushed, not yet compiled:** `9463978e` (the "new" badge needs
-   nothing from the Premium screens: `applyNewSpan` moved to TextCell)
-   and `7417e051` (no padlock on Premium message effects: 238 lines).
-   The head is not proven green.
-2. **Uncommitted - commit 3, "Delete the Premium screens"**, every edit
-   complete, not cut mid-way (77 files, about -12,316/+218):
-   - **staged** (`git rm`): PremiumPreviewFragment, GLIconSettingsView,
-     TextInfoCell, 20 files in `ui/Components/Premium` plus `GLIcon/`
-     (4), StarParticlesView, BillingController, `assets/models/` (11),
-     `assets/shaders/` (4) and `flecks.png`;
-   - **unstaged**: MessagesController (promo-order keys, Premium bot
-     username, invoice slug), PremiumFeatureCell (down to the plain row
-     the Star rating sheet uses), CacheChart (its star drawable moved in
-     as a private `CompleteStars`), the Premium promo out of
-     MediaDataController/UserConfig/FileRefController (the
-     `premium_promo` table stays), BillingController's call in
-     ApplicationLoader and `BuildVars.useInvoiceBilling`, hooks only the
-     screens used (CellFlickerDrawable, FiltersSetupActivity
-     `highlightTags`, BlurredBackgroundProviderImpl, AnimatedEmojiDrawable,
-     RecyclerListView + two readers, the FillLast layout managers,
-     PremiumButtonView, LimitPreviewView), `premiumStickersPreviewLoaded`,
-     stale imports.
-   **Not done for it:** the checker run timed out before freed_res,
-   removed_decls, brace_balance, check_swallowed and
-   check_dangling_imports reported - re-run them without a timeout; run
-   `freed_res.py --fix` after reading its list; read back the joins in
-   RecyclerListView, FillLastLinearLayoutManager, LimitPreviewView,
-   PremiumButtonView, FiltersSetupActivity, BuildVars and CacheChart's
-   `CompleteStars`; then `git add -A`, commit, push, and compile 1-3.
-3. **Commit 4:** the emoji-status modes - `TYPE_EMOJI_STATUS*` in
-   SelectAnimatedEmojiDialog, `MessagesController.updateEmojiStatus`,
-   MediaDataController's default/recent status lists and
-   `recentEmojiStatusesUpdate` (keep `TL_updateRecentEmojiStatuses`
-   consumed).
-4. **Commit 5:** the three forced getters (`premiumFeaturesBlocked`,
-   `premiumPurchaseBlocked`, `starsPurchaseAvailable`), `premiumLocked`,
-   `directPaymentsCurrency` and its key, `billingProductDetailsUpdated`;
-   LaunchActivity's `billingConfirmPurchaseError` handler (nothing posts
-   it); `BuildVars.IS_BILLING_UNAVAILABLE` and PremiumButtonView's
-   flicker; `TL_account.toggleSponsoredMessages`,
-   `StoryPrivacyBottomSheet.toInput`, and PremiumGradient's
-   `createGradientDrawable`/`InternalDrawable` if unused. Compile 4-5.
-   Kept so far, to report: BotVerifySheet (desktop has none; still
-   reachable from ChatEditActivity) and the Star rating sheet (desktop
-   removed its `Ui::StarsRating`, outside this pass - raise it).
-5. **Then** the `isPremium()` / `user.premium` convergence: the non-
-   Premium path at every remaining check, ours and others' (see
-   "Remaining work"), keeping the user's two exceptions.
-6. **The phone**: `g20294896` is Latest and not installed; nothing after it
-   is in any build. When the user asks for a full build (pack everything,
-   head must compile), install it and walk the checklists below, newest
-   first. `adb` is at `C:\Users\Loogris\platform-tools\adb.exe`.
+1. **Ask how the desktop full build `f7bbe51779` went** - run 37138072076,
+   https://github.com/romanimpair-jpg/LoogriGram-Desktop/actions/runs/37138072076.
+   It is the first compile of desktop's free-suggested-posts restore
+   (`12f173a996` receiving, `f7bbe51779` sending; desktop has no
+   compile-only mode). If it failed, fix from `--log-failed` (`ninja -k 0`
+   lists every compile error; link errors can only show in the next build).
+   Its risk list, from the session that wrote it: `data_msg_id.h`
+   `SuggestOptions`, `api_common.cpp` `SuggestToMTP`, `apiwrap.cpp` ~3737
+   (the time change now replies to the original), `history_widget.cpp`
+   ~2424/~3242 (the bar, reverse-applied from `b6ce0dfcef`),
+   `history_view_compose_controls.cpp` ~1914, `history_view_chat_section.cpp`,
+   `history_item_reply_markup.h` ~100 (enum and table both shift
+   `CreateBot`). If green, the installed desktop app offers it on launch.
+2. **Next step - the user's, 2026-10-03: the reverse parity audit.** Parity
+   is two-way now (the rule at the top of this file). Desktop's 233 commits
+   were audited against Android on 2026-10-01 - 13 gaps, all closed by
+   `0d90a619..090da946` - but Android's own commits (`9f8c35d1..patches`)
+   have never been checked against desktop. Do it the same way: classify
+   every Android commit as Android-only (Play Services, launcher, Android UI
+   with no desktop counterpart), notes/tooling, done on desktop (with
+   evidence: a desktop commit or `LoogriGram:` comment, or the feature
+   absent there), differs by decision, MISSING ON DESKTOP, or unsure, in a
+   resumable tally file. Candidates to check first: the iTunes cover lookup
+   (`8fed48d0` - does desktop look covers up anywhere?), the rest of the
+   Help section and the Privacy Policy row (`46fc6ede`), held priced
+   suggested posts and paid-message notices (`ec4885b2`, `5a23f8e8`), and
+   anything the Premium convergence (`2531579c..ada551b5`) removed that
+   desktop still draws. Then mirror the gaps on desktop - each desktop change
+   costs a full build, so ask before dispatching - and watch for a client
+   being wrong (desktop once was): raise it, don't copy it.
+3. **Install `g55475fe4`** (Latest, green) when the phone is on USB, and walk
+   the lists below, newest first. `adb` is at
+   `C:\Users\Loogris\platform-tools\adb.exe`, the package
+   `com.loogrimedia.loogrigram`. The notes know of nothing since `gf20af361`
+   on the phone.
 
 Each pass since 2026-09-26 went to a subagent with a full brief (rules,
-every checker, desktop's decisions quoted) and was reviewed here after:
-every checker over the pass's whole range (`git reset --soft <base>`,
-run, `reset --soft` back), then the riskiest joins, and for dropped
-positional parameters `argcheck_all.py` (the dropped values must be null
-or the removed variable). If the user needs to leave, send the agent
-FREEZE rather than let a permission prompt be declined.
+every checker, the other client's decisions quoted) and was reviewed here
+after: every checker over the pass's whole range (`git reset --soft
+<base>`, run, `reset --soft` back), then the riskiest joins, and for
+dropped positional parameters `argcheck_all.py` (the dropped values must be
+null or the removed variable).
 
-**Look first where a mistake would be silent** - a compile draws
-nothing. From 2026-09-28/29 (unbuilt):
+**Look first where a mistake would be silent** - a compile draws nothing.
+Every list below is in `g55475fe4` and none has been seen on the phone.
+Gift items in the older lists are obsolete: the gift sheet, the Gifts tab
+and the gift data went on 2026-10-03.
+
+   From 2026-10-01..03:
+   - the launcher icon in round and squircle masks, the themed icon on
+     Android 13+, our picture in notifications and on the call screen;
+     Appearance has no App Icon section; an install that had Vintage or Aqua
+     still has an icon after updating (`LauncherIconController`);
+   - music without its own cover shows the plain music icon (no iTunes
+     lookup); covers carried by the file still show;
+   - Settings has no Help section, the update check follows Language,
+     `tg://settings/privacy-policy` opens Settings;
+   - a private chat's read-time line says "read", no "show when" pill; a
+     profile with hidden last seen has no "when?" pill;
+   - chat theme sheet: emoji themes only; a chat with a collectible theme
+     shows the default; wallpapers carry no gift symbol;
+   - replies and quotes from someone with a collectible colour use the plain
+     colour; profile headers are plain, buttons legible in light and dark,
+     the music bar included;
+   - `t.me/nft/...`: the "unsupported" alert and a plain preview; a
+     collectible username copies on tap; username editors show "taken" for a
+     name on sale; a +888 number's menu has no Fragment note;
+   - admin log "changed emoji pack": a tap does nothing; the group sticker
+     chooser works;
+   - permission prompts and the passcode screens say LoogriGram;
+   - profiles: no Gifts tab, no ring; `my-profile/gifts` opens the profile;
+   - free suggested posts get Accept/Decline; a priced one is not shown;
+     chat-list badges and order are unaffected by the held messages.
+
+   From 2026-09-29..10-01 (article editor, Premium, leftovers):
+   - no Article button in the attach menu, no expand button on long
+     messages; a received article copies and pastes with its formatting, its
+     checkboxes do not tick, it offers no Edit; a cloud draft holding an
+     article shows as text; html paste works; an inline bot's article sends;
+   - GIFs auto-download with photos (within the photo size limit), videos
+     and files do not by default;
+   - limit sheets: centred badge, plain sentence, OK; a file over 2 GB says
+     so; folders past the cap dimmed and locked; no folder tags on rows;
+   - emoji panel: the category row only on the stickers/GIF tabs, no
+     Premium packs; the double-tap reaction setting is the plain list; the
+     message-effect picker has no padlocks; Trending Stickers, never
+     "Premium";
+   - a received checklist draws with its ticks, tapping a task does nothing;
+     no checklist button in the attach menu;
+   - adding people to a group call works; the storage chart's star burst
+     after clearing the cache;
+   - global search shows the Posts tab; the scheduler has no repeat row; at
+     most three accounts can be added (a fourth already logged in stays);
+   - a gift or payment arriving shows no text in the chat list; a paid group
+     message has no star before its time.
+
+   From 2026-09-28/29:
    - the chat list: no story strip or rings, avatar taps work; the
      archive folder appears and goes correctly; unread counts and read
      positions sync with another device;
@@ -168,7 +196,7 @@ nothing. From 2026-09-28/29 (unbuilt):
      only from the server); Reset in Data settings leaves only Photos
      on; Pinned Messages notifications keep their state.
 
-   From 2026-09-27, Stories stages 1-2 (unbuilt):
+   From 2026-09-27, Stories stages 1-2:
    - the chat photo editor: stickers, and the sticker sheet's Photo
      widget; choosing a video cover (GallerySheet, TimelineView); the
      round-video camera and the in-chat camera's flash;
@@ -187,7 +215,7 @@ nothing. From 2026-09-28/29 (unbuilt):
      link previews as a plain page;
    - channel statistics: the overview in 3 rows, no story charts.
 
-   From 2026-09-26/27, Business (unbuilt):
+   From 2026-09-26/27, Business:
    - Devices: the session list, and Terminate all shows the plain alert;
    - Edit profile: no Chat Automation, hours or location rows;
    - a chat with a person: no bot bar, "/" offers nothing; a bot chat:
@@ -303,10 +331,9 @@ nothing. From 2026-09-28/29 (unbuilt):
      pages; a collectible's (`telegram_nft`) preview and button remain;
    - **limit sheets** (LimitPreviewView lost its dark-gradient paths): the
      bars and counters look as before.
-After the article editor - see "Remaining work": the Premium screens
-   themselves. **When a decision is needed, first check
-   what the desktop fork decided** (its `LOOGRIGRAM.md` and `LoogriGram:`
-   comments) and copy it - the user's rule, 2026-09-25.
+**When a decision is needed, first check what the other client decided**
+(its `LOOGRIGRAM.md`, its commits and its `LoogriGram:` comments) and copy
+it - the user's rule, 2026-09-25, two-way since 2026-10-03.
 
 Still unverified from earlier sessions, since a compile cannot see layout:
    - chat list: a gift or payment arriving must not move the chat to the top
@@ -1025,84 +1052,28 @@ In rough order of how much is left behind:
   is a second, smaller case of the same thing - it is a (dialog, message) pair
   that merely lives in the class, and `MessagesController` keys its delivery
   reports on it.
-- **Premium economy - nearly done outside the parity passes, continue
-  there.** Where it stands at the end of 2026-09-26:
-  - **The three forced getters** (`premiumFeaturesBlocked`,
-    `premiumPurchaseBlocked`, `starsPurchaseAvailable`) have 12 uses left:
-    Stories (PeerStoriesView 4, StoryRecorder 1, SelfStoryViewsPage 1,
-    DialogsActivity's stealth-mode item 1), PremiumPreviewFragment 1,
-    BillingController's comment, and the definitions. They go once
-    Stories and the Premium screens do.
-  - **15 Premium-screen entry points remain** as of 2026-09-27: the story
-    viewer 5 (StealthModeAlert 2, PeerStoriesView 2, SelfStoryViewsPage
-    1), the article editor 6, the Premium sheets 4. Business's two and
-    Stories posting's went with them; the older breakdown below is kept
-    for the record (`new PremiumPreviewFragment(`,
-    `PremiumFeatureBottomSheet`, `PremiumPreviewBottomSheet`,
-    `GiftPremiumBottomSheet`), down from ~100, and each belongs to a
-    parity pass: 15 in Stories (PeerStoriesView, DialogStoriesCell,
-    StoriesController, StealthModeAlert, SelfStoryViewsPage, PaintView,
-    StoryRecorder, EmojiBottomSheet, DialogsActivity's stealth item,
-    ProfileActivity's add-story, BotWebViewContainer's share-to-story), 6
-    in the article editor (AIEditorAlert, ChatAttachAlertRichLayout,
-    RichEditor, ChatActivityEnterView's rich-draft send), 2 in Business
-    quick replies (ChatActivity, ChatAttachAlertQuickRepliesLayout), and 4
-    inside the Premium sheets themselves.
-  - **Emoji statuses are done** (2026-09-26, as desktop): no status,
-    Premium star or bot verification icon is drawn anywhere, bots may not
-    set a status and lose the permission on sight, and a collectible
-    status neither tints a profile nor gets a tooltip. Left for the
-    Premium screens' deletion because PremiumPreviewFragment is their last
-    user: SelectAnimatedEmojiDialog's status modes (TYPE_EMOJI_STATUS*),
-    MessagesController.updateEmojiStatus, MediaDataController's
-    default/recent status lists and `recentEmojiStatusesUpdate`. Not yet
-    compared with desktop: BotVerifySheet (a verifier bot's owner
-    verifying others).
-  - **Leftovers seen 2026-09-26**: the article attach button's Premium
-    badge (GlassTabView.setPremiumBadge, ChatAttachAlert) goes with the
-    article editor; PremiumGradient.createGradientDrawable and
-    InternalDrawable serve only DoubledLimitsBottomSheet;
-    TL_account.toggleSponsoredMessages has no sender.
-  - **Then delete the Premium screens** - `PremiumPreviewFragment`
-    (2,416 lines), `PremiumFeatureBottomSheet`, `PremiumPreviewBottomSheet`,
-    `GiftPremiumBottomSheet`, the `ui/Components/Premium` preview views -
-    after moving out what ordinary code still uses: the feature constants
-    (`PREMIUM_FEATURE_*`, mostly arguments to the sheets, so few survive
-    the entry points), `PremiumGradient`, `PremiumLockIconView`,
-    `StarParticlesView`, `LimitReachedBottomSheet`.
-  - **Policy still differing from desktop**: desktop treats our account
-    as never Premium everywhere (`premium()` gone). Android still keeps
-    `UserConfig.isPremium()` branches and only removes what sells Premium
-    to an account without it. Converging means taking the non-Premium
-    path at every `isPremium()` site - a large, mechanical pass for later.
-- **Desktop parity** (decided 2026-09-24: "Whatever desktop removed android
-  should remove too", so don't ask per feature). The checklist is the
-  desktop `LOOGRIGRAM.md`:
-  - its "Removed" section: AI compose, large emoji, Premium badges and emoji
-    statuses for everyone, Business (the parts ours to set), Stories,
-    suggestion popups, greeting stickers, the bot verification icon, and nags
-    and help;
-  - the reading telemetry and post view increments its Ghost mode section
-    deleted;
-  - its "Changed defaults".
-
-  Keep what desktop kept on purpose, which those sections also list.
-  Done on 2026-09-26: AI compose's buttons and `addstyle/` link
-  (`962d6d07`); Premium badges and emoji statuses for everyone, with the
-  bot verification icon (`873fe3ab` and around it); our own name and
-  profile colour (`e53ce275`); Privacy's Voice Messages, Messages and
-  Gifts screens and the Premium-users / Mini-apps exceptions; the
-  private-chat sharing toggle (re-enable only); the Business greeting's
-  "how?". Business done 2026-09-26/27, Stories 2026-09-26..28, large
-  emoji, suggestion popups, greeting stickers, nags and help, reading
-  telemetry, view-count contributions and the changed defaults
-  2026-09-29 (see the record below). The article editor is mid-pass
-  (see "Start here"). AI compose's second half is
-  the article editor - `ui/iv`, ~27,000
-  lines, which shares classes with the rendering of received rich
-  messages, so split display from editor first (as GiftViews was split
-  from GiftSheet) - and with it AIEditorAlert, AiButtonDrawable and
-  AiTonesController, whose last users it is.
+- **Premium - done** (2026-10-01). The Premium screens (`51d67433`) and
+  the forced getters (`c50dae98`) are gone; `UserConfig.isPremium()` is
+  deleted and every caller takes the non-Premium path, others' Premium
+  changes nothing drawn, limits are the free ones (`2531579c..ada551b5`,
+  and `39686991`/`0667c778` for the featured-stickers flag). The user's two
+  exceptions stand. Left on purpose: a bot's request-a-user-with/without-
+  Premium filter (desktop keeps it; the server checks it),
+  `TL_availableReaction.premium`, read only to leave Premium reactions out,
+  and `BotVerifySheet` (desktop never had one).
+- **Parity with desktop - both ways now** (the rule at the top of this
+  file). Desktop to Android: every item of desktop's checklist is done
+  (Business, Stories, the article editor, AI compose, large emoji,
+  suggestion popups, greeting stickers, nags and help, telemetry, defaults),
+  and a commit-by-commit audit of all 233 desktop commits (2026-10-01) found
+  13 more gaps, all closed in `0d90a619..090da946`: the read-time and
+  last-seen trade, held paid-message notices and priced suggested posts,
+  collectible chat themes, wallpapers and name colours, decorated profile
+  backgrounds, collectible previews and links, Fragment collectibles, the
+  group emoji-pack chooser, 56 strings, the README, and the profile Gifts
+  tab with the gift data. Desktop's code removing *free* suggested posts was
+  judged a desktop mistake and restored there (`12f173a996`, `f7bbe51779`).
+  **Android to desktop: the reverse audit is owed** - see "Start here".
 - **Stories - four stages, as desktop (2026-09-19), each a subagent with
   a full brief, reviewed here.** Desktop's decisions: story-carrying
   messages held, not dropped; a story reply keeps its text and loses the
@@ -1152,16 +1123,15 @@ In rough order of how much is left behind:
   sets them now), TimelineView's audio/round/collage tracks (trim not
   clean yet), the debug menu's dual-camera slot left null so later
   indices hold.
-- **Smaller leftovers.** `ChatMessageCell.getStarsPrice` and
-  `starsPriceText` (the Stars someone else paid to send a group message -
-  check what desktop does); `LiveCommentsView`'s reads of
-  `getSendPaidMessagesStars`; `AlertsCreator`'s paid suggested-post
-  branches; `ChatActivity.PROGRESS_PAID_MEDIA`; and
-  `WallpapersListActivity`'s `TYPE_CHANNEL_*` code, which upstream no longer
-  reaches.
-- **`if (true)` guards.** Two are left, in `MessagesController`
-  (`addPhotoAtStart`) and `ChatActivity`. Their origin was never checked;
-  they may be upstream's own.
+- **Smaller leftovers - done** (2026-10-01, `0af7f619..83c5583d`): held
+  messages build no text, the Premium/TON gift packs, the Stars/TON rate
+  config, a paid group message's price, paid suggested-post branches, the
+  price of writing to someone, the channel wallpaper modes, `venueSearchBot`.
+  Kept: the two `if (true)` guards (upstream's own, blamed to `9f8c35d1`),
+  and the story-sticker and collage fields of the video pipeline
+  (VideoEditedInfo, TextureRenderer, MediaCodecVideoConvertor) - some are
+  still read back from stored strings, the rest would need a shader and
+  audio-mixing rewrite tested on a device.
 - **The javac notes are not ours.** A one-off `-Xlint` run measured 7,945
   warnings behind javac's two summary notes. 7,609 are in
   `org/telegram/**` - the client's own source, which is ours to edit but not
@@ -1341,6 +1311,21 @@ In rough order of how much is left behind:
   `argcheck_all.py`, `decl_ctx.py`, `all_checks.py`, `orphan_public.py`;
   `removed_decls.py` now sees declarations with modifiers.
 
+- **Done on 2026-09-29..10-03, for the record** (all in `g55475fe4`): the
+  smaller parity items (`efedb453..4caec8fd`: story UI modes, large emoji,
+  suggestion popups, the greeting sticker, help rows and the phone nag),
+  reading telemetry and view-count contributions (`a72f6144`, `63d84bb0`),
+  the defaults (`c3a60aa7`, `27d50187`), GIFs follow Photos (`7fa8201f`,
+  the user's choice), the article editor and AI compose's second half
+  (`8807747d..f05cc9ad`, ~31,700 lines), the Premium screens
+  (`9463978e..c50dae98`), the Premium convergence (`2531579c..ada551b5`),
+  the leftovers (`0af7f619..83c5583d`), the icon (`037d897a..9d316ac1`), no
+  iTunes cover lookup (`8fed48d0`), no Help section (`46fc6ede`), and the
+  desktop-parity pass (`0d90a619..090da946`). Slips worth remembering: two
+  compiles failed on a call in a neighbouring branch and on a `Foo.class` in
+  a class list - grep every usage form, file-wide; and a `grep -P` (the
+  locale) or a `--` before `--include` prints a false zero.
+
 ### Then
 
 1. **Verify what first use could not.** Installed and working, but still open:
@@ -1349,18 +1334,12 @@ In rough order of how much is left behind:
    including that the read date is hidden and no burst of receipts follows
    turning it off; a received location opening in a maps app; and a sweep for any
    premium, Stars or gift surface still reachable.
-2. **Cosmetic pass**, artwork half only — the naming half is done. The launcher
-   label, the in-app strings and the two screens that drew Telegram's *wordmark
-   over* the app name (the intro page and the chat list header, both now plain
-   text) are handled; `KEEP_COMPILED` in `LocaleController` stops the cloud
-   language pack putting "Telegram" back, which is the trap that makes renaming
-   look like it did nothing. Still to do: the launcher icon itself — L and G
-   laid diagonally over the default, `icon_plane.xml` being a vector so the mark
-   can be hand-written as paths, `icon_foreground.png` raster at five densities;
-   the two alternative app icons (Vintage, Aqua; the three Premium ones are
-   deleted) and their `activity-alias` blocks; the
-   `telegram_logo_2` wordmark still drawn by the stories row; and the dead
-   pre-API-26 launcher paths.
+2. **Cosmetic pass - done** (2026-10-01, `037d897a`): the launcher icon is
+   desktop's mark (black, the white plane, a blue L and G), built from
+   `branding/LoogriGram/logo_256.png` by `branding/make_android_icons.py`
+   (stdlib only); one icon, Vintage and Aqua gone; Telegram's unused
+   wordmark drawable went too (`660b642a`). The pre-API-26 launcher PNGs
+   stay - minSdk is 21.
 3. Consider caching the native build (`.cxx`) the way desktop caches `out/`, if
    22 minutes becomes annoying. Same mtime problem applies.
 
