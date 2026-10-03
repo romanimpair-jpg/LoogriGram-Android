@@ -10,6 +10,16 @@ specific to the fork. The desktop fork's `LOOGRIGRAM.md` is worth reading too:
 several traps are shared, and it records the read-receipt finding that this side
 depends on.
 
+**Rule: desktop and Android stay in parity, both ways** (the user, 2026-10-03).
+Whatever is removed, added or modified in one client is done in the other too —
+in the same stretch of work, or recorded in that client's notes as owed. Don't
+ask per change; ask only when a change looks wrong (either client can be:
+desktop's code once removed *free* suggested posts against its own money rule)
+or has no counterpart (Play Services, launcher mechanics, Windows packaging).
+Check against the other client's **commits**, not only its notes - a
+commit-by-commit audit of desktop (2026-10-01) found 13 gaps its notes never
+summarised. The reverse audit, Android's commits against desktop, is still owed.
+
 ---
 
 ## Status
