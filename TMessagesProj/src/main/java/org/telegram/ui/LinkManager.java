@@ -38,7 +38,6 @@ import org.telegram.ui.ActionBar.INavigationLayout;
 import org.telegram.ui.Components.AlertsCreator;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.CreateBotAlert;
-import org.telegram.ui.Components.SharedMediaLayout;
 import org.telegram.ui.Components.voip.VoIPHelper;
 import org.telegram.ui.web.WebBrowserSettings;
 
@@ -535,30 +534,10 @@ public class LinkManager {
             final Bundle args = new Bundle();
             args.putLong("user_id", getUserConfig().getClientUserId());
             args.putBoolean("my_profile", true);
-            if ("gifts".equalsIgnoreCase(second)) {
-                args.putBoolean("open_gifts", true);
-            }
+            // LoogriGram: my-profile/gifts (and my-profile/posts, which upstream
+            // also pointed at the Gifts tab) scrolled to our gifts. That tab is
+            // gone (desktop's 1dcf631a drops the link), so both open the profile.
             final ProfileActivity f = new ProfileActivity(args);
-            if ("gifts".equalsIgnoreCase(second)) {
-                f.whenFullyVisible(() -> {
-                    AndroidUtilities.runOnUIThread(() -> {
-                        if (f.sharedMediaLayout != null) {
-                            f.sharedMediaLayout.scrollToPage(SharedMediaLayout.TAB_GIFTS);
-                            f.scrollToSharedMedia();
-                        }
-                    }, 200);
-                });
-            }
-            if ("posts".equalsIgnoreCase(second)) {
-                f.whenFullyVisible(() -> {
-                    AndroidUtilities.runOnUIThread(() -> {
-                        if (f.sharedMediaLayout != null) {
-                            f.sharedMediaLayout.scrollToPage(SharedMediaLayout.TAB_GIFTS);
-                            f.scrollToSharedMedia();
-                        }
-                    }, 200);
-                });
-            }
             presentFragment(f);
 
             return true;

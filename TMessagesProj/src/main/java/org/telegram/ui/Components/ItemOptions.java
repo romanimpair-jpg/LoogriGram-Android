@@ -74,7 +74,6 @@ import org.telegram.ui.Components.blur3.source.BlurredBackgroundSourceBitmap;
 import org.telegram.ui.Components.blur3.utils.Blur3Utils;
 import org.telegram.ui.ContactsActivity;
 import org.telegram.ui.DialogsActivity;
-import org.telegram.ui.Gifts.GiftViews;
 import org.telegram.ui.MainTabsActivity;
 import org.telegram.ui.ProfileActivity;
 import org.telegram.ui.SettingsActivity;
@@ -1626,9 +1625,6 @@ public class ItemOptions {
                 container.getViewTreeObserver().removeOnPreDrawListener(preDrawListener);
                 if (hideScrimUnder) {
                     scrimView.setVisibility(View.VISIBLE);
-                    if (scrimView instanceof GiftViews.GiftCell) {
-                        ((GiftViews.GiftCell) scrimView).invalidateCustom();
-                    }
                 }
             }
         });
@@ -2004,16 +2000,6 @@ public class ItemOptions {
                         final float s = lerp(1.0f, 0.9f, dimProgress);
                         canvas.scale(s, s, w / 2.0f, h / 2.0f);
                         ((SharedPhotoVideoCell2) scrimView).customDraw(this, canvas, w, h, dimProgress);
-                        canvas.restore();
-                    }
-                } else if (scrimView instanceof GiftViews.GiftCell && animateToWidth != 0 && animateToHeight != 0) {
-                    if (scrimView.getAlpha() >= 1) {
-                        ((GiftViews.GiftCell) scrimView).customDraw(this, canvas, w, h, dimProgress);
-                    } else {
-                        canvas.saveLayerAlpha(0, 0, w, h, (int) (0xFF * dimProgress), Canvas.ALL_SAVE_FLAG);
-                        final float s = lerp(1.0f, 0.9f, dimProgress);
-                        canvas.scale(s, s, w / 2.0f, h / 2.0f);
-                        ((GiftViews.GiftCell) scrimView).customDraw(this, canvas, w, h, dimProgress);
                         canvas.restore();
                     }
                 } else {

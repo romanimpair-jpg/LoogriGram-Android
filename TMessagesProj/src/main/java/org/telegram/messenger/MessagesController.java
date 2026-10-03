@@ -99,7 +99,6 @@ import org.telegram.ui.LaunchActivity;
 import org.telegram.ui.MainTabsActivity;
 import org.telegram.ui.ProfileActivity;
 import org.telegram.ui.SecretMediaViewer;
-import org.telegram.ui.Gifts.GiftsController;
 import org.telegram.ui.ThemeActivity;
 import org.telegram.ui.TopicsFragment;
 import org.telegram.ui.bots.BotWebViewAttachedSheet;
@@ -6202,7 +6201,6 @@ public class MessagesController extends BaseController implements NotificationCe
                         getConnectionsManager().sendRequest(revoke, null);
                     }
                     getTranslateController().updateDialogFull(user.id);
-                    GiftsController.getInstance(currentAccount).invalidateProfileGifts(userFull);
                     loadingFullUsers.remove(user.id);
                     loadedFullUsers.put(user.id, System.currentTimeMillis());
                     String names = user.first_name + user.last_name + UserObject.getPublicUsername(user);
@@ -8802,7 +8800,6 @@ public class MessagesController extends BaseController implements NotificationCe
                 if (fullUsers.get(user.id) == null) {
                     fullUsers.put(user.id, info);
                     getTranslateController().updateDialogFull(user.id);
-                    GiftsController.getInstance(currentAccount).invalidateProfileGifts(info);
 
                     int index = blockePeers.indexOfKey(user.id);
                     if (info.blocked) {

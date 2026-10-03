@@ -7764,7 +7764,7 @@ public class ChatActivity extends BaseFragment implements
             undoView.showWithAction(dialog_id, UndoView.ACTION_TEXT_INFO, LocaleController.getString(R.string.BroadcastGroupInfo));
         });
         // LoogriGram: a channel's Gift button bought a gift for it. Nothing
-        // here buys one; receiving a gift is untouched.
+        // here buys one, and a gift received is held unshown (LoogriGramHidden).
         bottomChannelButtonsLayout.setButtonOnClickListener(ChatActivityChannelButtonsLayout.BUTTON_DIRECT, v -> {
             HintsController.Hint.ChannelSuggestHint.doNotShowAgain();
             if (currentChat != null && currentChat.linked_monoforum_id != 0) {
