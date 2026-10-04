@@ -14,7 +14,7 @@ One switch in the tab bar, where the Contacts tab used to be.
 
 - No "typing…" or other activity indicators are sent.
 - You always appear offline.
-- It sets **Last Seen** to *Nobody* and turns on **hide read time** on the server, once when an account first logs in and again each time you switch ghost mode on. Setting Last Seen replaces its rules, so any exceptions you had there are dropped. Turning ghost mode off doesn't change either setting back.
+- It sets **Last Seen** to *Nobody* and turns on **hide read time** on the server, once when an account first logs in and again each time you switch ghost mode on. People on your Last Seen "Always share with" list keep seeing it. Turning ghost mode off doesn't change either setting back.
 
 **Read receipts are still sent.** Telegram uses the same request both to tell the sender you've read a message and to sync your read position to your other devices, so blocking it would make everything you read on the phone show up unread everywhere else. Hiding the read *time* is the part that can be had without breaking sync.
 

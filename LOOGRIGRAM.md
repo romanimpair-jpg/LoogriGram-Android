@@ -565,7 +565,12 @@ skipped in the selection and gesture loops. Suppresses typing/activity
 the offline branch still latches and the rest of `updateTimerProc` runs), and
 story views (**after** `seenStories`/`saveCache`, or stories stay unread
 locally). Server-side: Last Seen → Nobody and `hide_read_marks`, once per
-account and on every explicit enable, never reversed;
+account and on every explicit enable, never reversed. Last Seen keeps its
+"Always share with" list (`d84b8ddb`, the user's choice, as on desktop): the
+rules are read fresh with `getPrivacy` and sent back as
+`PrivacyControlActivity` saves Nobody, "Never share with" left out as
+meaningless there. Before that a bare `DisallowAll` wiped both lists -
+**`setPrivacy` replaces the whole rule set**;
 `setGlobalPrivacySettings` replaces the whole object so the current settings are
 read back first or the archive settings get reset.
 
