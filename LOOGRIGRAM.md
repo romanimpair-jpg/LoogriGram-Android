@@ -381,6 +381,25 @@ Each of these was hit here. Do not relearn them.
      read (`currentNameStatusDrawable` in PremiumPreviewBottomSheet)
      breaks that class - grep the whole tree for every removed public
      name, including from dead screens.
+0k. **A cut branch head can leave its body under the branch above, and it
+   compiles.** `116c8df4` (2026-09-20) removed the attach menu's Contact
+   button by cutting `} else if (position == contactButton) {` and the line
+   after it - the other two lines of the branch, `setTag(5)` and a contacts
+   permission check, ran inside the Poll branch above. Poll was tagged 5,
+   which no longer meant anything, so tapping it closed the menu: **polls
+   could not be created for two weeks** (fixed in `ec0d7460`, 2026-10-04).
+   `android-edit-tools/orphan_bodies.py <repo> <base> <head>` finds the
+   shape - a removed `} else if`/`else`/`case` head followed by kept lines
+   indented deeper; run it over a pass's range. Over the whole fork it also
+   lists eleven harmless matches (diff alignment, a shrunk loop bound) that
+   were read and cleared on 2026-10-04.
+0l. **Create a release's tag at the start of the build, not at the end.**
+   Desktop's run 37158363951 compiled green and then got HTTP 403 "Resource
+   not accessible by integration" creating its release: commits had been
+   pushed to `patches` during the build, so the built commit was no longer
+   the head (and it changed its workflow). Both workflows now tag in "Tag the
+   build." while the commit is the head, and publish with `--verify-tag`
+   (`9347181f` here, `6120b243e6` on desktop).
 
 1. **A dependency you remove may be supplying something unrelated.** Dropping
    `androidx.mediarouter` with Chromecast took `androidx.media` with it, which
