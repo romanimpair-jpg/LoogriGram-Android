@@ -251,7 +251,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
     public boolean clipToGroupBounds;
     public boolean drawForBlur;
-    private boolean flipImage;
     private boolean visibleOnScreen = true;
     public boolean shouldCheckVisibleOnScreen;
     public float parentBoundsTop;
@@ -6468,7 +6467,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             sideButtonPressed = false;
             pressedSideButton = 0;
             hasNewLineForTime = false;
-            flipImage = false;
             isThreadPost = isThreadChat && messageObject.messageOwner.fwd_from != null && messageObject.messageOwner.fwd_from.channel_post != 0 && messageObject.messageOwner.reply_to == null;
             isAvatarVisible = needDrawAvatar() && (currentPosition == null || currentPosition.edge);
             boolean drawAvatar = needDrawAvatar();
@@ -8684,9 +8682,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
                     photoImage.setRoundRadius(0);
                     canChangeRadius = false;
-                    if (!messageObject.isOutOwner() && MessageObject.isPremiumSticker(messageObject.getDocument())) {
-                        flipImage = true;
-                    }
+                    // LoogriGram: an incoming Premium sticker was mirrored (flipImage) so
+                    // its effect ran into the chat. Effects are gone (the user's decision,
+                    // 2026-10-04), so it is drawn as it was made, as desktop does.
                     if (messageObject.getDocument() != null) {
                         if (messageObject.isVideoSticker()) {
                             photoImage.setImage(ImageLocation.getForDocument(messageObject.getDocument()), ImageLoader.AUTOPLAY_FILTER,
@@ -13107,52 +13105,31 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     // }
                     if (!photoImageOutOfBounds || drawForBlur) {
                         photoImage.setSkipUpdateFrame(drawForBlur || skipFrameUpdate);
-                        if (flipImage) {
-                            canvas.save();
-                            canvas.scale(-1f, 1, photoImage.getCenterX(), photoImage.getCenterY());
-                            if (blurredPhotoImage != null && fitPhotoImage) {
-                                blurredPhotoImage.setImageCoords(photoImage.getImageX(), photoImage.getImageY(), photoImage.getImageWidth(), photoImage.getImageHeight());
-                                blurredPhotoImage.setRoundRadius(photoImage.getRoundRadius());
-                                blurredPhotoImage.draw(canvas);
-                            }
-                            if (!pinchToZoomDrawing) {
-                                if (allowDrawPhotoImage()) {
-                                    imageDrawn = drawPhotoImage(canvas);
-                                } else {
-                                    imageDrawn = true;
-                                }
-                                if (currentMessageObject.hasMediaSpoilers()) {
-                                    drawBlurredPhoto(canvas);
-                                }
-                            }
-                            canvas.restore();
-                        } else {
-                            if (blurredPhotoImage != null && fitPhotoImage) {
-                                blurredPhotoImage.setImageCoords(photoImage.getImageX(), photoImage.getImageY(), photoImage.getImageWidth(), photoImage.getImageHeight());
-                                blurredPhotoImage.setRoundRadius(photoImage.getRoundRadius());
-                                blurredPhotoImage.draw(canvas);
-                            }
-                            if (!pinchToZoomDrawing) {
-                                if (allowDrawPhotoImage()) {
-                                    boolean needRestore = false;
-                                    if (contactBounce != null) {
-                                        float contactScale = contactBounce.getScale(0.0125f);
-                                        if (contactScale != 1f) {
-                                            needRestore = true;
-                                            canvas.save();
-                                            canvas.scale(contactScale, contactScale, contactRect.centerX(), contactRect.centerY());
-                                        }
+                        if (blurredPhotoImage != null && fitPhotoImage) {
+                            blurredPhotoImage.setImageCoords(photoImage.getImageX(), photoImage.getImageY(), photoImage.getImageWidth(), photoImage.getImageHeight());
+                            blurredPhotoImage.setRoundRadius(photoImage.getRoundRadius());
+                            blurredPhotoImage.draw(canvas);
+                        }
+                        if (!pinchToZoomDrawing) {
+                            if (allowDrawPhotoImage()) {
+                                boolean needRestore = false;
+                                if (contactBounce != null) {
+                                    float contactScale = contactBounce.getScale(0.0125f);
+                                    if (contactScale != 1f) {
+                                        needRestore = true;
+                                        canvas.save();
+                                        canvas.scale(contactScale, contactScale, contactRect.centerX(), contactRect.centerY());
                                     }
-                                    imageDrawn = drawPhotoImage(canvas);
-                                    if (needRestore) {
-                                        canvas.restore();
-                                    }
-                                } else {
-                                    imageDrawn = true;
                                 }
-                                if (currentMessageObject.hasMediaSpoilers()) {
-                                    drawBlurredPhoto(canvas);
+                                imageDrawn = drawPhotoImage(canvas);
+                                if (needRestore) {
+                                    canvas.restore();
                                 }
+                            } else {
+                                imageDrawn = true;
+                            }
+                            if (currentMessageObject.hasMediaSpoilers()) {
+                                drawBlurredPhoto(canvas);
                             }
                         }
                         photoImage.setSkipUpdateFrame(skipFrameUpdate);
