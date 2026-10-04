@@ -4038,7 +4038,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                                 SharedConfig.forwardingOptionsHintShown = false;
                                 SharedConfig.replyingOptionsHintShown = false;
                                 SharedConfig.messageSeenHintCount = 3;
-                                SharedConfig.emojiInteractionsHintCount = 3;
                                 SharedConfig.dayNightThemeSwitchHintCount = 3;
                                 SharedConfig.fastScrollHintCount = 3;
                                 ChatThemeController.getInstance(currentAccount).clearCache();
@@ -10653,7 +10652,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         getSendMessagesHelper().sendMessage(SendMessagesHelper.SendMessageParams.of(user, did, null, null, null, null, notify, scheduleDate, scheduleRepeatPeriod));
         if (!TextUtils.isEmpty(message)) {
             AccountInstance accountInstance = AccountInstance.getInstance(currentAccount);
-            SendMessagesHelper.prepareSendingText(accountInstance, message, did, notify, scheduleDate, scheduleRepeatPeriod, 0);
+            SendMessagesHelper.prepareSendingText(accountInstance, message, did, notify, scheduleDate, scheduleRepeatPeriod);
         }
         return true;
     }

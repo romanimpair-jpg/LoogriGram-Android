@@ -2249,7 +2249,7 @@ public class ChatActivity extends BaseFragment implements
         }
 
         @Override
-        public void needStartRecordVideo(int state, boolean notify, int scheduleDate, int scheduleRepeatPeriod, int ttl, long effectId) {
+        public void needStartRecordVideo(int state, boolean notify, int scheduleDate, int scheduleRepeatPeriod, int ttl) {
             checkInstantCameraView();
             if (instantCameraView != null) {
                 if (state == 0) {
@@ -2257,7 +2257,7 @@ public class ChatActivity extends BaseFragment implements
                     chatListView.stopScroll();
                     chatAdapter.updateRowsSafe();
                 } else if (state == 1 || state == 3 || state == 4) {
-                    instantCameraView.send(state, notify, scheduleDate, 0, ttl, effectId);
+                    instantCameraView.send(state, notify, scheduleDate, 0, ttl);
                 } else if (state == 2 || state == 5) {
                     instantCameraView.cancel(state == 2);
                 }
@@ -11214,7 +11214,7 @@ public class ChatActivity extends BaseFragment implements
             chatAttachAlert.allowLivePhotos = true;
             chatAttachAlert.setDelegate(new ChatAttachAlert.ChatAttachViewDelegate() {
                 @Override
-                public void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia, boolean forceDocument) {
+                public void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, int scheduleRepeatPeriod, boolean invertMedia, boolean forceDocument) {
                     if (getParentActivity() == null || chatAttachAlert == null) {
                         return;
                     }
@@ -11284,9 +11284,9 @@ public class ChatActivity extends BaseFragment implements
                                 if (editingMessageObject != null && editingMessageObject.needResendWhenEdit()) {
                                     MessageSuggestionParams params = messageSuggestionParams != null ?
                                         messageSuggestionParams : MessageSuggestionParams.of(editingMessageObject.messageOwner.suggested_post);
-                                    SendMessagesHelper.prepareSendingMedia(getAccountInstance(), photos, dialog_id, editingMessageObject, getThreadMessage(), replyingQuote, button == 4 || forceDocument, arg, null, notify, scheduleDate, scheduleRepeatPeriod, chatMode, updateStickersOrder, null, getMessageChatSendParams(), effectId, invertMedia, getSendMonoForumPeerId(), params);
+                                    SendMessagesHelper.prepareSendingMedia(getAccountInstance(), photos, dialog_id, editingMessageObject, getThreadMessage(), replyingQuote, button == 4 || forceDocument, arg, null, notify, scheduleDate, scheduleRepeatPeriod, chatMode, updateStickersOrder, null, getMessageChatSendParams(), invertMedia, getSendMonoForumPeerId(), params);
                                 } else {
-                                    SendMessagesHelper.prepareSendingMedia(getAccountInstance(), photos, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, button == 4 || forceDocument, arg, editingMessageObject, notify, scheduleDate, scheduleRepeatPeriod, chatMode, updateStickersOrder, null, getMessageChatSendParams(), effectId, invertMedia, getSendMonoForumPeerId(), messageSuggestionParams);
+                                    SendMessagesHelper.prepareSendingMedia(getAccountInstance(), photos, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, button == 4 || forceDocument, arg, editingMessageObject, notify, scheduleDate, scheduleRepeatPeriod, chatMode, updateStickersOrder, null, getMessageChatSendParams(), invertMedia, getSendMonoForumPeerId(), messageSuggestionParams);
                                 }
                             }
                             afterMessageSend();
@@ -12575,7 +12575,7 @@ public class ChatActivity extends BaseFragment implements
     }
 
     @Override
-    public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia) {
+    public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, int scheduleRepeatPeriod, boolean invertMedia) {
         fillEditingMediaWithCaption(caption, null);
         if (checkSlowModeAlert()) {
             if (!fmessages.isEmpty() && !TextUtils.isEmpty(caption)) {
@@ -12588,7 +12588,7 @@ public class ChatActivity extends BaseFragment implements
                 caption = null;
             }
             getSendMessagesHelper().sendMessage(fmessages, dialog_id, false, false, true, 0, 0, null, -1, getSendMonoForumPeerId(), getSendMessageSuggestionParams());
-            SendMessagesHelper.prepareSendingDocuments(getAccountInstance(), files, files, null, caption, captionEntities, null, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, editingMessageObject, notify, scheduleDate, scheduleRepeatPeriod, null, getMessageChatSendParams(), effectId, invertMedia, getSendMonoForumPeerId(), getSendMessageSuggestionParams());
+            SendMessagesHelper.prepareSendingDocuments(getAccountInstance(), files, files, null, caption, captionEntities, null, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, editingMessageObject, notify, scheduleDate, scheduleRepeatPeriod, null, getMessageChatSendParams(), invertMedia, getSendMonoForumPeerId(), getSendMessageSuggestionParams());
             afterMessageSend();
         }
     }
@@ -12596,7 +12596,7 @@ public class ChatActivity extends BaseFragment implements
     @Override
     public void didSelectPhotos(ArrayList<SendMessagesHelper.SendingMediaInfo> photos, boolean notify, int scheduleDate, int scheduleRepeatPeriod) {
         fillEditingMediaWithCaption(photos.get(0).caption, photos.get(0).entities);
-        SendMessagesHelper.prepareSendingMedia(getAccountInstance(), photos, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, true, false, editingMessageObject, notify, scheduleDate, scheduleRepeatPeriod, chatMode, photos.get(0).updateStickersOrder, null, getMessageChatSendParams(), 0, false, getSendMonoForumPeerId(), getSendMessageSuggestionParams());
+        SendMessagesHelper.prepareSendingMedia(getAccountInstance(), photos, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, true, false, editingMessageObject, notify, scheduleDate, scheduleRepeatPeriod, chatMode, photos.get(0).updateStickersOrder, null, getMessageChatSendParams(), false, getSendMonoForumPeerId(), getSendMessageSuggestionParams());
         afterMessageSend();
         if (scheduleDate != 0) {
             if (scheduledMessagesCount == -1) {
@@ -12639,7 +12639,7 @@ public class ChatActivity extends BaseFragment implements
             return;
         }
         fillEditingMediaWithCaption(photos.get(0).caption, photos.get(0).entities);
-        SendMessagesHelper.prepareSendingMedia(getAccountInstance(), photos, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, false, true, editingMessageObject, notify, scheduleDate, 0, chatMode, photos.get(0).updateStickersOrder, null, getMessageChatSendParams(), 0, false, getSendMonoForumPeerId(), messageSuggestionParams);
+        SendMessagesHelper.prepareSendingMedia(getAccountInstance(), photos, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, false, true, editingMessageObject, notify, scheduleDate, 0, chatMode, photos.get(0).updateStickersOrder, null, getMessageChatSendParams(), false, getSendMonoForumPeerId(), messageSuggestionParams);
         afterMessageSend();
         if (scheduleDate != 0) {
             if (scheduledMessagesCount == -1) {
@@ -18055,7 +18055,7 @@ public class ChatActivity extends BaseFragment implements
             }, this);
         } else {
             fillEditingMediaWithCaption(caption, null);
-            SendMessagesHelper.prepareSendingVideo(getAccountInstance(), videoPath, null, null, null, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, null, 0, editingMessageObject, true, 0, 0, false, false, null, getMessageChatSendParams(), 0, getSendMonoForumPeerId(), getSendMessageSuggestionParams());
+            SendMessagesHelper.prepareSendingVideo(getAccountInstance(), videoPath, null, null, null, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, null, 0, editingMessageObject, true, 0, 0, false, false, null, getMessageChatSendParams(), getSendMonoForumPeerId(), getSendMessageSuggestionParams());
             afterMessageSend();
         }
     }
@@ -18178,7 +18178,7 @@ public class ChatActivity extends BaseFragment implements
                 entry.reset();
             }
             fillEditingMediaWithCaption(photos.get(0).caption, photos.get(0).entities);
-            SendMessagesHelper.prepareSendingMedia(getAccountInstance(), photos, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, forceDocument, true, null, notify, scheduleDate, 0, chatMode, photos.get(0).updateStickersOrder, null, getMessageChatSendParams(), 0, false, getSendMonoForumPeerId(), messageSuggestionParams);
+            SendMessagesHelper.prepareSendingMedia(getAccountInstance(), photos, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, forceDocument, true, null, notify, scheduleDate, 0, chatMode, photos.get(0).updateStickersOrder, null, getMessageChatSendParams(), false, getSendMonoForumPeerId(), messageSuggestionParams);
             afterMessageSend();
             if (chatActivityEnterView != null) {
                 chatActivityEnterView.setFieldText("");
@@ -23265,7 +23265,7 @@ public class ChatActivity extends BaseFragment implements
             inlineReturn = 0;
             chatActivityEnterView.setFieldText(query);
         } else {
-            getMediaDataController().saveDraft(inlineReturn, 0, query, null, null, false, 0);
+            getMediaDataController().saveDraft(inlineReturn, 0, query, null, null, false);
             if (parentLayout.getFragmentStack().size() > 1) {
                 BaseFragment prevFragment = parentLayout.getFragmentStack().get(parentLayout.getFragmentStack().size() - 2);
                 if (prevFragment instanceof ChatActivity && ((ChatActivity) prevFragment).dialog_id == inlineReturn) {
@@ -27464,7 +27464,7 @@ public class ChatActivity extends BaseFragment implements
         CharSequence[] message = new CharSequence[]{ignoreDraft ? null : draftMessage};
         ArrayList<TLRPC.MessageEntity> entities = getMediaDataController().getEntities(message, currentEncryptedChat == null || AndroidUtilities.getPeerLayerVersion(currentEncryptedChat.layer) >= 101, false);
         long draftThreadId = computeDraftThreadId(replyMessage);
-        getMediaDataController().saveDraft(dialog_id, draftThreadId, message[0], entities, (replyMessage != null && !replyMessage.isTopicMainMessage && replyMessage.replyToForumTopic == null && !ignoreDraft) ? replyMessage.messageOwner : null, replyingQuote, messageSuggestionParams != null ? messageSuggestionParams.toTl() : null, chatActivityEnterView != null ? chatActivityEnterView.getEffectId() : 0, !searchWebpage, false);
+        getMediaDataController().saveDraft(dialog_id, draftThreadId, message[0], entities, (replyMessage != null && !replyMessage.isTopicMainMessage && replyMessage.replyToForumTopic == null && !ignoreDraft) ? replyMessage.messageOwner : null, replyingQuote, messageSuggestionParams != null ? messageSuggestionParams.toTl() : null, !searchWebpage, false);
     }
 
     private long computeDraftThreadId(MessageObject replyMessage) {
@@ -32110,15 +32110,15 @@ public class ChatActivity extends BaseFragment implements
         return userInfo;
     }
 
-    public void sendAudio(ArrayList<MessageObject> audios, CharSequence caption, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia) {
+    public void sendAudio(ArrayList<MessageObject> audios, CharSequence caption, boolean notify, int scheduleDate, int scheduleRepeatPeriod, boolean invertMedia) {
         if (checkSlowModeAlert()) {
             fillEditingMediaWithCaption(caption, null);
-            SendMessagesHelper.prepareSendingAudioDocuments(getAccountInstance(), audios, caption != null ? caption : null, dialog_id, replyingMessageObject, getThreadMessage(), notify, scheduleDate, scheduleRepeatPeriod, editingMessageObject, getMessageChatSendParams(), effectId, invertMedia);
+            SendMessagesHelper.prepareSendingAudioDocuments(getAccountInstance(), audios, caption != null ? caption : null, dialog_id, replyingMessageObject, getThreadMessage(), notify, scheduleDate, scheduleRepeatPeriod, editingMessageObject, getMessageChatSendParams(), invertMedia);
             afterMessageSend();
         }
     }
 
-    public void sendContact(TLRPC.User user, boolean notify, int scheduleDate, long effectId, boolean invertMedia) {
+    public void sendContact(TLRPC.User user, boolean notify, int scheduleDate, boolean invertMedia) {
         if (checkSlowModeAlert()) {
             SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(user, dialog_id, replyingMessageObject, getThreadMessage(), null, null, notify, scheduleDate, 0);
             params.sendMessageChatArguments = getMessageChatSendParams();
@@ -32131,7 +32131,7 @@ public class ChatActivity extends BaseFragment implements
         }
     }
 
-    public void sendContacts(ArrayList<TLRPC.User> users, String caption, boolean notify, int scheduleDate, long effectId, boolean invertMedia) {
+    public void sendContacts(ArrayList<TLRPC.User> users, String caption, boolean notify, int scheduleDate, boolean invertMedia) {
         if (checkSlowModeAlert()) {
             if (!TextUtils.isEmpty(caption)) {
                 SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(caption, dialog_id, null, null, null, true, null, null, null, true, 0, 0, null, false);
@@ -32196,22 +32196,22 @@ public class ChatActivity extends BaseFragment implements
             MessageSuggestionParams params = messageSuggestionParams != null ?
                 messageSuggestionParams : MessageSuggestionParams.of(editingMessageObject.messageOwner.suggested_post);
             if (photoEntry.isVideo) {
-                SendMessagesHelper.prepareSendingVideo(getAccountInstance(), photoEntry.path, videoEditedInfo, photoEntry.coverPath, photoEntry.coverPhoto, dialog_id, editingMessageObject, getThreadMessage(), replyingQuote, photoEntry.entities, photoEntry.ttl, null, notify, scheduleDate, scheduleRepeatPeriod, forceDocument, photoEntry.hasSpoiler, photoEntry.caption, getMessageChatSendParams(), photoEntry.effectId, getSendMonoForumPeerId(), params);
+                SendMessagesHelper.prepareSendingVideo(getAccountInstance(), photoEntry.path, videoEditedInfo, photoEntry.coverPath, photoEntry.coverPhoto, dialog_id, editingMessageObject, getThreadMessage(), replyingQuote, photoEntry.entities, photoEntry.ttl, null, notify, scheduleDate, scheduleRepeatPeriod, forceDocument, photoEntry.hasSpoiler, photoEntry.caption, getMessageChatSendParams(), getSendMonoForumPeerId(), params);
             } else {
                 if (photoEntry.imagePath != null) {
-                    SendMessagesHelper.prepareSendingPhoto(getAccountInstance(), photoEntry.imagePath, photoEntry.thumbPath, null, dialog_id, editingMessageObject, getThreadMessage(), replyingQuote, photoEntry.entities, photoEntry.stickers, null, photoEntry.ttl, null, videoEditedInfo, notify, scheduleDate, scheduleRepeatPeriod, 0, forceDocument, photoEntry.caption, getMessageChatSendParams(), photoEntry.effectId, getSendMonoForumPeerId(), params);
+                    SendMessagesHelper.prepareSendingPhoto(getAccountInstance(), photoEntry.imagePath, photoEntry.thumbPath, null, dialog_id, editingMessageObject, getThreadMessage(), replyingQuote, photoEntry.entities, photoEntry.stickers, null, photoEntry.ttl, null, videoEditedInfo, notify, scheduleDate, scheduleRepeatPeriod, 0, forceDocument, photoEntry.caption, getMessageChatSendParams(), getSendMonoForumPeerId(), params);
                 } else if (photoEntry.path != null) {
-                    SendMessagesHelper.prepareSendingPhoto(getAccountInstance(), photoEntry.path, photoEntry.thumbPath, null, dialog_id, editingMessageObject, getThreadMessage(), replyingQuote, photoEntry.entities, photoEntry.stickers, null, photoEntry.ttl, null, videoEditedInfo, notify, scheduleDate, scheduleRepeatPeriod, 0, forceDocument, photoEntry.caption, getMessageChatSendParams(), photoEntry.effectId, getSendMonoForumPeerId(), params);
+                    SendMessagesHelper.prepareSendingPhoto(getAccountInstance(), photoEntry.path, photoEntry.thumbPath, null, dialog_id, editingMessageObject, getThreadMessage(), replyingQuote, photoEntry.entities, photoEntry.stickers, null, photoEntry.ttl, null, videoEditedInfo, notify, scheduleDate, scheduleRepeatPeriod, 0, forceDocument, photoEntry.caption, getMessageChatSendParams(), getSendMonoForumPeerId(), params);
                 }
             }
         } else {
             if (photoEntry.isVideo) {
-                SendMessagesHelper.prepareSendingVideo(getAccountInstance(), photoEntry.path, videoEditedInfo, photoEntry.coverPath, photoEntry.coverPhoto, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, photoEntry.entities, photoEntry.ttl, editingMessageObject, notify, scheduleDate, scheduleRepeatPeriod, forceDocument, photoEntry.hasSpoiler, photoEntry.caption, getMessageChatSendParams(), photoEntry.effectId, getSendMonoForumPeerId(), getSendMessageSuggestionParams());
+                SendMessagesHelper.prepareSendingVideo(getAccountInstance(), photoEntry.path, videoEditedInfo, photoEntry.coverPath, photoEntry.coverPhoto, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, photoEntry.entities, photoEntry.ttl, editingMessageObject, notify, scheduleDate, scheduleRepeatPeriod, forceDocument, photoEntry.hasSpoiler, photoEntry.caption, getMessageChatSendParams(), getSendMonoForumPeerId(), getSendMessageSuggestionParams());
             } else {
                 if (photoEntry.imagePath != null) {
-                    SendMessagesHelper.prepareSendingPhoto(getAccountInstance(), photoEntry.imagePath, photoEntry.thumbPath, null, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, photoEntry.entities, photoEntry.stickers, null, photoEntry.ttl, editingMessageObject, videoEditedInfo, notify, scheduleDate, scheduleRepeatPeriod, 0, forceDocument, photoEntry.caption, getMessageChatSendParams(), photoEntry.effectId, getSendMonoForumPeerId(), getSendMessageSuggestionParams());
+                    SendMessagesHelper.prepareSendingPhoto(getAccountInstance(), photoEntry.imagePath, photoEntry.thumbPath, null, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, photoEntry.entities, photoEntry.stickers, null, photoEntry.ttl, editingMessageObject, videoEditedInfo, notify, scheduleDate, scheduleRepeatPeriod, 0, forceDocument, photoEntry.caption, getMessageChatSendParams(), getSendMonoForumPeerId(), getSendMessageSuggestionParams());
                 } else if (photoEntry.path != null) {
-                    SendMessagesHelper.prepareSendingPhoto(getAccountInstance(), photoEntry.path, photoEntry.thumbPath, null, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, photoEntry.entities, photoEntry.stickers, null, photoEntry.ttl, editingMessageObject, videoEditedInfo, notify, scheduleDate, scheduleRepeatPeriod, 0, forceDocument, photoEntry.caption, getMessageChatSendParams(), photoEntry.effectId, getSendMonoForumPeerId(), getSendMessageSuggestionParams());
+                    SendMessagesHelper.prepareSendingPhoto(getAccountInstance(), photoEntry.path, photoEntry.thumbPath, null, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, photoEntry.entities, photoEntry.stickers, null, photoEntry.ttl, editingMessageObject, videoEditedInfo, notify, scheduleDate, scheduleRepeatPeriod, 0, forceDocument, photoEntry.caption, getMessageChatSendParams(), getSendMonoForumPeerId(), getSendMessageSuggestionParams());
                 }
             }
         }

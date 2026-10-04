@@ -215,7 +215,6 @@ public class NotificationCenter {
     public static final int smsJobStatusUpdate = totalEvents++;
     public static final int timezonesUpdated = totalEvents++;
     public static final int customStickerCreated = totalEvents++;
-    public static final int availableEffectsUpdate = totalEvents++;
     public static final int starBalanceUpdated = totalEvents++;
     public static final int starSubscriptionsLoaded = totalEvents++;
     public static final int factCheckLoaded = totalEvents++;
@@ -280,7 +279,6 @@ public class NotificationCenter {
     public static final int appUpdateAvailable = totalEvents++;
     public static final int appUpdateLoading = totalEvents++;
     public static final int onDatabaseMigration = totalEvents++;
-    public static final int onEmojiInteractionsReceived = totalEvents++;
     public static final int emojiPreviewThemesChanged = totalEvents++;
     public static final int reactionsDidLoad = totalEvents++;
     public static final int attachMenuBotsDidLoad = totalEvents++;

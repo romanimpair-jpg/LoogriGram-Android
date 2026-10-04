@@ -11567,17 +11567,8 @@ public class MessageObject {
     // getQuickReplyId/Name/DisplayName, isQuickReply): a message belonging to
     // one of our Business quick replies. None are kept or sent any more.
     
-    public TLRPC.TL_availableEffect getEffect() {
-        if (messageOwner == null || (messageOwner.flags2 & 4) == 0)
-            return null;
-        return MessagesController.getInstance(currentAccount).getEffect(messageOwner.effect);
-    }
-
-    public long getEffectId() {
-        if (messageOwner == null || (messageOwner.flags2 & 4) == 0)
-            return 0;
-        return messageOwner.effect;
-    }
+    // LoogriGram: getEffect and getEffectId read a message's effect; effects
+    // are neither played nor marked on messages now.
 
     public TLRPC.TL_factCheck getFactCheck() {
         return FactCheckController.getInstance(currentAccount).getFactCheck(this);

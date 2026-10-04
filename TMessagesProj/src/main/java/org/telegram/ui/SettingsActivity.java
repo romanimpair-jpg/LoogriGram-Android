@@ -1377,7 +1377,6 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 SharedConfig.forwardingOptionsHintShown = false;
                 SharedConfig.replyingOptionsHintShown = false;
                 SharedConfig.messageSeenHintCount = 3;
-                SharedConfig.emojiInteractionsHintCount = 3;
                 SharedConfig.dayNightThemeSwitchHintCount = 3;
                 SharedConfig.fastScrollHintCount = 3;
                 ChatThemeController.getInstance(currentAccount).clearCache();

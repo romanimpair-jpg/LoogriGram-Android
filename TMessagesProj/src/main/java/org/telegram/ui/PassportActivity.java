@@ -6841,7 +6841,7 @@ public class PassportActivity extends BaseFragment implements NotificationCenter
             chatAttachAlert.setDelegate(new ChatAttachAlert.ChatAttachViewDelegate() {
 
                 @Override
-                public void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia, boolean forceDocument) {
+                public void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, int scheduleRepeatPeriod, boolean invertMedia, boolean forceDocument) {
                     if (getParentActivity() == null || chatAttachAlert == null) {
                         return;
                     }
@@ -6935,7 +6935,7 @@ public class PassportActivity extends BaseFragment implements NotificationCenter
         }
     }
 
-    public void didSelectFiles(ArrayList<String> files, String caption, boolean notify, int scheduleDate, long effectId, boolean invertMedia) {
+    public void didSelectFiles(ArrayList<String> files, String caption, boolean notify, int scheduleDate, boolean invertMedia) {
         ArrayList<SendMessagesHelper.SendingMediaInfo> arrayList = new ArrayList<>();
         for (int a = 0, count = files.size(); a < count; a++) {
             SendMessagesHelper.SendingMediaInfo info = new SendMessagesHelper.SendingMediaInfo();

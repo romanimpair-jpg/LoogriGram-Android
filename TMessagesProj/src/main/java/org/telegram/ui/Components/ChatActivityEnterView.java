@@ -300,7 +300,7 @@ public class ChatActivityEnterView extends FrameLayout implements
 
         default void didPressSuggestionButton() {}
 
-        void needStartRecordVideo(int state, boolean notify, int scheduleDate, int scheduleRepeatPeriod, int ttl, long effectId);
+        void needStartRecordVideo(int state, boolean notify, int scheduleDate, int scheduleRepeatPeriod, int ttl);
 
         void toggleVideoRecordingPause();
 
@@ -783,7 +783,7 @@ public class ChatActivityEnterView extends FrameLayout implements
         @Override
         public void run() {
             if (delegate != null) {
-                delegate.needStartRecordVideo(0, true, 0, 0, 0, 0);
+                delegate.needStartRecordVideo(0, true, 0, 0, 0);
             }
         }
     };
@@ -2747,7 +2747,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                         if (!hasRecordVideo || calledRecordRunnable) {
                             startedDraggingX = -1;
                             if (hasRecordVideo && isInVideoMode()) {
-                                delegate.needStartRecordVideo(1, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId);
+                                delegate.needStartRecordVideo(1, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0);
                                 sendButton.setEffect(effectId = 0);
                             } else {
                                 if (recordingAudioVideo && isInScheduleMode()) {
@@ -2787,7 +2787,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                         if (slideToCancelProgress < 0.7f) {
                             if (hasRecordVideo && isInVideoMode()) {
                                 CameraController.getInstance().cancelOnInitRunnable(onFinishInitCameraRunnable);
-                                delegate.needStartRecordVideo(2, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId);
+                                delegate.needStartRecordVideo(2, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0);
                                 sendButton.setEffect(effectId = 0);
                             } else {
                                 delegate.needStartRecordAudio(0);
@@ -2815,7 +2815,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                     if (alpha < 0.45) {
                         if (hasRecordVideo && isInVideoMode()) {
                             CameraController.getInstance().cancelOnInitRunnable(onFinishInitCameraRunnable);
-                            delegate.needStartRecordVideo(2, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId);
+                            delegate.needStartRecordVideo(2, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0);
                             sendButton.setEffect(effectId = 0);
                         } else {
                             delegate.needStartRecordAudio(0);
@@ -2839,7 +2839,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                             startedDraggingX = -1;
                             if (hasRecordVideo && isInVideoMode()) {
                                 CameraController.getInstance().cancelOnInitRunnable(onFinishInitCameraRunnable);
-                                delegate.needStartRecordVideo(1, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId);
+                                delegate.needStartRecordVideo(1, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0);
                                 sendButton.setEffect(effectId = 0);
                             } else if (!sendVoiceEnabled) {
                                 delegate.needShowMediaBanHint();
@@ -2898,7 +2898,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                     if (alpha == 0) {
                         if (hasRecordVideo && isInVideoMode()) {
                             CameraController.getInstance().cancelOnInitRunnable(onFinishInitCameraRunnable);
-                            delegate.needStartRecordVideo(2, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId);
+                            delegate.needStartRecordVideo(2, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0);
                             sendButton.setEffect(effectId = 0);
                         } else {
                             delegate.needStartRecordAudio(0);
@@ -3644,7 +3644,7 @@ public class ChatActivityEnterView extends FrameLayout implements
         }
         if (videoToSendMessageObject != null) {
             CameraController.getInstance().cancelOnInitRunnable(onFinishInitCameraRunnable);
-            delegate.needStartRecordVideo(2, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId);
+            delegate.needStartRecordVideo(2, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0);
             sendButton.setEffect(effectId = 0);
         } else {
             MessageObject playing = MediaController.getInstance().getPlayingMessageObject();
@@ -5077,7 +5077,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                     photoEntry.reset();
                     sending = true;
                     boolean updateStickersOrder = SendMessagesHelper.checkUpdateStickersOrder(info.caption);
-                    SendMessagesHelper.prepareSendingMedia(accountInstance, photos, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, false, false, editingMessageObject, notify, scheduleDate, scheduleRepeatPeriod, parentFragment == null ? 0 : parentFragment.getChatMode(), updateStickersOrder, null, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, 0, false, getSendMonoForumPeerId(), parentFragment != null ? parentFragment.messageSuggestionParams : null);
+                    SendMessagesHelper.prepareSendingMedia(accountInstance, photos, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, false, false, editingMessageObject, notify, scheduleDate, scheduleRepeatPeriod, parentFragment == null ? 0 : parentFragment.getChatMode(), updateStickersOrder, null, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, false, getSendMonoForumPeerId(), parentFragment != null ? parentFragment.messageSuggestionParams : null);
                     if (delegate != null) {
                         delegate.onMessageSend(null, true, scheduleDate, scheduleRepeatPeriod);
                     }
@@ -5552,7 +5552,7 @@ public class ChatActivityEnterView extends FrameLayout implements
     public void cancelRecordingAudioVideo() {
         if (hasRecordVideo && isInVideoMode()) {
             CameraController.getInstance().cancelOnInitRunnable(onFinishInitCameraRunnable);
-            delegate.needStartRecordVideo(5, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId);
+            delegate.needStartRecordVideo(5, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0);
             sendButton.setEffect(effectId = 0);
         } else {
             delegate.needStartRecordAudio(0);
@@ -6603,7 +6603,7 @@ public class ChatActivityEnterView extends FrameLayout implements
             }
             dismissSendPreviewSent = true;
             if (videoToSendMessageObject != null) {
-                delegate.needStartRecordVideo(4, notify, scheduleDate, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId);
+                delegate.needStartRecordVideo(4, notify, scheduleDate, 0, voiceOnce ? 0x7FFFFFFF : 0);
                 sendButton.setEffect(effectId = 0);
                 hideRecordedAudioPanel(true);
                 checkSendButton(true);
@@ -10303,7 +10303,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                         return true;
                     }
                     long did = dids.get(0).dialogId;
-                    MediaDataController.getInstance(currentAccount).saveDraft(did, 0, "@" + UserObject.getPublicUsername(user) + " " + buttonTypeSwitchInline.query, null, null, true, 0);
+                    MediaDataController.getInstance(currentAccount).saveDraft(did, 0, "@" + UserObject.getPublicUsername(user) + " " + buttonTypeSwitchInline.query, null, null, true);
                     if (did != dialog_id) {
                         if (!DialogObject.isEncryptedDialog(did)) {
                             Bundle args1 = new Bundle();
@@ -10936,7 +10936,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                                 photos.add(info);
                                 entry.reset();
 
-                                SendMessagesHelper.prepareSendingMedia(AccountInstance.getInstance(currentAccount), photos, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, false, false, editingMessageObject, notify, scheduleDate, scheduleRepeatPeriod, 0, false, null, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, effectId, invertMedia, getSendMonoForumPeerId(),  getSendMessageSuggestionParams());
+                                SendMessagesHelper.prepareSendingMedia(AccountInstance.getInstance(currentAccount), photos, dialog_id, replyingMessageObject, getThreadMessage(), replyingQuote, false, false, editingMessageObject, notify, scheduleDate, scheduleRepeatPeriod, 0, false, null, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, invertMedia, getSendMonoForumPeerId(),  getSendMessageSuggestionParams());
                             } else {
                                 SendMessagesHelper.getInstance(currentAccount).sendSticker(document, query, dialog_id, entry != null ? entry.caption : null, videoEditedInfo, replyingMessageObject, getThreadMessage(), replyingQuote, null, notify, scheduleDate, scheduleRepeatPeriod, false, parent, parentFragment != null ? parentFragment.getMessageChatSendParams() : null, getSendMonoForumPeerId(), getSendMessageSuggestionParams(), invertMedia);
                                 MediaDataController.getInstance(currentAccount).addRecentGif(document, (int) (System.currentTimeMillis() / 1000), true);
@@ -12633,7 +12633,7 @@ public class ChatActivityEnterView extends FrameLayout implements
         public void onCancelButtonPressed() {
             if (hasRecordVideo && isInVideoMode()) {
                 CameraController.getInstance().cancelOnInitRunnable(onFinishInitCameraRunnable);
-                delegate.needStartRecordVideo(5, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId);
+                delegate.needStartRecordVideo(5, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0);
                 sendButton.setEffect(effectId = 0);
             } else {
                 delegate.needStartRecordAudio(0);
@@ -12901,7 +12901,7 @@ public class ChatActivityEnterView extends FrameLayout implements
             if (isInVideoMode()) {
                 if (t >= 59500 && !stoppedInternal) {
                     startedDraggingX = -1;
-                    delegate.needStartRecordVideo(3, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0, effectId);
+                    delegate.needStartRecordVideo(3, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0);
                     sendButton.setEffect(effectId = 0);
                     stoppedInternal = true;
                 }

@@ -499,7 +499,6 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
         public boolean isPainted;
         public boolean isCropped;
         public int ttl;
-        public long effectId;
         @Nullable
         public Boolean highQuality;
         public boolean isHighQuality() {

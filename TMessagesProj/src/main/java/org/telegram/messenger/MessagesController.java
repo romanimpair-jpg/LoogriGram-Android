@@ -532,7 +532,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public Set<String> authDomains;
     public String autologinToken;
     public HashMap<String, DiceFrameSuccess> diceSuccess = new HashMap<>();
-    public HashMap<Long, ArrayList<TLRPC.TL_sendMessageEmojiInteraction>> emojiInteractions = new HashMap<>();
     public boolean remoteConfigLoaded;
     public int ringtoneDurationMax;
     public int ringtoneSizeMax;
@@ -9543,14 +9542,6 @@ public class MessagesController extends BaseController implements NotificationCe
                             text = LocaleController.getString(R.string.SelectingContact);
                         }
                         type = 0;
-                    } else if (pu.action instanceof TLRPC.TL_sendMessageEmojiInteractionSeen) {
-                        final String emoji = ((TLRPC.TL_sendMessageEmojiInteractionSeen) pu.action).emoticon;
-                        if (isGroup) {
-                            text = LocaleController.formatString("IsEnjoyngAnimations", R.string.IsEnjoyngAnimations, getUserNameForTyping(user), emoji);
-                        } else {
-                            text = LocaleController.formatString("EnjoyngAnimations", R.string.EnjoyngAnimations, emoji);
-                        }
-                        type = 5;
                     } else if (pu.action instanceof TLRPC.TL_sendMessageChooseStickerAction) {
                         if (isGroup) {
                             text = LocaleController.formatString("IsChoosingSticker", R.string.IsChoosingSticker, getUserNameForTyping(user));
@@ -9725,11 +9716,9 @@ public class MessagesController extends BaseController implements NotificationCe
                 req.action = new TLRPC.TL_sendMessageUploadAudioAction();
             } else if (action == 10) {
                 req.action = new TLRPC.TL_sendMessageChooseStickerAction();
-            } else if (action == 11) {
-                TLRPC.TL_sendMessageEmojiInteractionSeen interactionSeen = new TLRPC.TL_sendMessageEmojiInteractionSeen();
-                interactionSeen.emoticon = emojicon;
-                req.action = interactionSeen;
             }
+            // LoogriGram: action 11 told the sender we watched their emoji
+            // interaction; interactions are not played.
             threads.put(threadMsgId, true);
             int reqId = getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> cancelTyping(action, dialogId, threadMsgId)), ConnectionsManager.RequestFlagFailOnServerErrors);
             if (classGuid != 0) {
@@ -16588,7 +16577,6 @@ public class MessagesController extends BaseController implements NotificationCe
         EphemeralMessagesHelper.EphemeralUpdates ephemeralUpdates = null;
         LongSparseArray<ArrayList<Integer>> ephemeralMessagesDeletedArr = null;
         ArrayList<TLRPC.Message> messageActionNoForwardsToggles = null;
-        ArrayList<TLRPC.TL_sendMessageEmojiInteraction> emojiInteractions = null;
         ArrayList<TLRPC.Message> scheduledMessagesArr = null;
         LongSparseArray<ArrayList<MessageObject>> editingMessages = null;
         LongSparseArray<SparseIntArray> channelViews = null;
@@ -17040,8 +17028,10 @@ public class MessagesController extends BaseController implements NotificationCe
                     action = update.action;
                     chatId = 0;
                     threadId = update.top_msg_id;
-                    if (update.action instanceof TLRPC.TL_sendMessageEmojiInteraction) {
-                        AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.onEmojiInteractionsReceived, update.user_id, update.action));
+                    // LoogriGram: an emoji interaction was handed to the chat to
+                    // play, and "is watching" was shown as typing. Both are skipped.
+                    if (update.action instanceof TLRPC.TL_sendMessageEmojiInteraction
+                            || update.action instanceof TLRPC.TL_sendMessageEmojiInteractionSeen) {
                         continue;
                     }
                 } else {
@@ -17057,8 +17047,8 @@ public class MessagesController extends BaseController implements NotificationCe
                     action = update.action;
                     threadId = 0;
 
-                    if (update.action instanceof TLRPC.TL_sendMessageEmojiInteraction) {
-                        AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.onEmojiInteractionsReceived, -update.chat_id, update.action));
+                    if (update.action instanceof TLRPC.TL_sendMessageEmojiInteraction
+                            || update.action instanceof TLRPC.TL_sendMessageEmojiInteractionSeen) {
                         continue;
                     }
                 }
@@ -21860,146 +21850,9 @@ public class MessagesController extends BaseController implements NotificationCe
     // action a Premium user could take on an ad, and the check that skipped
     // fetching ads for them. Both lost every caller when ads were removed.
 
-    private boolean loadingAvailableEffects;
-    private TLRPC.messages_AvailableEffects availableEffects;
-    public TLRPC.messages_AvailableEffects getAvailableEffects() {
-        if (!loadingAvailableEffects) {
-            loadingAvailableEffects = true;
-            effectsFetcher.fetch(currentAccount, 0, effects -> {
-                if (availableEffects != effects) {
-                    availableEffects = effects;
-                    if (availableEffects != null) {
-                        AnimatedEmojiDrawable.getDocumentFetcher(currentAccount).putDocuments(availableEffects.documents);
-                    }
-                    getNotificationCenter().postNotificationName(NotificationCenter.availableEffectsUpdate);
-                }
-                loadingAvailableEffects = false;
-            });
-        }
-        return availableEffects;
-    }
-
-    public boolean hasAvailableEffects() {
-        return availableEffects != null && !availableEffects.effects.isEmpty();
-    }
-
-    public TLRPC.TL_availableEffect getEffect(long id) {
-        getAvailableEffects();
-        if (availableEffects != null) {
-            for (int i = 0; i < availableEffects.effects.size(); ++i) {
-                if (availableEffects.effects.get(i).id == id)
-                    return availableEffects.effects.get(i);
-            }
-        }
-        return null;
-    }
-
-    public TLRPC.Document getEffectDocument(long documentId) {
-        if (availableEffects != null) {
-            for (int i = 0; i < availableEffects.documents.size(); ++i) {
-                if (availableEffects.documents.get(i).id == documentId)
-                    return availableEffects.documents.get(i);
-            }
-        }
-        return null;
-    }
-
-    private final CacheFetcher<Integer, TLRPC.messages_AvailableEffects> effectsFetcher = new CacheFetcher<Integer, TLRPC.messages_AvailableEffects>() {
-        @Override
-        protected void getRemote(int currentAccount, Integer arguments, long hash, Utilities.Callback4<Boolean, TLRPC.messages_AvailableEffects, Long, Boolean> onResult) {
-            TLRPC.TL_messages_getAvailableEffects req = new TLRPC.TL_messages_getAvailableEffects();
-            req.hash = (int) hash;
-            getConnectionsManager().sendRequest(req, (res, err) -> {
-                if (res instanceof TLRPC.TL_messages_availableEffectsNotModified) {
-                    onResult.run(true, null, 0L, true);
-                } else if (res instanceof TLRPC.TL_messages_availableEffects) {
-                    onResult.run(false, (TLRPC.TL_messages_availableEffects) res, (long) ((TLRPC.TL_messages_availableEffects) res).hash, true);
-                } else {
-                    FileLog.e("getting available effects error " + (err != null ? err.code + " " + err.text : ""));
-                    onResult.run(false, null, 0L, err == null || !(err.code == -2000 || err.code == -2001));
-                }
-            });
-        }
-
-        @Override
-        protected void getLocal(int currentAccount, Integer arguments, Utilities.Callback2<Long, TLRPC.messages_AvailableEffects> onResult) {
-            getMessagesStorage().getStorageQueue().postRunnable(() -> {
-                SQLiteCursor cursor = null;
-                try {
-                    SQLiteDatabase database = MessagesStorage.getInstance(currentAccount).getDatabase();
-                    if (database != null) {
-                        TLRPC.messages_AvailableEffects maybeResult = null;
-                        cursor = database.queryFinalized("SELECT data FROM effects");
-                        if (cursor.next()) {
-                            NativeByteBuffer data = cursor.byteBufferValue(0);
-                            if (data != null) {
-                                maybeResult = TLRPC.messages_AvailableEffects.TLdeserialize(data, data.readInt32(false), true);
-                                data.reuse();
-                            }
-                        }
-
-                        if (maybeResult instanceof TLRPC.TL_messages_availableEffects) {
-                            TLRPC.TL_messages_availableEffects result = (TLRPC.TL_messages_availableEffects) maybeResult;
-                            onResult.run((long) result.hash, result);
-                        } else {
-                            onResult.run(0L, null);
-                        }
-                    }
-                } catch (Exception e) {
-                    FileLog.e(e);
-                    onResult.run(0L, null);
-                } finally {
-                    if (cursor != null) {
-                        cursor.dispose();
-                    }
-                }
-            });
-        }
-
-        @Override
-        protected void setLocal(int currentAccount, Integer arguments, TLRPC.messages_AvailableEffects data, long hash) {
-            MessagesStorage.getInstance(currentAccount).getStorageQueue().postRunnable(() -> {
-                try {
-                    SQLiteDatabase database = MessagesStorage.getInstance(currentAccount).getDatabase();
-                    if (database != null) {
-                        database.executeFast("DELETE FROM effects").stepThis().dispose();
-                        if (data != null) {
-                            SQLitePreparedStatement state = database.executeFast("INSERT INTO effects VALUES(?)");
-                            state.requery();
-                            NativeByteBuffer buffer = new NativeByteBuffer(data.getObjectSize());
-                            data.serializeToStream(buffer);
-                            state.bindByteBuffer(1, buffer);
-                            state.step();
-                            buffer.reuse();
-                            state.dispose();
-                        }
-                    }
-                } catch (Exception e) {
-                    FileLog.e(e);
-                }
-            });
-        }
-
-        @Override
-        protected boolean saveLastTimeRequested() {
-            return true;
-        }
-
-        @Override
-        protected long getSavedLastTimeRequested(int hashCode) {
-            return mainPreferences.getLong("effects_last_" + hashCode, 0);
-        }
-
-        @Override
-        protected void setSavedLastTimeRequested(int hashCode, long time) {
-            mainPreferences.edit().putLong("effects_last_" + hashCode, time).apply();
-        }
-
-        @Override
-        protected boolean emitLocal(Integer arguments) {
-            return true;
-        }
-    };
+    // LoogriGram: the message effects catalogue (messages.getAvailableEffects,
+    // cached in the effects table, which stays in the schema unread) was loaded
+    // and looked up here. Effects are neither offered nor played.
 
     public static boolean equals(TLRPC.MessageMedia a, TLRPC.MessageMedia b) {
         if (a instanceof TLRPC.TL_messageMediaDocument) {

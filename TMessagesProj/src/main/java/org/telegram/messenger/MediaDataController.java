@@ -6814,11 +6814,11 @@ public class MediaDataController extends BaseController {
         return threads.get(threadId);
     }
 
-    public void saveDraft(long dialogId, int threadId, CharSequence message, ArrayList<TLRPC.MessageEntity> entities, TLRPC.Message replyToMessage, boolean noWebpage, long effectId) {
-        saveDraft(dialogId, threadId, message, entities, replyToMessage, null, null, effectId, noWebpage, false);
+    public void saveDraft(long dialogId, int threadId, CharSequence message, ArrayList<TLRPC.MessageEntity> entities, TLRPC.Message replyToMessage, boolean noWebpage) {
+        saveDraft(dialogId, threadId, message, entities, replyToMessage, null, null, noWebpage, false);
     }
 
-    public void saveDraft(long dialogId, long threadId, CharSequence message, ArrayList<TLRPC.MessageEntity> entities, TLRPC.Message replyToMessage, ChatActivity.ReplyQuote quote, TLRPC.SuggestedPost suggestedPost, long effectId, boolean noWebpage, boolean clean) {
+    public void saveDraft(long dialogId, long threadId, CharSequence message, ArrayList<TLRPC.MessageEntity> entities, TLRPC.Message replyToMessage, ChatActivity.ReplyQuote quote, TLRPC.SuggestedPost suggestedPost, boolean noWebpage, boolean clean) {
         TLRPC.DraftMessage draftMessage;
         if (getMessagesController().isForum(dialogId) && threadId == 0) {
             replyToMessage = null;
@@ -6831,10 +6831,7 @@ public class MediaDataController extends BaseController {
         draftMessage.date = (int) (System.currentTimeMillis() / 1000);
         draftMessage.message = message == null ? "" : message.toString();
         draftMessage.no_webpage = noWebpage;
-        if (effectId != 0) {
-            draftMessage.flags |= 128;
-            draftMessage.effect = effectId;
-        }
+        // LoogriGram: a draft carried its chosen message effect here.
         if (replyToMessage != null) {
             draftMessage.reply_to = new TLRPC.TL_inputReplyToMessage();
             draftMessage.flags |= 16;
@@ -7279,7 +7276,7 @@ public class MediaDataController extends BaseController {
                 draftMessage.reply_to.reply_to_msg_id = 0;
             }
             draftMessage.flags &= ~1;
-            saveDraft(dialogId, threadId, draftMessage.message, draftMessage.entities, null, null, null, 0, draftMessage.no_webpage, true);
+            saveDraft(dialogId, threadId, draftMessage.message, draftMessage.entities, null, null, null, draftMessage.no_webpage, true);
         }
     }
 
@@ -7656,7 +7653,6 @@ public class MediaDataController extends BaseController {
         // LoogriGram: the Premium and TON gift sticker packs are not fetched;
         // they drew gift and giveaway messages, which are held unshown.
         checkGenericAnimations();
-        getMessagesController().getAvailableEffects();
     }
 
     public void moveStickerSetToTop(long setId, boolean emojis, boolean masks) {

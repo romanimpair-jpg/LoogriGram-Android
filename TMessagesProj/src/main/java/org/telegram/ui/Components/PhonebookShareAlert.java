@@ -92,9 +92,9 @@ public class PhonebookShareAlert extends BottomSheet {
     // implemented or called it was this alert. It moved here when that tab was
     // deleted.
     public interface PhonebookShareAlertDelegate {
-        void didSelectContact(TLRPC.User user, boolean notify, int scheduleDate, long effectId, boolean invertMedia);
+        void didSelectContact(TLRPC.User user, boolean notify, int scheduleDate, boolean invertMedia);
 
-        default void didSelectContacts(ArrayList<TLRPC.User> users, String caption, boolean notify, int scheduleDate, long effectId, boolean invertMedia) {
+        default void didSelectContacts(ArrayList<TLRPC.User> users, String caption, boolean notify, int scheduleDate, boolean invertMedia) {
 
         }
     }
@@ -938,7 +938,7 @@ public class PhonebookShareAlert extends BottomSheet {
                 if (parentFragment instanceof ChatActivity && ((ChatActivity) parentFragment).isInScheduleMode()) {
                     ChatActivity chatActivity = (ChatActivity) parentFragment;
                     AlertsCreator.createScheduleDatePickerDialog(getContext(), chatActivity.getDialogId(), (notify, scheduleDate, scheduleRepeatPeriod) -> {
-                        delegate.didSelectContact(currentUser, notify, scheduleDate, 0, false);
+                        delegate.didSelectContact(currentUser, notify, scheduleDate, false);
                         dismiss();
                     }, resourcesProvider);
                 } else {
@@ -946,7 +946,7 @@ public class PhonebookShareAlert extends BottomSheet {
                     if (parentFragment instanceof ChatActivity) {
                         dialogId = ((ChatActivity) parentFragment).getDialogId();
                     }
-                    delegate.didSelectContact(currentUser, true, 0, 0, false);
+                    delegate.didSelectContact(currentUser, true, 0, false);
                     dismiss();
                 }
             }

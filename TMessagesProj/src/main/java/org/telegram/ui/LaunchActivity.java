@@ -4594,7 +4594,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 }
                 if (MessagesController.getInstance(intentAccount).checkCanOpenChat(args13, fragment13)) {
                     NotificationCenter.getInstance(intentAccount).postNotificationName(NotificationCenter.closeChats);
-                    MediaDataController.getInstance(intentAccount).saveDraft(did, 0, message, null, null, false, 0);
+                    MediaDataController.getInstance(intentAccount).saveDraft(did, 0, message, null, null, false);
                     getActionBarLayout().presentFragment(new ChatActivity(args13), true, false, true, false);
                 }
                 return true;
@@ -5585,7 +5585,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                 final CharSequence finalMessage = message;
                 presentedFragmentWithRemoveLast = true;
                 PhonebookShareAlert alert = new PhonebookShareAlert(mainFragmentsStack.get(mainFragmentsStack.size() - 1), null, contactsToSendUri, null, null, null);
-                alert.setDelegate((user, notify2, scheduleDate2, effectId, invertMedia) -> {
+                alert.setDelegate((user, notify2, scheduleDate2, invertMedia) -> {
                     if (fragment != null) {
                         getActionBarLayout().presentFragment(fragment, true, false, true, false);
                     }
@@ -5603,13 +5603,10 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                         }
 
                         SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(user, did, replyToMsg, replyToMsg, null, null, notify2, scheduleDate2 != 0 ? scheduleDate2 : scheduleDate, scheduleRepeatPeriod);
-                        if (TextUtils.isEmpty(finalMessage)) {
-                            params.effect_id = effectId;
-                        }
                         params.invert_media = invertMedia;
                         SendMessagesHelper.getInstance(account).sendMessage(params);
                         if (!TextUtils.isEmpty(finalMessage)) {
-                            SendMessagesHelper.prepareSendingText(accountInstance, finalMessage, did, notify, scheduleDate2 != 0 ? scheduleDate2 : scheduleDate, scheduleRepeatPeriod, effectId);
+                            SendMessagesHelper.prepareSendingText(accountInstance, finalMessage, did, notify, scheduleDate2 != 0 ? scheduleDate2 : scheduleDate, scheduleRepeatPeriod);
                         }
                     }
                 });
@@ -5676,7 +5673,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                             }
                             ArrayList<String> arrayList = new ArrayList<>();
                             arrayList.add(videoPath);
-                            SendMessagesHelper.prepareSendingDocuments(accountInstance, arrayList, arrayList, null, captionToSend, null, did, replyToMsg, replyToMsg, null, null, notify, scheduleDate, null, null, 0, false);
+                            SendMessagesHelper.prepareSendingDocuments(accountInstance, arrayList, arrayList, null, captionToSend, null, did, replyToMsg, replyToMsg, null, null, notify, scheduleDate, null, null, false);
                         } else if (photoPathsArray != null && photoPathsArray.size() > 0 && !photosEditorOpened) {
                             if (sendingText != null && sendingText.length() <= 1024 && photoPathsArray.size() == 1) {
                                 CharSequence[] m = new CharSequence[] { sendingText };
@@ -5684,7 +5681,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                                 photoPathsArray.get(0).caption = m[0].toString();
                                 sendingText = null;
                             }
-                            SendMessagesHelper.prepareSendingMedia(accountInstance, photoPathsArray, did, replyToMsg, replyToMsg, null, false, photoPathsArray.size() > 1, null, notify, scheduleDate, scheduleRepeatPeriod, 0, false, null, null, 0, false, 0, null);
+                            SendMessagesHelper.prepareSendingMedia(accountInstance, photoPathsArray, did, replyToMsg, replyToMsg, null, false, photoPathsArray.size() > 1, null, notify, scheduleDate, scheduleRepeatPeriod, 0, false, null, null, false, 0, null);
                         }
                     } else {
                         if (videoPath != null) {
@@ -5694,7 +5691,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                             }
                             ArrayList<String> arrayList = new ArrayList<>();
                             arrayList.add(videoPath);
-                            SendMessagesHelper.prepareSendingDocuments(accountInstance, arrayList, arrayList, null, captionToSend, null, did, replyToMsg, replyToMsg, null, null, notify, scheduleDate, null, null, 0, false);
+                            SendMessagesHelper.prepareSendingDocuments(accountInstance, arrayList, arrayList, null, captionToSend, null, did, replyToMsg, replyToMsg, null, null, notify, scheduleDate, null, null, false);
                         }
                         if (photoPathsArray != null && !photosEditorOpened) {
                             if (sendingText != null && sendingText.length() <= 1024 && photoPathsArray.size() == 1) {
@@ -5703,7 +5700,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                                 photoPathsArray.get(0).caption = m[0].toString();
                                 sendingText = null;
                             }
-                            SendMessagesHelper.prepareSendingMedia(accountInstance, photoPathsArray, did, replyToMsg, replyToMsg, null, false, photoPathsArray.size() > 1, null, notify, scheduleDate, scheduleRepeatPeriod, 0, false, null, null, 0, false, 0, null);
+                            SendMessagesHelper.prepareSendingMedia(accountInstance, photoPathsArray, did, replyToMsg, replyToMsg, null, false, photoPathsArray.size() > 1, null, notify, scheduleDate, scheduleRepeatPeriod, 0, false, null, null, false, 0, null);
                         }
                     }
                     if (documentsPathsArray != null || documentsUrisArray != null) {
@@ -5711,7 +5708,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
                             captionToSend = sendingText;
                             sendingText = null;
                         }
-                        SendMessagesHelper.prepareSendingDocuments(accountInstance, documentsPathsArray, documentsOriginalPathsArray, documentsUrisArray, captionToSend, documentsMimeType, did, replyToMsg, replyToMsg, null, null, notify, scheduleDate, null, null, 0, false);
+                        SendMessagesHelper.prepareSendingDocuments(accountInstance, documentsPathsArray, documentsOriginalPathsArray, documentsUrisArray, captionToSend, documentsMimeType, did, replyToMsg, replyToMsg, null, null, notify, scheduleDate, null, null, false);
                     }
                     if (voicePath != null) {
                         File file = new File(voicePath);
@@ -5779,7 +5776,7 @@ public class LaunchActivity extends BasePermissionsActivity implements INavigati
         final TLRPC.WebPage webPage = previewEnabled && dialogsFragment != null ? dialogsFragment.getSharedWebPage() : null;
         if (TextUtils.isEmpty(text)) return;
         if (webPage == null && previewEnabled) {
-            SendMessagesHelper.prepareSendingText(accountInstance, text, dialogId, topicId, notify, scheduleDate, scheduleRepeatPeriod, 0);
+            SendMessagesHelper.prepareSendingText(accountInstance, text, dialogId, topicId, notify, scheduleDate, scheduleRepeatPeriod);
             return;
         }
         final CharSequence trimmed = SendMessagesHelper.getTrimmedString(text);

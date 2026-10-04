@@ -107,7 +107,7 @@ public class ChatAttachAlertAudioLayout extends ChatAttachAlert.AttachAlertLayou
     private float currentPanTranslationProgress;
 
     public interface AudioSelectDelegate {
-        void didSelectAudio(ArrayList<MessageObject> audios, CharSequence caption, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia);
+        void didSelectAudio(ArrayList<MessageObject> audios, CharSequence caption, boolean notify, int scheduleDate, int scheduleRepeatPeriod, boolean invertMedia);
     }
 
     public ChatAttachAlertAudioLayout(ChatAttachAlert alert, Context context, Theme.ResourcesProvider resourcesProvider) {
@@ -499,7 +499,7 @@ public class ChatAttachAlertAudioLayout extends ChatAttachAlert.AttachAlertLayou
             sendPressed = true;
             ArrayList<MessageObject> audios = new ArrayList<>();
             audios.add(audioEntry.messageObject);
-            delegate.didSelectAudio(audios, parentAlert.getCommentView().getText(), false, 0, 0, 0, false);
+            delegate.didSelectAudio(audios, parentAlert.getCommentView().getText(), false, 0, 0, false);
             add = true;
         } else if (selectedAudios.contains(audioEntry)) {
             selectedAudios.remove(audioEntry);
@@ -694,7 +694,7 @@ public class ChatAttachAlertAudioLayout extends ChatAttachAlert.AttachAlertLayou
     }
 
     @Override
-    public boolean sendSelectedItems(boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia) {
+    public boolean sendSelectedItems(boolean notify, int scheduleDate, int scheduleRepeatPeriod, boolean invertMedia) {
         if (selectedAudios.size() == 0 || delegate == null || sendPressed) {
             return false;
         }
@@ -703,7 +703,7 @@ public class ChatAttachAlertAudioLayout extends ChatAttachAlert.AttachAlertLayou
         for (MediaController.AudioEntry entry : selectedAudios) {
             audios.add(entry.messageObject);
         }
-        delegate.didSelectAudio(audios, parentAlert.getCommentView().getText(), notify, scheduleDate, scheduleRepeatPeriod, effectId, invertMedia);
+        delegate.didSelectAudio(audios, parentAlert.getCommentView().getText(), notify, scheduleDate, scheduleRepeatPeriod, invertMedia);
         parentAlert.dismiss(true);
         return false;
     }

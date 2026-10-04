@@ -95,7 +95,7 @@ import java.util.StringTokenizer;
 public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLayout {
 
     public interface DocumentSelectActivityDelegate {
-        void didSelectFiles(ArrayList<String> files, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia);
+        void didSelectFiles(ArrayList<String> files, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, int scheduleRepeatPeriod, boolean invertMedia);
         default void didSelectPhotos(ArrayList<SendMessagesHelper.SendingMediaInfo> photos, boolean notify, int scheduleDate, int scheduleRepeatPeriod) {
 
         }
@@ -747,7 +747,7 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
     }
 
     @Override
-    public boolean sendSelectedItems(boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia) {
+    public boolean sendSelectedItems(boolean notify, int scheduleDate, int scheduleRepeatPeriod, boolean invertMedia) {
         if (selectedFiles.size() == 0 && selectedMessages.size() == 0 || delegate == null || sendPressed) {
             return false;
         }
@@ -764,7 +764,7 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
         final String caption = message[0].toString();
 
         sendPressed = true;
-        delegate.didSelectFiles(files, caption, captionEntities, fmessages, notify, scheduleDate, 0, effectId, invertMedia);
+        delegate.didSelectFiles(files, caption, captionEntities, fmessages, notify, scheduleDate, 0, invertMedia);
         parentAlert.dismiss(true);
         return false;
     }
@@ -837,7 +837,7 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
                 fmessages.add(selectedMessages.get(hashId));
             }
             final ArrayList<String> files = new ArrayList<>(selectedFilesOrder);
-            delegate.didSelectFiles(files, null, null, fmessages, false, 0, 0, 0, false);
+            delegate.didSelectFiles(files, null, null, fmessages, false, 0, 0, false);
             return true;
         }
 

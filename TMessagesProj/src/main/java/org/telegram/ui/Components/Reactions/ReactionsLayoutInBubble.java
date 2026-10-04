@@ -1366,9 +1366,8 @@ public class ReactionsLayoutInBubble {
     public static class VisibleReaction {
 
         public boolean isStar;
-        public boolean isEffect;
-        public long effectId;
-        public boolean sticker;
+        // LoogriGram: isEffect, effectId and sticker described a message
+        // effect offered in the effect picker, which is gone.
 
         public String emojicon;
         public long documentId;
@@ -1392,17 +1391,6 @@ public class ReactionsLayoutInBubble {
                 visibleReaction.hash = visibleReaction.documentId;
             }
 
-            return visibleReaction;
-        }
-
-        public static VisibleReaction fromTL(TLRPC.TL_availableEffect effect) {
-            VisibleReaction visibleReaction = new VisibleReaction();
-            visibleReaction.isEffect = true;
-            visibleReaction.effectId = effect.id;
-            visibleReaction.sticker = effect.effect_animation_id == 0;
-            visibleReaction.documentId = effect.effect_sticker_id;
-            visibleReaction.hash = effect.id;
-            visibleReaction.emojicon = effect.emoticon;
             return visibleReaction;
         }
 

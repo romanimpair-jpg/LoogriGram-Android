@@ -2105,7 +2105,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
         };
         chatAttachAlert.setDelegate(new ChatAttachAlert.ChatAttachViewDelegate() {
             @Override
-            public void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia, boolean forceDocument) {
+            public void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate, int scheduleRepeatPeriod, boolean invertMedia, boolean forceDocument) {
                 if (button == ChatAttachAlert.LAYOUT_TYPE_LINK) {
                     AlertsCreator.showAddLinkToPoll(fragment.getContext(), fragment.getResourceProvider(), null, null, url -> {
                         callback.run(new PollAttachedMediaLink(url));
@@ -2211,7 +2211,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
         chatAttachAlert.enablePollAttachMode(allowedLayouts);
         chatAttachAlert.setDocumentsDelegate(new ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate() {
             @Override
-            public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, int scheduleRepeatPeriod, long effectId, boolean invertMedia) {
+            public void didSelectFiles(ArrayList<String> files, String caption, ArrayList<TLRPC.MessageEntity> captionEntities, ArrayList<MessageObject> fmessages, boolean notify, int scheduleDate, int scheduleRepeatPeriod, boolean invertMedia) {
                 if (files != null && !files.isEmpty()) {
                     callback.run(new PollAttachedMediaFile(files.get(0)));
                 }
@@ -2237,7 +2237,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
                 }
             }
         });
-        chatAttachAlert.setAudioSelectDelegate((audios, caption, notify, scheduleDate, scheduleRepeatPeriod, effectId, invertMedia) -> {
+        chatAttachAlert.setAudioSelectDelegate((audios, caption, notify, scheduleDate, scheduleRepeatPeriod, invertMedia) -> {
             if (audios != null && !audios.isEmpty()) {
                 callback.run(new PollAttachedMediaMusic(audios.get(0)));
             }

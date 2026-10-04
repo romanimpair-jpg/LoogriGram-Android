@@ -82,7 +82,8 @@ public class AnimatedEmojiDrawable extends Drawable {
     public static final int CACHE_TYPE_STANDARD_EMOJI = 20; // taken from RestrictedEmoji, using thumb as regular emojis
     public static final int CACHE_TYPE_ALERT_STANDARD_EMOJI = 21;
     public static final int CACHE_TYPE_FORUM_TOPIC_PULL_DOWN = 22;
-    public static final int CACHE_TYPE_MESSAGE_EFFECT_MINI = 23;
+    // LoogriGram: 23 was CACHE_TYPE_MESSAGE_EFFECT_MINI, a message effect's
+    // icon by the time.
     public static final int CACHE_TYPE_ALERT_PREVIEW_LARGE_140 = 24;
     public static final int CACHE_TYPE_ALERT_PREVIEW_LARGE_50 = 27;
     public static final int CACHE_TYPE_TOGGLEABLE_EDIT = 25;
@@ -524,8 +525,6 @@ public class AnimatedEmojiDrawable extends Drawable {
             sizedp = 50;
         } else if (cacheType == CACHE_TYPE_ALERT_PREVIEW_LARGE_140) {
             sizedp = 140;
-        } else if (this.cacheType == CACHE_TYPE_MESSAGE_EFFECT_MINI) {
-            sizedp = 14;
         } else if (cacheType == CACHE_TYPE_ALERT_STANDARD_EMOJI) {
             sizedp = 90;
         } else {

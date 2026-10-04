@@ -316,7 +316,6 @@ public class SharedConfig {
     public static boolean proxyRotationEnabled;
     public static int proxyRotationTimeout;
     public static int messageSeenHintCount;
-    public static int emojiInteractionsHintCount;
     public static int dayNightThemeSwitchHintCount;
     public static int callEncryptionHintDisplayedCount;
     public static boolean shadowsInSections;
@@ -642,7 +641,6 @@ public class SharedConfig {
             noiseSupression = preferences.getBoolean("noiseSupression", false);
             chatSwipeAction = preferences.getInt("ChatSwipeAction", -1);
             messageSeenHintCount = preferences.getInt("messageSeenCount", 3);
-            emojiInteractionsHintCount = preferences.getInt("emojiInteractionsHintCount", 3);
             dayNightThemeSwitchHintCount = preferences.getInt("dayNightThemeSwitchHintCount", 3);
             mediaColumnsCount = preferences.getInt("mediaColumnsCount", 3);
             fastScrollHintCount = preferences.getInt("fastScrollHintCount", 3);
@@ -869,7 +867,6 @@ public class SharedConfig {
         forwardingOptionsHintShown = false;
         replyingOptionsHintShown = false;
         messageSeenHintCount = 3;
-        emojiInteractionsHintCount = 3;
         dayNightThemeSwitchHintCount = 3;
         dayNightWallpaperSwitchHint = 0;
         saveConfig();
@@ -1553,12 +1550,6 @@ public class SharedConfig {
         messageSeenHintCount = count;
         SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("mainconfig", Activity.MODE_PRIVATE);
         preferences.edit().putInt("messageSeenCount", messageSeenHintCount).apply();
-    }
-
-    public static void updateEmojiInteractionsHintCount(int count) {
-        emojiInteractionsHintCount = count;
-        SharedPreferences preferences = ApplicationLoader.applicationContext.getSharedPreferences("mainconfig", Activity.MODE_PRIVATE);
-        preferences.edit().putInt("emojiInteractionsHintCount", emojiInteractionsHintCount).apply();
     }
 
     public static void updateDayNightThemeSwitchHintCount(int count) {
