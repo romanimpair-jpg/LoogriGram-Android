@@ -1387,8 +1387,8 @@ public class PrivacyControlActivity extends BaseFragment implements Notification
                                     }
                                 }), ConnectionsManager.RequestFlagDoNotWaitFloodWait);
 
-                                MessagesController.getInstance(currentAccount).removeSuggestion(0, "BIRTHDAY_SETUP");
-
+                                // LoogriGram: this also dismissed the "Add your birthday"
+                                // hint over the chat list, which is gone.
                                 NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.premiumPromoUpdated);
                                 updateRows(true);
                             }, null, false, false, getResourceProvider()).create());

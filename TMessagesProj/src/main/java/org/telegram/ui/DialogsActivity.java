@@ -101,7 +101,6 @@ import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.ContactsController;
 import org.telegram.messenger.DialogObject;
 import org.telegram.messenger.Emoji;
-import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.FilesMigrationService;
 import org.telegram.messenger.ImageLoader;
@@ -131,7 +130,6 @@ import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
-import org.telegram.tgnet.tl.TL_account;
 import org.telegram.tgnet.tl.TL_chatlists;
 import org.telegram.ui.ActionBar.ActionBar;
 import org.telegram.ui.ActionBar.ActionBarMenu;
@@ -179,7 +177,6 @@ import org.telegram.ui.Components.DialogsActivityTopPanelLayout;
 import org.telegram.ui.Components.FragmentFloatingButton;
 import org.telegram.ui.Components.FragmentSearchField;
 import org.telegram.ui.Components.IconBackgroundColors;
-import org.telegram.ui.Components.ImageUpdater;
 import org.telegram.ui.Components.PermissionRequest;
 import org.telegram.ui.Components.UItem;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
@@ -245,7 +242,6 @@ import org.telegram.ui.community.CommunityPendingRequestsActivity;
 import org.telegram.ui.community.CommunityUtils;
 import org.telegram.ui.community.cells.CommunityRequestsCell;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -5157,9 +5153,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         boolean dialogsHintCellVisible;
 
         if (dialogsHintCell != null) {
-            try {
-                ((RLottieDrawable) ((AvatarDrawable) dialogsHintCell.imageView.getImageReceiver().getStaticThumb()).getCustomIcon()).setMasterParent(null);
-            } catch (Exception e) {}
             dialogsHintCell.clear();
         }
         if (isInPreviewMode()) {
@@ -5209,81 +5202,9 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             });
         // LoogriGram: a hint over the chat list stood here, naming the Stars
         // subscriptions about to lapse and what buying more would cost to keep them.
-        } else if (
-            folderId == 0 && communityId == 0 &&
-            MessagesController.getInstance(currentAccount).pendingSuggestions.contains("BIRTHDAY_SETUP") &&
-            getMessagesController().getUserFull(getUserConfig().getClientUserId()) != null &&
-            getMessagesController().getUserFull(getUserConfig().getClientUserId()).birthday == null
-        ) {
-            ContactsController.getInstance(currentAccount).loadPrivacySettings();
-            dialogsHintCellVisible = true;
-            dialogsHintCell.setOnClickListener(v -> {
-                showDialog(AlertsCreator.createBirthdayPickerDialog(getContext(), getString(R.string.EditProfileBirthdayTitle), getString(R.string.EditProfileBirthdayButton), null, birthday -> {
-                    TL_account.updateBirthday req = new TL_account.updateBirthday();
-                    req.flags |= 1;
-                    req.birthday = birthday;
-                    TLRPC.UserFull userFull = getMessagesController().getUserFull(getUserConfig().getClientUserId());
-                    TL_account.TL_birthday oldBirthday = userFull != null ? userFull.birthday : null;
-                    if (userFull != null) {
-                        userFull.flags2 |= 32;
-                        userFull.birthday = birthday;
-                    }
-                    getMessagesController().invalidateContentSettings();
-                    getConnectionsManager().sendRequest(req, (res, err) -> AndroidUtilities.runOnUIThread(() -> {
-                        if (res instanceof TLRPC.TL_boolTrue) {
-                            BulletinFactory.of(DialogsActivity.this)
-                                .createSimpleBulletin(R.raw.gift, getString(R.string.PrivacyBirthdaySetDone), getString(R.string.PrivacyBirthdaySetDoneInfo))
-                                .setDuration(Bulletin.DURATION_PROLONG).show();
-                        } else {
-                            if (userFull != null) {
-                                if (oldBirthday == null) {
-                                    userFull.flags2 &=~ 32;
-                                } else {
-                                    userFull.flags2 |= 32;
-                                }
-                                userFull.birthday = oldBirthday;
-                                getMessagesStorage().updateUserInfo(userFull, false);
-                            }
-                            if (err != null && err.text != null && err.text.startsWith("FLOOD_WAIT_")) {
-                                if (getContext() != null) {
-                                    showDialog(
-                                        new AlertDialog.Builder(getContext(), resourceProvider)
-                                            .setTitle(getString(R.string.PrivacyBirthdayTooOftenTitle))
-                                            .setMessage(getString(R.string.PrivacyBirthdayTooOftenMessage))
-                                            .setPositiveButton(getString(R.string.OK), null)
-                                            .create()
-                                    );
-                                }
-                            } else {
-                                BulletinFactory.of(DialogsActivity.this)
-                                    .createSimpleBulletin(R.raw.error, LocaleController.getString(R.string.UnknownError))
-                                    .show();
-                            }
-                        }
-                    }), ConnectionsManager.RequestFlagDoNotWaitFloodWait);
-
-                    MessagesController.getInstance(currentAccount).removeSuggestion(0, "BIRTHDAY_SETUP");
-
-                    updateDialogsHint();
-                }, () -> {
-                    BaseFragment.BottomSheetParams params = new BaseFragment.BottomSheetParams();
-                    params.transitionFromLeft = true;
-                    params.allowNestedScroll = false;
-                    showAsSheet(new PrivacyControlActivity(PrivacyControlActivity.PRIVACY_RULES_TYPE_BIRTHDAY), params);
-                }, false, false, getResourceProvider()).create());
-            });
-            dialogsHintCell.setText(Emoji.replaceWithRestrictedEmoji(LocaleController.getString(R.string.BirthdaySetupTitle), dialogsHintCell.titleView, this::updateDialogsHint), LocaleController.formatString(R.string.BirthdaySetupMessage));
-            dialogsHintCell.setOnCloseListener(v -> {
-                MessagesController.getInstance(currentAccount).removeSuggestion(0, "BIRTHDAY_SETUP");
-                updateDialogsHint();
-
-                BulletinFactory.of(this)
-                    .createSimpleBulletin(R.raw.chats_infotip, LocaleController.getString(R.string.BirthdaySetupLater), LocaleController.getString(R.string.Settings), () -> {
-                        presentFragment(new UserInfoActivity());
-                    })
-                    .setDuration(Bulletin.DURATION_PROLONG)
-                    .show();
-            });
+        // LoogriGram: "Add your birthday" stood here, the hint the server asks
+        // for with BIRTHDAY_SETUP, opening the birthday picker. Removed, as on
+        // desktop; a birthday is still set from the profile.
         // LoogriGram: four hints stood here - "it is their birthday, send a
         // gift" and the Premium-gifting promotion, both opening the gift
         // picker, then "restore Premium at a discount" and "upgrade to the
@@ -5306,25 +5227,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     ),
                     LocaleController.getString(R.string.ClearStorageHintMessage)
             );
-        } else if (folderId == 0 && communityId == 0 && getUserConfig().getCurrentUser() != null && (getUserConfig().getCurrentUser().photo == null || getUserConfig().getCurrentUser().photo instanceof TLRPC.TL_userProfilePhotoEmpty) && MessagesController.getInstance(currentAccount).pendingSuggestions.contains("USERPIC_SETUP")) {
-            dialogsHintCellVisible = true;
-            dialogsHintCell.setOnClickListener(v -> {
-                openSetAvatar();
-            });
-            dialogsHintCell.showImage();
-            final AvatarDrawable avatarDrawable = new AvatarDrawable();
-            avatarDrawable.setBounds(0, 0, dp(36), dp(36));
-            avatarDrawable.setInfo(getUserConfig().getClientUserId());
-            avatarDrawable.setCustomIcon(getContext().getResources().getDrawable(R.drawable.filled_profile_photo_20));
-            dialogsHintCell.imageView.setImageDrawable(avatarDrawable);
-            dialogsHintCell.setText(
-                Emoji.replaceWithRestrictedEmoji(LocaleController.getString(R.string.HintAddYourPhoto), dialogsHintCell.titleView, this::updateDialogsHint),
-                getString(R.string.HintAddYourPhotoText)
-            );
-            dialogsHintCell.setOnCloseListener(v -> {
-                MessagesController.getInstance(currentAccount).removeSuggestion(0, "USERPIC_SETUP");
-                updateDialogsHint();
-            });
+        // LoogriGram: "Add your photo" (USERPIC_SETUP) stood here, opening the
+        // photo picker from the chat list. Removed, as on desktop.
         } else if (folderId == 0 && communityId == 0 && ApplicationLoader.applicationLoaderInstance != null) {
             boolean found = false;
             String foundSuggestion = null;
@@ -11895,215 +11799,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
     public boolean clickSelectsDialog() {
         return initialDialogsType == DIALOGS_TYPE_WIDGET;
-    }
-
-    private ImageUpdater imageUpdater;
-    private int avatarUploadingRequest;
-    private TLRPC.FileLocation avatar;
-    private TLRPC.FileLocation avatarBig;
-    private ImageLocation uploadingImageLocation;
-    private Bulletin uploadingAvatarBulletin;
-
-    public void openSetAvatar() {
-        try {
-            ((RLottieDrawable) ((AvatarDrawable) dialogsHintCell.imageView.getImageReceiver().getStaticThumb()).getCustomIcon()).restart(true);
-        } catch (Exception e) {}
-        if (imageUpdater == null) {
-            imageUpdater = new ImageUpdater(true, ImageUpdater.FOR_TYPE_USER, true);
-            imageUpdater.setOpenWithFrontfaceCamera(true);
-            imageUpdater.parentFragment = this;
-            imageUpdater.setDelegate(new ImageUpdater.ImageUpdaterDelegate() {
-                @Override
-                public void didStartUpload(boolean fromAvatarConstructor, boolean isVideo) {
-                    if (uploadingAvatarBulletin != null) {
-                        uploadingAvatarBulletin.hide();
-                        uploadingAvatarBulletin = null;
-                    }
-                    final Bulletin.ProgressLayout bulletinLayout = new Bulletin.ProgressLayout(getContext(), resourceProvider);
-                    if (fromAvatarConstructor) {
-                        bulletinLayout.imageView.setImageBitmap(imageUpdater.getPreviewBitmap());
-                    } else {
-                        bulletinLayout.imageView.setImageBitmap(PhotoViewer.getInstance().centerImage.getBitmap());
-                    }
-                    bulletinLayout.setButton(new Bulletin.UndoButton(getContext(), true, resourceProvider).setText(getString(R.string.ViewAction)).setUndoAction(this::openAvatarInProfile));
-                    bulletinLayout.getButton().setVisibility(View.GONE);
-                    bulletinLayout.textView.setText(getString(isVideo ? R.string.YourProfileVideoUploading : R.string.YourProfilePhotoUploading), true);
-                    uploadingAvatarBulletin = BulletinFactory.of(DialogsActivity.this).create(bulletinLayout, -1);
-                    uploadingAvatarBulletin.hideAfterBottomSheet = false;
-                    uploadingAvatarBulletin.setCanHide(false);
-                    uploadingAvatarBulletin.skipShowAnimation();
-                    uploadingAvatarBulletin.show();
-                }
-
-                private void openAvatarInProfile() {
-                    Bundle args = new Bundle();
-                    args.putLong("user_id", UserConfig.getInstance(currentAccount).getClientUserId());
-                    args.putBoolean("my_profile", true);
-                    presentFragment(new ProfileActivity(args, null));
-                }
-
-                @Override
-                public PhotoViewer.PlaceProviderObject getCloseIntoObject() {
-                    if (uploadingAvatarBulletin != null) {
-                        final Bulletin.ProgressLayout layout = (Bulletin.ProgressLayout) uploadingAvatarBulletin.getLayout();
-                        PhotoViewer.PlaceProviderObject object = new PhotoViewer.PlaceProviderObject();
-                        int[] coords = new int[2];
-                        layout.imageView.getLocationInWindow(coords);
-                        object.viewX = coords[0];
-                        object.viewY = coords[1];
-                        object.parentView = fragmentView;
-                        object.imageReceiver = layout.imageView.getImageReceiver();
-                        object.thumb = object.imageReceiver.getBitmapSafe();
-                        object.clipBottomAddition = 0;
-                        object.radius = object.imageReceiver.getRoundRadius();
-                        object.scale = layout.imageView.getScaleX();
-                        return object;
-                    }
-                    return null;
-                }
-
-                @Override
-                public boolean supportsBulletin() {
-                    return true;
-                }
-
-                @Override
-                public void onUploadProgressChanged(float progress) {
-                    if (uploadingAvatarBulletin != null) {
-                        final Bulletin.ProgressLayout layout = (Bulletin.ProgressLayout) uploadingAvatarBulletin.getLayout();
-                        layout.setProgress(0.9f * progress);
-                    }
-                }
-
-                @Override
-                public void didUploadPhoto(TLRPC.InputFile photo, TLRPC.InputFile video, double videoStartTimestamp, String videoPath, TLRPC.PhotoSize bigSize, TLRPC.PhotoSize smallSize, boolean isVideo, TLRPC.VideoSize emojiMarkup) {
-                    AndroidUtilities.runOnUIThread(() -> {
-                        if (photo != null || video != null || emojiMarkup != null) {
-                            if (avatar == null) {
-                                return;
-                            }
-                            final TLRPC.TL_photos_uploadProfilePhoto req = new TLRPC.TL_photos_uploadProfilePhoto();
-                            if (photo != null) {
-                                req.file = photo;
-                                req.flags |= 1;
-                            }
-                            if (video != null) {
-                                req.video = video;
-                                req.flags |= 2;
-                                req.video_start_ts = videoStartTimestamp;
-                                req.flags |= 4;
-                            }
-                            if (emojiMarkup != null) {
-                                req.video_emoji_markup = emojiMarkup;
-                                req.flags |= 16;
-                            }
-                            avatarUploadingRequest = getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                                if (error == null) {
-                                    TLRPC.User user = getMessagesController().getUser(getUserConfig().getClientUserId());
-                                    if (user == null) {
-                                        user = getUserConfig().getCurrentUser();
-                                        if (user == null) {
-                                            return;
-                                        }
-                                        getMessagesController().putUser(user, false);
-                                    } else {
-                                        getUserConfig().setCurrentUser(user);
-                                    }
-
-                                    final TLRPC.TL_photos_photo photos_photo = (TLRPC.TL_photos_photo) response;
-                                    ArrayList<TLRPC.PhotoSize> sizes = photos_photo.photo.sizes;
-                                    TLRPC.PhotoSize small = FileLoader.getClosestPhotoSizeWithSize(sizes, 150);
-                                    TLRPC.PhotoSize big = FileLoader.getClosestPhotoSizeWithSize(sizes, 800);
-                                    TLRPC.VideoSize videoSize = photos_photo.photo.video_sizes.isEmpty() ? null : FileLoader.getClosestVideoSizeWithSize(photos_photo.photo.video_sizes, 1000);
-                                    user.photo = new TLRPC.TL_userProfilePhoto();
-                                    user.photo.photo_id = photos_photo.photo.id;
-                                    if (small != null) {
-                                        user.photo.photo_small = small.location;
-                                    }
-                                    if (big != null) {
-                                        user.photo.photo_big = big.location;
-                                    }
-
-                                    if (small != null && avatar != null) {
-                                        final File destFile = FileLoader.getInstance(currentAccount).getPathToAttach(small, true);
-                                        final File src = FileLoader.getInstance(currentAccount).getPathToAttach(avatar, true);
-                                        src.renameTo(destFile);
-                                        final String oldKey = avatar.volume_id + "_" + avatar.local_id + "@50_50";
-                                        final String newKey = small.location.volume_id + "_" + small.location.local_id + "@50_50";
-                                        ImageLoader.getInstance().replaceImageInCache(oldKey, newKey, ImageLocation.getForUserOrChat(currentAccount, user, ImageLocation.TYPE_SMALL), false);
-                                    }
-
-                                    if (videoSize != null && videoPath != null) {
-                                        final File destFile = FileLoader.getInstance(currentAccount).getPathToAttach(videoSize, "mp4", true);
-                                        final File src = new File(videoPath);
-                                        src.renameTo(destFile);
-                                    } else if (big != null && avatarBig != null) {
-                                        final File destFile = FileLoader.getInstance(currentAccount).getPathToAttach(big, true);
-                                        final File src = FileLoader.getInstance(currentAccount).getPathToAttach(avatarBig, true);
-                                        src.renameTo(destFile);
-                                    }
-                                    getMessagesController().getDialogPhotos(user.id).addPhotoAtStart(((TLRPC.TL_photos_photo) response).photo);
-                                    final ArrayList<TLRPC.User> users = new ArrayList<>();
-                                    users.add(user);
-                                    getMessagesStorage().putUsersAndChats(users, null, false, true);
-                                    final TLRPC.UserFull userFull = getMessagesController().getUserFull(getUserConfig().getClientUserId());
-                                    if (userFull != null) {
-                                        userFull.profile_photo = photos_photo.photo;
-                                        getMessagesStorage().updateUserInfo(userFull, false);
-                                    }
-                                }
-
-                                avatar = null;
-                                avatarBig = null;
-                                getNotificationCenter().postNotificationName(NotificationCenter.updateInterfaces, MessagesController.UPDATE_MASK_ALL);
-                                getNotificationCenter().postNotificationName(NotificationCenter.mainUserInfoChanged);
-                                getUserConfig().saveConfig(true);
-
-                                MessagesController.getInstance(currentAccount).removeSuggestion(0, "USERPIC_SETUP");
-                                updateDialogsHint();
-
-                                if (uploadingAvatarBulletin != null) {
-                                    final Bulletin.ProgressLayout layout = (Bulletin.ProgressLayout) uploadingAvatarBulletin.getLayout();
-                                    layout.textView.setText(getString(isVideo ? R.string.YourProfileVideoDone : R.string.YourProfilePhotoDone), true);
-                                    layout.setProgress(1.0f);
-                                    final View button = layout.getButton();
-                                    button.setScaleX(0.6f);
-                                    button.setScaleY(0.6f);
-                                    button.setAlpha(0.0f);
-                                    button.setVisibility(View.VISIBLE);
-                                    button.animate().scaleX(1.0f).scaleY(1.0f).alpha(1.0f).setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT).setDuration(360).start();
-                                    uploadingAvatarBulletin.setDuration(Bulletin.DURATION_PROLONG);
-                                    uploadingAvatarBulletin.setCanHide(false);
-                                    uploadingAvatarBulletin.setCanHide(true);
-                                }
-                            }));
-                        } else {
-                            avatar = smallSize.location;
-                            avatarBig = bigSize.location;
-                        }
-                        actionBar.createMenu().requestLayout();
-                    });
-                }
-            });
-            getMessagesController().loadSuggestedFilters();
-            getMessagesController().loadUserInfo(getUserConfig().getCurrentUser(), true, classGuid);
-        }
-        TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(UserConfig.getInstance(currentAccount).getClientUserId());
-        if (user == null) {
-            user = UserConfig.getInstance(currentAccount).getCurrentUser();
-        }
-        if (user == null) {
-            return;
-        }
-        imageUpdater.updateColors();
-        imageUpdater.openMenu(user.photo != null && user.photo.photo_big != null && !(user.photo instanceof TLRPC.TL_userProfilePhotoEmpty), () -> {
-            MessagesController.getInstance(currentAccount).deleteUserPhoto(null);
-        }, dialog -> {
-            if (imageUpdater.isUploadingImage()) {
-                MessagesController.getInstance(currentAccount).removeSuggestion(0, "USERPIC_SETUP");
-                updateDialogsHint();
-            }
-        }, 0);
     }
 
     private void openWriteContacts() {

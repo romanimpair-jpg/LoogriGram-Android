@@ -25,7 +25,6 @@ import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.AnimatedEmojiSpan;
 import org.telegram.ui.Components.AvatarsImageView;
-import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.LinkSpanDrawable;
 
@@ -39,7 +38,8 @@ public class DialogsHintCell extends FrameLayout {
     public final LinkSpanDrawable.LinksTextView messageView;
     private final ImageView chevronView;
     private final ImageView closeView;
-    public final BackupImageView imageView;
+    // LoogriGram: an image slot before the text showed the avatar of the
+    // "Add your photo" hint, its only user; that hint is gone.
     private final AvatarsImageView avatarsImageView;
 
     public boolean titleIsError;
@@ -54,9 +54,6 @@ public class DialogsHintCell extends FrameLayout {
         avatarsImageView.setStepFactor(46f / 81f);
         avatarsImageView.setVisibility(View.GONE);
         avatarsImageView.setCount(0);
-
-        imageView = new BackupImageView(context);
-        imageView.setVisibility(View.GONE);
 
         contentView = new LinearLayout(context);
         contentView.setOrientation(LinearLayout.VERTICAL);
@@ -84,9 +81,7 @@ public class DialogsHintCell extends FrameLayout {
         if (LocaleController.isRTL) {
             parentView.addView(contentView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.CENTER_VERTICAL, 7, 0, 7, 0));
             parentView.addView(avatarsImageView, LayoutHelper.createFrame(0, LayoutHelper.MATCH_PARENT, Gravity.CENTER_VERTICAL, 0, 0, -2, 0));
-            parentView.addView(imageView, LayoutHelper.createFrame(36, 36, Gravity.CENTER_VERTICAL | Gravity.RIGHT, 0, 0, -2, 0));
         } else {
-            parentView.addView(imageView, LayoutHelper.createFrame(36, 36, Gravity.CENTER_VERTICAL | Gravity.LEFT, -2, 0, 0, 0));
             parentView.addView(avatarsImageView, LayoutHelper.createFrame(0, LayoutHelper.MATCH_PARENT, Gravity.CENTER_VERTICAL, -2, 0, 0, 0));
             parentView.addView(contentView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.CENTER_VERTICAL, 7, 0, 7, 0));
         }
@@ -147,12 +142,6 @@ public class DialogsHintCell extends FrameLayout {
     public void clear() {
         setCompact(false);
         setAvatars(UserConfig.selectedAccount, null);
-        imageView.setVisibility(View.GONE);
-        imageView.clearImage();
-    }
-
-    public void showImage() {
-        imageView.setVisibility(View.VISIBLE);
     }
 
     public void setText(CharSequence title, CharSequence subtitle) {
@@ -207,7 +196,6 @@ public class DialogsHintCell extends FrameLayout {
 
         closeView.setTranslationY((getPaddingBottom() - getPaddingTop()) / 2f);
         avatarsImageView.setTranslationY((getPaddingBottom() - getPaddingTop()) / 2f);
-        imageView.setTranslationY((getPaddingBottom() - getPaddingTop()) / 2f);
         chevronView.setTranslationY((getPaddingBottom() - getPaddingTop()) / 2f);
     }
 }

@@ -7181,12 +7181,8 @@
     <string name="PrivacyBirthdayInfo3">You can add users or entire groups as exception that will override the settings above.</string>
     <string name="PrivacyBirthdaySet">You haven’t entered your date of birth yet.\n**Add my birthday >**</string>
     <string name="PrivacyBirthdaySetDone">Date of birth added.</string>
-    <string name="PrivacyBirthdaySetDoneInfo">You can change your birth of date in settings.</string>
     <string name="PrivacyBirthdayTooOftenTitle">Oops</string>
     <string name="PrivacyBirthdayTooOftenMessage">Sorry, you can’t change your birthday so often.</string>
-    <string name="BirthdaySetupTitle">Add your birthday! 🎂</string>
-    <string name="BirthdaySetupMessage">Let your contacts know when you’re celebrating</string>
-    <string name="BirthdaySetupLater">You can always set your birthday in profile settings.</string>
     <string name="BirthdayTodaySingleTitle">It’s %s’s **birthday** today! 🎂</string>
     <string name="BirthdayTodaySingleMessage2">Send them a Gift.</string>
     <string name="BirthdayTodayMultipleTitle_other">%d contacts have **birthdays** today! 🎂</string>
@@ -8263,8 +8259,6 @@
     <string name="MoveCaptionDown">Move caption down</string>
     <string name="MovedCaptionDown">Caption moved down</string>
     <string name="MovedCaptionDownText">Caption will be shown below the media</string>
-    <string name="HintAddYourPhoto">Add your photo! 📸</string>
-    <string name="HintAddYourPhotoText">Help your friends spot you easily.</string>
     <string name="SendAnotherGift">Send Another Gift</string>
     <string name="SendGiftTo">Send Gift to %s</string>
     <string name="SearchMessagesFilterAll">All Chats</string>
@@ -8371,10 +8365,6 @@
     <string name="Gift2ActionUpgradeOut">%s can turn this gift into a unique collectible.</string>
     <string name="Gift2TransferOption">Transfer</string>
     <string name="EditorMuteHint">Sound is now muted, so the video will play and loop like a GIF.</string>
-    <string name="YourProfilePhotoUploading">Your profile photo is uploading...</string>
-    <string name="YourProfileVideoUploading">Your profile video is uploading...</string>
-    <string name="YourProfilePhotoDone">Your profile photo is now set.</string>
-    <string name="YourProfileVideoDone">Your profile video is now set.</string>
     <string name="UserProfileCollectibleHeader">Use a gift</string>
     <string name="UserProfileCollectibleInfo">Apply your collectible\'s unique look to your profile.</string>
     <string name="VideoShareAddTimestamp">Start at %s</string>
