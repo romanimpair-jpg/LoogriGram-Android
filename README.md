@@ -26,6 +26,7 @@ One switch in the tab bar, where the Contacts tab used to be.
 - **Premium is shown for nobody.** Everyone looks the same: no Premium badges, emoji statuses, collectible colours or decorated profiles on anyone, and no Premium-only tools in the interface. Limits that Telegram's servers enforce on free accounts still apply.
 - **Stories**, entirely: the strip, avatar rings, profile tabs, the camera and editor, the viewer and statistics. Messages that carry a story are hidden. Replies to a story keep their text.
 - **AI compose**, the **article editor**, **large animated emoji**, the **greeting sticker** in empty chats, and **emoji and sticker suggestions** above the message field.
+- **Trending stickers and emoji.** Telegram's suggested packs don't appear anywhere: no Trending tab, no trending packs in the sticker or emoji panel, and no dot for packs you haven't looked at. Your own packs, sticker search and packs opened from a link work as before.
 - **Bots can't set your emoji status**, and an account verified by a bot rather than by Telegram looks unverified.
 - **Telegram's help section:** Ask a Question, the FAQ, Telegram Features and the Privacy Policy row, and the "is this still your number?" prompt. The two-step verification password reminder is kept, because forgetting that password locks you out.
 - **Your location.** The app has no location permission, so it can't find you or share where you are, and there is no map to pick a place on. A location someone sends you opens in your maps app.
