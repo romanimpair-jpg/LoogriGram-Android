@@ -242,7 +242,6 @@ import org.telegram.ui.Components.FloatingDebug.FloatingDebugController;
 import org.telegram.ui.Components.FloatingDebug.FloatingDebugProvider;
 import org.telegram.ui.Components.Forum.ForumUtilities;
 import org.telegram.ui.Components.Reactions.ChatSelectionReactionMenuOverlay;
-import org.telegram.ui.Components.Reactions.ReactionsEffectOverlay;
 import org.telegram.ui.Components.Reactions.ReactionsLayoutInBubble;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
 import org.telegram.ui.Components.blur3.DownscaleScrollableNoiseSuppressor;
@@ -1832,7 +1831,6 @@ public class ChatActivity extends BaseFragment implements
                 return;
             }
 
-            ReactionsEffectOverlay.removeCurrent(false);
             String reactionString = getMediaDataController().getDoubleTapReaction();
             if (reactionString.startsWith("animated_")) {
                 boolean available = dialog_id >= 0;
@@ -2106,7 +2104,6 @@ public class ChatActivity extends BaseFragment implements
             if (emojiAnimationsOverlay != null) {
                 emojiAnimationsOverlay.cancelAllAnimations();
             }
-            ReactionsEffectOverlay.dismissAll();
             if (!fromDraft) {
                 if ((scheduledOrNoSoundHint != null && scheduledOrNoSoundHint.getVisibility() == View.VISIBLE)
                         || (scheduledHint != null && scheduledHint.getVisibility() == View.VISIBLE)) {
@@ -6348,7 +6345,6 @@ public class ChatActivity extends BaseFragment implements
                     }
 
                     pullingDownOffset += dy * k;
-                    ReactionsEffectOverlay.onScrolled((int) (dy * k));
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && scrollableViewNoiseSuppressor != null) {
                         scrollableViewNoiseSuppressor.onScrolled(0, (dy * k));
                     }
@@ -6576,7 +6572,6 @@ public class ChatActivity extends BaseFragment implements
                 invalidateMessagesVisiblePart();
                 textSelectionHelper.onParentScrolled();
                 emojiAnimationsOverlay.onScrolled(dy);
-                ReactionsEffectOverlay.onScrolled(dy);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && chatToUpdate.scrollableViewNoiseSuppressor != null) {
                     chatToUpdate.scrollableViewNoiseSuppressor.onScrolled(dx, dy);
                 }
@@ -9333,27 +9328,17 @@ public class ChatActivity extends BaseFragment implements
         return headerItem;
     }
 
-    private void playReactionAnimation(Integer messageId) {
+    // LoogriGram: a reaction left on one of our messages played its burst
+    // (ReactionsEffectOverlay) here first; now it is only marked read.
+    private void markCellReactionsRead(Integer messageId) {
         if (fragmentView == null) {
             return;
         }
         BaseCell cell = findMessageCell(messageId, false);
         if (cell instanceof ChatMessageCell) {
-            final ChatMessageCell messageCell = (ChatMessageCell) cell;
-            final TLRPC.MessagePeerReaction reaction = messageCell.getMessageObject().getRandomUnreadReaction();
-            if (reaction != null && (messageCell.reactionsLayoutInBubble.hasUnreadReactions || reaction.big)) {
-                ReactionsEffectOverlay.show(ChatActivity.this, null, cell, null,0, 0, ReactionsLayoutInBubble.VisibleReaction.fromTL(reaction.reaction), currentAccount, reaction.big ? ReactionsEffectOverlay.LONG_ANIMATION : ReactionsEffectOverlay.SHORT_ANIMATION);
-                ReactionsEffectOverlay.startAnimation();
-            }
-            messageCell.markReactionsAsRead();
+            ((ChatMessageCell) cell).markReactionsAsRead();
         } else if (cell instanceof ChatActionCell) {
-            final ChatActionCell actionCell = (ChatActionCell) cell;
-            final TLRPC.MessagePeerReaction reaction = actionCell.getMessageObject().getRandomUnreadReaction();
-            if (reaction != null && (actionCell.reactionsLayoutInBubble.hasUnreadReactions || reaction.big)) {
-                ReactionsEffectOverlay.show(ChatActivity.this, null, cell, null,0, 0, ReactionsLayoutInBubble.VisibleReaction.fromTL(reaction.reaction), currentAccount, reaction.big ? ReactionsEffectOverlay.LONG_ANIMATION : ReactionsEffectOverlay.SHORT_ANIMATION);
-                ReactionsEffectOverlay.startAnimation();
-            }
-            actionCell.markReactionsAsRead();
+            ((ChatActionCell) cell).markReactionsAsRead();
         }
     }
 
@@ -14577,12 +14562,7 @@ public class ChatActivity extends BaseFragment implements
                         getMessagesController().markReactionsAsRead(dialog_id, getTopicId());
                     }
                     if (reactionsMentionCount >= 0) {
-                        TLRPC.MessagePeerReaction reaction = messageCell.getMessageObject().getRandomUnreadReaction();
-                        if (reaction != null) {
-                            ReactionsLayoutInBubble.VisibleReaction visibleReaction =  ReactionsLayoutInBubble.VisibleReaction.fromTL(reaction.reaction);
-                            ReactionsEffectOverlay.show(ChatActivity.this, null, messageCell, null, 0, 0, visibleReaction, currentAccount, reaction.big ? ReactionsEffectOverlay.LONG_ANIMATION : ReactionsEffectOverlay.SHORT_ANIMATION);
-                            ReactionsEffectOverlay.startAnimation();
-                        }
+                        // LoogriGram: one of the unread reactions played its burst here.
                         messageCell.markReactionsAsRead();
                     } else {
                         messageCell.markReactionsAsRead();
@@ -14609,12 +14589,7 @@ public class ChatActivity extends BaseFragment implements
                         getMessagesController().markReactionsAsRead(dialog_id, getTopicId());
                     }
                     if (reactionsMentionCount >= 0) {
-                        TLRPC.MessagePeerReaction reaction = cell.getMessageObject().getRandomUnreadReaction();
-                        if (reaction != null) {
-                            ReactionsLayoutInBubble.VisibleReaction visibleReaction =  ReactionsLayoutInBubble.VisibleReaction.fromTL(reaction.reaction);
-                            ReactionsEffectOverlay.show(ChatActivity.this, null, cell, null, 0, 0, visibleReaction, currentAccount, reaction.big ? ReactionsEffectOverlay.LONG_ANIMATION : ReactionsEffectOverlay.SHORT_ANIMATION);
-                            ReactionsEffectOverlay.startAnimation();
-                        }
+                        // LoogriGram: as above, the burst is gone.
                         cell.markReactionsAsRead();
                     } else {
                         reactionsMentionCount = 0;
@@ -15883,9 +15858,6 @@ public class ChatActivity extends BaseFragment implements
                 pullingDownDrawable = null;
             }
             emojiAnimationsOverlay.onDetachedFromWindow();
-            AndroidUtilities.runOnUIThread(() -> {
-                ReactionsEffectOverlay.removeCurrent(true);
-            });
         }
 
         private float x, y;
@@ -22427,9 +22399,7 @@ public class ChatActivity extends BaseFragment implements
                         if (cell != null && reactionsMentionCount > 0) {
                             reactionsMentionCount--;
                             getMessagesStorage().markMessageReactionsAsRead(getDialogId(), getTopicId(), messageId);
-                            AndroidUtilities.runOnUIThread(() -> {
-                                playReactionAnimation(messageId);
-                            }, 200);
+                            markCellReactionsRead(messageId);
                         }
                     }
                 }
@@ -29860,27 +29830,11 @@ public class ChatActivity extends BaseFragment implements
             return;
         }
 
-        ReactionsEffectOverlay.removeCurrent(false);
         // LoogriGram: a second reaction from an account without Premium got a
         // bulletin saying Premium sets several (showMultipleReactionsPromo).
         final boolean added = primaryMessage.selectReaction(visibleReaction, bigEmoji, fromDoubleTap);
-        int messageIdForCell = primaryMessage.getId();
-        if (groupedMessagesMap.get(primaryMessage.getGroupId()) != null) {
-            int flags = primaryMessage.shouldDrawReactionsInLayout() ? MessageObject.POSITION_FLAG_BOTTOM | MessageObject.POSITION_FLAG_LEFT : MessageObject.POSITION_FLAG_BOTTOM | MessageObject.POSITION_FLAG_RIGHT;
-            MessageObject messageObject = groupedMessagesMap.get(primaryMessage.getGroupId()).findMessageWithFlags(flags);
-            if (messageObject != null) {
-                messageIdForCell = messageObject.getId();
-            }
-        }
-
-        int finalMessageIdForCell = messageIdForCell;
-
-        if (added) {
-            cell = findMessageCell(finalMessageIdForCell, true);
-            if (!fromDoubleTap) {
-                ReactionsEffectOverlay.show(ChatActivity.this, reactionsLayout, cell, fromView, x, y, visibleReaction, currentAccount, reactionsLayout != null ? (bigEmoji ? ReactionsEffectOverlay.LONG_ANIMATION : ReactionsEffectOverlay.ONLY_MOVE_ANIMATION) : ReactionsEffectOverlay.SHORT_ANIMATION);
-            }
-        }
+        // LoogriGram: the chosen reaction flew from the menu into the message
+        // and burst there (ReactionsEffectOverlay); it just appears now.
         if (added && visibleReaction != null && visibleReaction.emojicon != null) {
             AndroidUtilities.makeAccessibilityAnnouncement(LocaleController.formatString(R.string.AccDescrYouReactedWith, visibleReaction.emojicon));
         }
@@ -29894,17 +29848,8 @@ public class ChatActivity extends BaseFragment implements
                 }
                 if (updateReactionRunnable != null) {
                     updateReactionRunnable = null;
-                    if (fromDoubleTap) {
-                        doOnIdle(() -> {
-                            AndroidUtilities.runOnUIThread(() -> {
-                                BaseCell cell = findMessageCell(finalMessageIdForCell, true);
-                                if (added) {
-                                    ReactionsEffectOverlay.show(ChatActivity.this, reactionsLayout, cell, null, x, y, visibleReaction, currentAccount, ReactionsEffectOverlay.SHORT_ANIMATION);
-                                    ReactionsEffectOverlay.startAnimation();
-                                }
-                            }, 50);
-                        });
-                    } else {
+                    // a double tap only played the burst here
+                    if (!fromDoubleTap) {
                         doOnIdle(() -> {
                             MessageObject messageToUpdate = primaryMessage;
                             MessageObject messageInDict = messagesDict[0].get(primaryMessage.getId());
@@ -29914,7 +29859,6 @@ public class ChatActivity extends BaseFragment implements
                             }
 
                             updateMessageAnimated(messageToUpdate, true);
-                            ReactionsEffectOverlay.startAnimation();
                         });
                     }
                     closeMenu();

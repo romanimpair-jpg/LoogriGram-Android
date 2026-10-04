@@ -35,7 +35,6 @@ import org.telegram.ui.Cells.ChatActionCell;
 import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.Bulletin;
-import org.telegram.ui.Components.Reactions.AnimatedEmojiEffect;
 import org.telegram.ui.Components.Reactions.ReactionsLayoutInBubble;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.StickerSetBulletinLayout;
@@ -114,9 +113,6 @@ public class EmojiAnimationsOverlay implements NotificationCenter.NotificationCe
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.updateInterfaces);
         for (int i = 0; i < drawingObjects.size(); i++) {
             drawingObjects.get(i).imageReceiver.onAttachedToWindow();
-            if (drawingObjects.get(i).genericEffect != null) {
-                drawingObjects.get(i).genericEffect.setView(contentLayout);
-            }
         }
     }
 
@@ -127,9 +123,6 @@ public class EmojiAnimationsOverlay implements NotificationCenter.NotificationCe
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.updateInterfaces);
         for (int i = 0; i < drawingObjects.size(); i++) {
             drawingObjects.get(i).imageReceiver.onDetachedFromWindow();
-            if (drawingObjects.get(i).genericEffect != null) {
-                drawingObjects.get(i).genericEffect.removeView(contentLayout);
-            }
         }
         drawingObjects.clear();
     }
@@ -138,9 +131,6 @@ public class EmojiAnimationsOverlay implements NotificationCenter.NotificationCe
     public void clear() {
         for (int i = 0; i < drawingObjects.size(); i++) {
             drawingObjects.get(i).imageReceiver.onDetachedFromWindow();
-            if (drawingObjects.get(i).genericEffect != null) {
-                drawingObjects.get(i).genericEffect.removeView(contentLayout);
-            }
         }
         drawingObjects.clear();
     }
@@ -363,41 +353,27 @@ public class EmojiAnimationsOverlay implements NotificationCenter.NotificationCe
                             drawingObject.imageReceiver.draw(canvas);
                         }
                     } else {
-                        if (drawingObject.genericEffect != null) {
-                            float x = drawingObject.lastX + drawingObject.randomOffsetX;
-                            float y = drawingObject.lastY + drawingObject.randomOffsetY;
-                            float size = drawingObject.lastW * 3;
-                            drawingObject.genericEffect.setBounds((int) x, (int) y, (int) (x + size), (int) (y + size));
-                            drawingObject.genericEffect.draw(canvas);
+                        drawingObject.imageReceiver.setImageCoords(drawingObject.lastX + drawingObject.randomOffsetX, drawingObject.lastY + drawingObject.randomOffsetY, drawingObject.lastW * 3, drawingObject.lastW * 3);
+                        if (!drawingObject.isOut) {
+                            canvas.save();
+                            canvas.scale(-1f, 1, drawingObject.imageReceiver.getCenterX(), drawingObject.imageReceiver.getCenterY());
+                            drawingObject.imageReceiver.draw(canvas);
+                            canvas.restore();
                         } else {
-                            drawingObject.imageReceiver.setImageCoords(drawingObject.lastX + drawingObject.randomOffsetX, drawingObject.lastY + drawingObject.randomOffsetY, drawingObject.lastW * 3, drawingObject.lastW * 3);
-                            if (!drawingObject.isOut) {
-                                canvas.save();
-                                canvas.scale(-1f, 1, drawingObject.imageReceiver.getCenterX(), drawingObject.imageReceiver.getCenterY());
-                                drawingObject.imageReceiver.draw(canvas);
-                                canvas.restore();
-                            } else {
-                                drawingObject.imageReceiver.draw(canvas);
-                            }
+                            drawingObject.imageReceiver.draw(canvas);
                         }
                     }
                 }
 
-                boolean isDone;
-                if (drawingObject.genericEffect != null) {
-                    isDone = drawingObject.genericEffect.isDone();
-                } else {
-                    isDone = (drawingObject.wasPlayed && drawingObject.imageReceiver.getLottieAnimation() != null && drawingObject.imageReceiver.getLottieAnimation().getCurrentFrame() >= drawingObject.imageReceiver.getLottieAnimation().getFramesCount() - 2);
-                }
+                // LoogriGram: a genericEffect (AnimatedEmojiEffect) was checked
+                // here and above; nothing ever set one, and the class is gone.
+                final boolean isDone = (drawingObject.wasPlayed && drawingObject.imageReceiver.getLottieAnimation() != null && drawingObject.imageReceiver.getLottieAnimation().getCurrentFrame() >= drawingObject.imageReceiver.getLottieAnimation().getFramesCount() - 2);
                 if (drawingObject.removeProgress == 1f || isDone || removeOnStart) {
                     DrawingObject toRemove = drawingObjects.remove(i);
                     if (drawingObject.isPremiumSticker && drawingObject.imageReceiver.getLottieAnimation() != null) {
                         toRemove.imageReceiver.getLottieAnimation().setCurrentFrame(0, true, true);
                     }
                     toRemove.imageReceiver.onDetachedFromWindow();
-                    if (toRemove.genericEffect != null) {
-                        toRemove.genericEffect.removeView(contentLayout);
-                    }
                     i--;
                 } else if (drawingObject.imageReceiver.getLottieAnimation() != null && drawingObject.imageReceiver.getLottieAnimation().isRunning()) {
                     drawingObject.wasPlayed = true;
@@ -825,7 +801,6 @@ public class EmojiAnimationsOverlay implements NotificationCenter.NotificationCe
         public boolean isPremiumSticker;
         public boolean isMessageEffect;
         public boolean isReaction;
-        public AnimatedEmojiEffect genericEffect;
         public long documentId;
         boolean wasPlayed;
         boolean isOut;

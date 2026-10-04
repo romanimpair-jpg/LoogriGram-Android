@@ -183,7 +183,6 @@ import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.RLottieImageView;
 import org.telegram.ui.Components.RadialProgressView;
 import org.telegram.ui.Components.Reactions.CustomEmojiReactionsWindow;
-import org.telegram.ui.Components.Reactions.ReactionsEffectOverlay;
 import org.telegram.ui.Components.Reactions.ReactionsLayoutInBubble;
 import org.telegram.ui.Components.ReactionsContainerLayout;
 import org.telegram.ui.Components.RecordStatusDrawable;
@@ -5259,23 +5258,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
         containerView.addView(buttonsBackgroundGradientView2, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 0, Gravity.LEFT | Gravity.BOTTOM));
 
         groupCallMessagesListView = new GroupCallMessagesListView(context);
-        groupCallMessagesListView.setDelegate(new GroupCallMessagesListView.Delegate() {
-            @Override
-            public void showReaction(GroupCallMessageCell cell, ReactionsLayoutInBubble.VisibleReaction reaction) {
-                ReactionsEffectOverlay effectOverlay = new ReactionsEffectOverlay(
-                    getContext(), null,
-                    reactionsContainerLayout, cell,
-                    null, 0, 0,
-                    reaction, currentAccount,
-                    ReactionsEffectOverlay.SHORT_ANIMATION, false);
-
-                ReactionsEffectOverlay.currentOverlay = effectOverlay;
-                effectOverlay.windowView.setTag(R.id.parent_tag, 1);
-                container.addView(effectOverlay.windowView);
-                effectOverlay.started = true;
-                effectOverlay.startTime = System.currentTimeMillis();
-            }
-        });
+        // LoogriGram: a reaction sent in the call's messages burst over the list.
         groupCallMessagesListView.setClickCellDelegate(new GroupCallMessageCell.Delegate() {
             @Override
             public void didClickAvatar(GroupCallMessageCell cell, GroupCallMessage message, float x, float y) {

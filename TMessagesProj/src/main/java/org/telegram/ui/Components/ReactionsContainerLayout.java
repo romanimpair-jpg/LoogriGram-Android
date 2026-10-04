@@ -72,7 +72,6 @@ import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Components.ListView.AdapterWithDiffUtils;
 import org.telegram.ui.Components.Reactions.CustomEmojiReactionsWindow;
 import org.telegram.ui.Components.Reactions.HwEmojis;
-import org.telegram.ui.Components.Reactions.ReactionsEffectOverlay;
 import org.telegram.ui.Components.Reactions.ReactionsLayoutInBubble;
 import org.telegram.ui.Components.Reactions.ReactionsUtils;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
@@ -1640,7 +1639,6 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
         public BackupImageView enterImageView;
         public BackupImageView loopImageView;
         public BackupImageView pressedBackupImageView;
-        private ImageReceiver preloadImageReceiver = new ImageReceiver();
         public ReactionsLayoutInBubble.VisibleReaction currentReaction;
         public float sideScale = 1f;
         private boolean isEnter;
@@ -1936,8 +1934,6 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
                     }
                     pressedBackupImageView.getImageReceiver().setImage(ImageLocation.getForDocument(defaultReaction.select_animation), ReactionsUtils.SELECT_ANIMATION_FILTER, null, null, svgThumb, 0, "tgs", react, 0);
 
-                    preloadImageReceiver.setAllowStartLottieAnimation(false);
-                    MediaDataController.getInstance(currentAccount).preloadImage(preloadImageReceiver, ImageLocation.getForDocument(defaultReaction.around_animation), ReactionsEffectOverlay.getFilterForAroundAnimation());
                 }
             }
         }
@@ -1946,13 +1942,11 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
         protected void onAttachedToWindow() {
             super.onAttachedToWindow();
             resetAnimation();
-            preloadImageReceiver.onAttachedToWindow();
         }
 
         @Override
         protected void onDetachedFromWindow() {
             super.onDetachedFromWindow();
-            preloadImageReceiver.onDetachedFromWindow();
         }
 
         public boolean play(int delay) {

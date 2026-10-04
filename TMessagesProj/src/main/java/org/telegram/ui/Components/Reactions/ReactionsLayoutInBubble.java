@@ -666,11 +666,6 @@ public class ReactionsLayoutInBubble {
         }
 
         @Override
-        protected boolean isPlaying() {
-            return ReactionsEffectOverlay.isPlaying(messageObject.getId(), messageObject.getGroupId(), visibleReaction);
-        }
-
-        @Override
         protected boolean isOutOwner() {
             return messageObject.isOutOwner();
         }
@@ -982,10 +977,6 @@ public class ReactionsLayoutInBubble {
             lastDrawnBackgroundColor = ColorUtils.blendARGB(fromBackgroundColor, ColorUtils.blendARGB(backgroundColor, serviceBackgroundColor, getDrawServiceShaderBackground()), progress);
         }
 
-        protected boolean isPlaying() {
-            return false;
-        }
-
         protected ImageReceiver getImageReceiver() {
             return null;
         }
@@ -1010,7 +1001,8 @@ public class ReactionsLayoutInBubble {
             if (animatedEmojiDrawable != null && animatedEmojiDrawableColor != lastDrawnTextColor) {
                 animatedEmojiDrawable.setColorFilter(new PorterDuffColorFilter(animatedEmojiDrawableColor = lastDrawnTextColor, PorterDuff.Mode.SRC_IN));
             }
-            if (drawImage && (realCount > 1 || !isPlaying() || !isSelected)) {
+            // LoogriGram: the icon hid while the reaction's burst flew in.
+            if (drawImage) {
                 ImageReceiver imageReceiver2 = getImageReceiver();
                 boolean drawStaticImage = true;
                 if (imageReceiver2 != null) {

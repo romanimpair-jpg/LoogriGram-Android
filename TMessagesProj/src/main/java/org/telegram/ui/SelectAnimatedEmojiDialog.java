@@ -100,7 +100,6 @@ import org.telegram.ui.Components.EmojiTabsStrip;
 import org.telegram.ui.Components.EmojiView;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.Reactions.HwEmojis;
-import org.telegram.ui.Components.Reactions.ReactionsEffectOverlay;
 import org.telegram.ui.Components.Reactions.ReactionsLayoutInBubble;
 import org.telegram.ui.Components.Reactions.ReactionsUtils;
 import org.telegram.ui.Components.RecyclerAnimationScrollHelper;
@@ -2051,10 +2050,8 @@ public class SelectAnimatedEmojiDialog extends FrameLayout implements Notificati
                         } else {
                             imageView.imageReceiver.setImage(ImageLocation.getForDocument(reaction.select_animation), ReactionsUtils.SELECT_ANIMATION_FILTER, ImageLocation.getForDocument(reaction.select_animation), "30_30_firstframe", null, null, svgThumb, 0, "tgs", currentReaction, 0);
                         }
-                        MediaDataController.getInstance(currentAccount).preloadImage(imageView.preloadEffectImageReceiver, ImageLocation.getForDocument(reaction.around_animation), ReactionsEffectOverlay.getFilterForAroundAnimation());
                     } else {
                         imageView.imageReceiver.clearImage();
-                        imageView.preloadEffectImageReceiver.clearImage();
                     }
                     imageView.span = null;
                     imageView.document = null;
@@ -2067,7 +2064,6 @@ public class SelectAnimatedEmojiDialog extends FrameLayout implements Notificati
                     imageView.span = new AnimatedEmojiSpan(currentReaction.documentId, null);
                     imageView.document = null;
                     imageView.imageReceiver.clearImage();
-                    imageView.preloadEffectImageReceiver.clearImage();
                     AnimatedEmojiDrawable drawable = emojiSearchGridView.animatedEmojiDrawables.get(imageView.span.getDocumentId());
 
                     if (drawable == null) {
@@ -2398,10 +2394,8 @@ public class SelectAnimatedEmojiDialog extends FrameLayout implements Notificati
                         } else {
                             imageView.imageReceiver.setImage(ImageLocation.getForDocument(reaction.select_animation), ReactionsUtils.SELECT_ANIMATION_FILTER, ImageLocation.getForDocument(reaction.select_animation), "30_30_firstframe", null, null, svgThumb, 0, "tgs", currentReaction, 0);
                         }
-                        MediaDataController.getInstance(currentAccount).preloadImage(imageView.preloadEffectImageReceiver, ImageLocation.getForDocument(reaction.around_animation), ReactionsEffectOverlay.getFilterForAroundAnimation());
                     } else {
                         imageView.imageReceiver.clearImage();
-                        imageView.preloadEffectImageReceiver.clearImage();
                     }
                     imageView.span = null;
                     imageView.document = null;
@@ -2411,7 +2405,6 @@ public class SelectAnimatedEmojiDialog extends FrameLayout implements Notificati
                     imageView.span = new AnimatedEmojiSpan(currentReaction.documentId, null);
                     imageView.document = null;
                     imageView.imageReceiver.clearImage();
-                    imageView.preloadEffectImageReceiver.clearImage();
                     Drawable drawable = emojiGridView.animatedEmojiDrawables.get(imageView.span.getDocumentId());
 
                     if (drawable == null) {
@@ -2623,7 +2616,6 @@ public class SelectAnimatedEmojiDialog extends FrameLayout implements Notificati
         public AnimatedEmojiSpan span;
         public ImageReceiver.BackgroundThreadDrawHolder[] backgroundThreadDrawHolder = new ImageReceiver.BackgroundThreadDrawHolder[DrawingInBackgroundThreadDrawable.THREAD_COUNT];
         public ImageReceiver imageReceiver;
-        public ImageReceiver preloadEffectImageReceiver = new ImageReceiver();
         public ImageReceiver imageReceiverToDraw;
         public boolean isDefaultReaction;
         public ReactionsLayoutInBubble.VisibleReaction reaction;
@@ -2655,7 +2647,6 @@ public class SelectAnimatedEmojiDialog extends FrameLayout implements Notificati
 
         public ImageViewEmoji(Context context) {
             super(context);
-            preloadEffectImageReceiver.ignoreNotifications = true;
             setFocusable(true);
         }
 
@@ -2859,7 +2850,6 @@ public class SelectAnimatedEmojiDialog extends FrameLayout implements Notificati
                 imageReceiver.setParentView((View) getParent());
                 imageReceiver.onAttachedToWindow();
             }
-            preloadEffectImageReceiver.onAttachedToWindow();
         }
 
         @Override
@@ -2879,7 +2869,6 @@ public class SelectAnimatedEmojiDialog extends FrameLayout implements Notificati
                 imageReceiver.onDetachedFromWindow();
                 imageReceiver.setEmojiPaused(false);
             }
-            preloadEffectImageReceiver.onDetachedFromWindow();
         }
 
         public void setDrawable(Drawable drawable) {

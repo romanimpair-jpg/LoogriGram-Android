@@ -637,11 +637,8 @@ public class MediaDataController extends BaseController {
             preloadImage(ImageLocation.getForDocument(reaction.activate_animation), FileLoader.PRIORITY_LOW);
             preloadImage(ImageLocation.getForDocument(reaction.appear_animation), FileLoader.PRIORITY_LOW);
         }
-
-        for (int i = 0; i < N; i++) {
-            TLRPC.TL_availableReaction reaction = arrayList.get(i);
-            preloadImage(ImageLocation.getForDocument(reaction.effect_animation), FileLoader.PRIORITY_LOW);
-        }
+        // LoogriGram: each reaction's effect_animation was preloaded too, for
+        // the burst; nothing plays it now.
     }
 
     public void preloadImage(ImageLocation location, int priority) {

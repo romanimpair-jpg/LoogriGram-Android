@@ -20,10 +20,8 @@ import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import org.telegram.messenger.voip.GroupCallMessage;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.Components.CubicBezierInterpolator;
-import org.telegram.ui.Components.Reactions.ReactionsLayoutInBubble;
 
 public class GroupCallMessagesListView extends RecyclerView {
     private static final int FADE_HEIGHT = 16;
@@ -34,7 +32,6 @@ public class GroupCallMessagesListView extends RecyclerView {
     private RenderNode renderNode;
     private float renderNodeScale;
     private View blurRoot;
-    private Delegate delegate;
     private GroupCallMessageCell.Delegate cellDelegate;
 
     public GroupCallMessagesListView(@NonNull Context context) {
@@ -76,18 +73,6 @@ public class GroupCallMessagesListView extends RecyclerView {
             @Override
             protected float animateByScale(View view) {
                 return 0.6f;
-            }
-
-            @Override
-            public void onAddFinished(RecyclerView.ViewHolder item) {
-                super.onAddFinished(item);
-
-                GroupCallMessage message = adapter.getMessage(item.getAdapterPosition());
-                if (message != null && message.visibleReaction != null && item.itemView instanceof GroupCallMessageCell) {
-                    if (delegate != null) {
-                        delegate.showReaction((GroupCallMessageCell) item.itemView, message.visibleReaction);
-                    }
-                }
             }
         };
         itemAnimator.setSupportsChangeAnimations(false);
@@ -174,16 +159,8 @@ public class GroupCallMessagesListView extends RecyclerView {
         this.blurRoot = blurRoot;
     }
 
-    public void setDelegate(Delegate delegate) {
-        this.delegate = delegate;
-    }
-
     public void setClickCellDelegate(GroupCallMessageCell.Delegate delegate) {
         this.cellDelegate = delegate;
-    }
-
-    public interface Delegate {
-        void showReaction(GroupCallMessageCell cell, ReactionsLayoutInBubble.VisibleReaction reaction);
     }
 
     @Override
