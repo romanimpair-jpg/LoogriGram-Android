@@ -51,8 +51,8 @@ jobs:
     env:
       # Hard-pinned rather than "latest": the app declares the NDK and CMake
       # versions in its own Gradle files, and neither is preinstalled on the
-      # runner. PLATFORM_REVISION is the one sdkmanager cannot pin; it is
-      # checked, not enforced.
+      # runner. PLATFORM_REVISION is the one sdkmanager cannot pin; any other
+      # revision stops the build (see "Install Android SDK components.").
       NDK_VERSION: "27.2.12479018"
       CMAKE_VERSION: "3.22.1"
       COMPILE_SDK: "36"
@@ -113,6 +113,29 @@ jobs:
           # which matters: ffmpeg and libvpx have very large histories and we
           # only ever need the pinned commit.
           fetch-depth: 1
+
+      # LoogriGram: the GitHub CLI the tag and release steps use is pinned
+      # rather than the image's: 2.101.0, what the image had for the last good
+      # build, checked against the SHA-256 GitHub records for the asset. Left
+      # to the image by necessity: Ubuntu, bash and coreutils, and the git
+      # actions/checkout drives (it fetches fixed commits).
+      - name: Pinned tools.
+        run: |
+          GH_TGZ="$RUNNER_TEMP/gh.tar.gz"
+          curl -fsSL -o "$GH_TGZ" \
+            https://github.com/cli/cli/releases/download/v2.101.0/gh_2.101.0_linux_amd64.tar.gz
+          echo "9bca2d1c16825f109907a23307628a2f0698fbf99662b73a5cf0b020293072b8  $GH_TGZ" | sha256sum -c -
+          tar -xzf "$GH_TGZ" -C "$RUNNER_TEMP"
+          rm "$GH_TGZ"
+          echo "$RUNNER_TEMP/gh_2.101.0_linux_amd64/bin" >> "$GITHUB_PATH"
+
+      - name: Check the pinned tools.
+        run: |
+          echo "gh -> $(command -v gh)"
+          case "$(command -v gh)" in
+            "$RUNNER_TEMP"/*) gh --version | head -1 ;;
+            *) echo "::error::gh resolves outside the pinned tools"; exit 1 ;;
+          esac
 
       # LoogriGram: the release's tag is made here, at the start, not by
       # "Publish release." at the end - desktop's lesson (its run 37158363951,
@@ -182,10 +205,21 @@ jobs:
           # platform and build-tools are. sdkmanager is quiet about a version
           # it cannot find and Gradle then reports it as a missing NDK much
           # later, so each install is checked here.
+          #
+          # LoogriGram: sdkmanager itself is pinned too - command-line tools
+          # 12.0 (build 11076708), what the image had for the last good build
+          # (g55475fe4) - rather than the image's cmdline-tools/latest, and
+          # checked against a fixed SHA-256.
           SDK="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
-          MGR="$SDK/cmdline-tools/latest/bin/sdkmanager"
-          yes | "$MGR" --licenses >/dev/null 2>&1 || true
-          "$MGR" --install \
+          TOOLS_ZIP="$RUNNER_TEMP/cmdline-tools.zip"
+          curl -fsSL -o "$TOOLS_ZIP" \
+            https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          echo "2d2d50857e4eb553af5a6dc3ad507a17adf43d115264b1afc116f95c92e5e258  $TOOLS_ZIP" | sha256sum -c -
+          unzip -q "$TOOLS_ZIP" -d "$RUNNER_TEMP/cmdline-tools-12.0"
+          rm "$TOOLS_ZIP"
+          MGR="$RUNNER_TEMP/cmdline-tools-12.0/cmdline-tools/bin/sdkmanager --sdk_root=$SDK"
+          yes | $MGR --licenses >/dev/null 2>&1 || true
+          $MGR --install \
             "platforms;android-$COMPILE_SDK" \
             "build-tools;$BUILD_TOOLS" \
             "ndk;$NDK_VERSION" \
@@ -198,11 +232,15 @@ jobs:
             echo "ok: $p"
           done
           # sdkmanager always installs a platform's latest revision and cannot
-          # pin one, so a change is reported rather than prevented.
+          # pin one, so any other revision stops the build rather than slipping
+          # in: the frozen one is platform-36_r02.zip from
+          # dl.google.com/android/repository, SHA-256
+          # 37607369a28c5b640b3a7998868d45898ebcb777565a0e85f9acf36f29631d2e.
           rev=$(sed -n 's/^Pkg\.Revision=//p' "$SDK/platforms/android-$COMPILE_SDK/source.properties")
           echo "platform android-$COMPILE_SDK revision $rev"
           if [ "$rev" != "$PLATFORM_REVISION" ]; then
-            echo "::warning::platform android-$COMPILE_SDK is revision $rev, not the frozen $PLATFORM_REVISION."
+            echo "::error::platform android-$COMPILE_SDK is revision $rev, not the frozen $PLATFORM_REVISION - install platform-36_r02.zip (see this step)."
+            exit 1
           fi
 
       - name: Inject API credentials.
