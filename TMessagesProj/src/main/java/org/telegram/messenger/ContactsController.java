@@ -1288,17 +1288,23 @@ public class ContactsController extends BaseController {
             return;
         }
 
-        // Note: this replaces the last-seen rules outright, so any existing
-        // exception list for last seen goes with it. Nobody is the point, and
-        // an exception to it would defeat it.
-        final TL_account.setPrivacy lastSeen = new TL_account.setPrivacy();
-        lastSeen.key = new TLRPC.TL_inputPrivacyKeyStatusTimestamp();
-        lastSeen.rules.add(new TLRPC.TL_inputPrivacyValueDisallowAll());
-        getConnectionsManager().sendRequest(lastSeen, (response, error) -> {
-            if (error != null) {
-                FileLog.e("LoogriGram: could not hide last seen: " + error.text);
+        // The "Always share with" list is kept - the user's choice, 2026-10-04,
+        // and desktop's too. setPrivacy replaces the whole rule set, so a bare
+        // DisallowAll wiped both exception lists; the current rules are read
+        // fresh instead and sent back as sendLastSeenNobody describes. A failed
+        // read sends nothing rather than guess.
+        final TL_account.getPrivacy readLastSeen = new TL_account.getPrivacy();
+        readLastSeen.key = new TLRPC.TL_inputPrivacyKeyStatusTimestamp();
+        getConnectionsManager().sendRequest(readLastSeen, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+            if (error != null || !(response instanceof TL_account.privacyRules)) {
+                FileLog.e("LoogriGram: could not read last seen rules, not changing them");
+                return;
             }
-        });
+            final TL_account.privacyRules current = (TL_account.privacyRules) response;
+            getMessagesController().putUsers(current.users, false);
+            getMessagesController().putChats(current.chats, false);
+            sendLastSeenNobody(current.rules);
+        }));
 
         // setGlobalPrivacySettings replaces the whole object, which also holds
         // the archive settings - archive_and_mute_new_noncontact_peers,
@@ -1328,6 +1334,47 @@ public class ContactsController extends BaseController {
         // two extra requests per launch forever on an account where the server
         // keeps refusing; the explicit-enable path is the way to retry.
         preferences.edit().putBoolean("ghostPrivacyApplied", true).apply();
+    }
+
+    // LoogriGram: Last Seen -> Nobody the way PrivacyControlActivity saves it
+    // when Nobody is picked: the "Always share with" users and groups, then
+    // DisallowAll. "Never share with" means nothing under Nobody and is left
+    // out, as that screen leaves it out.
+    private void sendLastSeenNobody(ArrayList<TLRPC.PrivacyRule> current) {
+        final TLRPC.TL_inputPrivacyValueAllowUsers users = new TLRPC.TL_inputPrivacyValueAllowUsers();
+        final TLRPC.TL_inputPrivacyValueAllowChatParticipants chats = new TLRPC.TL_inputPrivacyValueAllowChatParticipants();
+        for (TLRPC.PrivacyRule rule : current) {
+            if (rule instanceof TLRPC.TL_privacyValueAllowUsers) {
+                for (long id : ((TLRPC.TL_privacyValueAllowUsers) rule).users) {
+                    final TLRPC.User user = getMessagesController().getUser(id);
+                    final TLRPC.InputUser inputUser = user != null ? getMessagesController().getInputUser(user) : null;
+                    if (inputUser != null) {
+                        users.users.add(inputUser);
+                    }
+                }
+            } else if (rule instanceof TLRPC.TL_privacyValueAllowChatParticipants) {
+                chats.chats.addAll(((TLRPC.TL_privacyValueAllowChatParticipants) rule).chats);
+            }
+        }
+        final TL_account.setPrivacy req = new TL_account.setPrivacy();
+        req.key = new TLRPC.TL_inputPrivacyKeyStatusTimestamp();
+        if (!users.users.isEmpty()) {
+            req.rules.add(users);
+        }
+        if (!chats.chats.isEmpty()) {
+            req.rules.add(chats);
+        }
+        req.rules.add(new TLRPC.TL_inputPrivacyValueDisallowAll());
+        getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+            if (error != null || !(response instanceof TL_account.privacyRules)) {
+                FileLog.e("LoogriGram: could not hide last seen" + (error != null ? ": " + error.text : ""));
+                return;
+            }
+            final TL_account.privacyRules saved = (TL_account.privacyRules) response;
+            getMessagesController().putUsers(saved.users, false);
+            getMessagesController().putChats(saved.chats, false);
+            setPrivacyRules(saved.rules, PRIVACY_RULES_TYPE_LASTSEEN);
+        }));
     }
 
     private void sendHideReadMarks(TLRPC.GlobalPrivacySettings current) {
