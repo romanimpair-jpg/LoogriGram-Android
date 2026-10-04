@@ -2191,7 +2191,7 @@
     <string name="NewThemeTitle">New Theme</string>
     <string name="EditThemeTitle">Edit Theme</string>
     <string name="CreateNewThemeHelp">Tap on the palette icon to view the list of elements on each screen - and edit them.</string>
-    <string name="CreateNewThemeAlert">You can create your own theme by changing colors within the app.\n\nYou can always switch back to the default Telegram theme here.</string>
+    <string name="CreateNewThemeAlert">You can create your own theme by changing colors within the app.\n\nYou can always switch back to the default LoogriGram theme here.</string>
     <string name="ThemeSetUrlHelp">You can use a-z, 0-9 and underscores.\nMinimum length is 5 characters.</string>
     <string name="ThemeHelpLink">Your theme will be updated for all users each time you change it. Anyone can install it using this link:\n%1$s</string>
     <string name="ThemeCreateHelp">Anyone can install your theme using this link. When you change the theme, it will be updated for all users who installed it.\n\nThe theme will be based on your currently selected theme and wallpaper.</string>
@@ -7618,7 +7618,7 @@
     <string name="BrowserSettingsCustomTabs">New Pages within LoogriGram</string>
     <string name="BrowserSettingsNoCustomTabs">New Tabs in External Browser</string>
     <string name="BrowserSettingsNoCustomTabsInfo">You can choose to open external link without leaving LoogriGram.</string>
-    <string name="BrowserSettingsEnableInfo">Open links inside Telegram without starting an external browser.</string>
+    <string name="BrowserSettingsEnableInfo">Open links inside LoogriGram without starting an external browser.</string>
     <string name="BrowserSettingsCacheClear">Clear Cache</string>
     <string name="BrowserSettingsCookiesClear">Clear Cookies</string>
     <string name="BrowserSettingsCacheClearText">Are you sure you want to clear browser cache%s?</string>

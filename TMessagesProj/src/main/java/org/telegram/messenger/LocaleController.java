@@ -1518,7 +1518,11 @@ public class LocaleController {
         "BrowserSettingsNoCustomTabsInfo",
         "BrowserSettingsCookiesInfo",
         "VoiceCallViaTelegram",
-        "VoipOutgoingCall"
+        "VoipOutgoingCall",
+        // 2026-10-04, with desktop's 4a576095: the in-app browser's switch and
+        // the theme editor's "default theme" note
+        "BrowserSettingsEnableInfo",
+        "CreateNewThemeAlert"
     ));
 
     private String getStringInternal(String key, int res) {
