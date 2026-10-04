@@ -12085,7 +12085,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     });
                 }
             });
-            getMediaDataController().checkFeaturedStickers();
             getMessagesController().loadSuggestedFilters();
             getMessagesController().loadUserInfo(getUserConfig().getCurrentUser(), true, classGuid);
         }

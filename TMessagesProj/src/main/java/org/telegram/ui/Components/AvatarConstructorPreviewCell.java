@@ -91,26 +91,13 @@ public class AvatarConstructorPreviewCell extends FrameLayout {
         if (emojiList == null || emojiList.document_id.isEmpty()) {
             ArrayList<TLRPC.TL_messages_stickerSet> installedEmojipacks = MediaDataController.getInstance(currentAccount).getStickerSets(MediaDataController.TYPE_EMOJIPACKS);
             emojiList = new TLRPC.TL_emojiList();
-            if (installedEmojipacks.isEmpty()) {
-                ArrayList<TLRPC.StickerSetCovered> featured = MediaDataController.getInstance(currentAccount).getFeaturedEmojiSets();
-                for (int i = 0; i < featured.size(); i++) {
-                    TLRPC.StickerSetCovered set = featured.get(i);
-                    if (set.cover != null) {
-                        emojiList.document_id.add(set.cover.id);
-                    } else if (set instanceof TLRPC.TL_stickerSetFullCovered) {
-                        TLRPC.TL_stickerSetFullCovered setFullCovered = ((TLRPC.TL_stickerSetFullCovered) set);
-                        if (!setFullCovered.documents.isEmpty()) {
-                            emojiList.document_id.add(setFullCovered.documents.get(0).id);
-                        }
-                    }
-                }
-            } else {
-                for (int i = 0; i < installedEmojipacks.size(); i++) {
-                    TLRPC.TL_messages_stickerSet set = installedEmojipacks.get(i);
-                    if (!set.documents.isEmpty()) {
-                        int index = Math.abs(Utilities.fastRandom.nextInt() % set.documents.size());
-                        emojiList.document_id.add(set.documents.get(index).id);
-                    }
+            // LoogriGram: with no emoji packs installed this fell back to the
+            // covers of Telegram's trending emoji packs, which are not fetched.
+            for (int i = 0; i < installedEmojipacks.size(); i++) {
+                TLRPC.TL_messages_stickerSet set = installedEmojipacks.get(i);
+                if (!set.documents.isEmpty()) {
+                    int index = Math.abs(Utilities.fastRandom.nextInt() % set.documents.size());
+                    emojiList.document_id.add(set.documents.get(index).id);
                 }
             }
         }

@@ -1425,27 +1425,9 @@ public class SelectAnimatedEmojiDialog extends FrameLayout implements Notificati
         }
 
         TLRPC.Document emoji = null;
-        ArrayList<TLRPC.StickerSetCovered> featuredSets = MediaDataController.getInstance(currentAccount).getFeaturedEmojiSets();
-        List<TLRPC.StickerSetCovered> shuffledFeaturedSets = new ArrayList<>(featuredSets);
-        Collections.shuffle(shuffledFeaturedSets);
+        // LoogriGram: the empty-search picture came from Telegram's trending
+        // emoji packs first; only installed packs remain.
         int skip = (int) Math.round(Math.random() * 10);
-        for (int i = 0; i < shuffledFeaturedSets.size(); ++i) {
-            if (shuffledFeaturedSets.get(i) instanceof TLRPC.TL_stickerSetFullCovered && ((TLRPC.TL_stickerSetFullCovered) shuffledFeaturedSets.get(i)).documents != null) {
-                List<TLRPC.Document> documents = new ArrayList<>(((TLRPC.TL_stickerSetFullCovered) shuffledFeaturedSets.get(i)).documents);
-                Collections.shuffle(documents);
-                for (int j = 0; j < documents.size(); ++j) {
-                    TLRPC.Document document = documents.get(j);
-                    if (document != null && emptyViewEmojis.contains(MessageObject.findAnimatedEmojiEmoticon(document, null))) {
-                        emoji = document;
-                        if (skip-- <= 0)
-                            break;
-                    }
-                }
-            }
-            if (emoji != null && skip <= 0) {
-                break;
-            }
-        }
         if (emoji == null || skip > 0) {
             ArrayList<TLRPC.TL_messages_stickerSet> sets = MediaDataController.getInstance(currentAccount).getStickerSets(MediaDataController.TYPE_EMOJIPACKS);
             List<TLRPC.TL_messages_stickerSet> shuffledSets = new ArrayList<>(sets);
@@ -1820,24 +1802,6 @@ public class SelectAnimatedEmojiDialog extends FrameLayout implements Notificati
                                 }
                             }
 
-                            ArrayList<TLRPC.StickerSetCovered> featuredStickerSets = MediaDataController.getInstance(currentAccount).getFeaturedEmojiSets();
-                            for (int i = 0; i < featuredStickerSets.size(); ++i) {
-                                if (featuredStickerSets.get(i) instanceof TLRPC.TL_stickerSetFullCovered &&
-                                        ((TLRPC.TL_stickerSetFullCovered) featuredStickerSets.get(i)).keywords != null) {
-                                    ArrayList<TLRPC.Document> documents = ((TLRPC.TL_stickerSetFullCovered) featuredStickerSets.get(i)).documents;
-                                    if (documents == null) {
-                                        continue;
-                                    }
-                                    for (int j = 0; j < documents.size(); ++j) {
-                                        emoticon = MessageObject.findAnimatedEmojiEmoticon(documents.get(j), null);
-                                        final long id = documents.get(j).id;
-                                        if (emoticon != null && !documentIds.contains(id) && query.contains(emoticon)) {
-                                            documentIds.add(id);
-                                        }
-                                    }
-                                }
-                            }
-
                             next.run();
                         } else {
                             MediaDataController.getInstance(currentAccount).getEmojiSuggestions(
@@ -1925,31 +1889,6 @@ public class SelectAnimatedEmojiDialog extends FrameLayout implements Notificati
                                 if (title.startsWith(q) || title.contains(sq)) {
                                     sets.add(new SetTitleDocument(title));
                                     sets.addAll(set.documents);
-                                    addedSets.add(set.set.id);
-                                }
-                            }
-                        }
-                        ArrayList<TLRPC.StickerSetCovered> featuredSets = MediaDataController.getInstance(currentAccount).getFeaturedEmojiSets();
-                        if (featuredSets != null) {
-                            for (int i = 0; i < featuredSets.size(); ++i) {
-                                TLRPC.StickerSetCovered set = featuredSets.get(i);
-                                if (set == null || set.set == null || set.set.title == null || addedSets.contains(set.set.id)) continue;
-                                final String title = translitSafe(set.set.title);
-                                if (title.startsWith(q) || title.contains(sq)) {
-                                    ArrayList<TLRPC.Document> documents = null;
-                                    if (set instanceof TLRPC.TL_stickerSetNoCovered) {
-                                        TLRPC.TL_messages_stickerSet fullSet = MediaDataController.getInstance(currentAccount).getStickerSet(MediaDataController.getInputStickerSet(set.set), set.set.hash, true);
-                                        if (fullSet != null) {
-                                            documents = fullSet.documents;
-                                        }
-                                    } else if (set instanceof TLRPC.TL_stickerSetFullCovered) {
-                                        documents = ((TLRPC.TL_stickerSetFullCovered) set).documents;
-                                    } else {
-                                        documents = set.covers;
-                                    }
-                                    if (documents == null || documents.size() == 0) continue;
-                                    sets.add(new SetTitleDocument(set.set.title));
-                                    sets.addAll(documents);
                                     addedSets.add(set.set.id);
                                 }
                             }
@@ -3278,7 +3217,6 @@ public class SelectAnimatedEmojiDialog extends FrameLayout implements Notificati
             frozenEmojiPacks = new ArrayList<>(mediaDataController.getStickerSets(showStickers ? MediaDataController.TYPE_IMAGE : MediaDataController.TYPE_EMOJIPACKS));
         }
         ArrayList<TLRPC.TL_messages_stickerSet> installedEmojipacks = frozenEmojiPacks;
-        ArrayList<TLRPC.StickerSetCovered> featuredEmojiPacks = new ArrayList<>(mediaDataController.getFeaturedEmojiSets());
 
         ArrayList<Long> prevRowHashCodes = new ArrayList<>(rowHashCodes);
         totalCount = 0;
@@ -3527,91 +3465,8 @@ public class SelectAnimatedEmojiDialog extends FrameLayout implements Notificati
                 }
             }
         }
-        if (featuredEmojiPacks != null && !showStickers && type != TYPE_EXPANDABLE_REACTIONS && type != TYPE_STICKER_SET_EMOJI && type != TYPE_EFFECTS) {
-            final int maxlen = SPAN_COUNT_FOR_EMOJI * EXPAND_MAX_LINES;
-            for (int i = 0; i < featuredEmojiPacks.size(); ++i) {
-                TLRPC.StickerSetCovered set1 = featuredEmojiPacks.get(i);
-                TLRPC.StickerSet set = set1.set;
-                boolean isPremiumPack = false;
-                boolean foundDuplicate = false;
-                for (int j = 0; j < packs.size(); ++j) {
-                    if (packs.get(j).set.id == set.id) {
-                        foundDuplicate = true;
-                        break;
-                    }
-                }
-                if (foundDuplicate) {
-                    continue;
-                }
-
-                TLRPC.InputStickerSet needLoadSet = null;
-                ArrayList<TLRPC.Document> documents = null;
-                if (set1 instanceof TLRPC.TL_stickerSetNoCovered) {
-                    TLRPC.TL_messages_stickerSet fullSet = mediaDataController.getStickerSet(MediaDataController.getInputStickerSet(set1.set), set1.set.hash, true);
-                    if (fullSet != null) {
-                        documents = fullSet.documents;
-                        isPremiumPack = MessageObject.isPremiumEmojiPack(fullSet);
-                    } else {
-                        needLoadSet = MediaDataController.getInputStickerSet(set1.set);
-                        documents = new ArrayList<>();
-                        isPremiumPack = true;
-                    }
-                } else if (set1 instanceof TLRPC.TL_stickerSetFullCovered) {
-                    documents = ((TLRPC.TL_stickerSetFullCovered) set1).documents;
-                    isPremiumPack = MessageObject.isPremiumEmojiPack(set1);
-                }
-
-                if (documents == null) {
-                    continue;
-                }
-                // a set not loaded yet counts as premium, as upstream counted it;
-                // EmojiView leaves such featured sets out for everyone
-                if (leavePremiumPacksOut && isPremiumPack) {
-                    continue;
-                }
-
-                if ((type == TYPE_SET_REPLY_ICON || type == TYPE_SET_REPLY_ICON_BOTTOM) && (documents.isEmpty() || !MessageObject.isTextColorEmoji(documents.get(0)))) {
-                    continue;
-                }
-
-                positionToSection.put(totalCount, packs.size());
-                sectionToPosition.put(packs.size(), totalCount);
-                totalCount++;
-                rowHashCodes.add(9211 + 13L * set.id);
-
-                EmojiView.EmojiPack pack = new EmojiView.EmojiPack();
-                pack.needLoadSet = needLoadSet;
-                pack.installed = installedEmojiSets.contains(set.id);
-                pack.featured = true;
-                pack.set = set;
-                pack.documents = documents;
-                pack.index = packs.size();
-                pack.expanded = expandedEmojiSets.contains(pack.set.id);
-
-                if (pack.documents.size() > maxlen && !pack.expanded) {
-                    totalCount += maxlen;
-                    for (int k = 0; k < maxlen - 1; ++k) {
-                        rowHashCodes.add(3212 + 13L * pack.documents.get(k).id);
-                    }
-                    rowHashCodes.add(-5531 + 13L * set.id + 169L * (pack.documents.size() - maxlen + 1));
-                    positionToExpand.put(totalCount - 1, packs.size());
-                } else {
-                    totalCount += pack.documents.size();
-                    for (int k = 0; k < pack.documents.size(); ++k) {
-                        rowHashCodes.add(3212 + 13L * pack.documents.get(k).id);
-                    }
-                }
-
-                if (!pack.installed && type != TYPE_AVATAR_CONSTRUCTOR && type != TYPE_SET_REPLY_ICON && type != TYPE_SET_REPLY_ICON_BOTTOM && type != TYPE_CHAT_REACTIONS) {
-                    positionToButton.put(totalCount, packs.size());
-                    totalCount++;
-                    rowHashCodes.add(3321 + 13L * set.id);
-                }
-
-                packs.add(pack);
-            }
-        }
-
+        // LoogriGram: Telegram's trending emoji packs followed the installed
+        // ones here, with an Add button; they are not fetched (as on desktop).
         if (type != TYPE_EFFECTS && type != TYPE_EXPANDABLE_REACTIONS && type != TYPE_STICKER_SET_EMOJI) {
             emojiTabs.updateEmojiPacks(packs);
         }
@@ -4367,7 +4222,6 @@ public class SelectAnimatedEmojiDialog extends FrameLayout implements Notificati
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
         isAttached = true;
-        NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.featuredEmojiDidLoad);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.stickersDidLoad);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.groupStickersDidLoad);
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.emojiLoaded);
@@ -4382,7 +4236,6 @@ public class SelectAnimatedEmojiDialog extends FrameLayout implements Notificati
         super.onDetachedFromWindow();
         setBigReactionAnimatedEmoji(null);
         isAttached = false;
-        NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.featuredEmojiDidLoad);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.stickersDidLoad);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.groupStickersDidLoad);
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.emojiLoaded);
@@ -4409,8 +4262,6 @@ public class SelectAnimatedEmojiDialog extends FrameLayout implements Notificati
             if (((int) args[0]) == MediaDataController.TYPE_EMOJIPACKS || (((int) args[0]) == MediaDataController.TYPE_IMAGE && showStickers)) {
                 updateRowsDelayed();
             }
-        } else if (id == NotificationCenter.featuredEmojiDidLoad) {
-            updateRowsDelayed();
         } else if (id == NotificationCenter.groupStickersDidLoad) {
             updateRowsDelayed();
         } else if (id == NotificationCenter.emojiLoaded) {

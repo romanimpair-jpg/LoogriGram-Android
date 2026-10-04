@@ -239,10 +239,12 @@ public class MediaDataController extends BaseController {
     public static final int TYPE_IMAGE = 0;
     public static final int TYPE_MASK = 1;
     public static final int TYPE_FAVE = 2;
-    public static final int TYPE_FEATURED = 3;
+    // LoogriGram: 3 and 6 were TYPE_FEATURED and TYPE_FEATURED_EMOJIPACKS,
+    // Telegram's trending sticker and emoji packs, which this fork does not
+    // fetch or offer, as on desktop. The numbers stay unused so the other
+    // types - array indexes and cache row ids - keep theirs.
     public static final int TYPE_EMOJI = 4;
     public static final int TYPE_EMOJIPACKS = 5;
-    public static final int TYPE_FEATURED_EMOJIPACKS = 6;
     public static final int TYPE_PREMIUM_STICKERS = 7;
 
     // LoogriGram: 3 was TYPE_GREETINGS, the server's greeting stickers
@@ -289,7 +291,6 @@ public class MediaDataController extends BaseController {
 
     private LongSparseArray<String> stickersByEmoji = new LongSparseArray<>();
     private HashMap<String, ArrayList<TLRPC.Document>> allStickers = new HashMap<>();
-    private HashMap<String, ArrayList<TLRPC.Document>> allStickersFeatured = new HashMap<>();
 
     private ArrayList<TLRPC.Document>[] recentStickers = new ArrayList[]{
             new ArrayList<>(),
@@ -311,15 +312,6 @@ public class MediaDataController extends BaseController {
     private boolean loadingGenericAnimations;
     private boolean loadingDefaultTopicIcons;
 
-    private long loadFeaturedHash[] = new long[2];
-    private int loadFeaturedDate[] = new int[2];
-    private ArrayList<TLRPC.StickerSetCovered>[] featuredStickerSets = new ArrayList[]{new ArrayList<>(), new ArrayList<>()};
-    private LongSparseArray<TLRPC.StickerSetCovered>[] featuredStickerSetsById = new LongSparseArray[]{new LongSparseArray<>(), new LongSparseArray<>()};
-    private ArrayList<Long> unreadStickerSets[] = new ArrayList[]{new ArrayList<Long>(), new ArrayList<Long>()};
-    private ArrayList<Long> readingStickerSets[] = new ArrayList[]{new ArrayList<Long>(), new ArrayList<Long>()};
-    private boolean loadingFeaturedStickers[] = new boolean[2];
-    private boolean featuredStickersLoaded[] = new boolean[2];
-
     public final RingtoneDataStore ringtoneDataStore;
     public final ArrayList<ChatThemeBottomSheet.ChatThemeItem> defaultEmojiThemes = new ArrayList<>();
 
@@ -339,19 +331,8 @@ public class MediaDataController extends BaseController {
             stickersLoaded[a] = false;
         }
         loadingPinnedMessages.clear();
-        loadFeaturedDate[0] = 0;
-        loadFeaturedHash[0] = 0;
-        loadFeaturedDate[1] = 0;
-        loadFeaturedHash[1] = 0;
         allStickers.clear();
-        allStickersFeatured.clear();
         stickersByEmoji.clear();
-        featuredStickerSetsById[0].clear();
-        featuredStickerSets[0].clear();
-        featuredStickerSetsById[1].clear();
-        featuredStickerSets[1].clear();
-        unreadStickerSets[0].clear();
-        unreadStickerSets[1].clear();
         recentGifs.clear();
         stickerSetsById.clear();
         installedStickerSetsById.clear();
@@ -359,10 +340,6 @@ public class MediaDataController extends BaseController {
         diceStickerSetsByEmoji.clear();
         diceEmojiStickerSetsById.clear();
         loadingDiceStickerSets.clear();
-        loadingFeaturedStickers[0] = false;
-        featuredStickersLoaded[0] = false;
-        loadingFeaturedStickers[1] = false;
-        featuredStickersLoaded[1] = false;
         loadingRecentGifs = false;
         recentGifsLoaded = false;
 
@@ -714,18 +691,6 @@ public class MediaDataController extends BaseController {
                 FileLog.e(e);
             }
         });
-    }
-
-    public void checkFeaturedStickers() {
-        if (!loadingFeaturedStickers[0] && (!featuredStickersLoaded[0] || Math.abs(System.currentTimeMillis() / 1000 - loadFeaturedDate[0]) >= 60 * 60)) {
-            loadFeaturedStickers(false, true);
-        }
-    }
-
-    public void checkFeaturedEmoji() {
-        if (!loadingFeaturedStickers[1] && (!featuredStickersLoaded[1] || Math.abs(System.currentTimeMillis() / 1000 - loadFeaturedDate[1]) >= 60 * 60)) {
-            loadFeaturedStickers(true, true);
-        }
     }
 
     public ArrayList<TLRPC.Document> getRecentStickers(int type) {
@@ -1536,10 +1501,6 @@ public class MediaDataController extends BaseController {
         return allStickers;
     }
 
-    public HashMap<String, ArrayList<TLRPC.Document>> getAllStickersFeatured() {
-        return allStickersFeatured;
-    }
-
     public TLRPC.Document getEmojiAnimatedSticker(CharSequence message) {
         if (message == null) {
             return null;
@@ -1564,44 +1525,11 @@ public class MediaDataController extends BaseController {
     }
 
     public ArrayList<TLRPC.TL_messages_stickerSet> getStickerSets(int type) {
-        if (type == TYPE_FEATURED) {
-            return stickerSets[2];
-        } else {
-            return stickerSets[type];
-        }
+        return stickerSets[type];
     }
 
     public LongSparseArray<TLRPC.Document> getStickerByIds(int type) {
         return stickersByIds[type];
-    }
-
-    public ArrayList<TLRPC.StickerSetCovered> getFeaturedStickerSets() {
-        return featuredStickerSets[0];
-    }
-
-    public ArrayList<TLRPC.StickerSetCovered> getFeaturedEmojiSets() {
-        return featuredStickerSets[1];
-    }
-
-    public ArrayList<Long> getUnreadStickerSets() {
-        return unreadStickerSets[0];
-    }
-
-    public ArrayList<Long> getUnreadEmojiSets() {
-        return unreadStickerSets[1];
-    }
-
-    public boolean areAllTrendingStickerSetsUnread(boolean emoji) {
-        for (int a = 0, N = featuredStickerSets[emoji ? 1 : 0].size(); a < N; a++) {
-            TLRPC.StickerSetCovered pack = featuredStickerSets[emoji ? 1 : 0].get(a);
-            if (isStickerPackInstalled(pack.set.id) || pack.covers.isEmpty() && pack.cover == null) {
-                continue;
-            }
-            if (!unreadStickerSets[emoji ? 1 : 0].contains(pack.set.id)) {
-                return false;
-            }
-        }
-        return true;
     }
 
     public boolean isStickerPackInstalled(long id) {
@@ -1610,10 +1538,6 @@ public class MediaDataController extends BaseController {
 
     public boolean isStickerPackInstalled(long id, boolean countForced) {
         return (installedStickerSetsById.indexOfKey(id) >= 0 || countForced && installedForceStickerSetsById.contains(id)) && (!countForced || !uninstalledForceStickerSetsById.contains(id));
-    }
-
-    public boolean isStickerPackUnread(boolean emoji, long id) {
-        return unreadStickerSets[emoji ? 1 : 0].contains(id);
     }
 
     public boolean isStickerPackInstalled(String name) {
@@ -2048,253 +1972,11 @@ public class MediaDataController extends BaseController {
         loadStickers(type, false, true);
     }
 
-    public void loadFeaturedStickers(boolean emoji, boolean cache) {
-        if (loadingFeaturedStickers[emoji ? 1 : 0]) {
-            return;
-        }
-        loadingFeaturedStickers[emoji ? 1 : 0] = true;
-        if (cache) {
-            getMessagesStorage().getStorageQueue().postRunnable(() -> {
-                ArrayList<TLRPC.StickerSetCovered> newStickerArray = null;
-                ArrayList<Long> unread = new ArrayList<>();
-                int date = 0;
-                long hash = 0;
-                SQLiteCursor cursor = null;
-                try {
-                    cursor = getMessagesStorage().getDatabase().queryFinalized("SELECT data, unread, date, hash FROM stickers_featured WHERE emoji = " + (emoji ? 1 : 0) + " AND id = " + (emoji ? 2 : 1));
-                    if (cursor.next()) {
-                        NativeByteBuffer data = cursor.byteBufferValue(0);
-                        if (data != null) {
-                            newStickerArray = new ArrayList<>();
-                            int count = data.readInt32(false);
-                            for (int a = 0; a < count; a++) {
-                                TLRPC.StickerSetCovered stickerSet = TLRPC.StickerSetCovered.TLdeserialize(data, data.readInt32(false), false);
-                                newStickerArray.add(stickerSet);
-                            }
-                            data.reuse();
-                        }
-                        data = cursor.byteBufferValue(1);
-                        if (data != null) {
-                            int count = data.readInt32(false);
-                            for (int a = 0; a < count; a++) {
-                                unread.add(data.readInt64(false));
-                            }
-                            data.reuse();
-                        }
-                        date = cursor.intValue(2);
-                        hash = cursor.longValue(3); // calcFeaturedStickersHash(emoji, newStickerArray);
-                    }
-                } catch (Throwable e) {
-                    FileLog.e(e);
-                } finally {
-                    if (cursor != null) {
-                        cursor.dispose();
-                    }
-                }
-                processLoadedFeaturedStickers(emoji, newStickerArray, unread, true, date, hash);
-            });
-        } else {
-            final long hash;
-            TLObject req;
-            if (emoji) {
-                TLRPC.TL_messages_getFeaturedEmojiStickers request = new TLRPC.TL_messages_getFeaturedEmojiStickers();
-                request.hash = hash = loadFeaturedHash[1];
-                req = request;
-            } else {
-                TLRPC.TL_messages_getFeaturedStickers request = new TLRPC.TL_messages_getFeaturedStickers();
-                request.hash = hash = loadFeaturedHash[0];
-                req = request;
-            }
-            getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                if (response instanceof TLRPC.TL_messages_featuredStickers) {
-                    TLRPC.TL_messages_featuredStickers res = (TLRPC.TL_messages_featuredStickers) response;
-                    // LoogriGram: res.premium marked the list as Premium-only trending
-                    // stickers, which only retitled the panel's header. Premium is
-                    // honoured for nobody, so it is not read.
-                    processLoadedFeaturedStickers(emoji, res.sets, res.unread, false, (int) (System.currentTimeMillis() / 1000), res.hash);
-                } else if (response instanceof TLRPC.TL_messages_featuredStickersNotModified) {
-                    final int date = (int) (System.currentTimeMillis() / 1000);
-                    AndroidUtilities.runOnUIThread(() -> {
-                        loadingFeaturedStickers[emoji ? 1 : 0] = false;
-                        featuredStickersLoaded[emoji ? 1 : 0] = true;
-                        loadFeaturedDate[emoji ? 1 : 0] = date;
-                    });
-                    putFeaturedStickersToCache(emoji, null, null, date, hash);
-                } else {
-                    processLoadedFeaturedStickers(emoji, null, null, false, (int) (System.currentTimeMillis() / 1000), hash);
-                }
-            }));
-        }
-    }
-
-    private void processLoadedFeaturedStickers(boolean emoji, ArrayList<TLRPC.StickerSetCovered> res, ArrayList<Long> unreadStickers, boolean cache, int date, long hash) {
-        AndroidUtilities.runOnUIThread(() -> {
-            loadingFeaturedStickers[emoji ? 1 : 0] = false;
-            featuredStickersLoaded[emoji ? 1 : 0] = true;
-        });
-        Utilities.stageQueue.postRunnable(() -> {
-            if (cache && (res == null || Math.abs(System.currentTimeMillis() / 1000 - date) >= 60 * 60) || !cache && res == null && hash == 0) {
-                AndroidUtilities.runOnUIThread(() -> {
-                    if (res != null && hash != 0) {
-                        loadFeaturedHash[emoji ? 1 : 0] = hash;
-                    }
-                    loadingFeaturedStickers[emoji ? 1 : 0] = false;
-                    loadFeaturedStickers(emoji, false);
-                }, res == null && !cache ? 1000 : 0);
-                if (res == null) {
-                    return;
-                }
-            }
-            if (res != null) {
-                try {
-                    ArrayList<TLRPC.StickerSetCovered> stickerSetsNew = new ArrayList<>();
-                    LongSparseArray<TLRPC.StickerSetCovered> stickerSetsByIdNew = new LongSparseArray<>();
-
-                    for (int a = 0; a < res.size(); a++) {
-                        TLRPC.StickerSetCovered stickerSet = res.get(a);
-                        stickerSetsNew.add(stickerSet);
-                        stickerSetsByIdNew.put(stickerSet.set.id, stickerSet);
-                    }
-
-                    if (!cache) {
-                        putFeaturedStickersToCache(emoji, stickerSetsNew, unreadStickers, date, hash);
-                    }
-                    AndroidUtilities.runOnUIThread(() -> {
-                        unreadStickerSets[emoji ? 1 : 0] = unreadStickers;
-                        featuredStickerSetsById[emoji ? 1 : 0] = stickerSetsByIdNew;
-                        featuredStickerSets[emoji ? 1 : 0] = stickerSetsNew;
-                        loadFeaturedHash[emoji ? 1 : 0] = hash;
-                        loadFeaturedDate[emoji ? 1 : 0] = date;
-                        loadStickers(emoji ? TYPE_FEATURED_EMOJIPACKS : TYPE_FEATURED, true, false);
-                        getNotificationCenter().postNotificationName(emoji ? NotificationCenter.featuredEmojiDidLoad : NotificationCenter.featuredStickersDidLoad);
-                    });
-                } catch (Throwable e) {
-                    FileLog.e(e);
-                }
-            } else {
-                AndroidUtilities.runOnUIThread(() -> loadFeaturedDate[emoji ? 1 : 0] = date);
-                putFeaturedStickersToCache(emoji, null, null, date, 0);
-            }
-        });
-    }
-
-    private void putFeaturedStickersToCache(boolean emoji, ArrayList<TLRPC.StickerSetCovered> stickers, ArrayList<Long> unreadStickers, int date, long hash) {
-        ArrayList<TLRPC.StickerSetCovered> stickersFinal = stickers != null ? new ArrayList<>(stickers) : null;
-        getMessagesStorage().getStorageQueue().postRunnable(() -> {
-            try {
-                if (stickersFinal != null) {
-                    SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("REPLACE INTO stickers_featured VALUES(?, ?, ?, ?, ?, ?, ?)");
-                    state.requery();
-                    int size = 4;
-                    for (int a = 0; a < stickersFinal.size(); a++) {
-                        size += stickersFinal.get(a).getObjectSize();
-                    }
-                    NativeByteBuffer data = new NativeByteBuffer(size);
-                    NativeByteBuffer data2 = new NativeByteBuffer(4 + unreadStickers.size() * 8);
-                    data.writeInt32(stickersFinal.size());
-                    for (int a = 0; a < stickersFinal.size(); a++) {
-                        stickersFinal.get(a).serializeToStream(data);
-                    }
-                    data2.writeInt32(unreadStickers.size());
-                    for (int a = 0; a < unreadStickers.size(); a++) {
-                        data2.writeInt64(unreadStickers.get(a));
-                    }
-                    state.bindInteger(1, emoji ? 2 : 1);
-                    state.bindByteBuffer(2, data);
-                    state.bindByteBuffer(3, data2);
-                    state.bindInteger(4, date);
-                    state.bindLong(5, hash);
-                    state.bindInteger(6, 0); // LoogriGram: the premium column stays in the schema, unused.
-                    state.bindInteger(7, emoji ? 1 : 0);
-                    state.step();
-                    data.reuse();
-                    data2.reuse();
-                    state.dispose();
-                } else {
-                    SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("UPDATE stickers_featured SET date = ? WHERE id = ? AND emoji = ?");
-                    state.requery();
-                    state.bindInteger(1, date);
-                    state.bindInteger(2, emoji ? 2 : 1);
-                    state.bindInteger(3, emoji ? 1 : 0);
-                    state.step();
-                    state.dispose();
-                }
-            } catch (Exception e) {
-                FileLog.e(e);
-            }
-        });
-    }
-
-    private long calcFeaturedStickersHash(boolean emoji, ArrayList<TLRPC.StickerSetCovered> sets) {
-        if (sets == null || sets.isEmpty()) {
-            return 0;
-        }
-        long acc = 0;
-        for (int a = 0; a < sets.size(); a++) {
-            TLRPC.StickerSet set = sets.get(a).set;
-            if (set.archived) {
-                continue;
-            }
-            acc = calcHash(acc, set.id);
-            if (unreadStickerSets[emoji ? 1 : 0].contains(set.id)) {
-                acc = calcHash(acc, 1);
-            }
-        }
-        return acc;
-    }
-
     public static long calcHash(long hash, long id) {
         hash ^= hash >>> 21;
         hash ^= hash << 35;
         hash ^= hash >>> 4;
         return hash + id;
-    }
-
-    public void markFeaturedStickersAsRead(boolean emoji, boolean query) {
-        if (unreadStickerSets[emoji ? 1 : 0].isEmpty()) {
-            return;
-        }
-        unreadStickerSets[emoji ? 1 : 0].clear();
-        loadFeaturedHash[emoji ? 1 : 0] = calcFeaturedStickersHash(emoji, featuredStickerSets[emoji ? 1 : 0]);
-        getNotificationCenter().postNotificationName(emoji ? NotificationCenter.featuredEmojiDidLoad : NotificationCenter.featuredStickersDidLoad);
-        putFeaturedStickersToCache(emoji, featuredStickerSets[emoji ? 1 : 0], unreadStickerSets[emoji ? 1 : 0], loadFeaturedDate[emoji ? 1 : 0], loadFeaturedHash[emoji ? 1 : 0]);
-        if (query) {
-            TLRPC.TL_messages_readFeaturedStickers req = new TLRPC.TL_messages_readFeaturedStickers();
-            getConnectionsManager().sendRequest(req, (response, error) -> {
-
-            });
-        }
-    }
-
-    public long getFeaturedStickersHashWithoutUnread(boolean emoji) {
-        long acc = 0;
-        for (int a = 0; a < featuredStickerSets[emoji ? 1 : 0].size(); a++) {
-            TLRPC.StickerSet set = featuredStickerSets[emoji ? 1 : 0].get(a).set;
-            if (set.archived) {
-                continue;
-            }
-            acc = calcHash(acc, set.id);
-        }
-        return acc;
-    }
-
-    public void markFeaturedStickersByIdAsRead(boolean emoji, long id) {
-        if (!unreadStickerSets[emoji ? 1 : 0].contains(id) || readingStickerSets[emoji ? 1 : 0].contains(id)) {
-            return;
-        }
-        readingStickerSets[emoji ? 1 : 0].add(id);
-        TLRPC.TL_messages_readFeaturedStickers req = new TLRPC.TL_messages_readFeaturedStickers();
-        req.id.add(id);
-        getConnectionsManager().sendRequest(req, (response, error) -> {
-
-        });
-        AndroidUtilities.runOnUIThread(() -> {
-            unreadStickerSets[emoji ? 1 : 0].remove(id);
-            readingStickerSets[emoji ? 1 : 0].remove(id);
-            loadFeaturedHash[emoji ? 1 : 0] = calcFeaturedStickersHash(emoji, featuredStickerSets[emoji ? 1 : 0]);
-            getNotificationCenter().postNotificationName(emoji ? NotificationCenter.featuredEmojiDidLoad : NotificationCenter.featuredStickersDidLoad);
-            putFeaturedStickersToCache(emoji, featuredStickerSets[emoji ? 1 : 0], unreadStickerSets[emoji ? 1 : 0], loadFeaturedDate[emoji ? 1 : 0], loadFeaturedHash[emoji ? 1 : 0]);
-        }, 1000);
     }
 
     public int getArchivedStickersCount(int type) {
@@ -2665,21 +2347,7 @@ public class MediaDataController extends BaseController {
             }
             return;
         }
-        if (type == TYPE_FEATURED) {
-            if (featuredStickerSets[0].isEmpty() || !getMessagesController().preloadFeaturedStickers) {
-                if (onFinish != null) {
-                    onFinish.run(null);
-                }
-                return;
-            }
-        } else if (type == TYPE_FEATURED_EMOJIPACKS) {
-            if (featuredStickerSets[1].isEmpty() || !getMessagesController().preloadFeaturedStickers) {
-                if (onFinish != null) {
-                    onFinish.run(null);
-                }
-                return;
-            }
-        } else if (type != TYPE_EMOJI) {
+        if (type != TYPE_EMOJI) {
             loadArchivedStickersCount(type, cache);
         }
         loadingStickers[type] = true;
@@ -2718,19 +2386,7 @@ public class MediaDataController extends BaseController {
                 });
             });
         } else {
-            if (type == TYPE_FEATURED || type == TYPE_FEATURED_EMOJIPACKS) {
-                final boolean emoji = type == TYPE_FEATURED_EMOJIPACKS;
-                TLRPC.TL_messages_allStickers response = new TLRPC.TL_messages_allStickers();
-                response.hash2 = loadFeaturedHash[emoji ? 1 : 0];
-                for (int a = 0, size = featuredStickerSets[emoji ? 1 : 0].size(); a < size; a++) {
-                    response.sets.add(featuredStickerSets[emoji ? 1 : 0].get(a).set);
-                }
-                processLoadStickersResponse(type, response, () -> {
-                    if (onFinish != null) {
-                        onFinish.run(null);
-                    }
-                });
-            } else if (type == TYPE_EMOJI) {
+            if (type == TYPE_EMOJI) {
                 TLRPC.TL_messages_getStickerSet req = new TLRPC.TL_messages_getStickerSet();
                 req.stickerset = new TLRPC.TL_inputStickerSetAnimatedEmoji();
 
@@ -2823,15 +2479,6 @@ public class MediaDataController extends BaseController {
         TLRPC.TL_messages_stickerSet stickerSet = stickerSetsById.get(setId);
         if (stickerSet != null) {
             return stickerSet.set.short_name;
-        }
-        TLRPC.StickerSetCovered stickerSetCovered;
-        stickerSetCovered = featuredStickerSetsById[0].get(setId);
-        if (stickerSetCovered != null) {
-            return stickerSetCovered.set.short_name;
-        }
-        stickerSetCovered = featuredStickerSetsById[1].get(setId);
-        if (stickerSetCovered != null) {
-            return stickerSetCovered.set.short_name;
         }
         return null;
     }
@@ -2967,13 +2614,13 @@ public class MediaDataController extends BaseController {
                             TLRPC.StickerSet set = stickerSets[type].get(a).set;
                             stickerSetsById.remove(set.id);
                             stickerSetsByName.remove(set.short_name);
-                            if (type != TYPE_FEATURED && type != TYPE_FEATURED_EMOJIPACKS && type != TYPE_EMOJI) {
+                            if (type != TYPE_EMOJI) {
                                 installedStickerSetsById.remove(set.id);
                             }
                         }
                         for (int a = 0; a < stickerSetsByIdNew.size(); a++) {
                             stickerSetsById.put(stickerSetsByIdNew.keyAt(a), stickerSetsByIdNew.valueAt(a));
-                            if (type != TYPE_FEATURED && type != TYPE_FEATURED_EMOJIPACKS && type != TYPE_EMOJI) {
+                            if (type != TYPE_EMOJI) {
                                 installedStickerSetsById.put(stickerSetsByIdNew.keyAt(a), stickerSetsByIdNew.valueAt(a));
                             }
                         }
@@ -2985,8 +2632,6 @@ public class MediaDataController extends BaseController {
                         if (type == TYPE_IMAGE) {
                             allStickers = allStickersNew;
                             stickersByEmoji = stickersByEmojiNew;
-                        } else if (type == TYPE_FEATURED) {
-                            allStickersFeatured = allStickersNew;
                         }
                         getNotificationCenter().postNotificationName(NotificationCenter.stickersDidLoad, type, true);
                         if (onFinish != null) {
@@ -8006,13 +7651,9 @@ public class MediaDataController extends BaseController {
     public void checkAllMedia(boolean force) {
         if (force) {
             reactionsUpdateDate = 0;
-            loadFeaturedDate[0] = 0;
-            loadFeaturedDate[1] = 0;
         }
         loadRecents(MediaDataController.TYPE_FAVE, false, true, false);
         loadRecents(MediaDataController.TYPE_PREMIUM_STICKERS, false, false, true);
-        checkFeaturedStickers();
-        checkFeaturedEmoji();
         checkReactions();
         checkMenuBots(true);
         // LoogriGram: the Premium and TON gift sticker packs are not fetched;
@@ -8248,7 +7889,6 @@ public class MediaDataController extends BaseController {
             return;
         }
         final ArrayList<TLRPC.TL_messages_stickerSet> stickerSets = getStickerSets(TYPE_EMOJIPACKS);
-        final ArrayList<TLRPC.StickerSetCovered> featuredStickerSets = getFeaturedEmojiSets();
         Utilities.searchQueue.postRunnable(() -> {
             ArrayList<Long> fullMatch = new ArrayList<>();
             ArrayList<Long> halfMatch = new ArrayList<>();
@@ -8256,23 +7896,6 @@ public class MediaDataController extends BaseController {
             for (int i = 0; i < stickerSets.size(); ++i) {
                 if (stickerSets.get(i).keywords != null) {
                     ArrayList<TLRPC.TL_stickerKeyword> keywords = stickerSets.get(i).keywords;
-                    for (int j = 0; j < keywords.size(); ++j) {
-                        for (int k = 0; k < keywords.get(j).keyword.size(); ++k) {
-                            String keyword = keywords.get(j).keyword.get(k);
-                            if (queryLowercased.equals(keyword)) {
-                                fullMatch.add(keywords.get(j).document_id);
-                            } else if (queryLowercased.contains(keyword) || keyword.contains(queryLowercased)) {
-                                halfMatch.add(keywords.get(j).document_id);
-                            }
-                        }
-                    }
-                }
-            }
-
-            for (int i = 0; i < featuredStickerSets.size(); ++i) {
-                if (featuredStickerSets.get(i) instanceof TLRPC.TL_stickerSetFullCovered &&
-                    ((TLRPC.TL_stickerSetFullCovered) featuredStickerSets.get(i)).keywords != null) {
-                    ArrayList<TLRPC.TL_stickerKeyword> keywords = ((TLRPC.TL_stickerSetFullCovered) featuredStickerSets.get(i)).keywords;
                     for (int j = 0; j < keywords.size(); ++j) {
                         for (int k = 0; k < keywords.get(j).keyword.size(); ++k) {
                             String keyword = keywords.get(j).keyword.get(k);
@@ -8516,7 +8139,6 @@ public class MediaDataController extends BaseController {
         final ArrayList<TLRPC.TL_messages_stickerSet>[] emojiPacks = new ArrayList[1];
         emojiPacks[0] = getStickerSets(TYPE_EMOJIPACKS);
         final Runnable fillRunnable = () -> {
-            ArrayList<TLRPC.StickerSetCovered> featuredSets = getFeaturedEmojiSets();
             ArrayList<KeywordResult> animatedResult = new ArrayList<>();
             HashSet<Long> foundEmojis = new HashSet<>();
             ArrayList<TLRPC.Document> animatedEmoji = new ArrayList<>();
@@ -8627,45 +8249,6 @@ public class MediaDataController extends BaseController {
                         }
                     }
                 }
-                if (animatedEmoji.size() < maxAnimatedPerEmoji && featuredSets != null) {
-                    for (int j = 0; j < featuredSets.size(); ++j) {
-                        TLRPC.StickerSetCovered set = featuredSets.get(j);
-                        if (set == null) {
-                            continue;
-                        }
-                        ArrayList<TLRPC.Document> documents = set instanceof TLRPC.TL_stickerSetFullCovered ? ((TLRPC.TL_stickerSetFullCovered) set).documents : set.covers;
-                        if (documents == null) {
-                            continue;
-                        }
-                        for (int d = 0; d < documents.size(); ++d) {
-                            TLRPC.Document document = documents.get(d);
-                            if (document != null && document.attributes != null && !animatedEmoji.contains(document)) {
-                                TLRPC.TL_documentAttributeCustomEmoji attribute = null;
-                                for (int k = 0; k < document.attributes.size(); ++k) {
-                                    TLRPC.DocumentAttribute attr = document.attributes.get(k);
-                                    if (attr instanceof TLRPC.TL_documentAttributeCustomEmoji) {
-                                        attribute = (TLRPC.TL_documentAttributeCustomEmoji) attr;
-                                        break;
-                                    }
-                                }
-
-                                if (attribute != null && !TextUtils.isEmpty(attribute.alt) && attribute.alt.contains(emoji) && (forcePremium || attribute.free || set.set != null && set.set.short_name != null && set.set.short_name.equals(topicIconsName))) {
-                                    if (!foundEmojis.contains(document.id)) {
-                                        foundEmojis.add(document.id);
-                                        animatedEmoji.add(document);
-                                        if (animatedEmoji.size() >= maxAnimatedPerEmoji) {
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        if (animatedEmoji.size() >= maxAnimatedPerEmoji) {
-                            break;
-                        }
-                    }
-                }
-
                 if (!animatedEmoji.isEmpty()) {
                     String keyword = result.get(i).keyword;
                     for (int p = 0; p < animatedEmoji.size(); ++p) {

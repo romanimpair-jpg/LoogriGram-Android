@@ -90,12 +90,10 @@ import androidx.viewpager.widget.ViewPager;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ChatObject;
 import org.telegram.messenger.CompoundEmoji;
-import org.telegram.messenger.DocumentObject;
 import org.telegram.messenger.Emoji;
 import org.telegram.messenger.EmojiData;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
-import org.telegram.messenger.ImageLocation;
 import org.telegram.messenger.ImageReceiver;
 import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.LocaleController;
@@ -106,7 +104,6 @@ import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
-import org.telegram.messenger.SvgHelper;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
@@ -221,7 +218,6 @@ public class EmojiView extends FrameLayout implements
     private GridLayoutManager emojiLayoutManager;
     private EmojiGridAdapter emojiAdapter;
     private EmojiSearchAdapter emojiSearchAdapter;
-    private TrendingAdapter trendingEmojiAdapter;
     private FoundStickerPacksHeaderCell emojiSearchHeader;
     private SearchField emojiSearchField;
     private AnimatorSet emojiTabShadowAnimator;
@@ -259,7 +255,6 @@ public class EmojiView extends FrameLayout implements
     private FrameLayout stickersTabContainer;
     private RecyclerListView stickersGridView;
     private GridLayoutManager stickersLayoutManager;
-    private TrendingAdapter trendingAdapter;
     private SearchField stickersSearchField;
     private FoundStickerPacksHeaderCell stickerSearchHeader;
     private int stickersMinusDy;
@@ -348,9 +343,6 @@ public class EmojiView extends FrameLayout implements
     private ArrayList<TLRPC.Document> recentGifs = new ArrayList<>();
     private ArrayList<TLRPC.Document> recentStickers = new ArrayList<>();
     private ArrayList<TLRPC.Document> favouriteStickers = new ArrayList<>();
-    private ArrayList<TLRPC.StickerSetCovered> featuredStickerSets = new ArrayList<>();
-
-    private ArrayList<TLRPC.StickerSetCovered> featuredEmojiSets = new ArrayList<>();
     private ArrayList<Long> expandedEmojiSets = new ArrayList<>();
     public ArrayList<Long> installedEmojiSets = new ArrayList<>();
     private ArrayList<EmojiPack> emojipacksProcessed = new ArrayList<>();
@@ -375,7 +367,6 @@ public class EmojiView extends FrameLayout implements
     private int stickersTabOffset;
     private int recentTabNum = -2;
     private int favTabNum = -2;
-    private int trendingTabNum = -2;
 
     private TLRPC.ChatFull info;
 
@@ -515,10 +506,6 @@ public class EmojiView extends FrameLayout implements
 
         default int getThreadId() {
             return 0;
-        }
-
-        default void showTrendingStickersAlert(TrendingStickersLayout layout) {
-
         }
 
         default void invalidateEnterView() {
@@ -1546,7 +1533,6 @@ public class EmojiView extends FrameLayout implements
 
         if (needAnimatedEmoji) {
             MediaDataController.getInstance(currentAccount).checkStickers(MediaDataController.TYPE_EMOJIPACKS);
-            MediaDataController.getInstance(currentAccount).checkFeaturedEmoji();
             animatedEmojiTextColorFilter = new PorterDuffColorFilter(getThemedColor(Theme.key_featuredStickers_addButton), PorterDuff.Mode.SRC_IN);
         }
         emojiGridView = new EmojiGridView(context) {
@@ -1671,9 +1657,6 @@ public class EmojiView extends FrameLayout implements
                 } else {
                     if (
                         needEmojiSearch && position == 0 ||
-                        position == emojiAdapter.trendingRow ||
-                        position == emojiAdapter.trendingHeaderRow ||
-                        position == emojiAdapter.recentlyUsedHeaderRow ||
                         emojiAdapter.positionToSection.indexOfKey(position) >= 0
                     ) {
                         return emojiLayoutManager.getSpanCount();
@@ -2102,7 +2085,6 @@ public class EmojiView extends FrameLayout implements
             };
 
             MediaDataController.getInstance(currentAccount).checkStickers(MediaDataController.TYPE_IMAGE);
-            MediaDataController.getInstance(currentAccount).checkFeaturedStickers();
             stickersGridView = new RecyclerListViewWithOverlayDraw(context) {
 
                 boolean ignoreLayout;
@@ -2410,10 +2392,6 @@ public class EmojiView extends FrameLayout implements
             updateStickerTabs(true);
             stickersTab.setDelegate(page -> {
                 if (firstTabUpdate) {
-                    return;
-                }
-                if (page == trendingTabNum) {
-                    openTrendingStickers(null);
                     return;
                 }
 
@@ -3434,7 +3412,7 @@ public class EmojiView extends FrameLayout implements
     private void updateEmojiTabsPosition(int position) {
         if (!emojiSmoothScrolling && position != RecyclerView.NO_POSITION) {
             int tab = 0;
-            int count = getRecentEmoji().size() + (needEmojiSearch ? 1 : 0) + (emojiAdapter.trendingHeaderRow >= 0 ? 3 : 0);
+            int count = getRecentEmoji().size() + (needEmojiSearch ? 1 : 0);
             if (position >= count) {
                 tab = -1;
                 for (int a = 0; a < EmojiData.dataColored.length; a++) {
@@ -3882,15 +3860,10 @@ public class EmojiView extends FrameLayout implements
                 if (position + 1 > emojiAdapter.plainEmojisCount && !allowEmojisForNonPremium) {
                     outRect.top = AndroidUtilities.dp(10);
                 }
-            } else if (view instanceof RecyclerListView || view instanceof EmojiPackHeader) {
+            } else if (view instanceof EmojiPackHeader) {
                 outRect.left = -emojiGridView.getPaddingLeft();
                 outRect.right = -emojiGridView.getPaddingRight();
-                if (view instanceof EmojiPackHeader) {
-                    outRect.top = AndroidUtilities.dp(8);
-//                    if (parent.getChildAdapterPosition(view) == emojiAdapter.firstTrendingRow) {
-//                        outRect.top = AndroidUtilities.dp(32);
-//                    }
-                }
+                outRect.top = AndroidUtilities.dp(8);
             } else if (view instanceof BackupImageView) {
                 outRect.bottom = AndroidUtilities.dp(12);
             }
@@ -3924,64 +3897,6 @@ public class EmojiView extends FrameLayout implements
             }
             return code;
         }
-    }
-
-    private void openTrendingStickers(TLRPC.StickerSetCovered set) {
-        final TrendingStickersLayout.Delegate trendingDelegate = new TrendingStickersLayout.Delegate() {
-            @Override
-            public void onStickerSetAdd(TLRPC.StickerSetCovered stickerSet, boolean primary) {
-                delegate.onStickerSetAdd(stickerSet);
-                if (primary) {
-                    updateStickerTabs(true);
-                }
-            }
-
-            @Override
-            public void onStickerSetRemove(TLRPC.StickerSetCovered stickerSet) {
-                delegate.onStickerSetRemove(stickerSet);
-            }
-
-            @Override
-            public boolean onListViewInterceptTouchEvent(RecyclerListView listView, MotionEvent event) {
-                return ContentPreviewViewer.getInstance().onInterceptTouchEvent(event, listView, EmojiView.this.getMeasuredHeight(), contentPreviewViewerDelegate, resourcesProvider);
-            }
-
-            @Override
-            public boolean onListViewTouchEvent(RecyclerListView listView, RecyclerListView.OnItemClickListener onItemClickListener, MotionEvent event) {
-                return ContentPreviewViewer.getInstance().onTouch(event, listView, EmojiView.this.getMeasuredHeight(), onItemClickListener, contentPreviewViewerDelegate, resourcesProvider);
-            }
-
-            @Override
-            public String[] getLastSearchKeyboardLanguage() {
-                return lastSearchKeyboardLanguage;
-            }
-
-            @Override
-            public void setLastSearchKeyboardLanguage(String[] language) {
-                lastSearchKeyboardLanguage = language;
-            }
-
-            @Override
-            public boolean canSendSticker() {
-                return true;
-            }
-
-            @Override
-            public void onStickerSelected(TLRPC.Document sticker, Object parent, boolean clearsInputField, boolean notify, int scheduleDate) {
-                delegate.onStickerSelected(null, sticker, null, parent, null, notify, scheduleDate, 0);
-            }
-
-            @Override
-            public boolean canSchedule() {
-                return delegate.canSchedule();
-            }
-
-            @Override
-            public boolean isInScheduleMode() {
-                return delegate.isInScheduleMode();
-            }
-        };
-        this.delegate.showTrendingStickersAlert(new TrendingStickersLayout(getContext(), trendingDelegate, primaryInstallingStickerSets, installingStickerSets, removingStickerSets, set, resourcesProvider));
     }
 
     @Override
@@ -5081,7 +4996,6 @@ public class EmojiView extends FrameLayout implements
         }
         recentTabNum = -2;
         favTabNum = -2;
-        trendingTabNum = -2;
         hasChatStickers = false;
 
         stickersTabOffset = 0;
@@ -5091,27 +5005,8 @@ public class EmojiView extends FrameLayout implements
         final MediaDataController mediaDataController = MediaDataController.getInstance(currentAccount);
 
         SharedPreferences preferences = MessagesController.getEmojiSettings(currentAccount);
-        featuredStickerSets.clear();
-        ArrayList<TLRPC.StickerSetCovered> featured = mediaDataController.getFeaturedStickerSets();
-        for (int a = 0, N = featured.size(); a < N; a++) {
-            TLRPC.StickerSetCovered set = featured.get(a);
-            if (mediaDataController.isStickerPackInstalled(set.set.id)) {
-                continue;
-            }
-            featuredStickerSets.add(set);
-        }
-        if (trendingAdapter != null) {
-            trendingAdapter.notifyDataSetChanged();
-        }
-        if (!featured.isEmpty() && (featuredStickerSets.isEmpty() || preferences.getLong("featured_hidden", 0) == featured.get(0).set.id)) {
-            final int id = mediaDataController.getUnreadStickerSets().isEmpty() ? 2 : 3;
-            final StickerTabView trendingStickersTabView = stickersTab.addStickerIconTab(id, stickerIcons[id]);
-            trendingStickersTabView.textView.setText(getString(R.string.FeaturedStickersShort));
-            trendingStickersTabView.setContentDescription(getString(R.string.FeaturedStickers));
-            trendingTabNum = stickersTabOffset;
-            stickersTabOffset++;
-        }
-
+        // LoogriGram: a Trending tab led the sticker tabs, opening Telegram's
+        // trending packs; they are not fetched or offered, as on desktop.
         if (!favouriteStickers.isEmpty()) {
             favTabNum = stickersTabOffset;
             stickersTabOffset++;
@@ -5634,7 +5529,6 @@ public class EmojiView extends FrameLayout implements
         if (stickersGridAdapter != null) {
             NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.stickersDidLoad);
             NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.recentDocumentsDidLoad);
-            NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.featuredStickersDidLoad);
             NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.groupStickersDidLoad);
             AndroidUtilities.runOnUIThread(() -> {
                 updateStickerTabs(false);
@@ -5682,7 +5576,6 @@ public class EmojiView extends FrameLayout implements
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.stickersDidLoad);
         if (stickersGridAdapter != null) {
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.recentDocumentsDidLoad);
-            NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.featuredStickersDidLoad);
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.groupStickersDidLoad);
         }
     }
@@ -5843,7 +5736,7 @@ public class EmojiView extends FrameLayout implements
         showStickersBanAnimator.start();
     }
 
-    private void updateVisibleTrendingSets() {
+    private void updateVisibleFoundStickerSets() {
         if (stickersGridView == null) {
             return;
         }
@@ -5857,9 +5750,7 @@ public class EmojiView extends FrameLayout implements
                         continue;
                     }
                     FeaturedStickerSetInfoCell cell = (FeaturedStickerSetInfoCell) child;
-                    ArrayList<Long> unreadStickers = MediaDataController.getInstance(currentAccount).getUnreadStickerSets();
                     TLRPC.StickerSetCovered stickerSetCovered = cell.getStickerSet();
-                    boolean unread = unreadStickers != null && unreadStickers.contains(stickerSetCovered.set.id);
                     boolean forceInstalled = false;
                     for (int i = 0; i < primaryInstallingStickerSets.length; i++) {
                         if (primaryInstallingStickerSets[i] != null && primaryInstallingStickerSets[i].set.id == stickerSetCovered.set.id) {
@@ -5867,10 +5758,7 @@ public class EmojiView extends FrameLayout implements
                             break;
                         }
                     }
-                    cell.setStickerSet(stickerSetCovered, unread, true, 0, 0, forceInstalled);
-                    if (unread) {
-                        MediaDataController.getInstance(currentAccount).markFeaturedStickersByIdAsRead(false, stickerSetCovered.set.id);
-                    }
+                    cell.setStickerSet(stickerSetCovered, true, 0, 0, forceInstalled);
                     boolean installing = installingStickerSets.indexOfKey(stickerSetCovered.set.id) >= 0;
                     boolean removing = removingStickerSets.indexOfKey(stickerSetCovered.set.id) >= 0;
                     if (installing || removing) {
@@ -5907,7 +5795,7 @@ public class EmojiView extends FrameLayout implements
             if ((Integer) args[0] == MediaDataController.TYPE_IMAGE) {
                 if (stickersGridAdapter != null) {
                     updateStickerTabs((Boolean) args[1]);
-                    updateVisibleTrendingSets();
+                    updateVisibleFoundStickerSets();
                     reloadStickersAdapter();
                     checkPanels();
                 }
@@ -5924,19 +5812,6 @@ public class EmojiView extends FrameLayout implements
             int type = (Integer) args[1];
             if (isGif || type == MediaDataController.TYPE_IMAGE || type == MediaDataController.TYPE_FAVE) {
                 checkDocuments(isGif);
-            }
-        } else if (id == NotificationCenter.featuredStickersDidLoad) {
-            updateVisibleTrendingSets();
-            if (typeTabs != null) {
-                int count = typeTabs.getChildCount();
-                for (int a = 0; a < count; a++) {
-                    typeTabs.getChildAt(a).invalidate();
-                }
-            }
-            updateStickerTabs(false);
-        } else if (id == NotificationCenter.featuredEmojiDidLoad) {
-            if (emojiAdapter != null) {
-                emojiAdapter.notifyDataSetChanged();
             }
         } else if (id == NotificationCenter.groupStickersDidLoad) {
            final long stickerSetId = (long) args[0];
@@ -6002,166 +5877,6 @@ public class EmojiView extends FrameLayout implements
         return Theme.getColor(key);
     }
 
-    private class TrendingAdapter extends RecyclerListView.SelectionAdapter {
-
-        private boolean emoji;
-        public TrendingAdapter(boolean emoji) {
-            this.emoji = emoji;
-        }
-
-        @Override
-        public boolean isEnabled(RecyclerView.ViewHolder holder) {
-            return true;
-        }
-
-        @Override
-        public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            BackupImageView imageView = new BackupImageView(getContext()) {
-                @Override
-                protected void onDraw(Canvas canvas) {
-                    super.onDraw(canvas);
-                    if (!emoji) {
-                        TLRPC.StickerSetCovered set = (TLRPC.StickerSetCovered) getTag();
-                        if (MediaDataController.getInstance(currentAccount).isStickerPackUnread(emoji, set.set.id) && dotPaint != null) {
-                            int x = canvas.getWidth() - AndroidUtilities.dp(8);
-                            int y = AndroidUtilities.dp(14);
-                            canvas.drawCircle(x, y, AndroidUtilities.dp(3), dotPaint);
-                        }
-                    }
-                }
-            };
-            imageView.setSize(AndroidUtilities.dp(24), AndroidUtilities.dp(24));
-            imageView.setLayerNum(1);
-            imageView.setAspectFit(true);
-            imageView.setLayoutParams(new RecyclerView.LayoutParams(AndroidUtilities.dp(34), AndroidUtilities.dp(34)));
-            return new RecyclerListView.Holder(imageView);
-        }
-
-        @Override
-        public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-            BackupImageView imageView = (BackupImageView) holder.itemView;
-            TLRPC.StickerSetCovered set = (emoji ? featuredEmojiSets : featuredStickerSets).get(position);
-            imageView.setTag(set);
-
-            ArrayList<TLRPC.Document> setDocuments;
-            if (set instanceof TLRPC.TL_stickerSetFullCovered) {
-                setDocuments = ((TLRPC.TL_stickerSetFullCovered) set).documents;
-            } else if (set instanceof TLRPC.TL_stickerSetNoCovered) {
-                TLRPC.TL_messages_stickerSet fullSet = MediaDataController.getInstance(currentAccount).getStickerSet(MediaDataController.getInputStickerSet(set.set), false);
-                if (fullSet == null) {
-                    setDocuments = null;
-                } else {
-                    setDocuments = fullSet.documents;
-                }
-            } else {
-                setDocuments = set.covers;
-            }
-
-            TLRPC.Document document = null;
-            if (set.cover != null) {
-                document = set.cover;
-            } else if (setDocuments != null && !setDocuments.isEmpty()) {
-                if (set.set != null) {
-                    for (int i = 0; i < setDocuments.size(); ++i) {
-                        if (setDocuments.get(i).id == set.set.thumb_document_id) {
-                            document = setDocuments.get(i);
-                            break;
-                        }
-                    }
-                }
-                if (document == null) {
-                    document = setDocuments.get(0);
-                }
-            }
-            if (document == null) {
-                return;
-            }
-
-            if (this.emoji) {
-                imageView.setColorFilter(MessageObject.isTextColorEmoji(document) ? Theme.getAnimatedEmojiColorFilter(resourcesProvider) : null);
-            }
-
-            TLObject object = FileLoader.getClosestPhotoSizeWithSize(set.set.thumbs, 90);
-            SvgHelper.SvgDrawable svgThumb = DocumentObject.getSvgThumb(set.set.thumbs, Theme.key_emptyListPlaceholder, 0.2f);
-            if (svgThumb != null) {
-                svgThumb.overrideWidthAndHeight(512, 512);
-            }
-            if (object == null || MessageObject.isVideoSticker(document)) {
-                object = document;
-            }
-
-            ImageLocation imageLocation;
-            if (object instanceof TLRPC.Document) {
-                TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 90);
-                imageLocation = ImageLocation.getForDocument(thumb, document);
-            } else if (object instanceof TLRPC.PhotoSize) {
-                TLRPC.PhotoSize thumb = (TLRPC.PhotoSize) object;
-                int thumbVersion = set.set.thumb_version;
-                imageLocation = ImageLocation.getForSticker(thumb, document, thumbVersion);
-            } else {
-                return;
-            }
-
-            if (imageLocation == null) {
-                return;
-            }
-            String filter = !LiteMode.isEnabled(emoji ? LiteMode.FLAG_ANIMATED_EMOJI_KEYBOARD : LiteMode.FLAG_ANIMATED_STICKERS_KEYBOARD) ? "30_30_firstframe" : "30_30";
-            if (object instanceof TLRPC.Document && (MessageObject.isAnimatedStickerDocument(document, true) || MessageObject.isVideoSticker(document))) {
-                if (svgThumb != null) {
-                    imageView.setImage(ImageLocation.getForDocument(document), filter, svgThumb, 0, set);
-                } else {
-                    imageView.setImage(ImageLocation.getForDocument(document), filter, imageLocation, null, 0, set);
-                }
-            } else if (imageLocation.imageType == FileLoader.IMAGE_TYPE_LOTTIE) {
-                imageView.setImage(imageLocation, filter, "tgs", svgThumb, set);
-            } else {
-                imageView.setImage(imageLocation, null, "webp", svgThumb, set);
-            }
-        }
-
-        @Override
-        public int getItemViewType(int position) {
-            return 0;
-        }
-
-        @Override
-        public int getItemCount() {
-            return (emoji ? featuredEmojiSets : featuredStickerSets).size();
-        }
-    }
-
-    private class TrendingListView extends RecyclerListView {
-        public TrendingListView(Context context, Adapter adapter) {
-            super(context);
-
-            setNestedScrollingEnabled(true);
-            setSelectorRadius(AndroidUtilities.dp(4));
-            setSelectorDrawableColor(getThemedColor(Theme.key_listSelector));
-            setTag(9);
-            setItemAnimator(null);
-            setLayoutAnimation(null);
-
-            LinearLayoutManager layoutManager = new LinearLayoutManager(context) {
-                @Override
-                public boolean supportsPredictiveItemAnimations() {
-                    return false;
-                }
-            };
-            layoutManager.setOrientation(LinearLayoutManager.HORIZONTAL);
-            setLayoutManager(layoutManager);
-            setAdapter(adapter);
-        }
-
-        @Override
-        public boolean onInterceptTouchEvent(MotionEvent e) {
-            if (getParent() != null && getParent().getParent() != null) {
-                getParent().getParent().requestDisallowInterceptTouchEvent(canScrollHorizontally(-1) || canScrollHorizontally(1));
-                pager.requestDisallowInterceptTouchEvent(true);
-            }
-            return super.onInterceptTouchEvent(e);
-        }
-    }
-
     private boolean disableStickerEditor = StickersAlert.DISABLE_STICKER_EDITOR;
 
     public void setDisableStickerEditor() {
@@ -6218,11 +5933,6 @@ public class EmojiView extends FrameLayout implements
                     }
                     return 0;
                 } else if (object instanceof String) {
-                    if ("trend1".equals(object)) {
-                        return 5;
-                    } else if ("trend2".equals(object)) {
-                        return 6;
-                    }
                     return 3;
                 } else {
                     return 2;
@@ -6233,7 +5943,7 @@ public class EmojiView extends FrameLayout implements
 
         public int getTabForPosition(int position) {
             Object cacheObject = cache.get(position);
-            if ("search".equals(cacheObject) || "trend1".equals(cacheObject) || "trend2".equals(cacheObject)) {
+            if ("search".equals(cacheObject)) {
                 if (favTabNum >= 0) {
                     return favTabNum;
                 }
@@ -6337,36 +6047,6 @@ public class EmojiView extends FrameLayout implements
                 case 4:
                     view = new View(context);
                     view.setLayoutParams(new RecyclerView.LayoutParams(LayoutHelper.MATCH_PARENT, searchFieldHeight));
-                    break;
-                case 5:
-                    view = new StickerSetNameCell(context, false, resourcesProvider, glassDesign);
-                    ((StickerSetNameCell) view).setOnIconClickListener(v -> {
-                        MediaDataController mediaDataController = MediaDataController.getInstance(currentAccount);
-                        ArrayList<TLRPC.StickerSetCovered> featured = mediaDataController.getFeaturedStickerSets();
-                        if (!featured.isEmpty()) {
-                            MessagesController.getEmojiSettings(currentAccount).edit().putLong("featured_hidden", featured.get(0).set.id).commit();
-                            if (stickersGridAdapter != null) {
-                                stickersGridAdapter.notifyItemRangeRemoved(1, 2);
-                            }
-                            updateStickerTabs(false);
-                        }
-                    });
-                    break;
-                case 6:
-                    TrendingListView listView = new TrendingListView(context, trendingAdapter = new TrendingAdapter(false));
-                    listView.setPadding(AndroidUtilities.dp(8), AndroidUtilities.dp(4), AndroidUtilities.dp(8), 0);
-                    listView.setClipToPadding(false);
-                    listView.addItemDecoration(new RecyclerView.ItemDecoration() {
-                        @Override
-                        public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
-                            outRect.right = AndroidUtilities.dp(2);
-                        }
-                    });
-                    listView.setOnItemClickListener((view1, position) -> {
-                        openTrendingStickers((TLRPC.StickerSetCovered) view1.getTag());
-                    });
-                    view = listView;
-                    view.setLayoutParams(new RecyclerView.LayoutParams(LayoutHelper.MATCH_PARENT, AndroidUtilities.dp(52)));
                     break;
                 case 7:
                     FrameLayout layout = new FrameLayout(context);
@@ -6487,11 +6167,6 @@ public class EmojiView extends FrameLayout implements
                     cell.setIsLast(position == totalItems - 1);
                     break;
                 }
-                case 5: {
-                    StickerSetNameCell cell = (StickerSetNameCell) holder.itemView;
-                    cell.setText(getString(R.string.FeaturedStickers),R.drawable.msg_close, getString(R.string.AccDescrCloseTrendingStickers));
-                    break;
-                }
             }
         }
 
@@ -6515,23 +6190,13 @@ public class EmojiView extends FrameLayout implements
             ArrayList<TLRPC.TL_messages_stickerSet> packs = stickerSets;
             int startRow = 0;
             boolean isAddedStickerBtnSet = false;
-            for (int a = -5; a < packs.size(); a++) {
+            for (int a = -4; a < packs.size(); a++) {
                 ArrayList<TLRPC.Document> documents;
                 TLRPC.TL_messages_stickerSet pack = null;
                 String key;
-                if (a == -5) {
+                if (a == -4) {
                     cache.put(totalItems++, "search");
                     startRow++;
-                    continue;
-                } else if (a == -4) {
-                    MediaDataController mediaDataController = MediaDataController.getInstance(currentAccount);
-                    SharedPreferences preferences = MessagesController.getEmojiSettings(currentAccount);
-                    ArrayList<TLRPC.StickerSetCovered> featured = mediaDataController.getFeaturedStickerSets();
-                    if (!featuredStickerSets.isEmpty() && preferences.getLong("featured_hidden", 0) != featured.get(0).set.id) {
-                        cache.put(totalItems++, "trend1");
-                        cache.put(totalItems++, "trend2");
-                        startRow += 2;
-                    }
                     continue;
                 } else if (a == -3) {
                     documents = favouriteStickers;
@@ -6678,14 +6343,11 @@ public class EmojiView extends FrameLayout implements
         private static final int VIEW_TYPE_SEARCH = 2;
         // LoogriGram: VIEW_TYPE_UNLOCK = 3 was an "Unlock <pack>" / Add button
         // row, already never filled upstream (its binding was commented out).
-        private static final int VIEW_TYPE_TRENDING = 4;
+        // LoogriGram: 4 was VIEW_TYPE_TRENDING, the row of Telegram's trending
+        // emoji packs; they are not fetched or offered, as on desktop.
         private static final int VIEW_TYPE_PACK_HEADER = 5;
         private static final int VIEW_TYPE_EXPAND = 6;
 
-        private int trendingHeaderRow = -1;
-        private int trendingRow = -1;
-        private int firstTrendingRow = -1;
-        private int recentlyUsedHeaderRow = -1;
 
         private ArrayList<TLRPC.TL_messages_stickerSet> frozenEmojiPacks;
         private ArrayList<Integer> rowHashCodes = new ArrayList<>();
@@ -6709,7 +6371,7 @@ public class EmojiView extends FrameLayout implements
         @Override
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             int type = holder.getItemViewType();
-            return type == VIEW_TYPE_EMOJI || type == VIEW_TYPE_TRENDING || type == VIEW_TYPE_EXPAND;
+            return type == VIEW_TYPE_EMOJI || type == VIEW_TYPE_EXPAND;
         }
 
         @Override
@@ -6721,67 +6383,9 @@ public class EmojiView extends FrameLayout implements
                     break;
                 case VIEW_TYPE_HEADER:
                     view = new StickerSetNameCell(getContext(), true, resourcesProvider, glassDesign);
-                    ((StickerSetNameCell) view).setOnIconClickListener(e -> {
-                        if (featuredEmojiSets == null || featuredEmojiSets.isEmpty() || featuredEmojiSets.get(0).set == null) {
-                            return;
-                        }
-                        long lastSetId = featuredEmojiSets.get(0).set.id;
-                        MessagesController.getEmojiSettings(currentAccount).edit().putLong("emoji_featured_hidden", lastSetId).commit();
-                        if (emojiAdapter != null) {
-                            emojiAdapter.notifyItemRangeRemoved(1, 3);
-                        }
-                        if (emojiTabs != null) {
-                            emojiTabs.updateEmojiPacks(getEmojipacks());
-                        }
-                        updateRows();
-                    });
                     break;
                 case VIEW_TYPE_PACK_HEADER:
                     view = new EmojiPackHeader(getContext());
-                    break;
-                case VIEW_TYPE_TRENDING:
-                    TrendingListView listView = new TrendingListView(getContext(), trendingEmojiAdapter = new TrendingAdapter(true));
-                    listView.setPadding(AndroidUtilities.dp(8), AndroidUtilities.dp(4), AndroidUtilities.dp(8), 0);
-                    listView.setClipToPadding(false);
-                    listView.addItemDecoration(new RecyclerView.ItemDecoration() {
-                        @Override
-                        public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
-                            outRect.right = AndroidUtilities.dp(2);
-                        }
-                    });
-                    listView.setOnItemClickListener((item, position) -> {
-                        if (item.getTag() instanceof TLRPC.StickerSetCovered) {
-                            TLRPC.StickerSetCovered highlightSet = (TLRPC.StickerSetCovered) item.getTag();
-                            ArrayList<TLRPC.InputStickerSet> inputStickerSets = new ArrayList<>();
-                            ArrayList<TLRPC.StickerSetCovered> sets = MediaDataController.getInstance(currentAccount).getFeaturedEmojiSets();
-                            int highlight = -1;
-                            for (int i = 0; i < sets.size(); ++i) {
-                                TLRPC.StickerSetCovered set = sets.get(i);
-                                if (set != null && set.set != null) {
-                                    TLRPC.TL_inputStickerSetID inputStickerSet = new TLRPC.TL_inputStickerSetID();
-                                    inputStickerSet.id = set.set.id;
-                                    inputStickerSet.access_hash = set.set.access_hash;
-                                    inputStickerSets.add(inputStickerSet);
-
-                                    if (highlightSet != null && highlightSet.set != null && highlightSet.set.id == set.set.id) {
-                                        highlight = i;
-                                    }
-                                }
-                            }
-
-                            MediaDataController.getInstance(currentAccount).markFeaturedStickersAsRead(true, true);
-                            EmojiPacksAlert alert = new EmojiPacksAlert(fragment, getContext(), fragment == null ? resourcesProvider : fragment.getResourceProvider(), inputStickerSets);
-                            if (highlight >= 0) {
-                                alert.highlight(highlight);
-                            }
-                            if (fragment != null) {
-                                fragment.showDialog(alert);
-                            } else {
-                                alert.show();
-                            }
-                        }
-                    });
-                    view = listView;
                     break;
                 case VIEW_TYPE_EXPAND:
                     view = new EmojiPackExpand(getContext(), resourcesProvider);
@@ -6811,12 +6415,6 @@ public class EmojiView extends FrameLayout implements
                     Long customEmojiId = null;
                     if (needEmojiSearch) {
                         position--;
-                    }
-                    if (recentlyUsedHeaderRow >= 0) {
-                        position--;
-                    }
-                    if (trendingRow >= 0) {
-                        position -= 2;
                     }
 
                     int count = getRecentEmoji().size();
@@ -6887,11 +6485,7 @@ public class EmojiView extends FrameLayout implements
                     StickerSetNameCell cell = (StickerSetNameCell) holder.itemView;
                     cell.position = position;
                     index = positionToSection.get(position);
-                    if (position == trendingHeaderRow) {
-                        cell.setText(getString(R.string.FeaturedEmojiPacks), R.drawable.msg_close, getString(R.string.AccDescrCloseTrendingEmoji));
-                    } else if (position == recentlyUsedHeaderRow) {
-                        cell.setText(getString(R.string.RecentlyUsed), 0);
-                    } else if (index >= emojiTitles.length) {
+                    if (index >= emojiTitles.length) {
                         try {
                             cell.setText(emojipacksProcessed.get(index - emojiTitles.length).set.title, 0);
                         } catch (Exception ignore) {
@@ -6928,11 +6522,7 @@ public class EmojiView extends FrameLayout implements
 
         @Override
         public int getItemViewType(int position) {
-            if (position == trendingRow) {
-                return VIEW_TYPE_TRENDING;
-            } else if (position == trendingHeaderRow || position == recentlyUsedHeaderRow) {
-                return VIEW_TYPE_HEADER;
-            } else if (positionToSection.indexOfKey(position) >= 0) {
+            if (positionToSection.indexOfKey(position) >= 0) {
                 return positionToSection.get(position) >= EmojiData.dataColored.length ? VIEW_TYPE_PACK_HEADER : VIEW_TYPE_HEADER;
             } else if (needEmojiSearch && position == 0) {
                 return VIEW_TYPE_SEARCH;
@@ -7035,50 +6625,6 @@ public class EmojiView extends FrameLayout implements
                     }
                 }
             }
-            for (int i = 0; i < featuredEmojiSets.size(); ++i) {
-                TLRPC.StickerSetCovered set = featuredEmojiSets.get(i);
-//                if (!allowEmojisForNonPremium && !MessageObject.isPremiumEmojiPack(set) && mediaDataController.isStickerPackInstalled(set.set.id)) {
-//                    continue;
-//                }
-                EmojiPack pack = new EmojiPack();
-                pack.installed = mediaDataController.isStickerPackInstalled(set.set.id);
-                pack.set = set.set;
-                if (set instanceof TLRPC.TL_stickerSetFullCovered) {
-                    pack.documents = ((TLRPC.TL_stickerSetFullCovered) set).documents;
-                } else if (set instanceof TLRPC.TL_stickerSetNoCovered) {
-                    TLRPC.TL_messages_stickerSet stickerSet = mediaDataController.getStickerSet(MediaDataController.getInputStickerSet(set.set), set.set.hash, true);
-                    if (stickerSet != null) {
-                        pack.documents = stickerSet.documents;
-                    } else {
-                        pack.needLoadSet = MediaDataController.getInputStickerSet(set.set);
-                    }
-                } else {
-                    pack.documents = set.covers;
-                }
-                if (pack.documents == null || pack.documents.isEmpty()) {
-                    continue;
-                }
-                // LoogriGram: without Premium, a featured set holding premium
-                // emoji was listed padlocked, with an "Unlock" button. It is left
-                // out, as on desktop (chat_helpers/emoji_list_widget.cpp).
-                if (!allowEmojisForNonPremium) {
-                    boolean premium = false;
-                    for (int j = 0; j < pack.documents.size(); ++j) {
-                        if (!MessageObject.isFreeEmoji(pack.documents.get(j))) {
-                            premium = true;
-                            break;
-                        }
-                    }
-                    if (premium) {
-                        continue;
-                    }
-                }
-                pack.index = index++;
-                pack.expanded = expandedEmojiSets.contains(pack.set.id);
-                pack.featured = true;
-                emojipacksProcessed.add(pack);
-            }
-
             if (emojiTabs != null) {
                 emojiTabs.updateEmojiPacks(getEmojipacks());
             }
@@ -7151,18 +6697,6 @@ public class EmojiView extends FrameLayout implements
                 itemCount++;
                 rowHashCodes.add(-1);
             }
-            if (allowEmojisForNonPremium && allowAnimatedEmoji && featuredEmojiSets.size() > 0 && featuredEmojiSets.get(0).set != null && MessagesController.getEmojiSettings(currentAccount).getLong("emoji_featured_hidden", 0) != featuredEmojiSets.get(0).set.id && needEmojiSearch) {
-                trendingHeaderRow = itemCount++;
-                trendingRow = itemCount++;
-                recentlyUsedHeaderRow = itemCount++;
-                rowHashCodes.add(324953);
-                rowHashCodes.add(123342);
-                rowHashCodes.add(929132);
-            } else {
-                trendingHeaderRow = -1;
-                trendingRow = -1;
-                recentlyUsedHeaderRow = -1;
-            }
             ArrayList<String> recent = getRecentEmoji();
             if (emojiTabs != null) {
                 emojiTabs.showRecent(!recent.isEmpty());
@@ -7184,7 +6718,6 @@ public class EmojiView extends FrameLayout implements
 
             int maxlen = emojiLayoutManager.getSpanCount() * 3;
             plainEmojisCount = itemCount;
-            firstTrendingRow = -1;
 
             if (emojipacksProcessed != null) {
                 for (int b = 0; b < emojipacksProcessed.size(); ++b, ++k) {
@@ -7193,9 +6726,6 @@ public class EmojiView extends FrameLayout implements
                     packStartPosition.add(itemCount);
 
                     EmojiPack pack = emojipacksProcessed.get(b);
-                    if (pack.featured && firstTrendingRow < 0) {
-                        firstTrendingRow = itemCount;
-                    }
                     int count = 1 + ((pack.installed && !pack.featured) || pack.expanded ? pack.documents.size() : Math.min(maxlen, pack.documents.size()));
                     if (!pack.expanded && pack.documents.size() > maxlen) {
                         count--;
@@ -7225,21 +6755,8 @@ public class EmojiView extends FrameLayout implements
             }
             ArrayList<Integer> prevRowHashCodes = new ArrayList<>(rowHashCodes);
 
-            final MediaDataController mediaDataController = MediaDataController.getInstance(currentAccount);
-            ArrayList<TLRPC.StickerSetCovered> featured = mediaDataController.getFeaturedEmojiSets();
-            featuredEmojiSets.clear();
-            for (int a = 0, N = featured.size(); a < N; a++) {
-                TLRPC.StickerSetCovered set = featured.get(a);
-                if (!mediaDataController.isStickerPackInstalled(set.set.id) || installedEmojiSets.contains(set.set.id)) {
-                    featuredEmojiSets.add(set);
-                }
-            }
-
             processEmoji(updateEmojipack);
             updateRows();
-            if (trendingEmojiAdapter != null) {
-                trendingEmojiAdapter.notifyDataSetChanged();
-            }
 //            super.notifyDataSetChanged();
 
             DiffUtil.calculateDiff(new DiffUtil.Callback() {
@@ -7832,31 +7349,6 @@ public class EmojiView extends FrameLayout implements
                                         }
                                     }
 
-                                    final ArrayList<TLRPC.StickerSetCovered> favs = MediaDataController.getInstance(currentAccount).getFeaturedEmojiSets();
-                                    if (favs != null) {
-                                        for (int i = 0; i < favs.size(); ++i) {
-                                            TLRPC.StickerSetCovered fav = favs.get(i);
-                                            if (fav == null || fav.set == null || fav.set.title == null || addedSets.contains(fav.set.id)) continue;
-                                            final String title = translitSafe(fav.set.title.toLowerCase());
-                                            if (title.startsWith(q) || title.contains(" " + q)) {
-                                                ArrayList<TLRPC.Document> documents = null;
-                                                if (fav instanceof TLRPC.TL_stickerSetFullCovered) {
-                                                    documents = ((TLRPC.TL_stickerSetFullCovered) fav).documents;
-                                                } else if (fav instanceof TLRPC.TL_stickerSetNoCovered) {
-                                                    TLRPC.TL_messages_stickerSet set = MediaDataController.getInstance(currentAccount).getStickerSet(MediaDataController.getInputStickerSet(fav.set), fav.set.hash, true);
-                                                    if (set != null) {
-                                                        documents = set.documents;
-                                                    }
-                                                } else {
-                                                    documents = fav.covers;
-                                                }
-                                                if (documents != null && !documents.isEmpty()) {
-                                                    packsResult.add(new EmojiPackInfo(fav, documents));
-                                                    addedSets.add(fav.set.id);
-                                                }
-                                            }
-                                        }
-                                    }
                                     next.run();
                                 },
                                 next -> {
@@ -8783,22 +8275,6 @@ public class EmojiView extends FrameLayout implements
                         }
                     }
                 }
-                local = MediaDataController.getInstance(currentAccount).getStickerSets(MediaDataController.TYPE_FEATURED);
-                MessagesController.getInstance(currentAccount).filterPremiumStickers(local);
-                for (int a = 0, size = local.size(); a < size; a++) {
-                    TLRPC.TL_messages_stickerSet set = local.get(a);
-                    if ((index = AndroidUtilities.indexOfIgnoreCase(set.set.title, searchQuery)) >= 0) {
-                        if (index == 0 || set.set.title.charAt(index - 1) == ' ') {
-                            localPacks.add(set);
-                            localPacksByName.put(set, index);
-                        }
-                    } else if (set.set.short_name != null && (index = AndroidUtilities.indexOfIgnoreCase(set.set.short_name, searchQuery)) >= 0) {
-                        if (index == 0 || set.set.short_name.charAt(index - 1) == ' ') {
-                            localPacks.add(set);
-                            localPacksByShortName.put(set, true);
-                        }
-                    }
-                }
                 finished.run();
             }
 
@@ -9296,9 +8772,9 @@ public class EmojiView extends FrameLayout implements
                     cell.setAddDrawProgress(installing, false);
                     int idx = TextUtils.isEmpty(searchQuery) ? -1 : AndroidUtilities.indexOfIgnoreCase(stickerSetCovered.set.title, searchQuery);
                     if (idx >= 0) {
-                        cell.setStickerSet(stickerSetCovered, false, false, idx, searchQuery.length());
+                        cell.setStickerSet(stickerSetCovered, false, idx, searchQuery.length());
                     } else {
-                        cell.setStickerSet(stickerSetCovered, false);
+                        cell.setStickerSet(stickerSetCovered);
                         if (!TextUtils.isEmpty(searchQuery) && AndroidUtilities.indexOfIgnoreCase(stickerSetCovered.set.short_name, searchQuery) == 0) {
                             cell.setUrl(stickerSetCovered.set.short_name, searchQuery.length());
                         }

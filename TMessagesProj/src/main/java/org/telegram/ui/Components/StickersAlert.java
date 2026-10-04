@@ -2250,7 +2250,7 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
                     case 2:
                         TLRPC.StickerSetCovered stickerSetCovered = stickerSetCovereds.get((Integer) cache.get(position));
                         FeaturedStickerSetInfoCell cell2 = (FeaturedStickerSetInfoCell) holder.itemView;
-                        cell2.setStickerSet(stickerSetCovered, false);
+                        cell2.setStickerSet(stickerSetCovered);
                         break;
                 }
             } else if (importingStickers != null) {

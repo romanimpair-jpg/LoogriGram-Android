@@ -1506,7 +1506,6 @@
     <string name="ApkRestricted">APK installation is restricted for this app. You can enable this in system settings.</string>
     <string name="UnreadMessages">Unread Messages</string>
     <string name="SearchStickersHint">Search sticker sets</string>
-    <string name="SearchTrendingStickersHint">Search trending stickers</string>
     <string name="SearchEmojiHint">Search emoji</string>
     <string name="URL">URL</string>
     <string name="MapPreviewProvider">Map Preview Provider</string>
@@ -2048,7 +2047,6 @@
     <string name="RecentStickers">Recently Used</string>
     <string name="FavoriteStickers">Favorites</string>
     <string name="CurrentGroupStickers">Group Stickers</string>
-    <string name="OtherStickers">More Stickers</string>
     <string name="DeleteFromFavorites">Delete from Favorites</string>
     <string name="DeleteFromRecent">Delete from Recent</string>
     <string name="RemoveFromRecent">Remove from Recent</string>
@@ -2107,11 +2105,8 @@
     <string name="EmojiSuggestionsUrl">https://translations.telegram.org/%1$s/emoji</string>
     <string name="Masks">Masks</string>
     <string name="MasksInfo">You can add masks to photos you send. To do this, open the photo editor before sending a photo.</string>
-    <string name="FeaturedStickers">Trending Stickers</string>
-    <string name="FeaturedEmojiPacks">Trending Emoji Packs</string>
     <string name="FeaturedGifs">Trending GIFs</string>
     <string name="ShowMoreStickers">Show More Stickers</string>
-    <string name="ShowMoreEmojiPacks">Show More Emoji</string>
     <string name="StickersBotInfo">Artists are welcome to add their own sticker sets using our @stickers bot.</string>
     <string name="EmojiBotInfo">Artists are welcome to add their own emoji packs using our @stickers bot.</string>
     <string name="ArchivedStickers">Archived Stickers</string>
@@ -4844,8 +4839,6 @@
     <string name="AccDescrMoreOptions">More options</string>
     <string name="AccDescrSwitchToNightTheme">Switch to night theme</string>
     <string name="AccDescrSwitchToDayTheme">Switch to day theme</string>
-    <string name="AccDescrCloseTrendingStickers">Close Trending stickers</string>
-    <string name="AccDescrCloseTrendingEmoji">Close Trending emoji</string>
     <string name="AccDescrTagMessage">Edit Message Tag</string>
     <string name="AccActionPlay">Play</string>
     <string name="AccActionPause">Pause</string>

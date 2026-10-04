@@ -476,7 +476,6 @@ public class StickerMasksAlert extends BottomSheet implements NotificationCenter
 
         MediaDataController.getInstance(currentAccount).checkStickers(MediaDataController.TYPE_IMAGE);
         MediaDataController.getInstance(currentAccount).checkStickers(MediaDataController.TYPE_MASK);
-        MediaDataController.getInstance(currentAccount).checkFeaturedStickers();
         gridView = new RecyclerListView(context) {
 
             @Override
@@ -1760,23 +1759,6 @@ public class StickerMasksAlert extends BottomSheet implements NotificationCenter
                 }
                 ArrayList<TLRPC.TL_messages_stickerSet> local = MediaDataController.getInstance(currentAccount).getStickerSets(currentType);
                 int index;
-                for (int a = 0, size = local.size(); a < size; a++) {
-                    TLRPC.TL_messages_stickerSet set = local.get(a);
-                    if ((index = AndroidUtilities.indexOfIgnoreCase(set.set.title, searchQuery)) >= 0) {
-                        if (index == 0 || set.set.title.charAt(index - 1) == ' ') {
-                            clear();
-                            localPacks.add(set);
-                            localPacksByName.put(set, index);
-                        }
-                    } else if (set.set.short_name != null && (index = AndroidUtilities.indexOfIgnoreCase(set.set.short_name, searchQuery)) >= 0) {
-                        if (index == 0 || set.set.short_name.charAt(index - 1) == ' ') {
-                            clear();
-                            localPacks.add(set);
-                            localPacksByShortName.put(set, true);
-                        }
-                    }
-                }
-                local = MediaDataController.getInstance(currentAccount).getStickerSets(MediaDataController.TYPE_FEATURED);
                 for (int a = 0, size = local.size(); a < size; a++) {
                     TLRPC.TL_messages_stickerSet set = local.get(a);
                     if ((index = AndroidUtilities.indexOfIgnoreCase(set.set.title, searchQuery)) >= 0) {

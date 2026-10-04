@@ -1911,7 +1911,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 imageUpdater.setOpenWithFrontfaceCamera(true);
                 imageUpdater.parentFragment = this;
                 imageUpdater.setDelegate(this);
-                getMediaDataController().checkFeaturedStickers();
                 getMessagesController().loadSuggestedFilters();
                 getMessagesController().loadUserInfo(getUserConfig().getCurrentUser(), true, classGuid);
             }
@@ -12550,13 +12549,11 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     new SearchResult(318, getString(R.string.DistanceUnits), "distanceRow", getString(R.string.ChatSettings), R.drawable.msg2_discussion, () -> f.presentFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC))),
 
                     new SearchResult(600, getString(R.string.StickersName), R.drawable.msg2_sticker, () -> f.presentFragment(new StickersActivity(MediaDataController.TYPE_IMAGE, null))).withLink("tg://settings/appearance/stickers-and-emoji"),
-                    new SearchResult(602, getString(R.string.FeaturedStickers), "featuredStickersHeaderRow", getString(R.string.StickersName), R.drawable.msg2_sticker, () -> f.presentFragment(new StickersActivity(MediaDataController.TYPE_IMAGE, null))),
                     new SearchResult(603, getString(R.string.Masks), null, getString(R.string.StickersName), R.drawable.msg2_sticker, () -> f.presentFragment(new StickersActivity(MediaDataController.TYPE_MASK, null))),
                     new SearchResult(604, getString(R.string.ArchivedStickers), null, getString(R.string.StickersName), R.drawable.msg2_sticker, () -> f.presentFragment(new ArchivedStickersActivity(MediaDataController.TYPE_IMAGE))).withLink("tg://settings/appearance/stickers-and-emoji/archived"),
                     new SearchResult(605, getString(R.string.ArchivedMasks), null, getString(R.string.StickersName), R.drawable.msg2_sticker, () -> f.presentFragment(new ArchivedStickersActivity(MediaDataController.TYPE_MASK))),
                     new SearchResult(607, getString(R.string.LoopAnimatedStickers), "loopRow", getString(R.string.StickersName), R.drawable.msg2_sticker, () -> f.presentFragment(new StickersActivity(MediaDataController.TYPE_IMAGE, null))),
                     new SearchResult(608, getString(R.string.Emoji), null, getString(R.string.StickersName), R.drawable.input_smile, () -> f.presentFragment(new StickersActivity(MediaDataController.TYPE_EMOJIPACKS, null))).withLink("tg://settings/appearance/stickers-and-emoji/emoji"),
-                    new SearchResult(610, getString(R.string.FeaturedEmojiPacks), "featuredStickersHeaderRow", getString(R.string.StickersName), getString(R.string.Emoji), R.drawable.input_smile, () -> f.presentFragment(new StickersActivity(MediaDataController.TYPE_EMOJIPACKS, null))),
                     new SearchResult(611, getString(R.string.DoubleTapSetting), null, getString(R.string.StickersName), R.drawable.msg2_sticker, () -> f.presentFragment(new ReactionsDoubleTapManageActivity())).withLink("tg://settings/appearance/stickers-and-emoji/emoji/quick-reaction"),
 
                     new SearchResult(700, getString(R.string.Filters), null, R.drawable.msg2_folder, () -> f.presentFragment(new FiltersSetupActivity())).withLink("tg://settings/folders"),

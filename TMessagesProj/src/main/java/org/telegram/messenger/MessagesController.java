@@ -500,7 +500,6 @@ public class MessagesController extends BaseController implements NotificationCe
     public int roundVideoBitrate;
     public int roundAudioBitrate;
     public boolean blockedCountry;
-    public boolean preloadFeaturedStickers;
     public String youtubePipType;
     public boolean keepAliveService;
     public boolean backgroundConnection;
@@ -1408,7 +1407,6 @@ public class MessagesController extends BaseController implements NotificationCe
         revokeTimeLimit = mainPreferences.getInt("revokeTimeLimit", 2147483647);
         revokeTimePmLimit = mainPreferences.getInt("revokeTimePmLimit", 2147483647);
         canRevokePmInbox = mainPreferences.getBoolean("canRevokePmInbox", canRevokePmInbox);
-        preloadFeaturedStickers = mainPreferences.getBoolean("preloadFeaturedStickers", false);
         youtubePipType = mainPreferences.getString("youtubePipType", "disabled");
         keepAliveService = mainPreferences.getBoolean("keepAliveService", false);
         backgroundConnection = mainPreferences.getBoolean("backgroundConnection", false);
@@ -4129,7 +4127,6 @@ public class MessagesController extends BaseController implements NotificationCe
 //            maxFolderPinnedDialogsCount = config.pinned_infolder_count_max;
             maxMessageLength = config.message_length_max;
             maxCaptionLength = config.caption_length_max;
-            preloadFeaturedStickers = config.preload_featured_stickers;
             if (config.gif_search_username != null) {
                 gifSearchBot = config.gif_search_username;
             }
@@ -4210,7 +4207,6 @@ public class MessagesController extends BaseController implements NotificationCe
             editor.putInt("maxFolderPinnedDialogsCountDefault", maxFolderPinnedDialogsCountDefault);
             editor.putInt("maxMessageLength", maxMessageLength);
             editor.putInt("maxCaptionLength", maxCaptionLength);
-            editor.putBoolean("preloadFeaturedStickers", preloadFeaturedStickers);
             editor.putInt("revokeTimeLimit", revokeTimeLimit);
             editor.putInt("revokeTimePmLimit", revokeTimePmLimit);
             editor.putInt("mapProvider", mapProvider);
@@ -18451,10 +18447,9 @@ public class MessagesController extends BaseController implements NotificationCe
                             DialogObject.getPeerDialogId(update.saved_peer_id): update.top_msg_id;
 
                         getMediaDataController().saveDraft(did, threadId, update.draft, null, true);
-                    } else if (baseUpdate instanceof TL_update.TL_updateReadFeaturedStickers) {
-                        getMediaDataController().markFeaturedStickersAsRead(false, false);
-                    } else if (baseUpdate instanceof TL_update.TL_updateReadFeaturedEmojiStickers) {
-                        getMediaDataController().markFeaturedStickersAsRead(true, false);
+                    // LoogriGram: updateReadFeaturedStickers and its emoji twin marked
+                    // the trending packs read; trending packs are gone, so they are
+                    // left unhandled, as on desktop.
                     } else if (baseUpdate instanceof TL_update.TL_updateMoveStickerSetToTop) {
                         TL_update.TL_updateMoveStickerSetToTop update = (TL_update.TL_updateMoveStickerSetToTop) baseUpdate;
                         getMediaDataController().moveStickerSetToTop(update.stickerset, update.emojis, update.masks);

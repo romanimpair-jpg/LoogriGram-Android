@@ -62,7 +62,6 @@ import org.telegram.messenger.ImageReceiver;
 import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaDataController;
-import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
 import org.telegram.messenger.NotificationCenter;
@@ -110,7 +109,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 
 public class EmojiBottomSheet extends BottomSheet implements NotificationCenter.NotificationCenterDelegate {
 
@@ -853,7 +851,6 @@ public class EmojiBottomSheet extends BottomSheet implements NotificationCenter.
 
             private int lastAllSetsCount;
             private final HashMap<String, ArrayList<Long>> allEmojis = new HashMap<>();
-            private final HashMap<Long, ArrayList<TLRPC.TL_stickerPack>> packsBySet = new HashMap<>();
             private final HashMap<Long, Object> setByDocumentId = new HashMap<>();
 
             private final ArrayList<TLRPC.TL_messages_stickerSet> allStickerSets = new ArrayList<>();
@@ -965,7 +962,6 @@ public class EmojiBottomSheet extends BottomSheet implements NotificationCenter.
                     pack.documents = set.documents;
                     pack.set = set.set;
                     pack.installed = true;
-                    pack.featured = false;
                     pack.expanded = true;
                     pack.free = true;
                     if (set == faveSet) {
@@ -978,95 +974,8 @@ public class EmojiBottomSheet extends BottomSheet implements NotificationCenter.
                     allStickerSets.add(set);
                 }
                 if (currentType == PAGE_TYPE_EMOJI) {
-                    ArrayList<TLRPC.StickerSetCovered> featuredSets = mediaDataController.getFeaturedEmojiSets();
-                    if (featuredSets != null) {
-                        for (int j = 0; j < featuredSets.size(); ++j) {
-                            TLRPC.StickerSetCovered setCovered = featuredSets.get(j);
-                            TLRPC.TL_messages_stickerSet set;
-                            if (setCovered instanceof TLRPC.TL_stickerSetNoCovered) {
-                                set = MediaDataController.getInstance(currentAccount).getStickerSet(MediaDataController.getInputStickerSet(setCovered.set), false);
-                                if (set == null) {
-                                    continue;
-                                }
-                            } else if (setCovered instanceof TLRPC.TL_stickerSetFullCovered) {
-                                set = new TLRPC.TL_messages_stickerSet();
-                                set.set = setCovered.set;
-                                set.documents = ((TLRPC.TL_stickerSetFullCovered) setCovered).documents;
-                                set.packs = packsBySet.get(set.set.id);
-                                if (set.packs == null) {
-                                    HashMap<String, ArrayList<Long>> packs = new HashMap<>();
-                                    for (int a = 0; a < set.documents.size(); ++a) {
-                                        TLRPC.Document document = set.documents.get(a);
-                                        if (document == null) {
-                                            continue;
-                                        }
-                                        String emoticon = MessageObject.findAnimatedEmojiEmoticon(document, null);
-                                        ArrayList<Emoji.EmojiSpanRange> emojis = Emoji.parseEmojis(emoticon);
-                                        if (emojis != null) {
-                                            for (int e = 0; e < emojis.size(); ++e) {
-                                                String emoji = emojis.get(e).code.toString();
-                                                ArrayList<Long> list = packs.get(emoji);
-                                                if (list == null) {
-                                                    packs.put(emoji, list = new ArrayList<>());
-                                                }
-                                                list.add(document.id);
-                                            }
-                                        }
-                                    }
-                                    set.packs = new ArrayList<>();
-                                    for (Map.Entry<String, ArrayList<Long>> e : packs.entrySet()) {
-                                        TLRPC.TL_stickerPack pack = new TLRPC.TL_stickerPack();
-                                        pack.emoticon = e.getKey();
-                                        pack.documents = e.getValue();
-                                        set.packs.add(pack);
-                                    }
-                                    packsBySet.put(set.set.id, set.packs);
-                                }
-                            } else {
-                                continue;
-                            }
-
-                            boolean found = false;
-                            if (set == null || set.set == null) {
-                                continue;
-                            }
-                            for (int a = 0; a < packs.size(); ++a) {
-                                TLRPC.StickerSet set2 = packs.get(a).set;
-                                if (set2 != null && set2.id == set.set.id) {
-                                    found = true;
-                                    break;
-                                }
-                            }
-                            if (found) {
-                                continue;
-                            }
-
-                            stickerSets.add(set);
-                            allStickerSets.add(set);
-
-                            // header
-                            positionToSection.put(itemsCount, i);
-                            i++;
-                            documents.add(null);
-                            itemsCount++;
-
-                            // emoji/stickers
-                            documents.addAll(set.documents);
-                            itemsCount += set.documents.size();
-                            for (int k = 0; k < set.documents.size(); ++k) {
-                                setByDocumentId.put(set.documents.get(k).id, set);
-                            }
-
-                            EmojiView.EmojiPack pack = new EmojiView.EmojiPack();
-                            pack.documents = set.documents;
-                            pack.set = set.set;
-                            pack.installed = false;
-                            pack.featured = true;
-                            pack.expanded = true;
-                            pack.free = true;
-                            packs.add(pack);
-                        }
-                    }
+                    // LoogriGram: Telegram's trending emoji packs were listed here,
+                    // after the installed ones; they are not fetched (as on desktop).
                     boolean containsStaticEmoji = false;
                     for (int a = 0; a < allStickerSets.size(); ++a) {
                         try {
@@ -1228,34 +1137,6 @@ public class EmojiBottomSheet extends BottomSheet implements NotificationCenter.
                                 if (d != null && !documents.contains(d)) {
                                     documents.add(d);
                                     itemsCount++;
-                                }
-                            }
-                        }
-                        final ArrayList<TLRPC.StickerSetCovered> featuredStickers = mediaDataController.getFeaturedStickerSets();
-                        for (int i = 0; i < result.size(); ++i) {
-                            MediaDataController.KeywordResult r = result.get(i);
-                            if (r.emoji == null || r.emoji.startsWith("animated_")) {
-                                continue;
-                            }
-                            for (int j = 0; j < featuredStickers.size(); ++j) {
-                                TLRPC.StickerSetCovered set = featuredStickers.get(j);
-                                ArrayList<TLRPC.Document> documents = null;
-                                if (set instanceof TLRPC.TL_stickerSetFullCovered) {
-                                    documents = ((TLRPC.TL_stickerSetFullCovered) set).documents;
-                                } else if (!set.covers.isEmpty()) {
-                                    documents = set.covers;
-                                } else if (set.cover != null) {
-                                    documents = new ArrayList<>();
-                                    documents.add(set.cover);
-                                } else {
-                                    continue;
-                                }
-                                for (int d = 0; d < documents.size(); ++d) {
-                                    String emoji = MessageObject.findAnimatedEmojiEmoticon(documents.get(d), null);
-                                    if (emoji != null && emoji.contains(r.emoji)) {
-                                        this.documents.add(documents.get(d));
-                                        itemsCount++;
-                                    }
                                 }
                             }
                         }
@@ -1525,7 +1406,6 @@ public class EmojiBottomSheet extends BottomSheet implements NotificationCenter.
 
         if (!onlyStickers) {
             MediaDataController.getInstance(currentAccount).checkStickers(MediaDataController.TYPE_EMOJIPACKS);
-            MediaDataController.getInstance(currentAccount).checkFeaturedEmoji();
             MediaDataController.getInstance(currentAccount).loadRecents(MediaDataController.TYPE_IMAGE, true, true, false);
         }
 

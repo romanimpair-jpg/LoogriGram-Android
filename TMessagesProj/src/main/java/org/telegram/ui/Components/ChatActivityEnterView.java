@@ -344,10 +344,6 @@ public class ChatActivityEnterView extends FrameLayout implements
 
         }
 
-        default void onTrendingStickersShowed(boolean show) {
-
-        }
-
         default boolean hasForwardingMessages() {
             return false;
         }
@@ -580,7 +576,6 @@ public class ChatActivityEnterView extends FrameLayout implements
     private RecordCircle recordCircle;
     public ControlsView controlsView;
     private CloseProgressDrawable2 progressDrawable;
-    private Paint dotPaint;
     private int searchingType;
     private Runnable focusRunnable;
     protected int animatedTop;
@@ -657,7 +652,6 @@ public class ChatActivityEnterView extends FrameLayout implements
     private TLRPC.WebPage messageWebPage;
     private boolean messageWebPageSearch = true;
     private ChatActivityEnterViewDelegate delegate;
-    private TrendingStickersAlert trendingStickersAlert;
 
     private TLRPC.TL_document audioToSend;
     private String audioToSendPath;
@@ -2478,8 +2472,6 @@ public class ChatActivityEnterView extends FrameLayout implements
         this.isChat = isChat;
 
         smoothKeyboard = isChat && !AndroidUtilities.isInMultiwindow && (fragment == null || !fragment.isInBubbleMode());
-        dotPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        dotPaint.setColor(getThemedColor(Theme.key_chat_emojiPanelNewTrending));
         setFocusable(true);
         setFocusableInTouchMode(true);
         setWillNotDraw(false);
@@ -2495,7 +2487,6 @@ public class ChatActivityEnterView extends FrameLayout implements
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.audioDidSent);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.audioRouteChanged);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.messagePlayingProgressDidChanged);
-        NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.featuredStickersDidLoad);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.messageReceivedByServer2);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.sendingMessagesChanged);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.audioRecordTooShort);
@@ -2570,18 +2561,9 @@ public class ChatActivityEnterView extends FrameLayout implements
         frameLayout.setClipChildren(false);
         textFieldContainer.addView(frameLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM, 0, 0, DEFAULT_HEIGHT, 0));
 
-        emojiButton = new ChatActivityEnterViewAnimatedIconView(context) {
-            @Override
-            protected void onDraw(Canvas canvas) {
-                super.onDraw(canvas);
-                if (getTag() != null && attachLayout != null && !emojiViewVisible && !MediaDataController.getInstance(currentAccount).getUnreadStickerSets().isEmpty() && dotPaint != null) {
-                    int x = getWidth() / 2 + dp(4 + 5);
-                    int y = getHeight() / 2 - dp(13 - 5);
-                    canvas.drawCircle(x, y, dp(5), dotPaint);
-
-                }
-            }
-        };
+        // LoogriGram: the button drew a dot while Telegram had trending sticker
+        // packs not yet seen; trending packs are not fetched.
+        emojiButton = new ChatActivityEnterViewAnimatedIconView(context);
         emojiButton.setContentDescription(getString(R.string.AccDescrEmojiButton));
         emojiButton.setFocusable(true);
         int padding = dp(7.5f);
@@ -5879,7 +5861,6 @@ public class ChatActivityEnterView extends FrameLayout implements
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.audioDidSent);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.audioRouteChanged);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.messagePlayingProgressDidChanged);
-        NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.featuredStickersDidLoad);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.messageReceivedByServer2);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.sendingMessagesChanged);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.audioRecordTooShort);
@@ -6049,7 +6030,6 @@ public class ChatActivityEnterView extends FrameLayout implements
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.audioDidSent);
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.audioRouteChanged);
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.messagePlayingProgressDidChanged);
-            NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.featuredStickersDidLoad);
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.messageReceivedByServer2);
             NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.sendingMessagesChanged);
             currentAccount = account;
@@ -6064,7 +6044,6 @@ public class ChatActivityEnterView extends FrameLayout implements
             NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.audioDidSent);
             NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.audioRouteChanged);
             NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.messagePlayingProgressDidChanged);
-            NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.featuredStickersDidLoad);
             NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.messageReceivedByServer2);
             NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.sendingMessagesChanged);
         }
@@ -6821,45 +6800,6 @@ public class ChatActivityEnterView extends FrameLayout implements
                 }
             }
         }
-        if (emoji == null) {
-            ArrayList<TLRPC.StickerSetCovered> sets2 = MediaDataController.getInstance(currentAccount).getFeaturedEmojiSets();
-            for (TLRPC.StickerSetCovered set : sets2) {
-                if (set != null && set.covers != null && !set.covers.isEmpty()) {
-                    for (TLRPC.Document document : set.covers) {
-                        if (document.id == documentId) {
-                            emoji = document;
-                            break;
-                        }
-                    }
-                }
-                if (emoji != null) {
-                    break;
-                }
-                ArrayList<TLRPC.Document> documents = null;
-                if (set instanceof TLRPC.TL_stickerSetFullCovered) {
-                    documents = ((TLRPC.TL_stickerSetFullCovered) set).documents;
-                } else if (set instanceof TLRPC.TL_stickerSetNoCovered && set.set != null) {
-                    TLRPC.TL_inputStickerSetID inputStickerSetID = new TLRPC.TL_inputStickerSetID();
-                    inputStickerSetID.id = set.set.id;
-                    TLRPC.TL_messages_stickerSet fullSet = MediaDataController.getInstance(currentAccount).getStickerSet(inputStickerSetID, true);
-                    if (fullSet != null && fullSet.documents != null) {
-                        documents = fullSet.documents;
-                    }
-                }
-                if (documents != null && !documents.isEmpty()) {
-                    for (TLRPC.Document document : documents) {
-                        if (document.id == documentId) {
-                            emoji = document;
-                            break;
-                        }
-                    }
-                }
-                if (emoji != null) {
-                    break;
-                }
-            }
-        }
-
         if (emoji != null) {
             TLRPC.ChatFull chatFull = MessagesController.getInstance(currentAccount).getChatFull(-dialogId);
             if (chatFull != null && chatFull.emojiset != null) {
@@ -9511,10 +9451,6 @@ public class ChatActivityEnterView extends FrameLayout implements
         return emojiView;
     }
 
-    public TrendingStickersAlert getTrendingStickersAlert() {
-        return trendingStickersAlert;
-    }
-
     @Override
     public void updateColors() {
         if (messageSendPreview != null) {
@@ -10649,10 +10585,6 @@ public class ChatActivityEnterView extends FrameLayout implements
 
             @Override
             public void onStickerSelected(View view, TLRPC.Document sticker, String query, Object parent, MessageObject.SendAnimationData sendAnimationData, boolean notify, int scheduleDate, int scheduleRepeatPeriod) {
-                if (trendingStickersAlert != null) {
-                    trendingStickersAlert.dismiss();
-                    trendingStickersAlert = null;
-                }
                 if (slowModeTimer > 0 && !isInScheduleMode()) {
                     if (delegate != null) {
                         delegate.onUpdateSlowModeButton(view != null ? view : slowModeButton, true, slowModeButton.getText());
@@ -11068,10 +11000,6 @@ public class ChatActivityEnterView extends FrameLayout implements
 
             @Override
             public void onShowStickerSet(TLRPC.StickerSet stickerSet, TLRPC.InputStickerSet inputStickerSet, boolean edit) {
-                if (trendingStickersAlert != null && !trendingStickersAlert.isDismissed()) {
-                    trendingStickersAlert.getLayout().showStickerSet(stickerSet, inputStickerSet);
-                    return;
-                }
                 BaseFragment fragment = parentFragment;
                 if (fragment == null) {
                     fragment = getLastFragment();
@@ -11152,32 +11080,6 @@ public class ChatActivityEnterView extends FrameLayout implements
             @Override
             public int getThreadId() {
                 return getThreadMessageId();
-            }
-
-            @Override
-            public void showTrendingStickersAlert(TrendingStickersLayout layout) {
-                BaseFragment fragment = parentFragment;
-                if (fragment == null) {
-                    fragment = getLastFragment();
-                }
-                if (fragment != null) {
-                    trendingStickersAlert = new TrendingStickersAlert(getContext(), fragment, layout, resourcesProvider) {
-                        @Override
-                        public void dismiss() {
-                            super.dismiss();
-                            if (trendingStickersAlert == this) {
-                                trendingStickersAlert = null;
-                            }
-                            if (ChatActivityEnterView.this.delegate != null) {
-                                ChatActivityEnterView.this.delegate.onTrendingStickersShowed(false);
-                            }
-                        }
-                    };
-                    if (ChatActivityEnterView.this.delegate != null) {
-                        ChatActivityEnterView.this.delegate.onTrendingStickersShowed(true);
-                    }
-                    fragment.showDialog(trendingStickersAlert);
-                }
             }
 
             @Override
@@ -12230,10 +12132,6 @@ public class ChatActivityEnterView extends FrameLayout implements
 //                if (!recordedAudioSeekBar.isDragging()) {
 //                    recordedAudioSeekBar.setProgress(audioToSendMessageObject.audioProgress);
 //                }
-            }
-        } else if (id == NotificationCenter.featuredStickersDidLoad) {
-            if (emojiButton != null) {
-                emojiButton.invalidate();
             }
         } else if (id == NotificationCenter.messageReceivedByServer2) {
             Boolean scheduled = (Boolean) args[6];

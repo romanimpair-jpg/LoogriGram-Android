@@ -2373,16 +2373,6 @@ public class ChatActivity extends BaseFragment implements
         }
 
         @Override
-        public void onTrendingStickersShowed(boolean show) {
-            if (show) {
-                AndroidUtilities.setAdjustResizeToNothing(getParentActivity(), classGuid);
-                fragmentView.requestLayout();
-            } else {
-                AndroidUtilities.requestAdjustResize(getParentActivity(), classGuid);
-            }
-        }
-
-        @Override
         public boolean hasForwardingMessages() {
             return messagePreviewParams != null && messagePreviewParams.forwardMessages != null && !messagePreviewParams.forwardMessages.messages.isEmpty();
         }
@@ -15694,9 +15684,6 @@ public class ChatActivity extends BaseFragment implements
                     if ((ChatActivity.this == actionBarLayout.getLastFragment() && actionBarLayout.isTransitionAnimationInProgress()) || actionBarLayout.isPreviewOpenAnimationInProgress() || isPaused || !openAnimationEnded || (chatAttachAlert != null && chatAttachAlert.isShowing())) {
                         return false;
                     }
-                    if (chatActivityEnterView != null && chatActivityEnterView.getTrendingStickersAlert() != null && chatActivityEnterView.getTrendingStickersAlert().isShowing()) {
-                        return false;
-                    }
                     return true;
                 }
 
@@ -27685,44 +27672,6 @@ public class ChatActivity extends BaseFragment implements
                             }
                         }
                     }
-                    if (emoji == null) {
-                        ArrayList<TLRPC.StickerSetCovered> sets2 = MediaDataController.getInstance(currentAccount).getFeaturedEmojiSets();
-                        for (TLRPC.StickerSetCovered set : sets2) {
-                            if (set != null && set.covers != null && !set.covers.isEmpty()) {
-                                for (TLRPC.Document document : set.covers) {
-                                    if (document.id == documentId) {
-                                        emoji = document;
-                                        break;
-                                    }
-                                }
-                            }
-                            if (emoji != null) {
-                                break;
-                            }
-                            ArrayList<TLRPC.Document> documents = null;
-                            if (set instanceof TLRPC.TL_stickerSetFullCovered) {
-                                documents = ((TLRPC.TL_stickerSetFullCovered) set).documents;
-                            } else if (set instanceof TLRPC.TL_stickerSetNoCovered && set.set != null) {
-                                TLRPC.TL_inputStickerSetID inputStickerSetID = new TLRPC.TL_inputStickerSetID();
-                                inputStickerSetID.id = set.set.id;
-                                TLRPC.TL_messages_stickerSet fullSet = MediaDataController.getInstance(currentAccount).getStickerSet(inputStickerSetID, true);
-                                if (fullSet != null && fullSet.documents != null) {
-                                    documents = fullSet.documents;
-                                }
-                            }
-                            if (documents != null && !documents.isEmpty()) {
-                                for (TLRPC.Document document : documents) {
-                                    if (document.id == documentId) {
-                                        emoji = document;
-                                        break;
-                                    }
-                                }
-                            }
-                            if (emoji != null) {
-                                break;
-                            }
-                        }
-                    }
                     if (emoji != null) {
                         TLRPC.ChatFull chatFull = MessagesController.getInstance(currentAccount).getChatFull(-dialog_id);
                         if (chatFull != null && chatFull.emojiset != null) {
@@ -38882,10 +38831,6 @@ public class ChatActivity extends BaseFragment implements
         themeDescriptions.add(new ThemeDescription(chatActivityEnterView != null ? chatActivityEnterView.getEmojiView() : null, 0, new Class[]{EmojiView.class}, null, null, null, selectedBackgroundDelegate, Theme.key_chat_emojiPanelStickerPackSelectorLine));
 
         if (chatActivityEnterView != null) {
-            final TrendingStickersAlert trendingStickersAlert = chatActivityEnterView.getTrendingStickersAlert();
-            if (trendingStickersAlert != null) {
-                themeDescriptions.addAll(trendingStickersAlert.getThemeDescriptions());
-            }
             themeDescriptions.add(new ThemeDescription(null, 0, null, null, null, new Drawable[]{chatActivityEnterView.getStickersArrowDrawable()}, null, Theme.key_glass_defaultIcon));
         }
 
