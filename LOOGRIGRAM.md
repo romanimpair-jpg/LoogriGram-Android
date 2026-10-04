@@ -40,7 +40,7 @@ index and `commit-tree`, then push it to `dev`.
 |---|---|
 | Fork, CI, degoogling | Done. No Google bytecode in the APK, verified in the dex. The last Google-shaped code went on 2026-09-23/24: the Play install referrer and the four Chromecast stubs |
 | Latest release | `g55475fe4` (full build run 37110897841, green, 2026-10-03): everything through the desktop-parity pass, the icon, iTunes and Help. Before it: `g83c5583d` (36907722985, 2026-10-01), `g20294896`, `gb81ce49d`, `gf2478ebb` (which superseded the crashing `g1ec92ae0`, trap 0e) - a buggy Latest is superseded by the next build, never deleted, the user's rule |
-| Pending build | None on Android: `55475fe4` is Latest; only CI and notes commits follow it. **Desktop** has one in flight - see "Start here" |
+| Pending build | None dispatched since the user's "no builds yet" (2026-10-04). `55475fe4` is Latest; `patches` adds the trending, setup-hint, branding and big-animation removals, compile-checked through `4f7e40ea` (run 37241814791, green). **Desktop** has nothing built since `dd0ea5658d` - see its notes |
 | Premium pass | **Done** (2026-10-01). The Premium screens are deleted (`51d67433`), `UserConfig.isPremium()` is gone and every caller takes the non-Premium path, others' Premium changes nothing drawn (`b90da4f6`), limits are the free ones. The user's two exceptions stand: the Premium-users-only notice's wording, dimmed folders past the cap |
 | App name and icon | Done - launcher, in-app strings (56 more in `5bd6a07d`, 2 more in `a4a47c59` after a full re-sweep with desktop's `4a57609593`), the two wordmark screens, and the launcher icon: desktop's mark, one icon only (`037d897a`, built by `branding/make_android_icons.py`) |
 | Phone contacts | **Never touched.** Permissions, account and sync adapter all gone |
@@ -60,6 +60,7 @@ index and `commit-tree`, then push it to `dev`.
 | Location | **Gone** (2026-09-22): the map screens are deleted, every received location opens in a maps app, and the weather sticker went with them |
 | Trending stickers/emoji | **Gone** (2026-10-04, `3c8b32c7` + `ad39e7b0`; desktop `8359383304`): never fetched, cached, shown or marked read. No Trending tab or Settings row, no trending packs in the sticker, emoji, reaction/status or avatar pickers, no unread dot; the "+N" expand row and the pack header's Add/Remove buttons went with them, since only trending packs used them. `TYPE_FEATURED`/`TYPE_FEATURED_EMOJIPACKS` numbers stay unused; the `stickers_featured` table stays in the schema, unread. Installed packs, sticker search, packs from links and trending GIFs are untouched |
 | Setup hints | **Gone** (2026-10-04, `a0e53171`; desktop `c9c0265100`): "Add your birthday" (`BIRTHDAY_SETUP`) and "Add your photo" (`USERPIC_SETUP`) over the chat list, with what only they used - DialogsActivity's own photo upload (`openSetAvatar`), DialogsHintCell's image slot, and PrivacyControlActivity's dismissal of the birthday suggestion. Birthday and photo are still set from the profile; "X suggests you add your birthday" messages were already held |
+| Big animations | **Gone** (2026-10-04/05, the user's decision; desktop `3042504db8`, `101b007820`, `7df5d4c973`, `e50995c977`, `cbdf5aac89`, `6d1b3e4547`): the reaction burst (ReactionsEffectOverlay, AnimatedEmojiEffect, AnimatedStatusView, `988742b1`); message effects, neither offered, sent, played nor shown (`1056c5c4`, `a36fbf36`); EmojiAnimationsOverlay with the Premium sticker effect over the chat (a tap opens the set; the long-press preview keeps its effect) and emoji interactions, whose incoming updates are skipped rather than shown as typing; the mirroring of incoming Premium stickers, which only aimed that effect (`4f7e40ea`); and the birthday balloons on the profile and in the chat. Desktop's reaction preview beside the who-reacted menu had no Android counterpart |
 | Photo/video viewer | **Fixed** 2026-09-20; was our own null dereference, see the traps |
 | Build warnings | **None of ours are left.** Native, CMake, Gradle, Kotlin and CI fixed in `d6b0890c`/`f2f12360`; both AAPT sets fixed 2026-09-22 (`663ec903`, `77673c28`). What remains is javac's two notes, which are upstream's and third-party's — see "The javac notes are not ours" |
 | Ghost mode | Done: on by default, see Architecture |
@@ -85,85 +86,7 @@ The release APK: ~44.5 MB, `lib/arm64-v8a/libtmessages.49.so` only, signed
 fingerprint is how to confirm a later build carries the same key - and it must,
 because Android will refuse an update signed with any other.
 
-### Start here next session (written 2026-10-04, handoff)
-
-**The head of `patches` (`1056c5c4`) does not compile.** It is part 1 of
-the message-effects removal, frozen mid-change at the user's request. The
-last compiling commit is `988742b1` (the reaction burst, compile run
-37207966399 green). No build of either client has been dispatched since
-the user said "no builds yet"; Android's Latest is still `g55475fe4`.
-
-The decision (2026-10-04, the user's, both clients): every "big animated
-view" goes - the reaction preview (desktop-only, done in `3042504db8`),
-the reaction burst (Android done in `988742b1`), **message effects**
-(neither offered when sending nor played when received), **Premium sticker
-effects** and **emoji interactions** (both play through Android's
-EmojiAnimationsOverlay, so they go with it), and the **birthday balloons**
-(profile, and on Android also the chat). Delete, don't guard: the effect
-plumbing goes too.
-
-1. **Finish Android part 2**, then compile (free) until green, then commit:
-   - Delete `EmojiAnimationsOverlay.java` and its uses: ChatActivity's
-     field, `cancelAllAnimations`, `onScrolled`, constructor (~8187),
-     attach/detach, `draw`, the visible-message playback (~14574), the
-     `forcePlayEffect` setter (~23541), the `didPressEffect` override
-     (~35389), and the Premium-sticker tap branch (~37464) - without it a
-     Premium sticker taps through to its sticker set like any other.
-   - MessageSendPreview: the effect picker (fields, the effect badge in
-     `cameraRect`, `effectsView` and its overlay, `onBackPressed`'s
-     selector branch, `allowEffectSelector` through `hideEffectSelector`,
-     `layout()`'s selector block, `show()`'s `bringToFront`,
-     `afterDismiss`'s observer, `animateOpenTo`'s hide and alpha lines,
-     `didReceivedNotification` and the `implements`). **Keep Back closing
-     the keyboard first:** the KeyboardNotifier that set `keyboardVisible`
-     lived in `allowEffectSelector`; move it into `makeFocusable()`.
-   - ChatActivityEnterView: the `effectId` field, `setEffectId` /
-     `getEffectId`, every `sendButton.setEffect(effectId = 0)`, every
-     `params.effect_id = effectId`, the `onEffectChange` override (~4436),
-     the `allowEffectSelector` block (~4559), and SendButton's badge
-     (`setEffect`, `setEmoji`, `emojiDrawable`, its drawing ~13795 and the
-     copy ~13888).
-   - ChatAttachAlert: the `effectId` field, the `onEffectChange` override,
-     the `getSelectedEffect()` locals with `writeButton.setEffect`, the
-     `allowEffectSelector` block, `writeButton.setEffect(effectId = 0)`.
-   - ChatActivity: the draft's `setEffectId` (~27788, ~27792), sendContact /
-     sendContacts' `params.effect_id` and `effectId = 0` lines (~32125-
-     32153), the `availableEffectsUpdate` observer (~2711) and handler
-     (~22648), the `msg.effect` / `premiumEffectWasPlayed` copies (~35275,
-     ~35304).
-   - ChatMessageCell: the effect icon by the time - fields (~971),
-     `checkEffectMotionEvent` and its call (~4736), the effectId checks
-     (~6443, ~10988, ~12541, ~17012-17032, ~21944), `hasOutboundsContent`'s
-     effect test, the drawing (~21816), `getEffect()` (~27037) and the
-     delegate's `didPressEffect`. The send preview's time background
-     (~21931) multiplied its alpha by the effect icon's presence - with no
-     icon that is 0; keep it 0.
-   - The picker modes: ReactionsContainerLayout `TYPE_MESSAGE_EFFECTS`
-     (~15 sites), CustomEmojiReactionsWindow (~15) and SelectAnimatedEmoji
-     Dialog `TYPE_EFFECTS` (~33, including the effect-stickers section,
-     `setEmojicon` with ImageViewEmoji's emoji badge, `getEffectDocument`).
-     Each `type == ..._EFFECTS` is false and is simplified site by site.
-   - Birthday: delete `ProfileBirthdayEffect.java`; ProfileActivity's
-     `birthdayFetcher` / `createdBirthdayFetcher` / `birthdayEffect`, its
-     detach (~2160), the birthday row's replay (~3934),
-     `createBirthdayEffect` and its calls, `setUserInfo`'s third parameter
-     (and ChatAvatarContainer ~563); ChatActivity's `birthdayAssetsFetcher`
-     (~911, ~3218, ~22181).
-   - Then `all_checks.py` and `drop_strings.py` for what it frees
-     (IsEnjoyngAnimations, EnjoyngAnimations, the effect picker's strings).
-     Part 1's script is `android-edit-tools/effects_core.py`; the burst's
-     are `reaction_burst*.py`.
-2. **Then desktop, owed for parity** (nothing done there yet beyond the
-   preview): `Ui::ReactionFlyAnimation` and its users (the burst), message
-   effects (`menu/menu_send.cpp`'s effect selector, `Api::SendOptions`'
-   `effectId`, the effect icon in `history_view_bottom_info`, the catalogue
-   in `data_message_reactions`), `HistoryView::EmojiInteractions` and
-   `ChatHelpers::EmojiInteractions` (interactions, Premium sticker effects
-   in `history_view_sticker`, message effects), and the birthday effect
-   (`info_profile_birthday_effect.*`, `TopBar::setupBirthdayEffect`). No
-   compiler: ask before the full build that tests it.
-3. **Then both READMEs** (on `patches` and `dev`): reactions and effects
-   play no big animation, no effects are offered when sending.
+### Open questions and working method
 
 Unanswered questions for the user: which "warnings on our side" were meant
 (none of ours were in desktop build 37158363951 - the only candidates are
