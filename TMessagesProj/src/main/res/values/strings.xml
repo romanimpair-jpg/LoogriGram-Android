@@ -2015,7 +2015,6 @@
     <string name="LoopAnimatedStickers">Loop Animated Stickers</string>
     <string name="LoopAnimatedStickersInfo">Animated stickers will play in chat continuously.</string>
     <string name="AddStickers">Add Stickers</string>
-    <string name="AddStickersCount">Add %1$s</string>
     <string name="AddManyStickersCount_one">Add sticker</string>
     <string name="AddManyStickersCount_other">Add %1$d stickers</string>
     <string name="RemoveManyStickersCount_one">Remove sticker</string>

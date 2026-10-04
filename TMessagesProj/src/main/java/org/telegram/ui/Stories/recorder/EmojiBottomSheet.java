@@ -962,7 +962,6 @@ public class EmojiBottomSheet extends BottomSheet implements NotificationCenter.
                     pack.documents = set.documents;
                     pack.set = set.set;
                     pack.installed = true;
-                    pack.expanded = true;
                     pack.free = true;
                     if (set == faveSet) {
                         pack.resId = R.drawable.emoji_tabs_faves;
