@@ -85,66 +85,91 @@ The release APK: ~44.5 MB, `lib/arm64-v8a/libtmessages.49.so` only, signed
 fingerprint is how to confirm a later build carries the same key - and it must,
 because Android will refuse an update signed with any other.
 
-### Start here next session (written 2026-10-03, handoff)
+### Start here next session (written 2026-10-04, handoff)
 
-1. **Ask how the desktop full build `dd0ea5658d` went** - run 37158363951,
-   https://github.com/romanimpair-jpg/LoogriGram-Desktop/actions/runs/37158363951.
-   The earlier one (`f7bbe51779`, run 37138072076) failed before compiling
-   anything of ours: every dependency cache had been evicted after the idle
-   fortnight, and the rebuild died at MSYS2's "target not found:
-   mingw-w64-x86_64-diffutils". The fix is desktop's frozen dependencies
-   (see its `LOOGRIGRAM.md`, Building, "Frozen dependencies") - **not**
-   upstream's ucrt64 switch, which was tried (`6b3c48e7d1`) and reverted
-   (`d4958b8bab`) on the user's rule: "stop following upstream until break".
-   This run is also the first compile of the free-suggested-posts restore
-   (`12f173a996`, `f7bbe51779`); its risk list: `data_msg_id.h`
-   `SuggestOptions`, `api_common.cpp` `SuggestToMTP`, `apiwrap.cpp` ~3737,
-   `history_widget.cpp` ~2424/~3242, `history_view_compose_controls.cpp`
-   ~1914, `history_view_chat_section.cpp`, `history_item_reply_markup.h`
-   ~100. If it fails, fix from `--log-failed`. **If green, ask the user
-   whether to dispatch one desktop `cache` run** (no app release; it stores
-   the built ThirdParty and Libraries trees as the `deps-trees`
-   pre-release, so an evicted cache can never force a rebuild again).
-2. **Then freeze every other dependency, in both projects** - the user's
-   decision, 2026-10-03, for the start of the next session. Pin each to
-   exactly what the last good build used (read it from that run's log),
-   never to upstream's newer choice:
-   - Android (`.github/workflows/android.yml`): `runs-on: ubuntu-latest`
-     -> `ubuntu-24.04` (the last good build ran image 20260927.320.1);
-     `java-version: '17'` -> `'17.0.20+101'` (Temurin, as `g55475fe4`
-     used); `actions/checkout@v5`, `actions/setup-java@v5`,
-     `gradle/actions/setup-gradle@v5`, `actions/upload-artifact@v6` ->
-     exact commit SHAs. `platforms;android-36` installs its latest revision
-     and sdkmanager cannot pin one - record it, low risk. Already pinned:
-     NDK 27.2.12479018, CMake 3.22.1, build-tools 36.0.0, Gradle 8.11.1, no
-     dynamic dependency versions, native sources at submodule commits.
-     Validate with a compile run.
-   - Desktop (`win.yml`, `prepare.py`): `Eden-CI/msvc-dev-cmd@master` (a
-     branch!) and every `actions/*@vN` -> commit SHAs; `runs-on:
-     windows-latest` -> the image version the last good build used (the
-     VS toolset is already pinned to 14.44); `prepare.py`'s python stage
-     `pip install pywin32 six meson` -> exact versions; NuGet's
-     `.../latest/nuget.exe` -> a fixed version (or mirror it, as the MSYS2
-     packages are); then audit every other `stage(...)` for a download that
-     is not a fixed tag, commit or hash. Desktop has no compile-only mode -
-     each change costs a build, so batch them and ask.
-3. **Then the reverse parity audit** (the user's, 2026-10-03). Parity
-   is two-way now (the rule at the top of this file). Desktop's 233 commits
-   were audited against Android on 2026-10-01 - 13 gaps, all closed by
-   `0d90a619..090da946` - but Android's own commits (`9f8c35d1..patches`)
-   have never been checked against desktop. Do it the same way: classify
-   every Android commit as Android-only (Play Services, launcher, Android UI
-   with no desktop counterpart), notes/tooling, done on desktop (with
-   evidence: a desktop commit or `LoogriGram:` comment, or the feature
-   absent there), differs by decision, MISSING ON DESKTOP, or unsure, in a
-   resumable tally file. Candidates to check first: the iTunes cover lookup
-   (`8fed48d0` - does desktop look covers up anywhere?), the rest of the
-   Help section and the Privacy Policy row (`46fc6ede`), held priced
-   suggested posts and paid-message notices (`ec4885b2`, `5a23f8e8`), and
-   anything the Premium convergence (`2531579c..ada551b5`) removed that
-   desktop still draws. Then mirror the gaps on desktop - each desktop change
-   costs a full build, so ask before dispatching - and watch for a client
-   being wrong (desktop once was): raise it, don't copy it.
+**The head of `patches` (`1056c5c4`) does not compile.** It is part 1 of
+the message-effects removal, frozen mid-change at the user's request. The
+last compiling commit is `988742b1` (the reaction burst, compile run
+37207966399 green). No build of either client has been dispatched since
+the user said "no builds yet"; Android's Latest is still `g55475fe4`.
+
+The decision (2026-10-04, the user's, both clients): every "big animated
+view" goes - the reaction preview (desktop-only, done in `3042504db8`),
+the reaction burst (Android done in `988742b1`), **message effects**
+(neither offered when sending nor played when received), **Premium sticker
+effects** and **emoji interactions** (both play through Android's
+EmojiAnimationsOverlay, so they go with it), and the **birthday balloons**
+(profile, and on Android also the chat). Delete, don't guard: the effect
+plumbing goes too.
+
+1. **Finish Android part 2**, then compile (free) until green, then commit:
+   - Delete `EmojiAnimationsOverlay.java` and its uses: ChatActivity's
+     field, `cancelAllAnimations`, `onScrolled`, constructor (~8187),
+     attach/detach, `draw`, the visible-message playback (~14574), the
+     `forcePlayEffect` setter (~23541), the `didPressEffect` override
+     (~35389), and the Premium-sticker tap branch (~37464) - without it a
+     Premium sticker taps through to its sticker set like any other.
+   - MessageSendPreview: the effect picker (fields, the effect badge in
+     `cameraRect`, `effectsView` and its overlay, `onBackPressed`'s
+     selector branch, `allowEffectSelector` through `hideEffectSelector`,
+     `layout()`'s selector block, `show()`'s `bringToFront`,
+     `afterDismiss`'s observer, `animateOpenTo`'s hide and alpha lines,
+     `didReceivedNotification` and the `implements`). **Keep Back closing
+     the keyboard first:** the KeyboardNotifier that set `keyboardVisible`
+     lived in `allowEffectSelector`; move it into `makeFocusable()`.
+   - ChatActivityEnterView: the `effectId` field, `setEffectId` /
+     `getEffectId`, every `sendButton.setEffect(effectId = 0)`, every
+     `params.effect_id = effectId`, the `onEffectChange` override (~4436),
+     the `allowEffectSelector` block (~4559), and SendButton's badge
+     (`setEffect`, `setEmoji`, `emojiDrawable`, its drawing ~13795 and the
+     copy ~13888).
+   - ChatAttachAlert: the `effectId` field, the `onEffectChange` override,
+     the `getSelectedEffect()` locals with `writeButton.setEffect`, the
+     `allowEffectSelector` block, `writeButton.setEffect(effectId = 0)`.
+   - ChatActivity: the draft's `setEffectId` (~27788, ~27792), sendContact /
+     sendContacts' `params.effect_id` and `effectId = 0` lines (~32125-
+     32153), the `availableEffectsUpdate` observer (~2711) and handler
+     (~22648), the `msg.effect` / `premiumEffectWasPlayed` copies (~35275,
+     ~35304).
+   - ChatMessageCell: the effect icon by the time - fields (~971),
+     `checkEffectMotionEvent` and its call (~4736), the effectId checks
+     (~6443, ~10988, ~12541, ~17012-17032, ~21944), `hasOutboundsContent`'s
+     effect test, the drawing (~21816), `getEffect()` (~27037) and the
+     delegate's `didPressEffect`. The send preview's time background
+     (~21931) multiplied its alpha by the effect icon's presence - with no
+     icon that is 0; keep it 0.
+   - The picker modes: ReactionsContainerLayout `TYPE_MESSAGE_EFFECTS`
+     (~15 sites), CustomEmojiReactionsWindow (~15) and SelectAnimatedEmoji
+     Dialog `TYPE_EFFECTS` (~33, including the effect-stickers section,
+     `setEmojicon` with ImageViewEmoji's emoji badge, `getEffectDocument`).
+     Each `type == ..._EFFECTS` is false and is simplified site by site.
+   - Birthday: delete `ProfileBirthdayEffect.java`; ProfileActivity's
+     `birthdayFetcher` / `createdBirthdayFetcher` / `birthdayEffect`, its
+     detach (~2160), the birthday row's replay (~3934),
+     `createBirthdayEffect` and its calls, `setUserInfo`'s third parameter
+     (and ChatAvatarContainer ~563); ChatActivity's `birthdayAssetsFetcher`
+     (~911, ~3218, ~22181).
+   - Then `all_checks.py` and `drop_strings.py` for what it frees
+     (IsEnjoyngAnimations, EnjoyngAnimations, the effect picker's strings).
+     Part 1's script is `android-edit-tools/effects_core.py`; the burst's
+     are `reaction_burst*.py`.
+2. **Then desktop, owed for parity** (nothing done there yet beyond the
+   preview): `Ui::ReactionFlyAnimation` and its users (the burst), message
+   effects (`menu/menu_send.cpp`'s effect selector, `Api::SendOptions`'
+   `effectId`, the effect icon in `history_view_bottom_info`, the catalogue
+   in `data_message_reactions`), `HistoryView::EmojiInteractions` and
+   `ChatHelpers::EmojiInteractions` (interactions, Premium sticker effects
+   in `history_view_sticker`, message effects), and the birthday effect
+   (`info_profile_birthday_effect.*`, `TopBar::setupBirthdayEffect`). No
+   compiler: ask before the full build that tests it.
+3. **Then both READMEs** (on `patches` and `dev`): reactions and effects
+   play no big animation, no effects are offered when sending.
+
+Unanswered questions for the user: which "warnings on our side" were meant
+(none of ours were in desktop build 37158363951 - the only candidates are
+three CMake unused-flag warnings in `prepare.py`); and whether Android's
+media folders, still named "Telegram" (Pictures/Telegram and the like),
+should be renamed - it would change where new files are saved.
 
 Each pass since 2026-09-26 went to a subagent with a full brief (rules,
 every checker, the other client's decisions quoted) and was reviewed here
