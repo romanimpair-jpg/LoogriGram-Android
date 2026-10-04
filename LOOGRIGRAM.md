@@ -217,9 +217,17 @@ as on desktop; `2c60b2fb`, 2026-10-04, read from `g55475fe4`'s run
 37110897841): `runs-on: ubuntu-24.04`, Temurin `17.0.20+101`, every action
 by commit SHA, NDK 27.2.12479018, CMake 3.22.1, build-tools 36.0.0, Gradle
 8.11.1, no dynamic dependency versions, native sources at submodule commits.
-Two things cannot be pinned: a hosted image's build (only its label), and
-the SDK platform's revision, which sdkmanager always installs at its latest -
-`android-36` was revision 2, and the install step warns when that changes.
+The image's own tools are pinned too (`24a508d9`, 2026-10-04, the user's
+"pin everything"): `sdkmanager` is command-line tools 12.0 (build 11076708),
+the GitHub CLI 2.101.0, both downloaded and checked against fixed SHA-256s
+(compile run 37197841246 confirmed them), and the Gradle wrapper carries
+`distributionSha256Sum`. The native build takes nothing from the system.
+The SDK platform's revision is the one thing sdkmanager cannot pin - it
+always installs the latest - so anything but `android-36` revision 2 now
+stops the build; the step names the frozen archive (`platform-36_r02.zip`)
+and its SHA-256. Left to the image because they cannot be pinned: the
+image's build (only its label), Ubuntu, bash and coreutils, and the git
+`actions/checkout` drives.
 
 There is no JDK on the dev machine — **CI is the only compiler.** Plan edits
 accordingly: read code back after scripted edits rather than trusting them,
