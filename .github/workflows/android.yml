@@ -114,6 +114,30 @@ jobs:
           # only ever need the pinned commit.
           fetch-depth: 1
 
+      # LoogriGram: the release's tag is made here, at the start, not by
+      # "Publish release." at the end - desktop's lesson (its run 37158363951,
+      # 2026-10-04). GitHub refused to create a release tag with the job's
+      # token, HTTP 403 "Resource not accessible by integration", once the
+      # built commit was no longer the head of patches (commits pushed during
+      # the build) - a commit that changed its workflow. Every release that
+      # published was tagged while its commit was still the head; made now,
+      # this one is too. The tag is computed exactly as the build step
+      # computes LOOGRIGRAM_TAG. A failed run leaves a tag without a release,
+      # which the updater never sees, and re-running the commit reuses it.
+      - name: Tag the build.
+        if: inputs.mode == 'build' && inputs.config == 'Release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="g$(git rev-parse --short HEAD)"
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" > /dev/null 2>&1; then
+            echo "tag $TAG already exists"
+          else
+            gh api "repos/$GITHUB_REPOSITORY/git/refs" \
+              -f ref="refs/tags/$TAG" -f sha="$GITHUB_SHA" > /dev/null
+            echo "created tag $TAG at $GITHUB_SHA"
+          fi
+
       - name: Reclaim disk space.
         if: inputs.mode != 'validate'
         run: |
@@ -376,7 +400,7 @@ jobs:
             echo "release $LOOGRIGRAM_TAG already exists, replacing its asset"
             gh release upload "$LOOGRIGRAM_TAG" artifact/LoogriGram.apk               --repo "$GITHUB_REPOSITORY" --clobber
           else
-            gh release create "$LOOGRIGRAM_TAG" artifact/LoogriGram.apk               --repo "$GITHUB_REPOSITORY"               --target "$GITHUB_SHA"               --title "$LOOGRIGRAM_TAG"               --notes "$(git log -1 --pretty=%s)"
+            gh release create "$LOOGRIGRAM_TAG" artifact/LoogriGram.apk               --repo "$GITHUB_REPOSITORY"               --verify-tag               --title "$LOOGRIGRAM_TAG"               --notes "$(git log -1 --pretty=%s)"
           fi
           echo "published $LOOGRIGRAM_TAG"
 
