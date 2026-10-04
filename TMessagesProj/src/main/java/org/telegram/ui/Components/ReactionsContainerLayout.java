@@ -105,7 +105,7 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
     // LoogriGram: 3 was TYPE_TAGS, the row of Saved Messages tags, which only
     // Premium can set.
     public static final int TYPE_STICKER_SET_EMOJI = 4;
-    public final static int TYPE_MESSAGE_EFFECTS = 5;
+    // LoogriGram: 5 was TYPE_MESSAGE_EFFECTS, the message effect picker.
 
     private final static int ALPHA_DURATION = 150;
     private final static float SIDE_SCALE = 0.6f;
@@ -405,9 +405,6 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
             }
         });
         recyclerListView.setOnItemLongClickListener((view, position) -> {
-            if (type == TYPE_MESSAGE_EFFECTS) {
-                return false;
-            }
             if (delegate != null && view instanceof ReactionHolderView) {
                 ReactionHolderView reactionHolderView = (ReactionHolderView) view;
                 delegate.onReactionClicked(this, reactionHolderView.currentReaction, true, false);
@@ -443,9 +440,6 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
     public int getWindowType() {
         if (type == TYPE_STICKER_SET_EMOJI) {
             return SelectAnimatedEmojiDialog.TYPE_STICKER_SET_EMOJI;
-        }
-        if (type == TYPE_MESSAGE_EFFECTS) {
-            return SelectAnimatedEmojiDialog.TYPE_EFFECTS;
         }
         if (showExpandableReactions) {
             return SelectAnimatedEmojiDialog.TYPE_EXPANDABLE_REACTIONS;
@@ -640,7 +634,7 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
             invalidate();
         }
 
-        if (pressedReaction != null && type != TYPE_MESSAGE_EFFECTS && (delegate == null || delegate.allowLongPress())) {
+        if (pressedReaction != null && (delegate == null || delegate.allowLongPress())) {
             if (pressedProgress != 1f) {
                 pressedProgress += 16f / 1500f;
                 if (pressedProgress >= 1f) {
@@ -721,7 +715,7 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
             canvas.scale(sc, sc, pivotX, getHeight() / 2f);
         }
 
-        if (transitionProgress != 0 && (getAlpha() == 1f || type == TYPE_MESSAGE_EFFECTS)) {
+        if (transitionProgress != 0 && getAlpha() == 1f) {
             int delay = 0;
             int lastReactionX = 0;
             for (int i = 0; i < recyclerListView.getChildCount(); i++) {
@@ -838,7 +832,7 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
     public void drawBubbles(Canvas canvas) {
         float cPr = (Math.max(CLIP_PROGRESS, Math.min(transitionProgress, 1f)) - CLIP_PROGRESS) / (1f - CLIP_PROGRESS);
         float br = bigCircleRadius * cPr, sr = smallCircleRadius * cPr;
-        int alpha = type == TYPE_MESSAGE_EFFECTS ? 0xFF : (int) (Utilities.clamp((customEmojiReactionsEnterProgress / 0.2f), 1f, 0f) * (1f - customEmojiReactionsEnterProgress) * 255);
+        int alpha = (int) (Utilities.clamp((customEmojiReactionsEnterProgress / 0.2f), 1f, 0f) * (1f - customEmojiReactionsEnterProgress) * 255);
         drawBubbles(canvas, br, cPr, sr, alpha);
     }
 
@@ -1067,10 +1061,7 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
                 return;
             }
         }
-        if (type == TYPE_MESSAGE_EFFECTS) {
-            allReactionsAvailable = true;
-            fillRecentReactionsList(visibleReactions);
-        } else if (hitLimit) {
+        if (hitLimit) {
             allReactionsAvailable = false;
             // LoogriGram: the star reaction is not offered - sending one pays
             // Stars for it - and one already on the message is not offered back.
@@ -1252,25 +1243,6 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
             return;
         }
 
-        if (type == TYPE_MESSAGE_EFFECTS) {
-            MessagesController messagesController = MessagesController.getInstance(currentAccount);
-            TLRPC.messages_AvailableEffects effects = messagesController.getAvailableEffects();
-            if (effects != null) {
-                // LoogriGram: effects that need Premium are not offered without it;
-                // upstream offered them padlocked.
-                for (int i = 0; i < effects.effects.size(); i++) {
-                    if (effects.effects.get(i).premium_required) continue;
-                    ReactionsLayoutInBubble.VisibleReaction visibleReaction = ReactionsLayoutInBubble.VisibleReaction.fromTL(effects.effects.get(i));
-                    if (!hashSet.contains(visibleReaction)) {
-                        hashSet.add(visibleReaction);
-                        visibleReactions.add(visibleReaction);
-                        added++;
-                    }
-                }
-            }
-            return;
-        }
-
         ArrayList<TLRPC.Reaction> topReactions = MediaDataController.getInstance(currentAccount).getTopReactions();
         for (int i = 0; i < topReactions.size(); i++) {
             ReactionsLayoutInBubble.VisibleReaction visibleReaction = ReactionsLayoutInBubble.VisibleReaction.fromTL(topReactions.get(i));
@@ -1379,11 +1351,6 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
     public void onReactionClicked(View emojiView, ReactionsLayoutInBubble.VisibleReaction visibleReaction, boolean longpress) {
         if (delegate != null) {
             delegate.onReactionClicked(emojiView, visibleReaction, longpress, true);
-        }
-        if (type == TYPE_MESSAGE_EFFECTS) {
-            try {
-                performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING);
-            } catch (Exception ignore) {}
         }
     }
 
@@ -1855,7 +1822,7 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
             resetAnimation();
             currentReaction = react;
             hasEnterAnimation = currentReaction.emojicon != null && (showCustomEmojiReaction() || allReactionsIsDefault) && LiteMode.isEnabled(LiteMode.FLAG_ANIMATED_EMOJI_REACTIONS);
-            if (type == TYPE_STICKER_SET_EMOJI || currentReaction.isEffect) {
+            if (type == TYPE_STICKER_SET_EMOJI) {
                 hasEnterAnimation = false;
             }
             if (currentReaction.emojicon != null) {
@@ -1906,14 +1873,6 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
             if (type == TYPE_STICKER_SET_EMOJI && react != null && react.emojicon != null) {
                 enterImageView.getImageReceiver().setImageBitmap(Emoji.getEmojiDrawable(react.emojicon));
                 loopImageView.getImageReceiver().setImageBitmap(Emoji.getEmojiDrawable(react.emojicon));
-            } else if (currentReaction.isEffect) {
-                TLRPC.Document document = MessagesController.getInstance(currentAccount).getEffectDocument(currentReaction.documentId);
-                SvgHelper.SvgDrawable svgThumb = DocumentObject.getSvgThumb(document, Theme.key_windowBackgroundWhiteGrayIcon, 0.2f);
-//                if (!LiteMode.isEnabled(LiteMode.FLAG_ANIMATED_EMOJI_REACTIONS)) {
-                    loopImageView.getImageReceiver().setImage(ImageLocation.getForDocument(document), "60_60_firstframe", null, null, hasEnterAnimation ? null : svgThumb, 0, "tgs", currentReaction, 0);
-//                } else {
-//                    loopImageView.getImageReceiver().setImage(ImageLocation.getForDocument(document), ReactionsUtils.SELECT_ANIMATION_FILTER, null, null, hasEnterAnimation ? null : svgThumb, 0, "tgs", currentReaction, 0);
-//                }
             } else if (currentReaction.emojicon != null) {
                 TLRPC.TL_availableReaction defaultReaction = MediaDataController.getInstance(currentAccount).getReactionsMap().get(currentReaction.emojicon);
                 if (defaultReaction != null) {
@@ -2058,7 +2017,7 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
                 pressed = true;
                 pressedX = event.getX();
                 pressedY = event.getY();
-                if (sideScale == 1f && type != TYPE_STICKER_SET_EMOJI && type != TYPE_MESSAGE_EFFECTS && (delegate == null || delegate.allowLongPress())) {
+                if (sideScale == 1f && type != TYPE_STICKER_SET_EMOJI && (delegate == null || delegate.allowLongPress())) {
                     AndroidUtilities.runOnUIThread(longPressRunnable, ViewConfiguration.getLongPressTimeout());
                 }
             }
@@ -2173,9 +2132,6 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
         super.onAttachedToWindow();
         NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.emojiLoaded);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.chatInfoDidLoad);
-        if (type == TYPE_MESSAGE_EFFECTS) {
-            NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.availableEffectsUpdate);
-        }
     }
 
     @Override
@@ -2183,9 +2139,6 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
         super.onDetachedFromWindow();
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.emojiLoaded);
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.chatInfoDidLoad);
-        if (type == TYPE_MESSAGE_EFFECTS) {
-            NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.availableEffectsUpdate);
-        }
     }
 
     @Override
@@ -2199,8 +2152,6 @@ public class ReactionsContainerLayout extends FrameLayout implements Notificatio
             }
         } else if (id == NotificationCenter.emojiLoaded) {
             invalidateEmojis();
-        } else if (id == NotificationCenter.availableEffectsUpdate) {
-            setMessage(messageObject, null, true);
         }
     }
 

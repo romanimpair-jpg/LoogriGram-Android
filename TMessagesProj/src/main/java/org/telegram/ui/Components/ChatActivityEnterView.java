@@ -2748,7 +2748,6 @@ public class ChatActivityEnterView extends FrameLayout implements
                             startedDraggingX = -1;
                             if (hasRecordVideo && isInVideoMode()) {
                                 delegate.needStartRecordVideo(1, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0);
-                                sendButton.setEffect(effectId = 0);
                             } else {
                                 if (recordingAudioVideo && isInScheduleMode()) {
                                     AlertsCreator.createScheduleDatePickerDialog(parentActivity, parentFragment.getDialogId(), (notify, scheduleDate, scheduleRepeatPeriod) -> MediaController.getInstance().stopRecording(1, notify, scheduleDate, false), () -> MediaController.getInstance().stopRecording(0, false, 0, false), resourcesProvider);
@@ -2788,7 +2787,6 @@ public class ChatActivityEnterView extends FrameLayout implements
                             if (hasRecordVideo && isInVideoMode()) {
                                 CameraController.getInstance().cancelOnInitRunnable(onFinishInitCameraRunnable);
                                 delegate.needStartRecordVideo(2, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0);
-                                sendButton.setEffect(effectId = 0);
                             } else {
                                 delegate.needStartRecordAudio(0);
                                 MediaController.getInstance().stopRecording(0, false, 0, voiceOnce);
@@ -2816,7 +2814,6 @@ public class ChatActivityEnterView extends FrameLayout implements
                         if (hasRecordVideo && isInVideoMode()) {
                             CameraController.getInstance().cancelOnInitRunnable(onFinishInitCameraRunnable);
                             delegate.needStartRecordVideo(2, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0);
-                            sendButton.setEffect(effectId = 0);
                         } else {
                             delegate.needStartRecordAudio(0);
                             MediaController.getInstance().stopRecording(0, false, 0, voiceOnce);
@@ -2840,7 +2837,6 @@ public class ChatActivityEnterView extends FrameLayout implements
                             if (hasRecordVideo && isInVideoMode()) {
                                 CameraController.getInstance().cancelOnInitRunnable(onFinishInitCameraRunnable);
                                 delegate.needStartRecordVideo(1, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0);
-                                sendButton.setEffect(effectId = 0);
                             } else if (!sendVoiceEnabled) {
                                 delegate.needShowMediaBanHint();
                             } else {
@@ -2899,7 +2895,6 @@ public class ChatActivityEnterView extends FrameLayout implements
                         if (hasRecordVideo && isInVideoMode()) {
                             CameraController.getInstance().cancelOnInitRunnable(onFinishInitCameraRunnable);
                             delegate.needStartRecordVideo(2, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0);
-                            sendButton.setEffect(effectId = 0);
                         } else {
                             delegate.needStartRecordAudio(0);
                             MediaController.getInstance().stopRecording(0, false, 0, voiceOnce);
@@ -3645,7 +3640,6 @@ public class ChatActivityEnterView extends FrameLayout implements
         if (videoToSendMessageObject != null) {
             CameraController.getInstance().cancelOnInitRunnable(onFinishInitCameraRunnable);
             delegate.needStartRecordVideo(2, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0);
-            sendButton.setEffect(effectId = 0);
         } else {
             MessageObject playing = MediaController.getInstance().getPlayingMessageObject();
             if (playing != null && playing == audioToSendMessageObject) {
@@ -4431,12 +4425,7 @@ public class ChatActivityEnterView extends FrameLayout implements
             messageSendPreview.dismiss(false);
         }
         AndroidUtilities.cancelRunOnUIThread(dismissSendPreview);
-        messageSendPreview = new MessageSendPreview(getContext(), resourcesProvider) {
-            @Override
-            protected void onEffectChange(long effectId) {
-                ChatActivityEnterView.this.setEffectId(effectId);
-            }
-        };
+        messageSendPreview = new MessageSendPreview(getContext(), resourcesProvider);
         messageSendPreview.setOnDismissListener(di -> {
             messageSendPreview = null;
         });
@@ -4556,10 +4545,7 @@ public class ChatActivityEnterView extends FrameLayout implements
                 AndroidUtilities.runOnUIThread(dismissSendPreview, 500);
             }
         });
-        if ((containsSendMessage || putCameraTexture) && dialog_id >= 0) {
-            messageSendPreview.allowEffectSelector(parentFragment);
-            messageSendPreview.setEffectId(effectId);
-        }
+        // LoogriGram: the preview offered message effects here, in private chats.
 
         ItemOptions options = ItemOptions.makeOptions(this, resourcesProvider, sendButton);
 
@@ -4694,11 +4680,9 @@ public class ChatActivityEnterView extends FrameLayout implements
                         AlertsCreator.createScheduleDatePickerDialog(parentActivity, dialog_id, (notify, scheduleDate, scheduleRepeatPeriod) -> {
                             final SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(command, dialog_id, replyingMessageObject, getThreadMessage(), null, false, null, null, null, notify, scheduleDate, scheduleRepeatPeriod, null, false);
                             params.sendMessageChatArguments = parentFragment != null ? parentFragment.getMessageChatSendParams() : null;
-                            params.effect_id = effectId;
                             SendMessagesHelper.getInstance(currentAccount).sendMessage(params);
                             setFieldText("");
                             botCommandsMenuContainer.dismiss();
-                            sendButton.setEffect(effectId = 0);
                         }, resourcesProvider);
                     } else {
                         if (parentFragment != null && parentFragment.checkSlowMode(view)) {
@@ -4706,13 +4690,11 @@ public class ChatActivityEnterView extends FrameLayout implements
                         }
                         final SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(command, dialog_id, replyingMessageObject, getThreadMessage(), null, false, null, null, null, true, 0, 0, null, false);
                         params.sendMessageChatArguments = parentFragment != null ? parentFragment.getMessageChatSendParams() : null;
-                        params.effect_id = effectId;
                         params.monoForumPeer = getSendMonoForumPeerId();
                         params.suggestionParams = getSendMessageSuggestionParams();
                         SendMessagesHelper.getInstance(currentAccount).sendMessage(params);
                         setFieldText("");
                         botCommandsMenuContainer.dismiss();
-                        sendButton.setEffect(effectId = 0);
                     }
                 }
             }
@@ -5553,7 +5535,6 @@ public class ChatActivityEnterView extends FrameLayout implements
         if (hasRecordVideo && isInVideoMode()) {
             CameraController.getInstance().cancelOnInitRunnable(onFinishInitCameraRunnable);
             delegate.needStartRecordVideo(5, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0);
-            sendButton.setEffect(effectId = 0);
         } else {
             delegate.needStartRecordAudio(0);
             MediaController.getInstance().stopRecording(0, false, 0, false);
@@ -6604,7 +6585,6 @@ public class ChatActivityEnterView extends FrameLayout implements
             dismissSendPreviewSent = true;
             if (videoToSendMessageObject != null) {
                 delegate.needStartRecordVideo(4, notify, scheduleDate, 0, voiceOnce ? 0x7FFFFFFF : 0);
-                sendButton.setEffect(effectId = 0);
                 hideRecordedAudioPanel(true);
                 checkSendButton(true);
                 AndroidUtilities.runOnUIThread(() -> {
@@ -6647,10 +6627,8 @@ public class ChatActivityEnterView extends FrameLayout implements
                 }
                 SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(audioToSend, null, audioToSendPath, dialog_id, replyingMessageObject, getThreadMessage(), null, null, null, null, notify, scheduleDate, 0, voiceOnce ? 0x7FFFFFFF : 0, null, null, false);
                 params.sendMessageChatArguments = parentFragment != null ? parentFragment.getMessageChatSendParams() : null;
-                params.effect_id = effectId;
                 params.monoForumPeer = getSendMonoForumPeerId();
                 params.suggestionParams = getSendMessageSuggestionParams();
-                sendButton.setEffect(effectId = 0);
                 if (!delegate.hasForwardingMessages()) {
                     MessageObject.SendAnimationData sendAnimationData = new MessageObject.SendAnimationData();
                     sendAnimationData.fromPreview = System.currentTimeMillis() - sentFromPreview < 200;
@@ -7024,10 +7002,8 @@ public class ChatActivityEnterView extends FrameLayout implements
                 }
                 SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(message[0].toString(), dialog_id, replyingMessageObject, replyToTopMsg, messageWebPage, messageWebPageSearch, entities, null, null, notify, scheduleDate, scheduleRepeatPeriod, sendAnimationData, updateStickersOrder);
                 params.sendMessageChatArguments = parentFragment != null ? parentFragment.getMessageChatSendParams() : null;
-                params.effect_id = effectId;
                 params.monoForumPeer = getSendMonoForumPeerId();
                 params.suggestionParams = getSendMessageSuggestionParams();
-                sendButton.setEffect(effectId = 0);
                 applyReplyQuoteToSendMessageParams(params);
                 params.invert_media = parentFragment != null && parentFragment.messagePreviewParams != null && parentFragment.messagePreviewParams.webpageTop;
                 if (parentFragment != null && parentFragment.getCurrentChat() != null && !ChatObject.canSendEmbed(parentFragment.getCurrentChat())) {
@@ -8975,26 +8951,14 @@ public class ChatActivityEnterView extends FrameLayout implements
                 sendMessageParams = SendMessagesHelper.SendMessageParams.of(command, dialog_id, replyingMessageObject, getThreadMessage(), null, false, null, null, null, true, 0, 0, null, false);
             }
             sendMessageParams.sendMessageChatArguments = parentFragment != null ? parentFragment.getMessageChatSendParams() : null;
-            sendMessageParams.effect_id = effectId;
-            sendButton.setEffect(effectId = 0);
             applyReplyQuoteToSendMessageParams(sendMessageParams);
             SendMessagesHelper.getInstance(currentAccount).sendMessage(sendMessageParams);
         }
     }
 
     private boolean captionAbove;
-    private long effectId;
-
-    public void setEffectId(long effectId) {
-        this.effectId = effectId;
-        if (sendButton != null) {
-            sendButton.setEffect(effectId);
-        }
-    }
-
-    public long getEffectId() {
-        return effectId;
-    }
+    // LoogriGram: the message effect chosen for the next send was kept here
+    // (setEffectId / getEffectId); effects are not offered.
 
     private MessageObject editingMessageObjectPreview(MessageObject msg, boolean applyCaption) {
         MessageObject previewMessage = new MessageObject(msg.currentAccount, msg.messageOwner, true, true) {
@@ -10170,8 +10134,6 @@ public class ChatActivityEnterView extends FrameLayout implements
             final TL_keyboard.TL_keyboardButton keyboardButton = (TL_keyboard.TL_keyboardButton) button;
             SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(keyboardButton.text, dialog_id, replyMessageObject, getThreadMessage(), null, false, null, null, null, true, 0, 0, null, false);
             params.sendMessageChatArguments = parentFragment != null ? parentFragment.getMessageChatSendParams() : null;
-            params.effect_id = effectId;
-            sendButton.setEffect(effectId = 0);
             SendMessagesHelper.getInstance(currentAccount).sendMessage(params);
         } else if (buttonTypeUrl != null) {
             if (Browser.urlMustNotHaveConfirmation(buttonTypeUrl.url)) {
@@ -12634,7 +12596,6 @@ public class ChatActivityEnterView extends FrameLayout implements
             if (hasRecordVideo && isInVideoMode()) {
                 CameraController.getInstance().cancelOnInitRunnable(onFinishInitCameraRunnable);
                 delegate.needStartRecordVideo(5, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0);
-                sendButton.setEffect(effectId = 0);
             } else {
                 delegate.needStartRecordAudio(0);
                 MediaController.getInstance().stopRecording(0, false, 0, voiceOnce);
@@ -12902,7 +12863,6 @@ public class ChatActivityEnterView extends FrameLayout implements
                 if (t >= 59500 && !stoppedInternal) {
                     startedDraggingX = -1;
                     delegate.needStartRecordVideo(3, true, 0, 0, voiceOnce ? 0x7FFFFFFF : 0);
-                    sendButton.setEffect(effectId = 0);
                     stoppedInternal = true;
                 }
             }
@@ -13400,7 +13360,6 @@ public class ChatActivityEnterView extends FrameLayout implements
         private Drawable drawable;
         private Drawable inactiveDrawable;
         private Drawable drawableInverse;
-        private final AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable emojiDrawable;
         private float ephemeralFactor;
         private float sameWidthFactor;
 
@@ -13440,7 +13399,6 @@ public class ChatActivityEnterView extends FrameLayout implements
             drawable = context.getResources().getDrawable(resId).mutate();
             inactiveDrawable = context.getResources().getDrawable(resId).mutate();
             drawableInverse = context.getResources().getDrawable(resId).mutate();
-            emojiDrawable = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(this, dp(14));
 
             loadingPaint.setStyle(Paint.Style.STROKE);
             loadingPaint.setStrokeWidth(dp(2));
@@ -13558,17 +13516,11 @@ public class ChatActivityEnterView extends FrameLayout implements
 
         @Override
         protected boolean verifyDrawable(@NonNull Drawable who) {
-            return who == count || who == emojiDrawable || super.verifyDrawable(who);
+            return who == count || super.verifyDrawable(who);
         }
 
-        public void setEffect(long effectId) {
-            TLRPC.TL_availableEffect effect = MessagesController.getInstance(UserConfig.selectedAccount).getEffect(effectId);
-            setEmoji(effect != null ? Emoji.getEmojiDrawable(effect.emoticon) : null);
-        }
-
-        public void setEmoji(Drawable drawable) {
-            emojiDrawable.set(drawable, true);
-        }
+        // LoogriGram: setEffect / setEmoji drew the chosen message effect's
+        // emoji as a badge on the button; effects are not offered.
 
         public boolean isOpen() {
             return false;
@@ -13787,16 +13739,6 @@ public class ChatActivityEnterView extends FrameLayout implements
                 }
             }
 
-            if (countScale < 1) {
-                final int r = dp(8);
-                final int _cx = (int) (getMeasuredWidth() - getCircleWidth() / 2.0f - circlePadX + dp(12));
-                final int _cy = (int) (getMeasuredHeight() - getCircleHeight() / 2.0f - circlePadY + dp(10));
-
-                emojiDrawable.setBounds(_cx - r, _cy - r, _cx + r, _cy + r);
-                emojiDrawable.setAlpha((int) (0xFF * (1.0f - countScale)));
-                emojiDrawable.draw(canvas);
-            }
-
             if (!isNewDesignSendButton) {
                 canvas.restore();
             }
@@ -13885,7 +13827,6 @@ public class ChatActivityEnterView extends FrameLayout implements
             btn.newCounterPos = newCounterPos;
             btn.count.setText(this.count.getText(), false);
             btn.countBounceScale = countBounceScale;
-            btn.setEmoji(emojiDrawable.getDrawable());
             btn.open.force(open.get());
             btn.setCircleSize(circleWidth, circleHeight);
             btn.setCirclePadding(circlePadX, circlePadY);

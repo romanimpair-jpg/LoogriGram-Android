@@ -15,7 +15,6 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Shader;
-import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.Gravity;
@@ -42,33 +41,22 @@ import androidx.recyclerview.widget.RecyclerView;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.ChatMessageSharedResources;
-import org.telegram.messenger.Emoji;
 import org.telegram.messenger.FileLog;
-import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MessageObject;
-import org.telegram.messenger.MessagesController;
-import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
-import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.StarsFormat;
 import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.utils.WindowVisibilityManager;
-import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBarPopupWindow;
-import org.telegram.ui.ActionBar.AdjustPanLayoutHelper;
-import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.ChatMessageCell;
-import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.AnimatedFloat;
 import org.telegram.ui.Components.ChatActivityEnterView;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.EditTextCaption;
 import org.telegram.ui.Components.ItemOptions;
 import org.telegram.ui.Components.LayoutHelper;
-import org.telegram.ui.Components.Reactions.ReactionsLayoutInBubble;
-import org.telegram.ui.Components.ReactionsContainerLayout;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.ScrimOptions;
 import org.telegram.ui.Components.SizeNotifierFrameLayout;
@@ -83,7 +71,7 @@ import org.telegram.ui.Stories.recorder.KeyboardNotifier;
 
 import java.util.ArrayList;
 
-public class MessageSendPreview extends Dialog implements NotificationCenter.NotificationCenterDelegate {
+public class MessageSendPreview extends Dialog {
 
     public final Context context;
     public final Theme.ResourcesProvider resourcesProvider;
@@ -106,10 +94,10 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
 
     private final FrameLayout windowView;
     private final FrameLayout containerView;
-    private final FrameLayout effectsView;
-
-    private long effectId;
-    private AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable effectDrawable;
+    // LoogriGram: the message effect picker lived here - effectSelector over
+    // the preview, effectsView with an EmojiAnimationsOverlay playing the
+    // chosen effect, its badge over the round-video preview. Effects are
+    // neither offered nor played.
 
     private int messagesContainerTopPadding;
     private final RecyclerListView chatListView;
@@ -131,14 +119,8 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
     private ChatActivityEnterView.SendButton sendButton;
     private int sendButtonRight;
     private View optionsView;
-    private EmojiAnimationsOverlay effectOverlay;
 
     private boolean keyboardVisible;
-
-    private float effectSelectorContainerY;
-    private FrameLayout effectSelectorContainer;
-    private ReactionsContainerLayout effectSelector;
-    private boolean effectSelectorShown;
 
     private boolean layoutDone;
     public boolean allowRelayout;
@@ -233,7 +215,6 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
             final int[] destCellPos = new int[2];
             private GradientClip clip = new GradientClip();
             private AnimatedFloat destCellY = new AnimatedFloat(0, 100, CubicBezierInterpolator.EASE_OUT_QUINT);
-            private Paint backgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             @Override
             protected void dispatchDraw(Canvas canvas) {
                 if (openInProgress && mainMessageCell != null && mainMessageCell.getCurrentPosition() == null) {
@@ -403,26 +384,6 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
                     canvas.restore();
                 }
                 super.dispatchDraw(canvas);
-                if (cameraRect != null) {
-                    if (effectDrawable == null) {
-                        effectDrawable = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(this, dp(24), AnimatedEmojiDrawable.CACHE_TYPE_MESSAGE_EFFECT_MINI);
-                    }
-                    AndroidUtilities.rectTmp2.set(
-                            (int) (cameraRect.right - dp(12) - dp(24)),
-                            (int) (cameraRect.bottom - dp(12) - dp(24)),
-                            (int) (cameraRect.right - dp(12)),
-                            (int) (cameraRect.bottom - dp(12))
-                    );
-                    AndroidUtilities.rectTmp.set(AndroidUtilities.rectTmp2);
-                    AndroidUtilities.rectTmp.inset(-dp(12), -dp(6));
-                    final float r = AndroidUtilities.rectTmp.height() / 2f;
-                    backgroundPaint.setColor(0x1e000000);
-                    backgroundPaint.setAlpha((int) (0x1e * effectDrawable.isNotEmpty() * openProgress));
-                    canvas.drawRoundRect(AndroidUtilities.rectTmp, r, r, backgroundPaint);
-                    effectDrawable.setBounds(AndroidUtilities.rectTmp2);
-                    effectDrawable.setAlpha((int) (0xFF * openProgress));
-                    effectDrawable.draw(canvas);
-                }
             }
 
             @Override
@@ -1016,49 +977,6 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
         chatListView.setOverScrollMode(View.OVER_SCROLL_NEVER);
         containerView.addView(chatListView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
 
-        effectsView = new FrameLayout(context) {
-            @Override
-            protected void dispatchDraw(Canvas canvas) {
-                super.dispatchDraw(canvas);
-                effectOverlay.draw(canvas);
-
-                float progress = effectOverlay.getProgress();
-                if (progress != -2) {
-                    sendButton.setLoading(progress >= 0f && progress < 1f, ChatActivityEnterView.SendButton.INFINITE_LOADING);
-                }
-
-//                if (effectSelector != null) {
-//                    effectSelector.setPaused(effectOverlay.hasPlaying(), true);
-//                }
-                if (!effectOverlay.isIdle()) {
-                    invalidate();
-                }
-            }
-        };
-        windowView.addView(effectsView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
-        effectOverlay = new EmojiAnimationsOverlay(effectsView, currentAccount) {
-            int[] messagePos = new int[2];
-            @Override
-            protected void layoutObject(EmojiAnimationsOverlay.DrawingObject object) {
-                if (object == null) return;
-                if (cameraRect != null) {
-                    object.viewFound = true;
-                    float sz = getFilterWidth() * AndroidUtilities.density / 1.3f;
-                    object.lastW = sz / 3f;
-                    object.lastH = sz / 3f;
-                    object.lastX = Utilities.clamp(cameraRect.right - sz * .75f, AndroidUtilities.displaySize.x - sz, 0);
-                    object.lastY = cameraRect.bottom - sz / 2f;
-                } else if (mainMessageCell != null && mainMessageCell.isAttachedToWindow() && mainMessageCell.getMessageObject() != null && mainMessageCell.getMessageObject().getId() == mainMessageCellId) {
-                    mainMessageCell.getLocationOnScreen(messagePos);
-                    object.viewFound = true;
-                    float sz = getFilterWidth() * AndroidUtilities.density / 1.3f;
-                    object.lastW = sz / 3f;
-                    object.lastH = sz / 3f;
-                    object.lastX = Utilities.clamp(messagePos[0] + mainMessageCell.getTimeX() * chatListView.getScaleX() - sz / 2f, AndroidUtilities.displaySize.x - sz, 0);
-                    object.lastY = messagePos[1] + mainMessageCell.getTimeY() * chatListView.getScaleY() - sz / 2f;
-                }
-            }
-        };
     }
 
     private void updateMessagesVisiblePart() {
@@ -1102,13 +1020,6 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
             keyboardVisible = false;
             return;
         }
-        if (effectSelector != null && effectSelector.getReactionsWindow() != null) {
-            if (!effectSelector.getReactionsWindow().transition) {
-                effectSelector.getReactionsWindow().dismiss();
-            }
-            return;
-        }
-        sentEffect = true;
         super.onBackPressed();
     }
 
@@ -1276,184 +1187,6 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
         containerView.addView(optionsView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT));
     }
 
-    public void allowEffectSelector(BaseFragment fragment) {
-        if (effectSelector != null || fragment == null) return;
-        MessagesController.getInstance(currentAccount).getAvailableEffects();
-        effectSelectorContainer = new FrameLayout(context);
-        effectSelectorContainer.setClipChildren(false);
-        effectSelectorContainer.setClipToPadding(false);
-        effectSelectorContainer.setPadding(0, 0, 0, dp(24));
-        effectSelector = new ReactionsContainerLayout(ReactionsContainerLayout.TYPE_MESSAGE_EFFECTS, null, getContext(), currentAccount, resourcesProvider) {
-            @Override
-            protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-                super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-                setPivotX(getMeasuredWidth());
-                setPivotY(getMeasuredHeight());
-            }
-        };
-        effectSelector.setClipChildren(false);
-        effectSelector.setClipToPadding(false);
-        effectSelector.setPadding(AndroidUtilities.dp(4), AndroidUtilities.dp(22), AndroidUtilities.dp(4), AndroidUtilities.dp(22));
-        effectSelector.setDelegate(new ReactionsContainerLayout.ReactionsContainerDelegate() {
-            @Override
-            public void onReactionClicked(View view, ReactionsLayoutInBubble.VisibleReaction visibleReaction, boolean longpress, boolean addToRecent) {
-                if (visibleReaction == null || effectSelector == null)
-                    return;
-                if (mainMessageCell != null) {
-                    MessageObject messageObject = mainMessageCell.getMessageObject();
-                    if (messageObject == null)
-                        return;
-                    boolean clear = false;
-                    if (visibleReaction.effectId == messageObject.messageOwner.effect) {
-                        messageObject.messageOwner.flags2 &=~ 4;
-                        messageObject.messageOwner.effect = 0;
-                        clear = true;
-                    } else {
-                        messageObject.messageOwner.flags2 |= 4;
-                        messageObject.messageOwner.effect = visibleReaction.effectId;
-                    }
-                    mainMessageCell.setMessageObject(messageObject, getValidGroupedMessage(messageObject), messageObjects.size() > 1, false, false);
-                    effectSelector.setSelectedReactionAnimated(clear ? null : visibleReaction);
-                    if (effectSelector.getReactionsWindow() != null && effectSelector.getReactionsWindow().getSelectAnimatedEmojiDialog() != null) {
-                        effectSelector.getReactionsWindow().getSelectAnimatedEmojiDialog().setSelectedReaction(clear ? null : visibleReaction);
-                        effectSelector.getReactionsWindow().containerView.invalidate();
-                    }
-                    effectOverlay.clear();
-                    if (!clear) {
-                        effectOverlay.showAnimationForCell(mainMessageCell, 0, false, false);
-                    }
-                    if (sendButton != null) {
-                        sendButton.setEffect(messageObject.messageOwner.effect);
-                    }
-                    onEffectChange(messageObject.messageOwner.effect);
-                } else if (cameraRect != null) {
-                    boolean clear = false;
-                    if (visibleReaction.effectId == effectId) {
-                        effectId = 0;
-                        clear = true;
-                    } else {
-                        effectId = visibleReaction.effectId;
-                    }
-                    if (sendButton != null) {
-                        sendButton.setEffect(effectId);
-                    }
-                    onEffectChange(effectId);
-                    TLRPC.TL_availableEffect effect = effectId == 0 ? null : MessagesController.getInstance(currentAccount).getEffect(effectId);
-                    if (effectDrawable != null) {
-                        if (effectId == 0 || effect == null) {
-                            effectDrawable.set((Drawable) null, true);
-                        } else {
-                            effectDrawable.set(Emoji.getEmojiDrawable(effect.emoticon), true);
-                        }
-                    }
-                    effectSelector.setSelectedReactionAnimated(clear ? null : visibleReaction);
-                    if (effectSelector.getReactionsWindow() != null && effectSelector.getReactionsWindow().getSelectAnimatedEmojiDialog() != null) {
-                        effectSelector.getReactionsWindow().getSelectAnimatedEmojiDialog().setSelectedReaction(clear ? null : visibleReaction);
-                        effectSelector.getReactionsWindow().containerView.invalidate();
-                    }
-                    effectOverlay.clear();
-                    if (!clear) {
-                        TLRPC.TL_message message = new TLRPC.TL_message();
-                        message.effect = effectId;
-                        if (effectId != 0) {
-                            message.flags2 |= 4;
-                        }
-                        MessageObject messageObject = new MessageObject(currentAccount, message, false, false);
-                        effectOverlay.createDrawingObject(null, 0, null, messageObject, 0, false, false, 0, 0, true);
-                    }
-                }
-                // LoogriGram: a Premium effect is no longer offered without Premium
-                // (ReactionsContainerLayout), so none is refused here with a bulletin.
-                effectsView.invalidate();
-            }
-        });
-        effectSelector.setTop(false);
-        effectSelector.setClipChildren(false);
-        effectSelector.setClipToPadding(false);
-        effectSelector.setVisibility(View.VISIBLE);
-        effectSelector.setHint(LocaleController.getString(R.string.AddEffectMessageHint));
-        effectSelector.setBubbleOffset(dp(-25));
-        effectSelector.setMiniBubblesOffset(dp(2));
-        containerView.addView(effectSelectorContainer, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 300, Gravity.LEFT | Gravity.TOP, 0, 0, 0, 0));
-        effectSelectorContainer.addView(effectSelector, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 72 + 22 + 22, Gravity.LEFT | Gravity.BOTTOM, 0, 0, 0, 0));
-        effectSelector.setScaleY(.4f);
-        effectSelector.setScaleX(.4f);
-        effectSelector.setAlpha(0f);
-        if (MessagesController.getInstance(currentAccount).hasAvailableEffects()) {
-            showEffectSelector();
-        } else {
-            NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.availableEffectsUpdate);
-        }
-        if (effectSelector != null /*&& SharedConfig.getDevicePerformanceClass() < SharedConfig.PERFORMANCE_CLASS_HIGH*/) {
-            effectSelector.setPaused(true, true);
-        }
-
-        new KeyboardNotifier(windowView, keyboardHeight -> {
-            keyboardVisible = keyboardHeight - insets.bottom > dp(20);
-            float newY = keyboardVisible ? Math.min(effectSelectorContainerY, windowView.getHeight() - keyboardHeight - effectSelectorContainer.getMeasuredHeight()) : effectSelectorContainerY;
-            effectSelectorContainer.animate().translationY(newY - effectSelectorContainer.getTop()).setDuration(AdjustPanLayoutHelper.keyboardDuration).setInterpolator(AdjustPanLayoutHelper.keyboardInterpolator).start();
-        });
-    }
-
-    public void setEffectId(long effectId) {
-        this.effectId = effectId;
-        final int position = getMainMessageCellPosition();
-        MessageObject messageObject = position >= 0 && position < messageObjects.size() ? messageObjects.get(position) : null;
-        if (messageObject != null) {
-            messageObject.messageOwner.flags2 |= 4;
-            messageObject.messageOwner.effect = effectId;
-        }
-        if (effectSelector != null) {
-            TLRPC.TL_availableEffect effect = MessagesController.getInstance(currentAccount).getEffect(effectId);
-            if (effect != null) {
-                effectSelector.setSelectedReactionAnimated(ReactionsLayoutInBubble.VisibleReaction.fromTL(effect));
-            }
-        }
-    }
-
-    public void showEffectSelector() {
-        if (effectSelectorShown) return;
-        layoutDone = false;
-        effectSelectorShown = true;
-        effectSelector.setMessage(null, null, true);
-        effectSelector.animate().scaleY(1f).scaleX(1f).alpha(1f).setDuration(420).setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT).start();
-        effectSelector.startEnterAnimation(false);
-    }
-
-    private boolean sentEffect;
-    public long getSelectedEffect() {
-        if (sentEffect || effectSelector == null)
-            return 0;
-        if (cameraRect != null) {
-            sentEffect = true;
-            return effectId;
-        } else if (mainMessageCell != null) {
-            MessageObject messageObject = mainMessageCell.getMessageObject();
-            if (messageObject == null)
-                return 0;
-            if ((messageObject.messageOwner.flags2 & 4) == 0) {
-                return 0;
-            }
-            sentEffect = true;
-            return messageObject.messageOwner.effect;
-        }
-        return 0;
-    }
-
-    protected void onEffectChange(long effectId) {
-
-    }
-
-    public void hideEffectSelector() {
-        if (effectSelector == null) return;
-        if (!effectSelectorShown) return;
-        effectSelector.dismissWindow();
-        if (effectSelector.getReactionsWindow() != null && effectSelector.getReactionsWindow().containerView != null) {
-            effectSelector.getReactionsWindow().containerView.animate().alpha(0).setDuration(180).start();
-        }
-        effectSelector.animate().alpha(0.01f).translationY(-dp(12)).scaleX(.6f).scaleY(.6f).setDuration(180).start();
-    }
-
     private final int[] sendButtonInitialPosition = new int[2];
     private void layout() {
         if (windowView.getWidth() <= 0)
@@ -1468,7 +1201,7 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
         sendButtonInitialPosition[0] = pos[0];
         sendButtonInitialPosition[1] = pos[1];
 
-        final int heightup = chatListView.getMeasuredHeight() - sendButton.getHeight() + (effectSelector != null ? dp(320) : 0);
+        final int heightup = chatListView.getMeasuredHeight() - sendButton.getHeight();
         final int top = insets.top + dp(8);
 
         final int heightdown = dp(messageObjects.isEmpty() ? -6 : 48) + (optionsView == null ? 0 : optionsView.getMeasuredHeight());
@@ -1497,22 +1230,6 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
             optionsView.setX(pos[0] + dp(7) - optionsView.getMeasuredWidth());
             optionsView.setY(pos[1] + (messageObjects.isEmpty() ? -dp(6) : sendButton.getHeight()));
         }
-
-        if (effectSelectorContainer != null) {
-            effectSelectorContainer.setX(Math.max(0, pos[0] + sendButton.width() - effectSelectorContainer.getMeasuredWidth() - dp(6)));
-            if (cameraRect != null) {
-                effectSelectorContainer.setY(effectSelectorContainerY = Math.max(insets.top, cameraRect.top - effectSelectorContainer.getMeasuredWidth()));
-                if (effectSelector != null) {
-                    effectSelector.setY(Math.max(insets.top, cameraRect.top - dp(24) - effectSelector.getMeasuredHeight()));
-                }
-            } else {
-                final float y = pos[1] + sendButton.getHeight() - chatListView.getMeasuredHeight();
-                effectSelectorContainer.setY(effectSelectorContainerY = Math.max(insets.top, y - effectSelectorContainer.getMeasuredHeight()) + dp(24));
-                if (effectSelector != null) {
-                    effectSelector.setY(Math.max(0, y - effectSelector.getMeasuredHeight() - effectSelectorContainerY));
-                }
-            }
-        }
     }
 
     private boolean focusable;
@@ -1524,6 +1241,11 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
             params.flags &= ~WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM;
             window.setAttributes(params);
             focusable = true;
+            // LoogriGram: Back closes the keyboard first. This watcher was set
+            // up with the effect picker, which is gone.
+            new KeyboardNotifier(windowView, keyboardHeight -> {
+                keyboardVisible = keyboardHeight - insets.bottom > dp(20);
+            });
         } catch (Exception e) {
             FileLog.e(e);
         }
@@ -1541,9 +1263,6 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
         SpoilerEffect2.pause(SpoilerEffect2.TYPE_DEFAULT, true);
         super.show();
         prepareBlur(null);
-        if (effectsView != null) {
-            effectsView.bringToFront();
-        }
         animateOpenTo(true, null);
     }
 
@@ -1692,7 +1411,6 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
     }
 
     private void afterDismiss() {
-        NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.availableEffectsUpdate);
         if (activityVisibilityController != null) {
             activityVisibilityController.destroy();
             activityVisibilityController = null;
@@ -1709,9 +1427,6 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
         if (animateOptions) {
             ActionBarPopupWindow.startAnimation((ActionBarPopupWindow.ActionBarPopupWindowLayout) optionsView);
         }
-        if (!open) {
-            hideEffectSelector();
-        }
         openInProgress = true;
         opening = open;
         closing = !open;
@@ -1721,7 +1436,6 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
         openAnimator = ValueAnimator.ofFloat(openProgress, open ? 1 : 0);
         openAnimator.addUpdateListener(anm -> {
             openProgress = (float) anm.getAnimatedValue();
-            effectsView.setAlpha(openProgress);
             chatListView.setAlpha(openProgress);
             if (!animateOptions && optionsView != null) {
                 optionsView.setAlpha(openProgress);
@@ -1735,7 +1449,6 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
                 openProgress = open ? 1 : 0;
                 firstOpenFrame = false;
                 firstOpenFrame2 = false;
-                effectsView.setAlpha(openProgress);
                 if (open) {
                     openInProgress = false;
                     opening = false;
@@ -1806,15 +1519,6 @@ public class MessageSendPreview extends Dialog implements NotificationCenter.Not
 
     public void updateColors() {
 
-    }
-
-    @Override
-    public void didReceivedNotification(int id, int account, Object... args) {
-        if (id == NotificationCenter.availableEffectsUpdate) {
-            if (MessagesController.getInstance(currentAccount).hasAvailableEffects()) {
-                showEffectSelector();
-            }
-        }
     }
 
 

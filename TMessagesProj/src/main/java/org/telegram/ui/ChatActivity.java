@@ -908,7 +908,8 @@ public class ChatActivity extends BaseFragment implements
     protected TLRPC.UserFull userInfo;
 
     public ProfileChannelCell.ChannelMessageFetcher profileChannelMessageFetcher;
-    public ProfileBirthdayEffect.BirthdayEffectFetcher birthdayAssetsFetcher;
+    // LoogriGram: birthdayAssetsFetcher loaded the birthday balloons for the
+    // profile opened from here; they are not drawn.
 
     public final LongSparseArray<TL_bots.BotInfo> botInfo = new LongSparseArray<>();
     private String botUser;
@@ -1221,7 +1222,8 @@ public class ChatActivity extends BaseFragment implements
     private static boolean replacingChatActivity = false;
 
     private PinchToZoomHelper pinchToZoomHelper;
-    public EmojiAnimationsOverlay emojiAnimationsOverlay;
+    // LoogriGram: emojiAnimationsOverlay played message effects, Premium
+    // sticker effects and emoji interactions over the chat; all three are gone.
     public float drawingChatListViewYoffset;
     public int blurredViewTopOffset;
     public int blurredViewBottomOffset;
@@ -2101,9 +2103,6 @@ public class ChatActivity extends BaseFragment implements
                     AndroidUtilities.runOnUIThread(waitingForCharaterEnterRunnable, AndroidUtilities.WEB_URL == null ? 3000 : 1000);
                 }
             }
-            if (emojiAnimationsOverlay != null) {
-                emojiAnimationsOverlay.cancelAllAnimations();
-            }
             if (!fromDraft) {
                 if ((scheduledOrNoSoundHint != null && scheduledOrNoSoundHint.getVisibility() == View.VISIBLE)
                         || (scheduledHint != null && scheduledHint.getVisibility() == View.VISIBLE)) {
@@ -2707,8 +2706,7 @@ public class ChatActivity extends BaseFragment implements
                 .add(NotificationCenter.chatSearchResultsAvailable)
                 .add(NotificationCenter.chatSearchResultsLoading)
                 .add(NotificationCenter.didUpdateMessagesViews)
-                .add(NotificationCenter.didUpdatePollResults)
-                .add(NotificationCenter.availableEffectsUpdate);
+                .add(NotificationCenter.didUpdatePollResults);
             if (currentEncryptedChat != null) {
                 observersGroup.add(NotificationCenter.didVerifyMessagesStickers);
             }
@@ -3215,10 +3213,6 @@ public class ChatActivity extends BaseFragment implements
             progressDialogCurrent = null;
         }
         chatMessagesMetadataController.onFragmentDestroy();
-        if (birthdayAssetsFetcher != null) {
-            birthdayAssetsFetcher.detach(true);
-            birthdayAssetsFetcher = null;
-        }
     }
 
     private static class ChatActivityTextSelectionHelper extends TextSelectionHelper.ChatListTextSelectionHelper {
@@ -6571,7 +6565,6 @@ public class ChatActivity extends BaseFragment implements
                 }
                 invalidateMessagesVisiblePart();
                 textSelectionHelper.onParentScrolled();
-                emojiAnimationsOverlay.onScrolled(dy);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && chatToUpdate.scrollableViewNoiseSuppressor != null) {
                     chatToUpdate.scrollableViewNoiseSuppressor.onScrolled(dx, dy);
                 }
@@ -8184,13 +8177,6 @@ public class ChatActivity extends BaseFragment implements
             topBottom[1] = chatListView.getBottom() - blurredViewBottomOffset;
             topBottom[0] = chatListView.getTop() + chatListViewPaddingTop - AndroidUtilities.dp(4);
         });
-        emojiAnimationsOverlay = new EmojiAnimationsOverlay(ChatActivity.this, contentView, chatListView, currentAccount, dialog_id, threadMessageId) {
-            @Override
-            public void onAllEffectsEnd() {
-                updateMessagesVisiblePart(false);
-            }
-        };
-
         if (isTopic) {
             reactionsMentionCount = forumTopic.unread_reactions_count;
             pollVotesMentionCount = forumTopic.unread_poll_votes_count;
@@ -14571,10 +14557,6 @@ public class ChatActivity extends BaseFragment implements
                     updateReactionsMentionButton(true);
                 }
                 getDownloadController().checkUnviewedDownloads(messageCell.getId(), dialog_id);
-                boolean allowPlayEffect = messageObject.getEffect() != null || (messageObject.messageOwner.media != null && !messageObject.messageOwner.media.nopremium);
-                if ((chatListItemAnimator == null || !chatListItemAnimator.isRunning()) && (!messageObject.isOutOwner() || messageObject.forcePlayEffect) && allowPlayEffect && !messageObject.messageOwner.premiumEffectWasPlayed && (messageObject.isPremiumSticker() || messageCell.getEffect() != null) && emojiAnimationsOverlay.isIdle() && emojiAnimationsOverlay.checkPosition(messageCell, chatListViewPaddingTop, chatListView.getMeasuredHeight() - blurredViewBottomOffset)) {
-                    emojiAnimationsOverlay.onTapItem(messageCell, ChatActivity.this, false);
-                }
             } else if (view instanceof ChatActionCell) {
                 ChatActionCell cell = (ChatActionCell) view;
                 messageObject = cell.getMessageObject();
@@ -15846,7 +15828,6 @@ public class ChatActivity extends BaseFragment implements
             if (pullingDownDrawable != null) {
                 pullingDownDrawable.onAttach();
             }
-            emojiAnimationsOverlay.onAttachedToWindow();
         }
 
         @Override
@@ -15857,7 +15838,6 @@ public class ChatActivity extends BaseFragment implements
                 pullingDownDrawable.onDetach();
                 pullingDownDrawable = null;
             }
-            emojiAnimationsOverlay.onDetachedFromWindow();
         }
 
         private float x, y;
@@ -16646,8 +16626,6 @@ public class ChatActivity extends BaseFragment implements
                 pullingDownAnimateToActivity.fragmentView.draw(canvas);
                 canvas.restore();
             }
-
-            emojiAnimationsOverlay.draw(canvas);
 
             if (restoreToCount >= 0) {
                 canvas.restore();
@@ -22178,7 +22156,6 @@ public class ChatActivity extends BaseFragment implements
                     profileChannelMessageFetcher = new ProfileChannelCell.ChannelMessageFetcher(currentAccount);
                     profileChannelMessageFetcher.fetch(userInfo);
                 }
-                birthdayAssetsFetcher = ProfileBirthdayEffect.BirthdayEffectFetcher.of(currentAccount, userInfo, birthdayAssetsFetcher);
                 updateTopPanel(true);
                 if (flagSecure != null) {
                     flagSecure.invalidate();
@@ -22645,8 +22622,6 @@ public class ChatActivity extends BaseFragment implements
             }
         } else if (id == NotificationCenter.factCheckLoaded) {
             updateVisibleRows(msg -> msg != null && msg.getFactCheck() != null);
-        } else if (id == NotificationCenter.availableEffectsUpdate) {
-            updateVisibleRows(msg -> msg != null && msg.getEffect() != null);
         } else if (id == NotificationCenter.starBalanceUpdated) {
             updateTopPanel(true);
             updateBottomOverlay(true);
@@ -23538,11 +23513,8 @@ public class ChatActivity extends BaseFragment implements
                         }
                     }
                 }
-                // LoogriGram: a Premium account also replayed a just-sent premium
-                // sticker's effect; only a message effect is replayed now.
-                if (messageObject.wasJustSent && messageObject.getEffect() != null && !(SharedConfig.getDevicePerformanceClass() == SharedConfig.PERFORMANCE_CLASS_LOW || !LiteMode.isEnabled(LiteMode.FLAG_ANIMATED_STICKERS_CHAT))) {
-                    messageObject.forcePlayEffect = true;
-                }
+                // LoogriGram: a just-sent message's effect (and, for Premium, a
+                // Premium sticker's) was replayed here; effects are not played.
             }
             if (currentChat != null) {
                 // LoogriGram: a price change is held and never drawn, but it still
@@ -27785,11 +27757,9 @@ public class ChatActivity extends BaseFragment implements
                         }
                     }, 700);
                 }
-                chatActivityEnterView.setEffectId(draftMessage.effect);
             }
         } else if (canClear && draftMessage == null) {
             chatActivityEnterView.setFieldText("");
-            chatActivityEnterView.setEffectId(0);
             hideFieldPanel(true);
         }
 
@@ -32122,7 +32092,6 @@ public class ChatActivity extends BaseFragment implements
         if (checkSlowModeAlert()) {
             SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(user, dialog_id, replyingMessageObject, getThreadMessage(), null, null, notify, scheduleDate, 0);
             params.sendMessageChatArguments = getMessageChatSendParams();
-            params.effect_id = effectId;
             params.invert_media = invertMedia;
             params.monoForumPeer = getSendMonoForumPeerId();
             params.suggestionParams = messageSuggestionParams;
@@ -32136,21 +32105,17 @@ public class ChatActivity extends BaseFragment implements
             if (!TextUtils.isEmpty(caption)) {
                 SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(caption, dialog_id, null, null, null, true, null, null, null, true, 0, 0, null, false);
                 params.sendMessageChatArguments = getMessageChatSendParams();
-                params.effect_id = effectId;
                 params.invert_media = invertMedia;
                 params.monoForumPeer = getSendMonoForumPeerId();
                 params.suggestionParams = messageSuggestionParams;
-                effectId = 0;
                 SendMessagesHelper.getInstance(currentAccount).sendMessage(params);
             }
             for (TLRPC.User user : users) {
                 SendMessagesHelper.SendMessageParams params = SendMessagesHelper.SendMessageParams.of(user, dialog_id, null, null, null, null, notify, scheduleDate, 0);
                 params.sendMessageChatArguments = getMessageChatSendParams();
-                params.effect_id = effectId;
                 params.invert_media = invertMedia;
                 params.monoForumPeer = getSendMonoForumPeerId();
                 params.suggestionParams = messageSuggestionParams;
-                effectId = 0;
                 getSendMessagesHelper().sendMessage(params);
             }
             afterMessageSend();
@@ -35272,7 +35237,6 @@ public class ChatActivity extends BaseFragment implements
         msg.restriction_reason = omsg.restriction_reason;
         msg.ttl_period = omsg.ttl_period;
         msg.quick_reply_shortcut_id = omsg.quick_reply_shortcut_id;
-        msg.effect = omsg.effect;
         msg.noforwards = omsg.noforwards;
         msg.invert_media = omsg.invert_media;
         msg.offline = omsg.offline;
@@ -35301,7 +35265,6 @@ public class ChatActivity extends BaseFragment implements
         msg.voiceTranscriptionFinal = omsg.voiceTranscriptionFinal;
         msg.voiceTranscriptionForce = omsg.voiceTranscriptionForce;
         msg.voiceTranscriptionId = omsg.voiceTranscriptionId;
-        msg.premiumEffectWasPlayed = omsg.premiumEffectWasPlayed;
         msg.originalLanguage = omsg.originalLanguage;
         msg.translatedToLanguage = omsg.translatedToLanguage;
         msg.translatedText = omsg.translatedText;
@@ -35383,12 +35346,6 @@ public class ChatActivity extends BaseFragment implements
                 return inProgress && System.currentTimeMillis() - commentLoadingStartedAt > 1000;
             }
             return inProgress;
-        }
-
-        @Override
-        public void didPressEffect(ChatMessageCell cell) {
-            emojiAnimationsOverlay.onTapItem(cell, ChatActivity.this, true);
-            chatListView.cancelClickRunnables(false);
         }
 
         @Override
@@ -37461,10 +37418,8 @@ public class ChatActivity extends BaseFragment implements
                 // on the outcome, through StakedDiceSheet. It is gambling with money; the
                 // plain "roll one too" toast is all that is offered.
                 toastForNotStackedDice.run();
-            } else if (message.isPremiumSticker()) {
-                restartSticker(cell);
-                emojiAnimationsOverlay.onTapItem(cell, ChatActivity.this, true);
-                chatListView.cancelClickRunnables(false);
+            // LoogriGram: a tapped Premium sticker played its full-chat effect;
+            // it now opens its set like any other sticker.
             } else if (message.needDrawBluredPreview()) {
                 Runnable openAction = sendSecretMessageRead(message, false);
                 Runnable closeAction = sendSecretMediaDelete(message);

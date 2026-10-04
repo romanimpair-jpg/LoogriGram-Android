@@ -560,7 +560,7 @@ public class ChatAvatarContainer extends FrameLayout implements FactorAnimator.T
                 args.putInt("actionBarColor", getThemedColor(Theme.key_actionBarDefault));
                 final ProfileActivity fragment = new ProfileActivity(args, sharedMediaPreloader);
                 if (!monoforum) {
-                    fragment.setUserInfo(parentFragment.getCurrentUserInfo(), parentFragment.profileChannelMessageFetcher, parentFragment.birthdayAssetsFetcher);
+                    fragment.setUserInfo(parentFragment.getCurrentUserInfo(), parentFragment.profileChannelMessageFetcher);
                 }
                 if (fromChatAnimation) {
                     fragment.setPlayProfileAnimation(byAvatar ? 2 : 1);

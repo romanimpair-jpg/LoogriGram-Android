@@ -469,8 +469,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private TLRPC.UserFull userInfo;
 
     public ProfileChannelCell.ChannelMessageFetcher profileChannelMessageFetcher;
-    public boolean createdBirthdayFetcher;
-    public ProfileBirthdayEffect.BirthdayEffectFetcher birthdayFetcher;
+    // LoogriGram: birthdayFetcher and birthdayEffect played balloons over the
+    // profile on its owner's birthday; the birthday itself still shows.
 
     private CharSequence currentBio;
 
@@ -2156,10 +2156,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
         if (pinchToZoomHelper != null) {
             pinchToZoomHelper.clear();
-        }
-        if (birthdayFetcher != null && createdBirthdayFetcher) {
-            birthdayFetcher.detach(true);
-            birthdayFetcher = null;
         }
 
         Bulletin.removeDelegate(this);
@@ -3931,9 +3927,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 args.putLong("chat_id", userInfo.personal_channel_id);
                 presentFragment(new ChatActivity(args));
             } else if (position == birthdayRow) {
-                if (birthdayEffect != null && birthdayEffect.start()) {
-                    return;
-                }
                 if (editRow(view, position)) {
                     return;
                 }
@@ -5082,7 +5075,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         blurredView.setFitsSystemWindows(true);
         contentView.addView(blurredView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
 
-        createBirthdayEffect();
 
         if (actionsView != null && actionsView.hasCall()) {
             callToActionItem = new ImageView(context);
@@ -7971,14 +7963,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     profileChannelMessageFetcher.subscribe(() -> updateListAnimated(false));
                     profileChannelMessageFetcher.fetch(userInfo);
                 }
-                if (!isSettings()) {
-                    ProfileBirthdayEffect.BirthdayEffectFetcher oldFetcher = birthdayFetcher;
-                    birthdayFetcher = ProfileBirthdayEffect.BirthdayEffectFetcher.of(currentAccount, userInfo, birthdayFetcher);
-                    createdBirthdayFetcher = birthdayFetcher != oldFetcher;
-                    if (birthdayFetcher != null) {
-                        birthdayFetcher.subscribe(this::createBirthdayEffect);
-                    }
-                }
                 if (otherItem != null) {
                     if (hasPrivacyCommand()) {
                         otherItem.showSubItem(bot_privacy);
@@ -8336,7 +8320,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             undoView.hide(true, 0);
         }
         super.onBecomeFullyHidden();
-        fullyVisible = false;
     }
 
     public void setPlayProfileAnimation(int type) {
@@ -8803,9 +8786,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 }
             }
             animatorSet.playTogether(animators);
-            if (birthdayEffect != null) {
-                birthdayEffect.hide();
-            }
         }
         profileTransitionInProgress = true;
         ValueAnimator valueAnimator = ValueAnimator.ofFloat(0, 1f);
@@ -8943,8 +8923,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
     public void setUserInfo(
             TLRPC.UserFull value,
-            ProfileChannelCell.ChannelMessageFetcher channelMessageFetcher,
-            ProfileBirthdayEffect.BirthdayEffectFetcher birthdayAssetsFetcher
+            ProfileChannelCell.ChannelMessageFetcher channelMessageFetcher
     ) {
         userInfo = value;
         if (sharedMediaLayout != null) {
@@ -8958,16 +8937,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
         profileChannelMessageFetcher.subscribe(() -> updateListAnimated(false));
         profileChannelMessageFetcher.fetch(userInfo);
-        if (birthdayFetcher == null) {
-            birthdayFetcher = birthdayAssetsFetcher;
-        }
-        if (birthdayFetcher == null) {
-            birthdayFetcher = ProfileBirthdayEffect.BirthdayEffectFetcher.of(currentAccount, userInfo, birthdayFetcher);
-            createdBirthdayFetcher = birthdayFetcher != null;
-        }
-        if (birthdayFetcher != null) {
-            birthdayFetcher.subscribe(this::createBirthdayEffect);
-        }
         if (otherItem != null) {
             otherItem.setSubItemShown(start_secret_chat, DialogObject.isEmpty(getMessagesController().isUserContactBlocked(userId)));
             if (hasPrivacyCommand()) {
@@ -13378,14 +13347,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         // LoogriGram: tapping a birthday offered to buy a gift for it.
     }
 
-    private boolean fullyVisible;
-
     @Override
     public void onBecomeFullyVisible() {
         super.onBecomeFullyVisible();
         writeButtonSetBackground();
-        fullyVisible = true;
-        createBirthdayEffect();
     }
 
     private void writeButtonSetBackground() {
@@ -13915,22 +13880,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         public void setView(View view) {
             this.view = view;
         }
-    }
-
-    private ProfileBirthdayEffect birthdayEffect;
-
-    private void createBirthdayEffect() {
-        if (fragmentView == null || !fullyVisible || birthdayFetcher == null || getContext() == null)
-            return;
-
-        if (birthdayEffect != null) {
-            birthdayEffect.updateFetcher(birthdayFetcher);
-            birthdayEffect.invalidate();
-            return;
-        }
-
-        birthdayEffect = new ProfileBirthdayEffect(this, birthdayFetcher);
-        ((FrameLayout) fragmentView).addView(birthdayEffect, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.FILL_HORIZONTAL | Gravity.TOP));
     }
 
     // LoogriGram: inMapsApp is what it always is now - there is no map of

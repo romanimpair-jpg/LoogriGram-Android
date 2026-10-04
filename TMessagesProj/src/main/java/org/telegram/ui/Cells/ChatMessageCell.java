@@ -782,10 +782,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
         }
 
-        default void didPressEffect(ChatMessageCell cell) {
-
-        }
-
         default void didPressFactCheckWhat(ChatMessageCell cell, int cx, int cy) {
 
         }
@@ -968,10 +964,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     public SuggestionOffer suggestionOffer;
     private int suggestionOfferTopPadding;
 
-    private long effectId;
-    private int effectMessageId;
-    private ButtonBounce effectDrawableBounce;
-    private AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable effectDrawable;
+    // LoogriGram: a message's effect showed as an emoji by the time, tapped to
+    // replay it; effects are neither shown nor played.
 
     private boolean invalidateSpoilersParent;
 
@@ -3089,40 +3083,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         return false;
     }
 
-    private boolean pressedEffect = false;
-    private boolean checkEffectMotionEvent(MotionEvent event) {
-        if (currentMessageObject == null || currentMessageObject.getEffect() == null) {
-            return false;
-        }
-        int x = (int) (getTimeX() - dp(effectId == 0 ? 0 : 14 + 4) + timeWidth * (currentMessageObject.sendPreview ? 1f - timeAlpha : 0f));
-        int y = (int) getTimeY();
-        x -= dp(2);
-        y -= dp(2);
-        AndroidUtilities.rectTmp.set(x, y, x + dp(16) + timeWidth, y + dp(16));
-        final boolean hit = AndroidUtilities.rectTmp.contains(getEventX(event), getEventY(event));
-        if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            if (hit) {
-                if (effectDrawableBounce == null) {
-                    effectDrawableBounce = new ButtonBounce(this);
-                }
-                pressedEffect = true;
-            }
-        } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
-            pressedEffect = hit;
-        } else if (event.getAction() == MotionEvent.ACTION_UP) {
-            if (pressedEffect && delegate != null) {
-                delegate.didPressEffect(this);
-            }
-            pressedEffect = false;
-        } else if (event.getAction() == MotionEvent.ACTION_CANCEL) {
-            pressedEffect = false;
-        }
-        if (effectDrawableBounce != null) {
-            effectDrawableBounce.setPressed(pressedEffect);
-        }
-        return pressedEffect;
-    }
-
     private boolean factCheckWhatPressed;
     private boolean factCheckPressed;
     private boolean checkFactCheckMotionEvent(MotionEvent event) {
@@ -4731,9 +4691,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
         if (!result) {
             result = checkGameMotionEvent(event);
-        }
-        if (!result) {
-            result = checkEffectMotionEvent(event);
         }
         if (!result) {
             result = checkPhotoImageMotionEvent(event);
@@ -6439,9 +6396,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 newPosition = null;
             }
             groupChanged = newPosition != currentPosition;
-        }
-        if (!messageChanged && effectId != messageObject.getEffectId()) {
-            messageChanged = true;
         }
         if (messageObject.updateSideMenuEnabled(isSideMenuEnabled)) {
             messageChanged = true;
@@ -10985,10 +10939,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         if (forwardBg != null) {
             forwardBg.setPressed(false);
         }
-        pressedEffect = false;
-        if (effectDrawableBounce != null) {
-            effectDrawableBounce.setPressed(pressedEffect);
-        }
         if (pressedEmoji != null) {
 //            hadLongPress = true;
 //            if (delegate.didPressAnimatedEmoji(this, pressedEmoji)) {
@@ -12538,9 +12488,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 }
             }
             timeX -= getExtraTimeX();
-            if (effectId != 0) {
-                timeX += dp(14 + 4);
-            }
 
             final boolean isInWelcomeMessages = delegate != null && delegate.getChatMode() == ChatActivity.MODE_WELCOME_MESSAGES;
             if ((currentMessageObject.messageOwner.flags & TLRPC.MESSAGE_FLAG_HAS_VIEWS) != 0 && !isInWelcomeMessages) {
@@ -17009,27 +16956,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             reactionsLayoutInBubble.measure(Integer.MAX_VALUE, Gravity.LEFT);
             timeWidth += reactionsLayoutInBubble.width;
         }
-        TLRPC.TL_availableEffect effect = getEffect();
-        if (effectId != (effect != null ? effect.id : 0)) {
-            if (effectDrawable == null) {
-                effectDrawable = new AnimatedEmojiDrawable.SwapAnimatedEmojiDrawable(this, !(delegate != null && delegate.canDrawOutboundsContent()), dp(14), AnimatedEmojiDrawable.CACHE_TYPE_MESSAGE_EFFECT_MINI);
-            }
-            final boolean animated = effectMessageId == currentMessageObject.getId();
-            if (effect != null) {
-                if (!TextUtils.isEmpty(effect.emoticon)) {
-                    effectDrawable.set(Emoji.getEmojiDrawable(effect.emoticon), animated);
-                } else if ((effect.flags & 1) != 0) {
-                    effectDrawable.set(effect.static_icon_id, animated);
-                }
-            } else {
-                effectDrawable.set((Drawable) null, animated);
-            }
-            effectId = effect != null ? effect.id : 0;
-            effectMessageId = currentMessageObject.getId();
-        }
-        if (effectId != 0 && !currentMessageObject.notime) {
-            timeWidth += dp(14 + 4);
-        }
         if (signString != null) {
             if (availableTimeWidth == 0) {
                 availableTimeWidth = dp(1000);
@@ -19224,9 +19150,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     }
 
     public boolean hasOutboundsContent() {
-        if (effectDrawable != null && effectDrawable.isNotEmpty() > 0) {
-            return true;
-        }
         if (hasFactCheck) {
             return true;
         }
@@ -21813,30 +21736,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             drawOverlays(canvas);
         }
 
-        if (effectDrawable != null) {
-            if (effectDrawableBounce == null) {
-                effectDrawableBounce = new ButtonBounce(this);
-            }
-            final float s = effectDrawableBounce.getScale(.2f);
-            int x = (int) (getTimeX() - dp(effectId == 0 ? 0 : 14 + 4) + timeWidth * (currentMessageObject.sendPreview ? 1f - timeAlpha : 0f));
-            int y = (int) getTimeY();
-            if (currentMessageObject != null && !currentMessageObject.notime && pinnedBottom && !shouldDrawTimeOnMedia()) {
-                y += dp(2);
-            }
-            if (shouldDrawTimeOnMedia() && currentMessageObject.sendPreview) {
-                x -= dp(1);
-            }
-            if (currentMessageObject != null && (currentMessageObject.type == MessageObject.TYPE_ANIMATED_STICKER || currentMessageObject.isAnyKindOfSticker())) {
-                x -= dp(6);
-            }
-            int sz = dp(14);
-            int cx = x + sz / 2, cy = y + sz / 2;
-            effectDrawable.setBounds((int) (cx - sz / 2 * s), (int) (cy - sz / 2 * s), (int) (cx + sz / 2 * s), (int) (cy + sz / 2 * s));
-            if (!currentMessageObject.sendPreview) {
-                effectDrawable.setAlpha((int) (0xFF * timeAlpha));
-            }
-            effectDrawable.draw(canvas);
-        }
     }
 
     private void drawTimeInternal(Canvas canvas, float alpha, boolean fromParent, float timeX, StaticLayout timeLayout, float timeWidth, boolean drawSelectionBackground) {
@@ -21928,7 +21827,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 alpha = AndroidUtilities.lerp(0.35f, 1f, progress);
             }
             if (currentMessageObject != null && currentMessageObject.sendPreview) {
-                alpha *= effectDrawable == null ? 0f : effectDrawable.isNotEmpty();
+                // LoogriGram: scaled by the effect icon's presence; there is none.
+                alpha = 0f;
             }
             paint.setAlpha((int) (oldAlpha * timeAlpha * alpha * .6f));
 
@@ -21941,9 +21841,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 r = dp(4) + (currentMessageObject != null && currentMessageObject.isAnyKindOfSticker() ? dp(8) : 0);
             }
             timeX += (currentMessageObject != null && currentMessageObject.isAnyKindOfSticker() ? dp(-STICKER_STATUS_OFFSET) : 0);
-            if (effectId != 0) {
-                timeX -= dp(14 + 4);
-            }
             float x1 = timeX - dp(bigRadius ? 6 : 4);
             float offsetX = (currentMessageObject != null && currentMessageObject.isAnyKindOfSticker()) ? dp(2) : 0;
             float timeY;
@@ -27030,16 +26927,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             return FileLoader.getAttachFileName(documentAttach);
         } else if (currentPhotoObject != null) {
             return FileLoader.getAttachFileName(currentPhotoObject);
-        }
-        return null;
-    }
-
-    public TLRPC.TL_availableEffect getEffect() {
-        if (currentPosition != null && !currentPosition.last) {
-            return null;
-        }
-        if (currentMessageObject != null) {
-            return currentMessageObject.getEffect();
         }
         return null;
     }

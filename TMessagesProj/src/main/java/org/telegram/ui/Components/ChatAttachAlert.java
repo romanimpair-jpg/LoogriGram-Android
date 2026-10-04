@@ -975,8 +975,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     private Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private AnimatorSet commentsAnimator;
 
-    private long effectId;
-
     public FrameLayout topCommentContainer;
     public EditTextEmoji topCommentTextView;
     public ImageView topCommentMoveButton;
@@ -3338,16 +3336,8 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             if (messageSendPreview != null) {
                 messageSendPreview.dismiss();
             }
-            messageSendPreview = new MessageSendPreview(context, resourcesProvider) {
-                @Override
-                protected void onEffectChange(long effectId) {
-                    writeButton.setEffect(ChatAttachAlert.this.effectId = effectId);
-                    super.onEffectChange(effectId);
-                }
-            };
+            messageSendPreview = new MessageSendPreview(context, resourcesProvider);
             messageSendPreview.setSendButton(writeButton, false, v -> {
-                final long effectId = messageSendPreview != null ? messageSendPreview.getSelectedEffect() : 0;
-                writeButton.setEffect(ChatAttachAlert.this.effectId = effectId);
                 forceKeyboardOnDismiss();
                 if (currentLimit - codepointCount < 0) {
                     AndroidUtilities.shakeView(captionLimitView);
@@ -3636,8 +3626,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 final long finalDialogId = dialogId;
                 options.add(R.drawable.msg_calendar2, getString(self ? R.string.SetReminder : R.string.ScheduleMessage), () -> {
                     AlertsCreator.createScheduleDatePickerDialog(getContext(), finalDialogId, (notify, scheduleDate, scheduleRepeatPeriod) -> {
-                        final long effectId = messageSendPreview != null ? messageSendPreview.getSelectedEffect() : 0;
-                        writeButton.setEffect(ChatAttachAlert.this.effectId = effectId);
                         boolean shownDialog = false;
                         if (currentAttachLayout == photoLayout || currentAttachLayout == photoPreviewLayout) {
                             shownDialog = sendPressed(notify, scheduleDate, scheduleRepeatPeriod, isCaptionAbove());
@@ -3672,8 +3660,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             }
             if (editingMessageObject == null && !self) {
                 options.add(R.drawable.input_notify_off, getString(R.string.SendWithoutSound), () -> {
-                    final long effectId = messageSendPreview != null ? messageSendPreview.getSelectedEffect() : 0;
-                    writeButton.setEffect(ChatAttachAlert.this.effectId = effectId);
                     boolean shownDialog = false;
                     if (currentAttachLayout == photoLayout || currentAttachLayout == photoPreviewLayout) {
                         shownDialog = sendPressed(false, 0, 0, isCaptionAbove());
@@ -3694,10 +3680,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             messageSendPreview.setItemOptions(options);
 
             messageSendPreview.setMessageObjects(messageObjects);
-            if (editingMessageObject == null && dialogId >= 0 && hasMessageToEffect) {
-                messageSendPreview.allowEffectSelector(parentFragment);
-                messageSendPreview.setEffectId(effectId);
-            }
+            // LoogriGram: the preview offered message effects here.
 
             messageSendPreview.show();
 
@@ -5461,7 +5444,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     }
 
     public void init() {
-        writeButton.setEffect(effectId = 0);
         botButtonWasVisible = false;
         botButtonProgressWasVisible = false;
         botMainButtonOffsetY = 0;

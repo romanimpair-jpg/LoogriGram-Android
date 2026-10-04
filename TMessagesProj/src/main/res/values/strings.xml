@@ -2098,7 +2098,6 @@
     <string name="NoGIFsFound">No GIFs found</string>
     <string name="NoEmojiFound">No emoji found</string>
     <string name="NoReactionsFound">No reactions found</string>
-    <string name="NoEffectsFound">No effects found</string>
     <string name="EmojiSuggestions">Emoji suggestions</string>
     <string name="EmojiSuggestionsInfo">**Telegram** lets you find emoji by thousands of keywords, but there is always something missing. If you want to suggest a new emoji replacement, you can help us by visiting:</string>
     <string name="EmojiSuggestionsUrl">https://translations.telegram.org/%1$s/emoji</string>
@@ -5098,12 +5097,9 @@
     <string name="OptimizingTelegram">Optimizing LoogriGram...</string>
     <string name="OptimizingTelegramDescription1">This may take a while, depending on the size of the database. Please keep the app open until the process is finished.</string>
     <string name="OptimizingTelegramDescription2">Sorry for the inconvenience.</string>
-    <string name="EnjoyngAnimations">**oo** watching %1$s</string>
-    <string name="IsEnjoyngAnimations">%1$s is **oo** watching %2$s</string>
     <string name="ThemeAlsoAppliedForHint">Theme will be also applied for **%s**.</string>
     <string name="ThemeAlsoDisabledForHint">Theme will be also disabled for **%s**.</string>
     <string name="MessageSeenTooltipMessage">To protect privacy, views are only stored for **7 days**</string>
-    <string name="EmojiInteractionTapHint">If **%s** were viewing the chat now, they would also see this animation.</string>
     <string name="AttachMenu">Attach...</string>
     <string name="Calendar">Calendar</string>
     <string name="MediaZoomIn">Zoom in</string>
@@ -7306,9 +7302,7 @@
     <string name="EventLogExpandMore_other">Show %d More Messages</string>
     <string name="NoLogFound">**No results found**</string>
     <string name="NoLogFoundFiltered">**No results matching your filters**</string>
-    <string name="AddEffectMessageHint">Add an animated effect</string>
     <string name="AnimatedEffectPremium">Subscribe to **Telegram Premium** to add this animated effect.</string>
-    <string name="StickerEffects">Effects from stickers</string>
     <string name="NumberNotOnTelegram">This number is not on Telegram</string>
     <string name="NoUsernameFound2">This user doesn’t exist on Telegram</string>
     <string name="ViewProfile">View Profile ></string>
