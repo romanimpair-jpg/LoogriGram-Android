@@ -5765,9 +5765,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
 
         return true;
     }
-    private static boolean checkContactsPermission(Context context) {
-        return Build.VERSION.SDK_INT < 23 || ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED;
-    }
 
     private static boolean checkMusicPermission(Context context) {
         return Build.VERSION.SDK_INT < 23 || ContextCompat.checkSelfPermission(context, Build.VERSION.SDK_INT >= 33 ? Manifest.permission.READ_MEDIA_AUDIO : Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
@@ -5840,8 +5837,11 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     } else if (position == pollButton) {
                         attachButton.setTextAndIcon(9, getString(R.string.Poll), GlassTabView.TabAnimation.POLL);
                         attachButton.setTag(9);
-                        attachButton.setTag(5);
-                        err = !checkContactsPermission(mContext);
+                        // LoogriGram: 116c8df4 cut only the Contact branch's head
+                        // here, leaving its setTag(5) and contacts-permission
+                        // check in this one: Poll asked for item 5, which no
+                        // longer exists, so the menu just closed, and the missing
+                        // permission put a "!" on the button.
                     } else if (position == stickerButton) {
                         attachButton.setTextAndIcon(LAYOUT_TYPE_STICKERS, getString(R.string.ChatSticker), GlassTabView.TabAnimation.STICKER);
                         attachButton.setTag(LAYOUT_TYPE_STICKERS);
