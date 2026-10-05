@@ -22,7 +22,6 @@ public class MessageCustomParamsHelper {
             !message.voiceTranscriptionRated &&
             !message.voiceTranscriptionForce &&
             message.voiceTranscriptionId == 0 &&
-            !message.premiumEffectWasPlayed &&
             message.originalLanguage == null &&
             message.translatedToLanguage == null &&
             message.translatedPoll == null &&
@@ -38,7 +37,6 @@ public class MessageCustomParamsHelper {
         toMessage.voiceTranscriptionForce = fromMessage.voiceTranscriptionForce;
         toMessage.voiceTranscriptionRated = fromMessage.voiceTranscriptionRated;
         toMessage.voiceTranscriptionId = fromMessage.voiceTranscriptionId;
-        toMessage.premiumEffectWasPlayed = fromMessage.premiumEffectWasPlayed;
         toMessage.originalLanguage = fromMessage.originalLanguage;
         toMessage.translatedToLanguage = fromMessage.translatedToLanguage;
         toMessage.translatedPoll = fromMessage.translatedPoll;
@@ -123,7 +121,9 @@ public class MessageCustomParamsHelper {
             stream.writeBool(message.voiceTranscriptionRated);
             stream.writeInt64(message.voiceTranscriptionId);
 
-            stream.writeBool(message.premiumEffectWasPlayed);
+            // LoogriGram: was premiumEffectWasPlayed; nothing plays a Premium
+            // effect any more, so its slot keeps the stored format only.
+            stream.writeBool(false);
 
             if ((flags & 4) != 0) {
                 stream.writeString(message.originalLanguage);
@@ -168,7 +168,7 @@ public class MessageCustomParamsHelper {
             message.voiceTranscriptionRated = stream.readBool(exception);
             message.voiceTranscriptionId = stream.readInt64(exception);
 
-            message.premiumEffectWasPlayed = stream.readBool(exception);
+            stream.readBool(exception); // LoogriGram: was premiumEffectWasPlayed.
 
             if ((flags & 4) != 0) {
                 message.originalLanguage = stream.readString(exception);

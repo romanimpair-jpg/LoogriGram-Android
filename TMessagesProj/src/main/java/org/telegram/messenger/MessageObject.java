@@ -197,7 +197,6 @@ public class MessageObject {
     public boolean isOauthPush;
     public boolean putInDownloadsStore;
     public boolean isDownloadingFile;
-    public boolean forcePlayEffect;
     private int isRoundVideoCached;
     public long eventId;
     public int contentType;
@@ -696,26 +695,8 @@ public class MessageObject {
         return isPremiumSticker(getDocument());
     }
 
-    public TLRPC.VideoSize getPremiumStickerAnimation() {
-        return getPremiumStickerAnimation(getDocument());
-    }
-
-    public static TLRPC.VideoSize getPremiumStickerAnimation(TLRPC.Document document) {
-        if (document == null || document.thumbs == null) {
-            return null;
-        }
-        for (int i = 0; i < document.video_thumbs.size(); i++) {
-            if ("f".equals(document.video_thumbs.get(i).type)) {
-                return document.video_thumbs.get(i);
-            }
-        }
-        return null;
-    }
-
     public void copyStableParams(MessageObject old) {
         stableId = old.stableId;
-        messageOwner.premiumEffectWasPlayed = old.messageOwner.premiumEffectWasPlayed;
-        forcePlayEffect = old.forcePlayEffect;
         wasJustSent = old.wasJustSent;
         if (messageOwner.reactions != null && messageOwner.reactions.results != null && !messageOwner.reactions.results.isEmpty() && old.messageOwner.reactions != null && old.messageOwner.reactions.results != null) {
             for (int i = 0; i < messageOwner.reactions.results.size(); i++) {

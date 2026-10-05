@@ -57403,7 +57403,6 @@ public class TLRPC {
         public boolean voiceTranscriptionFinal; //custom
         public boolean voiceTranscriptionForce; //custom
         public long voiceTranscriptionId; //custom
-        public boolean premiumEffectWasPlayed; //custom
         public String originalLanguage; //custom
         public String translatedToLanguage; //custom
         public TL_textWithEntities translatedText; //custom

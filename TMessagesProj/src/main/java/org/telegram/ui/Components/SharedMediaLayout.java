@@ -7371,7 +7371,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     msg.voiceTranscriptionFinal = omsg.voiceTranscriptionFinal;
                     msg.voiceTranscriptionForce = omsg.voiceTranscriptionForce;
                     msg.voiceTranscriptionId = omsg.voiceTranscriptionId;
-                    msg.premiumEffectWasPlayed = omsg.premiumEffectWasPlayed;
                     msg.originalLanguage = omsg.originalLanguage;
                     msg.translatedToLanguage = omsg.translatedToLanguage;
                     msg.translatedText = omsg.translatedText;

@@ -338,7 +338,6 @@ public class ContentPreviewViewer {
     private FrameLayout windowView;
     private FrameLayoutDrawer containerView;
     public ImageReceiver centerImage = new ImageReceiver();
-    private ImageReceiver effectImage = new ImageReceiver();
     public PaintingOverlay paintingOverlay;
     private Path paintingOverlayClipPath;
     private boolean isVisible = false;
@@ -354,7 +353,6 @@ public class ContentPreviewViewer {
     private ReactionsContainerLayout reactionsLayout;
     private FrameLayout reactionsLayoutContainer;
     private boolean closeOnDismiss;
-    private boolean drawEffect;
     private TLRPC.TL_messages_stickerSet stickerSetForCustomSticker;
 
     private boolean canShowFullVotersList() {
@@ -863,18 +861,11 @@ public class ContentPreviewViewer {
                 if (currentContentType == CONTENT_TYPE_GIF) {
                     size = Math.min(containerView.getWidth(), containerView.getHeight() - insets) - AndroidUtilities.dp(40f);
                 } else {
-                    if (drawEffect) {
-                        size = (int) (Math.min(containerView.getWidth(), containerView.getHeight() - insets) - AndroidUtilities.dpf2(40f));
-                    } else {
-                        size = (int) (Math.min(containerView.getWidth(), containerView.getHeight() - insets) / 1.8f);
-                    }
+                    size = (int) (Math.min(containerView.getWidth(), containerView.getHeight() - insets) / 1.8f);
                 }
 
                 int y = (int) (moveY + Math.max(size / 2 + top + (stickerEmojiLayout != null ? AndroidUtilities.dp(40) : 0), (containerView.getHeight() - insets - keyboardHeight) / 2) + size / 2);
                 y += AndroidUtilities.dp(24);
-                if (drawEffect) {
-                    y += AndroidUtilities.dp(24);
-                }
                 popupWindow.showAtLocation(containerView, 0, (int) ((containerView.getMeasuredWidth() - previewMenu.getMeasuredWidth()) / 2f), y);
 
                 try {
@@ -1559,8 +1550,6 @@ public class ContentPreviewViewer {
         currentAccount = UserConfig.selectedAccount;
         centerImage.setCurrentAccount(currentAccount);
         centerImage.setLayerNum(Integer.MAX_VALUE);
-        effectImage.setCurrentAccount(currentAccount);
-        effectImage.setLayerNum(Integer.MAX_VALUE);
         if (parentActivity == activity) {
             return;
         }
@@ -1604,14 +1593,12 @@ public class ContentPreviewViewer {
             protected void onAttachedToWindow() {
                 super.onAttachedToWindow();
                 centerImage.onAttachedToWindow();
-                effectImage.onAttachedToWindow();
             }
 
             @Override
             protected void onDetachedFromWindow() {
                 super.onDetachedFromWindow();
                 centerImage.onDetachedFromWindow();
-                effectImage.onDetachedFromWindow();
             }
         };
         containerView.setFocusable(false);
@@ -1646,10 +1633,6 @@ public class ContentPreviewViewer {
         centerImage.setAspectFit(true);
         centerImage.setInvalidateAll(true);
         centerImage.setParentView(containerView);
-
-        effectImage.setAspectFit(true);
-        effectImage.setInvalidateAll(true);
-        effectImage.setParentView(containerView);
     }
 
     public void setFocusable(boolean focusable) {
@@ -1684,7 +1667,6 @@ public class ContentPreviewViewer {
         stickerEmojiLayout = null;
         boolean isDark = AndroidUtilities.isDarkColor(Theme.getColor(Theme.key_windowBackgroundWhite, resourcesProvider));
         backgroundDrawable.setColor(isDark ? 0x71000000 : 0x64E6E6E6);
-        drawEffect = false;
         centerImage.setColorFilter(null);
         if (contentType == CONTENT_TYPE_STICKER || contentType == CONTENT_TYPE_EMOJI || contentType == CONTENT_TYPE_CUSTOM_STIKER) {
             if (document == null && sticker == null) {
@@ -1695,8 +1677,6 @@ public class ContentPreviewViewer {
                 textPaint.setTextSize(AndroidUtilities.dp(24));
             }
 
-            effectImage.clearImage();
-            drawEffect = false;
             if (document != null) {
                 TLRPC.InputStickerSet newSet = null;
                 for (int a = 0; a < document.attributes.size(); a++) {
@@ -1725,11 +1705,11 @@ public class ContentPreviewViewer {
                 if (MessageObject.isVideoStickerDocument(document)) {
                     centerImage.setImage(ImageLocation.getForDocument(document), null, ImageLocation.getForDocument(thumb, document), null, null, 0, "webp", currentStickerSet, 1);
                 } else {
+                    // LoogriGram: a Premium sticker also loaded its effect here and
+                    // was drawn smaller, to one side, with the effect playing
+                    // around it (effectImage, drawEffect). The user's decision,
+                    // 2026-10-05: not in the preview either; desktop cb712935e5.
                     centerImage.setImage(ImageLocation.getForDocument(document), null, ImageLocation.getForDocument(thumb, document), null, "webp", currentStickerSet, 1);
-                    if (MessageObject.isPremiumSticker(document)) {
-                        drawEffect = true;
-                        effectImage.setImage(ImageLocation.getForDocument(MessageObject.getPremiumStickerAnimation(document), document), null, null, null, "tgs", currentStickerSet, 1);
-                    }
                 }
                 if (MessageObject.isTextColorEmoji(document)) {
                     centerImage.setColorFilter(Theme.getAnimatedEmojiColorFilter(resourcesProvider));
@@ -1797,9 +1777,6 @@ public class ContentPreviewViewer {
 
         if (centerImage.getLottieAnimation() != null) {
             centerImage.getLottieAnimation().setCurrentFrame(0);
-        }
-        if (drawEffect && effectImage.getLottieAnimation() != null) {
-            effectImage.getLottieAnimation().setCurrentFrame(0);
         }
 
         currentContentType = contentType;
@@ -1964,16 +1941,9 @@ public class ContentPreviewViewer {
         if (currentContentType == CONTENT_TYPE_GIF) {
             size = Math.min(containerView.getWidth(), containerView.getHeight() - insets) - AndroidUtilities.dp(40f);
         } else {
-            if (drawEffect) {
-                size = (int) (Math.min(containerView.getWidth(), containerView.getHeight() - insets) - AndroidUtilities.dpf2(40f));
-            } else {
-                size = (int) (Math.min(containerView.getWidth(), containerView.getHeight() - insets) / 1.8f);
-            }
+            size = (int) (Math.min(containerView.getWidth(), containerView.getHeight() - insets) / 1.8f);
         }
         float topOffset = Math.max(size / 2 + top + (stickerEmojiLayout != null ? AndroidUtilities.dp(40) : 0), (containerView.getHeight() - insets - keyboardHeight) / 2);
-        if (drawEffect) {
-            topOffset += AndroidUtilities.dp(40);
-        }
         canvas.translate(containerView.getWidth() / 2, moveY + topOffset);
         float scale = 0.8f * showProgress / 0.8f;
         size = (int) (size * scale);
@@ -1982,21 +1952,9 @@ public class ContentPreviewViewer {
             canvas.translate(0, dp(70));
         }
 
-        if (drawEffect) {
-            float smallImageSize = size * 0.6669f;
-            float padding = size * 0.0546875f;
-            centerImage.setAlpha(showProgress);
-            centerImage.setImageCoords(size - smallImageSize - size / 2f - padding, (size - smallImageSize) / 2f - size / 2f, smallImageSize, smallImageSize);
-            centerImage.draw(canvas);
-
-            effectImage.setAlpha(showProgress);
-            effectImage.setImageCoords(-size / 2f, -size / 2f, size, size);
-            effectImage.draw(canvas);
-        } else {
-            centerImage.setAlpha(showProgress);
-            centerImage.setImageCoords(-size / 2f, -size / 2f, size, size);
-            centerImage.draw(canvas);
-        }
+        centerImage.setAlpha(showProgress);
+        centerImage.setImageCoords(-size / 2f, -size / 2f, size, size);
+        centerImage.draw(canvas);
 
         if (paintingOverlay != null) {
             canvas.save();
@@ -2023,11 +1981,7 @@ public class ContentPreviewViewer {
             slideUpDrawable.draw(canvas);
         }
         if (stickerEmojiLayout != null) {
-            if (drawEffect) {
-                canvas.translate(-stickerEmojiLayout.getWidth() / 2f, -effectImage.getImageHeight() / 2 - AndroidUtilities.dp(30));
-            } else {
-                canvas.translate(-stickerEmojiLayout.getWidth() / 2f, -centerImage.getImageHeight() / 2 - AndroidUtilities.dp(30));
-            }
+            canvas.translate(-stickerEmojiLayout.getWidth() / 2f, -centerImage.getImageHeight() / 2 - AndroidUtilities.dp(30));
             textPaint.setAlpha((int) (0xFF * showProgress));
             stickerEmojiLayout.draw(canvas);
         }
