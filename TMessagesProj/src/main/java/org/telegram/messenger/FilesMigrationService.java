@@ -97,8 +97,11 @@ public class FilesMigrationService extends Service {
         }
 
         File newPath = ApplicationLoader.applicationContext.getExternalFilesDir(null);
-        File telegramPath = new File(newPath, "Telegram");
-        File oldPath = new File(path, "Telegram");
+        // LoogriGram: the folder this app kept on shared storage before
+        // Android 11 is named after it; the official app's Telegram folder
+        // there is not ours to move.
+        File telegramPath = new File(newPath, AndroidUtilities.MEDIA_FOLDER);
+        File oldPath = new File(path, AndroidUtilities.MEDIA_FOLDER);
 
         totalFilesCount = getFilesCount(oldPath);
 
@@ -204,7 +207,7 @@ public class FilesMigrationService extends Service {
                     }
                 }
             }
-            File oldDirectory = new File(path, "Telegram");
+            File oldDirectory = new File(path, AndroidUtilities.MEDIA_FOLDER);
             hasOldFolder = oldDirectory.exists();
         }
         if (hasOldFolder) {

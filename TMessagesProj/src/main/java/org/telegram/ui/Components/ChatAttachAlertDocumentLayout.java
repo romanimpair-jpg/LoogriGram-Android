@@ -971,7 +971,7 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
         if (files != null) {
             for (int a = 0; a < files.length; a++) {
                 File file = files[a];
-                if (file.isDirectory() && file.getName().equals("Telegram")) {
+                if (file.isDirectory() && file.getName().equals(AndroidUtilities.MEDIA_FOLDER)) {
                     checkDirectory(file);
                     continue;
                 }
@@ -1345,10 +1345,11 @@ public class ChatAttachAlertDocumentLayout extends ChatAttachAlert.AttachAlertLa
 
         ListItem fs;
         try {
-            File telegramPath = new File(ApplicationLoader.applicationContext.getExternalFilesDir(null), "Telegram");
+            // LoogriGram: the app's own folder, named after it.
+            File telegramPath = new File(ApplicationLoader.applicationContext.getExternalFilesDir(null), AndroidUtilities.MEDIA_FOLDER);
             if (telegramPath.exists()) {
                 fs = new ListItem();
-                fs.title = "Telegram";
+                fs.title = AndroidUtilities.MEDIA_FOLDER;
                 fs.subtitle = LocaleController.getString(R.string.AppFolderInfo);
                 fs.icon = R.drawable.files_folder;
                 fs.file = telegramPath;

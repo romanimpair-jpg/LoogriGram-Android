@@ -3693,6 +3693,25 @@ public class AndroidUtilities {
         }
     }
 
+    // LoogriGram: the app's media folders carried Telegram's name (Telegram,
+    // Telegram Images, Pictures/Telegram and so on). The user's decision,
+    // 2026-10-05: they are named after the app.
+    public static final String MEDIA_FOLDER = "LoogriGram";
+
+    // A folder the app owns itself - under its own external files or media
+    // dirs, never shared storage another app may use - is moved once from its
+    // old name, so nothing it holds is stranded or downloaded again.
+    public static File ownMediaFolder(File parent, String oldName, String newName) {
+        final File folder = new File(parent, newName);
+        if (!folder.exists()) {
+            final File old = new File(parent, oldName);
+            if (old.isDirectory() && !old.renameTo(folder)) {
+                FileLog.d("could not move " + old + " to " + folder);
+            }
+        }
+        return folder;
+    }
+
     private static File getAlbumDir(boolean secretChat) {
         if (
             secretChat ||
@@ -3709,7 +3728,7 @@ public class AndroidUtilities {
         }
         File storageDir = null;
         if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
-            storageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "Telegram");
+            storageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), MEDIA_FOLDER);
             if (!storageDir.mkdirs()) {
                 if (!storageDir.exists()) {
                     if (BuildVars.LOGS_ENABLED) {

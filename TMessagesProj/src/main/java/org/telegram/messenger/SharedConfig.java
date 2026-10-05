@@ -1500,10 +1500,11 @@ public class SharedConfig {
     public static void checkSaveToGalleryFiles() {
         Utilities.globalQueue.postRunnable(() -> {
             try {
-                File telegramPath = new File(Environment.getExternalStorageDirectory(), "Telegram");
-                File imagePath = new File(telegramPath, "Telegram Images");
+                // LoogriGram: shared storage - new names, nothing moved.
+                File telegramPath = new File(Environment.getExternalStorageDirectory(), AndroidUtilities.MEDIA_FOLDER);
+                File imagePath = new File(telegramPath, AndroidUtilities.MEDIA_FOLDER + " Images");
                 imagePath.mkdir();
-                File videoPath = new File(telegramPath, "Telegram Video");
+                File videoPath = new File(telegramPath, AndroidUtilities.MEDIA_FOLDER + " Video");
                 videoPath.mkdir();
 
                 if (!BuildVars.NO_SCOPED_STORAGE) {
