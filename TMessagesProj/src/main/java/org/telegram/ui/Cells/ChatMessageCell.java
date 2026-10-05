@@ -419,24 +419,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
     }
 
-    public void setScrimReaction(Integer scrimViewReaction) {
-        reactionsLayoutInBubble.setScrimReaction(scrimViewReaction);
-    }
-
-    public void drawScrimReaction(Canvas canvas, Integer scrimViewReaction, float progress, boolean direction) {
-        if ((currentPosition == null || ((currentPosition.flags & MessageObject.POSITION_FLAG_BOTTOM) != 0 && (currentPosition.flags & MessageObject.POSITION_FLAG_LEFT) != 0)) && !reactionsLayoutInBubble.isSmall) {
-            reactionsLayoutInBubble.setScrimProgress(progress, direction);
-            reactionsLayoutInBubble.draw(canvas, transitionParams.animateChangeProgress, scrimViewReaction);
-        }
-    }
-
-    public void drawScrimReactionPreview(View view, Canvas canvas, int offset, Integer scrimViewReaction, float progress) {
-        if ((currentPosition == null || ((currentPosition.flags & MessageObject.POSITION_FLAG_BOTTOM) != 0 && (currentPosition.flags & MessageObject.POSITION_FLAG_LEFT) != 0)) && !reactionsLayoutInBubble.isSmall) {
-            reactionsLayoutInBubble.setScrimProgress(progress);
-            reactionsLayoutInBubble.drawPreview(view, canvas, offset, scrimViewReaction);
-        }
-    }
-
     public boolean checkUnreadPollVotes() {
         if (currentMessageObject == null || currentMessageObject.type != MessageObject.TYPE_POLL) {
             return false;
@@ -13543,7 +13525,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         if (shouldDrawCaptionLayout() && !currentMessageObject.preview) {
             drawCaptionLayout(canvas, false, 1f);
             // drawCommentLayout(canvas, 1f); // not needed because it is already called by drawCaptionLayout
-            drawReactionsLayout(canvas, 1f, null);
+            drawReactionsLayout(canvas, 1f);
         }
 
         if (currentMessagesGroup == null) {
@@ -21332,7 +21314,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         return currentMessageObject != null && currentMessageObject.shouldDrawReactions() && (currentPosition == null || ((currentPosition.flags & MessageObject.POSITION_FLAG_BOTTOM) != 0 && (currentPosition.flags & MessageObject.POSITION_FLAG_LEFT) != 0)) && !reactionsLayoutInBubble.isSmall;
     }
 
-    public void drawReactionsLayout(Canvas canvas, float alpha, Integer only) {
+    public void drawReactionsLayout(Canvas canvas, float alpha) {
         if (isRoundVideo) {
             reactionsLayoutInBubble.drawServiceShaderBackground = 1f - getVideoTranscriptionProgress();
         }
@@ -21347,13 +21329,11 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 restore = true;
             }
             if (reactionsLayoutInBubble.drawServiceShaderBackground > 0 || !transitionParams.animateBackgroundBoundsInner || currentPosition != null || isRoundVideo) {
-                reactionsLayoutInBubble.setScrimProgress(0, false);
-                reactionsLayoutInBubble.draw(canvas, (transitionParams.animateChange ? transitionParams.animateChangeProgress : 1f), only);
+                reactionsLayoutInBubble.draw(canvas, (transitionParams.animateChange ? transitionParams.animateChangeProgress : 1f));
             } else {
                 canvas.save();
                 canvas.clipRect(0, 0, getMeasuredWidth(), getBackgroundDrawableBottom() + transitionParams.deltaBottom);
-                reactionsLayoutInBubble.setScrimProgress(0, false);
-                reactionsLayoutInBubble.draw(canvas, (transitionParams.animateChange ? transitionParams.animateChangeProgress : 1f), only);
+                reactionsLayoutInBubble.draw(canvas, (transitionParams.animateChange ? transitionParams.animateChangeProgress : 1f));
                 canvas.restore();
             }
             if (restore) {
@@ -21863,8 +21843,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             float additionalX = -timeLayout.getLineLeft(0) + (currentMessageObject != null && currentMessageObject.isAnyKindOfSticker() ? dp(-STICKER_STATUS_OFFSET) : 0);
             if (currentMessageObject.shouldDrawReactions() && reactionsLayoutInBubble.isSmall) {
                 updateReactionLayoutPosition();
-                reactionsLayoutInBubble.setScrimProgress(0, false);
-                reactionsLayoutInBubble.draw(canvas, transitionParams.animateChangeProgress, null);
+                reactionsLayoutInBubble.draw(canvas, transitionParams.animateChangeProgress);
             }
 
             if (ChatObject.isChannel(currentChat) && !currentChat.megagroup || (currentMessageObject.messageOwner.flags & TLRPC.MESSAGE_FLAG_HAS_VIEWS) != 0 || repliesLayout != null || isPinned) {
@@ -21928,8 +21907,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             float additionalX = -timeLayout.getLineLeft(0);
             if (currentMessageObject.shouldDrawReactions() && reactionsLayoutInBubble.isSmall) {
                 updateReactionLayoutPosition();
-                reactionsLayoutInBubble.setScrimProgress(0, false);
-                reactionsLayoutInBubble.draw(canvas, transitionParams.animateChangeProgress, null);
+                reactionsLayoutInBubble.draw(canvas, transitionParams.animateChangeProgress);
             }
             if (ChatObject.isChannel(currentChat) && !currentChat.megagroup || (currentMessageObject.messageOwner.flags & TLRPC.MESSAGE_FLAG_HAS_VIEWS) != 0 || (repliesLayout != null || transitionParams.animateReplies) || (isPinned || transitionParams.animatePinned)) {
                 additionalX += timeWidth - timeLayout.getLineWidth(0);

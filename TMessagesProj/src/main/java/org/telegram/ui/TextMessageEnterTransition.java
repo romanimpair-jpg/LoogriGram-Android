@@ -509,7 +509,7 @@ public class TextMessageEnterTransition implements MessageEnterTransitionContain
         messageView.drawNamesLayout(canvas, alphaProgress);
         messageView.drawCommentButton(canvas, alphaProgress);
         messageView.drawCaptionLayout(canvas, false, alphaProgress);
-        messageView.drawReactionsLayout(canvas, alphaProgress, null);
+        messageView.drawReactionsLayout(canvas, alphaProgress);
         messageView.drawCommentLayout(canvas, alphaProgress);
         messageView.drawLinkPreview(canvas, alphaProgress);
         canvas.restore();

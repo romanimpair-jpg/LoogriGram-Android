@@ -952,14 +952,10 @@ public class ChatActivity extends BaseFragment implements
     private Paint scrimPaint;
     private Paint actionBarBackgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private float scrimPaintAlpha = 0f;
-    private boolean scrimProgressDirection;
     private View scrimView;
     private float scrimViewAlpha = 1f;
     private float scrimViewProgress = 0f;
-    private Integer scrimViewReaction;
     private Integer scrimViewTask;
-    private int scrimViewReactionOffset;
-    private boolean scrimViewReactionAnimated;
     private int popupAnimationIndex = -1;
     private AnimatorSet scrimAnimatorSet;
     public ActionBarPopupWindow scrimPopupWindow;
@@ -5309,7 +5305,7 @@ public class ChatActivity extends BaseFragment implements
                         if (!selectionOnly && cell.getTransitionParams().wasDraw) {
                             canvas.translate(canvasOffsetX, canvasOffsetY);
                             cell.setInvalidatesParent(true);
-                            cell.drawReactionsLayout(canvas, alpha, null);
+                            cell.drawReactionsLayout(canvas, alpha);
                             cell.drawCommentLayout(canvas, alpha);
                             cell.setInvalidatesParent(false);
                         }
@@ -5459,7 +5455,7 @@ public class ChatActivity extends BaseFragment implements
                             canvas.scale(cell.getScaleX(), cell.getScaleY(), cell.getMeasuredWidth() / 2f, cell.getMeasuredHeight() / 2f);
                             canvas.translate(getSideMenuWidth() / 2f, 0);
                             cell.drawBackground(canvas, true);
-                            cell.drawReactions(canvas, true, null);
+                            cell.drawReactions(canvas, true);
                             canvas.restore();
                         }
                     }
@@ -9408,7 +9404,6 @@ public class ChatActivity extends BaseFragment implements
             if (scrimViewAlphaAnimator != null) {
                 scrimViewAlphaAnimator.cancel();
             }
-            scrimProgressDirection = true;
             animators.add(scrimPaintAlphaAnimator = ValueAnimator.ofFloat(0, value));
 
             if (blur) {
@@ -9424,7 +9419,6 @@ public class ChatActivity extends BaseFragment implements
             }
         } else {
             scrimViewProgress = scrimPaintAlpha / max;
-            scrimProgressDirection = false;
             animators.add(scrimPaintAlphaAnimator = ValueAnimator.ofFloat(scrimPaintAlpha, 0));
         }
         scrimPaintAlphaAnimator.addUpdateListener(a -> {
@@ -9458,7 +9452,6 @@ public class ChatActivity extends BaseFragment implements
                     }
                     setScrimView(null);
                     scrimViewTask = null;
-                    scrimViewReaction = null;
                     contentView.invalidate();
                     chatListView.invalidate();
                 }
@@ -16106,24 +16099,7 @@ public class ChatActivity extends BaseFragment implements
                 final boolean selectionOnly = cell.getCurrentPosition() != null && (cell.getCurrentPosition().flags & MessageObject.POSITION_FLAG_LEFT) == 0;
                 cell.drawCommentLayout(canvas, alpha);
                 if (!selectionOnly) {
-                    cell.drawReactionsLayout(canvas, alpha, null);
-                }
-            } else if (type == 4) {
-                final boolean selectionOnly = cell.getCurrentPosition() != null && (cell.getCurrentPosition().flags & MessageObject.POSITION_FLAG_LEFT) == 0;
-                if (!selectionOnly) {
-                    if (scrimViewReaction != null) {
-                        final float scrimProgress = scrimPaintAlpha * scrimViewAlpha / 0.2f;
-
-                        canvas.save();
-                        cell.drawScrimReaction(canvas, scrimViewReaction, scrimProgress, scrimProgressDirection);
-                        canvas.restore();
-
-                        canvas.restore();
-                        canvas.save();
-                        canvas.translate(canvasOffsetX, canvasOffsetY);
-                        cell.drawScrimReactionPreview(this, canvas, scrimViewReactionOffset, scrimViewReaction, scrimProgress);
-                        canvas.restore();
-                    }
+                    cell.drawReactionsLayout(canvas, alpha);
                 }
             }
             cell.setInvalidatesParent(false);
@@ -16202,26 +16178,20 @@ public class ChatActivity extends BaseFragment implements
                     canvas.restore();
                 }
             }
-            if (scrimViewReaction == null || scrimView == null) {
-                if (scrimBlurBitmapPaint != null) {
-                    scrimBlurMatrix.reset();
-                    final float s = (float) getMeasuredWidth() / scrimBlurBitmap.getWidth();
-                    scrimBlurMatrix.postScale(s, s);
-                    scrimBlurBitmapShader.setLocalMatrix(scrimBlurMatrix);
-                    scrimBlurBitmapPaint.setAlpha((int) (0xFF * scrimViewProgress));
-                    if (scrimBlurBitmapPaint.getAlpha() > 0) {
-                        canvas.drawRect(0, 0, getMeasuredWidth(), getMeasuredHeight(), scrimBlurBitmapPaint);
-                    }
-                } else {
-                    scrimPaint.setAlpha((int) (0xFF * scrimPaintAlpha * (scrimView != null ? scrimViewAlpha : 1f)));
-                    if (scrimPaint.getAlpha() > 0) {
-                        canvas.drawRect(0, 0, getMeasuredWidth(), getMeasuredHeight(), scrimPaint);
-                    }
+            if (scrimBlurBitmapPaint != null) {
+                scrimBlurMatrix.reset();
+                final float s = (float) getMeasuredWidth() / scrimBlurBitmap.getWidth();
+                scrimBlurMatrix.postScale(s, s);
+                scrimBlurBitmapShader.setLocalMatrix(scrimBlurMatrix);
+                scrimBlurBitmapPaint.setAlpha((int) (0xFF * scrimViewProgress));
+                if (scrimBlurBitmapPaint.getAlpha() > 0) {
+                    canvas.drawRect(0, 0, getMeasuredWidth(), getMeasuredHeight(), scrimBlurBitmapPaint);
                 }
-            }
-
-            if (scrimViewReaction != null && scrimViewReactionAnimated) {
-                invalidate();
+            } else {
+                scrimPaint.setAlpha((int) (0xFF * scrimPaintAlpha * (scrimView != null ? scrimViewAlpha : 1f)));
+                if (scrimPaint.getAlpha() > 0) {
+                    canvas.drawRect(0, 0, getMeasuredWidth(), getMeasuredHeight(), scrimPaint);
+                }
             }
 
             if (scrimView != null) {
@@ -16373,10 +16343,8 @@ public class ChatActivity extends BaseFragment implements
                             }
                             if (cell != null) {
                                 cell.setInvalidatesParent(true);
-                                cell.setScrimReaction(scrimViewReaction);
                             } else if (actionCell != null) {
                                 actionCell.setInvalidatesParent(true);
-                                actionCell.setScrimReaction(scrimViewReaction);
                             }
                             canvas.clipRect(viewClipLeft, viewClipTop, viewClipRight, viewClipBottom);
                             canvas.translate(chatListView.getLeft() + child.getX(), chatListView.getY() + child.getY());
@@ -16401,10 +16369,8 @@ public class ChatActivity extends BaseFragment implements
 
                             if (cell != null) {
                                 cell.setInvalidatesParent(false);
-                                cell.setScrimReaction(null);
                             } else if (actionCell != null) {
                                 actionCell.setInvalidatesParent(false);
-                                actionCell.setScrimReaction(null);
                             }
                         }
 
@@ -16422,71 +16388,6 @@ public class ChatActivity extends BaseFragment implements
                             }
                             if (position == null || (position.flags & MessageObject.POSITION_FLAG_BOTTOM) != 0 && (position.flags & MessageObject.POSITION_FLAG_LEFT) != 0) {
                                 drawReactionsAfter.add(cell);
-                            }
-                        }
-                        if (scrimViewReaction != null && cell != null && scrimGroup == null) {
-                            if (scrimBlurBitmapPaint != null) {
-                                scrimBlurMatrix.reset();
-                                final float s = (float) getMeasuredWidth() / scrimBlurBitmap.getWidth();
-                                scrimBlurMatrix.postScale(s, s);
-                                scrimBlurBitmapShader.setLocalMatrix(scrimBlurMatrix);
-                                scrimBlurBitmapPaint.setAlpha((int) (0xFF * scrimViewProgress));
-                                canvas.drawRect(0, 0, getMeasuredWidth(), getMeasuredHeight(), scrimBlurBitmapPaint);
-                            } else {
-                                scrimPaint.setAlpha((int) (255 * scrimPaintAlpha * scrimViewAlpha));
-                                canvas.drawRect(0, 0, getMeasuredWidth(), getMeasuredHeight(), scrimPaint);
-                            }
-
-                            if (viewClipTop < viewClipBottom) {
-                                final float scrimProgress = scrimPaintAlpha * scrimViewAlpha / 0.2f;
-
-                                float alpha = child.getAlpha() * scrimViewAlpha;
-                                if (alpha < 1f) {
-                                    canvas.saveLayerAlpha(viewClipLeft, viewClipTop, viewClipRight, viewClipBottom, (int) (255 * alpha), Canvas.ALL_SAVE_FLAG);
-                                } else {
-                                    canvas.save();
-                                }
-                                canvas.clipRect(viewClipLeft, viewClipTop, viewClipRight, viewClipBottom);
-                                canvas.translate(chatListView.getLeft() + child.getX(), chatListView.getY() + child.getY() + child.getPaddingTop());
-                                cell.drawScrimReaction(canvas, scrimViewReaction, scrimProgress, scrimProgressDirection);
-                                canvas.restore();
-
-                                canvas.save();
-                                canvas.translate(chatListView.getLeft() + child.getX(), chatListView.getY() + child.getY() + child.getPaddingTop());
-                                cell.drawScrimReactionPreview(this, canvas, scrimViewReactionOffset, scrimViewReaction, scrimProgress);
-                                canvas.restore();
-                            }
-                        } else if (scrimViewReaction != null && actionCell != null) {
-                            if (scrimBlurBitmapPaint != null) {
-                                scrimBlurMatrix.reset();
-                                final float s = (float) getMeasuredWidth() / scrimBlurBitmap.getWidth();
-                                scrimBlurMatrix.postScale(s, s);
-                                scrimBlurBitmapShader.setLocalMatrix(scrimBlurMatrix);
-                                scrimBlurBitmapPaint.setAlpha((int) (0xFF * scrimViewProgress));
-                                canvas.drawRect(0, 0, getMeasuredWidth(), getMeasuredHeight(), scrimBlurBitmapPaint);
-                            } else {
-                                scrimPaint.setAlpha((int) (255 * scrimPaintAlpha * scrimViewAlpha));
-                                canvas.drawRect(0, 0, getMeasuredWidth(), getMeasuredHeight(), scrimPaint);
-                            }
-
-                            if (viewClipTop < viewClipBottom) {
-                                final float scrimProgress = scrimPaintAlpha * scrimViewAlpha / 0.2f;
-
-                                float alpha = child.getAlpha() * scrimViewAlpha;
-                                if (alpha < 1f) {
-                                    canvas.saveLayerAlpha(viewClipLeft, viewClipTop, viewClipRight, viewClipBottom, (int) (255 * alpha), Canvas.ALL_SAVE_FLAG);
-                                } else {
-                                    canvas.save();
-                                }
-                                canvas.clipRect(viewClipLeft, viewClipTop, viewClipRight, viewClipBottom);
-                                canvas.translate(chatListView.getLeft() + child.getX(), chatListView.getY() + child.getY() + child.getPaddingTop());
-                                actionCell.drawScrimReaction(canvas, scrimViewReaction, scrimProgress, scrimProgressDirection);
-                                canvas.restore();
-
-                                canvas.save();
-                                canvas.translate(chatListView.getLeft() + child.getX(), chatListView.getY() + child.getY() + child.getPaddingTop());
-                                actionCell.drawScrimReactionPreview(this, canvas, scrimViewReactionOffset, scrimViewReaction, scrimProgress);
-                                canvas.restore();
                             }
                         }
                     }
@@ -16525,34 +16426,11 @@ public class ChatActivity extends BaseFragment implements
                             }
                             drawChildElement(canvas, listTop, cell, 3);
                         }
-                    }
-                    if (scrimViewReaction != null && scrimGroup != null) {
-                        if (scrimBlurBitmapPaint != null) {
-                            scrimBlurMatrix.reset();
-                            final float s = (float) getMeasuredWidth() / scrimBlurBitmap.getWidth();
-                            scrimBlurMatrix.postScale(s, s);
-                            scrimBlurBitmapShader.setLocalMatrix(scrimBlurMatrix);
-                            scrimBlurBitmapPaint.setAlpha((int) (0xFF * scrimViewProgress));
-                            canvas.drawRect(0, 0, getMeasuredWidth(), getMeasuredHeight(), scrimBlurBitmapPaint);
-                        } else {
-                            scrimPaint.setAlpha((int) (255 * scrimPaintAlpha * scrimViewAlpha));
-                            canvas.drawRect(0, 0, getMeasuredWidth(), getMeasuredHeight(), scrimPaint);
-                        }
-                    }
-                    size = drawReactionsAfter.size();
-                    if (size > 0) {
-                        for (int a = 0; a < size; a++) {
-                            ChatMessageCell cell = drawReactionsAfter.get(a);
-                            if (cell.getCurrentPosition() == null && !cell.getTransitionParams().animateBackgroundBoundsInner) {
-                                continue;
-                            }
-                            drawChildElement(canvas, listTop, cell, 4);
-                        }
                         drawReactionsAfter.clear();
                     }
                 }
 
-                if (scrimViewReaction == null && scrimViewAlpha < 1f) {
+                if (scrimViewAlpha < 1f) {
                     if (scrimBlurBitmapPaint != null) {
                         scrimBlurMatrix.reset();
                         final float s = (float) getMeasuredWidth() / scrimBlurBitmap.getWidth();
@@ -36574,26 +36452,18 @@ public class ChatActivity extends BaseFragment implements
                     cellY = location[1];
                 }
                 if (height < totalHeight / 2f && cellY + cell.getPollButtonTop(index) > totalHeight / 2f && !forceBottom) {
-                    scrimViewReactionOffset = -(height - dp(12));
                     popupY = (int) (cellY + cell.getPollButtonTop(index) - height);
                 } else {
-                    scrimViewReactionOffset = 0;
                     popupY = (int) (cellY + cell.getPollButtonBottom(index));
                 }
             } else {
-                scrimViewReactionOffset = 0;
                 popupY = inBubbleMode ? 0 : AndroidUtilities.statusBarHeight;
-            }
-            if (scrimPopupContainerLayout.getVisibility() != View.VISIBLE) {
-                scrimViewReactionOffset = 0;
             }
             scrimPopupWindow.showAtLocation(chatListView, Gravity.LEFT | Gravity.TOP, scrimPopupX = popupX, scrimPopupY = popupY);
 
             chatListView.stopScroll();
             chatLayoutManager.setCanScrollVertically(false);
-            scrimViewReaction = null;
             scrimViewTask = task.id;
-            scrimViewReactionAnimated = false;
             dimBehindView(cell, false, true);
             hideHints(false);
             if (topUndoView != null) {
@@ -40855,7 +40725,10 @@ public class ChatActivity extends BaseFragment implements
         // remove it. Tags are not drawn at all now (ReactionsLayoutInBubble), so none
         // is ever pressed.
         if (longpress) {
-            cell.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+            // LoogriGram: a long press dimmed and blurred the chat, lifted the
+            // reaction above it and played its activate animation large beside
+            // the list (scrimViewReaction, drawScrimReactionPreview). The
+            // user's rule, 2026-10-05: only the list shows, as on desktop.
             FrameLayout scrimPopupContainerLayout = new FrameLayout(getParentActivity()) {
                 @Override
                 public boolean dispatchKeyEvent(KeyEvent event) {
@@ -40892,6 +40765,7 @@ public class ChatActivity extends BaseFragment implements
 
             scrimPopupContainerLayout.setClipToOutline(true);
             scrimPopupContainerLayout.setOutlineProvider(ViewOutlineProviderImpl.boundsWithPaddingRoundRect(dp(8), dp(12)));
+            updateScrimSourceBitmap();
             scrimPopupContainerLayout.setBackground(scrimBlur3Factory.create(scrimPopupContainerLayout, true)
                 .setColorProvider(BlurredBackgroundProviderImpl.scrimMenuBackground(resourceProvider))
                 .setRadius(dp(12))
@@ -40906,10 +40780,6 @@ public class ChatActivity extends BaseFragment implements
             if (messageObject != null && messageObject.messageOwner != null && messageObject.messageOwner.reactions != null && messageObject.messageOwner.reactions.can_see_list || dialog_id >= 0) {
                 final boolean canDeleteReactions = ChatObject.canUserDoAdminAction(currentChat, ChatObject.ACTION_DELETE_MESSAGES)
                     && (reaction.count > 1 || !reaction.chosen);
-
-                if (reaction.reaction instanceof TLRPC.TL_reactionCustomEmoji) {
-                    button.stopAnimation();
-                }
 
                 final LinearLayout linearLayout = new LinearLayout(getContext());
                 linearLayout.setOrientation(LinearLayout.VERTICAL);
@@ -40974,7 +40844,6 @@ public class ChatActivity extends BaseFragment implements
                 TLRPC.TL_reactionCustomEmoji customEmoji = (TLRPC.TL_reactionCustomEmoji) reaction.reaction;
                 TLRPC.InputStickerSet inputStickerSet = AnimatedEmojiDrawable.getDocumentFetcher(currentAccount).findStickerSet(customEmoji.document_id);
                 if (inputStickerSet != null) {
-                    button.stopAnimation();
                     ArrayList<TLRPC.InputStickerSet> arr = new ArrayList<TLRPC.InputStickerSet>();
                     arr.add(inputStickerSet);
                     MessageContainsEmojiButton setButton = new MessageContainsEmojiButton(currentAccount, getContext(), themeDelegate, arr, MessageContainsEmojiButton.SINGLE_REACTION_TYPE);
@@ -40986,11 +40855,13 @@ public class ChatActivity extends BaseFragment implements
                     scrimPopupContainerLayout.addView(setButton, LayoutHelper.createFrame(240, LayoutHelper.WRAP_CONTENT));
                     forceBottom = true;
                 } else {
-                    scrimPopupContainerLayout.setVisibility(View.GONE);
+                    return;
                 }
             } else {
-                scrimPopupContainerLayout.setVisibility(View.GONE);
+                // Nothing to list: this showed only the lifted reaction.
+                return;
             }
+            cell.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
 
             scrimPopupWindow = new ActionBarPopupWindow(scrimPopupContainerLayout, LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT) {
                 @Override
@@ -41003,11 +40874,7 @@ public class ChatActivity extends BaseFragment implements
                     menuDeleteItem = null;
                     scrimPopupWindowItems = null;
                     chatLayoutManager.setCanScrollVertically(true);
-                    if (scrimPopupWindowHideDimOnDismiss) {
-                        dimBehindView(false);
-                    } else {
-                        scrimPopupWindowHideDimOnDismiss = true;
-                    }
+                    scrimPopupWindowHideDimOnDismiss = true;
                     if (chatActivityEnterView != null && chatActivityEnterView.getEditField() != null) {
                         chatActivityEnterView.getEditField().setAllowDrawCursor(true);
                     }
@@ -41047,27 +40914,18 @@ public class ChatActivity extends BaseFragment implements
                     cellY = location[1];
                 }
                 if (height < totalHeight / 2f && cellY + reactionsLayoutInBubble.y + button.y > totalHeight / 2f && !forceBottom) {
-                    scrimViewReactionOffset = -(height - dp(12));
                     popupY = (int) (cellY + reactionsLayoutInBubble.y + button.y - height);
                 } else {
-                    scrimViewReactionOffset = 0;
                     popupY = (int) (cellY + reactionsLayoutInBubble.y + button.y + button.height);
                 }
             } else {
-                scrimViewReactionOffset = 0;
                 popupY = inBubbleMode ? 0 : AndroidUtilities.statusBarHeight;
-            }
-            if (scrimPopupContainerLayout.getVisibility() != View.VISIBLE) {
-                scrimViewReactionOffset = 0;
             }
             scrimPopupWindow.showAtLocation(chatListView, Gravity.LEFT | Gravity.TOP, scrimPopupX = popupX, scrimPopupY = popupY);
 
             chatListView.stopScroll();
             chatLayoutManager.setCanScrollVertically(false);
             scrimViewTask = null;
-            scrimViewReaction = reaction.reaction.hashCode();
-            scrimViewReactionAnimated = reaction.reaction instanceof TLRPC.TL_reactionCustomEmoji && LiteMode.isEnabled(LiteMode.FLAG_ANIMATED_EMOJI_KEYBOARD);
-            dimBehindView(cell, true, true);
             hideHints(false);
             if (topUndoView != null) {
                 topUndoView.hide(true, 1);

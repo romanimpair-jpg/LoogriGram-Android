@@ -494,7 +494,7 @@ public class MessageSendPreview extends Dialog {
                         cell.drawCaptionLayout(canvas, false, cell.getAlpha());
                     }
                     if ((cell.getCurrentPosition() != null && ((cell.getCurrentPosition().flags & MessageObject.POSITION_FLAG_BOTTOM) != 0 && (cell.getCurrentPosition().flags & MessageObject.POSITION_FLAG_LEFT) != 0 || cell.getCurrentMessagesGroup() != null && cell.getCurrentMessagesGroup().isDocuments))) {
-                        cell.drawReactionsLayout(canvas, cell.getAlpha(), null);
+                        cell.drawReactionsLayout(canvas, cell.getAlpha());
                         cell.drawCommentLayout(canvas, cell.getAlpha());
                     }
                     if (cell.getCurrentPosition() != null) {

@@ -1854,7 +1854,7 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
             canvas.restore();
         }
 
-        drawReactions(canvas, false, null);
+        drawReactions(canvas, false);
 
         transitionParams.recordDrawingState();
         canvas.restore();
@@ -2299,7 +2299,7 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
         }
     }
 
-    public void drawReactions(Canvas canvas, boolean fromParent, Integer only) {
+    public void drawReactions(Canvas canvas, boolean fromParent) {
         if (canDrawInParent) {
             if (hasGradientService() && !fromParent) {
                 return;
@@ -2308,10 +2308,10 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
                 return;
             }
         }
-        drawReactionsLayout(canvas, fromParent, only);
+        drawReactionsLayout(canvas, fromParent);
     }
 
-    public void drawReactionsLayout(Canvas canvas, boolean fromParent, Integer only) {
+    public void drawReactionsLayout(Canvas canvas, boolean fromParent) {
         final float alpha = fromParent ? getAlpha() : 1.0f;
         if (alpha <= 0) {
             return;
@@ -2326,7 +2326,7 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
             if (alpha < 1) {
                 canvas.saveLayerAlpha(0, 0, getWidth(), getHeight(), (int) (0xFF * alpha), Canvas.ALL_SAVE_FLAG);
             }
-            reactionsLayoutInBubble.draw(canvas, transitionParams.animateChange ? transitionParams.animateChangeProgress : 1f, only);
+            reactionsLayoutInBubble.draw(canvas, transitionParams.animateChange ? transitionParams.animateChangeProgress : 1f);
             if (alpha < 1) {
                 canvas.restore();
             }
@@ -2627,34 +2627,6 @@ public class ChatActionCell extends BaseCell implements DownloadController.FileD
     public float getDeltaLeft() { return 0; }
     public float getDeltaRight() { return 0; }
     public float getDeltaBottom() { return 0; }
-
-    public void setScrimReaction(Integer scrimViewReaction) {
-        reactionsLayoutInBubble.setScrimReaction(scrimViewReaction);
-    }
-
-    public void drawScrimReaction(Canvas canvas, Integer scrimViewReaction, float progress, boolean direction) {
-        if (!reactionsLayoutInBubble.isSmall) {
-            if (themeDelegate != null) {
-                themeDelegate.applyServiceShaderMatrix(getMeasuredWidth(), backgroundHeight, viewTranslationX, viewTop + dp(4));
-            } else {
-                Theme.applyServiceShaderMatrix(getMeasuredWidth(), backgroundHeight, viewTranslationX, viewTop + dp(4));
-            }
-            reactionsLayoutInBubble.setScrimProgress(progress, direction);
-            reactionsLayoutInBubble.draw(canvas, transitionParams.animateChangeProgress, scrimViewReaction);
-        }
-    }
-
-    public void drawScrimReactionPreview(View view, Canvas canvas, int offset, Integer scrimViewReaction, float progress) {
-        if (!reactionsLayoutInBubble.isSmall) {
-            if (themeDelegate != null) {
-                themeDelegate.applyServiceShaderMatrix(getMeasuredWidth(), backgroundHeight, viewTranslationX, viewTop + dp(4));
-            } else {
-                Theme.applyServiceShaderMatrix(getMeasuredWidth(), backgroundHeight, viewTranslationX, viewTop + dp(4));
-            }
-            reactionsLayoutInBubble.setScrimProgress(progress);
-            reactionsLayoutInBubble.drawPreview(view, canvas, offset, scrimViewReaction);
-        }
-    }
 
     public boolean checkUnreadReactions(float clipTop, int clipBottom) {
         if (!reactionsLayoutInBubble.hasUnreadReactions) {

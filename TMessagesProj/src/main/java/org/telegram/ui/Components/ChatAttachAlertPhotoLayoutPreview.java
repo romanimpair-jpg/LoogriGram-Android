@@ -1211,7 +1211,7 @@ public class ChatAttachAlertPhotoLayoutPreview extends ChatAttachAlert.AttachAle
             hintView.setVisiblePart(y, hintView.getMeasuredHeight());
             if (hintView.hasGradientService()) {
                 hintView.drawBackground(canvas, true);
-                hintView.drawReactions(canvas, true, null);
+                hintView.drawReactions(canvas, true);
             }
             hintView.draw(canvas);
             canvas.restore();

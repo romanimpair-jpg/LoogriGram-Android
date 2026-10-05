@@ -392,10 +392,10 @@ public class SecretVoicePlayer extends Dialog {
                 }
 
                 @Override
-                public void drawReactionsLayout(Canvas canvas, float alpha, Integer only) {
+                public void drawReactionsLayout(Canvas canvas, float alpha) {
                     canvas.save();
                     canvas.translate(lerp(0, -reactionsLayoutInBubble.x, openProgress), lerp(cell.getBackgroundDrawableBottom() - getBackgroundDrawableBottom(), reactionsLayoutInBubble.totalHeight, openProgress));
-                    super.drawReactionsLayout(canvas, (1.0f - openProgress) * alpha, only);
+                    super.drawReactionsLayout(canvas, (1.0f - openProgress) * alpha);
                     canvas.restore();
                 }
 

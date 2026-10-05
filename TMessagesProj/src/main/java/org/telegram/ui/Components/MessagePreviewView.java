@@ -391,7 +391,7 @@ public class MessagePreviewView extends FrameLayout {
                         cell.drawMessageText(canvas);
                         if ((cell.getCurrentMessagesGroup() == null || cell.getCurrentPosition() != null && ((cell.getCurrentPosition().flags & cell.captionFlag()) != 0 && (cell.getCurrentPosition().flags & MessageObject.POSITION_FLAG_LEFT) != 0 || cell.getCurrentMessagesGroup() != null && cell.getCurrentMessagesGroup().isDocuments)) || cell.getTransitionParams().animateBackgroundBoundsInner) {
                             cell.drawCaptionLayout(canvas, false, cell.getAlpha());
-                            cell.drawReactionsLayout(canvas, cell.getAlpha(), null);
+                            cell.drawReactionsLayout(canvas, cell.getAlpha());
                             cell.drawCommentLayout(canvas, cell.getAlpha());
                         }
                         if (cell.getCurrentMessagesGroup() != null || cell.getTransitionParams().animateBackgroundBoundsInner) {
