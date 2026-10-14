@@ -409,6 +409,8 @@ public class ChatActivity extends BaseFragment implements
     private ActionBarMenuItem.Item viewAsTopics;
     private ActionBarMenuItem.Item closeTopicItem;
     private ActionBarMenuItem.Item openForumItem;
+    private ActionBarMenuItem.Item addToFolderItem;
+    private ActionBarMenuItem.Item archiveItem;
     private ClippingImageView animatingImageView;
     private ThanosEffect chatListThanosEffect;
     private ChatListViewPaddingsAnimator chatListViewPaddingsAnimator;
@@ -1584,6 +1586,9 @@ public class ChatActivity extends BaseFragment implements
     private final static int open_direct = 70;
 
     private final static int chat_menu_topic_create = 73;
+
+    private final static int add_to_folder = 75;
+    private final static int archive = 76;
 
     private final static int id_chat_compose_panel = 1000;
 
@@ -3612,6 +3617,10 @@ public class ChatActivity extends BaseFragment implements
                     } catch (Exception e) {
                         FileLog.e(e);
                     }
+                } else if (id == add_to_folder) {
+                    openFolderChooser();
+                } else if (id == archive) {
+                    toggleArchived();
                 } else if (id == report) {
                     ReportBottomSheet.openChat(ChatActivity.this);
                 } else if (id == star) {
@@ -3961,6 +3970,7 @@ public class ChatActivity extends BaseFragment implements
             headerItem.setSubMenuDelegate(new ActionBarMenuItem.ActionBarSubMenuItemDelegate() {
                 @Override
                 public void onShowSubMenu() {
+                    updateFilingItems();
                     updateScrimSourceBitmap();
                 }
 
@@ -4096,6 +4106,14 @@ public class ChatActivity extends BaseFragment implements
             }
             if (currentUser != null && currentUser.self && getDialogId() != UserObject.VERIFY) {
                 headerItem.lazilyAddSubItem(add_shortcut, R.drawable.msg_home, LocaleController.getString(R.string.AddShortcut));
+            }
+            // LoogriGram: the chat list's "Add to folder" and "Archive" in the
+            // chat's own menu too, as on desktop. updateFilingItems decides
+            // when they show.
+            if (chatMode == 0 && !isTopic) {
+                addToFolderItem = headerItem.lazilyAddSubItem(add_to_folder, R.drawable.msg_addfolder, getString(R.string.FilterAddTo));
+                archiveItem = headerItem.lazilyAddSubItem(archive, R.drawable.msg_archive, getString(R.string.Archive));
+                updateFilingItems();
             }
             if (!isTopic && !ChatObject.isMonoForum(currentChat)) {
                 clearHistoryItem = headerItem.lazilyAddSubItem(clear_history, R.drawable.msg_clear,
@@ -9882,6 +9900,67 @@ public class ChatActivity extends BaseFragment implements
             return;
         }
         translateItem.setVisibility(getMessagesController().getTranslateController().isTranslateDialogHidden(getDialogId()) && getMessagesController().getTranslateController().isDialogTranslatable(getDialogId()) ? View.VISIBLE : View.GONE);
+    }
+
+    // LoogriGram: when "Add to folder" and "Archive" show, by the chat list's
+    // rules (DialogsActivity.updateCounters, the folder choice): only for a
+    // chat that is in the list and not inside a community. An archived chat
+    // can always come out; Saved Messages, service notifications and the
+    // proxy's channel never go in. A folder must exist to add to. Checked
+    // again each time the menu opens.
+    private void updateFilingItems() {
+        if (archiveItem == null) {
+            return;
+        }
+        final TLRPC.Dialog dialog = getMessagesController().dialogs_dict.get(dialog_id);
+        final boolean listed = dialog != null && dialog.community_id == 0;
+        final boolean archived = listed && dialog.folder_id == 1;
+        final boolean canArchive = archived || listed && dialog_id != getUserConfig().getClientUserId() && dialog_id != 777000 && !getMessagesController().isPromoDialog(dialog_id, false);
+        archiveItem.setVisibility(canArchive ? View.VISIBLE : View.GONE);
+        archiveItem.setText(getString(archived ? R.string.Unarchive : R.string.Archive));
+        archiveItem.setIcon(archived ? R.drawable.msg_unarchive : R.drawable.msg_archive);
+        boolean hasFolders = false;
+        if (listed && getMessagesController().filtersEnabled) {
+            for (MessagesController.DialogFilter filter : getMessagesController().dialogFilters) {
+                if (!filter.isDefault()) {
+                    hasFolders = true;
+                    break;
+                }
+            }
+        }
+        addToFolderItem.setVisibility(hasFolders ? View.VISIBLE : View.GONE);
+    }
+
+    // LoogriGram: the chat list's folder sheet, for this chat: a checked
+    // folder takes it out, an unchecked one puts it in.
+    private void openFolderChooser() {
+        final ArrayList<Long> dialogs = new ArrayList<>();
+        dialogs.add(dialog_id);
+        final FiltersListBottomSheet sheet = new FiltersListBottomSheet(this, dialogs);
+        sheet.setDelegate((filter, checked) -> FiltersListBottomSheet.applyChoice(this, filter, checked, dialogs, this::getUndoView));
+        showDialog(sheet);
+    }
+
+    // LoogriGram: archives the chat or brings it back, as a swipe in the chat
+    // list does; archiving can be undone from the bar it shows.
+    private void toggleArchived() {
+        final TLRPC.Dialog dialog = getMessagesController().dialogs_dict.get(dialog_id);
+        if (dialog == null) {
+            return;
+        }
+        final UndoView undoView = getUndoView();
+        if (dialog.folder_id == 1) {
+            getMessagesController().addDialogToFolder(dialog_id, 0, -1, 0);
+            if (undoView != null) {
+                undoView.showWithAction(dialog_id, UndoView.ACTION_CHAT_UNARCHIVED, null);
+            }
+        } else {
+            final int pinnedNum = dialog.pinnedNum;
+            getMessagesController().addDialogToFolder(dialog_id, 1, -1, 0);
+            if (undoView != null) {
+                undoView.showWithAction(dialog_id, UndoView.ACTION_ARCHIVE, null, () -> getMessagesController().addDialogToFolder(dialog_id, 0, pinnedNum, 0));
+            }
+        }
     }
 
     private Animator infoTopViewAnimator;

@@ -32,11 +32,13 @@ import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
+import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.BottomSheet;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.DialogsActivity;
+import org.telegram.ui.Components.Premium.LimitReachedBottomSheet;
+import org.telegram.ui.FilterCreateActivity;
 
 import java.util.ArrayList;
 
@@ -60,9 +62,11 @@ public class FiltersListBottomSheet extends BottomSheet implements NotificationC
     }
 
     private final ArrayList<Long> selectedDialogs;
-    private final DialogsActivity fragment;
+    private final BaseFragment fragment;
 
-    public FiltersListBottomSheet(DialogsActivity baseFragment, ArrayList<Long> selectedDialogs) {
+    // LoogriGram: any screen may open this, not only the chat list; a chat's
+    // own menu files the chat with it too.
+    public FiltersListBottomSheet(BaseFragment baseFragment, ArrayList<Long> selectedDialogs) {
         super(baseFragment.getParentActivity(), false);
         fixNavigationBar();
         this.selectedDialogs = selectedDialogs;
@@ -362,6 +366,68 @@ public class FiltersListBottomSheet extends BottomSheet implements NotificationC
             }
         }
         return dids;
+    }
+
+    // LoogriGram: what choosing a row does, moved here from DialogsActivity's
+    // "Add to folder" so a chat's own menu shares it. A checked folder loses
+    // the chats, an unchecked one gains them, the last row creates a folder
+    // holding them. Returns false, having changed nothing, when the folder
+    // has no room for them.
+    public static boolean applyChoice(BaseFragment fragment, MessagesController.DialogFilter filter, boolean checked, ArrayList<Long> dialogs, Utilities.Callback0Return<UndoView> getUndoView) {
+        ArrayList<Long> alwaysShow = getDialogsCount(fragment, filter, dialogs, true, false);
+        if (!checked) {
+            int currentCount;
+            if (filter != null) {
+                currentCount = filter.alwaysShow.size();
+            } else {
+                currentCount = 0;
+            }
+            int totalCount = currentCount + alwaysShow.size();
+            if (totalCount > fragment.getMessagesController().dialogFiltersChatsLimitDefault) {
+                fragment.showDialog(new LimitReachedBottomSheet(fragment, fragment.getContext(), LimitReachedBottomSheet.TYPE_CHATS_IN_FOLDER, fragment.getCurrentAccount(), null));
+                return false;
+            }
+        }
+        if (filter != null) {
+            if (checked) {
+                for (int a = 0; a < dialogs.size(); a++) {
+                    filter.neverShow.add(dialogs.get(a));
+                    filter.alwaysShow.remove(dialogs.get(a));
+                }
+                FilterCreateActivity.saveFilterToServer(filter, filter.flags, filter.name, filter.entities, filter.title_noanimate, filter.color, filter.alwaysShow, filter.neverShow, filter.pinnedDialogs, false, false, true, true, false, fragment, null);
+                long did;
+                if (dialogs.size() == 1) {
+                    did = dialogs.get(0);
+                } else {
+                    did = 0;
+                }
+                final UndoView undoView = getUndoView.run();
+                if (undoView != null) {
+                    undoView.showWithAction(did, UndoView.ACTION_REMOVED_FROM_FOLDER, dialogs.size(), filter, null, null);
+                }
+            } else {
+                if (!alwaysShow.isEmpty()) {
+                    for (int a = 0; a < alwaysShow.size(); a++) {
+                        filter.neverShow.remove(alwaysShow.get(a));
+                    }
+                    filter.alwaysShow.addAll(alwaysShow);
+                    FilterCreateActivity.saveFilterToServer(filter, filter.flags, filter.name, filter.entities, filter.title_noanimate, filter.color, filter.alwaysShow, filter.neverShow, filter.pinnedDialogs, false, false, true, true, false, fragment, null);
+                }
+                long did;
+                if (alwaysShow.size() == 1) {
+                    did = alwaysShow.get(0);
+                } else {
+                    did = 0;
+                }
+                final UndoView undoView = getUndoView.run();
+                if (undoView != null) {
+                    undoView.showWithAction(did, UndoView.ACTION_ADDED_TO_FOLDER, alwaysShow.size(), filter, null, null);
+                }
+            }
+        } else {
+            fragment.presentFragment(new FilterCreateActivity(null, alwaysShow));
+        }
+        return true;
     }
 
     private class ListAdapter extends RecyclerListView.SelectionAdapter {

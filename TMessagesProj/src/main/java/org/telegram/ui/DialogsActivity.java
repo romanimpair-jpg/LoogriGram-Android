@@ -3609,61 +3609,12 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     openAccountSelector(switchItem);
                 } else if (id == add_to_folder) {
                     FiltersListBottomSheet sheet = new FiltersListBottomSheet(DialogsActivity.this, selectedDialogs);
+                    // LoogriGram: the choice's handling moved into the sheet,
+                    // which a chat's own menu opens too.
                     sheet.setDelegate((filter, checked) -> {
-                        ArrayList<Long> alwaysShow = FiltersListBottomSheet.getDialogsCount(DialogsActivity.this, filter, selectedDialogs, true, false);
-                        if (!checked) {
-                            int currentCount;
-                            if (filter != null) {
-                                currentCount = filter.alwaysShow.size();
-                            } else {
-                                currentCount = 0;
-                            }
-                            int totalCount = currentCount + alwaysShow.size();
-                            if (totalCount > getMessagesController().dialogFiltersChatsLimitDefault) {
-                                showDialog(new LimitReachedBottomSheet(DialogsActivity.this, fragmentView.getContext(), LimitReachedBottomSheet.TYPE_CHATS_IN_FOLDER, currentAccount, null));
-                                return;
-                            }
+                        if (FiltersListBottomSheet.applyChoice(DialogsActivity.this, filter, checked, selectedDialogs, DialogsActivity.this::getUndoView)) {
+                            hideActionMode(true);
                         }
-                        if (filter != null) {
-                            if (checked) {
-                                for (int a = 0; a < selectedDialogs.size(); a++) {
-                                    filter.neverShow.add(selectedDialogs.get(a));
-                                    filter.alwaysShow.remove(selectedDialogs.get(a));
-                                }
-                                FilterCreateActivity.saveFilterToServer(filter, filter.flags, filter.name, filter.entities, filter.title_noanimate, filter.color, filter.alwaysShow, filter.neverShow, filter.pinnedDialogs, false, false, true, true, false, DialogsActivity.this, null);
-                                long did;
-                                if (selectedDialogs.size() == 1) {
-                                    did = selectedDialogs.get(0);
-                                } else {
-                                    did = 0;
-                                }
-                                final UndoView undoView = getUndoView();
-                                if (undoView != null) {
-                                    undoView.showWithAction(did, UndoView.ACTION_REMOVED_FROM_FOLDER, selectedDialogs.size(), filter, null, null);
-                                }
-                            } else {
-                                if (!alwaysShow.isEmpty()) {
-                                    for (int a = 0; a < alwaysShow.size(); a++) {
-                                        filter.neverShow.remove(alwaysShow.get(a));
-                                    }
-                                    filter.alwaysShow.addAll(alwaysShow);
-                                    FilterCreateActivity.saveFilterToServer(filter, filter.flags, filter.name, filter.entities, filter.title_noanimate, filter.color, filter.alwaysShow, filter.neverShow, filter.pinnedDialogs, false, false, true, true, false, DialogsActivity.this, null);
-                                }
-                                long did;
-                                if (alwaysShow.size() == 1) {
-                                    did = alwaysShow.get(0);
-                                } else {
-                                    did = 0;
-                                }
-                                final UndoView undoView = getUndoView();
-                                if (undoView != null) {
-                                    undoView.showWithAction(did, UndoView.ACTION_ADDED_TO_FOLDER, alwaysShow.size(), filter, null, null);
-                                }
-                            }
-                        } else {
-                            presentFragment(new FilterCreateActivity(null, alwaysShow));
-                        }
-                        hideActionMode(true);
                     });
                     showDialog(sheet);
                 } else if (id == remove_from_folder) {
