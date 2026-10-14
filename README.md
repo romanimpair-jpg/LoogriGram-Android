@@ -41,6 +41,10 @@ One switch in the tab bar, where the Contacts tab used to be.
 - Notifications for pinned messages are off.
 - Saved media goes to folders named LoogriGram: Pictures, Movies, Download and Music/LoogriGram, and the app's own LoogriGram storage. Files saved earlier stay in the old Telegram folders; the app's own downloaded media moves over by itself.
 
+### Added
+
+- A chat's own menu (⋮ at its top right) can add the chat to a folder and archive or unarchive it, as selecting it in the chat list can. This works for private chats, groups and channels alike.
+
 ### Kept on purpose
 
 - Read receipts (see above).
