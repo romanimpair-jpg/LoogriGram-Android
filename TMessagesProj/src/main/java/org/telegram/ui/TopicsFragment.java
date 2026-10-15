@@ -100,6 +100,7 @@ import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.ChatActivityInterface;
 import org.telegram.ui.Components.ChatAvatarContainer;
+import org.telegram.ui.Components.ChatFiling;
 import org.telegram.ui.Components.ChatNotificationsPopupWrapper;
 import org.telegram.ui.Components.ColoredImageSpan;
 import org.telegram.ui.Components.CubicBezierInterpolator;
@@ -199,6 +200,8 @@ public class TopicsFragment extends BaseFragment implements NotificationCenter.N
     private static final int hide_id = 12;
     private static final int show_id = 13;
     private static final int report = 15;
+    private static final int add_to_folder_id = 16;
+    private static final int archive_id = 17;
 
     private boolean removeFragmentOnTransitionEnd;
     private boolean finishDialogRightSlidingPreviewOnTransitionEnd;
@@ -214,6 +217,8 @@ public class TopicsFragment extends BaseFragment implements NotificationCenter.N
     private ActionBarMenuSubItem addMemberSubMenu;
     private ActionBarMenuSubItem deleteChatSubmenu;
     private ActionBarMenuSubItem reportSubmenu;
+    private ActionBarMenuSubItem addToFolderSubmenu;
+    private ActionBarMenuSubItem archiveSubmenu;
     private boolean bottomPannelVisible = true;
     private float searchAnimationProgress = 0f;
 
@@ -797,6 +802,12 @@ public class TopicsFragment extends BaseFragment implements NotificationCenter.N
                     case report:
                         ReportBottomSheet.openChat(TopicsFragment.this, -chatId);
                         break;
+                    case add_to_folder_id:
+                        ChatFiling.openFolderChooser(TopicsFragment.this, -chatId);
+                        break;
+                    case archive_id:
+                        ChatFiling.toggleArchived(TopicsFragment.this, -chatId);
+                        break;
                 }
                 super.onItemClick(id);
             }
@@ -855,6 +866,22 @@ public class TopicsFragment extends BaseFragment implements NotificationCenter.N
         addMemberSubMenu = other.addSubItem(add_member_id, R.drawable.msg_addcontact, getString(R.string.AddMember));
         // LoogriGram: "Boost group" stood here, as in the chat's own menu.
         createTopicSubmenu = other.addSubItem(create_topic_id, R.drawable.msg_topic_create, getString(R.string.CreateTopic));
+        // LoogriGram: the chat list's "Add to folder" and "Archive" for the
+        // whole group, as in a chat's own menu (ChatFiling) and in desktop's
+        // topic list.
+        addToFolderSubmenu = other.addSubItem(add_to_folder_id, R.drawable.msg_addfolder, getString(R.string.FilterAddTo));
+        archiveSubmenu = other.addSubItem(archive_id, R.drawable.msg_archive, getString(R.string.Archive));
+        other.setSubMenuDelegate(new ActionBarMenuItem.ActionBarSubMenuItemDelegate() {
+            @Override
+            public void onShowSubMenu() {
+                updateFilingItems();
+            }
+
+            @Override
+            public void onHideSubMenu() {
+
+            }
+        });
         reportSubmenu = other.addSubItem(report, R.drawable.msg_report, getString(R.string.ReportChat));
         deleteChatSubmenu = other.addSubItem(delete_chat_id, R.drawable.msg_leave, getString(R.string.LeaveMegaMenu), themeDelegate);
 
@@ -2619,10 +2646,24 @@ public class TopicsFragment extends BaseFragment implements NotificationCenter.N
         addMemberSubMenu.setVisibility(ChatObject.canAddUsers(chatLocal) ? View.VISIBLE : View.GONE);
         deleteChatSubmenu.setVisibility(chatLocal != null && !chatLocal.creator && !ChatObject.isNotInChat(chatLocal) ? View.VISIBLE : View.GONE);
         reportSubmenu.setVisibility(chatLocal != null && !chatLocal.creator && !ChatObject.hasAdminRights(chatLocal) ? View.VISIBLE : View.GONE);
+        updateFilingItems();
         updateCreateTopicButton(true);
         groupCall = getMessagesController().getGroupCall(chatId, true);
 
         checkGroupCallJoin(false);
+    }
+
+    // LoogriGram: "Add to folder" and "Archive" show by the chat list's
+    // rules (ChatFiling), checked again each time the menu opens.
+    private void updateFilingItems() {
+        if (archiveSubmenu == null) {
+            return;
+        }
+        final long dialogId = -chatId;
+        final boolean archived = ChatFiling.isArchived(currentAccount, dialogId);
+        archiveSubmenu.setVisibility(ChatFiling.canArchive(currentAccount, dialogId) ? View.VISIBLE : View.GONE);
+        archiveSubmenu.setTextAndIcon(getString(archived ? R.string.Unarchive : R.string.Archive), archived ? R.drawable.msg_unarchive : R.drawable.msg_archive);
+        addToFolderSubmenu.setVisibility(ChatFiling.canAddToFolder(currentAccount, dialogId) ? View.VISIBLE : View.GONE);
     }
 
     private void setButtonType(int bottomButtonType) {

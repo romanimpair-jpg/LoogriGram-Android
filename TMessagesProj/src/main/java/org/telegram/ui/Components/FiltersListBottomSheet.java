@@ -32,7 +32,6 @@ import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.R;
-import org.telegram.messenger.Utilities;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.BaseFragment;
 import org.telegram.ui.ActionBar.BottomSheet;
@@ -368,12 +367,18 @@ public class FiltersListBottomSheet extends BottomSheet implements NotificationC
         return dids;
     }
 
+    // LoogriGram: how the screen that opened the sheet reports chats put in
+    // or taken out of a folder; did is the one chat, or 0 for several.
+    public interface ChoiceFeedback {
+        void show(long did, boolean added, int count, MessagesController.DialogFilter filter);
+    }
+
     // LoogriGram: what choosing a row does, moved here from DialogsActivity's
-    // "Add to folder" so a chat's own menu shares it. A checked folder loses
-    // the chats, an unchecked one gains them, the last row creates a folder
-    // holding them. Returns false, having changed nothing, when the folder
-    // has no room for them.
-    public static boolean applyChoice(BaseFragment fragment, MessagesController.DialogFilter filter, boolean checked, ArrayList<Long> dialogs, Utilities.Callback0Return<UndoView> getUndoView) {
+    // "Add to folder" so the menus of a chat and of a forum's topic list
+    // share it. A checked folder loses the chats, an unchecked one gains
+    // them, the last row creates a folder holding them. Returns false,
+    // having changed nothing, when the folder has no room for them.
+    public static boolean applyChoice(BaseFragment fragment, MessagesController.DialogFilter filter, boolean checked, ArrayList<Long> dialogs, ChoiceFeedback feedback) {
         ArrayList<Long> alwaysShow = getDialogsCount(fragment, filter, dialogs, true, false);
         if (!checked) {
             int currentCount;
@@ -401,10 +406,7 @@ public class FiltersListBottomSheet extends BottomSheet implements NotificationC
                 } else {
                     did = 0;
                 }
-                final UndoView undoView = getUndoView.run();
-                if (undoView != null) {
-                    undoView.showWithAction(did, UndoView.ACTION_REMOVED_FROM_FOLDER, dialogs.size(), filter, null, null);
-                }
+                feedback.show(did, false, dialogs.size(), filter);
             } else {
                 if (!alwaysShow.isEmpty()) {
                     for (int a = 0; a < alwaysShow.size(); a++) {
@@ -419,10 +421,7 @@ public class FiltersListBottomSheet extends BottomSheet implements NotificationC
                 } else {
                     did = 0;
                 }
-                final UndoView undoView = getUndoView.run();
-                if (undoView != null) {
-                    undoView.showWithAction(did, UndoView.ACTION_ADDED_TO_FOLDER, alwaysShow.size(), filter, null, null);
-                }
+                feedback.show(did, true, alwaysShow.size(), filter);
             }
         } else {
             fragment.presentFragment(new FilterCreateActivity(null, alwaysShow));

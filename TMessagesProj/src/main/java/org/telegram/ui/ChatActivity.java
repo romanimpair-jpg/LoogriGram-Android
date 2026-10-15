@@ -3618,9 +3618,9 @@ public class ChatActivity extends BaseFragment implements
                         FileLog.e(e);
                     }
                 } else if (id == add_to_folder) {
-                    openFolderChooser();
+                    ChatFiling.openFolderChooser(ChatActivity.this, dialog_id);
                 } else if (id == archive) {
-                    toggleArchived();
+                    ChatFiling.toggleArchived(ChatActivity.this, dialog_id);
                 } else if (id == report) {
                     ReportBottomSheet.openChat(ChatActivity.this);
                 } else if (id == star) {
@@ -4109,8 +4109,11 @@ public class ChatActivity extends BaseFragment implements
             }
             // LoogriGram: the chat list's "Add to folder" and "Archive" in the
             // chat's own menu too, as on desktop. updateFilingItems decides
-            // when they show.
-            if (chatMode == 0 && !isTopic) {
+            // when they show. A topic has them only in a chat that shows its
+            // topics as tabs (a forum set that way, a bot's topics): that
+            // screen is the chat's own, whichever tab is open, and the menu
+            // is not rebuilt when the tab changes.
+            if (chatMode == 0 && (!isTopic || ChatObject.isForum(currentChat) && ChatObject.areTabsEnabled(currentChat) || UserObject.isBotForum(currentUser))) {
                 addToFolderItem = headerItem.lazilyAddSubItem(add_to_folder, R.drawable.msg_addfolder, getString(R.string.FilterAddTo));
                 archiveItem = headerItem.lazilyAddSubItem(archive, R.drawable.msg_archive, getString(R.string.Archive));
                 updateFilingItems();
@@ -9902,65 +9905,17 @@ public class ChatActivity extends BaseFragment implements
         translateItem.setVisibility(getMessagesController().getTranslateController().isTranslateDialogHidden(getDialogId()) && getMessagesController().getTranslateController().isDialogTranslatable(getDialogId()) ? View.VISIBLE : View.GONE);
     }
 
-    // LoogriGram: when "Add to folder" and "Archive" show, by the chat list's
-    // rules (DialogsActivity.updateCounters, the folder choice): only for a
-    // chat that is in the list and not inside a community. An archived chat
-    // can always come out; Saved Messages, service notifications and the
-    // proxy's channel never go in. A folder must exist to add to. Checked
-    // again each time the menu opens.
+    // LoogriGram: "Add to folder" and "Archive" show by the chat list's rules
+    // (ChatFiling), checked again each time the menu opens.
     private void updateFilingItems() {
         if (archiveItem == null) {
             return;
         }
-        final TLRPC.Dialog dialog = getMessagesController().dialogs_dict.get(dialog_id);
-        final boolean listed = dialog != null && dialog.community_id == 0;
-        final boolean archived = listed && dialog.folder_id == 1;
-        final boolean canArchive = archived || listed && dialog_id != getUserConfig().getClientUserId() && dialog_id != 777000 && !getMessagesController().isPromoDialog(dialog_id, false);
-        archiveItem.setVisibility(canArchive ? View.VISIBLE : View.GONE);
+        final boolean archived = ChatFiling.isArchived(currentAccount, dialog_id);
+        archiveItem.setVisibility(ChatFiling.canArchive(currentAccount, dialog_id) ? View.VISIBLE : View.GONE);
         archiveItem.setText(getString(archived ? R.string.Unarchive : R.string.Archive));
         archiveItem.setIcon(archived ? R.drawable.msg_unarchive : R.drawable.msg_archive);
-        boolean hasFolders = false;
-        if (listed && getMessagesController().filtersEnabled) {
-            for (MessagesController.DialogFilter filter : getMessagesController().dialogFilters) {
-                if (!filter.isDefault()) {
-                    hasFolders = true;
-                    break;
-                }
-            }
-        }
-        addToFolderItem.setVisibility(hasFolders ? View.VISIBLE : View.GONE);
-    }
-
-    // LoogriGram: the chat list's folder sheet, for this chat: a checked
-    // folder takes it out, an unchecked one puts it in.
-    private void openFolderChooser() {
-        final ArrayList<Long> dialogs = new ArrayList<>();
-        dialogs.add(dialog_id);
-        final FiltersListBottomSheet sheet = new FiltersListBottomSheet(this, dialogs);
-        sheet.setDelegate((filter, checked) -> FiltersListBottomSheet.applyChoice(this, filter, checked, dialogs, this::getUndoView));
-        showDialog(sheet);
-    }
-
-    // LoogriGram: archives the chat or brings it back, as a swipe in the chat
-    // list does; archiving can be undone from the bar it shows.
-    private void toggleArchived() {
-        final TLRPC.Dialog dialog = getMessagesController().dialogs_dict.get(dialog_id);
-        if (dialog == null) {
-            return;
-        }
-        final UndoView undoView = getUndoView();
-        if (dialog.folder_id == 1) {
-            getMessagesController().addDialogToFolder(dialog_id, 0, -1, 0);
-            if (undoView != null) {
-                undoView.showWithAction(dialog_id, UndoView.ACTION_CHAT_UNARCHIVED, null);
-            }
-        } else {
-            final int pinnedNum = dialog.pinnedNum;
-            getMessagesController().addDialogToFolder(dialog_id, 1, -1, 0);
-            if (undoView != null) {
-                undoView.showWithAction(dialog_id, UndoView.ACTION_ARCHIVE, null, () -> getMessagesController().addDialogToFolder(dialog_id, 0, pinnedNum, 0));
-            }
-        }
+        addToFolderItem.setVisibility(ChatFiling.canAddToFolder(currentAccount, dialog_id) ? View.VISIBLE : View.GONE);
     }
 
     private Animator infoTopViewAnimator;

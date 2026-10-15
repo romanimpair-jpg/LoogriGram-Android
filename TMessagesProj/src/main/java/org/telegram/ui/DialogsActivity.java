@@ -3612,7 +3612,12 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     // LoogriGram: the choice's handling moved into the sheet,
                     // which a chat's own menu opens too.
                     sheet.setDelegate((filter, checked) -> {
-                        if (FiltersListBottomSheet.applyChoice(DialogsActivity.this, filter, checked, selectedDialogs, DialogsActivity.this::getUndoView)) {
+                        if (FiltersListBottomSheet.applyChoice(DialogsActivity.this, filter, checked, selectedDialogs, (did, added, count, folder) -> {
+                            final UndoView undoView = getUndoView();
+                            if (undoView != null) {
+                                undoView.showWithAction(did, added ? UndoView.ACTION_ADDED_TO_FOLDER : UndoView.ACTION_REMOVED_FROM_FOLDER, count, folder, null, null);
+                            }
+                        })) {
                             hideActionMode(true);
                         }
                     });
