@@ -6294,7 +6294,30 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
 
         @Override
         public void run() {
-            MediaController.getInstance().convertVideo(convertMessage);
+            // LoogriGram: the CPU is kept awake while the codecs convert. Upstream
+            // holds no wake lock here, so on battery with the screen off the
+            // system attempts to suspend every few seconds mid-conversion. On the
+            // Pixel 10a one such attempt lost an in-flight hardware codec job: the
+            // convertor waited for it forever, and every video queued behind it
+            // stalled until the app was killed. Over USB the phone never attempts
+            // to suspend, so it cannot be reproduced while plugged in. The timeout
+            // only bounds a conversion that hangs for some other reason.
+            PowerManager.WakeLock wakeLock = null;
+            try {
+                PowerManager powerManager = (PowerManager) ApplicationLoader.applicationContext.getSystemService(Context.POWER_SERVICE);
+                wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "telegram:video_convert_lock");
+                wakeLock.setReferenceCounted(false);
+                wakeLock.acquire(2 * 60 * 60 * 1000L);
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+            try {
+                MediaController.getInstance().convertVideo(convertMessage);
+            } finally {
+                if (wakeLock != null) {
+                    wakeLock.release();
+                }
+            }
         }
 
         public static void runConversion(final VideoConvertMessage obj) {
