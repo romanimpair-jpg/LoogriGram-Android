@@ -45,6 +45,10 @@ One switch in the tab bar, where the Contacts tab used to be.
 
 - A chat's own menu (⋮ at its top right) can add the chat to a folder and archive or unarchive it, as selecting it in the chat list can. This works for private chats, groups and channels alike, and in a group with topics the menu of its topic list (or of a topic, when the group shows topics as tabs) files the whole group.
 
+### Fixed
+
+- Videos no longer get stuck while converting. On battery with the screen locked, the phone could fall asleep partway through converting a video, which then never sent, and every video sent after it waited behind it until the app was closed. Big videos, which take longest to convert, were hit most. The app now keeps the phone from sleeping until a conversion finishes; the screen still turns off.
+
 ### Kept on purpose
 
 - Read receipts (see above).
