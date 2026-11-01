@@ -40,7 +40,7 @@ index and `commit-tree`, then push it to `dev`.
 |---|---|
 | Fork, CI, degoogling | Done. No Google bytecode in the APK, verified in the dex. The last Google-shaped code went on 2026-09-23/24: the Play install referrer and the four Chromecast stubs |
 | Latest release | `gaa9fa381` (full build run 38747339795, green, 2026-10-15): Add to folder and Archive for groups with topics. Before it: `g80d43aa0` (38633429057, 2026-10-14: Add to folder and Archive in a chat's own menu), `gdfb11a8f` (37320477333, 2026-10-05: the trending, setup-hint, branding and big-animation removals, LoogriGram media folders, a reaction's long press showing only the list), `g8939e23b` (37278375828, 2026-10-05), `g55475fe4` (37110897841, 2026-10-03), `g83c5583d` (36907722985, 2026-10-01), `g20294896`, `gb81ce49d`, `gf2478ebb` (which superseded the crashing `g1ec92ae0`, trap 0e) - a buggy Latest is superseded by the next build, never deleted, the user's rule |
-| Pending build | None: `patches` is `gaa9fa381` plus notes. **Desktop**'s side shipped as `gf48e0c3` (full build 38869428265, 2026-10-16) after two link failures that were its CI runner's page file, not the code - see its notes, CI lesson 13 |
+| Pending build | `4081db1f`, the video-conversion wake lock (compile 41294279155 green, 2026-11-01); not built. **Desktop** has nothing pending: its side last shipped as `gf48e0c3` (full build 38869428265, 2026-10-16) after two link failures that were its CI runner's page file, not the code - see its notes, CI lesson 13 |
 | Premium pass | **Done** (2026-10-01). The Premium screens are deleted (`51d67433`), `UserConfig.isPremium()` is gone and every caller takes the non-Premium path, others' Premium changes nothing drawn (`b90da4f6`), limits are the free ones. The user's two exceptions stand: the Premium-users-only notice's wording, dimmed folders past the cap |
 | App name and icon | Done - launcher, in-app strings (56 more in `5bd6a07d`, 2 more in `a4a47c59` after a full re-sweep with desktop's `4a57609593`), the two wordmark screens, and the launcher icon: desktop's mark, one icon only (`037d897a`, built by `branding/make_android_icons.py`) |
 | Phone contacts | **Never touched.** Permissions, account and sync adapter all gone |
@@ -64,6 +64,7 @@ index and `commit-tree`, then push it to `dev`.
 | Big animations | **Gone** (2026-10-04/05, the user's decision; desktop `3042504db8`, `101b007820`, `7df5d4c973`, `e50995c977`, `cbdf5aac89`, `6d1b3e4547`): the reaction burst (ReactionsEffectOverlay, AnimatedEmojiEffect, AnimatedStatusView, `988742b1`); message effects, neither offered, sent, played nor shown (`1056c5c4`, `a36fbf36`); EmojiAnimationsOverlay with the Premium sticker effect over the chat (a tap opens the set), and since 2026-10-05 in the long-press preview too (`c92ece7f`, desktop `cb712935e5`) and emoji interactions, whose incoming updates are skipped rather than shown as typing; the mirroring of incoming Premium stickers, which only aimed that effect (`4f7e40ea`); and the birthday balloons on the profile and in the chat. And a long-pressed reaction shows only its list (`de2eb9db`, 2026-10-05, after the user found the rest still there): no dim or blur, no lifted reaction, no 140dp activate animation beside it - desktop's `3042504db8`, whose counterpart these notes had wrongly said Android lacked |
 | Chat menu | **Add to folder and Archive added** (2026-10-15, the user's request; `bd692a00`, desktop `6c0b050615`), **groups with topics too** (`c783e4b198`, desktop `26e03b740a`). In a chat's ⋮ menu above Clear history, and in a forum's topic list (TopicsFragment) after Create topic; in a topic only when the chat shows topics as tabs (a forum set that way, a bot's topics), because that ChatActivity is the chat's own screen and switching tabs never rebuilds its menu. `ChatFiling` holds the chat list's rules and both actions and reports with bulletins; each screen re-checks the items whenever its menu opens. "Add to folder" opens the list's folder sheet; what a choice does moved from DialogsActivity into `FiltersListBottomSheet.applyChoice`, which reports through a `ChoiceFeedback` (DialogsActivity's is its undo bar, whose `getUndoView` dismisses a visible one, so it is fetched only when needed) |
 | Photo/video viewer | **Fixed** 2026-09-20; was our own null dereference, see the traps |
+| Video sending | **Fixed** 2026-11-01 (`4081db1f`), upstream's bug: a conversion now holds a partial wake lock. On battery with the screen locked, a suspend attempt could lose an in-flight hardware codec job, and the conversion and every video queued behind it waited forever. Trap 0m. Desktop sends videos unconverted, so no counterpart |
 | Build warnings | **None of ours are left.** Native, CMake, Gradle, Kotlin and CI fixed in `d6b0890c`/`f2f12360`; both AAPT sets fixed 2026-09-22 (`663ec903`, `77673c28`). What remains is javac's two notes, which are upstream's and third-party's — see "The javac notes are not ours" |
 | Ghost mode | Done: on by default, see Architecture |
 | Push transport | Ours: an MTProto foreground service. FCM is impossible here — see below |
@@ -360,6 +361,19 @@ Each of these was hit here. Do not relearn them.
    the head (and it changed its workflow). Both workflows now tag in "Tag the
    build." while the commit is the head, and publish with `--verify-tag`
    (`9347181f` here, `6120b243e6` on desktop).
+0m. **A suspend bug does not reproduce over USB.** On 2026-11-01 a big
+   video stopped converting at 94% and never sent, and two retries queued
+   behind it sat at 0%: the convertor thread asleep, both hardware codecs
+   still allocated. Plugged in, the same video converted cleanly twice,
+   locked or not, because the phone never attempts to suspend while
+   connected to a host. What settled it was history that outlives
+   logcat's main buffer (minutes): `logcat -b events` (power button,
+   `wm_pause_activity ... sleep`, `device_idle`) and
+   `dumpsys batterystats --history`, where `-running` and
+   `wake_reason=... Abort: Pending Wakeup Sources` are suspend attempts.
+   The output's last write (`stat -c %y`, to the nanosecond) came 485 ms
+   after one. Upstream converts with no wake lock; `4081db1f` holds one.
+   When a background task dies only on battery, look there first.
 
 1. **A dependency you remove may be supplying something unrelated.** Dropping
    `androidx.mediarouter` with Chromecast took `androidx.media` with it, which
@@ -378,7 +392,9 @@ Each of these was hit here. Do not relearn them.
    `write_text` emits CRLF on Windows, so a 9-line edit committed as a
    **13,946-line diff**. Write that file with explicit LF (`open(p,"wb")`), and
    check `git show --stat` before pushing. Every other file is normalised, so
-   git's CRLF warnings elsewhere are harmless.
+   git's CRLF warnings elsewhere are harmless. Count CR bytes with Python
+   (`open(p,"rb").read().count(b"\r")`), not grep: Git Bash's
+   `grep -a -c $'\r'` reported 6,768 for this file when it had none.
 
 3. **The APK verification check was lying.** It grepped the *zip listing* for
    `com/google/android/gms`, which reports a clean zero even on unmodified
