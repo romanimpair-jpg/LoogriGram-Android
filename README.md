@@ -44,6 +44,7 @@ One switch in the tab bar, where the Contacts tab used to be.
 ### Added
 
 - A chat's own menu (⋮ at its top right) can add the chat to a folder and archive or unarchive it, as selecting it in the chat list can. This works for private chats, groups and channels alike, and in a group with topics the menu of its topic list (or of a topic, when the group shows topics as tabs) files the whole group.
+- Long-pressing a sticker in a chat shows it enlarged, as holding one in the sticker panel does, with Add to Favorites and View Pack beneath it; a tap closes it. Long-pressing beside the sticker still selects the message and opens its menu.
 
 ### Fixed
 
