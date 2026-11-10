@@ -35217,9 +35217,9 @@ public class ChatActivity extends BaseFragment implements
         });
         ContentPreviewViewer.getInstance().open(document, null, MessageObject.findAnimatedEmojiEmoticon(document, null, currentAccount), null, null, ContentPreviewViewer.CONTENT_TYPE_STICKER, false, message, resourceProvider, 200);
         // The finger is still down: for the rest of this press the chat neither
-        // scrolls nor starts a swipe-to-reply under the preview.
+        // scrolls nor starts a swipe-to-reply under the preview. chatListView's
+        // override ends the swipe tracking this press began.
         chatListView.requestDisallowInterceptTouchEvent(true);
-        maybeStartTrackingSlidingView = false;
         return true;
     }
 
