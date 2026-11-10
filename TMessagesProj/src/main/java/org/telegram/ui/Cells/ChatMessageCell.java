@@ -17000,6 +17000,15 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         return currentBackgroundDrawable != null && x >= backgroundDrawableLeft && x <= backgroundDrawableLeft + backgroundDrawableRight;
     }
 
+    // LoogriGram: whether the press being held is on the sticker itself rather
+    // than beside it on its line. ChatActivity shows a sticker long-pressed
+    // there enlarged; elsewhere on the line the press selects the message. The
+    // point is recorded even for a press this cell leaves to the list, as it
+    // does on a sticker without a pack.
+    public boolean isTouchOnSticker() {
+        return currentMessageObject != null && currentMessageObject.isAnyKindOfSticker() && !currentMessageObject.isDice() && photoImage.isInsideImage(lastTouchX, lastTouchY);
+    }
+
     private void updateCurrentUserAndChat() {
         if (currentMessageObject == null) {
             return;

@@ -1599,6 +1599,12 @@ public class ChatActivity extends BaseFragment implements
                 return false;
             }
             wasManualScroll = true;
+            // LoogriGram: a sticker without a pack leaves its long press to this
+            // list; on the sticker itself it is shown enlarged, as one with a
+            // pack is from ChatMessageCellDelegate.didLongPress.
+            if (!actionBar.isActionModeShowed() && !isReport() && view instanceof ChatMessageCell && openStickerPreview((ChatMessageCell) view)) {
+                return true;
+            }
             boolean result = true;
             boolean showMenu = true;
             if (view instanceof ChatActionCell) {
@@ -35183,6 +35189,47 @@ public class ChatActivity extends BaseFragment implements
         return msg;
     }
 
+    // LoogriGram: a long press on a sticker itself shows it enlarged, as holding
+    // one in the sticker panel does, with that preview's menu (Add to Favorites,
+    // View Pack) and no Send; elsewhere on its line the press still selects the
+    // message and opens its menu. Upstream had no such preview in the chat: the
+    // user's request, 2026-11-10, both clients (desktop: PressedSticker in
+    // history_view_cursor_state.cpp).
+    private boolean openStickerPreview(ChatMessageCell cell) {
+        final MessageObject message = cell.getMessageObject();
+        final TLRPC.Document document = message != null ? message.getDocument() : null;
+        if (document == null || !cell.isTouchOnSticker() || getParentActivity() == null) {
+            return false;
+        }
+        ContentPreviewViewer.getInstance().setParentActivity(getParentActivity());
+        ContentPreviewViewer.getInstance().setDelegate(new ContentPreviewViewer.ContentPreviewViewerDelegate() {
+            @Override
+            public void openSet(TLRPC.InputStickerSet set, boolean clearInputField) {
+                if (getParentActivity() != null) {
+                    showStickerSetAlert(set);
+                }
+            }
+
+            @Override
+            public long getDialogId() {
+                return dialog_id;
+            }
+        });
+        ContentPreviewViewer.getInstance().open(document, null, MessageObject.findAnimatedEmojiEmoticon(document, null, currentAccount), null, null, ContentPreviewViewer.CONTENT_TYPE_STICKER, false, message, resourceProvider, 200);
+        // The finger is still down: for the rest of this press the chat neither
+        // scrolls nor starts a swipe-to-reply under the preview.
+        chatListView.requestDisallowInterceptTouchEvent(true);
+        maybeStartTrackingSlidingView = false;
+        return true;
+    }
+
+    // LoogriGram: shared by a tapped sticker and a held one's View Pack.
+    private void showStickerSetAlert(TLRPC.InputStickerSet set) {
+        StickersAlert alert = new StickersAlert(getParentActivity(), ChatActivity.this, set, null, bottomChannelButtonsLayout.getVisibility() != View.VISIBLE && (currentChat == null || ChatObject.canSendStickers(currentChat)) ? chatActivityEnterView : null, themeDelegate, false);
+        alert.setCalcMandatoryInsets(isKeyboardVisible());
+        showDialog(alert);
+    }
+
     private class ChatMessageCellDelegate implements ChatMessageCell.ChatMessageCellDelegate {
         @Override
         public boolean isReplyOrSelf() {
@@ -36612,6 +36659,10 @@ public class ChatActivity extends BaseFragment implements
 
         @Override
         public void didLongPress(ChatMessageCell cell, float x, float y) {
+            // LoogriGram: on the sticker itself, an enlarged preview instead.
+            if (openStickerPreview(cell)) {
+                return;
+            }
             createMenu(cell, false, false, x, y, false);
             startMultiselect(chatListView.getChildAdapterPosition(cell));
         }
@@ -37337,9 +37388,7 @@ public class ChatActivity extends BaseFragment implements
                 alert.setCalcMandatoryInsets(isKeyboardVisible());
                 showDialog(alert);
             } else if (message.getInputStickerSet() != null) {
-                StickersAlert alert = new StickersAlert(getParentActivity(), ChatActivity.this, message.getInputStickerSet(), null, bottomChannelButtonsLayout.getVisibility() != View.VISIBLE && (currentChat == null || ChatObject.canSendStickers(currentChat)) ? chatActivityEnterView : null, themeDelegate, false);
-                alert.setCalcMandatoryInsets(isKeyboardVisible());
-                showDialog(alert);
+                showStickerSetAlert(message.getInputStickerSet());
             } else if (message.isVideo() || message.type == MessageObject.TYPE_PHOTO || message.type == MessageObject.TYPE_TEXT && !message.isWebpageDocument() || message.isGif()) {
                 if (message.getDuration() > 0 && message.getVideoStartsTimestamp() > 0 && !message.openedInViewer) {
                     final int timestamp = message.getVideoStartsTimestamp();
