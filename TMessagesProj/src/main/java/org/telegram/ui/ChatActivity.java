@@ -25812,9 +25812,10 @@ public class ChatActivity extends BaseFragment implements
                 replyInlineMarkup.rows.get(0) != null && replyInlineMarkup.rows.get(0).buttons != null &&
                 replyInlineMarkup.rows.get(0).buttons.size() == 1 ?
                 replyInlineMarkup.rows.get(0).buttons.get(0) : null;
-            // LoogriGram: a pinned invoice put its Pay button on the pinned
-            // bar, priced in Stars. The invoice itself is held and never
-            // drawn, and a Buy button does nothing here, so it is not offered.
+            // LoogriGram: an invoice put its Pay button on this bar, priced in
+            // Stars - a pinned one did, and a thread's root post still can.
+            // The invoice itself is held and never drawn, and a Buy button
+            // does nothing here, so it is not offered.
             return TLKeyboardHelper.isType(button, TL_keyboard.TL_inlineButtonTypeBuy.class) ? null : button;
         }
         return null;
