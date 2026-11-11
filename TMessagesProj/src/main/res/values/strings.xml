@@ -9148,10 +9148,6 @@
     <string name="CocoonFeature3TextLink">https://cocoon.org/</string>
     <string name="CocoonFooter">Want to integrate Cocoon into your projects?\nReach out at **t.me/cocoon?direct**</string>
     <string name="CocoonFooterLink">https://t.me/cocoon?direct</string>
-    <string name="SummaryTitle">AI Summary</string>
-    <string name="SummarySubtitle">Tap to see original text</string>
-    <string name="SummaryLimit">Summarize large messages with AI — unlimited in Telegram Premium.</string>
-    <string name="SummaryLimitUpgrade">Upgrade</string>
 
     <string name="StakeDiceTitle">Emoji Stake</string>
     <string name="StakeDiceTitleBeta">Beta</string>

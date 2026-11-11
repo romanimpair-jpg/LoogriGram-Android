@@ -22182,11 +22182,10 @@ public class ChatActivity extends BaseFragment implements
             updateTranslateItemVisibility();
         } else if (id == NotificationCenter.messageTranslated) {
             final MessageObject messageObject = (MessageObject) args[0];
-            final boolean summary = args.length > 1 && (boolean) args[1];
             if (getDialogId() != messageObject.getDialogId()) {
                 return;
             }
-            updateMessageTranslation(messageObject, summary);
+            updateMessageTranslation(messageObject);
             if (args.length > 2 && (boolean) args[2]) {
                 checkTranslation(true);
             }
@@ -22521,7 +22520,7 @@ public class ChatActivity extends BaseFragment implements
         return chatListView.getMeasuredHeight() - v.getBottom() - chatListView.getPaddingBottom();
     }
 
-    private boolean updateMessageTranslation(MessageObject messageObject, boolean scroll) {
+    private boolean updateMessageTranslation(MessageObject messageObject) {
         if (messageObject == null || messageObject.messageOwner == null) {
             return false;
         }
@@ -22542,9 +22541,6 @@ public class ChatActivity extends BaseFragment implements
                 if (cellMessageObject.getId() == messageObject.getId()) {
                     cellMessageObject.messageOwner.translatedText = messageObject.messageOwner.translatedText;
                     cellMessageObject.messageOwner.translatedToLanguage = messageObject.messageOwner.translatedToLanguage;
-                    cellMessageObject.messageOwner.summaryText = messageObject.messageOwner.summaryText;
-                    cellMessageObject.messageOwner.translatedSummaryText = messageObject.messageOwner.translatedSummaryText;
-                    cellMessageObject.messageOwner.translatedSummaryLanguage = messageObject.messageOwner.translatedSummaryLanguage;
                     if (cellMessageObject.updateTranslation(false)) {
                         update = true;
                         ArrayList<Integer> dependentMessages = replyMessageOwners.get(cellMessageObject.getId());
@@ -22566,18 +22562,12 @@ public class ChatActivity extends BaseFragment implements
                 if (cellMessageObject.replyMessageObject != null && cellMessageObject.replyMessageObject.getId() == messageObject.getId() && cellMessageObject.replyMessageObject.getDialogId() == messageObject.getDialogId()) {
                     cellMessageObject.replyMessageObject.messageOwner.translatedText = messageObject.messageOwner.translatedText;
                     cellMessageObject.replyMessageObject.messageOwner.translatedToLanguage = messageObject.messageOwner.translatedToLanguage;
-                    cellMessageObject.replyMessageObject.messageOwner.translatedSummaryText = messageObject.messageOwner.translatedSummaryText;
-                    cellMessageObject.replyMessageObject.messageOwner.translatedSummaryLanguage = messageObject.messageOwner.translatedSummaryLanguage;
                     if (cellMessageObject.replyMessageObject.updateTranslation(false)) {
                         update = true;
                     }
                 }
                 if (update) {
-                    if (scroll) {
-                        chatLayoutManager.scrollToPositionWithOffset(chatListView.getChildAdapterPosition(child), cell.getTop() - (int) chatListViewPaddingTop, false);
-                    } else {
-                        saveGeneralScroll();
-                    }
+                    saveGeneralScroll();
                     cellMessageObject.forceUpdate = true;
                     cell.setMessageObject(cellMessageObject, cell.getCurrentMessagesGroup(), cell.isPinnedBottom(), cell.isPinnedTop(), cell.isFirstInChat(), cell.isLastInChatList());
                     if (group != null) {
@@ -28240,14 +28230,14 @@ public class ChatActivity extends BaseFragment implements
 
                                 String toLangValue = fromLang != null && fromLang.equals(toLang) ? toLangDefault : toLang;
                                 ArrayList<TLRPC.MessageEntity> entities = selectedObject != null && selectedObject.messageOwner != null ? selectedObject.messageOwner.entities : null;
-                                TranslateAlert2 alert = TranslateAlert2.showAlert(getParentActivity(), this, currentAccount, inputPeer, messageIdToTranslate[0], selectedObject.summarized, fromLang, toLangValue, finalMessageText, entities, noforwards, onLinkPress, () -> dimBehindView(false));
+                                TranslateAlert2 alert = TranslateAlert2.showAlert(getParentActivity(), this, currentAccount, inputPeer, messageIdToTranslate[0], fromLang, toLangValue, finalMessageText, entities, noforwards, onLinkPress, () -> dimBehindView(false));
                                 alert.setDimBehind(false);
                                 closeMenu(false);
                                 
 //                                final TranslateAlert3 alert =
 //                                    new TranslateAlert3(getContext(), resourceProvider)
 //                                        .setText(fromLang, finalMessageText)
-//                                        .setMessage(dialog_id, shouldTranslateByText ? 0 : messageIdToTranslate[0], selectedObject.summarized)
+//                                        .setMessage(dialog_id, shouldTranslateByText ? 0 : messageIdToTranslate[0])
 //                                        .setToLanguage(fromLang != null && fromLang.equals(toLang) ? toLangDefault : toLang)
 //                                        .setNoforwards(noforwards)
 //                                        .setOnLinkPress(onLinkPress);
@@ -28298,14 +28288,14 @@ public class ChatActivity extends BaseFragment implements
                                 }
                                 String toLangValue = fromLang[0] != null && fromLang[0].equals(toLang) ? toLangDefault : toLang;
                                 ArrayList<TLRPC.MessageEntity> entities = selectedObject != null && selectedObject.messageOwner != null ? selectedObject.messageOwner.entities : null;
-                                TranslateAlert2 alert = TranslateAlert2.showAlert(getParentActivity(), this, currentAccount, inputPeer, messageIdToTranslate[0], selectedObject.summarized, fromLang[0], toLangValue, finalMessageText, entities, noforwards, onLinkPress, () -> dimBehindView(false));
+                                TranslateAlert2 alert = TranslateAlert2.showAlert(getParentActivity(), this, currentAccount, inputPeer, messageIdToTranslate[0], fromLang[0], toLangValue, finalMessageText, entities, noforwards, onLinkPress, () -> dimBehindView(false));
                                 alert.setDimBehind(false);
                                 closeMenu(false);
 
 //                                final TranslateAlert3 alert =
 //                                    new TranslateAlert3(getContext(), resourceProvider)
 //                                        .setText(fromLang[0], finalMessageText)
-//                                        .setMessage(dialog_id, shouldTranslateByText ? 0 : messageIdToTranslate[0], selectedObject.summarized)
+//                                        .setMessage(dialog_id, shouldTranslateByText ? 0 : messageIdToTranslate[0])
 //                                        .setToLanguage(fromLang[0] != null && fromLang[0].equals(toLang) ? toLangDefault : toLang)
 //                                        .setNoforwards(noforwards)
 //                                        .setOnLinkPress(onLinkPress);
@@ -28332,12 +28322,12 @@ public class ChatActivity extends BaseFragment implements
                                     return;
                                 }
 
-                                TranslateAlert2 alert = TranslateAlert2.showAlert(getParentActivity(), this, currentAccount, inputPeer, messageIdToTranslate[0], selectedObject.summarized, "und", toLang, finalMessageText, null, noforwards, onLinkPress, () -> dimBehindView(false));
+                                TranslateAlert2 alert = TranslateAlert2.showAlert(getParentActivity(), this, currentAccount, inputPeer, messageIdToTranslate[0], "und", toLang, finalMessageText, null, noforwards, onLinkPress, () -> dimBehindView(false));
                                 alert.setDimBehind(false);
                                 closeMenu(false);
 
 //                                final TranslateAlert3 alert = new TranslateAlert3(getContext(), getResourceProvider())
-//                                    .setMessage(dialog_id, shouldTranslateByText ? 0 : messageIdToTranslate[0], selectedObject.summarized)
+//                                    .setMessage(dialog_id, shouldTranslateByText ? 0 : messageIdToTranslate[0])
 //                                    .setText(finalMessageText)
 //                                    .setNoforwards(noforwards)
 //                                    .setOnLinkPress(onLinkPress);
@@ -35094,17 +35084,6 @@ public class ChatActivity extends BaseFragment implements
                         .show();
                 }
             });
-        }
-
-        @Override
-        public void didPressSummarize(ChatMessageCell cell, boolean byReply) {
-            final MessageObject msg = cell.getMessageObject();
-            msg.messageOwner.summarizedOpen = !msg.messageOwner.summarizedOpen;
-            final boolean opened = msg.messageOwner.summarizedOpen;
-            msg.updateTranslation(true);
-            getMessagesStorage().updateMessageCustomParams(msg.getDialogId(), msg.messageOwner);
-            getMessagesController().getTranslateController().checkTranslation(msg, true);
-            forceUpdate(cell, true, true);
         }
 
         @Override

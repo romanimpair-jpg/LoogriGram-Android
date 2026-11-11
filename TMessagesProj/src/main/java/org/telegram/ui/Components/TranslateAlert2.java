@@ -92,7 +92,6 @@ public class TranslateAlert2 extends BottomSheet implements NotificationCenter.N
     private ArrayList<TLRPC.MessageEntity> reqMessageEntities;
     private TLRPC.InputPeer reqPeer;
     private int reqMessageId;
-    private boolean reqSum;
     private TL_iv.RichMessage reqRichMessage;
     private RichMessageLayout.PreviewView richLoadingPreviewView;
     private RichMessageLayout.PreviewView richPreviewView;
@@ -127,13 +126,13 @@ public class TranslateAlert2 extends BottomSheet implements NotificationCenter.N
         CharSequence text, ArrayList<TLRPC.MessageEntity> entities,
         Theme.ResourcesProvider resourcesProvider
     ) {
-        this(context, fromLanguage, toLanguage, text, entities, null, 0, false, null, resourcesProvider);
+        this(context, fromLanguage, toLanguage, text, entities, null, 0, null, resourcesProvider);
     }
 
     private TranslateAlert2(
         Context context,
         String fromLanguage, String toLanguage,
-        CharSequence text, ArrayList<TLRPC.MessageEntity> entities, TLRPC.InputPeer peer, int messageId, boolean sum,
+        CharSequence text, ArrayList<TLRPC.MessageEntity> entities, TLRPC.InputPeer peer, int messageId,
         TL_iv.RichMessage richMessage,
         Theme.ResourcesProvider resourcesProvider
     ) {
@@ -146,7 +145,6 @@ public class TranslateAlert2 extends BottomSheet implements NotificationCenter.N
         this.reqText = text;
         this.reqPeer = peer;
         this.reqMessageId = messageId;
-        this.reqSum = sum;
         this.reqRichMessage = richMessage;
 
         this.fromLanguage = fromLanguage;
@@ -365,36 +363,6 @@ public class TranslateAlert2 extends BottomSheet implements NotificationCenter.N
         textWithEntities.text = reqText == null ? "" : reqText.toString();
         if (reqMessageEntities != null) {
             textWithEntities.entities = reqMessageEntities;
-        }
-
-        if (reqSum && reqPeer != null) {
-            TLRPC.TL_messages_summarizeText req = new TLRPC.TL_messages_summarizeText();
-            req.flags |= 1;
-            req.peer = reqPeer;
-            req.id = reqMessageId;
-            req.to_lang = normalizeLanguage(lang);
-            reqId = ConnectionsManager.getInstance(currentAccount).sendRequestTyped(req, AndroidUtilities::runOnUIThread, (res, err) -> {
-                reqId = null;
-                if (err != null && "TRANSLATIONS_DISABLED_ALT".equalsIgnoreCase(err.text)) {
-                    translateAlt();
-                } else if (res != null) {
-                    firstTranslation = false;
-                    TLRPC.TL_textWithEntities text = preprocess(textWithEntities, res);
-                    CharSequence translated = SpannableStringBuilder.valueOf(text.text);
-                    MessageObject.addEntitiesToText(translated, text.entities, false, true, false, false);
-                    translated = preprocessText(translated);
-                    textView.setText(translated);
-                    adapter.updateMainView(textViewContainer);
-                } else if (firstTranslation) {
-                    dismiss();
-                    NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.showBulletin, Bulletin.TYPE_ERROR, LocaleController.getString(R.string.TranslationFailedAlert2));
-                } else {
-                    BulletinFactory.of((FrameLayout) containerView, resourcesProvider).createErrorBulletin(LocaleController.getString(R.string.TranslationFailedAlert2)).show();
-                    headerView.toLanguageTextView.setText(languageName(toLanguage = prevToLanguage));
-                    adapter.updateMainView(textViewContainer);
-                }
-            });
-            return;
         }
 
         TLRPC.TL_messages_translateText req = new TLRPC.TL_messages_translateText();
@@ -1769,8 +1737,8 @@ public class TranslateAlert2 extends BottomSheet implements NotificationCenter.N
         }
     }
 
-    public static TranslateAlert2 showAlert(Context context, BaseFragment fragment, int currentAccount, TLRPC.InputPeer peer, int msgId, boolean sum, String fromLanguage, String toLanguage, CharSequence text, ArrayList<TLRPC.MessageEntity> entities, boolean noforwards, Utilities.CallbackReturn<URLSpan, Boolean> onLinkPress, Runnable onDismiss) {
-        TranslateAlert2 alert = new TranslateAlert2(context, fromLanguage, toLanguage, text, entities, peer, msgId, sum, null, null) {
+    public static TranslateAlert2 showAlert(Context context, BaseFragment fragment, int currentAccount, TLRPC.InputPeer peer, int msgId, String fromLanguage, String toLanguage, CharSequence text, ArrayList<TLRPC.MessageEntity> entities, boolean noforwards, Utilities.CallbackReturn<URLSpan, Boolean> onLinkPress, Runnable onDismiss) {
+        TranslateAlert2 alert = new TranslateAlert2(context, fromLanguage, toLanguage, text, entities, peer, msgId, null, null) {
             @Override
             public void dismiss() {
                 super.dismiss();
@@ -1796,7 +1764,7 @@ public class TranslateAlert2 extends BottomSheet implements NotificationCenter.N
         if (context == null) {
             return null;
         }
-        TranslateAlert2 alert = new TranslateAlert2(context, fromLanguage, toLanguage, null, null, peer, msgId, false, richMessage, null) {
+        TranslateAlert2 alert = new TranslateAlert2(context, fromLanguage, toLanguage, null, null, peer, msgId, richMessage, null) {
             @Override
             public void dismiss() {
                 super.dismiss();
