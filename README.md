@@ -45,6 +45,7 @@ One switch in the tab bar, where the Contacts tab used to be.
 
 - A chat's own menu (⋮ at its top right) can add the chat to a folder and archive or unarchive it, as selecting it in the chat list can. This works for private chats, groups and channels alike, and in a group with topics the menu of its topic list (or of a topic, when the group shows topics as tabs) files the whole group.
 - Long-pressing a sticker in a chat shows it enlarged, as holding one in the sticker panel does, with Add to Favorites and View Pack beneath it; a tap closes it. Long-pressing beside the sticker still selects the message and opens its menu.
+- Pinned messages show as a small pill at the top right of a chat (a pin and how many messages are pinned) instead of a bar with the message text under the chat's header. Tapping it jumps to each pinned message in turn, newest first. Long-pressing it can hide it until something new is pinned, or open the list of all pinned messages. The chat's ⋮ menu has "Pinned messages" too, so the list stays reachable after the pill is hidden.
 
 ### Fixed
 
