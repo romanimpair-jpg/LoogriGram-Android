@@ -1325,12 +1325,10 @@
     <string name="PinAlsoFor">Also pin for %1$s</string>
     <string name="UnpinMessage">Unpin</string>
     <string name="PinMessageAlertTitle">Pin message</string>
-    <string name="UnpinMessageAlertTitle">Unpin message</string>
     <string name="PinOldMessageAlert">Do you want to pin an older message while leaving a more recent one pinned?</string>
     <string name="PinMessageAlert">Do you want to pin this message for all members in the group?</string>
     <string name="PinMessageAlertChannel">Do you want to pin this message in this channel?</string>
     <string name="PinMessageAlertChat">Do you want to pin this message at the top of the chat?</string>
-    <string name="UnpinMessageAlert">Do you want to unpin this message?</string>
     <string name="DeleteBan">Ban %1$s</string>
     <string name="DeleteBanUsers">Ban users</string>
     <string name="DeleteRestrict">Restrict %1$s</string>
@@ -1405,9 +1403,6 @@
     <string name="ReportChatOther">Other</string>
     <string name="ReportChatDescription">Description</string>
     <string name="DescriptionMore">more</string>
-    <string name="PinnedMessage">Pinned Message</string>
-    <string name="PinnedCall">Pinned Call</string>
-    <string name="PreviousPinnedMessage">Previous Message</string>
     <string name="EditedMessage">edited</string>
     <string name="EditMessage">Edit Message</string>
     <string name="EditCaption">Edit Caption</string>
@@ -4986,7 +4981,6 @@
     <string name="AccDescrVoipCamSwitchedToBack">Switched to rear camera</string>
     <string name="AccDescrVoipCamOn">Camera is on</string>
     <string name="AccDescrVoipCamOff">Camera is off</string>
-    <string name="AccPinnedMessagesList">Pinned messages list</string>
     <string name="AccSwitchToFullscreen">Switch to fullscreen</string>
     <string name="AccExitFullscreen">Exit fullscreen</string>
     <string name="AccDescrSendAsPeer">Send as %1$s</string>
@@ -9718,4 +9712,11 @@
     <string name="LoogriGramUpdateCurrent">LoogriGram is up to date (%1$s).</string>
     <string name="LoogriGramUpdateFailed">Couldn\'t reach GitHub to check for updates.</string>
     <string name="LoogriGramUpdateReady">The update is downloaded. Install it now? The app will close while Android installs it.</string>
+    <!-- LoogriGram: the pinned messages pill over a chat (ChatActivityPinnedPill),
+         its long-press menu, and the chat menu's way to the pinned messages
+         list, which stays there after the pill is hidden. Desktop carries the
+         same three strings. -->
+    <string name="LoogriGramPinnedMessages">Pinned messages</string>
+    <string name="LoogriGramHidePinnedMessages">Hide pinned messages</string>
+    <string name="LoogriGramAllPinnedMessages">All pinned messages</string>
 </resources>

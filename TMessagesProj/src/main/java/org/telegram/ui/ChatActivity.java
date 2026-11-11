@@ -252,6 +252,7 @@ import org.telegram.ui.Components.blur3.utils.Blur3Utils;
 import org.telegram.ui.Components.chat.ChatActivityBottomViewsVisibilityController;
 import org.telegram.ui.Components.chat.ChatActivityDraftMessageMeasureController;
 import org.telegram.ui.Components.chat.ChatActivitySearchContainer;
+import org.telegram.ui.Components.chat.buttons.ChatActivityPinnedPill;
 import org.telegram.ui.Components.chat.layouts.ChatActivityActionsButtonsLayout;
 import org.telegram.ui.Components.chat.layouts.ChatActivityChannelButtonsLayout;
 import org.telegram.ui.Components.chat.ChatInputViewsContainer;
@@ -298,7 +299,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -411,6 +411,7 @@ public class ChatActivity extends BaseFragment implements
     private ActionBarMenuItem.Item openForumItem;
     private ActionBarMenuItem.Item addToFolderItem;
     private ActionBarMenuItem.Item archiveItem;
+    private ActionBarMenuItem.Item pinnedMessagesItem;
     private ClippingImageView animatingImageView;
     private ThanosEffect chatListThanosEffect;
     private ChatListViewPaddingsAnimator chatListViewPaddingsAnimator;
@@ -526,19 +527,11 @@ public class ChatActivity extends BaseFragment implements
     private FrameLayout pinnedMessageView;
     private BluredView blurredView;
     private PinnedLineView pinnedLineView;
-    private boolean setPinnedTextTranslationX;
-    private BackupImageView[] pinnedMessageImageView = new BackupImageView[2];
-    private TrackingWidthSimpleTextView[] pinnedNameTextView = new TrackingWidthSimpleTextView[2];
-    private SimpleTextView[] pinnedMessageTextView = new SimpleTextView[2];
-    private PinnedMessageButton[] pinnedMessageButton = new PinnedMessageButton[2];
-    private NumberTextView pinnedCounterTextView;
-    private int pinnedCounterTextViewX;
-    private AnimatorSet[] pinnedNextAnimation = new AnimatorSet[2];
-    private boolean pinnedMessageButtonShown = false;
-    private ImageView closePinned;
-    private RadialProgressView pinnedProgress;
-    private ImageView pinnedListButton;
-    private AnimatorSet pinnedListAnimator;
+    private BackupImageView pinnedMessageImageView;
+    private SimpleTextView pinnedNameTextView;
+    private SimpleTextView pinnedMessageTextView;
+    private PinnedMessageButton pinnedMessageButton;
+    private ChatActivityPinnedPill pinnedPill;
     @Nullable
     private FrameLayout alertView;
     private Runnable hideAlertViewRunnable;
@@ -675,7 +668,6 @@ public class ChatActivity extends BaseFragment implements
     private ArrayList<Integer> pinnedMessageIds = new ArrayList<>();
     private int maxPinnedMessageId;
     private HashMap<Integer, MessageObject> pinnedMessageObjects = new HashMap<>();
-    private SparseArray<Boolean> loadingPinnedMessages = new SparseArray<>();
     private int currentPinnedMessageId;
     private int[] currentPinnedMessageIndex = new int[1];
     private int forceNextPinnedMessageId;
@@ -1193,7 +1185,6 @@ public class ChatActivity extends BaseFragment implements
         nextScrollToMessageId = 0;
         forceNextPinnedMessageId = 0;
         invalidateMessagesVisiblePart();
-        showPinnedProgress(false);
     };
 
     private NotificationCenter.PostponeNotificationCallback postponeNotificationsWhileLoadingCallback = new NotificationCenter.PostponeNotificationCallback() {
@@ -1589,6 +1580,7 @@ public class ChatActivity extends BaseFragment implements
 
     private final static int add_to_folder = 75;
     private final static int archive = 76;
+    private final static int pinned_messages = 77;
 
     private final static int id_chat_compose_panel = 1000;
 
@@ -3627,6 +3619,8 @@ public class ChatActivity extends BaseFragment implements
                     ChatFiling.openFolderChooser(ChatActivity.this, dialog_id);
                 } else if (id == archive) {
                     ChatFiling.toggleArchived(ChatActivity.this, dialog_id);
+                } else if (id == pinned_messages) {
+                    openPinnedMessagesList();
                 } else if (id == report) {
                     ReportBottomSheet.openChat(ChatActivity.this);
                 } else if (id == star) {
@@ -3977,6 +3971,7 @@ public class ChatActivity extends BaseFragment implements
                 @Override
                 public void onShowSubMenu() {
                     updateFilingItems();
+                    updatePinnedMessagesItem();
                     updateScrimSourceBitmap();
                 }
 
@@ -4093,6 +4088,15 @@ public class ChatActivity extends BaseFragment implements
             // LoogriGram: "Boost channel" / "Boost group" stood here - the boost
             // sheet for a member, the boosts screen for an admin. Boosts come
             // from Premium, which is honoured for nobody.
+            // LoogriGram: the pinned messages list, from the chat's or topic's
+            // own menu. The pill over the messages opens it too, but the pill
+            // can be hidden until a newer message is pinned; this item stays
+            // while anything is pinned (updatePinnedMessagesItem). Desktop's
+            // menus have the same item.
+            if (chatMode == 0 && currentEncryptedChat == null) {
+                pinnedMessagesItem = headerItem.lazilyAddSubItem(pinned_messages, R.drawable.msg_pin, getString(R.string.LoogriGramPinnedMessages));
+                updatePinnedMessagesItem();
+            }
             translateItem = headerItem.lazilyAddSubItem(translate, R.drawable.msg_translate, LocaleController.getString(R.string.TranslateMessage));
             updateTranslateItemVisibility();
             if (currentChat != null && !currentChat.creator && !ChatObject.hasAdminRights(currentChat)) {
@@ -9924,6 +9928,15 @@ public class ChatActivity extends BaseFragment implements
         addToFolderItem.setVisibility(ChatFiling.canAddToFolder(currentAccount, dialog_id) ? View.VISIBLE : View.GONE);
     }
 
+    // LoogriGram: "Pinned messages" shows while anything is pinned, whether
+    // or not the pill is, checked again each time the menu opens.
+    private void updatePinnedMessagesItem() {
+        if (pinnedMessagesItem == null) {
+            return;
+        }
+        pinnedMessagesItem.setVisibility(pinnedMessageIds.isEmpty() ? View.GONE : View.VISIBLE);
+    }
+
     private Animator infoTopViewAnimator;
 
     private void updateInfoTopView(boolean animated) {
@@ -10014,75 +10027,27 @@ public class ChatActivity extends BaseFragment implements
         contentView.addView(topUndoView, 17, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.LEFT, 8, 8, 8, 0));
     }
 
+    // LoogriGram: this bar only shows a comment thread's root post now, while
+    // it is scrolled away; pinned messages have the pill (createPinnedPill).
+    // What only the pinned bar used went with it: the "Pinned message #2"
+    // counter, the list and close buttons, the progress, the crossfade from
+    // one pinned message to the next, and the long-press preview of the list.
     private void createPinnedMessageView() {
         if (currentEncryptedChat != null || pinnedMessageView != null || getContext() == null) {
             return;
         }
         final int possibleLeftMarginDp = 0; // isSideMenued() ? SIDE_MENU_WIDTH : 0;
         pinnedMessageView = new FrameLayout(getContext()) {
-
-            float lastY;
-            float startY;
-
-            {
-                setOnLongClickListener(v -> {
-                    if (AndroidUtilities.isTablet() || (isThreadChat() && !UserObject.isBot(currentUser))) {
-                        return false;
-                    }
-                    startY = lastY;
-                    openPinnedMessagesList(true);
-                    return true;
-                });
-            }
-
-            @Override
-            public boolean onTouchEvent(MotionEvent event) {
-                lastY = event.getY();
-                if (event.getAction() == MotionEvent.ACTION_UP) {
-                    finishPreviewFragment();
-                } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
-                    float dy = startY - lastY;
-                    movePreviewFragment(dy);
-                    if (dy < 0) {
-                        startY = lastY;
-                    }
-                }
-                return super.onTouchEvent(event);
-            }
-
-            @Override
-            protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-                super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-                if (setPinnedTextTranslationX) {
-                    for (int a = 0; a < pinnedNextAnimation.length; a++) {
-                        if (pinnedNextAnimation[a] != null) {
-                            pinnedNextAnimation[a].start();
-                        }
-                    }
-                    setPinnedTextTranslationX = false;
-                }
-            }
-
             @Override
             protected boolean drawChild(Canvas canvas, View child, long drawingTime) {
-                if (child == pinnedLineView) {
-                    canvas.save();
-                    canvas.clipRect(0, 0, getMeasuredWidth(), AndroidUtilities.dp(48));
-                }
-                boolean result;
-                if (child == pinnedMessageTextView[0] || child == pinnedMessageTextView[1]) {
+                if (child == pinnedMessageTextView) {
                     canvas.save();
                     canvas.clipRect(0,0,getMeasuredWidth() - AndroidUtilities.dp(38),getMeasuredHeight());
-                    result = super.drawChild(canvas, child, drawingTime);
+                    final boolean result = super.drawChild(canvas, child, drawingTime);
                     canvas.restore();
-                } else {
-                    result = super.drawChild(canvas, child, drawingTime);
-                    if (child == pinnedLineView) {
-                        canvas.restore();
-                    }
+                    return result;
                 }
-
-                return result;
+                return super.drawChild(canvas, child, drawingTime);
             }
         };
         pinnedMessageView.setTag(1);
@@ -10091,28 +10056,7 @@ public class ChatActivity extends BaseFragment implements
         topPanelLayout.setDebugName(pinnedMessageView, "pinned message view");
         pinnedMessageView.setOnClickListener(v -> {
             wasManualScroll = true;
-            if (isThreadChat() && !isTopic) {
-                scrollToMessageId((int) threadMessageId, 0, true, 0, true, 0);
-            } else if (currentPinnedMessageId != 0) {
-                int currentPinned = currentPinnedMessageId;
-
-                int forceNextPinnedMessageId = 0;
-                if (!pinnedMessageIds.isEmpty()) {
-                    if (currentPinned == pinnedMessageIds.get(pinnedMessageIds.size() - 1)) {
-                        forceNextPinnedMessageId = pinnedMessageIds.get(0) + 1;
-                        forceScrollToFirst = true;
-                    } else {
-                        forceNextPinnedMessageId = currentPinned - 1;
-                        forceScrollToFirst = false;
-                    }
-                }
-                this.forceNextPinnedMessageId = forceNextPinnedMessageId;
-                if (!forceScrollToFirst) {
-                    forceNextPinnedMessageId = -forceNextPinnedMessageId;
-                }
-                scrollToMessageId(currentPinned, 0, true, 0, true, forceNextPinnedMessageId);
-                updateMessagesVisiblePart(false);
-            }
+            scrollToMessageId((int) threadMessageId, 0, true, 0, true, 0);
         });
         pinnedMessageView.setEnabled(!isInPreviewMode());
         pinnedMessageView.setBackground(Theme.getSelectorDrawable(false));
@@ -10121,150 +10065,56 @@ public class ChatActivity extends BaseFragment implements
         pinnedMessageView.addView(pinnedLineView, LayoutHelper.createFrame(3, 48, Gravity.LEFT | Gravity.TOP, 13, 0, 0, 0));
         pinnedMessageView.setClipChildren(false);
 
-        pinnedCounterTextView = new NumberTextView(getContext());
-        pinnedCounterTextView.setAddNumber();
-        pinnedCounterTextView.setTextSize(14);
-        pinnedCounterTextView.setTextColor(getThemedColor(Theme.key_chat_topPanelTitle));
-        pinnedCounterTextView.setTypeface(AndroidUtilities.bold());
-        pinnedMessageView.addView(pinnedCounterTextView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 18, Gravity.TOP | Gravity.LEFT, 23, 7, 44 + possibleLeftMarginDp, 0));
+        pinnedNameTextView = new SimpleTextView(getContext());
+        pinnedNameTextView.setTextSize(14);
+        pinnedNameTextView.setTextColor(getThemedColor(Theme.key_chat_topPanelTitle));
+        pinnedNameTextView.setTypeface(AndroidUtilities.bold());
+        pinnedMessageView.addView(pinnedNameTextView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 18, Gravity.TOP | Gravity.LEFT, 23, 7.3f, 44 + possibleLeftMarginDp, 0));
 
-        for (int a = 0; a < 2; a++) {
-            pinnedNameTextView[a] = new TrackingWidthSimpleTextView(getContext());
-            pinnedNameTextView[a].setTextSize(14);
-            pinnedNameTextView[a].setTextColor(getThemedColor(Theme.key_chat_topPanelTitle));
-            pinnedNameTextView[a].setTypeface(AndroidUtilities.bold());
-            pinnedMessageView.addView(pinnedNameTextView[a], LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 18, Gravity.TOP | Gravity.LEFT, 23, 7.3f, 44 + possibleLeftMarginDp, 0));
+        pinnedMessageTextView = new SimpleTextView(getContext());
+        pinnedMessageTextView.setTextSize(14);
+        pinnedMessageTextView.setTextColor(getThemedColor(Theme.key_chat_topPanelMessage));
+        pinnedMessageView.addView(pinnedMessageTextView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 18, Gravity.TOP | Gravity.LEFT, 23, 25.3f, 44 + possibleLeftMarginDp, 0));
 
-            pinnedMessageTextView[a] = new SimpleTextView(getContext()) {
-                @Override
-                public void setTranslationY(float translationY) {
-                    super.setTranslationY(translationY);
-                    if (this == pinnedMessageTextView[0] && pinnedNextAnimation[1] != null) {
-                        if (forceScrollToFirst && translationY < 0) {
-                            pinnedLineView.setTranslationY(translationY / 2);
-                        } else {
-                            pinnedLineView.setTranslationY(0);
-                        }
-                    }
+        pinnedMessageButton = new PinnedMessageButton(getContext());
+        pinnedMessageView.addView(pinnedMessageButton, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 28, Gravity.TOP | Gravity.RIGHT, 0, 10, 14, 0));
+
+        pinnedMessageImageView = new BackupImageView(getContext()) {
+            private SpoilerEffect spoilerEffect = new SpoilerEffect();
+            private Path path = new Path();
+            private float[] radii = new float[8];
+
+            @Override
+            protected void onDraw(Canvas canvas) {
+                super.onDraw(canvas);
+
+                if (hasBlur) {
+                    canvas.save();
+                    AndroidUtilities.rectTmp.set(0, 0, getWidth(), getHeight());
+
+                    int[] rad = imageReceiver.getRoundRadius();
+                    radii[0] = radii[1] = rad[0];
+                    radii[2] = radii[3] = rad[1];
+                    radii[4] = radii[5] = rad[2];
+                    radii[6] = radii[7] = rad[3];
+
+                    path.rewind();
+                    path.addRoundRect(AndroidUtilities.rectTmp, radii, Path.Direction.CW);
+                    canvas.clipPath(path);
+
+                    int sColor = Color.WHITE;
+                    spoilerEffect.setColor(ColorUtils.setAlphaComponent(sColor, (int) (Color.alpha(sColor) * 0.325f)));
+                    spoilerEffect.setBounds(0, 0, getWidth(), getHeight());
+                    spoilerEffect.draw(canvas);
+
+                    canvas.restore();
+                    invalidate();
                 }
-            };
-            pinnedMessageTextView[a].setTextSize(14);
-            pinnedMessageTextView[a].setTextColor(getThemedColor(Theme.key_chat_topPanelMessage));
-            pinnedMessageView.addView(pinnedMessageTextView[a], LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 18, Gravity.TOP | Gravity.LEFT, 23, 25.3f, 44 + possibleLeftMarginDp, 0));
-
-            pinnedMessageButton[a] = new PinnedMessageButton(getContext());
-            pinnedMessageView.addView(pinnedMessageButton[a], LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 28, Gravity.TOP | Gravity.RIGHT, 0, 10, 14, 0));
-
-            pinnedMessageImageView[a] = new BackupImageView(getContext()) {
-                private SpoilerEffect spoilerEffect = new SpoilerEffect();
-                private Path path = new Path();
-                private float[] radii = new float[8];
-
-                @Override
-                protected void onDraw(Canvas canvas) {
-                    super.onDraw(canvas);
-
-                    if (hasBlur) {
-                        canvas.save();
-                        AndroidUtilities.rectTmp.set(0, 0, getWidth(), getHeight());
-
-                        int[] rad = imageReceiver.getRoundRadius();
-                        radii[0] = radii[1] = rad[0];
-                        radii[2] = radii[3] = rad[1];
-                        radii[4] = radii[5] = rad[2];
-                        radii[6] = radii[7] = rad[3];
-
-                        path.rewind();
-                        path.addRoundRect(AndroidUtilities.rectTmp, radii, Path.Direction.CW);
-                        canvas.clipPath(path);
-
-                        int sColor = Color.WHITE;
-                        spoilerEffect.setColor(ColorUtils.setAlphaComponent(sColor, (int) (Color.alpha(sColor) * 0.325f)));
-                        spoilerEffect.setBounds(0, 0, getWidth(), getHeight());
-                        spoilerEffect.draw(canvas);
-
-                        canvas.restore();
-                        invalidate();
-                    }
-                }
-            };
-            pinnedMessageImageView[a].setBlurAllowed(true);
-            pinnedMessageImageView[a].setRoundRadius(AndroidUtilities.dp(2));
-            pinnedMessageView.addView(pinnedMessageImageView[a], LayoutHelper.createFrame(32, 32, Gravity.TOP | Gravity.LEFT, 22, 8, 0, 0));
-            if (a == 1) {
-                pinnedNameTextView[a].setVisibility(View.INVISIBLE);
-                pinnedMessageButton[a].setVisibility(View.INVISIBLE);
-                pinnedMessageTextView[a].setVisibility(View.INVISIBLE);
-                pinnedMessageImageView[a].setVisibility(View.INVISIBLE);
             }
-        }
-
-        pinnedListButton = new ImageView(getContext());
-        pinnedListButton.setImageResource(R.drawable.msg_pinnedlist);
-        pinnedListButton.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_chat_topPanelClose), PorterDuff.Mode.MULTIPLY));
-        pinnedListButton.setScaleType(ImageView.ScaleType.CENTER);
-        pinnedListButton.setContentDescription(LocaleController.getString(R.string.AccPinnedMessagesList));
-        pinnedListButton.setVisibility(View.INVISIBLE);
-        pinnedListButton.setAlpha(0.0f);
-        pinnedListButton.setScaleX(0.4f);
-        pinnedListButton.setScaleY(0.4f);
-        pinnedListButton.setBackgroundDrawable(Theme.createSelectorDrawable(getThemedColor(Theme.key_inappPlayerClose) & 0x19ffffff));
-        pinnedMessageView.addView(pinnedListButton, LayoutHelper.createFrame(36, 48, Gravity.RIGHT | Gravity.TOP, 0, 0, 7, 0));
-        pinnedListButton.setOnClickListener(v -> openPinnedMessagesList(false));
-
-        closePinned = new ImageView(getContext());
-        closePinned.setImageResource(R.drawable.miniplayer_close);
-        closePinned.setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_chat_topPanelClose), PorterDuff.Mode.MULTIPLY));
-        closePinned.setScaleType(ImageView.ScaleType.CENTER);
-        closePinned.setVisibility(View.GONE);
-        closePinned.setContentDescription(LocaleController.getString(R.string.Close));
-
-        pinnedProgress = new RadialProgressView(getContext(), themeDelegate);
-        pinnedProgress.setVisibility(View.GONE);
-        pinnedProgress.setSize(AndroidUtilities.dp(16));
-        pinnedProgress.setStrokeWidth(2f);
-        pinnedProgress.setProgressColor(getThemedColor(Theme.key_chat_topPanelLine));
-        pinnedMessageView.addView(pinnedProgress, LayoutHelper.createFrame(36, 48, Gravity.RIGHT | Gravity.TOP, 0, 0, 2, 0));
-
-        closePinned.setBackgroundDrawable(Theme.createSelectorDrawable(getThemedColor(Theme.key_inappPlayerClose) & 0x19ffffff, 1, AndroidUtilities.dp(14)));
-        pinnedMessageView.addView(closePinned, LayoutHelper.createFrame(36, 48, Gravity.RIGHT | Gravity.TOP, 0, 0, 2, 0));
-        closePinned.setOnClickListener(v -> {
-            if (getParentActivity() == null) {
-                return;
-            }
-            boolean allowPin;
-            if (currentChat != null) {
-                allowPin = ChatObject.canPinMessages(currentChat) && (!currentChat.monoforum /*|| ChatObject.canManageMonoForum(currentAccount, currentChat)*/);
-            } else if (currentEncryptedChat == null) {
-                if (userInfo != null) {
-                    allowPin = userInfo.can_pin_message;
-                } else {
-                    allowPin = false;
-                }
-            } else {
-                allowPin = false;
-            }
-            if (allowPin) {
-                AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity(), themeDelegate);
-                builder.setTitle(LocaleController.getString(R.string.UnpinMessageAlertTitle));
-                builder.setMessage(LocaleController.getString(R.string.UnpinMessageAlert));
-                builder.setPositiveButton(LocaleController.getString(R.string.UnpinMessage), (dialogInterface, i) -> {
-                    MessageObject messageObject = pinnedMessageObjects.get(currentPinnedMessageId);
-                    if (messageObject == null) {
-                        messageObject = messagesDict[0].get(currentPinnedMessageId);
-                    }
-                    unpinMessage(messageObject);
-                });
-                builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
-                showDialog(builder.create());
-            } else if (!pinnedMessageIds.isEmpty()) {
-                SharedPreferences preferences = MessagesController.getNotificationsSettings(currentAccount);
-                preferences.edit().putInt("pin_" + dialog_id, pinnedMessageIds.get(0)).commit();
-                updatePinnedMessageView(true);
-            }
-        });
-
-        updatePinnedListButton(false);
+        };
+        pinnedMessageImageView.setBlurAllowed(true);
+        pinnedMessageImageView.setRoundRadius(AndroidUtilities.dp(2));
+        pinnedMessageView.addView(pinnedMessageImageView, LayoutHelper.createFrame(32, 32, Gravity.TOP | Gravity.LEFT, 22, 8, 0, 0));
     }
 
     private void openAnotherForward() {
@@ -10321,7 +10171,7 @@ public class ChatActivity extends BaseFragment implements
         }
     }
 
-    private void openPinnedMessagesList(boolean preview) {
+    private void openPinnedMessagesList() {
         if (getParentActivity() == null || parentLayout == null || parentLayout.getLastFragment() != this || pinnedMessageIds.isEmpty()) {
             return;
         }
@@ -10425,12 +10275,7 @@ public class ChatActivity extends BaseFragment implements
                 }
             }
         };
-        if (preview) {
-            presentFragmentAsPreview(fragment);
-            checkShowBlur(true);
-        } else {
-            presentFragment(fragment, false);
-        }
+        presentFragment(fragment, false);
     }
 
     private void checkShowBlur(boolean animated) {
@@ -10627,6 +10472,7 @@ public class ChatActivity extends BaseFragment implements
         if (floatingDateView != null) {
             floatingDateView.setTranslationY(chatListView.getTranslationY() - searchExpandOffset + chatListViewPaddingTop + floatingDateViewOffset - dp(4));
         }
+        updatePinnedPillTranslation();
         updateFloatingTopicView();
 
         // int p = isInsideContainer && chatMode != MODE_SEARCH ? dp(4) : 0; // chatListView.getMeasuredHeight() * 2 / 3;
@@ -11118,7 +10964,6 @@ public class ChatActivity extends BaseFragment implements
             if (progressDialog != null) {
                 progressDialog.dismiss();
             }
-            updatePinnedListButton(false);
             progressDialog = new AlertDialog(getParentActivity(), AlertDialog.ALERT_TYPE_SPINNER, themeDelegate);
             progressDialog.setOnCancelListener(postponedScrollCancelListener);
             progressDialog.showDelayed(1000);
@@ -14232,7 +14077,6 @@ public class ChatActivity extends BaseFragment implements
                 progressDialog.dismiss();
             }
 
-            updatePinnedListButton(false);
             if (inCaseLoading != null) {
                 inCaseLoading.run();
             } else {
@@ -14958,49 +14802,24 @@ public class ChatActivity extends BaseFragment implements
                 });
             }
         } else {
-            if (currentPinnedMessageId != 0) {
-                MessageObject object = pinnedMessageObjects.get(currentPinnedMessageId);
-                if (object == null) {
-                    object = messagesDict[0].get(currentPinnedMessageId);
-                }
-                if (object == null) {
-                    if (loadingPinnedMessages.indexOfKey(currentPinnedMessageId) < 0) {
-                        loadingPinnedMessages.put(currentPinnedMessageId, true);
-                        ArrayList<Integer> ids = new ArrayList<>();
-                        ids.add(currentPinnedMessageId);
-                        getMediaDataController().loadPinnedMessages(dialog_id, ChatObject.isChannel(currentChat) ? currentChat.id : 0, ids, true);
-                    }
-                    currentPinnedMessageId = previousPinnedMessageId;
-                }
-            } else if (previousPinnedMessageId != 0 && !pinnedMessageIds.isEmpty()) {
+            // LoogriGram: the bar waited for the pinned message itself before
+            // moving on to it, to show its text, and loaded it meanwhile. The
+            // pill shows none, and a click loads whatever it jumps to.
+            if (currentPinnedMessageId == 0 && previousPinnedMessageId != 0 && !pinnedMessageIds.isEmpty()) {
                 currentPinnedMessageId = previousPinnedMessageId;
             }
             boolean animated = (fromPullingDownTransition && fragmentView.getVisibility() == View.VISIBLE) || (openAnimationStartTime != 0 && SystemClock.elapsedRealtime() >= openAnimationStartTime + 150);
             if (previousPinnedMessageId != currentPinnedMessageId) {
-                int animateToNext;
-                if (previousPinnedMessageId == 0) {
-                    animateToNext = 0;
-                } else if (previousPinnedMessageId > currentPinnedMessageId) {
-                    animateToNext = 1;
-                } else {
-                    animateToNext = 2;
-                }
-
                 AndroidUtilities.runOnUIThread(() -> {
-                    updatePinnedMessageView(animated, animateToNext);
+                    updatePinnedMessageView(animated);
                 });
-            } else if (isTopic && currentPinnedMessageId != 0 && (pinnedMessageView == null || pinnedMessageView.getTag() != null)) {
-                AndroidUtilities.runOnUIThread(() -> {
-                    updatePinnedMessageView(animated, 0);
-                });
-            } else {
-                updatePinnedListButton(animated);
             }
         }
         if (floatingDateView != null) {
             floatingDateView.setTranslationX(getSideMenuWidth() / 2f);
             floatingDateView.setTranslationY(chatListView.getTranslationY() + chatListViewPaddingTop + floatingDateViewOffset - dp(4));
         }
+        updatePinnedPillTranslation();
         updateFloatingTopicView();
         invalidateChatListViewTopPadding();
         if (!firstLoading && !paused && !inPreviewMode && (chatMode == 0 || chatMode == MODE_SUGGESTIONS) && !getMessagesController().ignoreSetOnline) {
@@ -15281,8 +15100,6 @@ public class ChatActivity extends BaseFragment implements
     }
 
     public static final boolean SCROLL_DEBUG_DELAY = false;
-    private boolean pinnedProgressIsShowing;
-    Runnable updatePinnedProgressRunnable;
 
     public void scrollToMessageId(int id, int fromMessageId, boolean select, int loadIndex, boolean forceScroll, int forcePinnedMessageId) {
         scrollToMessageId(id, fromMessageId, select, loadIndex, forceScroll, forcePinnedMessageId, null, null);
@@ -15444,13 +15261,13 @@ public class ChatActivity extends BaseFragment implements
                 progressDialog.dismiss();
             }
 
-            showPinnedProgress(forceNextPinnedMessageId != 0);
-
+            // LoogriGram: a jump to a pinned message spun a progress on the
+            // pinned bar instead of this dialog. The pill has none, so it gets
+            // the dialog every other jump gets.
             if (inCaseLoading != null) {
                 inCaseLoading.run();
-            } else if (forceNextPinnedMessageId == 0) {
+            } else {
                 progressDialog = new AlertDialog(getParentActivity(), AlertDialog.ALERT_TYPE_SPINNER, themeDelegate);
-                progressDialog.setOnShowListener(dialogInterface -> showPinnedProgress(false));
                 progressDialog.setOnCancelListener(postponedScrollCancelListener);
                 progressDialog.showDelayed(400);
             }
@@ -15479,25 +15296,6 @@ public class ChatActivity extends BaseFragment implements
         returnToMessageId = fromMessageId;
         returnToLoadIndex = loadIndex;
         needSelectFromMessageId = select;
-    }
-
-    private void showPinnedProgress(boolean show) {
-        if (show) {
-            if (updatePinnedProgressRunnable == null) {
-                updatePinnedProgressRunnable = () -> {
-                    pinnedProgressIsShowing = true;
-                    updatePinnedListButton(true);
-                };
-                AndroidUtilities.runOnUIThread(updatePinnedProgressRunnable, 100);
-            }
-        } else {
-            if (updatePinnedProgressRunnable != null) {
-                AndroidUtilities.cancelRunOnUIThread(updatePinnedProgressRunnable);
-            }
-            updatePinnedProgressRunnable = null;
-            pinnedProgressIsShowing = false;
-            updatePinnedListButton(true);
-        }
     }
 
     private void updatePagedownButtonVisibility(boolean animated) {
@@ -18951,7 +18749,6 @@ public class ChatActivity extends BaseFragment implements
                 progressDialog.dismiss();
             }
             resetProgressDialogLoading();
-            showPinnedProgress(false);
             if (postponedScrollIsCanceled) {
                 return;
             }
@@ -19893,7 +19690,6 @@ public class ChatActivity extends BaseFragment implements
                 showMessagesSearchListView(false);
             }
             resetProgressDialogLoading();
-            updatePinnedListButton(false);
             if (postponedScrollMessageId == 0) {
                 chatScrollHelperCallback.scrollTo = null;
                 chatScrollHelperCallback.lastBottom = true;
@@ -20072,10 +19868,8 @@ public class ChatActivity extends BaseFragment implements
             if (alertTextView != null) {
                 alertTextView.invalidate();
             }
-            for (int a = 0; a < 2; a++) {
-                if (pinnedMessageTextView[a] != null) {
-                    pinnedMessageTextView[a].invalidate();
-                }
+            if (pinnedMessageTextView != null) {
+                pinnedMessageTextView.invalidate();
             }
             if (mentionContainer != null) {
                 mentionContainer.getListView().invalidateViews();
@@ -20094,11 +19888,8 @@ public class ChatActivity extends BaseFragment implements
                     editText.setTextColor(color);
                 }
             }
-            if (pinnedMessageButton[0] != null) {
-                pinnedMessageButton[0].invalidate();
-            }
-            if (pinnedMessageButton[1] != null) {
-                pinnedMessageButton[1].invalidate();
+            if (pinnedMessageButton != null) {
+                pinnedMessageButton.invalidate();
             }
         } else if (id == NotificationCenter.didUpdateConnectionState) {
             int state = ConnectionsManager.getInstance(account).getConnectionState();
@@ -21607,12 +21398,10 @@ public class ChatActivity extends BaseFragment implements
                             avatarContainer.setTitle(LocaleController.formatPluralString("PinnedMessagesCount", getPinnedMessagesCount()));
                         }
                         Collections.sort(pinnedMessageIds, (o1, o2) -> o2.compareTo(o1));
-                        if (pinnedMessageIds.isEmpty()) {
-                            hidePinnedMessageView(true);
-                        } else {
+                        if (!pinnedMessageIds.isEmpty()) {
                             updateMessagesVisiblePart(false);
                         }
-                        updatePinnedListButton(true);
+                        updatePinnedPill(true);
                     }
                     if (chatMode == MODE_PINNED) {
                         if (pin) {
@@ -21630,7 +21419,6 @@ public class ChatActivity extends BaseFragment implements
                             if (pinnedMessageObjects.containsKey(message.getId())) {
                                 pinnedMessageObjects.put(message.getId(), message);
                             }
-                            loadingPinnedMessages.remove(message.getId());
                         }
                         getMediaDataController().loadReplyMessagesForMessages(arrayList, dialog_id, 0, 0, null, classGuid, null);
                         updateMessagesVisiblePart(false);
@@ -21640,7 +21428,7 @@ public class ChatActivity extends BaseFragment implements
                         currentPinnedMessageId = 0;
                         loadedPinnedMessagesCount = 0;
                         totalPinnedMessagesCount = 0;
-                        hidePinnedMessageView(true);
+                        updatePinnedPill(true);
                     }
                 }
             }
@@ -22333,7 +22121,6 @@ public class ChatActivity extends BaseFragment implements
 
             updateTopPanel(true);
             if (chatListView != null && chatAdapter != null) {
-                boolean updatedPinned = false;
                 saveGeneralScroll();
                 ArrayList<Long> groupChecked = new ArrayList<>();
                 for (int i = 0; i < chatListView.getChildCount(); ++i) {
@@ -22344,15 +22131,6 @@ public class ChatActivity extends BaseFragment implements
                         boolean update = false;
                         if (messageObject != null && messageObject.updateTranslation(false)) {
                             update = true;
-
-                            MessageObject pinnedMessageObject = pinnedMessageObjects.get(messageObject.getId());
-                            if (pinnedMessageObject != null) {
-                                pinnedMessageObject.messageOwner.translatedText = messageObject.messageOwner.translatedText;
-                                pinnedMessageObject.messageOwner.translatedToLanguage = messageObject.messageOwner.translatedToLanguage;
-                                if (pinnedMessageObject.updateTranslation(currentPinnedMessageId == messageObject.getId())) {
-                                    updatedPinned = true;
-                                }
-                            }
                         }
                         MessageObject.GroupedMessages group = groupedMessagesMap.get(messageObject.getGroupId());
                         if (group != null && !groupChecked.contains(group.groupId)) {
@@ -22395,16 +22173,6 @@ public class ChatActivity extends BaseFragment implements
                             cell.invalidate();
                         }
                     }
-                }
-                if (!updatedPinned) {
-                    for (MessageObject pinnedMessageObject : pinnedMessageObjects.values()) {
-                        if (pinnedMessageObject != null && pinnedMessageObject.updateTranslation(currentPinnedMessageId == pinnedMessageObject.getId())) {
-                            updatedPinned = true;
-                        }
-                    }
-                }
-                if (updatedPinned) {
-                    updatePinnedMessageView(true, 1);
                 }
             }
             checkTranslation(true);
@@ -22755,16 +22523,6 @@ public class ChatActivity extends BaseFragment implements
             return false;
         }
         boolean updated = false;
-        for (MessageObject pinnedMessageObject : pinnedMessageObjects.values()) {
-            if (pinnedMessageObject != null && pinnedMessageObject.getId() == messageObject.getId()) {
-                pinnedMessageObject.messageOwner.translatedText = messageObject.messageOwner.translatedText;
-                pinnedMessageObject.messageOwner.translatedToLanguage = messageObject.messageOwner.translatedToLanguage;
-                if (pinnedMessageObject.updateTranslation(true)) {
-                    updatePinnedMessageView(true, 1);
-                    updated = true;
-                }
-            }
-        }
         if (chatListView == null) {
             return updated;
         }
@@ -25939,111 +25697,112 @@ public class ChatActivity extends BaseFragment implements
             if (topPanelLayout != null && pinnedMessageView != null) {
                 topPanelLayout.setViewVisible(pinnedMessageView, false, animated);
             }
-
-            for (int a = 0; a < pinnedNextAnimation.length; a++) {
-                if (pinnedNextAnimation[a] != null) {
-                    pinnedNextAnimation[a].cancel();
-                    pinnedNextAnimation[a] = null;
-                }
-            }
-            setPinnedTextTranslationX = false;
             pinnedMessageView.setTag(1);
             return true;
         }
         return false;
     }
 
-    private void updatePinnedMessageView(boolean animated) {
-        updatePinnedMessageView(animated, 0);
-    }
-
-    private void updatePinnedListButton(boolean animated) {
-        if ((isThreadChat() && !isTopic) || pinnedListButton == null) {
+    // LoogriGram: the pinned messages pill (ChatActivityPinnedPill) in place
+    // of upstream's pinned bar. Shown while anything is pinned and the pill is
+    // not hidden - the "pin_" preference that the bar's close button wrote,
+    // now written by the pill's menu for anyone, until a newer message is
+    // pinned - and never in a comment thread, which pins nothing of its own.
+    private void updatePinnedPill(boolean animated) {
+        if (currentEncryptedChat != null || chatMode != 0 || isThreadChat() && !isTopic) {
             return;
         }
-        if (!fragmentOpened) {
-            animated = false;
-        }
-        boolean show = pinnedMessageIds.size() > 1 && !pinnedMessageButtonShown;
-        boolean visible = pinnedListButton.getTag() != null;
-        boolean progressIsVisible = pinnedProgress.getTag() != null;
-        boolean closeIsVisible = closePinned.getTag() != null;
-
-        boolean showClosed = !show && !pinnedProgressIsShowing && !pinnedMessageButtonShown;
-        boolean showPinned = show && !pinnedProgressIsShowing && !pinnedMessageButtonShown;
-        boolean showProgress = pinnedProgressIsShowing && !pinnedMessageButtonShown;
-
-        if (visible != show || progressIsVisible != showProgress || closeIsVisible != showClosed) {
-            if (pinnedListAnimator != null) {
-                pinnedListAnimator.cancel();
-                pinnedListAnimator = null;
+        final SharedPreferences preferences = MessagesController.getNotificationsSettings(currentAccount);
+        final boolean show = (chatInfo != null || userInfo != null)
+            && !pinnedMessageIds.isEmpty()
+            && pinnedMessageIds.get(0) != preferences.getInt("pin_" + dialog_id, 0)
+            && !isReport()
+            && !(actionBar != null && (actionBar.isActionModeShowed() || actionBar.isSearchFieldVisible()));
+        if (pinnedPill == null) {
+            if (!show || contentView == null || getContext() == null) {
+                return;
             }
-
-            if (animated) {
-                if (show) {
-                    pinnedListButton.setVisibility(View.VISIBLE);
-                } else if (showClosed) {
-                    closePinned.setVisibility(View.VISIBLE);
-                }
-                if (showProgress) {
-                    pinnedProgress.setVisibility(View.VISIBLE);
-                    pinnedProgress.setAlpha(0);
-                    pinnedProgress.setScaleX(0.4f);
-                    pinnedProgress.setScaleY(0.4f);
-                }
-                pinnedListAnimator = new AnimatorSet();
-
-                pinnedListAnimator.playTogether(
-                        ObjectAnimator.ofFloat(pinnedListButton, View.ALPHA, showPinned ? 1.0f : 0.0f),
-                        ObjectAnimator.ofFloat(pinnedListButton, View.SCALE_X, showPinned ? 1.0f : 0.4f),
-                        ObjectAnimator.ofFloat(pinnedListButton, View.SCALE_Y, showPinned ? 1.0f : 0.4f),
-                        ObjectAnimator.ofFloat(closePinned, View.ALPHA, showClosed ? 1.0f : 0.0f),
-                        ObjectAnimator.ofFloat(closePinned, View.SCALE_X, showClosed ? 1.0f : 0.4f),
-                        ObjectAnimator.ofFloat(closePinned, View.SCALE_Y, showClosed ? 1.0f : 0.4f),
-                        ObjectAnimator.ofFloat(pinnedProgress, View.ALPHA, !showProgress ? 0.0f : 1.0f),
-                        ObjectAnimator.ofFloat(pinnedProgress, View.SCALE_X, !showProgress ? 0.4f : 1.0f),
-                        ObjectAnimator.ofFloat(pinnedProgress, View.SCALE_Y, !showProgress ? 0.4f : 1.0f)
-                );
-
-                pinnedListAnimator.setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
-                pinnedListAnimator.setDuration(180 * 2);
-                pinnedListAnimator.addListener(new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        pinnedListAnimator = null;
-
-                        closePinned.setVisibility(showClosed ? View.VISIBLE : View.INVISIBLE);
-                        pinnedListButton.setVisibility(showPinned ? View.VISIBLE : View.INVISIBLE);
-                        pinnedProgress.setVisibility(showProgress ? View.VISIBLE : View.INVISIBLE);
-                    }
-                });
-                pinnedListAnimator.start();
-            } else {
-                closePinned.setAlpha(showClosed ? 1.0f : 0.0f);
-                closePinned.setScaleX(showClosed ? 1.0f : 0.4f);
-                closePinned.setScaleY(showClosed ? 1.0f : 0.4f);
-                closePinned.setVisibility(showClosed ? View.VISIBLE : View.INVISIBLE);
-                pinnedListButton.setAlpha(showPinned ? 1.0f : 0.0f);
-                pinnedListButton.setScaleX(showPinned ? 1.0f : 0.4f);
-                pinnedListButton.setScaleY(showPinned ? 1.0f : 0.4f);
-                pinnedListButton.setVisibility(showPinned ? View.VISIBLE : View.INVISIBLE);
-                pinnedProgress.setAlpha(showProgress ? 1.0f : 0.0f);
-                pinnedProgress.setScaleX(showProgress ? 1.0f : 0.4f);
-                pinnedProgress.setScaleY(showProgress ? 1.0f : 0.4f);
-                pinnedProgress.setVisibility(showProgress ? View.VISIBLE : View.GONE);
-            }
-            closePinned.setTag(showClosed ? 1 : null);
-            pinnedListButton.setTag(show ? 1 : null);
-            pinnedProgress.setTag(showProgress ? 1 : null);
+            createPinnedPill();
         }
-        if (pinnedLineView != null) {
-            if (isThreadChat() && !isTopic) {
-                pinnedLineView.set(0, 1, false);
-            } else {
-                int position = Collections.binarySearch(pinnedMessageIds, currentPinnedMessageId, Comparator.reverseOrder());
-                pinnedLineView.set(pinnedMessageIds.size() - 1 - position, pinnedMessageIds.size(), animated);
-            }
+        // A topic's own list, as the pinned messages list counts it there.
+        pinnedPill.setCount(isTopic ? pinnedMessageIds.size() : Math.max(getPinnedMessagesCount(), pinnedMessageIds.size()));
+        pinnedPill.setShown(show, animated && fragmentOpened);
+    }
+
+    private void createPinnedPill() {
+        pinnedPill = new ChatActivityPinnedPill(getContext(), contentView, themeDelegate);
+        pinnedPill.setOnClickListener(v -> onPinnedPillClick());
+        pinnedPill.setOnLongClickListener(v -> {
+            showPinnedPillMenu();
+            return true;
+        });
+        final FrameLayout.LayoutParams layoutParams = LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.RIGHT, 0, 0, 10, 0);
+        final int dateIndex = floatingDateView != null ? contentView.indexOfChild(floatingDateView) : -1;
+        if (dateIndex >= 0) {
+            contentView.addView(pinnedPill, dateIndex + 1, layoutParams);
+        } else {
+            contentView.addView(pinnedPill, layoutParams);
         }
+        updatePinnedPillTranslation();
+    }
+
+    // Level with the floating date's bubble: ChatActionCell draws it dp(4)
+    // into a cell laid out dp(4) below its translation.
+    private void updatePinnedPillTranslation() {
+        if (pinnedPill == null || floatingDateView == null) {
+            return;
+        }
+        final float y = floatingDateView.getTranslationY() - floatingDateViewOffset + dp(8);
+        if (pinnedPill.getTranslationY() != y) {
+            pinnedPill.setTranslationY(y);
+            pinnedPill.invalidate();
+        }
+    }
+
+    // The bar's click: the pinned message tracked from the scroll position,
+    // then each older one in turn, and from the oldest back to the newest.
+    private void onPinnedPillClick() {
+        if (pinnedMessageIds.isEmpty()) {
+            return;
+        }
+        wasManualScroll = true;
+        int currentPinned = currentPinnedMessageId != 0 ? currentPinnedMessageId : pinnedMessageIds.get(0);
+        int forceNextPinnedMessageId;
+        if (currentPinned == pinnedMessageIds.get(pinnedMessageIds.size() - 1)) {
+            forceNextPinnedMessageId = pinnedMessageIds.get(0) + 1;
+            forceScrollToFirst = true;
+        } else {
+            forceNextPinnedMessageId = currentPinned - 1;
+            forceScrollToFirst = false;
+        }
+        this.forceNextPinnedMessageId = forceNextPinnedMessageId;
+        if (!forceScrollToFirst) {
+            forceNextPinnedMessageId = -forceNextPinnedMessageId;
+        }
+        scrollToMessageId(currentPinned, 0, true, 0, true, forceNextPinnedMessageId);
+        updateMessagesVisiblePart(false);
+    }
+
+    private void showPinnedPillMenu() {
+        if (pinnedPill == null || getParentActivity() == null) {
+            return;
+        }
+        ItemOptions.makeOptions(this, pinnedPill)
+            .add(R.drawable.msg_cancel, getString(R.string.LoogriGramHidePinnedMessages), this::hidePinnedMessages)
+            .add(R.drawable.msg_pin, getString(R.string.LoogriGramAllPinnedMessages), this::openPinnedMessagesList)
+            .setGravity(Gravity.RIGHT)
+            .show();
+    }
+
+    // LoogriGram: hides the pill at once, for anyone, until a newer message
+    // is pinned. Upstream's close button did this only for those who cannot
+    // pin, and offered the others unpinning.
+    private void hidePinnedMessages() {
+        if (pinnedMessageIds.isEmpty()) {
+            return;
+        }
+        MessagesController.getNotificationsSettings(currentAccount).edit().putInt("pin_" + dialog_id, pinnedMessageIds.get(0)).commit();
+        updatePinnedPill(true);
     }
 
     private TL_keyboard.KeyboardInlineButton pinnedButton(MessageObject message) {
@@ -26072,713 +25831,252 @@ public class ChatActivity extends BaseFragment implements
         return null;
     }
 
-    private void updatePinnedMessageView(boolean animated, int animateToNext) {
+    // LoogriGram: the bar under the header shows a comment thread's root post
+    // while it is scrolled away, and nothing else now; see createPinnedMessageView.
+    private void updatePinnedMessageView(boolean animated) {
         if (currentEncryptedChat != null || chatMode != 0) {
             return;
         }
-        int pinned_msg_id;
+        updatePinnedPill(animated);
         boolean changed = false;
-        MessageObject pinnedMessageObject;
-        if (isThreadChat() && threadMessageVisible) {
-            pinnedMessageObject = null;
-            pinned_msg_id = 0;
-        } else if (isThreadChat() && !isTopic) {
-            if (!threadMessageVisible) {
-                pinnedMessageObject = threadMessageObject;
-                pinned_msg_id = (int) threadMessageId;
-            } else {
-                pinnedMessageObject = null;
-                pinned_msg_id = 0;
-            }
-        } else if (currentPinnedMessageId != 0 && !pinnedMessageIds.isEmpty()) {
-            pinnedMessageObject = pinnedMessageObjects.get(currentPinnedMessageId);
-            if (pinnedMessageObject == null) {
-                pinnedMessageObject = messagesDict[0].get(currentPinnedMessageId);
-            }
-            pinned_msg_id = currentPinnedMessageId;
-        } else {
-            pinnedMessageObject = null;
-            pinned_msg_id = 0;
-        }
+        final MessageObject pinnedMessageObject = isThreadChat() && !isTopic && !threadMessageVisible ? threadMessageObject : null;
         TL_keyboard.KeyboardInlineButton botButton = pinnedButton(pinnedMessageObject);
         String callLink = callLink(pinnedMessageObject);
-        pinnedMessageButtonShown = botButton != null || !TextUtils.isEmpty(callLink);
-        SharedPreferences preferences = MessagesController.getNotificationsSettings(currentAccount);
-        if ((threadMessageObject == null || isTopic) && (chatInfo == null && userInfo == null || pinned_msg_id == 0 || !pinnedMessageIds.isEmpty() && pinnedMessageIds.get(0) == preferences.getInt("pin_" + dialog_id, 0)) || isReport() || actionBar != null && (actionBar.isActionModeShowed() || actionBar.isSearchFieldVisible())) {
+        if (pinnedMessageObject == null || isReport() || actionBar != null && (actionBar.isActionModeShowed() || actionBar.isSearchFieldVisible())) {
+            pinnedImageLocation = null;
+            pinnedImageLocationObject = null;
             changed = hidePinnedMessageView(animated);
         } else {
             if (pinnedMessageView == null) {
                 createPinnedMessageView();
-            } else {
-                updatePinnedListButton(animated);
             }
             if (pinnedMessageView == null) {
                 return;
             }
-            if (pinnedMessageObject != null) {
-                if (pinnedMessageView != null && pinnedMessageView.getTag() != null) {
-                    pinnedMessageView.setTag(null);
-                    changed = true;
-
-                    if (topPanelLayout != null && pinnedMessageView != null) {
-                        topPanelLayout.setViewVisible(pinnedMessageView, true, animated);
-                    }
-                }
-                for (int a = 0; a < pinnedNextAnimation.length; a++) {
-                    if (pinnedNextAnimation[a] != null) {
-                        pinnedNextAnimation[a].cancel();
-                        pinnedNextAnimation[a] = null;
-                    }
-                }
-
-                setPinnedTextTranslationX = false;
-                TrackingWidthSimpleTextView nameTextView = pinnedNameTextView[animateToNext != 0 ? 1 : 0];
-                SimpleTextView messageTextView = pinnedMessageTextView[animateToNext != 0 ? 1 : 0];
-                PinnedMessageButton buttonTextView = pinnedMessageButton[animateToNext != 0 ? 1 : 0];
-
-                buttonTextView.setVisibility(botButton != null || !TextUtils.isEmpty(callLink) ? View.VISIBLE : View.GONE);
-                pinnedMessageButton[animateToNext != 0 ? 0 : 1].setOnClickListener(null);
-                pinnedMessageButton[animateToNext != 0 ? 0 : 1].setOnLongClickListener(null);
-                if (botButton != null) {
-                    CharSequence string = new SpannableString(botButton.text);
-                    string = Emoji.replaceEmoji(string, buttonTextView.getPaint().getFontMetricsInt(), false);
-                    buttonTextView.setText(string);
-                    final MessageObject buttonMessage = pinnedMessageObject;
-                    buttonTextView.setOnClickListener(e -> {
-                        if (getParentActivity() == null || bottomChannelButtonsLayout.getVisibility() == View.VISIBLE &&
-                                !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeSwitchInline.class) &&
-                                !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeCallback.class) &&
-                                !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeGame.class) &&
-                                !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeUrl.class) &&
-                                !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeUrlAuth.class) &&
-                                !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeUserProfile.class)) {
-                            return;
-                        }
-                        chatActivityEnterView.didPressedBotButton(botButton, buttonMessage, buttonMessage);
-                    });
-                    buttonTextView.setOnLongClickListener(e -> {
-                        final TL_keyboard.TL_inlineButtonTypeUrl buttonTypeUrl = TLKeyboardHelper.getType(botButton, TL_keyboard.TL_inlineButtonTypeUrl.class);
-                        if (getParentActivity() == null || bottomChannelButtonsLayout.getVisibility() == View.VISIBLE &&
-                                buttonTypeUrl == null &&
-                                !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeSwitchInline.class) &&
-                                !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeCallback.class) &&
-                                !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeGame.class) &&
-                                !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeUrlAuth.class) &&
-                                !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeUserProfile.class)) {
-                            return false;
-                        }
-                        if (buttonTypeUrl != null) {
-                            openClickableLink(null, buttonTypeUrl.url, true, null, buttonMessage, false);
-                            try {
-                                buttonTextView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS, HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING);
-                            } catch (Exception ignore) {}
-                            return true;
-                        }
-                        return false;
-                    });
-                } else if (!TextUtils.isEmpty(callLink)) {
-                    buttonTextView.setText(getString(R.string.VoipChatJoin));
-                    buttonTextView.setOnClickListener(e -> {
-                        final Uri uri = Uri.parse(callLink);
-                        final String slug = uri.getPathSegments().get(uri.getPathSegments().size() - 1);
-                        GroupCallSheet.show(getContext(), currentAccount, 0L, slug, null);
-                    });
-                } else {
-                    buttonTextView.setText(null);
-                    buttonTextView.setOnClickListener(null);
-                }
-                buttonTextView.measure(View.MeasureSpec.makeMeasureSpec(999999, View.MeasureSpec.AT_MOST), View.MeasureSpec.makeMeasureSpec(dp(28), View.MeasureSpec.EXACTLY));
-                if (messageTextView.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
-                    ((ViewGroup.MarginLayoutParams) messageTextView.getLayoutParams()).rightMargin = (
-                         (botButton == null && TextUtils.isEmpty(callLink) ? dp(44) : buttonTextView.getMeasuredWidth() + dp(14 + 8)) +
-                         0 /*(isSideMenued() ? dp(SIDE_MENU_WIDTH) : 0)*/
-                    );
-                }
-                if (nameTextView.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
-                    ((ViewGroup.MarginLayoutParams) nameTextView.getLayoutParams()).rightMargin = (
-                        (botButton == null && TextUtils.isEmpty(callLink) ? dp(44) : buttonTextView.getMeasuredWidth() + dp(14 + 8)) +
-                        0 /*(isSideMenued() ? dp(SIDE_MENU_WIDTH) : 0) */
-                    );
-                }
-
-                FrameLayout.LayoutParams layoutParams1 = (FrameLayout.LayoutParams) pinnedNameTextView[0].getLayoutParams();
-                FrameLayout.LayoutParams layoutParams2 = (FrameLayout.LayoutParams) pinnedNameTextView[1].getLayoutParams();
-                FrameLayout.LayoutParams layoutParams3 = (FrameLayout.LayoutParams) pinnedCounterTextView.getLayoutParams();
-                FrameLayout.LayoutParams layoutParams4 = (FrameLayout.LayoutParams) pinnedMessageTextView[0].getLayoutParams();
-                FrameLayout.LayoutParams layoutParams5 = (FrameLayout.LayoutParams) pinnedMessageTextView[1].getLayoutParams();
-
-                int cacheType = 1;
-                int size = 0;
-                TLRPC.PhotoSize photoSize = FileLoader.getClosestPhotoSizeWithSize(pinnedMessageObject.photoThumbs2, AndroidUtilities.dp(320));
-                TLRPC.PhotoSize thumbPhotoSize = FileLoader.getClosestPhotoSizeWithSize(pinnedMessageObject.photoThumbs2, AndroidUtilities.dp(40));
-                TLObject photoSizeObject = pinnedMessageObject.photoThumbsObject2;
-                if (photoSize == null) {
-                    if (pinnedMessageObject.mediaExists) {
-                        photoSize = FileLoader.getClosestPhotoSizeWithSize(pinnedMessageObject.photoThumbs, AndroidUtilities.getPhotoSize());
-                        if (photoSize != null) {
-                            size = photoSize.size;
-                        }
-                    } else {
-                        photoSize = FileLoader.getClosestPhotoSizeWithSize(pinnedMessageObject.photoThumbs, AndroidUtilities.dp(320));
-                    }
-                    thumbPhotoSize = FileLoader.getClosestPhotoSizeWithSize(pinnedMessageObject.photoThumbs, AndroidUtilities.dp(40));
-                    photoSizeObject = pinnedMessageObject.photoThumbsObject;
-                }
-                if (photoSize == thumbPhotoSize) {
-                    thumbPhotoSize = null;
-                }
-                boolean noImage;
-                int prevMargin = layoutParams1.leftMargin;
-                if (noImage = (photoSize == null || photoSize instanceof TLRPC.TL_photoSizeEmpty || photoSize.location instanceof TLRPC.TL_fileLocationUnavailable || pinnedMessageObject.isAnyKindOfSticker() || pinnedMessageObject.isSecretMedia())) {
-                    pinnedImageLocation = null;
-                    pinnedImageLocationObject = null;
-                    pinnedImageHasBlur = false;
-                    if (animateToNext == 0) {
-                        pinnedMessageImageView[0].setImageBitmap(null);
-                        pinnedMessageImageView[0].setVisibility(View.INVISIBLE);
-                    }
-                    layoutParams1.leftMargin = layoutParams2.leftMargin = layoutParams3.leftMargin = layoutParams4.leftMargin = layoutParams5.leftMargin = dp(23);
-                } else {
-                    if (pinnedMessageObject.isRoundVideo()) {
-                        pinnedMessageImageView[1].setRoundRadius(AndroidUtilities.dp(16));
-                    } else {
-                        pinnedMessageImageView[1].setRoundRadius(AndroidUtilities.dp(2));
-                    }
-                    pinnedImageHasBlur = pinnedMessageObject.hasMediaSpoilers();
-                    pinnedImageSize = size;
-                    pinnedImageCacheType = cacheType;
-                    pinnedImageLocation = photoSize;
-                    pinnedImageThumbLocation = thumbPhotoSize;
-                    pinnedImageLocationObject = photoSizeObject;
-                    pinnedMessageImageView[1].setImage(ImageLocation.getForObject(pinnedImageLocation, photoSizeObject), "50_50", ImageLocation.getForObject(thumbPhotoSize, photoSizeObject), "50_50_b", null, size, cacheType, pinnedMessageObject);
-                    pinnedMessageImageView[1].setVisibility(View.VISIBLE);
-                    pinnedMessageImageView[1].setHasBlur(pinnedImageHasBlur);
-                    if (animateToNext != 0) {
-                        pinnedMessageImageView[1].setAlpha(0.0f);
-                    }
-                    layoutParams1.leftMargin = layoutParams2.leftMargin = layoutParams3.leftMargin = layoutParams4.leftMargin = layoutParams5.leftMargin = dp(60);
-                }
-                pinnedNameTextView[0].setLayoutParams(layoutParams1);
-                pinnedNameTextView[1].setLayoutParams(layoutParams2);
-                pinnedCounterTextView.setLayoutParams(layoutParams3);
-                pinnedMessageTextView[0].setLayoutParams(layoutParams4);
-                pinnedMessageTextView[1].setLayoutParams(layoutParams5);
-
-                boolean showCounter = false;
-                boolean shouldAnimateName = loadedPinnedMessagesCount == 2 || !pinnedNameTextView[animateToNext != 0 ? 0 : 1].getTrackWidth();
-                pinnedNameTextView[animateToNext != 0 ? 0 : 1].setTrackWidth(false);
-                nameTextView.setTrackWidth(true);
-                nameTextView.setVisibility(View.VISIBLE);
-                if (threadMessageId != 0 && !isTopic) {
-                    MessagesController messagesController = getMessagesController();
-                    TLRPC.MessageFwdHeader fwd_from = threadMessageObject.messageOwner.fwd_from;
-                    TLRPC.User user = null;
-                    TLRPC.Chat chat = null;
-                    if (fwd_from != null && fwd_from.saved_from_peer != null) {
-                        if (fwd_from.saved_from_peer.user_id != 0) {
-                            if (fwd_from.from_id instanceof TLRPC.TL_peerUser) {
-                                user = messagesController.getUser(fwd_from.from_id.user_id);
-                            } else {
-                                user = messagesController.getUser(fwd_from.saved_from_peer.user_id);
-                            }
-                        } else if (fwd_from.saved_from_peer.channel_id != 0) {
-                            if (threadMessageObject.isSavedFromMegagroup() && fwd_from.from_id instanceof TLRPC.TL_peerUser) {
-                                user = messagesController.getUser(fwd_from.from_id.user_id);
-                            } else {
-                                chat = messagesController.getChat(fwd_from.saved_from_peer.channel_id);
-                            }
-                        } else if (fwd_from.saved_from_peer.chat_id != 0) {
-                            if (fwd_from.from_id instanceof TLRPC.TL_peerUser) {
-                                user = messagesController.getUser(fwd_from.from_id.user_id);
-                            } else if (fwd_from.from_id instanceof TLRPC.TL_peerChat) {
-                                chat = messagesController.getChat(fwd_from.from_id.chat_id);
-                            } else if (fwd_from.from_id instanceof TLRPC.TL_peerChannel) {
-                                chat = messagesController.getChat(fwd_from.from_id.channel_id);
-                            } else {
-                                chat = messagesController.getChat(fwd_from.saved_from_peer.chat_id);
-                            }
-                        }
-                    } else if (threadMessageObject.isFromUser()) {
-                        user = messagesController.getUser(threadMessageObject.messageOwner.from_id.user_id);
-                    } else if (threadMessageObject.messageOwner.from_id instanceof TLRPC.TL_peerChannel) {
-                        chat = messagesController.getChat(threadMessageObject.messageOwner.from_id.channel_id);
-                    } else if (threadMessageObject.messageOwner.from_id instanceof TLRPC.TL_peerChat) {
-                        chat = messagesController.getChat(threadMessageObject.messageOwner.from_id.chat_id);
-                    } else if (threadMessageObject.messageOwner.post) {
-                        chat = messagesController.getChat(threadMessageObject.messageOwner.peer_id.channel_id);
-                    }
-                    if (user != null) {
-                        nameTextView.setText(ContactsController.formatName(user.first_name, user.last_name));
-                    } else if (chat != null) {
-                        nameTextView.setText(chat.title);
-                    }
-                } else {
-                    if (pinnedMessageObject.isInvoice() &&
-                        pinnedMessageObject.messageOwner != null && pinnedMessageObject.messageOwner.media != null &&
-                        pinnedMessageObject.messageOwner.media.title != null) {
-                        nameTextView.setTrackWidth(false);
-                        nameTextView.setText(pinnedMessageObject.messageOwner.media.title);
-                        shouldAnimateName = true;
-                        showCounter = false;
-                    } else if (
-                        pinnedMessageObject.messageOwner != null &&
-                        pinnedMessageObject.messageOwner.media != null &&
-                        pinnedMessageObject.messageOwner.media.webpage != null &&
-                        "telegram_call".equalsIgnoreCase(pinnedMessageObject.messageOwner.media.webpage.type)
-                    ) {
-                        final SpannableStringBuilder sb = new SpannableStringBuilder("x ").append(getString(R.string.PinnedCall));
-                        final ColoredImageSpan span = new ColoredImageSpan(R.drawable.call);
-                        span.setSize(dp(16));
-                        sb.setSpan(span, 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        nameTextView.setText(sb, true);
-                        if (currentPinnedMessageIndex[0] != 0) {
-                            if (isTopic) {
-                                pinnedCounterTextView.setNumber(Math.max(1, currentPinnedMessageIndex[0]), animated && pinnedCounterTextView.getTag() == null);
-                            } else {
-                                int total = getPinnedMessagesCount();
-                                pinnedCounterTextView.setNumber(Math.min(total - 1, Math.max(1, total - currentPinnedMessageIndex[0])), animated && pinnedCounterTextView.getTag() == null);
-                            }
-                            showCounter = true;
-                        }
-                        showCounter = true;
-                    } else {
-                        if (currentPinnedMessageIndex[0] == 0 || loadedPinnedMessagesCount != 2) {
-                            nameTextView.setText(LocaleController.getString(R.string.PinnedMessage), true);
-                        } else {
-                            nameTextView.setText(LocaleController.getString(R.string.PreviousPinnedMessage), true);
-                        }
-                        if (currentPinnedMessageIndex[0] != 0) {
-                            if (isTopic) {
-                                pinnedCounterTextView.setNumber(Math.max(1, currentPinnedMessageIndex[0]), animated && pinnedCounterTextView.getTag() == null);
-                            } else {
-                                int total = getPinnedMessagesCount();
-                                pinnedCounterTextView.setNumber(Math.min(total - 1, Math.max(1, total - currentPinnedMessageIndex[0])), animated && pinnedCounterTextView.getTag() == null);
-                            }
-                            showCounter = true;
-                        }
-                    }
-                }
-                CharSequence pinnedText = null;
-                pinnedMessageObject.updateTranslation(false);
-                if (pinnedMessageObject.type == MessageObject.TYPE_MUSIC) {
-                    pinnedText = String.format("%s - %s", pinnedMessageObject.getMusicAuthor(), pinnedMessageObject.getMusicTitle());
-                } else if (pinnedMessageObject.type == MessageObject.TYPE_POLL) {
-                    if (pinnedMessageObject.messageOwner.media instanceof TLRPC.TL_messageMediaPoll) {
-                        TLRPC.TL_messageMediaPoll poll = (TLRPC.TL_messageMediaPoll) pinnedMessageObject.messageOwner.media;
-                        String mess = poll.poll.question.text;
-                        if (mess.length() > 150) {
-                            mess = mess.substring(0, 150);
-                        }
-                        mess = mess.replace('\n', ' ');
-                        pinnedText = mess;
-                    } else if (pinnedMessageObject.messageOwner.media instanceof TLRPC.TL_messageMediaToDo) {
-                        TLRPC.TL_messageMediaToDo poll = (TLRPC.TL_messageMediaToDo) pinnedMessageObject.messageOwner.media;
-                        String mess = poll.todo.title.text;
-                        if (mess.length() > 150) {
-                            mess = mess.substring(0, 150);
-                        }
-                        mess = mess.replace('\n', ' ');
-                        pinnedText = mess;
-                    }
-                } else if (pinnedMessageObject.messageOwner.media instanceof TLRPC.TL_messageMediaGame) {
-                    pinnedText = Emoji.replaceEmoji(pinnedMessageObject.messageOwner.media.game.title, messageTextView.getPaint().getFontMetricsInt(), false);
-                } else if (!TextUtils.isEmpty(pinnedMessageObject.caption)) {
-                    String mess = pinnedMessageObject.caption.toString();
-                    if (mess.length() > 150) {
-                        mess = mess.substring(0, 150);
-                    }
-                    mess = mess.replace('\n', ' ');
-                    pinnedText = mess;
-                    pinnedText = Emoji.replaceEmoji(pinnedText, messageTextView.getPaint().getFontMetricsInt(), false);
-                    if (pinnedMessageObject != null && pinnedMessageObject.messageOwner != null) {
-                        pinnedText = pinnedMessageObject.replaceAnimatedEmoji(pinnedText, messageTextView.getPaint().getFontMetricsInt());
-                    }
-                } else if (pinnedMessageObject.messageText != null) {
-                    String mess = pinnedMessageObject.messageText.toString();
-                    if (mess.length() > 150) {
-                        mess = mess.substring(0, 150);
-                    }
-                    mess = mess.replace('\n', ' ');
-                    pinnedText = mess;
-                    pinnedText = Emoji.replaceEmoji(pinnedText, messageTextView.getPaint().getFontMetricsInt(), false);
-                    if (pinnedMessageObject != null && pinnedMessageObject.messageOwner != null) {
-                        pinnedText = pinnedMessageObject.replaceAnimatedEmoji(pinnedText, messageTextView.getPaint().getFontMetricsInt());
-                    }
-                }
-                if (pinnedText != null) {
-                    if (pinnedText instanceof Spannable) {
-                        MediaDataController.addTextStyleRuns(pinnedMessageObject, (Spannable) pinnedText, TextStyleSpan.FLAG_STYLE_SPOILER | TextStyleSpan.FLAG_STYLE_STRIKE);
-                    }
-                    messageTextView.setText(AnimatedEmojiSpan.cloneSpans(pinnedText));
-                }
-                if (animateToNext != 0) {
-                    pinnedNextAnimation[0] = new AnimatorSet();
-                    pinnedNextAnimation[1] = new AnimatorSet();
-                    ArrayList<Animator> animators = new ArrayList<>();
-                    ArrayList<Animator> animators2 = new ArrayList<>();
-                    messageTextView.setVisibility(View.VISIBLE);
-                    nameTextView.setVisibility(View.VISIBLE);
-                    if (botButton != null || !TextUtils.isEmpty(callLink)) {
-                        buttonTextView.setVisibility(View.VISIBLE);
-                    }
-
-                    if (!showCounter) {
-                        if (pinnedCounterTextView.getTag() == null) {
-                            animators.add(ObjectAnimator.ofFloat(pinnedCounterTextView, View.ALPHA, 1.0f, 0.0f));
-                            animators.add(ObjectAnimator.ofFloat(pinnedCounterTextView, View.TRANSLATION_Y, 0.0f, -AndroidUtilities.dp(4)));
-                            pinnedCounterTextView.setTag(1);
-                        }
-                    } else {
-                        if (pinnedCounterTextView.getTag() != null) {
-                            pinnedCounterTextView.setVisibility(View.VISIBLE);
-                            pinnedCounterTextView.setAlpha(0.0f);
-                            animators.add(ObjectAnimator.ofFloat(pinnedCounterTextView, View.ALPHA, 0.0f, 1.0f));
-                            animators.add(ObjectAnimator.ofFloat(pinnedCounterTextView, View.TRANSLATION_Y, -AndroidUtilities.dp(4), 0));
-                            pinnedCounterTextView.setTag(null);
-                        }
-                    }
-
-                    boolean animateName;
-                    if (shouldAnimateName && !TextUtils.equals(nameTextView.getText(), pinnedNameTextView[0].getText())) {
-                        nameTextView.setAlpha(0);
-                        animators.add(ObjectAnimator.ofFloat(nameTextView, View.ALPHA, 0.0f, 1.0f));
-                        animators.add(ObjectAnimator.ofFloat(pinnedNameTextView[0], View.ALPHA, 1.0f, 0.0f));
-                        animators.add(ObjectAnimator.ofFloat(nameTextView, View.TRANSLATION_Y, AndroidUtilities.dp(animateToNext == 2 ? 4 : -4), 0.0f));
-                        if (animateName = forceScrollToFirst && loadedPinnedMessagesCount > 5) {
-                            animators2.add(ObjectAnimator.ofFloat(nameTextView, View.TRANSLATION_Y, AndroidUtilities.dp(4), AndroidUtilities.dp(-2)));
-                        } else {
-                            animators.add(ObjectAnimator.ofFloat(nameTextView, View.TRANSLATION_Y, AndroidUtilities.dp(animateToNext == 2 ? 4 : -4), 0.0f));
-                        }
-                        animators.add(ObjectAnimator.ofFloat(pinnedNameTextView[0], View.TRANSLATION_Y, 0.0f, AndroidUtilities.dp(animateToNext == 2 ? -4 : 4)));
-                    } else {
-                        animateName = false;
-                        if (nameTextView != pinnedNameTextView[0]) {
-                            nameTextView.setAlpha(1.0f);
-                            pinnedNameTextView[0].setAlpha(0.0f);
-                            nameTextView.setTranslationY(0.0f);
-                            pinnedNameTextView[0].setTranslationY(0.0f);
-                        } else {
-                            nameTextView.setAlpha(1.0f);
-                            nameTextView.setTranslationY(0.0f);
-                            pinnedNameTextView[1].setTranslationY(0.0f);
-                            pinnedNameTextView[1].setAlpha(0.0f);
-                        }
-                    }
-
-                    boolean animateText;
-                    if (!TextUtils.equals(messageTextView.getText(), pinnedMessageTextView[0].getText())) {
-                        messageTextView.setAlpha(0);
-                        animators.add(ObjectAnimator.ofFloat(messageTextView, View.ALPHA, 0.0f, 1.0f));
-                        animators.add(ObjectAnimator.ofFloat(pinnedMessageTextView[0], View.ALPHA, 1.0f, 0.0f));
-                        if (animateText = forceScrollToFirst && loadedPinnedMessagesCount > 5) {
-                            animators2.add(ObjectAnimator.ofFloat(messageTextView, View.TRANSLATION_Y, AndroidUtilities.dp(4), AndroidUtilities.dp(-2)));
-                        } else {
-                            animators.add(ObjectAnimator.ofFloat(messageTextView, View.TRANSLATION_Y, AndroidUtilities.dp(animateToNext == 2 ? 4 : -4), 0.0f));
-                        }
-                        animators.add(ObjectAnimator.ofFloat(pinnedMessageTextView[0], View.TRANSLATION_Y, 0.0f, AndroidUtilities.dp(animateToNext == 2 ? -4 : 4)));
-                    } else {
-                        animateText = false;
-                        messageTextView.setAlpha(1.0f);
-                        pinnedMessageTextView[0].setAlpha(0.0f);
-                        messageTextView.setTranslationY(0.0f);
-                        pinnedMessageTextView[0].setTranslationY(0.0f);
-                    }
-
-                    boolean animateButton;
-                    if (!TextUtils.equals(buttonTextView.getText(), pinnedMessageButton[0].getText())) {
-                        buttonTextView.setAlpha(0);
-                        animators.add(ObjectAnimator.ofFloat(buttonTextView, View.ALPHA, 0.0f, 1.0f));
-                        animators.add(ObjectAnimator.ofFloat(pinnedMessageButton[0], View.ALPHA, 1.0f, 0.0f));
-                        if (animateButton = forceScrollToFirst && loadedPinnedMessagesCount > 5) {
-                            animators2.add(ObjectAnimator.ofFloat(buttonTextView, View.TRANSLATION_Y, AndroidUtilities.dp(4), AndroidUtilities.dp(-2)));
-                        } else {
-                            animators.add(ObjectAnimator.ofFloat(buttonTextView, View.TRANSLATION_Y, AndroidUtilities.dp(animateToNext == 2 ? 4 : -4), 0.0f));
-                        }
-                        animators.add(ObjectAnimator.ofFloat(pinnedMessageButton[0], View.TRANSLATION_Y, 0.0f, AndroidUtilities.dp(animateToNext == 2 ? -4 : 4)));
-                    } else {
-                        animateButton = false;
-                        buttonTextView.setAlpha(1.0f);
-                        pinnedMessageButton[0].setAlpha(0.0f);
-                        buttonTextView.setTranslationY(0.0f);
-                        pinnedMessageButton[0].setTranslationY(0.0f);
-                    }
-
-                    BackupImageView animateImage;
-                    final float tx = 0; // getSideMenuWidth();
-                    if (layoutParams1.leftMargin != prevMargin) {
-                        animateImage = null;
-                        setPinnedTextTranslationX = true;
-                        int diff = prevMargin - layoutParams1.leftMargin;
-                        if (diff > 0) {
-                            pinnedMessageImageView[0].setAlpha(1f);
-                            animators.add(ObjectAnimator.ofFloat(pinnedMessageImageView[0], View.ALPHA, 1.0f, 0.0f));
-                            animators.add(ObjectAnimator.ofFloat(pinnedMessageImageView[0], View.SCALE_X, 1.0f, 0.7f));
-                            animators.add(ObjectAnimator.ofFloat(pinnedMessageImageView[0], View.SCALE_Y, 1.0f, 0.7f));
-                        } else {
-                            animators.add(ObjectAnimator.ofFloat(pinnedMessageImageView[1], View.ALPHA, 0.0f, 1.0f));
-                            animators.add(ObjectAnimator.ofFloat(pinnedMessageImageView[1], View.SCALE_X, 0.7f, 1.0f));
-                            animators.add(ObjectAnimator.ofFloat(pinnedMessageImageView[1], View.SCALE_Y, 0.7f, 1.0f));
-                        }
-                    } else {
-                        setPinnedTextTranslationX = false;
-                        messageTextView.setTranslationX(tx);
-                        pinnedMessageTextView[0].setTranslationX(tx);
-                        nameTextView.setTranslationX(tx);
-                        pinnedNameTextView[0].setTranslationX(tx);
-                        buttonTextView.setTranslationX(tx);
-                        pinnedMessageButton[0].setTranslationX(tx);
-                        pinnedCounterTextView.setTranslationX(tx + pinnedCounterTextViewX);
-                        pinnedMessageImageView[1].setAlpha(1.0f);
-                        if (!noImage) {
-                            animators.add(ObjectAnimator.ofFloat(pinnedMessageImageView[1], View.ALPHA, 0.0f, 1.0f));
-                            animators.add(ObjectAnimator.ofFloat(pinnedMessageImageView[0], View.ALPHA, 1.0f, 0.0f));
-                            if (forceScrollToFirst && loadedPinnedMessagesCount > 5) {
-                                animateImage = pinnedMessageImageView[1];
-                                animators2.add(ObjectAnimator.ofFloat(pinnedMessageImageView[1], View.TRANSLATION_Y, AndroidUtilities.dp(3), AndroidUtilities.dp(-2)));
-                            } else {
-                                animateImage = null;
-                                animators.add(ObjectAnimator.ofFloat(pinnedMessageImageView[1], View.TRANSLATION_Y, AndroidUtilities.dp(animateToNext == 2 ? 3 : -3), 0.0f));
-                            }
-                            animators.add(ObjectAnimator.ofFloat(pinnedMessageImageView[0], View.TRANSLATION_Y, 0.0f, AndroidUtilities.dp(animateToNext == 2 ? -3 : 3)));
-                        } else {
-                            animateImage = null;
-                        }
-                    }
-
-                    pinnedNextAnimation[1].addListener(new AnimatorListenerAdapter() {
-
-                        @Override
-                        public void onAnimationCancel(Animator animation) {
-                            pinnedNextAnimation[1] = null;
-                            pinnedMessageImageView[1].setTranslationY(0);
-                        }
-
-                        @Override
-                        public void onAnimationEnd(Animator animation) {
-                            if (animation.equals(pinnedNextAnimation[1])) {
-                                if (animateName || animateText || animateImage != null) {
-                                    pinnedNextAnimation[1] = new AnimatorSet();
-                                    pinnedNextAnimation[1].setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
-                                    pinnedNextAnimation[1].setDuration(180 * 2);
-                                    ArrayList<Animator> animators1 = new ArrayList<>();
-                                    if (animateName) {
-                                        animators1.add(ObjectAnimator.ofFloat(nameTextView, View.TRANSLATION_Y, 0.0f));
-                                    }
-                                    if (animateText) {
-                                        animators1.add(ObjectAnimator.ofFloat(messageTextView, View.TRANSLATION_Y, 0.0f));
-                                    }
-                                    if (animateButton) {
-                                        animators1.add(ObjectAnimator.ofFloat(buttonTextView, View.TRANSLATION_Y, 0.0f));
-                                    }
-                                    if (animateImage != null) {
-                                        animators1.add(ObjectAnimator.ofFloat(animateImage, View.TRANSLATION_Y, 0.0f));
-                                    }
-                                    pinnedNextAnimation[1].addListener(new AnimatorListenerAdapter() {
-                                        @Override
-                                        public void onAnimationEnd(Animator animation) {
-                                            if (animateName) {
-                                                nameTextView.setTranslationY(0.0f);
-                                            }
-                                            if (animateText) {
-                                                messageTextView.setTranslationY(0.0f);
-                                            }
-                                            if (animateButton) {
-                                                buttonTextView.setTranslationY(0.0f);
-                                            }
-                                            if (animateImage != null) {
-                                                animateImage.setTranslationY(0.0f);
-                                            }
-                                            pinnedNextAnimation[1] = null;
-                                        }
-                                    });
-                                    pinnedNextAnimation[1].playTogether(animators1);
-                                    pinnedNextAnimation[1].start();
-                                } else {
-                                    pinnedNextAnimation[1] = null;
-                                }
-                            }
-                        }
-                    });
-
-                    pinnedNextAnimation[1].setDuration(180 * 2);
-//                    if (forceScrollToFirst && loadedPinnedMessagesCount > 5) {
-                        pinnedNextAnimation[1].setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
-//                    }
-                    pinnedNextAnimation[1].playTogether(animators2);
-
-                    pinnedNextAnimation[0].playTogether(animators);
-                    pinnedNextAnimation[0].addListener(new AnimatorListenerAdapter() {
-                        @Override
-                        public void onAnimationEnd(Animator animation) {
-                            if (pinnedCounterTextView.getTag() != null) {
-                                pinnedCounterTextView.setVisibility(View.INVISIBLE);
-                                int total = getPinnedMessagesCount();
-                                pinnedCounterTextView.setNumber(Math.min(total - 1, Math.max(1, total - currentPinnedMessageIndex[0])), false);
-                            } else {
-                                pinnedCounterTextView.setAlpha(1.0f);
-                            }
-                            final float tx2 = 0; // getSideMenuWidth();
-                            pinnedCounterTextView.setTranslationY(0.0f);
-                            pinnedMessageTextView[0].setTranslationX(tx2);
-                            pinnedMessageTextView[1].setTranslationX(tx2);
-                            pinnedCounterTextView.setTranslationX(tx2 + pinnedCounterTextViewX);
-                            nameTextView.setTranslationY(0.0f);
-                            if (!animateText) {
-                                nameTextView.setTranslationY(0.0f);
-                            }
-                            if (!animateText) {
-                                messageTextView.setTranslationY(0.0f);
-                            }
-                            if (!animateButton) {
-                                buttonTextView.setTranslationY(0.0f);
-                            }
-                            pinnedNameTextView[0].setTranslationX(tx2);
-                            pinnedNameTextView[1].setTranslationX(tx2);
-                            pinnedMessageImageView[1].setAlpha(1.0f);
-                            pinnedMessageImageView[1].setScaleX(1f);
-                            pinnedMessageImageView[1].setScaleY(1f);
-                            pinnedMessageImageView[0].setAlpha(1.0f);
-                            pinnedMessageImageView[0].setScaleX(1f);
-                            pinnedMessageImageView[0].setScaleY(1f);
-                            pinnedMessageTextView[1] = pinnedMessageTextView[0];
-                            pinnedMessageTextView[0] = messageTextView;
-                            pinnedMessageTextView[1].setVisibility(View.INVISIBLE);
-                            pinnedMessageButton[1] = pinnedMessageButton[0];
-                            pinnedMessageButton[0] = buttonTextView;
-                            pinnedMessageButton[1].setVisibility(View.INVISIBLE);
-                            if (nameTextView != pinnedNameTextView[0]) {
-                                pinnedNameTextView[1] = pinnedNameTextView[0];
-                                pinnedNameTextView[0] = nameTextView;
-                                pinnedNameTextView[1].setVisibility(View.INVISIBLE);
-                            }
-                            if (noImage) {
-                                pinnedMessageImageView[1].setImageBitmap(null);
-                                pinnedMessageImageView[1].setVisibility(View.INVISIBLE);
-                            }
-                            BackupImageView backupImageView = pinnedMessageImageView[1];
-                            pinnedMessageImageView[1] = pinnedMessageImageView[0];
-                            pinnedMessageImageView[0] = backupImageView;
-                            pinnedMessageImageView[1].setAlpha(1.0f);
-                            pinnedMessageImageView[1].setScaleX(1f);
-                            pinnedMessageImageView[1].setScaleY(1f);
-                            pinnedMessageImageView[1].setVisibility(View.INVISIBLE);
-
-                            pinnedNextAnimation[0] = null;
-                            setPinnedTextTranslationX = false;
-                        }
-                    });
-                    pinnedNextAnimation[0].setInterpolator(CubicBezierInterpolator.EASE_OUT_QUINT);
-                    pinnedNextAnimation[0].setDuration(180 * 2);
-                    if (!setPinnedTextTranslationX) {
-                        pinnedNextAnimation[0].start();
-                        pinnedNextAnimation[1].start();
-                    }
-                } else {
-                    if (pinnedCounterTextView != null) {
-                        if (!showCounter || currentPinnedMessageIndex[0] == 0) {
-                            if (pinnedCounterTextView.getTag() == null) {
-                                pinnedCounterTextView.setAlpha(0.0f);
-                                pinnedCounterTextView.setVisibility(View.INVISIBLE);
-                                pinnedCounterTextView.setTag(1);
-                            }
-                        } else {
-                            if (pinnedCounterTextView.getTag() != null) {
-                                pinnedCounterTextView.setVisibility(View.VISIBLE);
-                                pinnedCounterTextView.setAlpha(1.0f);
-                                pinnedCounterTextView.setTag(null);
-                            }
-                        }
-                        pinnedCounterTextView.setTranslationY(0.0f);
-                        // pinnedCounterTextView.setTranslationX(getSideMenuWidth() + pinnedCounterTextViewX);
-                        pinnedCounterTextView.setAlpha(shouldAnimateName || currentPinnedMessageIndex[0] == 0 ? 0.0f : 1.0f);
-                    }
-
-                    messageTextView.setVisibility(View.VISIBLE);
-                    messageTextView.setAlpha(1.0f);
-                    // messageTextView.setTranslationX(getSideMenuWidth());
-                    messageTextView.setTranslationY(0);
-                    nameTextView.setVisibility(View.VISIBLE);
-                    nameTextView.setAlpha(1.0f);
-                    // nameTextView.setTranslationX(getSideMenuWidth());
-                    nameTextView.setTranslationY(0);
-                    pinnedMessageTextView[1].setVisibility(View.INVISIBLE);
-                    //pinnedMessageTextView[1].setTranslationX(getSideMenuWidth());
-                    pinnedMessageTextView[1].setTranslationY(0);
-                    pinnedMessageButton[1].setVisibility(View.INVISIBLE);
-                    pinnedMessageButton[1].setTranslationX(0);
-                    pinnedMessageButton[1].setTranslationY(0);
-                    pinnedNameTextView[1].setVisibility(View.INVISIBLE);
-                    // pinnedNameTextView[1].setTranslationX(getSideMenuWidth());
-                    pinnedNameTextView[1].setTranslationY(0);
-                    pinnedMessageImageView[0].setVisibility(View.INVISIBLE);
-                    BackupImageView backupImageView = pinnedMessageImageView[1];
-                    pinnedMessageImageView[1] = pinnedMessageImageView[0];
-                    pinnedMessageImageView[0] = backupImageView;
-                    if (pinnedMessageImageView[0] != null) {
-                        pinnedMessageImageView[0].setAlpha(1.0f);
-                        pinnedMessageImageView[0].setScaleX(1f);
-                        pinnedMessageImageView[0].setScaleY(1f);
-                        pinnedMessageImageView[0].setTranslationY(0);
-                    }
-                    if (pinnedMessageImageView[1] != null) {
-                        pinnedMessageImageView[1].setAlpha(1.0f);
-                        pinnedMessageImageView[1].setScaleX(1f);
-                        pinnedMessageImageView[1].setScaleY(1f);
-                        pinnedMessageImageView[1].setTranslationY(0);
-                    }
-                }
-                if (isThreadChat() && !isTopic) {
-                    pinnedLineView.set(0, 1, false);
-                } else {
-                    int position = Collections.binarySearch(pinnedMessageIds, currentPinnedMessageId, Comparator.reverseOrder());
-                    pinnedLineView.set(pinnedMessageIds.size() - 1 - position, pinnedMessageIds.size(), animated);
-                }
-            } else {
-                if (pinnedCounterTextView != null) {
-                    pinnedCounterTextView.setVisibility(loadedPinnedMessagesCount == 2 || currentPinnedMessageIndex[0] == 0 ? View.INVISIBLE : View.VISIBLE);
-                    pinnedCounterTextView.setAlpha(loadedPinnedMessagesCount == 2 || currentPinnedMessageIndex[0] == 0 ? 0.0f : 1.0f);
-                }
-                pinnedImageLocation = null;
-                pinnedImageLocationObject = null;
-                changed = hidePinnedMessageView(animated);
-                if (loadingPinnedMessages.indexOfKey(pinned_msg_id) < 0) {
-                    loadingPinnedMessages.put(pinned_msg_id, true);
-                    ArrayList<Integer> ids = new ArrayList<>();
-                    ids.add(pinned_msg_id);
-                    getMediaDataController().loadPinnedMessages(dialog_id, ChatObject.isChannel(currentChat) ? currentChat.id : 0, ids, true);
+            if (pinnedMessageView.getTag() != null) {
+                pinnedMessageView.setTag(null);
+                changed = true;
+                if (topPanelLayout != null) {
+                    topPanelLayout.setViewVisible(pinnedMessageView, true, animated);
                 }
             }
+            final SimpleTextView nameTextView = pinnedNameTextView;
+            final SimpleTextView messageTextView = pinnedMessageTextView;
+            final PinnedMessageButton buttonTextView = pinnedMessageButton;
+
+            buttonTextView.setVisibility(botButton != null || !TextUtils.isEmpty(callLink) ? View.VISIBLE : View.GONE);
+            if (botButton != null) {
+                CharSequence string = new SpannableString(botButton.text);
+                string = Emoji.replaceEmoji(string, buttonTextView.getPaint().getFontMetricsInt(), false);
+                buttonTextView.setText(string);
+                final MessageObject buttonMessage = pinnedMessageObject;
+                buttonTextView.setOnClickListener(e -> {
+                    if (getParentActivity() == null || bottomChannelButtonsLayout.getVisibility() == View.VISIBLE &&
+                            !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeSwitchInline.class) &&
+                            !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeCallback.class) &&
+                            !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeGame.class) &&
+                            !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeUrl.class) &&
+                            !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeUrlAuth.class) &&
+                            !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeUserProfile.class)) {
+                        return;
+                    }
+                    chatActivityEnterView.didPressedBotButton(botButton, buttonMessage, buttonMessage);
+                });
+                buttonTextView.setOnLongClickListener(e -> {
+                    final TL_keyboard.TL_inlineButtonTypeUrl buttonTypeUrl = TLKeyboardHelper.getType(botButton, TL_keyboard.TL_inlineButtonTypeUrl.class);
+                    if (getParentActivity() == null || bottomChannelButtonsLayout.getVisibility() == View.VISIBLE &&
+                            buttonTypeUrl == null &&
+                            !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeSwitchInline.class) &&
+                            !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeCallback.class) &&
+                            !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeGame.class) &&
+                            !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeUrlAuth.class) &&
+                            !TLKeyboardHelper.isType(botButton, TL_keyboard.TL_inlineButtonTypeUserProfile.class)) {
+                        return false;
+                    }
+                    if (buttonTypeUrl != null) {
+                        openClickableLink(null, buttonTypeUrl.url, true, null, buttonMessage, false);
+                        try {
+                            buttonTextView.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS, HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING);
+                        } catch (Exception ignore) {}
+                        return true;
+                    }
+                    return false;
+                });
+            } else if (!TextUtils.isEmpty(callLink)) {
+                buttonTextView.setText(getString(R.string.VoipChatJoin));
+                buttonTextView.setOnClickListener(e -> {
+                    final Uri uri = Uri.parse(callLink);
+                    final String slug = uri.getPathSegments().get(uri.getPathSegments().size() - 1);
+                    GroupCallSheet.show(getContext(), currentAccount, 0L, slug, null);
+                });
+            } else {
+                buttonTextView.setText(null);
+                buttonTextView.setOnClickListener(null);
+            }
+            buttonTextView.measure(View.MeasureSpec.makeMeasureSpec(999999, View.MeasureSpec.AT_MOST), View.MeasureSpec.makeMeasureSpec(dp(28), View.MeasureSpec.EXACTLY));
+            if (messageTextView.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
+                ((ViewGroup.MarginLayoutParams) messageTextView.getLayoutParams()).rightMargin = (
+                     (botButton == null && TextUtils.isEmpty(callLink) ? dp(44) : buttonTextView.getMeasuredWidth() + dp(14 + 8)) +
+                     0 /*(isSideMenued() ? dp(SIDE_MENU_WIDTH) : 0)*/
+                );
+            }
+            if (nameTextView.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
+                ((ViewGroup.MarginLayoutParams) nameTextView.getLayoutParams()).rightMargin = (
+                    (botButton == null && TextUtils.isEmpty(callLink) ? dp(44) : buttonTextView.getMeasuredWidth() + dp(14 + 8)) +
+                    0 /*(isSideMenued() ? dp(SIDE_MENU_WIDTH) : 0) */
+                );
+            }
+
+            FrameLayout.LayoutParams nameLayoutParams = (FrameLayout.LayoutParams) pinnedNameTextView.getLayoutParams();
+            FrameLayout.LayoutParams messageLayoutParams = (FrameLayout.LayoutParams) pinnedMessageTextView.getLayoutParams();
+
+            int cacheType = 1;
+            int size = 0;
+            TLRPC.PhotoSize photoSize = FileLoader.getClosestPhotoSizeWithSize(pinnedMessageObject.photoThumbs2, AndroidUtilities.dp(320));
+            TLRPC.PhotoSize thumbPhotoSize = FileLoader.getClosestPhotoSizeWithSize(pinnedMessageObject.photoThumbs2, AndroidUtilities.dp(40));
+            TLObject photoSizeObject = pinnedMessageObject.photoThumbsObject2;
+            if (photoSize == null) {
+                if (pinnedMessageObject.mediaExists) {
+                    photoSize = FileLoader.getClosestPhotoSizeWithSize(pinnedMessageObject.photoThumbs, AndroidUtilities.getPhotoSize());
+                    if (photoSize != null) {
+                        size = photoSize.size;
+                    }
+                } else {
+                    photoSize = FileLoader.getClosestPhotoSizeWithSize(pinnedMessageObject.photoThumbs, AndroidUtilities.dp(320));
+                }
+                thumbPhotoSize = FileLoader.getClosestPhotoSizeWithSize(pinnedMessageObject.photoThumbs, AndroidUtilities.dp(40));
+                photoSizeObject = pinnedMessageObject.photoThumbsObject;
+            }
+            if (photoSize == thumbPhotoSize) {
+                thumbPhotoSize = null;
+            }
+            if (photoSize == null || photoSize instanceof TLRPC.TL_photoSizeEmpty || photoSize.location instanceof TLRPC.TL_fileLocationUnavailable || pinnedMessageObject.isAnyKindOfSticker() || pinnedMessageObject.isSecretMedia()) {
+                pinnedImageLocation = null;
+                pinnedImageLocationObject = null;
+                pinnedImageHasBlur = false;
+                pinnedMessageImageView.setImageBitmap(null);
+                pinnedMessageImageView.setVisibility(View.INVISIBLE);
+                nameLayoutParams.leftMargin = messageLayoutParams.leftMargin = dp(23);
+            } else {
+                if (pinnedMessageObject.isRoundVideo()) {
+                    pinnedMessageImageView.setRoundRadius(AndroidUtilities.dp(16));
+                } else {
+                    pinnedMessageImageView.setRoundRadius(AndroidUtilities.dp(2));
+                }
+                pinnedImageHasBlur = pinnedMessageObject.hasMediaSpoilers();
+                pinnedImageSize = size;
+                pinnedImageCacheType = cacheType;
+                pinnedImageLocation = photoSize;
+                pinnedImageThumbLocation = thumbPhotoSize;
+                pinnedImageLocationObject = photoSizeObject;
+                pinnedMessageImageView.setImage(ImageLocation.getForObject(pinnedImageLocation, photoSizeObject), "50_50", ImageLocation.getForObject(thumbPhotoSize, photoSizeObject), "50_50_b", null, size, cacheType, pinnedMessageObject);
+                pinnedMessageImageView.setVisibility(View.VISIBLE);
+                pinnedMessageImageView.setHasBlur(pinnedImageHasBlur);
+                nameLayoutParams.leftMargin = messageLayoutParams.leftMargin = dp(60);
+            }
+            pinnedNameTextView.setLayoutParams(nameLayoutParams);
+            pinnedMessageTextView.setLayoutParams(messageLayoutParams);
+
+            nameTextView.setVisibility(View.VISIBLE);
+            MessagesController messagesController = getMessagesController();
+            TLRPC.MessageFwdHeader fwd_from = threadMessageObject.messageOwner.fwd_from;
+            TLRPC.User user = null;
+            TLRPC.Chat chat = null;
+            if (fwd_from != null && fwd_from.saved_from_peer != null) {
+                if (fwd_from.saved_from_peer.user_id != 0) {
+                    if (fwd_from.from_id instanceof TLRPC.TL_peerUser) {
+                        user = messagesController.getUser(fwd_from.from_id.user_id);
+                    } else {
+                        user = messagesController.getUser(fwd_from.saved_from_peer.user_id);
+                    }
+                } else if (fwd_from.saved_from_peer.channel_id != 0) {
+                    if (threadMessageObject.isSavedFromMegagroup() && fwd_from.from_id instanceof TLRPC.TL_peerUser) {
+                        user = messagesController.getUser(fwd_from.from_id.user_id);
+                    } else {
+                        chat = messagesController.getChat(fwd_from.saved_from_peer.channel_id);
+                    }
+                } else if (fwd_from.saved_from_peer.chat_id != 0) {
+                    if (fwd_from.from_id instanceof TLRPC.TL_peerUser) {
+                        user = messagesController.getUser(fwd_from.from_id.user_id);
+                    } else if (fwd_from.from_id instanceof TLRPC.TL_peerChat) {
+                        chat = messagesController.getChat(fwd_from.from_id.chat_id);
+                    } else if (fwd_from.from_id instanceof TLRPC.TL_peerChannel) {
+                        chat = messagesController.getChat(fwd_from.from_id.channel_id);
+                    } else {
+                        chat = messagesController.getChat(fwd_from.saved_from_peer.chat_id);
+                    }
+                }
+            } else if (threadMessageObject.isFromUser()) {
+                user = messagesController.getUser(threadMessageObject.messageOwner.from_id.user_id);
+            } else if (threadMessageObject.messageOwner.from_id instanceof TLRPC.TL_peerChannel) {
+                chat = messagesController.getChat(threadMessageObject.messageOwner.from_id.channel_id);
+            } else if (threadMessageObject.messageOwner.from_id instanceof TLRPC.TL_peerChat) {
+                chat = messagesController.getChat(threadMessageObject.messageOwner.from_id.chat_id);
+            } else if (threadMessageObject.messageOwner.post) {
+                chat = messagesController.getChat(threadMessageObject.messageOwner.peer_id.channel_id);
+            }
+            if (user != null) {
+                nameTextView.setText(ContactsController.formatName(user.first_name, user.last_name));
+            } else if (chat != null) {
+                nameTextView.setText(chat.title);
+            }
+            CharSequence pinnedText = null;
+            pinnedMessageObject.updateTranslation(false);
+            if (pinnedMessageObject.type == MessageObject.TYPE_MUSIC) {
+                pinnedText = String.format("%s - %s", pinnedMessageObject.getMusicAuthor(), pinnedMessageObject.getMusicTitle());
+            } else if (pinnedMessageObject.type == MessageObject.TYPE_POLL) {
+                if (pinnedMessageObject.messageOwner.media instanceof TLRPC.TL_messageMediaPoll) {
+                    TLRPC.TL_messageMediaPoll poll = (TLRPC.TL_messageMediaPoll) pinnedMessageObject.messageOwner.media;
+                    String mess = poll.poll.question.text;
+                    if (mess.length() > 150) {
+                        mess = mess.substring(0, 150);
+                    }
+                    mess = mess.replace('\n', ' ');
+                    pinnedText = mess;
+                } else if (pinnedMessageObject.messageOwner.media instanceof TLRPC.TL_messageMediaToDo) {
+                    TLRPC.TL_messageMediaToDo poll = (TLRPC.TL_messageMediaToDo) pinnedMessageObject.messageOwner.media;
+                    String mess = poll.todo.title.text;
+                    if (mess.length() > 150) {
+                        mess = mess.substring(0, 150);
+                    }
+                    mess = mess.replace('\n', ' ');
+                    pinnedText = mess;
+                }
+            } else if (pinnedMessageObject.messageOwner.media instanceof TLRPC.TL_messageMediaGame) {
+                pinnedText = Emoji.replaceEmoji(pinnedMessageObject.messageOwner.media.game.title, messageTextView.getPaint().getFontMetricsInt(), false);
+            } else if (!TextUtils.isEmpty(pinnedMessageObject.caption)) {
+                String mess = pinnedMessageObject.caption.toString();
+                if (mess.length() > 150) {
+                    mess = mess.substring(0, 150);
+                }
+                mess = mess.replace('\n', ' ');
+                pinnedText = mess;
+                pinnedText = Emoji.replaceEmoji(pinnedText, messageTextView.getPaint().getFontMetricsInt(), false);
+                if (pinnedMessageObject != null && pinnedMessageObject.messageOwner != null) {
+                    pinnedText = pinnedMessageObject.replaceAnimatedEmoji(pinnedText, messageTextView.getPaint().getFontMetricsInt());
+                }
+            } else if (pinnedMessageObject.messageText != null) {
+                String mess = pinnedMessageObject.messageText.toString();
+                if (mess.length() > 150) {
+                    mess = mess.substring(0, 150);
+                }
+                mess = mess.replace('\n', ' ');
+                pinnedText = mess;
+                pinnedText = Emoji.replaceEmoji(pinnedText, messageTextView.getPaint().getFontMetricsInt(), false);
+                if (pinnedMessageObject != null && pinnedMessageObject.messageOwner != null) {
+                    pinnedText = pinnedMessageObject.replaceAnimatedEmoji(pinnedText, messageTextView.getPaint().getFontMetricsInt());
+                }
+            }
+            if (pinnedText != null) {
+                if (pinnedText instanceof Spannable) {
+                    MediaDataController.addTextStyleRuns(pinnedMessageObject, (Spannable) pinnedText, TextStyleSpan.FLAG_STYLE_SPOILER | TextStyleSpan.FLAG_STYLE_STRIKE);
+                }
+                messageTextView.setText(AnimatedEmojiSpan.cloneSpans(pinnedText));
+            }
+            pinnedLineView.set(0, 1, false);
         }
         if (changed) {
             checkListViewPaddings();
-        }
-    }
-
-    private class TrackingWidthSimpleTextView extends SimpleTextView {
-        public TrackingWidthSimpleTextView(Context context) {
-            super(context);
-        }
-
-        private boolean trackWidth = true;
-
-        public void setTrackWidth(boolean value) {
-            this.trackWidth = value;
-        }
-
-        public boolean getTrackWidth() {
-            return this.trackWidth;
-        }
-
-        @Override
-        protected boolean createLayout(int width) {
-            boolean result = super.createLayout(width);
-            if (trackWidth && getVisibility() == View.VISIBLE) {
-                pinnedCounterTextViewX = getTextWidth() + dp(4);
-                if (pinnedCounterTextView != null) {
-                    pinnedCounterTextView.setTranslationX(/*getSideMenuWidth() +*/ pinnedCounterTextViewX);
-                }
-            }
-            return result;
         }
     }
 
@@ -27236,10 +26534,11 @@ public class ChatActivity extends BaseFragment implements
         if (replyImageLocation != null && replyLayout != null) {
             replyLayout.current().image.setImage(ImageLocation.getForObject(replyImageLocation, replyImageLocationObject), "50_50", ImageLocation.getForObject(replyImageThumbLocation, replyImageLocationObject), "50_50_b", null, replyImageSize, replyImageCacheType, replyingMessageObject);
         }
+        // LoogriGram: the bar's image is the thread root's, the one message
+        // it shows now.
         if (pinnedImageLocation != null && pinnedMessageImageView != null) {
-            MessageObject pinnedMessageObject = pinnedMessageObjects.get(currentPinnedMessageId);
-            pinnedMessageImageView[0].setImage(ImageLocation.getForObject(pinnedImageLocation, pinnedImageLocationObject), "50_50", ImageLocation.getForObject(pinnedImageThumbLocation, pinnedImageLocationObject), "50_50_b", null, pinnedImageSize, pinnedImageCacheType, pinnedMessageObject);
-            pinnedMessageImageView[0].setHasBlur(pinnedImageHasBlur);
+            pinnedMessageImageView.setImage(ImageLocation.getForObject(pinnedImageLocation, pinnedImageLocationObject), "50_50", ImageLocation.getForObject(pinnedImageThumbLocation, pinnedImageLocationObject), "50_50_b", null, pinnedImageSize, pinnedImageCacheType, threadMessageObject);
+            pinnedMessageImageView.setHasBlur(pinnedImageHasBlur);
         }
 
         if (chatMode == 0) {
@@ -38345,6 +37644,9 @@ public class ChatActivity extends BaseFragment implements
             if (sideControlsButtonsLayout != null) {
                 sideControlsButtonsLayout.updateColors();
             }
+            if (pinnedPill != null) {
+                pinnedPill.updateColors();
+            }
             if (bottomChannelButtonsLayout != null) {
                 bottomChannelButtonsLayout.updateColors();
             }
@@ -38714,15 +38016,10 @@ public class ChatActivity extends BaseFragment implements
 
         themeDescriptions.add(new ThemeDescription(pinnedLineView, 0, null, null, null, selectedBackgroundDelegate, Theme.key_chat_topPanelLine));
         themeDescriptions.add(new ThemeDescription(pinnedLineView, 0, null, null, null, selectedBackgroundDelegate, Theme.key_windowBackgroundWhite));
-        themeDescriptions.add(new ThemeDescription(pinnedCounterTextView, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_chat_topPanelTitle));
-        for (int a = 0; a < 2; a++) {
-            themeDescriptions.add(new ThemeDescription(pinnedNameTextView[a], ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_chat_topPanelTitle));
-            themeDescriptions.add(new ThemeDescription(pinnedMessageTextView[a], ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_chat_topPanelMessage));
-        }
+        themeDescriptions.add(new ThemeDescription(pinnedNameTextView, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_chat_topPanelTitle));
+        themeDescriptions.add(new ThemeDescription(pinnedMessageTextView, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_chat_topPanelMessage));
         themeDescriptions.add(new ThemeDescription(alertNameTextView, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_chat_topPanelTitle));
         themeDescriptions.add(new ThemeDescription(alertTextView, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_chat_topPanelMessage));
-        themeDescriptions.add(new ThemeDescription(closePinned, ThemeDescription.FLAG_IMAGECOLOR, null, null, null, null, Theme.key_chat_topPanelClose));
-        themeDescriptions.add(new ThemeDescription(pinnedListButton, ThemeDescription.FLAG_IMAGECOLOR, null, null, null, null, Theme.key_chat_topPanelClose));
         themeDescriptions.add(new ThemeDescription(closeReportSpam, ThemeDescription.FLAG_IMAGECOLOR, null, null, null, null, Theme.key_chat_topPanelClose));
         themeDescriptions.add(new ThemeDescription(addToContactsButton, ThemeDescription.FLAG_TEXTCOLOR, null, null, null, null, Theme.key_chat_addContact));
         themeDescriptions.add(new ThemeDescription(reportSpamButton, ThemeDescription.FLAG_TEXTCOLOR | ThemeDescription.FLAG_CHECKTAG, null, null, null, null, Theme.key_text_RedBold));
