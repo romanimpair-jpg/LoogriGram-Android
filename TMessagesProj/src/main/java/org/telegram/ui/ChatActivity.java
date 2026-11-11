@@ -16721,7 +16721,10 @@ public class ChatActivity extends BaseFragment implements
                     childTop -= windowInsetsStateHolder.getCurrentMaxBottomInset() + dp(9);
                 } else if (child == gifHintTextView || child == voiceHintTextView || child == mediaBanTooltip || child == emojiHintTextView) {
                     childTop -= inputFieldHeight;
-                } else if (child == chatListView || child == chatListThanosEffect || child == floatingDateView || child == floatingTopicSeparator || child == infoTopView) {
+                } else if (child == chatListView || child == chatListThanosEffect || child == floatingDateView || child == floatingTopicSeparator || child == infoTopView || child == pinnedPill) {
+                    // LoogriGram: the pinned messages pill rides on the list's
+                    // top padding, as the floating date does, so it must not
+                    // get the action bar's height added a second time.
                     childTop = -blurredViewTopOffset;
                 } else if (child == progressView) {
                     if (chatActivityEnterView.isTopViewVisible()) {
@@ -25746,13 +25749,14 @@ public class ChatActivity extends BaseFragment implements
         updatePinnedPillTranslation();
     }
 
-    // Level with the floating date's bubble: ChatActionCell draws it dp(4)
-    // into a cell laid out dp(4) below its translation.
+    // Level with the floating date's bubble, which ChatActionCell draws dp(4)
+    // into its cell. Both are laid out at the same top (see onLayout), so the
+    // pill takes the date's translation without the date's own slide offset.
     private void updatePinnedPillTranslation() {
         if (pinnedPill == null || floatingDateView == null) {
             return;
         }
-        final float y = floatingDateView.getTranslationY() - floatingDateViewOffset + dp(8);
+        final float y = floatingDateView.getTranslationY() - floatingDateViewOffset + dp(4);
         if (pinnedPill.getTranslationY() != y) {
             pinnedPill.setTranslationY(y);
             pinnedPill.invalidate();
