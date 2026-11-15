@@ -730,9 +730,10 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
         cameraReady = false;
         selectedCamera = null;
         if (!fromPaused) {
-            if (!useCamera2) {
-                isFrontface = true;
-            }
+            // LoogriGram: every recording starts on the camera chosen in Chat
+            // Settings, the back one by default. Upstream started Camera1 on the
+            // front camera and let Camera2 keep the last flip.
+            isFrontface = SharedConfig.roundCameraFront;
             updateFlash();
             recordedTime = 0;
             progress = 0;
@@ -786,19 +787,38 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                         }
                     }
                 }
+                // LoogriGram: without the chosen camera, start on the other one,
+                // as Camera1's initCamera does.
+                if (camera2Sessions[isFrontface ? 0 : 1] == null && camera2Sessions[isFrontface ? 1 : 0] != null) {
+                    isFrontface = !isFrontface;
+                }
                 updateFlash();
                 camera2SessionCurrent = camera2Sessions[isFrontface ? 0 : 1];
                 if (camera2SessionCurrent != null && camera2Sessions[isFrontface ? 1 : 0] == null) {
                     bothCameras = false;
+                    // LoogriGram: a lone session is drawn on surface 0 and scaled
+                    // by previewSize[0], but the back one's size went into [1].
+                    previewSize[0] = previewSize[isFrontface ? 0 : 1];
                 }
                 if (camera2SessionCurrent == null) return;
             } else {
                 camera2SessionCurrent = camera2Sessions[isFrontface ? 0 : 1] = Camera2Session.create(isFrontface, MessagesController.getInstance(UserConfig.selectedAccount).roundVideoSize, MessagesController.getInstance(UserConfig.selectedAccount).roundVideoSize);
+                if (camera2SessionCurrent == null) {
+                    // LoogriGram: as above, start on the other camera.
+                    camera2SessionCurrent = camera2Sessions[isFrontface ? 1 : 0] = Camera2Session.create(!isFrontface, MessagesController.getInstance(UserConfig.selectedAccount).roundVideoSize, MessagesController.getInstance(UserConfig.selectedAccount).roundVideoSize);
+                    if (camera2SessionCurrent != null) {
+                        isFrontface = !isFrontface;
+                    }
+                }
                 if (camera2SessionCurrent == null) return;
                 camera2SessionCurrent.setRecordingVideo(true);
                 previewSize[0] = new Size(camera2SessionCurrent.getPreviewWidth(), camera2SessionCurrent.getPreviewHeight());
             }
         }
+        // LoogriGram: the GL thread draws surface surfaceIndex, and with both
+        // cameras open surface 1 is the back one. Upstream only changed it on a
+        // flip, which held while every start kept the camera last used.
+        surfaceIndex = bothCameras && !isFrontface ? 1 : 0;
         textureView = new TextureView(getContext());
         textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override

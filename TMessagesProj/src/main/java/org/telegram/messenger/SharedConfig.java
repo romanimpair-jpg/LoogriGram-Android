@@ -288,6 +288,10 @@ public class SharedConfig {
     public static boolean directShare = true;
     public static boolean inappCamera = true;
     public static boolean roundCamera16to9 = true;
+    // LoogriGram: the camera a round video message starts with, set under
+    // Chat Settings' Media and Sound. Upstream always started on the front one;
+    // here the back one is the default.
+    public static boolean roundCameraFront = false;
     public static boolean noSoundHintShowed = false;
     public static boolean streamMedia = true;
     public static boolean streamAllVideo = false;
@@ -594,6 +598,7 @@ public class SharedConfig {
             inappCamera = preferences.getBoolean("inappCamera", true);
             hasCameraCache = preferences.contains("cameraCache");
             roundCamera16to9 = true;
+            roundCameraFront = preferences.getBoolean("roundCameraFront", false);
             repeatMode = preferences.getInt("repeatMode", 0);
             fontSize = preferences.getInt("fons_size", AndroidUtilities.isTablet() && !AndroidUtilities.isFold() ? 18 : 16);
             fontSizeIsDefault = !preferences.contains("fons_size");
@@ -1341,6 +1346,15 @@ public class SharedConfig {
         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean("roundCamera16to9", roundCamera16to9);
+        editor.apply();
+    }
+
+    // LoogriGram: see roundCameraFront.
+    public static void setRoundCameraFront(boolean front) {
+        roundCameraFront = front;
+        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean("roundCameraFront", roundCameraFront);
         editor.apply();
     }
 

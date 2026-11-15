@@ -164,6 +164,9 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
     private int distanceRow;
     private int searchEngineRow;
     private int bluetoothScoRow;
+    // LoogriGram: the camera a round video message starts with, beside the
+    // microphone for voice messages. See SharedConfig.roundCameraFront.
+    private int roundCameraRow;
     private int enableAnimationsRow;
     private int settings2Row;
 
@@ -239,6 +242,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
     private boolean previousByLocation;
 
     private boolean updateRecordViaSco;
+    private boolean updateRoundCamera;
     private boolean updateDistance;
     private boolean updateSearchEngine;
 
@@ -589,6 +593,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
         distanceRow = -1;
         searchEngineRow = -1;
         bluetoothScoRow = -1;
+        roundCameraRow = -1;
         settings2Row = -1;
 
         swipeGestureHeaderRow = -1;
@@ -680,6 +685,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
             pauseOnRecordRow = rowCount++;
             pauseOnMediaRow = rowCount++;
             bluetoothScoRow = rowCount++;
+            roundCameraRow = rowCount++;
             mediaSoundSectionRow = rowCount++;
 
             otherHeaderRow = rowCount++;
@@ -1291,6 +1297,41 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                         .setTitle(getString(R.string.MicrophoneForVoiceMessages))
                         .setView(linearLayout)
                         .setNegativeButton(getString("Cancel", R.string.Cancel), null)
+                        .create();
+                dialogRef.set(dialog);
+                showDialog(dialog);
+            } else if (position == roundCameraRow) {
+                if (getParentActivity() == null) {
+                    return;
+                }
+                AtomicReference<Dialog> dialogRef = new AtomicReference<>();
+
+                LinearLayout linearLayout = new LinearLayout(context);
+                linearLayout.setOrientation(LinearLayout.VERTICAL);
+
+                for (int i = 0; i < 2; ++i) {
+                    final boolean front = i == 1;
+                    RadioColorCell cell = new RadioColorCell(getParentActivity());
+                    cell.setPadding(dp(4), 0, dp(4), 0);
+                    cell.setCheckColor(Theme.getColor(Theme.key_radioBackground), Theme.getColor(Theme.key_dialogRadioBackgroundChecked));
+                    cell.setTextAndValue(getString(front ? R.string.LoogriGramCameraFront : R.string.LoogriGramCameraBack), front == SharedConfig.roundCameraFront);
+                    cell.setBackground(Theme.createSelectorDrawable(Theme.getColor(Theme.key_listSelector), Theme.RIPPLE_MASK_ALL));
+                    linearLayout.addView(cell);
+                    cell.setOnClickListener(v -> {
+                        SharedConfig.setRoundCameraFront(front);
+                        updateRoundCamera = true;
+                        RecyclerView.ViewHolder holder = listView.findViewHolderForAdapterPosition(roundCameraRow);
+                        if (holder != null) {
+                            listAdapter.onBindViewHolder(holder, roundCameraRow);
+                        }
+                        dialogRef.get().dismiss();
+                    });
+                }
+
+                Dialog dialog = new AlertDialog.Builder(getParentActivity())
+                        .setTitle(getString(R.string.LoogriGramCameraForVideoMessages))
+                        .setView(linearLayout)
+                        .setNegativeButton(getString(R.string.Cancel), null)
                         .create();
                 dialogRef.set(dialog);
                 showDialog(dialog);
@@ -2492,8 +2533,12 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
                     } else if (position == searchEngineRow) {
                         cell.setTextAndValue(getString(R.string.SearchEngine), SearchEngine.getCurrent().name, updateSearchEngine, false);
                     } else if (position == bluetoothScoRow) {
-                        cell.setTextAndValue(getString(R.string.MicrophoneForVoiceMessages), getString(SharedConfig.recordViaSco ? R.string.MicrophoneForVoiceMessagesSco : R.string.MicrophoneForVoiceMessagesBuiltIn), updateRecordViaSco, false);
+                        // LoogriGram: a divider, since roundCameraRow follows.
+                        cell.setTextAndValue(getString(R.string.MicrophoneForVoiceMessages), getString(SharedConfig.recordViaSco ? R.string.MicrophoneForVoiceMessagesSco : R.string.MicrophoneForVoiceMessagesBuiltIn), updateRecordViaSco, true);
                         updateRecordViaSco = false;
+                    } else if (position == roundCameraRow) {
+                        cell.setTextAndValue(getString(R.string.LoogriGramCameraForVideoMessages), getString(SharedConfig.roundCameraFront ? R.string.LoogriGramCameraFront : R.string.LoogriGramCameraBack), updateRoundCamera, false);
+                        updateRoundCamera = false;
                     }
                     break;
                 }
@@ -2702,7 +2747,7 @@ public class ThemeActivity extends BaseFragment implements NotificationCenter.No
             if (position == scheduleFromRow || position == distanceRow ||
                     position == scheduleToRow || position == scheduleUpdateLocationRow ||
                     position == contactsReimportRow || position == contactsSortRow ||
-                    position == bluetoothScoRow || position == searchEngineRow) {
+                    position == bluetoothScoRow || position == roundCameraRow || position == searchEngineRow) {
                 return TYPE_TEXT_SETTING;
             } else if (position == automaticBrightnessInfoRow || position == scheduleLocationInfoRow || position == swipeGestureInfoRow || position == stickersInfoRow || position == liteModeInfoRow) {
                 return TYPE_TEXT_INFO_PRIVACY;

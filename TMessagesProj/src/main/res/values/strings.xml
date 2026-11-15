@@ -9714,4 +9714,11 @@
     <string name="LoogriGramPinnedMessages">Pinned messages</string>
     <string name="LoogriGramHidePinnedMessages">Hide pinned messages</string>
     <string name="LoogriGramAllPinnedMessages">All pinned messages</string>
+    <!-- LoogriGram: the camera a round video message starts with, a row under
+         Chat Settings' Media and Sound that follows "Microphone for voice
+         messages" (ThemeActivity's roundCameraRow). Android only: desktop
+         records from whichever webcam is set for calls. -->
+    <string name="LoogriGramCameraForVideoMessages">Camera for video messages</string>
+    <string name="LoogriGramCameraBack">Back</string>
+    <string name="LoogriGramCameraFront">Front</string>
 </resources>
