@@ -40,6 +40,7 @@ One switch in the tab bar, where the Contacts tab used to be.
 - Media auto-download: photos and GIFs only.
 - Notifications for pinned messages are off.
 - Saved media goes to folders named LoogriGram: Pictures, Movies, Download and Music/LoogriGram, and the app's own LoogriGram storage. Files saved earlier stay in the old Telegram folders; the app's own downloaded media moves over by itself.
+- Video messages (the round ones) start on the back camera instead of the front one. A setting changes it (see below).
 
 ### Added
 
@@ -47,6 +48,7 @@ One switch in the tab bar, where the Contacts tab used to be.
 - Long-pressing a sticker in a chat shows it enlarged, as holding one in the sticker panel does, with Add to Favorites and View Pack beneath it; a tap closes it. Long-pressing beside the sticker still selects the message and opens its menu.
 - Pinned messages show as a small pill at the top right of a chat (a pin and how many messages are pinned) instead of a bar with the message text under the chat's header. Tapping it jumps to each pinned message in turn, newest first. Long-pressing it can hide it until something new is pinned, or open the list of all pinned messages. The chat's ⋮ menu has "Pinned messages" too, so the list stays reachable after the pill is hidden.
 - The attach button (the paperclip) sits in the message field beside the emoji button, left of the text, as on desktop, and stays there while you type. In Telegram it leaves the field once you start typing: the ⋮ at the top right of the chat gains a paperclip and an Attach item (in comments and scheduled messages it moves to a round button above the field once the text reaches it, covering the end of the line until then). Here it never moves and never covers your text. It's hidden only while you record a voice or video message or edit a message, as in Telegram.
+- Chat Settings has a "Camera for video messages" row, under the microphone for voice messages: the camera every round video message starts on, Back (the default) or Front. Telegram starts on the front camera. The flip button still switches cameras while you record.
 
 ### Fixed
 
