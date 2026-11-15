@@ -15,7 +15,6 @@ import androidx.annotation.Nullable;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.R;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.blur3.BlurredBackgroundDrawableViewFactory;
 import org.telegram.ui.Components.blur3.drawable.color.BlurredBackgroundColorProvider;
@@ -27,21 +26,22 @@ import me.vkryl.android.animator.FactorAnimator;
 
 @SuppressLint("ViewConstructor")
 public class ChatActivitySideControlsButtonsLayout extends FrameLayout implements FactorAnimator.Target {
-    public static final int BUTTON_ATTACH = 0;
-    public static final int BUTTON_PAGE_DOWN = 1;
-    public static final int BUTTON_MENTION = 2;
-    public static final int BUTTON_REACTIONS = 3;
-    public static final int BUTTON_POLL_VOTES = 4;
-    public static final int BUTTON_SEARCH_DOWN = 5;
-    public static final int BUTTON_SEARCH_UP = 6;
+    // LoogriGram: BUTTON_ATTACH is gone. In comments and scheduled messages
+    // the input bar's attach button moved here once text reached it; it stays
+    // in the input bar now, left of the text.
+    public static final int BUTTON_PAGE_DOWN = 0;
+    public static final int BUTTON_MENTION = 1;
+    public static final int BUTTON_REACTIONS = 2;
+    public static final int BUTTON_POLL_VOTES = 3;
+    public static final int BUTTON_SEARCH_DOWN = 4;
+    public static final int BUTTON_SEARCH_UP = 5;
 
-    private static final int BUTTONS_COUNT = 7;
+    private static final int BUTTONS_COUNT = 6;
 
     private static final int ANIMATOR_ID_VISIBILITY = 1;
     private static final int ANIMATOR_ID_COUNTER_VISIBILITY = 2;
 
     private static final @DrawableRes int[] buttonIcons = new int[] {
-        R.drawable.msg_input_attach2,
         R.drawable.pagedown,
         R.drawable.mentionbutton,
         R.drawable.reactionbutton,
@@ -51,7 +51,6 @@ public class ChatActivitySideControlsButtonsLayout extends FrameLayout implement
     };
 
     private final String[] buttonDescriptions = new String[] {
-        LocaleController.getString(R.string.AttachMenu),
         LocaleController.getString(R.string.AccDescrPageDown),
         LocaleController.getString(R.string.AccDescrMentionDown),
         LocaleController.getString(R.string.AccDescrReactionMentionDown),
@@ -180,9 +179,7 @@ public class ChatActivitySideControlsButtonsLayout extends FrameLayout implement
             holder.button.setAlpha(visibility);
             holder.button.setScaleX(lerp(0.7f, 1f, visibility));
             holder.button.setScaleY(lerp(0.7f, 1f, visibility));
-            if (buttonId != BUTTON_ATTACH) {
-                holder.button.setTranslationY(dp(80) * (1f - visibility) - totalHeight);
-            }
+            holder.button.setTranslationY(dp(80) * (1f - visibility) - totalHeight);
 
             final int height = dp(44);
             final int gap = dp(10 + 10 * counterVisibility);
@@ -214,20 +211,14 @@ public class ChatActivitySideControlsButtonsLayout extends FrameLayout implement
 
             final BoolAnimator visibilityAnimator = new BoolAnimator(
                 (buttonId << 16) | ANIMATOR_ID_VISIBILITY, this,
-                buttonId == BUTTON_ATTACH ? CubicBezierInterpolator.EASE_OUT_QUINT : AnimatorUtils.DECELERATE_INTERPOLATOR,
-                buttonId == BUTTON_ATTACH ? 300 : 280
+                AnimatorUtils.DECELERATE_INTERPOLATOR, 280
             );
 
             final BoolAnimator counterVisibilityAnimator = new BoolAnimator(
                 (buttonId << 16) | ANIMATOR_ID_COUNTER_VISIBILITY, this,
-                buttonId == BUTTON_ATTACH ? CubicBezierInterpolator.EASE_OUT_QUINT : AnimatorUtils.DECELERATE_INTERPOLATOR,
-                buttonId == BUTTON_ATTACH ? 300 : 280);
+                AnimatorUtils.DECELERATE_INTERPOLATOR, 280);
 
-            int size = 56, iconSize = 48;
-            if (buttonId == BUTTON_ATTACH) {
-                size = 50;
-                iconSize = 32;
-            }
+            final int size = 56, iconSize = 48;
             final ChatActivityBlurredRoundPageDownButton button = ChatActivityBlurredRoundPageDownButton.create(
                 getContext(),
                 size, iconSize,

@@ -5094,7 +5094,6 @@
     <string name="ThemeAlsoAppliedForHint">Theme will be also applied for **%s**.</string>
     <string name="ThemeAlsoDisabledForHint">Theme will be also disabled for **%s**.</string>
     <string name="MessageSeenTooltipMessage">To protect privacy, views are only stored for **7 days**</string>
-    <string name="AttachMenu">Attach...</string>
     <string name="Calendar">Calendar</string>
     <string name="MediaZoomIn">Zoom in</string>
     <string name="MediaZoomOut">Zoom out</string>

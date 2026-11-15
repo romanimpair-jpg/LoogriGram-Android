@@ -392,8 +392,10 @@ public class ChatActivity extends BaseFragment implements
     private int chatActivityEnterViewAnimateFromTop;
     private boolean chatActivityEnterViewAnimateBeforeSending;
     private ActionBarMenuItem.Item timeItem2;
-    private ComposeDrawable otherIcon;
-    private ActionBarMenu.LazyItem attachItem;
+    // LoogriGram: otherIcon (the ⋮ with a paperclip that fades in) and
+    // attachItem are gone. While text hid the input bar's attach button, the ⋮
+    // was swapped for an item whose menu began with Attach; text no longer
+    // hides the button, so the ⋮ stays as it is.
     private ActionBarMenuItem.Item savedChatsItem, savedChatsGap;;
     private ActionBarMenuItem headerItem;
     private ActionBarMenu.LazyItem editTextItem;
@@ -1279,38 +1281,9 @@ public class ChatActivity extends BaseFragment implements
     }
 
     public void showHeaderItem(boolean show) {
-        if (show) {
-            if (chatActivityEnterView.hasText() && TextUtils.isEmpty(chatActivityEnterView.getSlowModeTimer())) {
-                if (attachItem != null) {
-                    attachItem.setVisibility(View.VISIBLE);
-                }
-                if (headerItem != null) {
-                    headerItem.setVisibility(View.GONE);
-                }
-                if (otherIcon != null) {
-                    otherIcon.setIconVisible(true);
-                }
-            } else {
-                if (attachItem != null) {
-                    attachItem.setVisibility(View.GONE);
-                }
-                if (headerItem != null) {
-                    headerItem.setVisibility(View.VISIBLE);
-                }
-                if (otherIcon != null) {
-                    otherIcon.setIconVisible(false);
-                }
-            }
-        } else {
-            if (attachItem != null) {
-                attachItem.setVisibility(View.GONE);
-            }
-            if (headerItem != null) {
-                headerItem.setVisibility(View.GONE);
-            }
-            if (otherIcon != null) {
-                otherIcon.setIconVisible(false);
-            }
+        // LoogriGram: text no longer swaps the ⋮ for an attach item.
+        if (headerItem != null) {
+            headerItem.setVisibility(show ? View.VISIBLE : View.GONE);
         }
         if (avatarContainer != null) {
             avatarContainer.ignoreTouches = !show;
@@ -1527,7 +1500,7 @@ public class ChatActivity extends BaseFragment implements
     private final static int forward = 11;
     private final static int delete = 12;
     private final static int chat_enc_timer = 13;
-    private final static int chat_menu_attach = 14;
+    // LoogriGram: 14 was chat_menu_attach, the attach item above.
     private final static int chat_menu_search = -1;
     private final static int chat_menu_options = -2;
     private final static int chat_menu_edit_text_options = -3;
@@ -1862,7 +1835,8 @@ public class ChatActivity extends BaseFragment implements
     private class ChatActivityEnterViewDelegate implements ChatActivityEnterView.ChatActivityEnterViewDelegate {
 
         int lastSize;
-        boolean isEditTextItemVisibilitySuppressed;
+        // LoogriGram: isEditTextItemVisibilitySuppressed kept the attach
+        // callbacks below from hiding editTextItem mid-animation; they are gone.
 
         @Override
         public int getContentViewHeight() {
@@ -1960,15 +1934,8 @@ public class ChatActivity extends BaseFragment implements
         @Override
         public void onUpdateSlowModeButton(View button, boolean show, CharSequence time) {
             showSlowModeHint(button, show, time);
-            if (headerItem != null && headerItem.getVisibility() != View.VISIBLE) {
-                headerItem.setVisibility(View.VISIBLE);
-                if (attachItem != null) {
-                    attachItem.setVisibility(View.GONE);
-                }
-                if (otherIcon != null) {
-                    otherIcon.setIconVisible(false);
-                }
-            }
+            // LoogriGram: this brought the ⋮ back from the attach item, which
+            // slow mode never showed; that swap is gone.
         }
 
         @Override
@@ -1987,12 +1954,6 @@ public class ChatActivity extends BaseFragment implements
                             checkEditTextItemMenu();
                             if (headerItem != null) {
                                 headerItem.setVisibility(View.GONE);
-                            }
-                            if (attachItem != null) {
-                                attachItem.setVisibility(View.GONE);
-                            }
-                            if (otherIcon != null) {
-                                otherIcon.setIconVisible(false);
                             }
                         } else {
                             ValueAnimator valueAnimator = ValueAnimator.ofFloat(AndroidUtilities.dp(48), 0);
@@ -2026,26 +1987,10 @@ public class ChatActivity extends BaseFragment implements
                         if (chatMode == MODE_SAVED && getSavedDialogId() == getUserConfig().getClientUserId() || chatMode == 0 && (threadMessageId == 0 || isTopic) && !UserObject.isReplyUser(currentUser) && !isReport()) {
                             editTextItem.setVisibility(View.GONE);
 
-                            if (chatActivityEnterView.hasText() && TextUtils.isEmpty(chatActivityEnterView.getSlowModeTimer())) {
-                                if (headerItem != null) {
-                                    headerItem.setVisibility(View.GONE);
-                                }
-                                if (attachItem != null) {
-                                    attachItem.setVisibility(View.VISIBLE);
-                                }
-                                if (otherIcon != null) {
-                                    otherIcon.setIconVisible(true);
-                                }
-                            } else {
-                                if (headerItem != null) {
-                                    headerItem.setVisibility(View.VISIBLE);
-                                }
-                                if (attachItem != null) {
-                                    attachItem.setVisibility(View.GONE);
-                                }
-                                if (otherIcon != null) {
-                                    otherIcon.setIconVisible(false);
-                                }
+                            // LoogriGram: the ⋮ comes back whether or not there
+                            // is text; text no longer swaps it for an attach item.
+                            if (headerItem != null) {
+                                headerItem.setVisibility(View.VISIBLE);
                             }
                         } else {
                             ValueAnimator valueAnimator = ValueAnimator.ofFloat(0, AndroidUtilities.dp(48));
@@ -2055,7 +2000,6 @@ public class ChatActivity extends BaseFragment implements
                                 @Override
                                 public void onAnimationStart(Animator animation) {
                                     actionBar.setMenuOffsetSuppressed(true);
-                                    isEditTextItemVisibilitySuppressed = true;
                                 }
 
                                 @Override
@@ -2064,7 +2008,6 @@ public class ChatActivity extends BaseFragment implements
                                     menu.translateXItems(0);
 
                                     actionBar.setMenuOffsetSuppressed(false);
-                                    isEditTextItemVisibilitySuppressed = false;
                                 }
                             });
                             valueAnimator.addUpdateListener(animation -> menu.translateXItems((float) animation.getAnimatedValue()));
@@ -2123,45 +2066,8 @@ public class ChatActivity extends BaseFragment implements
             getMessagesController().sendTyping(dialog_id, threadMessageId, 0, classGuid);
         }
 
-        @Override
-        public void onAttachButtonHidden() {
-            if (actionBar.isSearchFieldVisible()) {
-                return;
-            }
-            if (editTextItem != null && !isEditTextItemVisibilitySuppressed) {
-                editTextItem.setVisibility(View.GONE);
-            }
-            if (TextUtils.isEmpty(chatActivityEnterView.getSlowModeTimer())) {
-                if (headerItem != null) {
-                    headerItem.setVisibility(View.GONE);
-                }
-                if (attachItem != null) {
-                    attachItem.setVisibility(View.VISIBLE);
-                }
-                if (otherIcon != null) {
-                    otherIcon.setIconVisible(true);
-                }
-            }
-        }
-
-        @Override
-        public void onAttachButtonShow() {
-            if (actionBar.isSearchFieldVisible()) {
-                return;
-            }
-            if (headerItem != null) {
-                headerItem.setVisibility(View.VISIBLE);
-            }
-            if (editTextItem != null && !isEditTextItemVisibilitySuppressed) {
-                editTextItem.setVisibility(View.GONE);
-            }
-            if (attachItem != null) {
-                attachItem.setVisibility(View.GONE);
-            }
-            if (otherIcon != null) {
-                otherIcon.setIconVisible(false);
-            }
-        }
+        // LoogriGram: onAttachButtonHidden swapped the ⋮ for the attach item and
+        // onAttachButtonShow swapped it back; both are gone from the delegate.
 
         @Override
         public void onMessageEditEnd(boolean loading) {
@@ -3653,17 +3559,8 @@ public class ChatActivity extends BaseFragment implements
                     hideActionMode();
                     updatePinnedMessageView(true);
                     updateVisibleRows();
-                } else if (id == chat_menu_attach) {
-                    ActionBarMenuSubItem attach = new ActionBarMenuSubItem(context, false, true, true, getResourceProvider());
-                    attach.setTextAndIcon(LocaleController.getString(R.string.AttachMenu), R.drawable.input_attach);
-                    attach.setOnClickListener(view -> {
-                        headerItem.closeSubMenu();
-                        if (chatAttachAlert != null) {
-                            chatAttachAlert.setEditingMessageObject(0, null);
-                        }
-                        openAttachMenu();
-                    });
-                    headerItem.toggleSubMenu(attach, attachItem.createView());
+                    // LoogriGram: chat_menu_attach opened the ⋮ menu with Attach
+                    // on top, from the attach item; that item is gone.
                 } else if (id == bot_help) {
                     getSendMessagesHelper().sendMessage(SendMessagesHelper.SendMessageParams.of("/help", dialog_id, null, null, null, false, null, null, null, true, 0, 0, null, false));
                 } else if (id == bot_settings) {
@@ -3955,18 +3852,14 @@ public class ChatActivity extends BaseFragment implements
         editTextItem.setTag(null);
         editTextItem.setVisibility(View.GONE);
 
-        otherIcon = new ComposeDrawable(
-            context.getResources().getDrawable(R.drawable.ic_ab_other).mutate(),
-            context.getResources().getDrawable(R.drawable.mini_attach).mutate()
-        );
-        otherIcon.setIconTranslate(-dp(6), dp(6.66f));
-
         if (((chatMode == 0 && (threadMessageId == 0 || isTopic)) || chatMode == MODE_SUGGESTIONS) && !UserObject.isReplyUser(currentUser) && !isReport()) {
             TLRPC.UserFull userFull = null;
             if (currentUser != null) {
                 userFull = getMessagesController().getUserFull(currentUser.id);
             }
-            headerItem = menu.addItem(chat_menu_options, otherIcon);
+            // LoogriGram: a plain ⋮. otherIcon drew a paperclip into it while
+            // text hid the input bar's attach button.
+            headerItem = menu.addItem(chat_menu_options, R.drawable.ic_ab_other);
             headerItem.setSubMenuDelegate(new ActionBarMenuItem.ActionBarSubMenuItemDelegate() {
                 @Override
                 public void onShowSubMenu() {
@@ -3980,7 +3873,6 @@ public class ChatActivity extends BaseFragment implements
 
                 }
             });
-            otherIcon.addView(headerItem.getIconView());
             headerItem.setContentDescription(LocaleController.getString(R.string.AccDescrMoreOptions));
 
             if (currentUser != null && currentUser.self && chatMode != MODE_SAVED) {
@@ -4187,21 +4079,11 @@ public class ChatActivity extends BaseFragment implements
         avatarContainer.updateSubtitle();
         updateTitleIcons();
 
-        if (chatMode == 0 && (!isThreadChat() || isTopic) && !isReport()) {
-            attachItem = menu.lazilyAddItem(chat_menu_attach, otherIcon, themeDelegate);
-            attachItem.onView(cell -> otherIcon.addView(cell.getIconView()));
-            attachItem.setOverrideMenuClick(true);
-            attachItem.setAllowCloseAnimation(false);
-            attachItem.setContentDescription(LocaleController.getString(R.string.AccDescrMoreOptions));
-            attachItem.setVisibility(View.GONE);
-        }
+        // LoogriGram: the attach item was added here; see otherIcon.
 
         if (inPreviewMode) {
             if (headerItem != null) {
                 headerItem.setAlpha(0.0f);
-            }
-            if (attachItem != null) {
-                attachItem.setAlpha(0.0f);
             }
         }
 
@@ -7452,9 +7334,8 @@ public class ChatActivity extends BaseFragment implements
         chatActivityEnterView.setVisibility(View.VISIBLE);
         chatActivityEnterView.getEditField().adaptiveCreateLinkDialog = true;
         chatActivityEnterView.setDelegate(new ChatActivityEnterViewDelegate());
-        if (chatMode == MODE_SCHEDULED || isComments) {
-            chatActivityEnterView.setSideButtonsForAttach(sideControlsButtonsLayout);
-        }
+        // LoogriGram: scheduled messages and comments no longer lend the input
+        // bar a round attach button; its own stays left of the text.
         chatActivityEnterView.setInAppInsetsController(windowInsetsStateHolder);
         chatActivityEnterView.setDialogId(dialog_id, currentAccount);
         if (chatInfo != null) {
@@ -25510,12 +25391,6 @@ public class ChatActivity extends BaseFragment implements
                     chatActivityEnterView.setVisibility(View.INVISIBLE);
                     chatActivityEnterView.closeKeyboard();
                 }
-                if (attachItem != null) {
-                    attachItem.setVisibility(View.GONE);
-                }
-                if (otherIcon != null) {
-                    otherIcon.setIconVisible(false);
-                }
                 if (editTextItem != null) {
                     editTextItem.setVisibility(View.GONE);
                 }
@@ -26408,9 +26283,6 @@ public class ChatActivity extends BaseFragment implements
             actionBar.setBackButtonDrawable(!value ? new BackDrawable(false) : null);
             if (headerItem != null) {
                 headerItem.setAlpha(!value ? 1.0f : 0.0f);
-            }
-            if (attachItem != null) {
-                attachItem.setAlpha(!value ? 1.0f : 0.0f);
             }
         }
 
@@ -30917,12 +30789,6 @@ public class ChatActivity extends BaseFragment implements
             if (headerItem != null) {
                 headerItem.setVisibility(View.GONE);
             }
-            if (attachItem != null) {
-                attachItem.setVisibility(View.GONE);
-            }
-            if (otherIcon != null) {
-                otherIcon.setIconVisible(false);
-            }
             if (editTextItem != null) {
                 editTextItem.setVisibility(View.GONE);
             }
@@ -30981,12 +30847,6 @@ public class ChatActivity extends BaseFragment implements
             animatorSearchFieldVisibility.setValue(true, true);
             if (headerItem != null) {
                 headerItem.setVisibility(View.GONE);
-            }
-            if (attachItem != null) {
-                attachItem.setVisibility(View.GONE);
-            }
-            if (otherIcon != null) {
-                otherIcon.setIconVisible(false);
             }
             if (editTextItem != null) {
                 editTextItem.setVisibility(View.GONE);
@@ -31069,12 +30929,6 @@ public class ChatActivity extends BaseFragment implements
             if (headerItem != null) {
                 headerItem.setVisibility(View.GONE);
             }
-            if (attachItem != null) {
-                attachItem.setVisibility(View.GONE);
-            }
-            if (otherIcon != null) {
-                otherIcon.setIconVisible(false);
-            }
             if (editTextItem != null) {
                 editTextItem.setVisibility(View.GONE);
             }
@@ -31123,12 +30977,6 @@ public class ChatActivity extends BaseFragment implements
             animatorSearchFieldVisibility.setValue(true, true);
             if (headerItem != null) {
                 headerItem.setVisibility(View.GONE);
-            }
-            if (attachItem != null) {
-                attachItem.setVisibility(View.GONE);
-            }
-            if (otherIcon != null) {
-                otherIcon.setIconVisible(false);
             }
             if (editTextItem != null) {
                 editTextItem.setVisibility(View.GONE);
@@ -34124,34 +33972,6 @@ public class ChatActivity extends BaseFragment implements
                     editTextItem.setVisibility(View.VISIBLE);
                     checkEditTextItemMenu();
                 }
-                if (attachItem != null) {
-                    attachItem.setVisibility(View.GONE);
-                }
-                if (otherIcon != null) {
-                    otherIcon.setIconVisible(false);
-                }
-                if (searchIconItem != null && showSearchAsIcon) {
-                    searchIconItem.setVisibility(View.GONE);
-                }
-                if (audioCallIconItem != null && showAudioCallAsIcon) {
-                    audioCallIconItem.setVisibility(View.GONE);
-                }
-                if (topicCreateItem != null) {
-                    topicCreateItem.setVisibility(View.GONE);
-                }
-            } else if (chatActivityEnterView.hasText() && TextUtils.isEmpty(chatActivityEnterView.getSlowModeTimer()) && (currentChat == null || ChatObject.canSendPlain(currentChat))) {
-                if (headerItem != null) {
-                    headerItem.setVisibility(View.GONE);
-                }
-                if (editTextItem != null) {
-                    editTextItem.setVisibility(View.GONE);
-                }
-                if (attachItem != null) {
-                    attachItem.setVisibility(View.VISIBLE);
-                }
-                if (otherIcon != null) {
-                    otherIcon.setIconVisible(true);
-                }
                 if (searchIconItem != null && showSearchAsIcon) {
                     searchIconItem.setVisibility(View.GONE);
                 }
@@ -34162,6 +33982,9 @@ public class ChatActivity extends BaseFragment implements
                     topicCreateItem.setVisibility(View.GONE);
                 }
             } else {
+                // LoogriGram: with text in the field this showed the attach item
+                // in place of the ⋮, and hid the search, call and new-topic icons
+                // to make room. Text no longer changes the action bar.
                 if (headerItem != null) {
                     headerItem.setVisibility(View.VISIBLE);
                 }
@@ -34176,12 +33999,6 @@ public class ChatActivity extends BaseFragment implements
                 }
                 if (editTextItem != null) {
                     editTextItem.setVisibility(View.GONE);
-                }
-                if (attachItem != null) {
-                    attachItem.setVisibility(View.GONE);
-                }
-                if (otherIcon != null) {
-                    otherIcon.setIconVisible(false);
                 }
             }
             if (searchViewPager != null) {
@@ -41353,12 +41170,8 @@ public class ChatActivity extends BaseFragment implements
             goToNextOrPrevSearchMessage(true);
         } else if (buttonId == ChatActivitySideControlsButtonsLayout.BUTTON_SEARCH_DOWN) {
             goToNextOrPrevSearchMessage(false);
-        } else if (buttonId == ChatActivitySideControlsButtonsLayout.BUTTON_ATTACH) {
-            if (chatAttachAlert != null) {
-                chatAttachAlert.setEditingMessageObject(0, null);
-            }
-            openAttachMenu();
         }
+        // LoogriGram: BUTTON_ATTACH is gone.
     }
 
     private void goToNextOrPrevSearchMessage(boolean searchUp) {

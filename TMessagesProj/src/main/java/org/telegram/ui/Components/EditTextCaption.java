@@ -862,12 +862,8 @@ public class EditTextCaption extends EditTextBoldCursor implements FloatingToolb
         }
     }
 
-    public boolean isNearRightCaption(int rightMargin) {
-        final Layout layout = getLayout();
-        if (layout == null || layout.getLineCount() <= 0) return false;
-        if (layout.getLineCount() > 1) return true;
-        return layout.getLineRight(0) + rightMargin >= getWidth() - getPaddingLeft() - getPaddingRight();
-    }
+    // LoogriGram: isNearRightCaption told the input bar when text reached the
+    // attach button, to move it away; the button is left of the text now.
 
     public String getCaption() {
         return caption;

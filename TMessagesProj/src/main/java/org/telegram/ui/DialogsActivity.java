@@ -4562,15 +4562,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 
                 }
 
-                @Override
-                public void onAttachButtonHidden() {
-
-                }
-
-                @Override
-                public void onAttachButtonShow() {
-
-                }
+                // LoogriGram: onAttachButtonHidden/onAttachButtonShow are gone
+                // from the delegate.
 
                 @Override
                 public void onMessageEditEnd(boolean loading) {
