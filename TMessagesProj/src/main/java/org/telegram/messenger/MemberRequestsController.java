@@ -20,7 +20,6 @@ import org.telegram.tgnet.tl.TL_update;
 import org.telegram.ui.LaunchActivity;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 
 public class MemberRequestsController extends BaseController {
 
@@ -100,16 +99,17 @@ public class MemberRequestsController extends BaseController {
     // LoogriGram: join requests waiting in each chat this account can approve
     // them in, for the chat list's badge (DialogCell) and a notification when
     // one arrives. Kept current by the live update; refreshPendingRequests
-    // re-reads every such chat when the chat list loads and after each
-    // catch-up (getDifference), at most every ten minutes, in case an update
-    // was missed while disconnected. A refresh never notifies: only an update
-    // is news.
+    // re-reads such chats when a page of the chat list loads and after each
+    // catch-up (getDifference), each at most every ten minutes, in case an
+    // update was missed while disconnected. A refresh never notifies: only an
+    // update is news.
     private static final long PENDING_REQUESTS_REFRESH_INTERVAL = 10 * 60 * 1000;
     private static final String JOIN_REQUESTS_CHANNEL = "loogrigram_join_requests";
 
     private final LongSparseArray<Integer> pendingRequests = new LongSparseArray<>();
-    private long pendingRequestsRefreshTime;
-    private boolean refreshingPendingRequests;
+    private final LongSparseArray<Long> pendingRequestsReadTime = new LongSparseArray<>();
+    private final ArrayList<Long> pendingRequestsQueue = new ArrayList<>();
+    private boolean readingPendingRequests;
     private long openedDialogId;
 
     public boolean hasPendingRequests(long chatId) {
@@ -131,43 +131,39 @@ public class MemberRequestsController extends BaseController {
 
     public void refreshPendingRequests() {
         long now = SystemClock.elapsedRealtime();
-        if (refreshingPendingRequests || pendingRequestsRefreshTime != 0 && now - pendingRequestsRefreshTime < PENDING_REQUESTS_REFRESH_INTERVAL) {
-            return;
-        }
-        ArrayList<TLRPC.Chat> chats = new ArrayList<>();
-        HashSet<Long> chatIds = new HashSet<>();
         ArrayList<TLRPC.Dialog> dialogs = getMessagesController().getAllDialogs();
         for (int a = 0; a < dialogs.size(); a++) {
             TLRPC.Dialog dialog = dialogs.get(a);
             if (dialog instanceof TLRPC.TL_dialogFolder || dialog instanceof TLRPC.TL_dialogCommunity || !DialogObject.isChatDialog(dialog.id)) {
                 continue;
             }
-            TLRPC.Chat chat = getMessagesController().getChat(-dialog.id);
-            if (chat != null && !chat.monoforum && !ChatObject.isNotInChat(chat) && ChatObject.canUserDoAdminAction(chat, ChatObject.ACTION_INVITE)) {
-                chats.add(chat);
-                chatIds.add(chat.id);
+            long chatId = -dialog.id;
+            TLRPC.Chat chat = getMessagesController().getChat(chatId);
+            if (chat == null) {
+                continue;
             }
-        }
-        if (chats.isEmpty() && dialogs.isEmpty()) {
-            return;
-        }
-        pendingRequestsRefreshTime = now;
-        for (int a = pendingRequests.size() - 1; a >= 0; a--) {
-            long chatId = pendingRequests.keyAt(a);
-            if (!chatIds.contains(chatId)) {
+            if (chat.monoforum || ChatObject.isNotInChat(chat) || !ChatObject.canUserDoAdminAction(chat, ChatObject.ACTION_INVITE)) {
                 setPendingRequests(chatId, 0, null, false);
+                continue;
+            }
+            Long readTime = pendingRequestsReadTime.get(chatId);
+            if (readTime == null || now - readTime >= PENDING_REQUESTS_REFRESH_INTERVAL) {
+                pendingRequestsReadTime.put(chatId, now);
+                pendingRequestsQueue.add(chatId);
             }
         }
-        refreshingPendingRequests = true;
-        refreshPendingRequests(chats, 0);
+        if (!readingPendingRequests) {
+            readNextPendingRequests();
+        }
     }
 
-    private void refreshPendingRequests(ArrayList<TLRPC.Chat> chats, int index) {
-        if (index >= chats.size()) {
-            refreshingPendingRequests = false;
+    private void readNextPendingRequests() {
+        if (pendingRequestsQueue.isEmpty()) {
+            readingPendingRequests = false;
             return;
         }
-        long chatId = chats.get(index).id;
+        readingPendingRequests = true;
+        long chatId = pendingRequestsQueue.remove(0);
         TLRPC.TL_messages_getChatInviteImporters req = new TLRPC.TL_messages_getChatInviteImporters();
         req.peer = getMessagesController().getInputPeer(-chatId);
         req.requested = true;
@@ -179,7 +175,7 @@ public class MemberRequestsController extends BaseController {
                 getMessagesController().putUsers(res.users, false);
                 setPendingRequests(chatId, res.count, null, false);
             }
-            refreshPendingRequests(chats, index + 1);
+            readNextPendingRequests();
         }));
     }
 
