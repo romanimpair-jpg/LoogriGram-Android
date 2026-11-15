@@ -2300,6 +2300,9 @@ public class Theme {
     public static Drawable dialogs_mentionDrawableMuted;
     public static Drawable dialogs_reactionsMentionDrawableMuted;
     public static Drawable dialogs_pollMentionDrawableMuted;
+    // LoogriGram: DialogCell's join-requests badge.
+    public static Drawable dialogs_joinRequestsDrawable;
+    public static Drawable dialogs_joinRequestsDrawableMuted;
     public static Drawable dialogs_holidayDrawable;
     public static Drawable dialogs_forum_arrowDrawable;
     public static RLottieDrawable dialogs_archiveAvatarDrawable;
@@ -7832,6 +7835,8 @@ public class Theme {
             dialogs_mentionDrawableMuted = resources.getDrawable(R.drawable.filled_chatlist_mention).mutate();
             dialogs_reactionsMentionDrawableMuted = resources.getDrawable(R.drawable.filled_chatlist_reaction).mutate();
             dialogs_pollMentionDrawableMuted = resources.getDrawable(R.drawable.filled_chatlist_poll).mutate();
+            dialogs_joinRequestsDrawable = resources.getDrawable(R.drawable.filled_chatlist_requests).mutate();
+            dialogs_joinRequestsDrawableMuted = resources.getDrawable(R.drawable.filled_chatlist_requests).mutate();
 
             dialogs_pinnedDrawable = resources.getDrawable(R.drawable.list_pin);
             dialogs_pinnedDrawable2 = resources.getDrawable(R.drawable.msg_pin_mini).mutate();
@@ -7928,6 +7933,8 @@ public class Theme {
         setDrawableColorByKey(dialogs_mentionDrawableMuted, key_chats_unreadCounterMuted);
         setDrawableColorByKey(dialogs_reactionsMentionDrawableMuted, key_chats_unreadCounterMuted);
         setDrawableColorByKey(dialogs_pollMentionDrawableMuted, key_chats_unreadCounterMuted);
+        setDrawableColorByKey(dialogs_joinRequestsDrawable, key_color_green);
+        setDrawableColorByKey(dialogs_joinRequestsDrawableMuted, key_chats_unreadCounterMuted);
 
         setDrawableColorByKey(dialogs_forum_arrowDrawable, key_chats_message);
         setDrawableColorByKey(dialogs_verifiedDrawable, key_chats_verifiedBackground);

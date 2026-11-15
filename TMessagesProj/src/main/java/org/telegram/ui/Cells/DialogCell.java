@@ -76,6 +76,7 @@ import org.telegram.messenger.ImageReceiver;
 import org.telegram.messenger.LiteMode;
 import org.telegram.messenger.LocaleController;
 import org.telegram.messenger.MediaDataController;
+import org.telegram.messenger.MemberRequestsController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.MessagesStorage;
@@ -651,6 +652,12 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
     private int mentionLeft;
     private int reactionMentionLeft;
     private int pollVotesMentionLeft;
+    // LoogriGram: a badge for join requests waiting in a chat we admin
+    // (MemberRequestsController), left of the poll badge, drawn like it.
+    private boolean hasJoinRequests;
+    private boolean drawJoinRequests;
+    private int joinRequestsLeft;
+    private final BoolAnimator animatorJoinRequestsVisible = new BoolAnimator(this, CubicBezierInterpolator.EASE_OUT_QUINT, 320);
     private int mentionWidth;
     private StaticLayout mentionLayout;
 
@@ -1291,6 +1298,7 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
         }
         lastMessageString = msgText;
 
+        drawJoinRequests = false;
         if (customDialog != null) {
             if (customDialog.type == 2) {
                 drawNameLock = true;
@@ -1990,6 +1998,9 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
                 timeString = LocaleController.stringForMessageListDate(message.messageOwner.date);
             }
 
+            // LoogriGram: shown with or without a last message, since a new
+            // channel can have requests before its first post.
+            drawJoinRequests = hasJoinRequests && currentDialogFolderId == 0 && !isSavedDialog;
             if (message == null || isSavedDialog) {
                 drawCheck1 = false;
                 drawCheck2 = false;
@@ -2373,7 +2384,7 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
                 buttonLeft += w;
                 messageNameLeft += w;
             }
-        } else if (countString != null || mentionString != null || drawReactionMention || drawPollVotesMention) {
+        } else if (countString != null || mentionString != null || drawReactionMention || drawPollVotesMention || drawJoinRequests) {
             if (countString != null) {
                 countWidth = Math.max(dp(BADGE_TEXT_MIN_WIDTH), (int) Math.ceil(Theme.dialogs_countTextPaint2.measureText(countString)));
                 countLayout = new StaticLayout(countString, Theme.dialogs_countTextPaint2, countWidth, Layout.Alignment.ALIGN_CENTER, 1.0f, 0.0f, false);
@@ -2464,6 +2475,22 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
                     if (drawCount) {
                         pollVotesMentionLeft += (countWidth != 0 ? (countWidth + dp(BADGE_GAP)) : 0);
                     }
+                    messageLeft += w;
+                    typingLeft += w;
+                    buttonLeft += w;
+                    messageNameLeft += w;
+                }
+            }
+            if (drawJoinRequests) {
+                int w = dp(25);
+                int before = (drawPollVotesMention ? dp(25) : 0) + (drawReactionMention ? dp(25) : 0)
+                    + (drawMention && mentionWidth != 0 ? mentionWidth + dp(BADGE_GAP) : 0)
+                    + (drawCount && countWidth != 0 ? countWidth + dp(BADGE_GAP) : 0);
+                messageWidth -= w;
+                if (!LocaleController.isRTL) {
+                    joinRequestsLeft = getMeasuredWidth() - dp(BADGE_SIZE + BADGE_MARGIN) - before;
+                } else {
+                    joinRequestsLeft = dp(BADGE_MARGIN) + before;
                     messageLeft += w;
                     typingLeft += w;
                     buttonLeft += w;
@@ -3146,6 +3173,10 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
                 reactionMentionCount = forumTopic.unread_reactions_count;
                 pollVotesMentionCount = forumTopic.unread_poll_votes_count;
             }
+            // LoogriGram: see hasJoinRequests.
+            boolean newHasJoinRequests = isDialogCell && readJoinRequests();
+            boolean joinRequestsChanged = newHasJoinRequests != hasJoinRequests;
+            hasJoinRequests = newHasJoinRequests;
             if (dialogsType == DialogsActivity.DIALOGS_TYPE_ADD_USERS_TO) {
                 drawPin = false;
             }
@@ -3261,6 +3292,10 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
                         lastSendState = message.messageOwner.send_state;
                         continueUpdate = true;
                     }
+                }
+                // LoogriGram: see hasJoinRequests.
+                if (joinRequestsChanged) {
+                    continueUpdate = true;
                 }
 
                 if (!continueUpdate) {
@@ -3431,6 +3466,7 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
             }
 
             animatorPollVotesMentionVisible.setValue(pollVotesMentionCount != 0, animated);
+            animatorJoinRequestsVisible.setValue(hasJoinRequests, animated);
             boolean newHasReactionsMentions = reactionMentionCount != 0;
             if (animated && (newHasReactionsMentions != oldHasReactionsMentions)) {
                 if (reactionsMentionsAnimator != null) {
@@ -4233,13 +4269,14 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
                 Theme.dialogs_reorderDrawable.draw(canvas);
             }
             final float pollVotesMentionsVisibility = animatorPollVotesMentionVisible.getFloatValue();
+            final float joinRequestsVisibility = animatorJoinRequestsVisible.getFloatValue();
             if (drawError) {
                 Theme.dialogs_errorDrawable.setAlpha((int) ((1.0f - reorderIconProgress) * 255));
                 rect.set(errorLeft, errorTop, errorLeft + dp(BADGE_SIZE), errorTop + dp(BADGE_SIZE));
                 canvas.drawRoundRect(rect, 10.5f * AndroidUtilities.density, 10.5f * AndroidUtilities.density, Theme.dialogs_errorPaint);
                 setDrawableBounds(Theme.dialogs_errorDrawable, errorLeft + dp(4.5f), errorTop + dp(5));
                 Theme.dialogs_errorDrawable.draw(canvas);
-            } else if ((drawCount || drawMention) && drawCount2 || countChangeProgress != 1f || drawReactionMention || reactionsMentionsChangeProgress != 1f || drawPollVotesMention || pollVotesMentionsVisibility > 0) {
+            } else if ((drawCount || drawMention) && drawCount2 || countChangeProgress != 1f || drawReactionMention || reactionsMentionsChangeProgress != 1f || drawPollVotesMention || pollVotesMentionsVisibility > 0 || drawJoinRequests && joinRequestsVisibility > 0) {
                 final boolean drawCounterMuted = isCounterMuted();
                 drawCounter(canvas, drawCounterMuted, countTop, countLeft, countLeftOld, 1f, false);
                 if (drawMention) {
@@ -4300,6 +4337,17 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
                         x + dp(BADGE_DRAWABLE_OFFSET + BADGE_DRAWABLE_SIZE / 2f),
                         countTop + dp(BADGE_DRAWABLE_OFFSET + BADGE_DRAWABLE_SIZE / 2f), Gravity.CENTER);
                     DrawableUtils.drawWithScale(canvas, drawable, pollVotesMentionsVisibility);
+                }
+                if (drawJoinRequests && joinRequestsVisibility > 0) {
+                    final Drawable drawable = drawCounterMuted ?
+                        Theme.dialogs_joinRequestsDrawableMuted :
+                        Theme.dialogs_joinRequestsDrawable;
+
+                    drawable.setAlpha((int) ((1.0f - reorderIconProgress) * 255));
+                    DrawableUtils.setBounds(drawable,
+                        joinRequestsLeft + dp(BADGE_DRAWABLE_OFFSET + BADGE_DRAWABLE_SIZE / 2f),
+                        countTop + dp(BADGE_DRAWABLE_OFFSET + BADGE_DRAWABLE_SIZE / 2f), Gravity.CENTER);
+                    DrawableUtils.drawWithScale(canvas, drawable, joinRequestsVisibility);
                 }
             } else if (openBot) {
                 canvas.save();
@@ -4625,6 +4673,13 @@ public class DialogCell extends BaseCell implements Theme.Colorable {
         } else {
             return chat != null && chat.forum && forumTopic == null ? !hasUnmutedTopics : dialogMuted;
         }
+    }
+
+    // LoogriGram: see hasJoinRequests. A topic's cell shows only the topic's
+    // own counts, and a community's are upstream's to show (DialogsActivity).
+    private boolean readJoinRequests() {
+        return !isTopic && !isDialogCommunity() && DialogObject.isChatDialog(currentDialogId)
+            && MemberRequestsController.getInstance(currentAccount).hasPendingRequests(-currentDialogId);
     }
 
 

@@ -420,6 +420,8 @@ public class NotificationsController extends BaseController implements Notificat
     }
 
     public void setOpenedDialogId(long dialog_id, long topicId) {
+        // LoogriGram: join request notifications follow the opened chat too.
+        getMemberRequestsController().setOpenedDialogId(dialog_id);
         notificationsQueue.postRunnable(() -> {
             openedDialogId = dialog_id;
             openedTopicId = topicId;

@@ -6091,6 +6091,8 @@ public class MessagesController extends BaseController implements NotificationCe
                     exportedChats.put(chatId, res.full_chat.exported_invite);
                     loadingFullChats.remove(chatId);
                     loadedFullChats.put(chatId,  System.currentTimeMillis());
+                    // LoogriGram: the chat list's join-requests badge.
+                    getMemberRequestsController().onChatFullLoaded(chatId, res.full_chat);
 
                     putUsers(res.users, false);
                     putChats(res.chats, false);
@@ -11943,6 +11945,9 @@ public class MessagesController extends BaseController implements NotificationCe
                     loadDialogs(folderId, 0, 100, false);
                 }
                 getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
+                // LoogriGram: the chats we admin are known now, which the first
+                // catch-up can run ahead of (MemberRequestsController).
+                getMemberRequestsController().refreshPendingRequests();
 
                 if (migrate) {
                     getUserConfig().migrateOffsetId = offset;
@@ -15263,6 +15268,11 @@ public class MessagesController extends BaseController implements NotificationCe
                                 }
                             }
                             getMessagesStorage().saveDiffParams(getMessagesStorage().getLastSeqValue(), getMessagesStorage().getLastPtsValue(), getMessagesStorage().getLastDateValue(), getMessagesStorage().getLastQtsValue());
+                            // LoogriGram: caught up, so re-read the join requests
+                            // waiting in chats we admin (rate-limited there).
+                            if (!gettingDifference) {
+                                getMemberRequestsController().refreshPendingRequests();
+                            }
                             if (BuildVars.LOGS_ENABLED) {
                                 FileLog.d("received difference with date = " + getMessagesStorage().getLastDateValue() + " pts = " + getMessagesStorage().getLastPtsValue() + " seq = " + getMessagesStorage().getLastSeqValue() + " messages = " + res.new_messages.size() + " users = " + res.users.size() + " chats = " + res.chats.size() + " other updates = " + res.other_updates.size());
                             }

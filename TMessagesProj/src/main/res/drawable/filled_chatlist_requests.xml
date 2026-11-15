@@ -1,0 +1,8 @@
+<!-- LoogriGram: the chat list's join-requests badge (DialogCell), a person
+     and a plus in the style of filled_chatlist_poll. Desktop draws the same
+     path (icons/dialogs/dialogs_chatlist_requests.svg). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:height="24dp" android:viewportHeight="72" android:viewportWidth="72" android:width="24dp">
+
+    <path android:fillColor="#FFFFFF" android:fillType="nonZero" android:pathData="M28,14C34.075,14 39,18.925 39,25C39,31.075 34.075,36 28,36C21.925,36 17,31.075 17,25C17,18.925 21.925,14 28,14ZM28,40C39.6,40 48,46.5 48,54.5L48,56C48,58.209 46.209,60 44,60L12,60C9.791,60 8,58.209 8,56L8,54.5C8,46.5 16.4,40 28,40ZM51.25,20.25C51.25,18.179 52.929,16.5 55,16.5C57.071,16.5 58.75,18.179 58.75,20.25L58.75,23.25L61.75,23.25C63.821,23.25 65.5,24.929 65.5,27C65.5,29.071 63.821,30.75 61.75,30.75L58.75,30.75L58.75,33.75C58.75,35.821 57.071,37.5 55,37.5C52.929,37.5 51.25,35.821 51.25,33.75L51.25,30.75L48.25,30.75C46.179,30.75 44.5,29.071 44.5,27C44.5,24.929 46.179,23.25 48.25,23.25L51.25,23.25Z" android:strokeColor="#00000000"/>
+
+</vector>

@@ -9721,4 +9721,10 @@
     <string name="LoogriGramCameraForVideoMessages">Camera for video messages</string>
     <string name="LoogriGramCameraBack">Back</string>
     <string name="LoogriGramCameraFront">Front</string>
+    <!-- LoogriGram: a notification when someone asks to join a chat we admin
+         (MemberRequestsController), and its notification channel. With more
+         than one waiting it says upstream's "JoinUsersRequests". Desktop
+         uses its own "lng_group_requests_pending_user" for the first. -->
+    <string name="LoogriGramUserRequestedToJoin">%1$s requested to join</string>
+    <string name="LoogriGramJoinRequestsChannel">Join requests</string>
 </resources>
