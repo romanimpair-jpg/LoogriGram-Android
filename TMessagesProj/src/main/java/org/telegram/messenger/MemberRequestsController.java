@@ -90,8 +90,9 @@ public class MemberRequestsController extends BaseController {
             getNotificationCenter().postNotificationName(NotificationCenter.chatInfoDidLoad, chatFull, 0, false, false);
         }
         // LoogriGram: upstream stopped at a loaded ChatFull, so the update was
-        // lost for any chat not opened this session.
-        if (update.peer instanceof TLRPC.TL_peerChannel || update.peer instanceof TLRPC.TL_peerChat) {
+        // lost for any chat not opened this session. A community's requests
+        // stay upstream's to show (DialogsActivity), as on desktop.
+        if ((update.peer instanceof TLRPC.TL_peerChannel || update.peer instanceof TLRPC.TL_peerChat) && !ChatObject.isCommunity(currentAccount, peerId)) {
             setPendingRequests(-peerId, update.requests_pending, update.recent_requesters, true);
         }
     }
@@ -142,7 +143,7 @@ public class MemberRequestsController extends BaseController {
             if (chat == null) {
                 continue;
             }
-            if (chat.monoforum || ChatObject.isNotInChat(chat) || !ChatObject.canUserDoAdminAction(chat, ChatObject.ACTION_INVITE)) {
+            if (chat.monoforum || ChatObject.isCommunity(chat) || ChatObject.isNotInChat(chat) || !ChatObject.canUserDoAdminAction(chat, ChatObject.ACTION_INVITE)) {
                 setPendingRequests(chatId, 0, null, false);
                 continue;
             }
